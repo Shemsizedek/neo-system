@@ -12,12 +12,21 @@ import {
 } from './encoding'
 
 const DEFAULT_ITERATIONS = 310_000
+const MIN_ITERATIONS = 100_000
+const MAX_ITERATIONS = 2_000_000
 const DOMAIN = 'NEO-CIPHER:#D:999:144:v1'
+
+function assertIterationCount(iterations: number): void {
+  if (!Number.isInteger(iterations) || iterations < MIN_ITERATIONS || iterations > MAX_ITERATIONS) {
+    throw new Error(`PBKDF2 iterations must be an integer between ${MIN_ITERATIONS} and ${MAX_ITERATIONS}.`)
+  }
+}
 
 async function deriveKey(passphrase: string, salt: Uint8Array, iterations: number): Promise<CryptoKey> {
   if (passphrase.length < 12) {
     throw new Error('Passphrase must be at least 12 characters.')
   }
+  assertIterationCount(iterations)
 
   const keyMaterial = await crypto.subtle.importKey(
     'raw',
@@ -45,14 +54,26 @@ function aadFor(envelope: Pick<NeoCipherEnvelope, 'version' | 'protocol' | 'symb
   return utf8(JSON.stringify({ domain: DOMAIN, ...envelope }))
 }
 
+function validateEnvelopeHeader(envelope: NeoCipherEnvelope): void {
+  if (
+    envelope.version !== 'NEO-CIPHER-1' ||
+    envelope.protocol !== '#D' ||
+    envelope.algorithm !== 'AES-GCM-256' ||
+    envelope.kdf !== 'PBKDF2-SHA-256' ||
+    envelope.symbolicConstants?.cycle !== 999 ||
+    envelope.symbolicConstants?.resonance !== 144
+  ) {
+    throw new Error('Unsupported or invalid NEO Cipher envelope.')
+  }
+  assertIterationCount(envelope.iterations)
+}
+
 export async function encryptNeoCipher(
   plaintext: string,
   options: NeoCipherEncryptOptions
 ): Promise<NeoCipherEnvelope> {
   const iterations = options.iterations ?? DEFAULT_ITERATIONS
-  if (!Number.isInteger(iterations) || iterations < 100_000) {
-    throw new Error('PBKDF2 iterations must be an integer of at least 100000.')
-  }
+  assertIterationCount(iterations)
 
   const salt = randomBytes(16)
   const iv = randomBytes(12)
@@ -85,12 +106,16 @@ export async function decryptNeoCipher(
   envelope: NeoCipherEnvelope,
   options: NeoCipherDecryptOptions
 ): Promise<string> {
-  if (envelope.version !== 'NEO-CIPHER-1' || envelope.protocol !== '#D') {
-    throw new Error('Unsupported NEO Cipher envelope.')
-  }
+  validateEnvelopeHeader(envelope)
 
   const salt = base64UrlToBytes(envelope.salt)
   const iv = base64UrlToBytes(envelope.iv)
+  const ciphertext = base64UrlToBytes(envelope.ciphertext)
+
+  if (salt.length !== 16) throw new Error('Invalid NEO Cipher salt length.')
+  if (iv.length !== 12) throw new Error('Invalid NEO Cipher IV length.')
+  if (ciphertext.length < 16) throw new Error('Invalid NEO Cipher ciphertext.')
+
   const key = await deriveKey(options.passphrase, salt, envelope.iterations)
   const header = {
     version: envelope.version,
@@ -104,7 +129,7 @@ export async function decryptNeoCipher(
   const decrypted = await crypto.subtle.decrypt(
     { name: 'AES-GCM', iv, additionalData: aadFor(header), tagLength: 128 },
     key,
-    base64UrlToBytes(envelope.ciphertext)
+    ciphertext
   )
 
   return fromUtf8(decrypted)
