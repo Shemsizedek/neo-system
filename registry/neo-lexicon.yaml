@@ -1,0 +1,26 @@
+version: 1.0
+id: neo-lexicon
+name: NEO Lexicon
+parent_system: NEO System
+mode: source-bound-semantic-registry
+status: active
+purpose: >-
+  Maintain structured NEO vocabulary, language, script, symbol, relationship, provenance, and source-claim records for NEO Lingo, NEOsync, and approved downstream systems.
+controls:
+  preserve_source_terminology: true
+  provenance_required: true
+  distinguish_source_claims_from_verified_facts: true
+  may_override_pa_sarun: false
+  may_override_temple_doctrine: false
+  cryptographic_dictionary_words_as_keys: false
+sources:
+  - id: NEO-LEX-SRC-001
+    title: First Language
+    path: registry/neo-lexicon/source-001-first-language.yaml
+    status: SOURCE-BOUND
+runtime:
+  module: src/neoLexicon
+  exports:
+    - firstLanguageSourceLayer
+    - firstLanguageLexicon
+    - findFirstLanguageEntry
