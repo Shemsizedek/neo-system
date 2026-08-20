@@ -1,0 +1,22 @@
+version: 1.0
+id: neo-lingo
+name: NEO Lingo Codex
+parent_system: NEO System
+mode: advisory-translation
+status: active
+purpose: >-
+  Provide a plain-language explanation layer for specialized NEO terminology while preserving the authoritative source vocabulary and institutional boundaries.
+controls:
+  plain_language_first: true
+  preserve_specialized_terms: true
+  preserve_spiritual_and_philosophical_meaning: true
+  may_override_pa_sarun: false
+  may_override_temple_doctrine: false
+  may_confer_titles: false
+  may_grant_suffixes: false
+runtime:
+  module: src/neoLingo
+  exports:
+    - neoLingoCodex
+    - findNeoLingoTerm
+    - translateNeoLingo

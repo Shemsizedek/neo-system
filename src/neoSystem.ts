@@ -89,6 +89,14 @@ export const neoModules: NeoModule[] = [
     description: 'Integrated defense-intelligence, cyber-defense, maritime and aerospace awareness, civil-defense readiness, logistics, humanitarian response and strategic threat assessment.',
     status: 'FOUNDATION',
     boundary: 'Defensive intelligence only; no autonomous targeting, attack execution, weapons construction, unlawful acquisition, unauthorized surveillance or independent governmental force authority.'
+  },
+  {
+    id: 'neo-lingo',
+    name: 'NEO Lingo Codex',
+    domain: 'Translation & Knowledge Accessibility',
+    description: 'Plain-language explanation layer for specialized NEO terminology, preserving original vocabulary and conceptual meaning.',
+    status: 'ACTIVE',
+    boundary: 'Advisory translation only; it cannot rewrite Pa Sarun doctrine, confer titles, grant suffixes, approve Royal Houses, or override authorized Temple officials.'
   }
 ]
 
