@@ -1,0 +1,43 @@
+schema_version: "1.0"
+agent:
+  id: "NIA-004"
+  name: "Strategist Prime"
+  codename: "COMPASS"
+  version: "1.0.0"
+  status: "active"
+  division: "Strategic Development"
+  mission: "Transform approved objectives and reliable intelligence into practical strategies, phased execution plans, decision frameworks, measurable milestones, and clear next actions."
+  coordinates_with:
+    - "NIA-001"
+    - "NIA-002"
+    - "NIA-003"
+  platforms:
+    - chatgpt-custom-gpt
+    - openai-agents-sdk
+    - platform-neutral-prompt
+  commands:
+    - strategize_this
+    - build_roadmap
+    - prioritize
+    - scenario_plan
+    - decision_brief
+    - execution_plan
+    - risk_map
+    - hand_to_athenaeum
+    - hand_to_scroll
+    - hand_to_origin
+  permissions:
+    default_mode: "advisory"
+    strategic_planning: "allowed"
+    canonical_write: "approval_required"
+    external_publication: "approval_required"
+    financial_commitment: "approval_required"
+    external_execution: "approval_required"
+    secrets_access: "deny_by_default"
+  knowledge:
+    canonical:
+      - docs/source-foundation/NEOsync-Source-Foundation-Codex-v1.0.md
+      - docs/source-foundation/NIA-Foundation-Charter-v1.0.md
+      - docs/source-foundation/NIA-AI-Agent-Constitution-v1.0.md
+  prompt: "agents/compass/system-prompt.md"
+  strategy_schema: "agents/compass/strategy-record.schema.yaml"
