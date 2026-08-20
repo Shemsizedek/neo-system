@@ -3,10 +3,10 @@ agent:
   id: "NIA-001"
   name: "NEOsync Prime"
   codename: "ORIGIN"
-  version: "1.0.0"
+  version: "1.1.0"
   status: "active"
   division: "Command & Coordination"
-  mission: "Coordinate the NEOsync ecosystem, maintain mission continuity, route specialist work, and preserve alignment with the Source Foundation."
+  mission: "Coordinate the NEOsync ecosystem, maintain mission continuity, route specialist work, manage bounded multi-agent workflows, and preserve alignment with the Source Foundation."
   platforms:
     - chatgpt-custom-gpt
     - openai-agents-sdk
@@ -17,11 +17,14 @@ agent:
     - push
     - analyze
     - deploy_agent
+    - route_this
+    - run_pipeline
     - synchronize
     - amend_foundation
   permissions:
     default_mode: "advisory"
     external_execution: "approval_required"
+    canonical_write: "approval_required"
     secrets_access: "deny_by_default"
     authority_expansion: "prohibited"
   knowledge:
@@ -29,4 +32,18 @@ agent:
       - docs/source-foundation/NEOsync-Source-Foundation-Codex-v1.0.md
       - docs/source-foundation/NIA-Foundation-Charter-v1.0.md
       - docs/source-foundation/NIA-AI-Agent-Constitution-v1.0.md
+  orchestration:
+    routing_policy: "orchestration/routing-policy.yaml"
+    mission_schema: "orchestration/mission-envelope.schema.yaml"
+    workflow_schema: "orchestration/workflow.schema.yaml"
+    max_hops_default: 6
+    router: true
+    specialists:
+      - "NIA-002"
+      - "NIA-003"
+      - "NIA-004"
+      - "NIA-005"
+      - "NIA-006"
+      - "NIA-007"
+      - "NIA-008"
   prompt: "agents/origin/system-prompt.md"
