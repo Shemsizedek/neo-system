@@ -81,6 +81,14 @@ export const neoModules: NeoModule[] = [
     description: 'Disaster readiness, continuity planning, humanitarian logistics, cyber resilience and defensive coordination.',
     status: 'FOUNDATION',
     boundary: 'No offensive weapons, targeting or autonomous force capability is implemented.'
+  },
+  {
+    id: 'gas',
+    name: 'NEO Global Arms System',
+    domain: 'Defense Intelligence & Strategic Resilience',
+    description: 'Integrated defense-intelligence, cyber-defense, maritime and aerospace awareness, civil-defense readiness, logistics, humanitarian response and strategic threat assessment.',
+    status: 'FOUNDATION',
+    boundary: 'Defensive intelligence only; no autonomous targeting, attack execution, weapons construction, unlawful acquisition, unauthorized surveillance or independent governmental force authority.'
   }
 ]
 
