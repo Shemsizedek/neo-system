@@ -1,0 +1,384 @@
+schema_version: '1.0'
+lexicon_name: NEO Lexicon
+source_layer:
+  id: NEO-LEX-SRC-001
+  title: First Language
+  source_type: user-provided book
+  page_count: 67
+  status: SOURCE-BOUND
+  provenance_policy: Entries preserve the terminology and framing of the source. Historical, linguistic, theological, ethnographic, and chronological assertions are stored as source claims unless separately verified.
+entry_schema:
+  canonical_term: Preferred NEO Lexicon label
+  entry_type: term | language | script | symbol | person | place | source_claim
+  plain_language: NEO Lingo explanation
+  source_position: Page/image location in First Language
+  source_status: SOURCE_TERM | SOURCE_DEFINITION | SOURCE_CLAIM
+  aliases: []
+  relations: []
+  restrictions: []
+  security_eligibility: NONE | DISPLAY_ONLY | SEMANTIC_SEED_ONLY
+entries:
+- id: FL-001
+  canonical_term: Language
+  entry_type: term
+  plain_language: The source treats language as a system for understanding and expressing the components and meanings of things.
+  source_position: pp. 1–4
+  source_status: SOURCE_DEFINITION
+  aliases: []
+  relations: [distinguished_from:Tongue]
+  restrictions: []
+  security_eligibility: SEMANTIC_SEED_ONLY
+- id: FL-002
+  canonical_term: Tongue
+  entry_type: term
+  plain_language: The source uses 'tongue' for spoken language or a dialect spoken by a people.
+  source_position: pp. 4–7
+  source_status: SOURCE_DEFINITION
+  aliases: []
+  relations: [related_to:Language, related_to:Dialect]
+  restrictions: []
+  security_eligibility: SEMANTIC_SEED_ONLY
+- id: FL-003
+  canonical_term: Dialect
+  entry_type: term
+  plain_language: A regional or derivative speech form connected to a broader language family.
+  source_position: pp. 5–7, 25–29
+  source_status: SOURCE_DEFINITION
+  aliases: []
+  relations: [related_to:Tongue, related_to:Language]
+  restrictions: []
+  security_eligibility: SEMANTIC_SEED_ONLY
+- id: FL-004
+  canonical_term: Aramic
+  entry_type: language
+  plain_language: The source presents Aramic/Aramaic as an ancient Semitic language and an ancestral source for later regional speech forms.
+  source_position: pp. 25–29, 73–78
+  source_status: SOURCE_CLAIM
+  aliases: [Aramaic]
+  relations: [related_to:Syriac, related_to:Hebrew, related_to:Arabic]
+  restrictions: []
+  security_eligibility: SEMANTIC_SEED_ONLY
+- id: FL-005
+  canonical_term: Ashuric/Syriac
+  entry_type: language
+  plain_language: A Semitic language layer identified by the source with Syriac and related regional dialects.
+  source_position: pp. 4–5, 23–29
+  source_status: SOURCE_CLAIM
+  aliases: [Syriac, Ashuric]
+  relations: [related_to:Aramic]
+  restrictions: []
+  security_eligibility: SEMANTIC_SEED_ONLY
+- id: FL-006
+  canonical_term: Hebrew
+  entry_type: language
+  plain_language: The source discusses Hebrew as a later dialect/language form within a broader Aramic/Semitic family.
+  source_position: pp. 6–8, 26–29, 76–78
+  source_status: SOURCE_CLAIM
+  aliases: []
+  relations: [related_to:Aramic, related_to:Semitic]
+  restrictions: []
+  security_eligibility: SEMANTIC_SEED_ONLY
+- id: FL-007
+  canonical_term: Arabic
+  entry_type: language
+  plain_language: The source treats Arabic as a later Semitic language related to Aramic/Ashuric traditions.
+  source_position: pp. 25–37, 53–67
+  source_status: SOURCE_CLAIM
+  aliases: []
+  relations: [related_to:Aramic, related_to:Ashuric/Syriac, related_to:Kufic]
+  restrictions: []
+  security_eligibility: SEMANTIC_SEED_ONLY
+- id: FL-008
+  canonical_term: Kufic
+  entry_type: script
+  plain_language: An early angular script tradition discussed in connection with Arabic writing.
+  source_position: pp. 32, 61–71
+  source_status: SOURCE_TERM
+  aliases: []
+  relations: [used_for:Arabic, related_to:Cuneiform]
+  restrictions: []
+  security_eligibility: DISPLAY_ONLY
+- id: FL-009
+  canonical_term: Cuneiform
+  entry_type: script
+  plain_language: A wedge-shaped writing system impressed into clay; the source presents it as an ancient foundational script.
+  source_position: pp. 23–25, 83, 92–97, 112–119
+  source_status: SOURCE_DEFINITION
+  aliases: []
+  relations: [used_by:Sumerian, used_by:Akkadian, related_to:Ugaritic]
+  restrictions: []
+  security_eligibility: DISPLAY_ONLY
+- id: FL-010
+  canonical_term: Ugaritic
+  entry_type: language
+  plain_language: A language/script tradition the source describes as combining cuneiform with another linguistic layer.
+  source_position: pp. 11–13, 86–87
+  source_status: SOURCE_CLAIM
+  aliases: []
+  relations: [written_in:Cuneiform]
+  restrictions: []
+  security_eligibility: SEMANTIC_SEED_ONLY
+- id: FL-011
+  canonical_term: Akkadian
+  entry_type: language
+  plain_language: A Semitic language associated with Akkad and cuneiform writing.
+  source_position: pp. 83, 96–97, 117–119
+  source_status: SOURCE_CLAIM
+  aliases: [Accadian]
+  relations: [written_in:Cuneiform, related_to:Semitic]
+  restrictions: []
+  security_eligibility: SEMANTIC_SEED_ONLY
+- id: FL-012
+  canonical_term: Sumerian
+  entry_type: language
+  plain_language: The source identifies Sumerian as an ancient language represented in cuneiform records.
+  source_position: pp. 24–25, 117–119
+  source_status: SOURCE_CLAIM
+  aliases: []
+  relations: [written_in:Cuneiform]
+  restrictions: []
+  security_eligibility: SEMANTIC_SEED_ONLY
+- id: FL-013
+  canonical_term: Hieroglyphics
+  entry_type: script
+  plain_language: A symbolic writing system using signs that may represent sounds, ideas, or images.
+  source_position: pp. 97–103
+  source_status: SOURCE_DEFINITION
+  aliases: [Egyptian Hieroglyphics]
+  relations: [related_to:Hieratic, related_to:Demotic]
+  restrictions: []
+  security_eligibility: DISPLAY_ONLY
+- id: FL-014
+  canonical_term: Hieratic
+  entry_type: script
+  plain_language: A cursive Egyptian script shown by the source alongside hieroglyphic and demotic writing.
+  source_position: pp. 100–101
+  source_status: SOURCE_TERM
+  aliases: []
+  relations: [related_to:Hieroglyphics, related_to:Demotic]
+  restrictions: []
+  security_eligibility: DISPLAY_ONLY
+- id: FL-015
+  canonical_term: Demotic
+  entry_type: script
+  plain_language: A later cursive Egyptian script shown by the source as part of the hieroglyphic/hieratic/demotic family.
+  source_position: pp. 100–101
+  source_status: SOURCE_TERM
+  aliases: []
+  relations: [related_to:Hieroglyphics, related_to:Hieratic]
+  restrictions: []
+  security_eligibility: DISPLAY_ONLY
+- id: FL-016
+  canonical_term: Coptic
+  entry_type: language
+  plain_language: The source describes Coptic as a later Egyptian language written with a Greek-derived alphabet plus additional signs.
+  source_position: pp. 98–100
+  source_status: SOURCE_CLAIM
+  aliases: []
+  relations: [related_to:Ancient Egyptian, written_in:Coptic alphabet]
+  restrictions: []
+  security_eligibility: SEMANTIC_SEED_ONLY
+- id: FL-017
+  canonical_term: Sanskrit
+  entry_type: language
+  plain_language: A learned and sacred language of India discussed by the source in relation to older Indo-Aryan traditions.
+  source_position: pp. 22–23, 87–95
+  source_status: SOURCE_CLAIM
+  aliases: []
+  relations: [related_to:Hindi, related_to:Indo-Aryan]
+  restrictions: []
+  security_eligibility: SEMANTIC_SEED_ONLY
+- id: FL-018
+  canonical_term: Hindi
+  entry_type: language
+  plain_language: A modern Indo-Aryan language discussed in the book alongside Sanskrit and related South Asian language forms.
+  source_position: pp. 22–23, 87–95
+  source_status: SOURCE_TERM
+  aliases: []
+  relations: [related_to:Sanskrit]
+  restrictions: []
+  security_eligibility: SEMANTIC_SEED_ONLY
+- id: FL-019
+  canonical_term: Persian
+  entry_type: language
+  plain_language: A language and script tradition discussed in relation to later Qur'anic manuscript traditions and regional writing systems.
+  source_position: pp. 60–67, 87–95
+  source_status: SOURCE_CLAIM
+  aliases: []
+  relations: [related_to:Arabic script, related_to:Urdu]
+  restrictions: []
+  security_eligibility: SEMANTIC_SEED_ONLY
+- id: FL-020
+  canonical_term: Urdu
+  entry_type: language
+  plain_language: A South Asian language shown in the source alongside Persian and discussed as connected to Indo-Aryan language development.
+  source_position: pp. 90–95
+  source_status: SOURCE_CLAIM
+  aliases: []
+  relations: [related_to:Persian, related_to:Hindi]
+  restrictions: []
+  security_eligibility: SEMANTIC_SEED_ONLY
+- id: FL-021
+  canonical_term: Nubic
+  entry_type: language
+  plain_language: The source's chosen label for a Nubian language form, described as based on a Nubian cultural script style rather than simply equated with Arabic, Hebrew, Syriac, or Aramaic.
+  source_position: p. 121
+  source_status: SOURCE_DEFINITION
+  aliases: [Nubian]
+  relations: [associated_with:Nubia, associated_with:Kuwshites]
+  restrictions: [Do not treat as independently verified linguistic classification without external verification.]
+  security_eligibility: SEMANTIC_SEED_ONLY
+- id: FL-022
+  canonical_term: Huwa Symbol
+  entry_type: symbol
+  plain_language: A composite symbol the source says contains the numerals 1 through 9.
+  source_position: p. 32
+  source_status: SOURCE_CLAIM
+  aliases: [Huwa]
+  relations: [related_to:Nine Ether]
+  restrictions: []
+  security_eligibility: DISPLAY_ONLY
+- id: FL-023
+  canonical_term: Nine Ether
+  entry_type: term
+  plain_language: A spiritual-symbolic concept associated by the source with the number 9.
+  source_position: pp. 32–35
+  source_status: SOURCE_DEFINITION
+  aliases: []
+  relations: [related_to:Huwa Symbol]
+  restrictions: [Symbolic concept only; must not be treated as cryptographic entropy or key strength.]
+  security_eligibility: SEMANTIC_SEED_ONLY
+- id: FL-024
+  canonical_term: Root
+  entry_type: term
+  plain_language: The underlying origin or base form of a word used to interpret later forms and meanings.
+  source_position: pp. 2–3, 31
+  source_status: SOURCE_DEFINITION
+  aliases: []
+  relations: [related_to:Etymology, related_to:Transliteration]
+  restrictions: []
+  security_eligibility: SEMANTIC_SEED_ONLY
+- id: FL-025
+  canonical_term: Etymology
+  entry_type: term
+  plain_language: The study of word origins and historical development; a core method implied throughout the book's root-based analysis.
+  source_position: pp. 2–7, 25–31
+  source_status: SOURCE_DEFINITION
+  aliases: []
+  relations: [related_to:Root]
+  restrictions: []
+  security_eligibility: SEMANTIC_SEED_ONLY
+- id: FL-026
+  canonical_term: Transliteration
+  entry_type: term
+  plain_language: Representing a word or sound from one script in another script without necessarily translating its meaning.
+  source_position: pp. 4–7, 27–31
+  source_status: SOURCE_DEFINITION
+  aliases: []
+  relations: [related_to:Script, related_to:Pronunciation]
+  restrictions: []
+  security_eligibility: SEMANTIC_SEED_ONLY
+- id: FL-027
+  canonical_term: Script
+  entry_type: term
+  plain_language: A system of written signs used to represent language, sounds, or ideas.
+  source_position: pp. 19–24, 31–32, 61–71, 97–103
+  source_status: SOURCE_DEFINITION
+  aliases: []
+  relations: [related_to:Language, related_to:Transliteration]
+  restrictions: []
+  security_eligibility: DISPLAY_ONLY
+- id: FL-028
+  canonical_term: One Language / One Speech
+  entry_type: source_claim
+  plain_language: The source argues that humanity once shared one language and one speech before later divisions into tongues and dialects.
+  source_position: pp. 46–53
+  source_status: SOURCE_CLAIM
+  aliases: []
+  relations: [related_to:Language, related_to:Dialect]
+  restrictions: [Store as a source claim; do not present as established historical fact.]
+  security_eligibility: NONE
+- id: FL-029
+  canonical_term: Language Family Tree
+  entry_type: source_claim
+  plain_language: The source provides a chart relating elder scripts/languages to later forms such as Syriac, Arabic, Hebrew, Persian, Greek, Latin, and English.
+  source_position: pp. 30–31
+  source_status: SOURCE_CLAIM
+  aliases: []
+  relations: [contains:Aramic, contains:Hebrew, contains:Arabic, contains:Syriac, contains:Persian]
+  restrictions: [Preserve as the source's model; external linguistic verification is separate.]
+  security_eligibility: NONE
+- id: FL-030
+  canonical_term: Right Knowledge
+  entry_type: term
+  plain_language: The source's label for knowledge grounded in what it presents as facts, roots, and corrected interpretations.
+  source_position: pp. 2–3, 18, 39–45
+  source_status: SOURCE_DEFINITION
+  aliases: []
+  relations: [related_to:Root, related_to:Language]
+  restrictions: []
+  security_eligibility: SEMANTIC_SEED_ONLY
+- id: FL-031
+  canonical_term: Ma'il Script
+  entry_type: script
+  plain_language: A slanting early Qur'anic script identified by the source.
+  source_position: pp. 68–69
+  source_status: SOURCE_TERM
+  aliases: []
+  relations: [used_for:Qur'anic manuscripts, related_to:Kufic]
+  restrictions: []
+  security_eligibility: DISPLAY_ONLY
+- id: FL-032
+  canonical_term: Phoenician
+  entry_type: script
+  plain_language: An alphabetic tradition presented by the source as historically connected to later Semitic writing systems.
+  source_position: pp. 77–83, 111
+  source_status: SOURCE_CLAIM
+  aliases: []
+  relations: [related_to:Semitic, related_to:Alphabet]
+  restrictions: []
+  security_eligibility: DISPLAY_ONLY
+- id: FL-033
+  canonical_term: Alphabet
+  entry_type: term
+  plain_language: A writing system made of letters/signs that represent sounds; the source contrasts alphabetic systems with pictorial or cuneiform systems.
+  source_position: pp. 31–32, 77–83, 97–101
+  source_status: SOURCE_DEFINITION
+  aliases: []
+  relations: [related_to:Script]
+  restrictions: []
+  security_eligibility: DISPLAY_ONLY
+- id: FL-034
+  canonical_term: Pronunciation
+  entry_type: term
+  plain_language: How a spoken sound or word is articulated; treated by the source as part of distinguishing related languages and dialects.
+  source_position: pp. 4–7, 50–55
+  source_status: SOURCE_DEFINITION
+  aliases: []
+  relations: [related_to:Tongue, related_to:Transliteration]
+  restrictions: []
+  security_eligibility: SEMANTIC_SEED_ONLY
+- id: FL-035
+  canonical_term: Symbol-to-Sound Mapping
+  entry_type: term
+  plain_language: The process of assigning written signs to spoken sounds, a principle discussed by the source in script development.
+  source_position: pp. 97–111
+  source_status: SOURCE_DEFINITION
+  aliases: []
+  relations: [related_to:Hieroglyphics, related_to:Alphabet, related_to:Script]
+  restrictions: []
+  security_eligibility: DISPLAY_ONLY
+integration:
+  neo_lingo:
+    purpose: Provide plain-language explanations while preserving canonical source terms.
+    rule: Do not overwrite Pa Sarun or other authoritative NEO registries.
+  neo_cipher:
+    allowed:
+    - Use approved lexicon terms as semantic labels, mnemonic material, or display encodings.
+    - Use script metadata for Yamassee/Nuwaubian presentation.
+    forbidden:
+    - Do not use book vocabulary, glyph secrecy, numerology, or symbolic values as a substitute for cryptographic entropy.
+    - Do not derive production cryptographic keys directly from dictionary words.
+  yamassee:
+    status: FONT/PRESENTATION LAYER
+    rule: Map approved encoded payloads to the Yamassee glyph carrier only after cryptographic protection.
