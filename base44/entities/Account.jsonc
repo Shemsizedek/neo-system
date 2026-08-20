@@ -1,0 +1,1 @@
+{"type":"object","properties":{"account_id":{"type":"string"},"customer_reference":{"type":"string"},"account_type":{"type":"string"},"status":{"type":"string"},"base_currency":{"type":"string"},"risk_status":{"type":"string"},"verification_status":{"type":"string"}},"required":["account_id","account_type","status"]}

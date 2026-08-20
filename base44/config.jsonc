@@ -1,0 +1,6 @@
+{
+  // NEO Teller ORIGIN — Base44-compatible project descriptor.
+  "name":"NEO Teller",
+  "environment":"sandbox",
+  "description":"Bitcoin / Counterparty XCP ATM and ETHA network control plane"
+}

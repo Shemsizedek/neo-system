@@ -1,0 +1,1 @@
+{"type":"object","properties":{"ledger_entry_id":{"type":"string"},"transaction_id":{"type":"string"},"account_id":{"type":"string"},"asset":{"type":"string"},"debit":{"type":"number"},"credit":{"type":"number"},"balance_after":{"type":"number"},"reference":{"type":"string"}},"required":["ledger_entry_id","transaction_id","account_id","asset"]}

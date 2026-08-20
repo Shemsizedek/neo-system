@@ -1,0 +1,1 @@
+{"type":"object","properties":{"case_id":{"type":"string"},"account_id":{"type":"string"},"transaction_id":{"type":"string"},"risk_level":{"type":"string","enum":["LOW","MEDIUM","HIGH","CRITICAL"]},"reason":{"type":"string"},"status":{"type":"string"},"reviewer":{"type":"string"},"resolution":{"type":"string"}},"required":["case_id","risk_level","status"]}
