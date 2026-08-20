@@ -22,6 +22,7 @@ export type NoologicalHangup =
   | 'NATURE_DISCONNECTION'
   | 'SUCCESSION_BLINDNESS'
   | 'AUTHORITY_SUBSTITUTION'
+  | 'SYMBOLIC_OVERREACH'
 
 export type NeoClaimRecord = {
   id: string
@@ -37,6 +38,8 @@ export type NeoClaimRecord = {
   externalRecognitionRelevant?: boolean
   externalRecognitionPresent?: boolean
   mixesDoctrineFactLawOrValuation?: boolean
+  symbolicLineageRelevant?: boolean
+  symbolicLineageDocumented?: boolean
 }
 
 export type NeoAlgoResult = {
@@ -73,6 +76,7 @@ export function evaluateNeoClaim(claim: NeoClaimRecord): NeoAlgoResult {
     activate('NMX-002')
     activate('NMX-006')
     activate('NMX-012')
+    activate('NMX-013')
   }
 
   if (!claim.chronologyPresent) {
@@ -101,6 +105,13 @@ export function evaluateNeoClaim(claim: NeoClaimRecord): NeoAlgoResult {
     addUnique(hangups, 'SUCCESSION_BLINDNESS')
     directives.push('Check predecessor and successor relationships, inherited benefits, duties, liabilities and institutional continuity.')
     activate('NMX-003')
+  }
+
+  if (claim.symbolicLineageRelevant && !claim.symbolicLineageDocumented) {
+    addUnique(hangups, 'SYMBOLIC_OVERREACH')
+    directives.push('Treat symbol similarity as an investigative lead only. Build a dated chain of transmission before inferring common origin, succession, authority or organizational identity.')
+    activate('NMX-014')
+    activate('NMX-013')
   }
 
   if (claim.mixesDoctrineFactLawOrValuation) {
