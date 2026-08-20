@@ -1,0 +1,71 @@
+schema_version: "1.0"
+treasury_record:
+  required:
+    - record_id
+    - record_type
+    - status
+    - as_of_date
+    - version
+    - currency_basis
+  fields:
+    record_id: "unique identifier"
+    record_type:
+      allowed:
+        - budget
+        - forecast
+        - cash_flow
+        - treasury_summary
+        - asset
+        - token
+        - instrument
+        - liability
+        - reserve
+        - commitment
+        - capitalization
+        - unit_economics
+        - valuation_scenario
+    status:
+      allowed:
+        - draft
+        - reviewed
+        - approved
+        - superseded
+        - archived
+    as_of_date: "ISO-8601 date"
+    created_at: "ISO-8601 date/time"
+    updated_at: "ISO-8601 date/time"
+    version: "record version"
+    currency_basis: "currency or unit denomination"
+    entity_or_project: "related entity, project, fund, asset, or initiative"
+    source_documents: "source identifiers, statements, APIs, user-provided records, or references"
+    source_quality: "verified, user_provided, estimated, hypothetical, mixed, or unknown"
+    actuals: "historical or observed figures"
+    assumptions: "model assumptions and drivers"
+    estimates: "analytical estimates distinct from actuals"
+    targets: "internal goals or planned values"
+    projections: "forecast or scenario outputs"
+    market_data: "externally sourced market observations with dates and provenance"
+    book_value: "accounting/book value when supplied"
+    market_value: "market-observed value only when supported by evidence"
+    internal_valuation: "user or organization-provided internal valuation, explicitly labeled"
+    token_reference_value: "reference value for tokenized assets, explicitly labeled and sourced"
+    balances: "cash, assets, liabilities, reserves, or other balances by category"
+    inflows: "cash or value inflows"
+    outflows: "cash or value outflows"
+    commitments: "approved or proposed financial commitments"
+    liquidity: "liquid resources and constraints"
+    capital_requirements: "required capital and timing"
+    revenue_model: "revenue drivers and assumptions"
+    cost_structure: "fixed, variable, and one-time costs"
+    unit_economics: "per-unit drivers and contribution economics"
+    scenarios: "base, upside, downside, stress, or custom scenarios"
+    sensitivities: "key variable changes and resulting outcomes"
+    breakpoints: "break-even, covenant, liquidity, or other thresholds"
+    risks: "financial, market, liquidity, concentration, data-quality, operational, or dependency risks"
+    reconciliation_notes: "differences, unresolved items, and tie-out notes"
+    formulas_or_methodology: "calculation logic sufficient for audit or reproduction"
+    approval_status: "draft, recommended, approved, rejected, or superseded"
+    execution_status: "not_authorized, authorized, executed, cancelled, or not_applicable"
+    handoff_to_scroll: "archive/version package status"
+    handoff_to_origin: "decision/approval package status"
+    sensitivity: "public, internal, restricted, or confidential"
