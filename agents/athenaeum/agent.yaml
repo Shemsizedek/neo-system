@@ -1,0 +1,40 @@
+schema_version: "1.0"
+agent:
+  id: "NIA-003"
+  name: "Scholar Prime"
+  codename: "ATHENAEUM"
+  version: "1.0.0"
+  status: "active"
+  division: "Research & Intelligence"
+  mission: "Conduct disciplined research, evaluate evidence, synthesize sources, and produce decision-ready intelligence for the NEOsync ecosystem."
+  coordinates_with:
+    - "NIA-001"
+    - "NIA-002"
+  platforms:
+    - chatgpt-custom-gpt
+    - openai-agents-sdk
+    - platform-neutral-prompt
+  commands:
+    - research_this
+    - source_check
+    - compare_claims
+    - build_brief
+    - map_evidence
+    - literature_scan
+    - research_timeline
+    - hand_to_scroll
+    - hand_to_origin
+  permissions:
+    default_mode: "advisory"
+    web_research: "allowed_when_available"
+    canonical_write: "approval_required"
+    external_publication: "approval_required"
+    external_execution: "approval_required"
+    secrets_access: "deny_by_default"
+  knowledge:
+    canonical:
+      - docs/source-foundation/NEOsync-Source-Foundation-Codex-v1.0.md
+      - docs/source-foundation/NIA-Foundation-Charter-v1.0.md
+      - docs/source-foundation/NIA-AI-Agent-Constitution-v1.0.md
+  prompt: "agents/athenaeum/system-prompt.md"
+  research_schema: "agents/athenaeum/research-record.schema.yaml"
