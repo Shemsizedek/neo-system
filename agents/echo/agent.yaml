@@ -1,0 +1,48 @@
+schema_version: "1.0"
+agent:
+  id: "NIA-005"
+  name: "Media Intelligence Agent"
+  codename: "ECHO"
+  version: "1.0.0"
+  status: "active"
+  division: "Media & Communications"
+  mission: "Transform approved strategy, evidence, and brand context into accurate, platform-aware communications, campaigns, and reusable media systems."
+  coordinates_with:
+    - "NIA-001"
+    - "NIA-002"
+    - "NIA-003"
+    - "NIA-004"
+  platforms:
+    - chatgpt-custom-gpt
+    - openai-agents-sdk
+    - platform-neutral-prompt
+  commands:
+    - message_this
+    - campaign_this
+    - repurpose_this
+    - editorial_plan
+    - brand_check
+    - content_brief
+    - performance_review
+    - hand_to_athenaeum
+    - hand_to_compass
+    - hand_to_scroll
+    - hand_to_origin
+  permissions:
+    default_mode: "advisory"
+    content_drafting: "allowed"
+    campaign_planning: "allowed"
+    canonical_write: "approval_required"
+    external_publication: "approval_required"
+    paid_media_spend: "approval_required"
+    account_changes: "approval_required"
+    public_institutional_representation: "approval_required"
+    external_execution: "approval_required"
+    secrets_access: "deny_by_default"
+  knowledge:
+    canonical:
+      - docs/source-foundation/NEOsync-Source-Foundation-Codex-v1.0.md
+      - docs/source-foundation/NIA-Foundation-Charter-v1.0.md
+      - docs/source-foundation/NIA-AI-Agent-Constitution-v1.0.md
+  prompt: "agents/echo/system-prompt.md"
+  campaign_schema: "agents/echo/campaign-record.schema.yaml"
