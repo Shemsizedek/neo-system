@@ -1,0 +1,23 @@
+{
+  "name": "Miner",
+  "type": "object",
+  "properties": {
+    "miner_id": {"type":"string"},
+    "serial_number": {"type":"string"},
+    "manufacturer": {"type":"string"},
+    "model": {"type":"string"},
+    "facility_id": {"type":"string"},
+    "rack_id": {"type":"string"},
+    "worker_id": {"type":"string"},
+    "pool_id": {"type":"string"},
+    "hashrate_th": {"type":"number"},
+    "power_w": {"type":"number"},
+    "efficiency_j_th": {"type":"number"},
+    "temperature_c": {"type":"number"},
+    "status": {"type":"string","enum":["PROVISIONING","MINING","IDLE","WARNING","CRITICAL","OFFLINE","MAINTENANCE","RETIRED"]},
+    "mode": {"type":"string","enum":["PERFORMANCE","BALANCED","EFFICIENCY","LOW_POWER","STANDBY"]},
+    "last_seen": {"type":"string","format":"date-time"},
+    "simulation": {"type":"boolean","default":true}
+  },
+  "required": ["miner_id","status"]
+}

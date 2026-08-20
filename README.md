@@ -1,27 +1,72 @@
 # NEO System
 
-The NEO System is a modular digital infrastructure ecosystem. This repository begins with the Noogle knowledge engine and the Omnitrix browser shell.
+A modular digital control plane for the New Ethereal Order ecosystem.
 
-## Active foundation
+The repository began as **NEO Teller — ORIGIN**, a Bitcoin / Counterparty XCP ATM and teller-terminal sandbox. The v0.1 foundation now preserves that financial simulator while adding the system shell for executive administration, legal/canonical research, tribunal case review, World Chaplaincy E-File, records, the four Global Arms administrative domains, and the Noogle / Omnitrix knowledge-and-browser foundation.
 
-- **Noogle** — search and knowledge discovery with provenance, Noology, Indigenous ontology, history, nature, and factology modes.
-- **Omnitrix** — browser command shell and NEO gateway.
-- **Bitcoin / Counterparty XCP** — native-ready interface layer; transaction execution is intentionally not enabled in this prototype.
-- **NEO Miner** — monitoring/control dashboard shell; hardware integration is intentionally not enabled in this prototype.
+## Foundation modules
 
-## Run the prototype
+- NEOsync Executive Office
+- Inner Bar Temple Tribunal
+- Noocratic Legal Corpus
+- World Chaplaincy E-File
+- NEO Teller / Treasury sandbox
+- Noogle knowledge engine
+- Omnitrix browser shell
+- Bitcoin / Counterparty XCP read-only browser surfaces
+- NEO Miner dashboard shell
+- World Police
+- World Marshals
+- World Guards
+- World Defense System
 
-Open `apps/noogle/web/index.html` in a modern browser.
+## Current release boundary
 
-## Repository structure
+This build is **FOUNDATION / SANDBOX** software.
 
-```text
-apps/noogle/web/              Noogle + Omnitrix static prototype
-docs/noogle-origin.md         Product and architecture specification
-packages/                     Shared protocol packages (next phase)
-services/                     Search, knowledge graph, and miner services (next phase)
+It does not create or represent live governmental jurisdiction, police or arrest authority, military authority, diplomatic recognition, banking/custody authority, court jurisdiction, Visa/Mastercard/SWIFT connectivity, live blockchain settlement, live wallet signing, or connected mining hardware.
+
+External capabilities must be connected through authorized institutions, valid agreements, applicable law, and approved production gateways.
+
+The Global Arms modules are limited to administration, records, readiness, safety planning, tribunal support, humanitarian logistics and defensive resilience. Offensive weapons, targeting, autonomous force, detention and coercive enforcement are outside the software boundary.
+
+## Noogle / Omnitrix
+
+The Noogle prototype is a provenance-first search and knowledge workspace with Noological, Indigenous ontology, historical, nature, scholarly, factology, geographic, Bitcoin, Counterparty, and Deep Search modes.
+
+Omnitrix is the browser and command surface for Noogle and the wider NEO ecosystem. The current build provides read-only Bitcoin / XCP panels and a NEO Miner control dashboard shell without requesting private keys, seed phrases, wallet passwords, or mining credentials.
+
+Run the static prototype by opening:
+
+`apps/noogle/web/index.html`
+
+See [`docs/noogle-origin.md`](docs/noogle-origin.md) for the Noogle / Omnitrix architecture and implementation milestones.
+
+## Historical-record policy
+
+Historical bulletins, letter patents, canons, resolutions and original drafts are treated as immutable source records. Later interpretation or development is stored as a separate addendum, authority note or superseding instrument; historical text is not silently rewritten.
+
+## Run locally
+
+```bash
+npm install
+npm run dev
 ```
 
-## Security posture
+## Build
 
-The first prototype is read-only. It does not request private keys, seed phrases, wallet passwords, or mining credentials. Financial and miner actions will require explicit adapters and user confirmation before they are enabled.
+```bash
+npm run build
+```
+
+## Architecture
+
+See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+
+Original finance route:
+
+`Cash / Card / Bank → NEO Teller → ETHA → Bitcoin / Counterparty XCP`
+
+`Bitcoin / XCP / Counterparty Assets → ETHA → NEO Teller → Cash / Card / Merchant`
+
+The Base44 project descriptors remain under `base44/` for later application integration.

@@ -1,0 +1,19 @@
+{
+  "name": "PaymentQuote",
+  "type": "object",
+  "properties": {
+    "quote_id": {"type":"string"},
+    "contract_id": {"type":"string"},
+    "base_currency": {"type":"string"},
+    "payment_currency": {"type":"string"},
+    "base_amount": {"type":"number"},
+    "customer_amount": {"type":"number"},
+    "btc_reference_value": {"type":"number"},
+    "fx_rate": {"type":"number"},
+    "fees": {"type":"number"},
+    "expires_at": {"type":"string","format":"date-time"},
+    "status": {"type":"string","enum":["DRAFT","ACTIVE","EXPIRED","PAID","PARTIALLY_PAID","FAILED","REFUNDED","CANCELLED"]},
+    "simulation": {"type":"boolean","default":true}
+  },
+  "required": ["quote_id","payment_currency","status"]
+}
