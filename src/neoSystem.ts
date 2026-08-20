@@ -38,9 +38,17 @@ export const neoModules: NeoModule[] = [
     id: 'neo-algo',
     name: 'NEO Algo & World Credit Clock',
     domain: 'Noology, Provenance & Mutual Credit Intelligence',
-    description: 'Provenance-first reasoning engine that detects logos-only hangups, preserves NEO Indigenous hermeneutics, separates evidence layers, applies NEO Maxims, and calculates the World Credit Clock / Clock of Destiny mutual-credit model.',
+    description: 'Provenance-first reasoning engine that detects logos-only hangups, preserves NEO Indigenous hermeneutics, separates evidence layers, applies NEO Maxims, models etheric/alchemical/nature-cycle context, and calculates the World Credit Clock / Clock of Destiny mutual-credit model.',
     status: 'FOUNDATION',
     boundary: 'Reasoning and modeling layer only; source assertions, technical observations, external recognition, ownership, valuation and enforceability remain explicitly separated evidence fields.'
+  },
+  {
+    id: 'noogle',
+    name: 'Noogle Noological Intelligence',
+    domain: 'Search, Doctrine, Factology & Noogenesis',
+    description: 'Noological discovery and ranking layer spanning Noology, Nuwau-Bu/Nuwaupu, Factology, Noone Science, Noone Philosophy, the Neoteric Method, Neology, Noetics, Noogony, Afrofuturism and Noogenesis. Results surface doctrine, provenance classes and NEO Maxims rather than treating relevance as truth.',
+    status: 'ACTIVE',
+    boundary: 'Search rank is relevance, not proof. Source-derived doctrine, NEO synthesis and external disciplines remain separately labeled; disputed or unverified claims are not promoted by ranking alone.'
   },
   {
     id: 'chaplaincy',
