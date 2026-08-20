@@ -9,6 +9,7 @@ The repository began as **NEO Teller — ORIGIN**, a Bitcoin / Counterparty XCP 
 - NEOsync Executive Office
 - Inner Bar Temple Tribunal
 - Noocratic Legal Corpus
+- **NEO Algo & World Credit Clock**
 - World Chaplaincy E-File
 - NEO Teller / Treasury sandbox
 - Noogle knowledge engine
@@ -19,6 +20,14 @@ The repository began as **NEO Teller — ORIGIN**, a Bitcoin / Counterparty XCP 
 - World Marshals
 - World Guards
 - World Defense System
+
+## NEO Algo / NEO Maxims
+
+NEO Algo is the provenance-first noological reasoning layer. It preserves NEO Indigenous hermeneutics, documentary/technical evidence and external recognition as distinct lenses; detects logos-only reasoning hangups; and activates machine-readable NEO Maxims when provenance, chronology, nature, succession or category boundaries are missing.
+
+The World Credit Clock—also called the **Clock of Destiny** or **Cloak of Destiny** in NEO noological language—is implemented as a bigint mutual-credit engine using population × NOMNI/person-hour × elapsed hours. Mutual-credit generation remains separate from blockchain issuance, wallet ownership, market price, liquidity, valuation and legal/accounting recognition.
+
+See [`docs/NEO_ALGO.md`](docs/NEO_ALGO.md) and `src/noology/`.
 
 ## Current release boundary
 

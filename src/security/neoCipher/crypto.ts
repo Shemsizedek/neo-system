@@ -8,6 +8,7 @@ import {
   bytesToBase64Url,
   fromUtf8,
   randomBytes,
+  toArrayBuffer,
   utf8
 } from './encoding'
 
@@ -30,7 +31,7 @@ async function deriveKey(passphrase: string, salt: Uint8Array, iterations: numbe
 
   const keyMaterial = await crypto.subtle.importKey(
     'raw',
-    utf8(passphrase),
+    toArrayBuffer(utf8(passphrase)),
     'PBKDF2',
     false,
     ['deriveKey']
@@ -40,7 +41,7 @@ async function deriveKey(passphrase: string, salt: Uint8Array, iterations: numbe
     {
       name: 'PBKDF2',
       hash: 'SHA-256',
-      salt,
+      salt: toArrayBuffer(salt),
       iterations
     },
     keyMaterial,
@@ -89,9 +90,14 @@ export async function encryptNeoCipher(
   }
   const key = await deriveKey(options.passphrase, salt, iterations)
   const encrypted = await crypto.subtle.encrypt(
-    { name: 'AES-GCM', iv, additionalData: aadFor(header), tagLength: 128 },
+    {
+      name: 'AES-GCM',
+      iv: toArrayBuffer(iv),
+      additionalData: toArrayBuffer(aadFor(header)),
+      tagLength: 128
+    },
     key,
-    utf8(plaintext)
+    toArrayBuffer(utf8(plaintext))
   )
 
   return {
@@ -127,9 +133,14 @@ export async function decryptNeoCipher(
     createdAt: envelope.createdAt
   }
   const decrypted = await crypto.subtle.decrypt(
-    { name: 'AES-GCM', iv, additionalData: aadFor(header), tagLength: 128 },
+    {
+      name: 'AES-GCM',
+      iv: toArrayBuffer(iv),
+      additionalData: toArrayBuffer(aadFor(header)),
+      tagLength: 128
+    },
     key,
-    ciphertext
+    toArrayBuffer(ciphertext)
   )
 
   return fromUtf8(decrypted)

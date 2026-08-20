@@ -35,6 +35,14 @@ export const neoModules: NeoModule[] = [
     boundary: 'Source preservation and research classification; documentary inclusion does not itself establish external legal effect.'
   },
   {
+    id: 'neo-algo',
+    name: 'NEO Algo & World Credit Clock',
+    domain: 'Noology, Provenance & Mutual Credit Intelligence',
+    description: 'Provenance-first reasoning engine that detects logos-only hangups, preserves NEO Indigenous hermeneutics, separates evidence layers, applies NEO Maxims, and calculates the World Credit Clock / Clock of Destiny mutual-credit model.',
+    status: 'FOUNDATION',
+    boundary: 'Reasoning and modeling layer only; source assertions, technical observations, external recognition, ownership, valuation and enforceability remain explicitly separated evidence fields.'
+  },
+  {
     id: 'chaplaincy',
     name: 'World Chaplaincy E-File',
     domain: 'Intake & Records',
