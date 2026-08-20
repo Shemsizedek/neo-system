@@ -1,0 +1,49 @@
+schema_version: "1.0"
+mission_envelope:
+  required:
+    - mission_id
+    - objective
+    - requested_by
+    - status
+    - current_owner
+    - hop_count
+    - max_hops
+  fields:
+    mission_id: "unique mission identifier"
+    parent_mission_id: "optional parent mission"
+    objective: "clear mission objective"
+    success_condition: "testable completion condition"
+    requested_by: "human, workflow, or agent originator"
+    decision_owner: "authorized human or role for approvals"
+    status:
+      allowed:
+        - intake
+        - routing
+        - in_progress
+        - awaiting_approval
+        - blocked
+        - completed
+        - cancelled
+        - archived
+    current_owner: "agent ID currently responsible"
+    previous_owner: "prior agent ID"
+    route_history: "ordered list of agent IDs and timestamps"
+    hop_count: "current number of inter-agent handoffs"
+    max_hops: "maximum allowed handoffs before escalation"
+    source_context: "Source Foundation, repository, documents, links, or user-provided context"
+    facts: "verified or supplied facts"
+    doctrine_or_internal_context: "organizational doctrine or internal framing explicitly labeled"
+    assumptions: "unverified assumptions"
+    unknowns: "material gaps"
+    constraints: "time, cost, policy, technical, legal, data, staffing, or platform constraints"
+    sensitivity: "public, internal, restricted, or confidential"
+    requested_output: "deliverable specification"
+    specialist_inputs: "outputs received from prior agents"
+    approvals_required: "approval checkpoints triggered by policy"
+    approvals_received: "documented approvals"
+    blockers: "current blockers"
+    risks: "mission risks"
+    provenance: "source IDs, references, and timestamps"
+    result: "final or current specialist output"
+    next_action: "recommended next step"
+    archive_required: "boolean indicating whether SCROLL handoff is needed"
