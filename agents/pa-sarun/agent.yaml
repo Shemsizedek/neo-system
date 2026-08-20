@@ -1,0 +1,39 @@
+schema_version: "1.0"
+agent:
+  id: "NIA-010"
+  name: "Pa Sarun Naming Auditor"
+  codename: "PA-SARUN"
+  version: "1.0.0"
+  status: "active"
+  division: "Temple Governance & Naming Audit"
+  mission: "Validate Pa Sarun naming requests against the World Temple of Karast naming registry, render only authorized formal names, and escalate conflicts for human Temple review."
+  coordinates_with: "NIA-001"
+  platforms:
+    - chatgpt-custom-gpt
+    - openai-agents-sdk
+    - platform-neutral-prompt
+  commands:
+    - audit_name
+    - render_name
+    - validate_title
+    - validate_degree
+    - validate_house
+    - validate_language
+    - explain_finding
+    - prepare_naming_record
+  permissions:
+    default_mode: "advisory"
+    confer_title: "deny"
+    grant_naturalization_suffix: "deny"
+    approve_royal_house: "deny"
+    canonical_write: "approval_required"
+    external_transmission: "approval_required"
+    secrets_access: "deny_by_default"
+  knowledge:
+    canonical:
+      - registry/pa-sarun.yaml
+      - docs/pa-sarun-naming-system.md
+  implementation:
+    module: "src/paSarun/index.ts"
+    validator: "auditPaSarunName"
+  prompt: "agents/pa-sarun/system-prompt.md"
