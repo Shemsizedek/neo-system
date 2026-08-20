@@ -1,0 +1,30 @@
+schema_version: "1.0"
+workflow:
+  required:
+    - workflow_id
+    - name
+    - version
+    - steps
+  fields:
+    workflow_id: "unique workflow identifier"
+    name: "workflow name"
+    version: "workflow version"
+    description: "workflow purpose"
+    trigger: "manual, event, scheduled, or condition"
+    entry_agent: "default ORIGIN"
+    steps:
+      description: "ordered or parallel orchestration steps"
+      item_fields:
+        step_id: "unique step identifier"
+        agent_id: "target NIA agent"
+        mode: "direct, sequential, parallel, review, or approval"
+        objective: "step objective"
+        input_from: "prior step IDs or mission envelope"
+        output_to: "next step IDs or ORIGIN"
+        approval_gate: "none or named approval requirement"
+        on_success: "next step or complete"
+        on_failure: "retry, reroute, block, or escalate"
+        max_retries: "bounded retry count"
+    completion_condition: "workflow success condition"
+    archive_on_completion: "whether SCROLL receives final record"
+    human_escalation: "conditions requiring human decision"

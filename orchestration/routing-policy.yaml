@@ -1,0 +1,104 @@
+schema_version: "1.0"
+router:
+  agent_id: "NIA-001"
+  codename: "ORIGIN"
+  principles:
+    - smallest_necessary_agent_set
+    - least_privilege
+    - explicit_handoffs
+    - preserve_provenance
+    - approval_checkpoints
+    - no_silent_authority_expansion
+    - no_unbounded_loops
+  max_hops_default: 6
+  require_human_checkpoint_on:
+    - external_execution
+    - financial_commitment
+    - transaction
+    - publication
+    - credential_change
+    - destructive_operation
+    - canonical_write
+    - public_institutional_representation
+    - production_deployment
+capabilities:
+  NIA-002:
+    codename: "SCROLL"
+    handles:
+      - provenance
+      - archive
+      - version_history
+      - canonical_record_preparation
+      - timeline
+  NIA-003:
+    codename: "ATHENAEUM"
+    handles:
+      - research
+      - source_verification
+      - evidence_synthesis
+      - claim_comparison
+      - literature_scan
+  NIA-004:
+    codename: "COMPASS"
+    handles:
+      - strategy
+      - roadmap
+      - prioritization
+      - scenario_planning
+      - execution_design
+  NIA-005:
+    codename: "ECHO"
+    handles:
+      - communications
+      - campaign_design
+      - content_strategy
+      - brand_continuity
+      - media_repurposing
+  NIA-006:
+    codename: "LEDGER"
+    handles:
+      - budget
+      - forecast
+      - treasury_analysis
+      - financial_modeling
+      - economic_case
+      - asset_record
+  NIA-007:
+    codename: "LUMEN"
+    handles:
+      - curriculum
+      - course_design
+      - assessment
+      - training_system
+      - knowledge_transfer
+  NIA-008:
+    codename: "FORGE"
+    handles:
+      - system_architecture
+      - integration_design
+      - automation_design
+      - implementation_plan
+      - security_review
+      - reliability_review
+routing_rules:
+  - when: "external factual uncertainty is material"
+    route_to: ["NIA-003"]
+  - when: "mission requires strategic choice or sequencing"
+    route_to: ["NIA-004"]
+  - when: "mission requires financial implications or modeling"
+    route_to: ["NIA-006"]
+  - when: "mission requires technology architecture or automation"
+    route_to: ["NIA-008"]
+  - when: "mission requires educational packaging"
+    route_to: ["NIA-007"]
+  - when: "mission requires public-facing communications"
+    route_to: ["NIA-005"]
+  - when: "approved output should become a versioned institutional record"
+    route_to: ["NIA-002"]
+conflict_resolution:
+  authority: "ORIGIN"
+  method:
+    - identify_conflict
+    - preserve_each_agents_evidence_and_assumptions
+    - request_targeted_reanalysis_if_needed
+    - escalate_material_unresolved_decisions_to_human
