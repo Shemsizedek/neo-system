@@ -1,0 +1,53 @@
+schema_version: "1.0"
+campaign_record:
+  required:
+    - campaign_id
+    - objective
+    - status
+    - audience
+    - version
+    - created_at
+  fields:
+    campaign_id: "unique identifier"
+    objective: "communications or campaign objective"
+    status:
+      allowed:
+        - scoped
+        - drafting
+        - proposed
+        - approved
+        - scheduled
+        - active
+        - paused
+        - completed
+        - superseded
+    audience: "primary and secondary audiences"
+    decision_owner: "person or role responsible for approval"
+    created_at: "ISO-8601 date/time"
+    updated_at: "ISO-8601 date/time"
+    version: "campaign record version"
+    source_strategy: "related COMPASS strategy ID or reference"
+    source_research: "related ATHENAEUM research IDs or source references"
+    canonical_context: "relevant Source Foundation references"
+    core_message: "single governing message"
+    supporting_messages: "supporting points and proof"
+    claim_classes: "verified fact, organizational doctrine, interpretation, creative framing, or promotional claim"
+    evidence_requirements: "claims requiring sourcing or verification"
+    prohibited_claims: "unapproved or unsupported claims that must not be published"
+    channels: "approved or proposed distribution channels"
+    formats: "video, short-form, post, thread, article, podcast, email, presentation, carousel, infographic, or other"
+    asset_plan: "required creative and production assets"
+    repurposing_map: "source-to-channel adaptation plan"
+    editorial_cadence: "timing and publishing sequence"
+    calls_to_action: "desired audience actions"
+    visual_direction: "approved aesthetic and production direction"
+    accessibility: "captioning, readability, alt text, language, or other requirements"
+    kpis: "reach, retention, engagement, conversion, qualified response, or mission-specific indicators"
+    test_plan: "experiments and learning agenda"
+    risks: "factual, reputational, operational, platform, brand, or dependency risks"
+    approvals: "required review and publication gates"
+    publication_status: "not_authorized, approved, scheduled, published, withdrawn, or superseded"
+    performance_notes: "approved observed results and lessons"
+    handoff_to_scroll: "archive/version package status"
+    handoff_to_origin: "mission/approval package status"
+    sensitivity: "public, internal, restricted, or confidential"
