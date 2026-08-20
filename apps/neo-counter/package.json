@@ -1,0 +1,13 @@
+{
+  "name": "@neo-system/neo-counter",
+  "version": "0.1.0",
+  "private": true,
+  "description": "NEO Counter Bitcoin / Counterparty merchant-services and POS core",
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.0"
+  }
+}
