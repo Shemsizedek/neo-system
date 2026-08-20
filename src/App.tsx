@@ -7,6 +7,7 @@ import {
 import {tellers,txs as seedTxs} from './mock'
 import type {Transaction} from './types'
 import {foundationalPrinciples,neoModules} from './neoSystem'
+import {gasBoundary,gasDivisions,gasPrinciples,gasThreatCategories,readinessSummary} from './globalArmsSystem'
 
 const money=(n:number)=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(n)
 
@@ -20,6 +21,7 @@ const iconMap: Record<string, typeof Activity> = {
   marshals: Scale,
   guards: Shield,
   defense: Building2,
+  gas: Network,
 }
 
 function Stat({label,value,sub,Icon}:{label:string;value:string;sub:string;Icon:typeof Activity}){
@@ -36,6 +38,7 @@ export function App(){
     xcp:tellers.reduce((a,t)=>a+t.xcp,0),
     online:tellers.filter(t=>t.status==='ONLINE').length
   }),[])
+  const gasReady=useMemo(()=>readinessSummary(),[])
   const simulate=()=>{
     const n=Math.max(1,Number(amount)||1)
     const id=`ETHA-${Math.random().toString(16).slice(2,8).toUpperCase()}`
@@ -43,7 +46,7 @@ export function App(){
   }
   return <div className="shell">
     <aside className="side">
-      <div className="brand"><div className="mark">N</div><div><b>NEO SYSTEM</b><span>FOUNDATION • v0.1</span></div></div>
+      <div className="brand"><div className="mark">N</div><div><b>NEO SYSTEM</b><span>FOUNDATION • v0.2</span></div></div>
       <nav>
         <button className={active==='overview'?'active':''} onClick={()=>setActive('overview')}><Gauge size={17}/>System Overview</button>
         <button className={active==='treasury'?'active':''} onClick={()=>setActive('treasury')}><Landmark size={17}/>Treasury / Teller</button>
@@ -54,7 +57,7 @@ export function App(){
       <div className="sidefoot">Love • Truth • Peace<br/>Freedom • Justice</div>
     </aside>
     <main>
-      <header><div><p>NEW ETHEREAL ORDER • DIGITAL CONTROL PLANE</p><h1>{active==='overview'?'NEO System Command Center':active==='treasury'?'Treasury & Teller Sandbox':active==='tribunal'?'Inner Bar Temple Tribunal':active==='corpus'?'Noocratic Legal Corpus':'Global Protection Systems'}</h1></div><div className="env"><i/> FOUNDATION</div></header>
+      <header><div><p>NEW ETHEREAL ORDER • DIGITAL CONTROL PLANE</p><h1>{active==='overview'?'NEO System Command Center':active==='treasury'?'Treasury & Teller Sandbox':active==='tribunal'?'Inner Bar Temple Tribunal':active==='corpus'?'Noocratic Legal Corpus':'NEO Global Arms System'}</h1></div><div className="env"><i/> FOUNDATION</div></header>
 
       {active==='overview' && <>
         <section className="principles">{foundationalPrinciples.map(p=><span key={p}>{p}</span>)}</section>
@@ -77,7 +80,18 @@ export function App(){
 
       {active==='corpus' && <section className="focusgrid"><div className="card focus"><BookOpen size={26}/><h2>Immutable Historical Record</h2><p>Original bulletins, letter patents, canons, resolutions and historical drafts are preserved as issued. Later interpretation is stored as a separate addendum or authority note.</p></div><div className="card focus"><FileText size={26}/><h2>Authority Classification</h2><p>Divine • Ecclesiastical • Noocratic Constitutional • Administrative • Historical • United States • International.</p></div></section>}
 
-      {active==='security' && <section className="modulegrid">{neoModules.filter(m=>['police','marshals','guards','defense'].includes(m.id)).map(m=>{const Icon=iconMap[m.id];return <article className="card module" key={m.id}><div className="modulehead"><Icon size={22}/><span className="status foundation">FOUNDATION</span></div><h2>{m.name}</h2><p>{m.description}</p><div className="boundary"><ShieldCheck size={14}/><span>{m.boundary}</span></div></article>})}</section>}
+      {active==='security' && <>
+        <section className="principles">{gasPrinciples.map(p=><span key={p}>{p}</span>)}</section>
+        <section className="stats">
+          <Stat label="Directorates" value={`${gasDivisions.length}`} sub="Defense-intelligence domains" Icon={Network}/>
+          <Stat label="Green Readiness" value={`${gasReady.GREEN}`} sub="Directorates ready" Icon={ShieldCheck}/>
+          <Stat label="Amber Readiness" value={`${gasReady.AMBER}`} sub="Development focus" Icon={AlertTriangle}/>
+          <Stat label="Threat Domains" value={`${gasThreatCategories.length}`} sub="Monitored categories" Icon={Activity}/>
+        </section>
+        <section className="card focus"><Shield size={26}/><h2>NEO-GAS Operating Boundary</h2><p>{gasBoundary}</p></section>
+        <section className="modulegrid">{gasDivisions.map(d=><article className="card module" key={d.id}><div className="modulehead"><Network size={20}/><span className={'status '+(d.readiness==='GREEN'?'active':'foundation')}>{d.readiness}</span></div><h2>{d.name}</h2><p>{d.mission}</p><div className="boundary"><ShieldCheck size={14}/><span>{d.functions.join(' • ')}</span></div></article>)}</section>
+        <section className="modulegrid">{gasThreatCategories.map(t=><article className="card module" key={t.id}><div className="modulehead"><AlertTriangle size={20}/><span className="status foundation">MONITOR</span></div><h2>{t.name}</h2><p>{t.scope}</p><div className="boundary"><ShieldCheck size={14}/><span>{t.defensiveResponse}</span></div></article>)}</section>
+      </>}
     </main>
   </div>
 }
