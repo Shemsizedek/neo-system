@@ -1,0 +1,75 @@
+schema_version: "1.0"
+architecture_record:
+  required:
+    - record_id
+    - record_type
+    - status
+    - version
+    - created_at
+  fields:
+    record_id: "unique identifier"
+    record_type:
+      allowed:
+        - architecture
+        - integration
+        - automation
+        - implementation_plan
+        - security_review
+        - reliability_review
+        - prototype_spec
+        - decision_record
+    status:
+      allowed:
+        - scoped
+        - researching
+        - proposed
+        - reviewed
+        - approved
+        - implementing
+        - validating
+        - deployed
+        - superseded
+        - archived
+    decision_owner: "person or role responsible for approval"
+    created_at: "ISO-8601 date/time"
+    updated_at: "ISO-8601 date/time"
+    version: "record version"
+    objective: "technical objective or problem statement"
+    users: "intended users, operators, agents, or systems"
+    environment: "local, development, staging, production, or mixed"
+    current_state: "known existing architecture or operational state"
+    requirements: "confirmed functional and non-functional requirements"
+    assumptions: "unverified technical assumptions"
+    non_goals: "explicitly excluded scope"
+    constraints: "security, cost, schedule, platform, policy, data, or staffing limits"
+    source_research: "ATHENAEUM technical research IDs or references"
+    source_strategy: "COMPASS strategy IDs or references"
+    options: "technical alternatives considered"
+    selected_option: "recommended or approved architecture choice"
+    decision_rationale: "tradeoffs and reason for selection"
+    components: "services, applications, agents, stores, queues, networks, or external systems"
+    interfaces: "APIs, events, protocols, contracts, schemas, or message boundaries"
+    data_flows: "movement and transformation of data across components"
+    trust_boundaries: "identity, authorization, network, tenant, or data boundaries"
+    identity_and_access: "authentication, authorization, roles, permissions, and least-privilege model"
+    secrets_management: "approved secret storage and injection pattern"
+    storage: "databases, object stores, caches, indexes, or file stores"
+    observability: "logs, metrics, traces, alerts, dashboards, and audit records"
+    security_controls: "security design and defense-in-depth controls"
+    privacy_controls: "data minimization, retention, access, and exposure controls"
+    reliability_controls: "timeouts, retries, idempotency, redundancy, recovery, and failure isolation"
+    performance_and_capacity: "latency, throughput, scaling, quotas, and capacity assumptions"
+    dependencies: "vendors, libraries, APIs, infrastructure, agents, or organizational dependencies"
+    implementation_phases: "ordered technical workstreams and milestones"
+    acceptance_criteria: "testable conditions for completion"
+    test_plan: "unit, integration, security, performance, regression, or operational validation"
+    migration_plan: "steps for transition from current state"
+    rollback_plan: "safe reversal or recovery steps"
+    failure_modes: "credible technical and operational failure scenarios"
+    risks: "security, privacy, reliability, cost, lock-in, dependency, data, or operational risks"
+    cost_inputs: "LEDGER references or cost assumptions"
+    production_status: "not_authorized, prototype, staging, approved_for_deploy, deployed, rolled_back, or not_applicable"
+    approvals: "required technical, security, financial, or operational gates"
+    handoff_to_scroll: "archive/version package status"
+    handoff_to_origin: "mission/approval package status"
+    sensitivity: "public, internal, restricted, or confidential"

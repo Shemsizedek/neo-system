@@ -58,4 +58,6 @@ agents:
     name: "Technology Intelligence Agent"
     codename: "FORGE"
     division: "Technology & Innovation"
-    status: "proposed"
+    status: "active"
+    version: "1.0.0"
+    manifest: "agents/forge/agent.yaml"
