@@ -1,0 +1,19 @@
+{
+  "name": "MiningContract",
+  "type": "object",
+  "properties": {
+    "contract_id": {"type":"string"},
+    "customer_id": {"type":"string"},
+    "contract_type": {"type":"string","enum":["HASHRATE","HOSTED_MINER","MINING_SERVICE","HARDWARE_HOSTING","ENTERPRISE"]},
+    "hashrate_th": {"type":"number"},
+    "term_months": {"type":"integer"},
+    "payment_currency": {"type":"string"},
+    "contract_amount": {"type":"number"},
+    "estimated_btc": {"type":"number"},
+    "actual_btc": {"type":"number"},
+    "contract_hash": {"type":"string"},
+    "status": {"type":"string","enum":["DRAFT","OFFERED","ACCEPTED","PAYMENT_PENDING","PAID","ACTIVE","SUSPENDED","COMPLETED","EXPIRED","CANCELLED","DISPUTED","REFUNDED"]},
+    "simulation": {"type":"boolean","default":true}
+  },
+  "required": ["contract_id","status","payment_currency"]
+}
