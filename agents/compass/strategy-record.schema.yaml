@@ -1,0 +1,51 @@
+schema_version: "1.0"
+strategy_record:
+  required:
+    - strategy_id
+    - objective
+    - status
+    - time_horizon
+    - version
+    - created_at
+  fields:
+    strategy_id: "unique identifier"
+    objective: "mission objective or decision to support"
+    decision_owner: "person or role responsible for approval"
+    audience: "intended users of the strategy"
+    status:
+      allowed:
+        - scoped
+        - analyzing
+        - proposed
+        - approved
+        - executing
+        - paused
+        - completed
+        - superseded
+    time_horizon: "near-term, medium-term, long-term, or explicit dates"
+    created_at: "ISO-8601 date/time"
+    updated_at: "ISO-8601 date/time"
+    version: "strategy record version"
+    success_criteria: "measurable conditions for success"
+    facts: "known inputs supporting the strategy"
+    assumptions: "provisional beliefs that may require validation"
+    constraints: "budget, policy, time, legal, technical, staffing, or other limits"
+    dependencies: "prerequisites and linked initiatives"
+    options: "viable strategic alternatives"
+    recommendation: "preferred path and rationale"
+    phases: "execution phases and sequencing"
+    milestones: "dated or ordered checkpoints"
+    roles: "owners or responsible functions"
+    kpis: "measurable indicators"
+    decision_gates: "approval or go/no-go points"
+    risks: "strategic and operational risks"
+    contingencies: "fallback or alternate paths"
+    resource_requirements: "people, tools, capital, data, or infrastructure needed"
+    blockers: "current impediments"
+    stop_conditions: "conditions requiring pause, redesign, or termination"
+    immediate_next_action: "smallest useful approved next action"
+    source_research: "related ATHENAEUM research IDs or source references"
+    handoff_to_scroll: "archive/version package status"
+    handoff_to_origin: "mission/decision package status"
+    approval_status: "draft, recommended, approved, rejected, or superseded"
+    sensitivity: "public, internal, restricted, or confidential"
