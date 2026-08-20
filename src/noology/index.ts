@@ -1,3 +1,7 @@
 export * from './maxims'
 export * from './neoAlgo'
 export * from './worldCreditClock'
+export * from './ethericPotency'
+export * from './alchemy'
+export * from './doctrineRegistry'
+export * from './neoIntelligence'
