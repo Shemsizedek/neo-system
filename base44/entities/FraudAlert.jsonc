@@ -1,0 +1,1 @@
+{"type":"object","properties":{"alert_id":{"type":"string"},"transaction_id":{"type":"string"},"account_id":{"type":"string"},"atm_id":{"type":"string"},"risk_score":{"type":"number"},"rule_triggered":{"type":"string"},"severity":{"type":"string"},"status":{"type":"string"},"resolution":{"type":"string"}},"required":["alert_id","risk_score","status"]}
