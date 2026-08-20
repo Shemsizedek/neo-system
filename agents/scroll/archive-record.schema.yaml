@@ -1,0 +1,40 @@
+schema_version: "1.0"
+archive_record:
+  required:
+    - record_id
+    - title
+    - classification
+    - source_type
+    - provenance_status
+    - created_or_observed_at
+    - version
+  fields:
+    record_id: "unique identifier"
+    title: "human-readable title"
+    classification:
+      allowed:
+        - canonical_foundation
+        - approved_operational_record
+        - working_draft
+        - external_reference
+        - unverified_material
+    source_type: "document, message, transcript, dataset, webpage, image, audio, video, code, or other"
+    source_uri: "optional stable source location"
+    source_owner: "originating person, organization, system, or unknown"
+    provenance_status:
+      allowed:
+        - verified
+        - partial
+        - unknown
+    created_or_observed_at: "ISO-8601 date/time when known"
+    ingested_at: "ISO-8601 ingestion date/time"
+    version: "record version"
+    supersedes: "optional prior record_id"
+    related_records: "list of related record_ids"
+    projects: "related NEO/Project 144 initiatives"
+    tags: "retrieval terms"
+    summary: "concise neutral description"
+    assertions: "claims contained in the record, kept distinct from verified facts"
+    provenance_notes: "chain-of-custody or source-quality notes"
+    approval_status: "draft, approved, superseded, or rejected"
+    sensitivity: "public, internal, restricted, or confidential"
