@@ -1,0 +1,45 @@
+id: neo-cipher-999-144
+name: NEO Cipher #D — 999/144 Yamassee Secure Script Protocol
+parent_system: NEO System
+status: FOUNDATION
+domain: Security, Encryption & Secure Communications
+version: 0.1.0
+
+cryptography:
+  encryption: AES-GCM-256
+  kdf: PBKDF2-SHA-256
+  default_iterations: 310000
+  domain_separator: "NEO-CIPHER:#D:999:144:v1"
+
+symbolic_protocol:
+  marker: "#D"
+  cycle: 999
+  resonance: 144
+  note: "Protocol constants only; not substitutes for cryptographic entropy."
+
+yamassee_layer:
+  carrier: YAMASSEE-CARRIER-1
+  font_family: YAMASSEEGLYPH
+  font_in_repository: false
+  role: "Licensed visual and transport rendering layer; not an encryption primitive."
+
+capabilities:
+  - authenticated message encryption
+  - authenticated message decryption
+  - secure random token generation
+  - Yamassee carrier serialization
+  - Yamassee carrier recovery
+  - passphrase candidate validation
+
+future_extensions:
+  - authoritative language lexicon adapter
+  - cryptographically randomized language-aware passphrase generator
+  - token-gated font entitlement
+  - key rotation and vault integration
+  - signatures and device identity
+  - audit logging and policy enforcement
+
+boundary: >-
+  Defensive security framework only. Yamassee/Nuwaubian glyph rendering and the 999/144/#D
+  protocol structure do not independently provide cryptographic secrecy. The font file is not
+  redistributed by this repository.

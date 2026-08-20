@@ -97,6 +97,14 @@ export const neoModules: NeoModule[] = [
     description: 'Plain-language explanation layer for specialized NEO terminology, preserving original vocabulary and conceptual meaning.',
     status: 'ACTIVE',
     boundary: 'Advisory translation only; it cannot rewrite Pa Sarun doctrine, confer titles, grant suffixes, approve Royal Houses, or override authorized Temple officials.'
+  },
+  {
+    id: 'neo-cipher-999-144',
+    name: 'NEO Cipher #D — 999/144 Yamassee Secure Script Protocol',
+    domain: 'Security, Encryption & Secure Communications',
+    description: 'Authenticated encryption, secure token generation, and Yamassee/Nuwaubian glyph-carrier framework for protected NEO System communications.',
+    status: 'FOUNDATION',
+    boundary: 'Defensive cryptography only. The Yamassee font and 999/144/#D protocol structure are presentation and domain-separation layers, not substitutes for cryptographic keys, entropy, or independent security review.'
   }
 ]
 
