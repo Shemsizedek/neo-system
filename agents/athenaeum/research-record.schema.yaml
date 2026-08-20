@@ -1,0 +1,46 @@
+schema_version: "1.0"
+research_record:
+  required:
+    - research_id
+    - question
+    - scope
+    - status
+    - confidence
+    - created_at
+    - version
+  fields:
+    research_id: "unique identifier"
+    question: "research question or mission"
+    scope: "subject boundaries, audience, geography, date range, or other constraints"
+    decision_relevance: "why the research matters"
+    status:
+      allowed:
+        - scoped
+        - researching
+        - synthesized
+        - reviewed
+        - archived
+    confidence:
+      allowed:
+        - high
+        - medium
+        - low
+        - indeterminate
+    created_at: "ISO-8601 date/time"
+    updated_at: "ISO-8601 date/time"
+    version: "research record version"
+    findings: "documented findings"
+    organizational_doctrine: "relevant internal doctrine, explicitly labeled"
+    interpretations: "sourced interpretations or analytical judgments"
+    hypotheses: "testable or provisional propositions"
+    unresolved_claims: "claims that remain unsupported, disputed, or incomplete"
+    contradictions: "conflicting evidence or interpretations"
+    sources: "list of source identifiers, citations, or URIs"
+    source_quality: "notes on authority, recency, provenance, and methodology"
+    evidence_map: "claim-to-source relationships"
+    implications: "decision or mission implications"
+    risks: "research limitations and uncertainty"
+    recommended_actions: "next research or operational steps"
+    handoff_to_scroll: "archive/provenance package status"
+    handoff_to_origin: "strategic summary status"
+    sensitivity: "public, internal, restricted, or confidential"
