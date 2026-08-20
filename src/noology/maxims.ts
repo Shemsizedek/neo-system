@@ -117,6 +117,22 @@ export const neoMaxims: NeoMaxim[] = [
     domain: 'knowledge',
     operationalMeaning:
       'The knowledge layer preserves provenance, oral and documentary continuity, competing interpretations and historical sequence rather than silently normalizing one institutional narrative.'
+  },
+  {
+    id: 'NMX-013',
+    title: 'Produce the Record',
+    statement: 'Words invite inquiry; records carry the weight.',
+    domain: 'evidence',
+    operationalMeaning:
+      'When a claim can be tested, seek the originating document, image, inscription, ledger, filing, artifact, chronology or other primary record before relying on repetition or institutional shorthand.'
+  },
+  {
+    id: 'NMX-014',
+    title: 'Symbols Require Provenance',
+    statement: 'A shared symbol is a clue, not a conclusion.',
+    domain: 'evidence',
+    operationalMeaning:
+      'Visual similarity may trigger a provenance inquiry, but organizational identity, succession, authority or common origin requires dates, source records and a documented chain of transmission.'
   }
 ]
 
