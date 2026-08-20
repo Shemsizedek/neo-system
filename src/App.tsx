@@ -8,6 +8,7 @@ import {tellers,txs as seedTxs} from './mock'
 import type {Transaction} from './types'
 import {foundationalPrinciples,neoModules} from './neoSystem'
 import {gasBoundary,gasDivisions,gasPrinciples,gasThreatCategories,readinessSummary} from './globalArmsSystem'
+import {assessmentPolicies,treasuryBoundary,treasuryCouncils,treasuryFunds,treasuryPrinciples,treasuryWorkflow,trustRoles} from './treasury/treasurySystem'
 
 const money=(n:number)=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(n)
 
@@ -46,10 +47,10 @@ export function App(){
   }
   return <div className="shell">
     <aside className="side">
-      <div className="brand"><div className="mark">N</div><div><b>NEO SYSTEM</b><span>FOUNDATION • v0.2</span></div></div>
+      <div className="brand"><div className="mark">N</div><div><b>NEO SYSTEM</b><span>FOUNDATION • v0.3</span></div></div>
       <nav>
         <button className={active==='overview'?'active':''} onClick={()=>setActive('overview')}><Gauge size={17}/>System Overview</button>
-        <button className={active==='treasury'?'active':''} onClick={()=>setActive('treasury')}><Landmark size={17}/>Treasury / Teller</button>
+        <button className={active==='treasury'?'active':''} onClick={()=>setActive('treasury')}><Landmark size={17}/>NEO Treasury</button>
         <button className={active==='tribunal'?'active':''} onClick={()=>setActive('tribunal')}><Gavel size={17}/>Tribunal</button>
         <button className={active==='corpus'?'active':''} onClick={()=>setActive('corpus')}><BookOpen size={17}/>Legal Corpus</button>
         <button className={active==='security'?'active':''} onClick={()=>setActive('security')}><Shield size={17}/>Global Arms</button>
@@ -57,7 +58,7 @@ export function App(){
       <div className="sidefoot">Love • Truth • Peace<br/>Freedom • Justice</div>
     </aside>
     <main>
-      <header><div><p>NEW ETHEREAL ORDER • DIGITAL CONTROL PLANE</p><h1>{active==='overview'?'NEO System Command Center':active==='treasury'?'Treasury & Teller Sandbox':active==='tribunal'?'Inner Bar Temple Tribunal':active==='corpus'?'Noocratic Legal Corpus':'NEO Global Arms System'}</h1></div><div className="env"><i/> FOUNDATION</div></header>
+      <header><div><p>NEW ETHEREAL ORDER • DIGITAL CONTROL PLANE</p><h1>{active==='overview'?'NEO System Command Center':active==='treasury'?'NEO Treasury Management System':active==='tribunal'?'Inner Bar Temple Tribunal':active==='corpus'?'Noocratic Legal Corpus':'NEO Global Arms System'}</h1></div><div className="env"><i/> FOUNDATION</div></header>
 
       {active==='overview' && <>
         <section className="principles">{foundationalPrinciples.map(p=><span key={p}>{p}</span>)}</section>
@@ -65,13 +66,20 @@ export function App(){
           <Stat label="System Modules" value={`${neoModules.length}`} sub="Integrated domains" Icon={Network}/>
           <Stat label="Tribunal" value="READY" sub="Case-review foundation" Icon={Gavel}/>
           <Stat label="Legal Corpus" value="ACTIVE" sub="Immutable source model" Icon={BookOpen}/>
-          <Stat label="Treasury" value="SANDBOX" sub="NEO Teller preserved" Icon={Landmark}/>
+          <Stat label="Treasury" value="FOUNDATION" sub="NEO-TMS initialized" Icon={Landmark}/>
         </section>
         <section className="modulegrid">{neoModules.map(m=>{const Icon=iconMap[m.id]||Activity;return <article className="card module" key={m.id}><div className="modulehead"><Icon size={20}/><span className={'status '+m.status.toLowerCase()}>{m.status}</span></div><h2>{m.name}</h2><p className="domain">{m.domain}</p><p>{m.description}</p><div className="boundary"><ShieldCheck size={14}/><span>{m.boundary}</span></div></article>})}</section>
       </>}
 
       {active==='treasury' && <>
-        <section className="stats"><Stat label="Network Cash" value={money(totals.cash)} sub="4 machine reserves" Icon={Banknote}/><Stat label="BTC Reserve" value={`${totals.btc.toFixed(4)} BTC`} sub="Operational liquidity" Icon={Bitcoin}/><Stat label="XCP Reserve" value={`${totals.xcp.toLocaleString()} XCP`} sub="Counterparty layer" Icon={CircleDollarSign}/><Stat label="Active Tellers" value={`${totals.online}/${tellers.length}`} sub="Sandbox availability" Icon={Activity}/></section>
+        <section className="principles">{treasuryPrinciples.map(p=><span key={p}>{p}</span>)}</section>
+        <section className="stats"><Stat label="Treasury Councils" value={`${treasuryCouncils.length}`} sub="Governance and control domains" Icon={Landmark}/><Stat label="Restricted Funds" value={`${treasuryFunds.filter(f=>f.restricted).length}`} sub="Segregated purpose accounts" Icon={WalletCards}/><Stat label="Assessment Policies" value={`${assessmentPolicies.length}`} sub="Configurable member obligations" Icon={FileText}/><Stat label="Active Tellers" value={`${totals.online}/${tellers.length}`} sub="Settlement sandbox" Icon={Activity}/></section>
+        <section className="card focus"><ShieldCheck size={26}/><h2>NEO-TMS Operating Boundary</h2><p>{treasuryBoundary}</p></section>
+        <section className="focusgrid"><div className="card focus"><Landmark size={26}/><h2>World Temple Trust Roles</h2><p><b>Grantor:</b> {trustRoles.grantor}</p><p><b>Trustee:</b> {trustRoles.trustee}</p><p><b>Beneficiary:</b> {trustRoles.beneficiary}</p></div><div className="card focus"><RefreshCw size={26}/><h2>Treasury Workflow</h2><p>{treasuryWorkflow.join(' → ')}</p></div></section>
+        <section className="modulegrid">{treasuryCouncils.map(c=><article className="card module" key={c.id}><div className="modulehead"><Landmark size={20}/><span className={'status '+c.status.toLowerCase()}>{c.status}</span></div><h2>{c.name}</h2><p>{c.mission}</p></article>)}</section>
+        <section className="modulegrid">{treasuryFunds.map(f=><article className="card module" key={f.id}><div className="modulehead"><WalletCards size={20}/><span className="status foundation">{f.restricted?'RESTRICTED':'GENERAL'}</span></div><h2>{f.name}</h2><p>{f.purpose}</p></article>)}</section>
+        <section className="card tablecard"><div className="paneltitle"><div><span>Congregational Assessment Policy</span><small>Member obligations remain configurable and instrument-governed</small></div><FileText size={18}/></div><div className="tablewrap"><table><thead><tr><th>ID</th><th>Assessment</th><th>Amount</th><th>Frequency</th><th>Due</th><th>Grace</th><th>Authority</th></tr></thead><tbody>{assessmentPolicies.map(a=><tr key={a.id}><td className="mono">{a.id}</td><td>{a.name}</td><td>{a.unit}{a.amount}</td><td>{a.frequency}</td><td>{a.dueDay??'—'}</td><td>{a.graceDay??'—'}</td><td>{a.authority}</td></tr>)}</tbody></table></div></section>
+        <section className="stats"><Stat label="Network Cash" value={money(totals.cash)} sub="4 machine reserves" Icon={Banknote}/><Stat label="BTC Reserve" value={`${totals.btc.toFixed(4)} BTC`} sub="Operational liquidity" Icon={Bitcoin}/><Stat label="XCP Reserve" value={`${totals.xcp.toLocaleString()} XCP`} sub="Counterparty layer" Icon={CircleDollarSign}/><Stat label="Settlement Mode" value="SANDBOX" sub="No live custody" Icon={Shield}/></section>
         <section className="grid"><div className="card panel"><div className="paneltitle"><div><span>ETHA Teller Simulator</span><small>All operations remain simulated</small></div><RefreshCw size={18}/></div><label>Amount (USD)</label><div className="amount"><span>$</span><input value={amount} onChange={e=>setAmount(e.target.value)}/></div><div className="route"><span>ROUTE</span><b>NEO Teller → ETHA → Bitcoin / XCP</b></div><button className="primary" onClick={simulate}>Authorize simulated transaction</button></div><div className="card panel"><div className="paneltitle"><div><span>Network Health</span><small>Machine heartbeat and reserves</small></div><Network size={18}/></div><div className="machines">{tellers.map(t=><div className="machine" key={t.id}><div><b>{t.id}</b><span>{t.city}</span></div><div className="reserve"><b>{money(t.cashUsd)}</b><span>{t.btc.toFixed(3)} BTC</span></div><em className={t.status.toLowerCase()}>{t.status}</em></div>)}</div></div></section>
         <section className="card tablecard"><div className="paneltitle"><div><span>ETHA Transaction Stream</span><small>Authorization, settlement and risk state</small></div><AlertTriangle size={18}/></div><div className="tablewrap"><table><thead><tr><th>ID</th><th>Teller</th><th>Type</th><th>Route</th><th>Value</th><th>Risk</th><th>Status</th></tr></thead><tbody>{txs.map(t=><tr key={t.id}><td className="mono">{t.id}</td><td>{t.tellerId}</td><td>{t.type}</td><td>{t.source} → {t.destination}</td><td>{money(t.fiatValue)}</td><td>{t.risk}</td><td><span className={'pill '+t.status.toLowerCase()}>{t.status}</span></td></tr>)}</tbody></table></div></section>
       </>}
