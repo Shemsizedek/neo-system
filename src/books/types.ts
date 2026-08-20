@@ -32,14 +32,18 @@ export interface LedgerAccount {
   active: boolean;
 }
 
+/**
+ * debit/credit are always stated in the entity's functional (base) currency.
+ * Native crypto/token quantity is retained independently for sub-ledger audit.
+ */
 export interface JournalLine {
   accountId: string;
   debit: number;
   credit: number;
-  currency: MoneyCurrency;
-  quantity?: number;
-  unitPrice?: number;
+  baseCurrency: MoneyCurrency;
   asset?: string;
+  quantity?: number;
+  unitPriceBase?: number;
   memo?: string;
 }
 
@@ -48,6 +52,7 @@ export interface JournalEntry {
   date: string;
   description: string;
   source: LedgerSource;
+  baseCurrency: MoneyCurrency;
   externalId?: string;
   txHash?: string;
   blockHeight?: number;
@@ -79,6 +84,7 @@ export interface TrialBalanceRow {
   code: string;
   name: string;
   type: AccountType;
+  baseCurrency: MoneyCurrency;
   debit: number;
   credit: number;
   balance: number;
