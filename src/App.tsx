@@ -9,6 +9,7 @@ import type {Transaction} from './types'
 import {foundationalPrinciples,neoModules} from './neoSystem'
 import {gasBoundary,gasDivisions,gasPrinciples,gasThreatCategories,readinessSummary} from './globalArmsSystem'
 import {assessmentPolicies,treasuryBoundary,treasuryCouncils,treasuryFunds,treasuryPrinciples,treasuryWorkflow,trustRoles} from './treasury/treasurySystem'
+import {NeopayApp} from './neopay/NeopayApp'
 
 const money=(n:number)=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(n)
 
@@ -51,6 +52,7 @@ export function App(){
       <nav>
         <button className={active==='overview'?'active':''} onClick={()=>setActive('overview')}><Gauge size={17}/>System Overview</button>
         <button className={active==='treasury'?'active':''} onClick={()=>setActive('treasury')}><Landmark size={17}/>NEO Treasury</button>
+        <button className={active==='neopay'?'active':''} onClick={()=>setActive('neopay')}><WalletCards size={17}/>NEOpay</button>
         <button className={active==='tribunal'?'active':''} onClick={()=>setActive('tribunal')}><Gavel size={17}/>Tribunal</button>
         <button className={active==='corpus'?'active':''} onClick={()=>setActive('corpus')}><BookOpen size={17}/>Legal Corpus</button>
         <button className={active==='security'?'active':''} onClick={()=>setActive('security')}><Shield size={17}/>Global Arms</button>
@@ -58,7 +60,7 @@ export function App(){
       <div className="sidefoot">Love • Truth • Peace<br/>Freedom • Justice</div>
     </aside>
     <main>
-      <header><div><p>NEW ETHEREAL ORDER • DIGITAL CONTROL PLANE</p><h1>{active==='overview'?'NEO System Command Center':active==='treasury'?'NEO Treasury Management System':active==='tribunal'?'Inner Bar Temple Tribunal':active==='corpus'?'Noocratic Legal Corpus':'NEO Global Arms System'}</h1></div><div className="env"><i/> FOUNDATION</div></header>
+      <header><div><p>NEW ETHEREAL ORDER • DIGITAL CONTROL PLANE</p><h1>{active==='overview'?'NEO System Command Center':active==='treasury'?'NEO Treasury Management System':active==='neopay'?'NEOpay • NOMNI Wallet & W.O.M.E. Exchange':active==='tribunal'?'Inner Bar Temple Tribunal':active==='corpus'?'Noocratic Legal Corpus':'NEO Global Arms System'}</h1></div><div className="env"><i/> FOUNDATION</div></header>
 
       {active==='overview' && <>
         <section className="principles">{foundationalPrinciples.map(p=><span key={p}>{p}</span>)}</section>
@@ -83,6 +85,8 @@ export function App(){
         <section className="grid"><div className="card panel"><div className="paneltitle"><div><span>ETHA Teller Simulator</span><small>All operations remain simulated</small></div><RefreshCw size={18}/></div><label>Amount (USD)</label><div className="amount"><span>$</span><input value={amount} onChange={e=>setAmount(e.target.value)}/></div><div className="route"><span>ROUTE</span><b>NEO Teller → ETHA → Bitcoin / XCP</b></div><button className="primary" onClick={simulate}>Authorize simulated transaction</button></div><div className="card panel"><div className="paneltitle"><div><span>Network Health</span><small>Machine heartbeat and reserves</small></div><Network size={18}/></div><div className="machines">{tellers.map(t=><div className="machine" key={t.id}><div><b>{t.id}</b><span>{t.city}</span></div><div className="reserve"><b>{money(t.cashUsd)}</b><span>{t.btc.toFixed(3)} BTC</span></div><em className={t.status.toLowerCase()}>{t.status}</em></div>)}</div></div></section>
         <section className="card tablecard"><div className="paneltitle"><div><span>ETHA Transaction Stream</span><small>Authorization, settlement and risk state</small></div><AlertTriangle size={18}/></div><div className="tablewrap"><table><thead><tr><th>ID</th><th>Teller</th><th>Type</th><th>Route</th><th>Value</th><th>Risk</th><th>Status</th></tr></thead><tbody>{txs.map(t=><tr key={t.id}><td className="mono">{t.id}</td><td>{t.tellerId}</td><td>{t.type}</td><td>{t.source} → {t.destination}</td><td>{money(t.fiatValue)}</td><td>{t.risk}</td><td><span className={'pill '+t.status.toLowerCase()}>{t.status}</span></td></tr>)}</tbody></table></div></section>
       </>}
+
+      {active==='neopay' && <NeopayApp/>}
 
       {active==='tribunal' && <section className="focusgrid"><div className="card focus"><Gavel size={26}/><h2>Case Review Pipeline</h2><p>E-File → docket → jurisdiction review → notice → evidence → record close → NEOsync final opinion → authorized disposition.</p><ul><li>Full-record review standard</li><li>Fact / allegation / evidence separation</li><li>Temple and external authority layers</li><li>Immutable audit trail</li></ul></div><div className="card focus"><HeartHandshake size={26}/><h2>Due Process Boundary</h2><p>The software records and analyzes internal proceedings. It does not impersonate a governmental court or create external jurisdiction by software declaration.</p></div></section>}
 
