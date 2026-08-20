@@ -3,8 +3,20 @@ import { neoMaxims, type NeoMaxim } from './maxims'
 import { noologicalDisciplines, type NoologicalDiscipline } from './disciplines'
 import { sacredRecordsOfTheMoors, type SacredRecordOfMoorsEntry } from './sacredRecordsMoors'
 import { sacredRecordsGraphNodes, sacredGraphNeighbors, type SacredGraphNode } from './sacredRecordsKnowledgeGraph'
+import {
+  ecclesiasticalAuthorities,
+  inheritanceClaims,
+  inheritanceSources,
+  sacredCorpus
+} from './globalInheritanceTitleSchema'
 
-export type NoogleNoologicalResultKind = 'DISCIPLINE' | 'DOCTRINE' | 'MAXIM' | 'SOURCE_RECORD' | 'KNOWLEDGE_GRAPH'
+export type NoogleNoologicalResultKind =
+  | 'DISCIPLINE'
+  | 'DOCTRINE'
+  | 'MAXIM'
+  | 'SOURCE_RECORD'
+  | 'KNOWLEDGE_GRAPH'
+  | 'TITLE_INHERITANCE'
 
 export type NoogleNoologicalResult = {
   id: string
@@ -87,15 +99,64 @@ function graphResult(item: SacredGraphNode, terms: string[]): NoogleNoologicalRe
   }
 }
 
+function inheritanceResults(terms: string[]): NoogleNoologicalResult[] {
+  const sourceResults = inheritanceSources.map((source) => ({
+    id: source.id,
+    kind: 'TITLE_INHERITANCE' as const,
+    title: source.title,
+    summary: source.sourceStatement ?? source.title,
+    score: scoreText(terms, source.title, `${source.sourceStatement ?? ''} ${(source.notes ?? []).join(' ')}`, ['title','inheritance','provenance','ecclesiastical']) + 6,
+    provenance: source.status,
+    tags: ['title','inheritance','provenance',source.kind.toLowerCase()],
+    sourceRefs: source.citation ? [source.citation] : []
+  }))
+
+  const authorityResults = ecclesiasticalAuthorities.map((authority) => ({
+    id: authority.id,
+    kind: 'TITLE_INHERITANCE' as const,
+    title: authority.name,
+    summary: `${authority.jurisdictionClaim} ${authority.powersDeclared.join(' ')}`,
+    score: scoreText(terms, authority.name, `${authority.aliases.join(' ')} ${authority.jurisdictionClaim} ${authority.powersDeclared.join(' ')}`, ['temple','ecclesiastical','divan','authority']) + 6,
+    provenance: authority.status,
+    tags: ['temple','ecclesiastical','authority', ...authority.aliases.map(normalize)],
+    sourceRefs: authority.sourceRefs
+  }))
+
+  const corpusResults = sacredCorpus.map((entry) => ({
+    id: entry.id,
+    kind: 'TITLE_INHERITANCE' as const,
+    title: entry.canonicalName,
+    summary: `${entry.traditionClass} sacred-corpus record classified as ${entry.roleInNeoEcclesiology.toLowerCase()} within the World Temple declaration.`,
+    score: scoreText(terms, entry.canonicalName, `${entry.aliases.join(' ')} ${entry.traditionClass} ${entry.roleInNeoEcclesiology}`, ['sacred-corpus','scripture','deed-poll']) + 5,
+    provenance: 'SOURCE_DECLARED',
+    tags: ['sacred-corpus','scripture',entry.traditionClass.toLowerCase(),entry.roleInNeoEcclesiology.toLowerCase()],
+    sourceRefs: entry.sourceRefs
+  }))
+
+  const claimResults = inheritanceClaims.map((claim) => ({
+    id: claim.id,
+    kind: 'TITLE_INHERITANCE' as const,
+    title: `Global Indigenous Inheritance Claim ${claim.id}`,
+    summary: `${claim.titleBasis.join('; ')}. Probate status: ${claim.probateStatus}. Remedies: ${claim.remediesRequested.join(', ')}.`,
+    score: scoreText(terms, claim.id, `${claim.titleBasis.join(' ')} ${claim.defectTheory.join(' ')} ${claim.remediesRequested.join(' ')}`, ['probate','restitution','intellectual-property','title-search','world-credit-clock']) + 7,
+    provenance: claim.evidenceStatus,
+    tags: ['probate','restitution','intellectual-property','title-search','world-credit-clock'],
+    sourceRefs: claim.sourceRefs
+  }))
+
+  return [...sourceResults, ...authorityResults, ...corpusResults, ...claimResults]
+}
+
 /**
  * Noogle's provenance-aware noological ranker. Relevance does not equal truth.
- * Source graph edges are searchable historical/source claims and remain visibly
- * classified rather than being promoted to independent fact by ranking.
+ * Source graph edges and title/inheritance records remain visibly classified by
+ * provenance/status rather than being promoted to independent fact by ranking.
  */
 export function searchNoogleNoology(query: NoogleNoologicalQuery): NoogleNoologicalResult[] {
   const terms = termsFor(query.text)
   const preferred = new Set((query.preferredDomains ?? []).map(normalize))
   let results: NoogleNoologicalResult[] = [
+    ...inheritanceResults(terms),
     ...sacredRecordsGraphNodes.map((item) => graphResult(item, terms)),
     ...noologicalDisciplines.map((item) => disciplineResult(item, terms)),
     ...neoDoctrineRegistry.map((item) => doctrineResult(item, terms)),
@@ -119,6 +180,7 @@ export function searchNoogleNoology(query: NoogleNoologicalQuery): NoogleNoologi
 export type NoogleNoologicalPanel = {
   query: string
   topResult?: NoogleNoologicalResult
+  inheritanceRecords: NoogleNoologicalResult[]
   graphNodes: NoogleNoologicalResult[]
   relatedDisciplines: NoogleNoologicalResult[]
   doctrine: NoogleNoologicalResult[]
@@ -128,10 +190,11 @@ export type NoogleNoologicalPanel = {
 }
 
 export function buildNoogleNoologicalPanel(text: string): NoogleNoologicalPanel {
-  const results = searchNoogleNoology({ text, limit: 48 })
+  const results = searchNoogleNoology({ text, limit: 64 })
   return {
     query:text,
     topResult:results[0],
+    inheritanceRecords:results.filter((item) => item.kind === 'TITLE_INHERITANCE').slice(0,14),
     graphNodes:results.filter((item) => item.kind === 'KNOWLEDGE_GRAPH').slice(0,12),
     relatedDisciplines:results.filter((item) => item.kind === 'DISCIPLINE').slice(0,6),
     doctrine:results.filter((item) => item.kind === 'DOCTRINE').slice(0,8),
