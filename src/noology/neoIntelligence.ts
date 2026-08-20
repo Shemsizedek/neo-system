@@ -2,17 +2,22 @@ import { doctrineByTag, type NeoDoctrineRecord } from './doctrineRegistry'
 import { evaluateNeoClaim, type NeoAlgoResult, type NeoClaimRecord } from './neoAlgo'
 import { reviewActionThroughAlchemy, type AlchemicalActionReview, type NeoActionContext } from './alchemy'
 import { assessNatureCycles, type NatureCycleAssessment, type NatureCycleContext } from './natureCycles'
+import { searchNoologicalDisciplines, type NoologicalDiscipline } from './disciplines'
+import { buildNoogleNoologicalPanel, type NoogleNoologicalPanel } from './noogleNoologicalSearch'
 
 export type NeoIntelligenceRequest = {
   claim: NeoClaimRecord
   action?: NeoActionContext
   nature?: NatureCycleContext
   topicTags?: string[]
+  doctrineQuery?: string
 }
 
 export type NeoIntelligenceResult = {
   reasoning: NeoAlgoResult
   doctrine: NeoDoctrineRecord[]
+  disciplines: NoologicalDiscipline[]
+  nooglePanel: NoogleNoologicalPanel
   actionReview?: AlchemicalActionReview
   natureAssessment?: NatureCycleAssessment
   reflectionPrompts: string[]
@@ -27,17 +32,18 @@ const uniqueById = <T extends { id: string }>(records: T[]): T[] => {
 /**
  * Single entry point for the NEO noological reasoning stack.
  *
- * This function does not decide truth by mystical score. It combines:
- * - provenance-first claim diagnostics,
- * - source-aware NEO doctrine retrieval,
- * - optional symbolic etheric/polarity assessment,
- * - optional alchemical action review,
- * - explicitly supplied natural-cycle observations.
+ * This function does not decide truth by mystical score or search rank. It
+ * combines provenance-first diagnostics, source-aware doctrine, NEO discipline
+ * mapping, Noogle relevance ranking, optional alchemical action review and
+ * explicitly supplied nature-cycle observations.
  */
 export function runNeoIntelligence(request: NeoIntelligenceRequest): NeoIntelligenceResult {
   const reasoning = evaluateNeoClaim(request.claim)
   const tags = request.topicTags ?? []
+  const query = request.doctrineQuery?.trim() || `${request.claim.statement} ${tags.join(' ')}`.trim()
   const doctrine = uniqueById(tags.flatMap((tag) => doctrineByTag(tag)))
+  const disciplines = searchNoologicalDisciplines(query).slice(0, 8)
+  const nooglePanel = buildNoogleNoologicalPanel(query)
 
   const actionReview = request.action
     ? reviewActionThroughAlchemy(request.action)
@@ -49,13 +55,23 @@ export function runNeoIntelligence(request: NeoIntelligenceRequest): NeoIntellig
 
   const reflectionPrompts = [
     'What is directly observed, and what is interpretation?',
+    'Which discipline is operating here: Factology, Noology, Noetics, Noogony, Neology, Noogenesis, or another NEO layer?',
     'Whose provenance, voice or contribution could be erased by the current framing?',
     'What changes when the issue is viewed through land, life, season, relationship and future generations?',
     'What opposing pole or missing counterforce must be acknowledged before acting?',
     'Does the proposed action reproduce deception, exploitation, coercion or erasure?',
     'What survives the alchemical sequence after assumptions and projections are removed?',
+    'How does this insight contribute to noogenesis: the emergence of more coherent shared intelligence?',
     'What is the smallest truthful action that improves coherence and stewardship?'
   ]
 
-  return { reasoning, doctrine, actionReview, natureAssessment, reflectionPrompts }
+  return {
+    reasoning,
+    doctrine,
+    disciplines,
+    nooglePanel,
+    actionReview,
+    natureAssessment,
+    reflectionPrompts
+  }
 }
