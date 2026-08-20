@@ -9,6 +9,7 @@ import type {Transaction} from './types'
 import {foundationalPrinciples,neoModules} from './neoSystem'
 import {gasBoundary,gasDivisions,gasPrinciples,gasThreatCategories,readinessSummary} from './globalArmsSystem'
 import {assessmentPolicies,treasuryBoundary,treasuryCouncils,treasuryFunds,treasuryPrinciples,treasuryWorkflow,trustRoles} from './treasury/treasurySystem'
+import {BooksDashboard} from './books/BooksDashboard'
 
 const money=(n:number)=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(n)
 
@@ -45,11 +46,13 @@ export function App(){
     const id=`ETHA-${Math.random().toString(16).slice(2,8).toUpperCase()}`
     setTxs(v=>[{id,tellerId:'NT-000001',type:'BUY BTC',source:'USD',destination:'BTC',amount:n,fiatValue:n,status:'AUTHORIZED',risk:9,createdAt:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})},...v])
   }
+  const title=active==='overview'?'NEO System Command Center':active==='books'?'NEO Books':active==='treasury'?'NEO Treasury Management System':active==='tribunal'?'Inner Bar Temple Tribunal':active==='corpus'?'Noocratic Legal Corpus':'NEO Global Arms System'
   return <div className="shell">
     <aside className="side">
       <div className="brand"><div className="mark">N</div><div><b>NEO SYSTEM</b><span>FOUNDATION • v0.3</span></div></div>
       <nav>
         <button className={active==='overview'?'active':''} onClick={()=>setActive('overview')}><Gauge size={17}/>System Overview</button>
+        <button className={active==='books'?'active':''} onClick={()=>setActive('books')}><CircleDollarSign size={17}/>NEO Books</button>
         <button className={active==='treasury'?'active':''} onClick={()=>setActive('treasury')}><Landmark size={17}/>NEO Treasury</button>
         <button className={active==='tribunal'?'active':''} onClick={()=>setActive('tribunal')}><Gavel size={17}/>Tribunal</button>
         <button className={active==='corpus'?'active':''} onClick={()=>setActive('corpus')}><BookOpen size={17}/>Legal Corpus</button>
@@ -58,7 +61,7 @@ export function App(){
       <div className="sidefoot">Love • Truth • Peace<br/>Freedom • Justice</div>
     </aside>
     <main>
-      <header><div><p>NEW ETHEREAL ORDER • DIGITAL CONTROL PLANE</p><h1>{active==='overview'?'NEO System Command Center':active==='treasury'?'NEO Treasury Management System':active==='tribunal'?'Inner Bar Temple Tribunal':active==='corpus'?'Noocratic Legal Corpus':'NEO Global Arms System'}</h1></div><div className="env"><i/> FOUNDATION</div></header>
+      <header><div><p>NEW ETHEREAL ORDER • DIGITAL CONTROL PLANE</p><h1>{title}</h1></div><div className="env"><i/> FOUNDATION</div></header>
 
       {active==='overview' && <>
         <section className="principles">{foundationalPrinciples.map(p=><span key={p}>{p}</span>)}</section>
@@ -70,6 +73,8 @@ export function App(){
         </section>
         <section className="modulegrid">{neoModules.map(m=>{const Icon=iconMap[m.id]||Activity;return <article className="card module" key={m.id}><div className="modulehead"><Icon size={20}/><span className={'status '+m.status.toLowerCase()}>{m.status}</span></div><h2>{m.name}</h2><p className="domain">{m.domain}</p><p>{m.description}</p><div className="boundary"><ShieldCheck size={14}/><span>{m.boundary}</span></div></article>})}</section>
       </>}
+
+      {active==='books' && <BooksDashboard/>}
 
       {active==='treasury' && <>
         <section className="principles">{treasuryPrinciples.map(p=><span key={p}>{p}</span>)}</section>
