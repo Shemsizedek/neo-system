@@ -1,0 +1,67 @@
+schema_version: "1.0"
+education_record:
+  required:
+    - record_id
+    - record_type
+    - status
+    - audience
+    - version
+    - created_at
+  fields:
+    record_id: "unique identifier"
+    record_type:
+      allowed:
+        - lesson
+        - module
+        - course
+        - curriculum
+        - workshop
+        - learning_path
+        - assessment
+        - rubric
+        - instructor_guide
+        - credential_map
+        - program_review
+    status:
+      allowed:
+        - scoped
+        - drafting
+        - reviewed
+        - approved
+        - active
+        - paused
+        - completed
+        - superseded
+        - archived
+    audience: "learner profile, level, age range, role, or cohort"
+    decision_owner: "person or role responsible for approval"
+    created_at: "ISO-8601 date/time"
+    updated_at: "ISO-8601 date/time"
+    version: "record version"
+    prerequisites: "required prior knowledge, skills, or materials"
+    program_objective: "overall educational purpose"
+    learning_outcomes: "measurable learner outcomes"
+    source_research: "ATHENAEUM research IDs or references"
+    canonical_context: "Source Foundation references"
+    organizational_doctrine: "internal doctrine explicitly labeled"
+    instructional_sequence: "ordered progression of concepts or competencies"
+    modules: "module titles, objectives, and sequence"
+    instructional_methods: "lecture, discussion, practice, project, simulation, reflection, or other"
+    activities: "learner practice and application"
+    resources: "readings, media, tools, references, or instructor materials"
+    formative_assessment: "low-stakes checks for learning"
+    summative_assessment: "final evaluation or demonstration"
+    rubric_or_criteria: "scoring or competency criteria"
+    completion_requirements: "conditions for successful completion"
+    delivery_format: "self-paced, instructor-led, live, hybrid, cohort, workshop, or other"
+    estimated_duration: "instruction and practice time"
+    accessibility: "language, captioning, readability, accommodation, or technology requirements"
+    instructor_requirements: "facilitator knowledge, preparation, or credentials when relevant"
+    credential_type: "none, internal_certificate, badge, academic_award, license, professional_credential, or other"
+    credential_authority: "issuing authority and evidence, if applicable"
+    accreditation_status: "not_applicable, internal_only, unverified, documented_external, or other"
+    risks: "content, evidence, accessibility, credential, delivery, or learner-support risks"
+    evaluation_plan: "how program quality and learner outcomes will be reviewed"
+    handoff_to_scroll: "archive/version package status"
+    handoff_to_origin: "mission/approval package status"
+    sensitivity: "public, internal, restricted, or confidential"
