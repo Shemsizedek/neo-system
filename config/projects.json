@@ -1,0 +1,37 @@
+[
+  {
+    "id": "neo-sync",
+    "name": "NEOsync OS",
+    "parent": "NEO SYSTEMS",
+    "status": "architecture",
+    "dependencies": ["NEO AI", "NEO DATA", "NEO SECURITY"]
+  },
+  {
+    "id": "neo-exchange",
+    "name": "NEO Exchange",
+    "parent": "NEO FINANCIAL",
+    "status": "architecture",
+    "dependencies": ["NEO CHAIN", "NEO DATA", "NEO SECURITY"]
+  },
+  {
+    "id": "neo-teller",
+    "name": "NEO Teller",
+    "parent": "NEO FINANCIAL",
+    "status": "architecture",
+    "dependencies": ["NEO CHAIN", "NEO SECURITY", "NEO DATA"]
+  },
+  {
+    "id": "neo-counter",
+    "name": "NEO Counter",
+    "parent": "NEO FINANCIAL",
+    "status": "architecture",
+    "dependencies": ["NEO SECURITY", "NEO DATA"]
+  },
+  {
+    "id": "neopay",
+    "name": "NEOpay",
+    "parent": "NEO FINANCIAL",
+    "status": "architecture",
+    "dependencies": ["NEO CHAIN", "NEO SECURITY", "NEO DATA"]
+  }
+]

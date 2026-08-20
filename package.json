@@ -1,0 +1,15 @@
+{
+  "name": "neo-system",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "NEO SYSTEMS ORIGIN enterprise intelligence and orchestration foundation",
+  "scripts": {
+    "start": "node apps/origin-cli/index.js",
+    "status": "node apps/origin-cli/index.js status",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

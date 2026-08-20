@@ -1,0 +1,29 @@
+{
+  "system": "NEO SYSTEMS",
+  "codename": "ORIGIN",
+  "version": "0.1.0",
+  "status": "foundation",
+  "mission": "Turn intelligence into organized infrastructure.",
+  "principles": [
+    "api-first",
+    "modular",
+    "interoperable",
+    "security-by-design",
+    "auditable",
+    "human-oversight",
+    "observable",
+    "versioned"
+  ],
+  "divisions": [
+    "NEO PRIME",
+    "NEO AI",
+    "NEO DATA",
+    "NEO CLOUD",
+    "NEO CHAIN",
+    "NEO FINANCIAL",
+    "NEO SECURITY",
+    "NEO DEVELOPER",
+    "NEO ENTERPRISE",
+    "NEO MARKETPLACE"
+  ]
+}
