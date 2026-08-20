@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Noogle / Omnitrix</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">NOOGLE</div>
+      <div class="subtitle">The NEO Way of Search</div>
+      <nav id="modeNav" class="mode-nav" aria-label="Search modes"></nav>
+      <div class="status-card">
+        <div><span class="dot"></span> Omnitrix online</div>
+        <small>Prototype mode · read-only</small>
+      </div>
+    </aside>
+
+    <main class="workspace">
+      <header class="browser-bar">
+        <button class="nav-button" title="Back" disabled>←</button>
+        <button class="nav-button" title="Forward" disabled>→</button>
+        <button class="nav-button" title="Reload">↻</button>
+        <form id="searchForm" class="address-form">
+          <input id="queryInput" autocomplete="off" placeholder="Search Noogle or enter a concept..." />
+        </form>
+        <button id="commandButton" class="command-button">OMNITRIX</button>
+      </header>
+
+      <section class="hero">
+        <p class="eyebrow">NOOLOGICAL KNOWLEDGE ENGINE</p>
+        <h1>Search the world. Understand the knowledge.</h1>
+        <p class="hero-copy">A provenance-first search workspace for Noology, Indigenous ontology, history, nature, Bitcoin, Counterparty XCP, and the wider NEO ecosystem.</p>
+        <div class="hero-search">
+          <form id="heroForm">
+            <input id="heroInput" autocomplete="off" placeholder="What do you want to understand?" />
+            <button>Search</button>
+          </form>
+        </div>
+      </section>
+
+      <section class="content-grid">
+        <div class="panel results-panel">
+          <div class="panel-header">
+            <div>
+              <p class="eyebrow">ACTIVE MODE</p>
+              <h2 id="activeMode">STANDARD</h2>
+            </div>
+            <span id="resultCount" class="badge">0 results</span>
+          </div>
+          <div id="results" class="results"></div>
+        </div>
+
+        <aside class="right-rail">
+          <section class="panel intel-panel">
+            <p class="eyebrow">OMNITRIX INTELLIGENCE</p>
+            <h3>Knowledge Card</h3>
+            <div id="knowledgeCard" class="knowledge-card">
+              <p>Run a search to inspect provenance, evidence status, and related knowledge.</p>
+            </div>
+          </section>
+
+          <section class="panel finance-panel">
+            <div class="panel-header compact">
+              <div>
+                <p class="eyebrow">NEO WALLET</p>
+                <h3>Bitcoin / XCP</h3>
+              </div>
+              <span class="badge safe">READ ONLY</span>
+            </div>
+            <div class="metric-row"><span>BTC</span><strong>—</strong></div>
+            <div class="metric-row"><span>XCP</span><strong>—</strong></div>
+            <p class="muted">No wallet adapter connected. Private keys are never requested by this prototype.</p>
+          </section>
+
+          <section class="panel miner-panel">
+            <div class="panel-header compact">
+              <div>
+                <p class="eyebrow">NEO MINER</p>
+                <h3>Miner Control</h3>
+              </div>
+              <span class="badge warning">OFFLINE</span>
+            </div>
+            <div class="metric-row"><span>Hashrate</span><strong>—</strong></div>
+            <div class="metric-row"><span>Pool</span><strong>Not connected</strong></div>
+            <div class="metric-row"><span>BTC payout</span><strong>—</strong></div>
+            <p class="muted">Hardware and pool adapters will be added in a later phase.</p>
+          </section>
+        </aside>
+      </section>
+    </main>
+  </div>
+
+  <script src="./app.js"></script>
+</body>
+</html>
