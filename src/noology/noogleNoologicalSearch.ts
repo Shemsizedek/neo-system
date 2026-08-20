@@ -1,8 +1,12 @@
 import { neoDoctrineRegistry, type NeoDoctrineRecord } from './doctrineRegistry'
 import { neoMaxims, type NeoMaxim } from './maxims'
 import { noologicalDisciplines, type NoologicalDiscipline } from './disciplines'
+import {
+  sacredRecordsOfTheMoors,
+  type SacredRecordOfMoorsEntry
+} from './sacredRecordsMoors'
 
-export type NoogleNoologicalResultKind = 'DISCIPLINE' | 'DOCTRINE' | 'MAXIM'
+export type NoogleNoologicalResultKind = 'DISCIPLINE' | 'DOCTRINE' | 'MAXIM' | 'SOURCE_RECORD'
 
 export type NoogleNoologicalResult = {
   id: string
@@ -86,12 +90,28 @@ function maximResult(item: NeoMaxim, terms: string[]): NoogleNoologicalResult {
   }
 }
 
+function sacredRecordResult(item: SacredRecordOfMoorsEntry, terms: string[]): NoogleNoologicalResult {
+  const body = `${item.summary} ${item.sourceClaims.join(' ')} ${item.controls.join(' ')}`
+  const sourceRef = `${item.source.title} — PDF p.${item.source.pdfPage}${item.source.printedPage ? ` / printed p.${item.source.printedPage}` : ''}${item.source.section ? ` — ${item.source.section}` : ''}`
+
+  return {
+    id: item.id,
+    kind: 'SOURCE_RECORD',
+    title: item.title,
+    summary: item.summary,
+    score: scoreText(terms, item.title, body, item.tags) + 4,
+    provenance: item.evidenceClass,
+    tags: item.tags,
+    sourceRefs: [sourceRef]
+  }
+}
+
 /**
  * Noogle's noological ranker.
  *
  * It does not claim that relevance equals truth. Ranking only identifies which
- * NEO disciplines, doctrine records and maxims are most conceptually relevant
- * to a query. Provenance remains visible in every result.
+ * NEO disciplines, doctrine records, source records and maxims are most
+ * conceptually relevant to a query. Provenance remains visible in every result.
  */
 export function searchNoogleNoology(query: NoogleNoologicalQuery): NoogleNoologicalResult[] {
   const terms = termsFor(query.text)
@@ -100,11 +120,14 @@ export function searchNoogleNoology(query: NoogleNoologicalQuery): NoogleNoologi
   let results: NoogleNoologicalResult[] = [
     ...noologicalDisciplines.map((item) => disciplineResult(item, terms)),
     ...neoDoctrineRegistry.map((item) => doctrineResult(item, terms)),
+    ...sacredRecordsOfTheMoors.map((item) => sacredRecordResult(item, terms)),
     ...neoMaxims.map((item) => maximResult(item, terms))
   ]
 
   if (query.includeSourceDerived === false) {
-    results = results.filter((item) => item.provenance !== 'SOURCE_DERIVED')
+    results = results.filter((item) =>
+      item.provenance !== 'SOURCE_DERIVED' && !item.provenance.startsWith('SOURCE_')
+    )
   }
   if (query.includeNeoSynthesis === false) {
     results = results.filter((item) => !item.provenance.includes('SYNTHESIS'))
@@ -126,17 +149,19 @@ export type NoogleNoologicalPanel = {
   topResult?: NoogleNoologicalResult
   relatedDisciplines: NoogleNoologicalResult[]
   doctrine: NoogleNoologicalResult[]
+  sacredRecords: NoogleNoologicalResult[]
   maxims: NoogleNoologicalResult[]
   provenanceClasses: string[]
 }
 
 export function buildNoogleNoologicalPanel(text: string): NoogleNoologicalPanel {
-  const results = searchNoogleNoology({ text, limit: 24 })
+  const results = searchNoogleNoology({ text, limit: 32 })
   return {
     query: text,
     topResult: results[0],
     relatedDisciplines: results.filter((item) => item.kind === 'DISCIPLINE').slice(0, 6),
     doctrine: results.filter((item) => item.kind === 'DOCTRINE').slice(0, 8),
+    sacredRecords: results.filter((item) => item.kind === 'SOURCE_RECORD').slice(0, 8),
     maxims: results.filter((item) => item.kind === 'MAXIM').slice(0, 6),
     provenanceClasses: [...new Set(results.map((item) => item.provenance))]
   }
