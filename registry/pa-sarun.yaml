@@ -1,0 +1,149 @@
+version: 1.0.0
+system: Pa Sarun Naming System
+organization: World Temple of Karast, Branch Temple No. 24, Moorish Science Temple of America Inc.
+status: internal-audit
+
+principles:
+  naturalization_context: "Naturalization Procedure conducted within the Holy Shahaddah Ceremony during the Holy Day Gathering."
+  formal_name: "[authorized prefix title] + [Sa or Temple Name per Major Lesson] + [authorized family/suffix element per Major Lesson]"
+  language_mixing: "Prohibited except Magism, which may mix its Semitic naming layer with Major Lessons 2-9."
+  sarun_reserved: true
+  neter_restricted_to_major_lesson: 8
+  nisut_bit_rule: "A location-based royal name/category; never include the words Nisut-Bit in the rendered name."
+  ritual_components: "Do not expand Haru/Nebti/Neter/etc. into a public full name; ritual blends may be used only where authorized."
+
+member_address:
+  general: [Brother, Sister, Kin, Kinfolk]
+  royal_peerage: [Kin, Honorable, Lady, Noble, Nin, Nayya, Prince, Princess]
+  council_only: [H.R.I.]
+  additional_roll_options: [H.E., H.E.M.]
+
+naturalization_suffixes:
+  Ali: Syriac
+  El: Ashuric
+  Al: Arabic
+  Bey: Turkish
+  Dey: Ottoman
+
+major_lessons:
+  - lesson: 1
+    chamber: Christism
+    language: English
+    house: House of Set
+    deity: Sutekh
+    introduction: "Welcome to the Holy Templist Ministries (Apprentice Orientation)."
+    lodge: "Nature's Unified Grand Temple Lodge of Tiamaat; Temple Lodge No. 1 of the Natural Ethereal Order; Subordinate Lodge No. 9"
+    order: "Original Order of Melchizedek"
+    naming_formula: "prefix title + birth (Sa) name + divine suffix"
+  - lesson: 2
+    chamber: Mosesim
+    language: Hebrew
+    house: House of Mu
+    deity: Nebthet
+    introduction: "Welcome to Holy Seed Baptist Synagogue Nazarian Knights of the Tents of Kedar."
+    lodge: "Temple Lodge of Esther; Ansaaruallah Community of Knights for the Tents of Kedar No. 3"
+    naming_formula: "prefix title + temple name + divine family name"
+  - lesson: 3
+    chamber: Muhammadism
+    language: Arabic
+    house: House of Nefu
+    deity: Aset
+    introduction: "Welcome to the Ansaaruallah Community Holy Shrine of Al Mahdhi."
+    lodge: "Temple Lodge of Faatimah; Khawaatiyah for the Al Mahdi Shrine No. 5"
+    naming_formula: "prefix title + temple name + divine family name"
+  - lesson: 4
+    chamber: Sufism
+    language: Moorish Kufic - Latin
+    house: House of Mu
+    deity: Asaru
+    introduction: "Welcome Sons of Al Khidr."
+    lodge: "Temple Lodge of Haashim for the pilgrims of Al Khidr No. 7"
+    naming_formula: "prefix title + temple name"
+  - lesson: 5
+    chamber: Kabalism
+    language: Persian
+    house: House of Ptah
+    deity: Nut
+    introduction: "Welcome Sanhedrin Magi's."
+    lodge: "Temple Lodge of Hammurabi for Sanhedrin Magistrates No. 13"
+    naming_formula: "prefix title + temple name"
+  - lesson: 6
+    chamber: Magism
+    language: Semitic
+    house: House of Atum-Re
+    deity: Geb
+    introduction: "Welcome Devotee's of Shemsizedek."
+    lodge: "Temple Lodge of Thothmoses for the Order of Shemsizedek No. 15"
+    naming_formula: "prefix title + temple name"
+  - lesson: 7
+    chamber: Sumerianism
+    language: Cuneiform
+    house: House of Atun-Re
+    deity: Tefnut
+    introduction: "Welcome Shuyukh of Shemesh."
+    lodge: "Temple Lodge of Enlil for the Elders Council of Shemesh No. 27"
+    naming_formula: "prefix title + temple name + divine family name"
+  - lesson: 8
+    chamber: Shamanism
+    language: Ancient Egyptian - Lumerian - Atlantean
+    house: House of Amun-Re
+    deity: Shu
+    introduction: "Welcome Heirophants of Amun-Ra."
+    lodge: "Nature's Grand Unified Temple Lodge of Dedan for the ancient priesthood of Amun-Ra No. 9"
+    naming_formula: "prefix title + temple name"
+    neter_name_allowed: true
+    lexical_rule: "Do not use Hotep as a standalone personal name; Im'hotep is the recognized complete example in this system."
+  - lesson: 9
+    chamber: Nuwaubu
+    alternate_degree_label: Gnosticism
+    language: Nuwaubic - Nubic
+    house: House of Anun-Re
+    deity: Atum-Re
+    introduction: "Welcome Seamu of Annu."
+    lodge: "Supreme Grand Unified Temple Lodge of Baalat for the Seamu No. 19"
+    naming_formula: "prefix title + temple name + divine family name"
+
+royal_houses:
+  - tribe: Anunite
+    house: House of Anun-Re
+    family_class: "Imperial Family of the Thrones"
+    family_name: Nupu
+  - tribe: Amunite
+    house: House of Amun-Re
+    family_class: "Royal Family of the Honorable"
+    family_name: Neb
+  - tribe: Atunite
+    house: House of Atun-Re
+    family_class: "Noble Family of the Prince & Princesses"
+    family_name: Zodok
+  - tribe: Atumite
+    house: House of Atum-Re
+    family_class: "Great Family of the Fathers & Mothers"
+    family_name: Sayyid
+
+royal_roll:
+  family_names: [Sayyid-Abdul, Zodok, Neb, Nupu]
+  appellations: [Muhammad, Musa, Mose, Afroo]
+
+progression:
+  counted_degrees:
+    lesson_1: "1-36; Masonic-themed sub-lessons"
+    lesson_2: "37-72; Magi-themed sub-lessons"
+    lesson_3: "73-108; Shriner-themed sub-lessons"
+    lesson_4: "109-144; Mystic-themed sub-lessons"
+  honorary_major_lessons: "5-9 are honorary for the Elect and Elite and do not add beyond 144 degrees."
+  profession_of_obligation_required: true
+  degree_144_titles: [Neb, Nebu, Noonebu, Neb Nebu]
+  degree_144_royal_family_names: [Nun, Nupu, NoopooH]
+
+audit_checks:
+  - verify_major_lesson_language
+  - reject_unauthorized_language_mixing
+  - verify_title_authority
+  - verify_neter_only_in_lesson_8
+  - reject_sarun_as_personal_name
+  - reject_standalone_hotep_as_personal_name
+  - verify_nisut_bit_location_rule
+  - verify_naturalization_suffix_granted_once
+  - verify_major_lesson_naming_formula
+  - verify_royal_house_mapping
