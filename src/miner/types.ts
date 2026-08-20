@@ -1,25 +1,26 @@
-export type MinerStatus = 'ONLINE' | 'DEGRADED' | 'OFFLINE'
-export type CurrencyStatus = 'ACTIVE' | 'PENDING' | 'REFERENCE_ONLY' | 'DISABLED'
+export type MinerStatus = 'MINING' | 'WARNING' | 'OFFLINE' | 'MAINTENANCE'
+export type CurrencyKind = 'FIAT' | 'DIGITAL' | 'WORLD_CURRENCY'
+export type CurrencyStatus = 'SUPPORTED' | 'PENDING' | 'REFERENCE_ONLY' | 'DISABLED'
 
-export interface MinerNode {
+export interface Miner {
   id: string
-  model: string
+  farm: string
   facility: string
-  worker: string
-  status: MinerStatus
-  hashrateThs: number
-  targetThs: number
-  powerWatts: number
+  model: string
+  hashrateTh: number
+  powerW: number
+  tempC: number
   efficiencyJTh: number
-  temperatureC: number
   uptimePct: number
+  status: MinerStatus
   pool: string
 }
 
-export interface CurrencyRail {
+export interface Currency {
   code: string
   name: string
-  type: 'FIAT' | 'DIGITAL' | 'WORLD_ASSET'
+  kind: CurrencyKind
+  region: string
   payment: boolean
   settlement: boolean
   fx: boolean
@@ -28,12 +29,21 @@ export interface CurrencyRail {
 
 export interface MiningContract {
   id: string
-  product: string
-  hashrateThs: number
+  customer: string
+  hashrateTh: number
   termMonths: number
   paymentCurrency: string
-  basePriceUsd: number
+  amount: number
+  status: 'ACTIVE' | 'PAYMENT_PENDING' | 'COMPLETED'
   estimatedBtc: number
-  status: 'DRAFT' | 'PAYMENT_PENDING' | 'ACTIVE' | 'COMPLETED'
-  createdAt: string
+}
+
+export interface PaymentQuote {
+  id: string
+  contractId: string
+  currency: string
+  amount: number
+  btcReference: number
+  fee: number
+  status: 'ACTIVE' | 'PAID' | 'EXPIRED'
 }
