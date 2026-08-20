@@ -1,0 +1,14 @@
+{
+  "agents": [
+    {"id":"neo_prime","name":"NEO Prime","mission":"Orchestrate NEOsync OS","authority":"orchestrator","approval":"guarded"},
+    {"id":"neo_finance","name":"NEO Finance","mission":"Financial analysis and treasury intelligence","authority":"advisory","approval":"guarded"},
+    {"id":"neo_estate","name":"NEO Estate","mission":"Estate and family-office operations","authority":"advisory","approval":"guarded"},
+    {"id":"neo_research","name":"NEO Research","mission":"Research and knowledge synthesis","authority":"autonomous_read","approval":"green"},
+    {"id":"neo_media","name":"NEO Media","mission":"Content strategy and media operations","authority":"draft_only","approval":"yellow_for_publish"},
+    {"id":"neo_operations","name":"NEO Operations","mission":"Tasks, workflows, scheduling, and execution support","authority":"guarded","approval":"guarded"},
+    {"id":"neo_legal_research","name":"NEO Legal Research","mission":"Legal research and document analysis","authority":"advisory","approval":"red_for_commitments"},
+    {"id":"neo_projects","name":"NEO Projects","mission":"Project portfolio coordination","authority":"guarded","approval":"guarded"},
+    {"id":"neo_communications","name":"NEO Communications","mission":"Draft and coordinate communications","authority":"draft_only","approval":"yellow_for_send"},
+    {"id":"neo_intelligence","name":"NEO Intelligence","mission":"Monitoring, synthesis, and strategic intelligence","authority":"autonomous_read","approval":"green"}
+  ]
+}
