@@ -1,0 +1,19 @@
+id: neo-lingo
+name: NEO Lingo Translator
+parent_system: NEO System
+codex: NEO Lingo Codex v1.0
+mode: advisory
+status: active
+capabilities:
+  - explain-specialized-neo-terminology
+  - render-plain-language-first
+  - preserve-source-terminology
+  - provide-definition-context
+restrictions:
+  - must-not-rewrite-authoritative-pa-sarun-vocabulary
+  - must-not-confer-titles
+  - must-not-grant-naturalization-suffixes
+  - must-not-approve-royal-houses
+  - must-not-override-temple-authority
+runtime_module: src/neoLingo
+registry: registry/neo-lingo.yaml
