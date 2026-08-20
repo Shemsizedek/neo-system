@@ -44,11 +44,11 @@ export const neoModules: NeoModule[] = [
   },
   {
     id: 'treasury',
-    name: 'NEO Teller / Treasury',
-    domain: 'Finance Sandbox',
-    description: 'Existing NEO Teller, ETHA and reserve simulation for treasury and transaction-system development.',
-    status: 'SANDBOX',
-    boundary: 'No live banking, custody, card-network, FX or blockchain connectivity without approved production gateways.'
+    name: 'NEO Treasury Management System',
+    domain: 'Treasury, Trust & Revenue Administration',
+    description: 'World Treasury command center for fund accounting, congregational assessments, trust administration, risk, currency records and NEO Teller settlement simulation.',
+    status: 'FOUNDATION',
+    boundary: 'Institutional treasury framework only; no live banking, custody, taxation, seizure, legal-tender or governmental authority is created by the software.'
   },
   {
     id: 'police',
