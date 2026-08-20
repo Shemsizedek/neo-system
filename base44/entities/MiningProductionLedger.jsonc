@@ -1,0 +1,16 @@
+{
+  "name": "MiningProductionLedger",
+  "type": "object",
+  "properties": {
+    "entry_id": {"type":"string"},
+    "contract_id": {"type":"string"},
+    "miner_id": {"type":"string"},
+    "btc_estimated": {"type":"number"},
+    "btc_actual": {"type":"number"},
+    "period_start": {"type":"string","format":"date-time"},
+    "period_end": {"type":"string","format":"date-time"},
+    "settlement_status": {"type":"string","enum":["PENDING","CONFIRMED","SETTLED"]},
+    "simulation": {"type":"boolean","default":true}
+  },
+  "required": ["entry_id","settlement_status"]
+}
