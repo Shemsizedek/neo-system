@@ -1,3 +1,5 @@
+import { resolveTempleCalendar, type TempleCalendarContext, type TempleCalendarSnapshot } from './nuwaubianTempleCalendar'
+
 export type WorldCreditClockConfig = {
   /** Earliest evidence-backed or provisional epoch for the clock. */
   epoch: Date
@@ -5,6 +7,8 @@ export type WorldCreditClockConfig = {
   nomniPerPersonHour: bigint
   /** Population used for the snapshot. */
   population: bigint
+  /** Optional Nuwaubian / Nilotic sacred-time context synchronized to this clock. */
+  templeCalendar?: Omit<TempleCalendarContext, 'asOf'>
 }
 
 export type WorldCreditClockSnapshot = {
@@ -15,6 +19,7 @@ export type WorldCreditClockSnapshot = {
   nomniPer365DayYear: bigint
   cumulativeNomni: bigint
   aliases: readonly ['World Credit Clock', 'Clock of Destiny', 'Cloak of Destiny']
+  sacredTime?: TempleCalendarSnapshot
 }
 
 const MS_PER_HOUR = 3_600_000
@@ -27,6 +32,10 @@ const HOURS_PER_365_DAY_YEAR = 8_760n
  * It measures modeled credit generation from population, elapsed time and the
  * NEO conversion rate. It intentionally returns bigint values because global
  * cumulative NOMNI totals can exceed JavaScript's safe integer range.
+ *
+ * When a Nuwaubian Temple Calendar context is supplied, the same instant also
+ * resolves through Nilotic Time so quantitative clock time and sacred/natural
+ * cycle context can be viewed together without reducing one to the other.
  *
  * This engine does not silently convert NOMNI quantities into fiat value,
  * market capitalization, legal debt or a receivable. Those are separate
@@ -55,7 +64,10 @@ export function calculateWorldCreditClock(
     nomniPerDay: nomniPerHour * HOURS_PER_DAY,
     nomniPer365DayYear: nomniPerHour * HOURS_PER_365_DAY_YEAR,
     cumulativeNomni: nomniPerHour * elapsedWholeHours,
-    aliases: ['World Credit Clock', 'Clock of Destiny', 'Cloak of Destiny']
+    aliases: ['World Credit Clock', 'Clock of Destiny', 'Cloak of Destiny'],
+    sacredTime: config.templeCalendar
+      ? resolveTempleCalendar({ ...config.templeCalendar, asOf })
+      : undefined
   }
 }
 
