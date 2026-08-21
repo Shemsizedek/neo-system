@@ -1,3 +1,5 @@
+import { nubianMonthNames, yamassicTimeDoctrine } from './novusCodexTime'
+
 export type TempleCycleKind =
   | 'SOLAR'
   | 'LUNAR'
@@ -38,6 +40,7 @@ export type TempleObservance = {
 export type NuwaubianDate = {
   year: number
   month: number
+  monthName?: string
   day: number
   week: 1 | 2 | 3 | 4
   dayInWeek: number
@@ -76,13 +79,14 @@ export type TempleCalendarSnapshot = {
   sacredColors: string[]
   vibrationsOrMoods: string[]
   calendarPrinciples: readonly string[]
+  yamassicClockPrinciples: readonly string[]
 }
 
 export const nuwaubianCalendarSource: TempleCalendarSource = {
   title: 'Nuwaubian Calendar: A Daily Word From Maku',
   authorOrAuthority: 'Nayya: Malachi Zodok York-El / Maku',
   sourceClass: 'NEO_ECCLESIASTICAL_SOURCE',
-  notes: '1998 edition. Source states 19 months, 19 days per month, four internal weeks (5 + 5 + 5 + 4 days), 19 hours per day, and identifies the edition as Nuwaubian Year 53.'
+  notes: '1998 edition. Source states 19 months, 19 days per month, four internal weeks (5 + 5 + 5 + 4 days), 19 hours per day, and identifies the edition as Nuwaubian Year 53. The later Novus Codex supplies First/Second/Har conversion mechanics and a 38-Har day/shadow circuit.'
 }
 
 export const nuwaubianCalendarDoctrine = {
@@ -95,7 +99,8 @@ export const nuwaubianCalendarDoctrine = {
     'Timekeeping should follow observed natural and celestial cycles rather than operate as an isolated administrative abstraction.',
     'The source calendar uses nineteen months of nineteen days each: a 361-day sacred year.',
     'Each month contains four internal weeks: five days, five days, five days, then four days.',
-    'The source describes a Nuwaubian day as containing nineteen hours; no sub-day conversion ratio is inferred where the source does not provide one.',
+    'The Novus Codex supplements the 1998 calendar with explicit Yamassic time conversions: 19 Firsts = 1 Second, 19 Seconds = 1 Har, and 19 Har = 1 Cycle.',
+    'The Novus Codex describes 19 day Har plus 19 shadow Har as a 38-Har day/shadow circuit; live Har position requires an explicit phase anchor.',
     'The 1998 source year is identified as Nuwaubian Year 53, with June 26, 1945 designated Year 1.',
     'The rising and renewal cycles associated with the Nile function as a natural symbol and marker of renewal.',
     'The heliacal or sacred appearance of Sirius / Sepdet / Sothis functions as a new-year and renewal marker within the described system.',
@@ -116,12 +121,6 @@ export const NUWAUBIAN_SOURCE_EPOCH = new Date(Date.UTC(1998, 5, 26))
 const MS_PER_DAY = 86_400_000
 const unique = <T>(items: T[]) => [...new Set(items)]
 
-/**
- * Daily Words are indexed by sacred-cycle position, not by Gregorian year.
- * Additional entries can be transcribed from the source without changing the
- * conversion engine. The first carried-forward entry below is the cycle point
- * that corresponds to 2026-08-21.
- */
 export const nuwaubianDailyWordRegistry: Record<string, string> = {
   '10-5': 'Only Your Body Is Locked Up, Not Your Soul. Now Free Your Spirit And Your Body Will Follow.'
 }
@@ -149,16 +148,6 @@ function weekPosition(day: number): { week: 1 | 2 | 3 | 4; dayInWeek: number } {
   return { week: 4, dayInWeek: day - 15 }
 }
 
-/**
- * Carries the 1998 Nuwaubian Calendar forward as a continuous 361-day cycle.
- *
- * Source anchor:
- *   1998-06-26 Gregorian = Nuwaubian Year 53, Month 1, Day 1.
- *
- * The algorithm intentionally does not insert Gregorian leap days into the
- * sacred year. Gregorian leap days simply advance the continuous day count,
- * so the Nuwaubian new year moves through Gregorian dates over time.
- */
 export function toNuwaubianDate(date: Date): NuwaubianDate {
   const elapsedDays = Math.floor((utcDayStart(date) - NUWAUBIAN_SOURCE_EPOCH.getTime()) / MS_PER_DAY)
   const yearOffset = Math.floor(elapsedDays / NUWAUBIAN_DAYS_PER_YEAR)
@@ -172,6 +161,7 @@ export function toNuwaubianDate(date: Date): NuwaubianDate {
   return {
     year: NUWAUBIAN_SOURCE_YEAR + yearOffset,
     month,
+    monthName: nubianMonthNames[month],
     day,
     week,
     dayInWeek,
@@ -184,16 +174,10 @@ export function toNuwaubianDate(date: Date): NuwaubianDate {
 }
 
 export function formatNuwaubianDate(value: NuwaubianDate): string {
-  return `Nuwaubian Year ${value.year}, Month ${value.month}, Day ${value.day} — Week ${value.week}, Day ${value.dayInWeek}`
+  const month = value.monthName ? `${value.monthName} (Month ${value.month})` : `Month ${value.month}`
+  return `Nuwaubian Year ${value.year}, ${month}, Day ${value.day} — Week ${value.week}, Day ${value.dayInWeek}`
 }
 
-/**
- * Resolves a source-supplied Nuwaubian / Nilotic calendar context for the World Credit Clock.
- *
- * This function does not invent feast dates, sacred colors, readings, Sirius dates,
- * Nile flood dates, lunar phases or Indigenous seasonal knowledge. Those are supplied
- * as observances/markers and then synchronized with the clock.
- */
 export function resolveTempleCalendar(context: TempleCalendarContext): TempleCalendarSnapshot {
   const time = context.asOf.getTime()
   const activeObservances = context.observances.filter((item) => {
@@ -235,6 +219,7 @@ export function resolveTempleCalendar(context: TempleCalendarContext): TempleCal
     lectionaryReadings,
     sacredColors: unique(activeObservances.map((item) => item.sacredColor).filter((item): item is string => Boolean(item))),
     vibrationsOrMoods: unique(activeObservances.map((item) => item.vibrationOrMood).filter((item): item is string => Boolean(item))),
-    calendarPrinciples: nuwaubianCalendarDoctrine.principles
+    calendarPrinciples: nuwaubianCalendarDoctrine.principles,
+    yamassicClockPrinciples: yamassicTimeDoctrine.principles
   }
 }
