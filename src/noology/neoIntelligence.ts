@@ -4,6 +4,7 @@ import { reviewActionThroughAlchemy, type AlchemicalActionReview, type NeoAction
 import { assessNatureCycles, type NatureCycleAssessment, type NatureCycleContext } from './natureCycles'
 import { searchNoologicalDisciplines, type NoologicalDiscipline } from './disciplines'
 import { buildNoogleNoologicalPanel, type NoogleNoologicalPanel } from './noogleNoologicalSearch'
+import { searchNovusCodexDoctrine } from './novusCodexDoctrine'
 
 export type NeoIntelligenceRequest = {
   claim: NeoClaimRecord
@@ -41,7 +42,10 @@ export function runNeoIntelligence(request: NeoIntelligenceRequest): NeoIntellig
   const reasoning = evaluateNeoClaim(request.claim)
   const tags = request.topicTags ?? []
   const query = request.doctrineQuery?.trim() || `${request.claim.statement} ${tags.join(' ')}`.trim()
-  const doctrine = uniqueById(tags.flatMap((tag) => doctrineByTag(tag)))
+  const doctrine = uniqueById([
+    ...tags.flatMap((tag) => doctrineByTag(tag)),
+    ...searchNovusCodexDoctrine(query)
+  ])
   const disciplines = searchNoologicalDisciplines(query).slice(0, 8)
   const nooglePanel = buildNoogleNoologicalPanel(query)
 
@@ -59,6 +63,7 @@ export function runNeoIntelligence(request: NeoIntelligenceRequest): NeoIntellig
     'Whose provenance, voice or contribution could be erased by the current framing?',
     'What changes when the issue is viewed through land, life, season, relationship and future generations?',
     'What opposing pole or missing counterforce must be acknowledged before acting?',
+    'What time system is being used here: administrative/Gregorian, Nilotic/Natural, Yamassic, direct celestial observation, or another source-defined cycle?',
     'Does the proposed action reproduce deception, exploitation, coercion or erasure?',
     'What survives the alchemical sequence after assumptions and projections are removed?',
     'How does this insight contribute to noogenesis: the emergence of more coherent shared intelligence?',
