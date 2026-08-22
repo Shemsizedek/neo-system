@@ -9,6 +9,7 @@ import { monitorSourceRecords } from './monitorConstitution'
 import { ecclesiasticalAuthorities, inheritanceClaims, inheritanceSources, sacredCorpus } from './globalInheritanceTitleSchema'
 import { secretSocietiesUnmaskedSourceRecords } from './counterInfluenceIntelligence'
 import { destinyProtectionMaxims, destinyProtectionDoctrine } from './destinyProvenanceDefense'
+import { noonebuDoctrine } from './noonebuDoctrine'
 import { neopediaSeedArticles, type NeopediaArticle, type NeopediaClaimStatus } from './neopedia'
 
 export type RecursiveNeopediaSourceClass =
@@ -23,6 +24,7 @@ export type RecursiveNeopediaSourceClass =
   | 'TITLE_INHERITANCE'
   | 'COUNTER_INFLUENCE'
   | 'DESTINY_PROVENANCE'
+  | 'NOONEBU'
   | 'WORLD_CREDIT_CLOCK'
 
 export type RecursiveNeopediaArticle = NeopediaArticle & {
@@ -51,7 +53,7 @@ const statusFrom = (r: Record<string, unknown>): NeopediaClaimStatus => {
   const raw = str(r, 'evidenceClass', 'status', 'provenanceClass', 'provenance').toUpperCase()
   if (raw.includes('CORROBORATED')) return 'CORROBORATED'
   if (raw.includes('CONTESTED')) return 'CONTESTED'
-  if (raw.includes('OPEN')) return 'OPEN_QUESTION'
+  if (raw.includes('OPEN') || raw.includes('PENDING')) return 'OPEN_QUESTION'
   if (raw.includes('SYNTHESIS') || raw.includes('MAXIM')) return 'NEO_SYNTHESIS'
   return 'SOURCE_STATES'
 }
@@ -99,7 +101,8 @@ const generated: RecursiveNeopediaArticle[] = [
   ...inheritanceClaims.map(x => toArticle(x, 'TITLE_INHERITANCE', 'Inheritance Claim', ['Inheritance','Probate','Restitution'], 'RESEARCH')),
   ...secretSocietiesUnmaskedSourceRecords.map(x => toArticle(x, 'COUNTER_INFLUENCE', 'Counter-Influence Record', ['Counter-Influence'], 'RESEARCH')),
   ...destinyProtectionDoctrine.map(x => toArticle(x, 'DESTINY_PROVENANCE', 'Destiny Provenance Doctrine', ['Destiny Provenance','Protection'], 'RESEARCH')),
-  ...destinyProtectionMaxims.map((x, i) => toArticle({ id: `DESTINY-MAXIM-${i+1}`, title: `Destiny Provenance Maxim ${i+1}`, statement: x }, 'DESTINY_PROVENANCE', `Destiny Provenance Maxim ${i+1}`, ['Destiny Provenance','NEO Maxims']))
+  ...destinyProtectionMaxims.map((x, i) => toArticle({ id: `DESTINY-MAXIM-${i+1}`, title: `Destiny Provenance Maxim ${i+1}`, statement: x }, 'DESTINY_PROVENANCE', `Destiny Provenance Maxim ${i+1}`, ['Destiny Provenance','NEO Maxims'])),
+  ...noonebuDoctrine.map(x => toArticle(x, 'NOONEBU', 'Noonebu Doctrine', ['Noonebu','Nature of Nature','Noology'], 'RESEARCH'))
 ]
 
 const worldCreditClockArticles: RecursiveNeopediaArticle[] = [
