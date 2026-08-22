@@ -1,0 +1,12 @@
+{
+  "system": "NEOsync OS",
+  "codename": "ORIGIN",
+  "primary_agent": "neo_prime",
+  "parent_initiative": "Project 144",
+  "command_flow": ["intent","memory","agents","tools","guard","execution","result"],
+  "risk_levels": {
+    "green": ["research","summarize","organize","draft","analyze","monitor","plan"],
+    "yellow": ["send_communication","publish","edit_important_record","external_api_write"],
+    "red": ["financial_transfer","legal_commitment","contract_execution","destructive_delete","irreversible_external_action"]
+  }
+}

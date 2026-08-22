@@ -1,0 +1,5 @@
+{
+  "memory_categories": ["identity","preference","project","decision","person","organization","document","procedure","research","conversation","instruction"],
+  "required_fields": ["id","category","title","content","source","importance","created_at","updated_at","tags","active"],
+  "promotion_policy": "Conversation content is not permanent memory by default. Important institutional information must be explicitly promoted or marked for retention."
+}
