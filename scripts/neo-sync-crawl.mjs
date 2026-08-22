@@ -11,8 +11,10 @@ const SOURCES = [
 
 const STATE_PATH = 'data/neo-sync/crawler-state.json'
 const QUEUE_PATH = 'data/neo-sync/review-queue.json'
+const RELATIONS_PATH = 'data/neo-sync/candidate-relations.json'
+const DRAFTS_PATH = 'data/neo-sync/neopedia-drafts.json'
 const REPORT_PATH = 'data/neo-sync/latest-report.json'
-const USER_AGENT = 'NEO-Sync-Crawler/1.0 (+provenance-preserving research)'
+const USER_AGENT = 'NEO-Sync-Crawler/1.1 (+provenance-preserving research)'
 
 const hash = value => createHash('sha256').update(value).digest('hex')
 const strip = html => html
@@ -25,11 +27,19 @@ const strip = html => html
   .replace(/&#39;/gi, "'")
   .replace(/\s+/g, ' ')
   .trim()
-
+const sleep = ms => new Promise(resolve => setTimeout(resolve, ms))
 const titleOf = html => (html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] ?? 'Untitled').replace(/\s+/g, ' ').trim()
 const linksOf = (html, base) => [...html.matchAll(/href=["']([^"'#]+)["']/gi)]
   .map(m => { try { return new URL(m[1], base).href } catch { return null } })
   .filter(Boolean)
+const tokens = value => new Set(value.toLowerCase().replace(/[^a-z0-9\s-]/g, ' ').split(/\s+/).filter(x => x.length > 3))
+const jaccard = (a, b) => {
+  const aa = tokens(a), bb = tokens(b)
+  if (!aa.size || !bb.size) return 0
+  const intersection = [...aa].filter(x => bb.has(x)).length
+  const union = new Set([...aa, ...bb]).size
+  return intersection / union
+}
 
 function qualityFor(snapshot) {
   const dims = {
@@ -90,6 +100,7 @@ async function crawlSource(source) {
         const parsed = new URL(link)
         if (parsed.origin === root.origin && !seen.has(parsed.href) && !/\.(pdf|jpg|jpeg|png|gif|zip)$/i.test(parsed.pathname)) queue.push(parsed.href)
       }
+      await sleep(200)
     } catch (error) {
       errors.push({ url, error: error instanceof Error ? error.message : String(error) })
     }
@@ -108,7 +119,9 @@ async function writeJson(path, value) {
 const previous = await readJson(STATE_PATH, { sources: {} })
 const runs = []
 const review = []
-const nextState = { version: 1, updatedAt: new Date().toISOString(), sources: {} }
+const relations = []
+const drafts = []
+const nextState = { version: 2, updatedAt: new Date().toISOString(), sources: {} }
 
 for (const source of SOURCES) {
   const run = await crawlSource(source)
@@ -119,11 +132,44 @@ for (const source of SOURCES) {
 
   for (const page of currentPages) {
     const before = priorPages.get(page.url)
-    if (!before) review.push({ type: 'NEW_PAGE', sourceId: source.id, url: page.url, title: page.title, currentHash: page.hash, quality: page.quality, decision: 'CANDIDATE' })
-    else if (before.hash !== page.hash) review.push({ type: 'REVISION', sourceId: source.id, url: page.url, title: page.title, previousHash: before.hash, currentHash: page.hash, previousExcerpt: before.excerpt, currentExcerpt: page.excerpt, quality: page.quality, decision: 'REVIEW_REQUIRED' })
+    const change = !before ? 'NEW_PAGE' : before.hash !== page.hash ? 'REVISION' : null
+    if (change) {
+      review.push({ type: change, sourceId: source.id, url: page.url, title: page.title, previousHash: before?.hash, currentHash: page.hash, previousExcerpt: before?.excerpt, currentExcerpt: page.excerpt, quality: page.quality, decision: change === 'REVISION' ? 'REVIEW_REQUIRED' : 'CANDIDATE' })
+      relations.push({ fromId: `PAGE:${page.hash}`, toId: source.id, kind: 'DERIVES_FROM', confidence: 0.99, evidenceRefs: [page.url, page.hash], decision: 'ACCEPTED' })
+      drafts.push({
+        id: `DRAFT:${page.hash.slice(0, 16)}`,
+        title: page.title,
+        summary: page.excerpt,
+        sourceId: source.id,
+        sourceUrl: page.url,
+        sourceHash: page.hash,
+        sourceMode: source.mode,
+        headings: page.headings,
+        claimStatus: 'SOURCE_STATES',
+        quality: page.quality,
+        publicationStatus: page.quality.gate === 'PASS' ? 'DRAFT_READY_FOR_REVIEW' : 'HOLD_FOR_REVIEW'
+      })
+    }
     priorPages.delete(page.url)
   }
   for (const removed of priorPages.values()) review.push({ type: 'REMOVED_OR_UNREACHABLE', sourceId: source.id, url: removed.url, title: removed.title, previousHash: removed.hash, decision: 'REVIEW_REQUIRED' })
+}
+
+const changedPages = drafts
+for (let i = 0; i < changedPages.length; i++) {
+  for (let j = i + 1; j < changedPages.length; j++) {
+    const a = changedPages[i], b = changedPages[j]
+    const similarity = jaccard(`${a.title} ${a.headings.join(' ')}`, `${b.title} ${b.headings.join(' ')}`)
+    if (similarity >= 0.28) relations.push({
+      fromId: a.id,
+      toId: b.id,
+      kind: 'PARALLELS',
+      confidence: Number(Math.min(0.89, 0.45 + similarity).toFixed(2)),
+      rationale: 'Candidate relation generated from title/heading overlap; semantic similarity alone does not establish derivation.',
+      evidenceRefs: [a.sourceUrl, b.sourceUrl],
+      decision: 'CANDIDATE'
+    })
+  }
 }
 
 const report = {
@@ -131,11 +177,17 @@ const report = {
   architecture: 'crawler -> hash -> revision diff -> candidate graph relations -> 9-Ethereal quality gate -> Neopedia draft/review queue',
   sources: runs.map(r => ({ sourceId: r.sourceId, title: r.title, rootUrl: r.rootUrl, pages: r.pages.length, errors: r.errors })),
   changes: review.length,
+  candidateRelations: relations.length,
+  neopediaDrafts: drafts.length,
   reviewQueuePath: QUEUE_PATH,
+  relationQueuePath: RELATIONS_PATH,
+  draftsPath: DRAFTS_PATH,
   statePath: STATE_PATH
 }
 
 await writeJson(STATE_PATH, nextState)
 await writeJson(QUEUE_PATH, { generatedAt: report.generatedAt, items: review })
+await writeJson(RELATIONS_PATH, { generatedAt: report.generatedAt, items: relations })
+await writeJson(DRAFTS_PATH, { generatedAt: report.generatedAt, items: drafts })
 await writeJson(REPORT_PATH, report)
 console.log(JSON.stringify(report, null, 2))
