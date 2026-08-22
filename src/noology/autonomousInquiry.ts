@@ -1,6 +1,7 @@
 import { assessNineEtherealQuality, type NineEtherealAssessment } from './nineEtherealQuality'
 import { neoSyncSearch } from './neoSync'
 import { neoLearningSources } from './sourceFeeds'
+import { routeResearchQuestion, type RoutedResearchQuestion } from './researchRouter'
 
 export type InquirySourceLane = 'NEO_LIBRARY'|'APPROVED_PRIMARY'|'EXTERNAL_PRIMARY'|'EXTERNAL_SECONDARY'
 export type InquiryClaimClass = 'SOURCE_STATES'|'NEO_SYNTHESIS'|'CORROBORATED'|'CONTESTED'|'OPEN_QUESTION'
@@ -22,12 +23,15 @@ export type EvidenceTask = {
   purpose: string
   priority: number
   sourceIds?: string[]
+  routedDomains?: string[]
+  preferredProviders?: string[]
 }
 
 export type InquiryPlan = {
   inquiryId: string
   question: string
   decomposedQuestions: string[]
+  routing: RoutedResearchQuestion
   evidenceTasks: EvidenceTask[]
   requiredChecks: readonly string[]
   impact: InquiryImpact
@@ -72,31 +76,34 @@ export type ResearchDossier = {
 export const autonomousInquiryRules = [
   'Begin with the actual research question, not a preferred conclusion.',
   'Search NEO Library and approved primary sources before expanding to external reference material when relevant.',
+  'Route each sub-question to the strongest relevant source domain before retrieval.',
   'Source doctrine, NEO synthesis, external corroboration and unresolved conflict remain separate claim classes.',
   'A source may establish what it states without establishing that every statement is externally verified.',
   'Contrary evidence is retained and linked to the claim it challenges.',
   'Symbolic resemblance, shared terminology or institutional proximity may generate a lead but cannot independently establish derivation, ownership, conspiracy or causation.',
   'Legal, financial, identity, governance, medical and sacred-access conclusions are always human-review gated.',
   'No source rank, institutional prestige, popularity or search score may silently substitute for provenance.',
-  'The final dossier must expose its evidence chain, unresolved questions and quality assessment.'
+  'The final dossier must expose its evidence chain, routing decisions, unresolved questions and quality assessment.'
 ] as const
 
 const splitQuestion = (question: string) => {
   const normalized = question.trim().replace(/\s+/g, ' ')
-  const stems = [
+  return [
     `What primary NEO or source records directly address: ${normalized}`,
     `What chronology and provenance chain is relevant to: ${normalized}`,
     `What independent primary records corroborate or contradict the material question?`,
     `What terminology, institutions, people, instruments, transactions or successor relationships require entity resolution?`,
     `What remains inference, synthesis, contested or unresolved?`
   ]
-  return stems
 }
 
 export function buildInquiryPlan(inquiry: InquiryQuestion): InquiryPlan {
   const impact = inquiry.impact ?? 'MEDIUM'
   const lanes = inquiry.requestedSourceLanes ?? ['NEO_LIBRARY','APPROVED_PRIMARY','EXTERNAL_PRIMARY','EXTERNAL_SECONDARY']
   const decomposedQuestions = splitQuestion(inquiry.question)
+  const routing = routeResearchQuestion(inquiry.question)
+  const routedDomains = routing.routes.map(route => route.domain)
+  const preferredProviders = [...new Set(routing.routes.flatMap(route => route.preferredProviders))]
   const evidenceTasks: EvidenceTask[] = []
   let sequence = 1
   for (const lane of lanes) {
@@ -106,18 +113,22 @@ export function buildInquiryPlan(inquiry: InquiryQuestion): InquiryPlan {
         id: `${inquiry.id}-TASK-${sequence++}`,
         lane,
         query: subQuestion,
-        purpose: lane === 'NEO_LIBRARY' ? 'Recover internal provenance and doctrine.' : lane === 'APPROVED_PRIMARY' ? 'Recover approved primary-source evidence.' : lane === 'EXTERNAL_PRIMARY' ? 'Seek independent primary records and authoritative documents.' : 'Map external scholarship, criticism, context and competing interpretations.',
+        purpose: lane === 'NEO_LIBRARY' ? 'Recover internal provenance and doctrine.' : lane === 'APPROVED_PRIMARY' ? 'Recover approved primary-source evidence.' : lane === 'EXTERNAL_PRIMARY' ? 'Seek independent primary records and authoritative documents from the routed domains.' : 'Map external scholarship, criticism, context and competing interpretations.',
         priority: lane === 'NEO_LIBRARY' ? 1 : lane === 'APPROVED_PRIMARY' ? 2 : lane === 'EXTERNAL_PRIMARY' ? 3 : 4,
-        sourceIds
+        sourceIds,
+        routedDomains,
+        preferredProviders
       })
     }
   }
+  const routeChecks = routing.routes.flatMap(route => route.requiredChecks)
   return {
     inquiryId: inquiry.id,
     question: inquiry.question,
     decomposedQuestions,
+    routing,
     evidenceTasks,
-    requiredChecks: autonomousInquiryRules,
+    requiredChecks: [...new Set([...autonomousInquiryRules, ...routeChecks])],
     impact
   }
 }
@@ -183,6 +194,7 @@ export function toNeopediaResearchDraft(dossier: ResearchDossier) {
     status: dossier.publicationGate === 'PASS' ? 'DRAFT_READY' : 'REVIEW_REQUIRED',
     claimCount: dossier.claims.length,
     evidenceCount: dossier.evidence.length,
+    routedDomains: dossier.plan.routing.routes.map(route => route.domain),
     unresolvedQuestions: dossier.unresolvedQuestions,
     nineEthereal: dossier.nineEthereal,
     provenanceMap: dossier.provenanceMap,
@@ -194,7 +206,7 @@ export const neoResearchAgent = {
   id: 'NEO-AUTONOMOUS-INQUIRY',
   title: 'NEO Research Agent / Autonomous Inquiry Engine',
   role: 'EVIDENCE_PLANNING_PROVENANCE_RESEARCH_AND_DOSSIER_GENERATION',
-  loop: ['QUESTION','DECOMPOSE','PLAN','NEO_LIBRARY','APPROVED_PRIMARY','EXTERNAL_PRIMARY','EXTERNAL_SECONDARY','ENTITY_RESOLUTION','FACTOLOGY','PROVENANCE','COUNTER_INFLUENCE','CONFLICT_MAP','CLAIM_CLASSIFICATION','9_ETHEREAL_GATE','NEOPEDIA_DRAFT','HUMAN_REVIEW'] as const,
+  loop: ['QUESTION','DECOMPOSE','ROUTE','PLAN','NEO_LIBRARY','APPROVED_PRIMARY','EXTERNAL_PRIMARY','EXTERNAL_SECONDARY','ENTITY_RESOLUTION','FACTOLOGY','PROVENANCE','COUNTER_INFLUENCE','CONFLICT_MAP','CLAIM_CLASSIFICATION','9_ETHEREAL_GATE','NEOPEDIA_DRAFT','HUMAN_REVIEW'] as const,
   rules: autonomousInquiryRules,
-  boundary: 'The agent may plan, retrieve, compare, classify and draft. It does not autonomously convert disputed claims into established facts or bypass review for high-impact conclusions.'
+  boundary: 'The agent may plan, route, retrieve, compare, classify and draft. It does not autonomously convert disputed claims into established facts or bypass review for high-impact conclusions.'
 } as const
