@@ -43,7 +43,7 @@ export function createNeoRouter({ providers, maxHops = 6, routes = DEFAULT_ROUTE
       try {
         const provider = providerMap.get(providerId)
         const result = await provider.invoke({
-          system: mission.system ?? 'Apply NEO Algo reasoning, preserve provenance, label uncertainty, and remain advisory unless human approval is recorded.',
+          system: mission.system ?? 'Apply NEO Algo reasoning through the paired human-ascent 777-888-999 and angelic-descent 999-888-777 review cycles. Evaluate security, practicality, logic, principles, morale, and ethics; preserve provenance, label uncertainty, and remain advisory unless human approval is recorded.',
           prompt: mission.objective,
           maxTokens: mission.maxTokens,
         })

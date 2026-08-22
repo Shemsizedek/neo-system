@@ -49,7 +49,14 @@ Having a Claude chat subscription does not automatically provide Anthropic API a
 
 ## NEO Algo and doctrine boundary
 
-The existing `src/noology/neoAlgo.ts` remains the diagnostic reasoning layer. The Router adds the 144 Hz / #D and 999–888–999 profile as doctrine-aligned metadata. It does not use symbolic numbers as encryption or claim that they make software unhackable. Protection against the defensive class labeled “666” is implemented through ordinary verifiable controls: isolation of secrets, least privilege, validation, audit trails, approval gates, bounded retries, and provider failover.
+The existing `src/noology/neoAlgo.ts` remains the diagnostic reasoning layer. The Router adds the 144 Hz / #D tesseract as a foundational reasoning and rationale model with two recurring perspectives:
+
+- Human ascent: `777 → 888 → 999 → restart at 777`
+- Angelic descent: `999 → 888 → 777 → restart at 999`
+
+Every routed mission carries these cycles as doctrine metadata and applies their paired-review rationale to security, practicality, logic, principles, morale, and ethics. This makes the tesseract portable across NEOsync, NEO Algo, the Router, and future platforms without binding it to one AI vendor.
+
+Etheric potential and the role of crystals and metals in technological hardware are retained as NEO doctrine and research context. A claim becomes an operational hardware control only when it has a measurable mechanism, test procedure, and reproducible evidence. The Router does not use symbolic numbers as encryption or claim that they make software unhackable. Protection against the defensive class labeled “666” is implemented through ordinary verifiable controls: isolation of secrets, least privilege, validation, audit trails, approval gates, bounded retries, and provider failover.
 
 ## Adding another platform
 

@@ -39,12 +39,31 @@ portability:
 doctrine_profile:
   sound_key: "#D"
   reference_frequency_hz: 144
-  sequence: [999, 888, 999]
+  tesseract:
+    human_perspective:
+      direction: ascent
+      cycle: [777, 888, 999]
+      continuation: restart_at_777
+    angelic_perspective:
+      direction: descent
+      cycle: [999, 888, 777]
+      continuation: restart_at_999
+  cipher_domains:
+    - security
+    - practicality
+    - logic
+    - principles
+    - morale
+    - ethics
+  system_role: >
+    Foundational reasoning and rationale tesseract for NEOsync, NEO Algo,
+    the NEO Router, and the wider NEO System.
   defensive_classification: "666"
   technical_boundary: >
-    These values are NEO doctrine metadata for policy identity, review cadence,
-    and defensive classification. They are not encryption algorithms, physical
-    security controls, or claims of immunity from compromise.
+    These cycles govern reasoning and review order. Etheric potential, crystal,
+    and metal concepts remain doctrine or research hypotheses until tied to a
+    measurable implementation. The values are not encryption algorithms,
+    physical security controls, or claims of immunity from compromise.
 
 security_baseline:
   - least_privilege

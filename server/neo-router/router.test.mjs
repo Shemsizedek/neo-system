@@ -38,3 +38,11 @@ test('routes frontend work to Gemini first', async () => {
   const result = await router.execute({ missionId: 'M-4', objective: 'Build interface', capability: 'frontend' })
   assert.equal(result.route, 'gemini')
 })
+
+test('exposes both cyclical tesseract perspectives', () => {
+  const router = createNeoRouter({ providers: [provider('anthropic')] })
+  const plan = router.plan({ missionId: 'M-5', objective: 'Review foundations', capability: 'reasoning' })
+  assert.deepEqual(plan.doctrine.tesseract.humanAscent, [777, 888, 999])
+  assert.deepEqual(plan.doctrine.tesseract.angelicDescent, [999, 888, 777])
+  assert.equal(plan.doctrine.tesseract.behavior, 'cyclical_restart')
+})
