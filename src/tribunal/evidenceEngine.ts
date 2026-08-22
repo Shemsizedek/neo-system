@@ -17,6 +17,9 @@ export interface EvidenceItem {
   offeredBy: 'PETITIONER' | 'RESPONDENT' | 'TRIBUNAL'
   description: string
   sourceLocator?: string
+  fileName?: string
+  mediaType?: string
+  sizeBytes?: number
   status: EvidenceStatus
   integrity: IntegrityState
   fingerprint?: string
@@ -47,6 +50,13 @@ export function setEvidenceStatus(item: EvidenceItem, status: EvidenceStatus, ac
   return recordCustody({...item,status},actor,action,note)
 }
 
+export async function attachEvidenceFile(item: EvidenceItem, file: File, actor='E-File Intake'): Promise<EvidenceItem> {
+  const bytes = new Uint8Array(await file.arrayBuffer())
+  const digest = await crypto.subtle.digest('SHA-256', bytes)
+  const fingerprint = Array.from(new Uint8Array(digest)).map(byte=>byte.toString(16).padStart(2,'0')).join('')
+  return recordCustody({...item,fileName:file.name,mediaType:file.type||'application/octet-stream',sizeBytes:file.size,fingerprint,integrity:'HASHED'},actor,'HASHED',`File ${file.name} hashed at intake. SHA-256 ${fingerprint}.`)
+}
+
 export function evidenceStats(items: EvidenceItem[]) {
   return {
     total:items.length,
@@ -54,6 +64,7 @@ export function evidenceStats(items: EvidenceItem[]) {
     offered:items.filter(item=>item.status==='OFFERED').length,
     review:items.filter(item=>item.status==='REVIEW_REQUIRED').length,
     excluded:items.filter(item=>item.status==='EXCLUDED').length,
+    hashed:items.filter(item=>item.integrity!=='UNHASHED').length,
   }
 }
 
@@ -62,5 +73,6 @@ export function validateEvidenceRecord(item: EvidenceItem) {
   if(!item.title.trim()) problems.push('Missing exhibit title')
   if(!item.description.trim()) problems.push('Missing exhibit description')
   if(!item.custody.length) problems.push('Missing chain-of-custody event')
+  if(item.fileName && !item.fingerprint) problems.push('Attached file is missing a cryptographic fingerprint')
   return {valid:problems.length===0,problems}
 }
