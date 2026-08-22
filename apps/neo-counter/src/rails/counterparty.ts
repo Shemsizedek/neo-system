@@ -1,4 +1,5 @@
 import type { PaymentObservation, Rail, RailQuote, ReadOnlyRail } from './types';
+import { quoteFromCesPacket } from './cesQuote';
 
 const COUNTERPARTY_API = import.meta.env.VITE_COUNTERPARTY_API || 'https://api.counterparty.io:4000/v2';
 const QUOTE_ENDPOINT = import.meta.env.VITE_NEO_COUNTER_QUOTE_ENDPOINT || '';
@@ -7,8 +8,11 @@ export class CounterpartyReadOnlyRail implements ReadOnlyRail {
   constructor(private readonly rail: Extract<Rail, 'XCP' | 'NOMNI'>) {}
 
   async quote(displayUsd: number): Promise<RailQuote> {
+    const cesQuote = await quoteFromCesPacket(this.rail, displayUsd);
+    if (cesQuote) return cesQuote;
+
     if (!QUOTE_ENDPOINT) {
-      throw new Error(`${this.rail} quote endpoint not configured`);
+      throw new Error(`${this.rail} quote unavailable: CES market packet has no fresh explicit USD quote and fallback endpoint is not configured`);
     }
 
     const url = new URL(QUOTE_ENDPOINT);
