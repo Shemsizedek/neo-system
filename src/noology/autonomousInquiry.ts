@@ -2,6 +2,8 @@ import { assessNineEtherealQuality, type NineEtherealAssessment } from './nineEt
 import { neoSyncSearch } from './neoSync'
 import { neoLearningSources } from './sourceFeeds'
 import { routeResearchQuestion, type RoutedResearchQuestion } from './researchRouter'
+import { fuseRetrievalResponses, type EvidenceFusionResult } from './evidenceFusion'
+import type { RetrievalResponse } from './retrievalAdapters'
 
 export type InquirySourceLane = 'NEO_LIBRARY'|'APPROVED_PRIMARY'|'EXTERNAL_PRIMARY'|'EXTERNAL_SECONDARY'
 export type InquiryClaimClass = 'SOURCE_STATES'|'NEO_SYNTHESIS'|'CORROBORATED'|'CONTESTED'|'OPEN_QUESTION'
@@ -68,6 +70,7 @@ export type ResearchDossier = {
   claims: DossierClaim[]
   unresolvedQuestions: string[]
   provenanceMap: Record<string, string[]>
+  fusion?: EvidenceFusionResult
   nineEthereal: NineEtherealAssessment
   publicationGate: 'PASS'|'REVIEW'|'HOLD'
   generatedAt: string
@@ -77,13 +80,14 @@ export const autonomousInquiryRules = [
   'Begin with the actual research question, not a preferred conclusion.',
   'Search NEO Library and approved primary sources before expanding to external reference material when relevant.',
   'Route each sub-question to the strongest relevant source domain before retrieval.',
+  'Fuse retrieved evidence before final claim synthesis: deduplicate records, resolve stable identifiers, preserve conflicts and build chronology.',
   'Source doctrine, NEO synthesis, external corroboration and unresolved conflict remain separate claim classes.',
   'A source may establish what it states without establishing that every statement is externally verified.',
   'Contrary evidence is retained and linked to the claim it challenges.',
   'Symbolic resemblance, shared terminology or institutional proximity may generate a lead but cannot independently establish derivation, ownership, conspiracy or causation.',
   'Legal, financial, identity, governance, medical and sacred-access conclusions are always human-review gated.',
   'No source rank, institutional prestige, popularity or search score may silently substitute for provenance.',
-  'The final dossier must expose its evidence chain, routing decisions, unresolved questions and quality assessment.'
+  'The final dossier must expose its evidence chain, fusion conflicts, routing decisions, unresolved questions and quality assessment.'
 ] as const
 
 const splitQuestion = (question: string) => {
@@ -148,13 +152,18 @@ export function buildResearchDossier(
   evidence: EvidenceRecord[],
   claims: DossierClaim[],
   unresolvedQuestions: string[] = [],
-  generatedAt = new Date()
+  generatedAt = new Date(),
+  fusion?: EvidenceFusionResult
 ): ResearchDossier {
   const plan = buildInquiryPlan(inquiry)
   const refs = evidence.map(item => `${item.sourceTitle} — ${item.locator}`).filter(Boolean)
   const contraryPreserved = claims.every(claim => Array.isArray(claim.contraryEvidenceIds))
   const claimsQualified = claims.every(claim => claim.claimClass && Number.isFinite(claim.confidence))
   const reasoningVisible = claims.every(claim => claim.supportingEvidenceIds.length > 0 || claim.claimClass === 'OPEN_QUESTION')
+  const fusionRisks = fusion ? [
+    ...fusion.conflicts.filter(item => item.severity === 'HIGH' && item.resolution === 'UNRESOLVED').map(item => `Unresolved ${item.type} conflict: ${item.subjectKey}`),
+    ...fusion.missingLinks.filter(item => item.priority === 'HIGH').map(item => item.description)
+  ] : []
   const quality = assessNineEtherealQuality({
     sourceRefs: refs,
     distinguishesSourceFromSynthesis: true,
@@ -165,9 +174,9 @@ export function buildResearchDossier(
     respectsRightsAndDignity: true,
     reciprocalBenefit: true,
     considersLivingSystems: true,
-    editorialQuality: unresolvedQuestions.length ? 7 : 9,
+    editorialQuality: unresolvedQuestions.length || fusionRisks.length ? 7 : 9,
     consequenceReview: true,
-    unresolvedRisks: inquiry.impact === 'HIGH' && unresolvedQuestions.length ? unresolvedQuestions : []
+    unresolvedRisks: inquiry.impact === 'HIGH' ? [...unresolvedQuestions, ...fusionRisks] : fusionRisks
   })
   const provenanceMap = evidence.reduce<Record<string, string[]>>((map, item) => {
     map[item.id] = [item.sourceTitle, item.locator, item.sourceUrl ?? ''].filter(Boolean)
@@ -180,10 +189,24 @@ export function buildResearchDossier(
     claims,
     unresolvedQuestions,
     provenanceMap,
+    fusion,
     nineEthereal: quality,
     publicationGate: classifyDossierGate(plan.impact, quality),
     generatedAt: generatedAt.toISOString()
   }
+}
+
+export function buildFusedResearchDossier(
+  inquiry: InquiryQuestion,
+  retrievalResponses: RetrievalResponse[],
+  evidence: EvidenceRecord[],
+  claims: DossierClaim[],
+  unresolvedQuestions: string[] = [],
+  generatedAt = new Date()
+) {
+  const fusion = fuseRetrievalResponses(retrievalResponses, generatedAt)
+  const fusionQuestions = fusion.missingLinks.map(link => link.description)
+  return buildResearchDossier(inquiry, evidence, claims, [...unresolvedQuestions, ...fusionQuestions], generatedAt, fusion)
 }
 
 export function toNeopediaResearchDraft(dossier: ResearchDossier) {
@@ -195,6 +218,14 @@ export function toNeopediaResearchDraft(dossier: ResearchDossier) {
     claimCount: dossier.claims.length,
     evidenceCount: dossier.evidence.length,
     routedDomains: dossier.plan.routing.routes.map(route => route.domain),
+    fusion: dossier.fusion ? {
+      rawHitCount: dossier.fusion.rawHitCount,
+      fusedRecordCount: dossier.fusion.fusedRecordCount,
+      duplicateHitsCollapsed: dossier.fusion.duplicateHitsCollapsed,
+      conflictCount: dossier.fusion.conflicts.length,
+      missingLinkCount: dossier.fusion.missingLinks.length,
+      timelineCount: dossier.fusion.timeline.length
+    } : undefined,
     unresolvedQuestions: dossier.unresolvedQuestions,
     nineEthereal: dossier.nineEthereal,
     provenanceMap: dossier.provenanceMap,
@@ -206,7 +237,7 @@ export const neoResearchAgent = {
   id: 'NEO-AUTONOMOUS-INQUIRY',
   title: 'NEO Research Agent / Autonomous Inquiry Engine',
   role: 'EVIDENCE_PLANNING_PROVENANCE_RESEARCH_AND_DOSSIER_GENERATION',
-  loop: ['QUESTION','DECOMPOSE','ROUTE','PLAN','NEO_LIBRARY','APPROVED_PRIMARY','EXTERNAL_PRIMARY','EXTERNAL_SECONDARY','ENTITY_RESOLUTION','FACTOLOGY','PROVENANCE','COUNTER_INFLUENCE','CONFLICT_MAP','CLAIM_CLASSIFICATION','9_ETHEREAL_GATE','NEOPEDIA_DRAFT','HUMAN_REVIEW'] as const,
+  loop: ['QUESTION','DECOMPOSE','ROUTE','PLAN','RETRIEVE','EVIDENCE_FUSION','ENTITY_RESOLUTION','FACTOLOGY','PROVENANCE','COUNTER_INFLUENCE','CONFLICT_MAP','CLAIM_CLASSIFICATION','9_ETHEREAL_GATE','NEOPEDIA_DRAFT','HUMAN_REVIEW'] as const,
   rules: autonomousInquiryRules,
-  boundary: 'The agent may plan, route, retrieve, compare, classify and draft. It does not autonomously convert disputed claims into established facts or bypass review for high-impact conclusions.'
+  boundary: 'The agent may plan, route, retrieve, fuse, compare, classify and draft. It does not autonomously convert disputed claims into established facts or bypass review for high-impact conclusions.'
 } as const
