@@ -69,6 +69,16 @@ export type NomniMetric = {
   calculatedAt: string
 }
 
+export type CesMarketQuote = {
+  asset: string
+  quoteCurrency: 'USD'
+  unitPrice: number
+  sampleSize: number
+  sourceRecordIds: string[]
+  observedAt: string
+  methodology: string
+}
+
 export type CesSnapshot = {
   exchange: CesExchange
   records: CesNormalizedRecord[]
