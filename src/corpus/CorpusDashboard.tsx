@@ -37,7 +37,7 @@ export function CorpusDashboard(){
     <section className="corpuslayout">
       <div className="card corpuslist">
         <div className="paneltitle"><div><span>Authority Register</span><small>{results.length} matching records</small></div><BookOpen size={18}/></div>
-        <div className="corpusrows">{results.map(record=><button key={record.id} className={selectedId===record.id?'corpusrow selected':''||'corpusrow'} onClick={()=>setSelectedId(record.id)}><div><b className="mono">{record.id}</b><strong>{record.shortTitle??record.title}</strong><small>{record.instrumentType} • {layerLabels[record.authorityLayer]}</small></div><span className={'verify '+record.verification.toLowerCase()}>{record.verification.replaceAll('_',' ')}</span></button>)}</div>
+        <div className="corpusrows">{results.map(record=><button key={record.id} className={selectedId===record.id?'corpusrow selected':'corpusrow'} onClick={()=>setSelectedId(record.id)}><div><b className="mono">{record.id}</b><strong>{record.shortTitle??record.title}</strong><small>{record.instrumentType} • {layerLabels[record.authorityLayer]}</small></div><span className={'verify '+record.verification.toLowerCase()}>{record.verification.replaceAll('_',' ')}</span></button>)}</div>
       </div>
 
       <div className="card corpusdetail">
