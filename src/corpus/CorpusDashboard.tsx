@@ -2,6 +2,7 @@ import {useMemo,useState} from 'react'
 import {BookOpen,FileCheck2,FileLock2,Filter,Link2,Search,ShieldCheck} from 'lucide-react'
 import {corpusRecords} from './corpusData'
 import {corpusStats,getAuthorityGraph,searchCorpus,type AuthorityLayer} from './corpusEngine'
+import {corpusSources,sourcesForAuthority} from './sourceStore'
 import './corpus.css'
 
 const layerLabels: Record<AuthorityLayer,string> = {
@@ -21,11 +22,13 @@ export function CorpusDashboard(){
   const stats=useMemo(()=>corpusStats(corpusRecords),[])
   const results=useMemo(()=>searchCorpus(corpusRecords,{text:query,layers:layer?[layer]:undefined}),[query,layer])
   const graph=useMemo(()=>getAuthorityGraph(selectedId,corpusRecords),[selectedId])
+  const selectedSources=useMemo(()=>sourcesForAuthority(selectedId),[selectedId])
+  const transcriptions=corpusSources.filter(source=>Boolean(source.text)).length
 
   return <>
     <section className="stats corpusstats">
       <div className="card stat"><div><span>Corpus Records</span><strong>{stats.total}</strong><small>Seeded authority records</small></div><BookOpen size={22}/></div>
-      <div className="card stat"><div><span>Immutable Sources</span><strong>{stats.immutable}</strong><small>Historical originals locked</small></div><FileLock2 size={22}/></div>
+      <div className="card stat"><div><span>Source Objects</span><strong>{corpusSources.length}</strong><small>{transcriptions} text transcriptions</small></div><FileLock2 size={22}/></div>
       <div className="card stat"><div><span>Primary Verified</span><strong>{stats.verified}</strong><small>Independent primary-source confirmation</small></div><FileCheck2 size={22}/></div>
       <div className="card stat"><div><span>Verification Queue</span><strong>{stats.unverified}</strong><small>Requires source authentication</small></div><ShieldCheck size={22}/></div>
     </section>
@@ -56,12 +59,13 @@ export function CorpusDashboard(){
             <div><dt>Immutability</dt><dd>{graph.root.immutable?'LOCKED — addenda only':'Mutable working record'}</dd></div>
           </dl>
           <div className="tagrow">{graph.root.tags.map(tag=><span key={tag}>{tag}</span>)}</div>
-          {graph.root.sourceUrl&&<p className="sourcehint">Source locator recorded: {graph.root.sourceUrl}</p>}
+          {graph.root.sourceUrl&&<p className="sourcehint">Authority source locator: {graph.root.sourceUrl}</p>}
+          <div className="related"><div className="paneltitle"><div><span>Source Objects</span><small>Transcriptions, URLs, archives and later addenda are separate objects</small></div><FileCheck2 size={18}/></div>{selectedSources.length?<ul>{selectedSources.map(source=><li key={source.sourceId}><span className="mono">{source.sourceId}</span> {source.title} <small>• {source.kind} • {source.integrity}</small></li>)}</ul>:<p>No source object ingested yet for this authority.</p>}</div>
           <div className="related"><div className="paneltitle"><div><span>Authority Graph</span><small>Parent, child and cross-reference links</small></div><Link2 size={18}/></div>{graph.related.length?<ul>{graph.related.map(record=><li key={record.id}><button onClick={()=>setSelectedId(record.id)}><span className="mono">{record.id}</span> {record.shortTitle??record.title}</button></li>)}</ul>:<p>No linked authorities recorded yet.</p>}</div>
         </>:<p>Select a Corpus authority.</p>}
       </div>
     </section>
 
-    <section className="card focus"><ShieldCheck size={26}/><h2>Corpus Integrity Rule</h2><p>Historical records are immutable. Corrections, later interpretation, verification findings and doctrinal developments are stored as separate addenda, authority notes or superseding instruments. The engine never silently rewrites an original source.</p></section>
+    <section className="card focus"><ShieldCheck size={26}/><h2>Corpus Integrity Rule</h2><p>Historical records are immutable. Corrections, later interpretation, verification findings and doctrinal developments are stored as separate addenda, authority notes or superseding instruments. Source ingestion records provenance and integrity without silently rewriting the original.</p></section>
   </>
 }
