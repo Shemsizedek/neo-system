@@ -15,6 +15,7 @@ The NEO System is a modular digital control plane for institutional administrati
 7. **World Marshals** — internal tribunal-process and hearing-support administration.
 8. **World Guards** — facility, event, humanitarian and protective-service planning.
 9. **World Defense System** — disaster readiness, continuity, cyber resilience and defensive logistics.
+10. **NEO Lingo Codex** — advisory plain-language translation with immutable source text, validated terminology, and strict separation from Pa Sarun and Temple authority.
 
 ## Architectural boundaries
 

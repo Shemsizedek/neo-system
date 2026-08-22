@@ -20,3 +20,4 @@ runtime:
     - neoLingoCodex
     - findNeoLingoTerm
     - translateNeoLingo
+    - validateNeoLingoCodex
