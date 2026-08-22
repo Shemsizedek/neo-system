@@ -1,5 +1,6 @@
 import { neoHall, neoLibrarySeed, findNeoHallItems } from './neoHall'
-import { neopedia, neopediaSeedArticles, searchNeopedia } from './neopedia'
+import { neopedia, searchNeopedia } from './neopedia'
+import { allNeopediaArticles, recursiveNeopediaStats } from './neopediaRecursive'
 import { monitorSource, monitorSourceRecords } from './monitorConstitution'
 
 export type NeoSyncDomain = 'HALL'|'LIBRARY'|'NEOPEDIA'|'MONITOR'
@@ -9,6 +10,8 @@ export type NeoSyncSnapshot = {
   hall: typeof neoHall
   libraryCount: number
   neopediaCount: number
+  generatedNeopediaCount: number
+  neopediaReviewRequired: number
   monitorRecordCount: number
   integrityRules: readonly string[]
 }
@@ -30,17 +33,22 @@ export const neoSync = {
     'Restricted sacred material may be indexed without exposing ritual detail publicly.',
     'Conflicting records coexist until the evidence graph resolves or preserves the dispute.',
     'Every revision must remain attributable and recoverable.',
-    'Search relevance is not truth status.'
+    'Search relevance is not truth status.',
+    'Recursive generation may create encyclopedia structure, but it may not upgrade a claim status beyond its source record.',
+    'Objects without adequate source locators remain REVIEW_REQUIRED rather than silently appearing complete.'
   ] as const
 }
 
 export function buildNeoSyncSnapshot(date = new Date()): NeoSyncSnapshot {
+  const stats = recursiveNeopediaStats()
   return {
     generatedAt: date.toISOString(),
     domains: ['HALL','LIBRARY','NEOPEDIA','MONITOR'],
     hall: neoHall,
     libraryCount: neoLibrarySeed.length,
-    neopediaCount: neopediaSeedArticles.length,
+    neopediaCount: allNeopediaArticles.length,
+    generatedNeopediaCount: stats.generatedArticles,
+    neopediaReviewRequired: stats.reviewRequired,
     monitorRecordCount: monitorSourceRecords.length,
     integrityRules: neoSync.integrityRules
   }
@@ -50,7 +58,7 @@ export function neoSyncSearch(query: string) {
   return {
     query,
     hall: findNeoHallItems(query),
-    neopedia: searchNeopedia(query),
+    neopedia: searchNeopedia(query, allNeopediaArticles),
     monitor: monitorSourceRecords.filter(record => {
       const text = `${record.title} ${record.summary} ${record.tags.join(' ')}`.toLowerCase()
       return query.toLowerCase().split(/\s+/).filter(Boolean).every(term => text.includes(term))
@@ -59,4 +67,4 @@ export function neoSyncSearch(query: string) {
   }
 }
 
-export { neoHall, neopedia }
+export { neoHall, neopedia, allNeopediaArticles }
