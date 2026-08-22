@@ -1,0 +1,177 @@
+version: "1.0"
+id: gisd-templist-curriculum-144
+name: "GISD Templist Curriculum — 144 Degrees"
+status: ACTIVE
+classification: SOURCE_SUPPLIED_DOCTRINE
+source_scope: "Canonical curriculum rules supplied by Dr. Lawiy Zodok Shamu-El in the Temple Degrees working session"
+
+preservation_rules:
+  - "Preserve Major Lesson names exactly; never rename or modernize them."
+  - "Use Templist as the primary learner/initiate term."
+  - "Reserve Noonebu for Elite/Elect Noocratic Society and Branch Temple No. 24 contexts."
+  - "Do not invent historical grips, passwords, tokens, rituals, quotations, or source claims."
+  - "Distinguish historical/manual-derived material from Temple curriculum interpretation and Noological synthesis."
+  - "When an exact Test of Study question has been supplied, reproduce it precisely without paraphrase."
+
+structure:
+  total_degrees: 144
+  major_lesson_degree_model: "Major Lessons 1-4 each contain 36 degrees; Major Lessons 5-9 are honorary/elect layers encompassed at 144° and do not replace the 144 numbered degree sequence."
+  theme_ranges:
+    - range: "1-36"
+      theme: Masonic
+    - range: "37-72"
+      theme: Magi
+    - range: "73-108"
+      theme: Shriner
+    - range: "109-144"
+      theme: Mystic
+    - range: "144"
+      theme: Elite
+      note: "Honorary Elect & Elite crown; encompasses Major Lessons 5-9."
+  element_rule:
+    known: "Degrees 1-118 map one-to-one to periodic atomic numbers 1-118."
+    etheric: "Degrees 119-144 map to Ether 1-26 as source-defined undiscovered/etheric curriculum elements; treat as doctrine/research framing, not established chemistry."
+
+major_lessons:
+  - number: 1
+    name: Christism
+    religious_order: "Holy Templist Ministries"
+    temple_lodge: "No. 1"
+    divine_house: Nut
+    deity: Sutekh
+    family: Bethuel
+    sacred_art: Trivium
+    study: "Degree of Christism By Dr. Malachi Z York / Universal Lessons Masonic Lodge, The Secret Degrees and Studies of E.A. Entered Apprentice / Q&A On Clandestine & Prince Hall by Dr. Malachi / Your Crown by Dr. Malachi Z. York / Regis Halliwell Poem / El Holy Injiyl by Dr. Malachi Z. York"
+  - number: 2
+    name: Mosesism
+    religious_order: "Holy Seed Baptist Synagogue"
+    temple_lodge: "No. 3"
+    divine_house: Set
+    deity: Nebthet
+    family: Zodok
+    sacred_art: Trivium
+    study: "Degree of Mosesism By Dr. Malachi Z York / Universal Lessons Masonic Lode, The Secret Degrees and Studies of F.C. Fellow Craft / Questions to Ask Series by Dr. Malachi Z. York / Holy Instructions by Prophet Noble Drew Ali / El Holy Torah By Dr. Malachi Z. York"
+  - number: 3
+    name: Muhammadism
+    religious_order: "Ansaaruallah Holy Shrine of Al Mahdhi"
+    temple_lodge: "No. 5"
+    divine_house: Mu
+    deity: Aset
+    family: Sayyid
+    sacred_art: Trivium
+    study: "Degree of Muhammedism By Dr. Malachi Z York / Universal Lessons Masonic Lodge - The Secret Degrees and Studies of M.M. Master Mason / Your Potential by Dr. Malchi Z York / Oral Sayings and Prophecies by Noble Drew Ali / El Holy Quraan by Dr. Malachi Z. York"
+  - number: 4
+    name: Sufism
+    religious_order: "Sons of Al Khidr"
+    temple_lodge: "No. 7"
+    divine_house: Nefu
+    deity: Asaru
+    sacred_art: Quadrivium
+    study: "Sons o f the Green Light Lessons Vol 1-12, And other S.G.L books By Dr. Malachi Z York / The Holy Koran Circle Seven, The 102's by Noble Drew Ali / El Suhuf by Dr. Malachi Z. York"
+  - number: 5
+    name: Kabalism
+    religious_order: "Sanhedrin Magi's"
+    temple_lodge: "No. 13"
+    divine_house: Ptah
+    deity: Nut
+    sacred_art: Quintivium
+    study: "The Handbook for the O.E.S order of the Eastern Star by Rev Dr. Malachi Z York / The Science of Healing / 360 Questions to Ask Series by Dr. Malachi Z. York / The Red Book (The Sacred Wisdom of the East) by Noble Drew Ali / The Book of Light by Dr. Malachi Z. York / Urim & Thummim by Dr. Malachi Z. York / Upanishads, Vedic Text"
+  - number: 6
+    name: Magism
+    religious_order: "Devotees of Shemsizedek"
+    temple_lodge: "No. 15"
+    divine_house: "Atum Re"
+    deity: Geb
+    sacred_art: Quintivium
+    study: "Ancient Mystic Order of Melchizedek A.M.O.M Degrees Vol. 1-12 By Dr. Malachi Z York / A.M.O.M Revelations / Boof Shamuel ( Shemesh) [The Sun God Tablet / El Annu Neter Katub] by Dr. Lawiy Zodok / The Holy Tablets by Dr. Malachi Z. York / The Dead Sea Scroll"
+  - number: 7
+    name: Summerianism
+    religious_order: "Shuyukh of Shemesh"
+    temple_lodge: "No. 27"
+    divine_house: "Amun Re"
+    deity: Tefnut
+    sacred_art: Quintivium
+    study: "The Holy Tablets, The Sumerian Bible By Dr. Malachi Z York / The Gold Book by Dr. Malachi Z. York / The Clear Vision Scroll Vol 1 by Dr. Lawiy Zodok / Gilgamesh Epic / Enuma Elish"
+  - number: 8
+    name: Shamanism
+    religious_order: "Hierophants of Amun-Ra"
+    temple_lodge: "No. 9"
+    divine_house: "Atun Re"
+    deity: Shu
+    family: Neb
+    sacred_art: Quintivium
+    study: "The AEO Guidence from the Masters Books, AEO Revelations Volumes, AEO Constitution By Dr. Malachi Z York. / AEO Initiation book by Dr. Malachi Z. York / Templist Scroll by Dr. Lawiy Zodok / Pa Ashutat by Dr. Malachi Z. York / Science of the Pyramids by Dr. Malachi Z. York / The Overcoming of Apep / The Book of the Dead by Dr. Malachi Z. York"
+  - number: 9
+    name: Gnosticism
+    religious_order: "Seamu of Annu"
+    temple_lodge: "No. 19"
+    divine_house: "Anun Re"
+    deity: Atum-Re
+    family: Nupu
+    sacred_art: Quintivium
+    study: "The Sacred Records of Atum-Re part 1& 2 By Dr. Malachi Z York / The New Ethiopian Order / Introduction to the Nature of Nature Series by Afroo Oonoo, The Neoteric Method by Dr. Lawiy Zodok"
+
+academic_arts:
+  trivium:
+    immutable: [Grammar, Logic, Rhetoric]
+    applies_to_major_lessons: [1, 2, 3]
+    neology_rule: "Noologists and Neophytes may use Neology to create new words and linguistic/alchemical formulas according to the law, grammar, etymology, and dialectics of the particular language."
+  quadrivium:
+    immutable: [Arithmetic, Geometry, "Harmonics / Music", Astronomy]
+    applies_to_major_lessons: [4]
+  quintivium:
+    attribution: "Created/codified by Dr. Lawiy Zodok Shamu-El as a higher-science extension of the liberal arts within this curriculum."
+    immutable: [Dialectics, Harmonics, Physics, Optics, Noology]
+    final_sacred_art: Noology
+    applies_to_major_lessons: [5, 6, 7, 8, 9]
+
+master_template:
+  - Major Lesson
+  - Element
+  - Temple Lodge
+  - Greeting
+  - Religious Order
+  - Divine House
+  - Deity
+  - Family
+  - Theme
+  - Degree Introduction
+  - Metal
+  - Star Constellation
+  - Grip
+  - Password
+  - Token
+  - Virtue
+  - Morale
+  - Principle
+  - Meaning of Degree
+  - Templist Interview Questions
+  - Lesson Overview
+  - Study of Degree
+  - Test of Study
+  - Sacred Art
+  - Academia
+  - Assignment
+  - Symbolism
+  - Labor/Career Knowledge
+  - Obligation of Profession
+  - Conclusion
+
+supplemental_curriculum:
+  neoteric_method: "The Neoteric Method by Dr. Lawiy Zodok — use where relevant to Noology, Neology, epistemology, dialectical reasoning, curriculum, governance, and higher science; do not fabricate quotations."
+  noocracy_papers: "The Noocracy Papers — use where relevant to noocratic governance, ethics, education, social organization, and Noological reasoning; do not fabricate quotations."
+  rekai:
+    name: "Ra-Ka Nous Reiki™ (Rekai™)"
+    doctrine: "Noological, Hika-based spiritual therapy system rooted in Ancient Egyptian Nous Field Science; practices and Nous Field cultivation precede symbols."
+    major_lesson_1_threshold: "Gifted to initiates who reach 36° of Major Lesson 1."
+    terms:
+      - "Cho Ku Rei → Sekhem → Sekhem Fork"
+      - "Sei He Ki → Ka → Ka Wave"
+      - "Hon Sha Ze Sho Nen → Djeneh / Behdet → Behdet Wing"
+      - "Dai Ko Myo → Ankh → Sa Shield + Ankh Alignment"
+      - "Grounding Extension → Shen → Shen Force"
+
+source_integrity:
+  doctrine_status: "Source-supplied/internal doctrine unless independently corroborated."
+  historical_claim_rule: "Historical claims from manuals or external traditions require source citation and must not be silently conflated with newly created Temple curriculum material."
+  science_claim_rule: "Ether elements 119-144, Nous Field metaphysics, and related claims remain doctrine/research hypotheses unless externally verified."
