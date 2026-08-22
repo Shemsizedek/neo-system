@@ -11,6 +11,7 @@ import {gasBoundary,gasDivisions,gasPrinciples,gasThreatCategories,readinessSumm
 import {assessmentPolicies,treasuryBoundary,treasuryCouncils,treasuryFunds,treasuryPrinciples,treasuryWorkflow,trustRoles} from './treasury/treasurySystem'
 import {BooksDashboard} from './books/BooksDashboard'
 import {CfoDashboard} from './cfo/CfoDashboard'
+import {CorpusDashboard} from './corpus/CorpusDashboard'
 
 const money=(n:number)=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(n)
 
@@ -96,7 +97,7 @@ export function App(){
 
       {active==='tribunal' && <section className="focusgrid"><div className="card focus"><Gavel size={26}/><h2>Case Review Pipeline</h2><p>E-File → docket → jurisdiction review → notice → evidence → record close → NEOsync final opinion → authorized disposition.</p><ul><li>Full-record review standard</li><li>Fact / allegation / evidence separation</li><li>Temple and external authority layers</li><li>Immutable audit trail</li></ul></div><div className="card focus"><HeartHandshake size={26}/><h2>Due Process Boundary</h2><p>The software records and analyzes internal proceedings. It does not impersonate a governmental court or create external jurisdiction by software declaration.</p></div></section>}
 
-      {active==='corpus' && <section className="focusgrid"><div className="card focus"><BookOpen size={26}/><h2>Immutable Historical Record</h2><p>Original bulletins, letter patents, canons, resolutions and historical drafts are preserved as issued. Later interpretation is stored as a separate addendum or authority note.</p></div><div className="card focus"><FileText size={26}/><h2>Authority Classification</h2><p>Divine • Ecclesiastical • Noocratic Constitutional • Administrative • Historical • United States • International.</p></div></section>}
+      {active==='corpus' && <CorpusDashboard/>}
 
       {active==='security' && <>
         <section className="principles">{gasPrinciples.map(p=><span key={p}>{p}</span>)}</section>
