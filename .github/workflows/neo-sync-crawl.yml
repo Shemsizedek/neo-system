@@ -1,0 +1,58 @@
+name: NEO Sync Crawl
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 */6 * * *'
+  push:
+    paths:
+      - 'scripts/neo-sync-crawl.mjs'
+      - 'src/noology/nineEtherealQuality.ts'
+      - 'src/noology/continualLearning.ts'
+      - 'src/noology/sourceFeeds.ts'
+      - '.github/workflows/neo-sync-crawl.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: neo-sync-crawl
+  cancel-in-progress: false
+
+jobs:
+  crawl:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Build validation
+        run: npm run build
+
+      - name: Run NEO Sync crawler
+        run: npm run crawl:neo
+
+      - name: Commit provenance state when changed
+        shell: bash
+        run: |
+          git config user.name "neo-sync-bot"
+          git config user.email "neo-sync-bot@users.noreply.github.com"
+          git add data/neo-sync
+          if git diff --cached --quiet; then
+            echo "No NEO Sync source changes to commit."
+            exit 0
+          fi
+          git commit -m "chore(neo-sync): update crawler provenance state"
+          git push
