@@ -1,4 +1,5 @@
 import { neoMaxims, type NeoMaxim } from './maxims'
+import { analyzeSmatPhase, type SmatPhase, type SmatCycleAnalysis } from './smatFourPhaseDoctrine'
 
 export type NeoEpistemicLens =
   | 'NEO_INDIGENOUS_HERMENEUTIC'
@@ -53,6 +54,8 @@ export type NeoClaimRecord = {
   hiddenMotiveAsserted?: boolean
   motiveDocumented?: boolean
   affiliationUsedAsProofOfWrongdoing?: boolean
+  /** Optional source-supplied or explicitly inferred SMAT phase. Inferences must remain labeled outside this field. */
+  smatPhase?: SmatPhase
 }
 
 export type NeoAlgoResult = {
@@ -61,6 +64,7 @@ export type NeoAlgoResult = {
   hangups: NoologicalHangup[]
   maximsActivated: NeoMaxim[]
   directives: string[]
+  smatCycle?: SmatCycleAnalysis
 }
 
 const addUnique = <T>(items: T[], value: T) => {
@@ -146,12 +150,19 @@ export function evaluateNeoClaim(claim: NeoClaimRecord): NeoAlgoResult {
     ;['NMX-010','NMX-011'].forEach(activate)
   }
 
+  const smatCycle = claim.smatPhase ? analyzeSmatPhase(claim.smatPhase) : undefined
+  if (smatCycle) {
+    directives.push(`SMAT four-phase analysis: ${smatCycle.directive}`)
+    directives.push('Do not treat the assigned SMAT phase as self-proving. Preserve whether the phase came directly from a source, was supplied by the researcher, or was inferred from evidence.')
+  }
+
   const lensOrder: NeoEpistemicLens[] = ['NEO_INDIGENOUS_HERMENEUTIC','DOCUMENTARY_TECHNICAL','EXTERNAL_RECOGNITION']
-  return { claimId: claim.id, lensOrder, hangups, maximsActivated: neoMaxims.filter(m => activatedIds.has(m.id)), directives }
+  return { claimId: claim.id, lensOrder, hangups, maximsActivated: neoMaxims.filter(m => activatedIds.has(m.id)), directives, smatCycle }
 }
 
 export function neoAlgoSummary(result: NeoAlgoResult): string {
   const hangups = result.hangups.length ? result.hangups.join(', ') : 'NONE'
   const maxims = result.maximsActivated.map(maxim => maxim.id).join(', ') || 'NONE'
-  return `NEO Algo ${result.claimId}: hangups=${hangups}; maxims=${maxims}`
+  const smat = result.smatCycle ? `; smat=${result.smatCycle.current.phase}->${result.smatCycle.next.phase}` : ''
+  return `NEO Algo ${result.claimId}: hangups=${hangups}; maxims=${maxims}${smat}`
 }
