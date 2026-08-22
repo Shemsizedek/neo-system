@@ -19,6 +19,14 @@ export const neoModules: NeoModule[] = [
     boundary: 'Digital decision-support; authorized human officers retain institutional authority.'
   },
   {
+    id: 'central-solution-complex',
+    name: 'Central Solution Office & Chaplaincy Private Chambers',
+    domain: 'Private Executive Deliberation, Delegation & Command',
+    description: 'Private executive complex comprising the Central Solution Office, Treaty Room, Central Solution Room, Chaplaincy Chamberroom and War Room. It supports confidential reading and rest, small meetings, delegation and command preparation, case and notice coordination, evidence provenance, resolutions, correspondence, crisis management and NEO System routing.',
+    status: 'FOUNDATION',
+    boundary: 'Private administrative decision-support only. The War Room is a secure coordination model inspired by the White House Situation Room concept; it does not create governmental, military, police, detention or coercive authority. Allegations remain allegations until supported, and external service, filing, enforcement and legal effect require authorized human action and applicable law.'
+  },
+  {
     id: 'tribunal',
     name: 'Inner Bar Temple Tribunal',
     domain: 'Tribunal & Case Review',
