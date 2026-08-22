@@ -1,0 +1,110 @@
+schema_version: "1.0"
+id: "NEO-ROUTER-001"
+name: "NEO Router"
+mode: "provider-neutral multiplatform orchestration"
+authority: "advisory; human decision owner retains execution authority"
+
+roles:
+  orchestrator:
+    primary: anthropic
+    product: Claude
+    fallbacks: [openai, gemini]
+  reasoning_backend:
+    primary: openai
+    product: ChatGPT / OpenAI API
+    fallbacks: [anthropic, gemini]
+  frontend_and_build:
+    primary: gemini
+    product: Gemini API
+    fallbacks: [openai, anthropic]
+
+portability:
+  contract: "mission envelope + provider adapter"
+  requirements:
+    - no provider-specific mission format
+    - server-side credentials only
+    - configurable model names
+    - health-based fallback
+    - bounded hops
+    - preserved provenance
+    - exportable audit records
+    - human approval for consequential action
+  future_provider_admission:
+    - implements invoke contract
+    - declares capabilities
+    - passes conformance and security tests
+    - supports timeout and cancellation
+    - has documented data-retention policy
+
+doctrine_profile:
+  sound_key: "#D"
+  reference_frequency_hz: 144
+  tesseract:
+    human_perspective:
+      direction: ascent
+      cycle: [777, 888, 999]
+      continuation: restart_at_777
+    angelic_perspective:
+      direction: descent
+      cycle: [999, 888, 777]
+      continuation: restart_at_999
+  cipher_domains:
+    - security
+    - practicality
+    - logic
+    - principles
+    - morale
+    - ethics
+  system_role: >
+    Foundational reasoning and rationale tesseract for NEOsync, NEO Algo,
+    the NEO Router, and the wider NEO System.
+  defensive_classification: "666"
+  technical_boundary: >
+    These cycles govern reasoning and review order. Etheric potential, crystal,
+    and metal concepts remain doctrine or research hypotheses until tied to a
+    measurable implementation. The values are not encryption algorithms,
+    physical security controls, or claims of immunity from compromise.
+
+security_baseline:
+  - least_privilege
+  - prompt_injection_screening
+  - secret_isolation
+  - output_schema_validation
+  - audit_logging_with_redaction
+  - provider_timeout_and_circuit_breaker
+  - human_approval_gates
+  - no_silent_authority_expansion
+  - no_claim_of_unhackability
+
+emerging_interface_readiness:
+  profile_id: "NEO-PSITRONIC-READINESS-001"
+  maturity: experimental_unverified
+  scope:
+    - applications
+    - software
+    - web
+    - internet_of_things
+    - media
+    - sensors
+    - devices
+    - wearables
+    - robotics
+    - assistive_interfaces
+  integration_contract:
+    transport: authenticated_event_envelope
+    adapter: sandboxed_capability_provider
+    telemetry: schema_validated_and_minimized
+    actuation: human_approval_required
+  mandatory_controls:
+    - explicit_informed_consent
+    - signed_device_identity
+    - least_privilege_capabilities
+    - encrypted_transport
+    - replay_protection
+    - local_kill_switch
+    - tamper_evident_audit_log
+    - measurable_reproducible_validation
+  evidence_boundary: >
+    Psitronic is a future-facing NEO research classification. The architecture
+    reserves safe interfaces for emerging technologies but does not treat any
+    unverified mechanism as operational, causal, safe, or effective.
