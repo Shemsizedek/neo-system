@@ -5,6 +5,7 @@ import {corpusSources,makeCitation,sourcesForAuthority} from '../corpus/sourceSt
 import {createEvidence,evidenceStats,setEvidenceStatus,type EvidenceKind} from './evidenceEngine'
 import {createOpinion,renderOpinionText,updateOpinionSection,validateOpinion,type TribunalOpinion} from './opinionBuilder'
 import {addCitationToCase,addEvidenceToCase,advanceCase,caseReadiness,citationMatrix,replaceEvidence,tribunalCases,type TribunalCase} from './tribunalEngine'
+import {TribunalPacketPanel} from './TribunalPacketPanel'
 
 export function TribunalDashboard(){
   const [caseFile,setCaseFile]=useState<TribunalCase>(tribunalCases[0])
@@ -48,7 +49,7 @@ export function TribunalDashboard(){
     <section className="stats">
       <div className="card stat"><div><span>Claim No.</span><strong>{caseFile.claimNo}</strong><small>{caseFile.caseType.replaceAll('_',' ')}</small></div><Gavel size={22}/></div>
       <div className="card stat"><div><span>Case Status</span><strong>{caseFile.status.replaceAll('_',' ')}</strong><small>Controlled lifecycle</small></div><Scale size={22}/></div>
-      <div className="card stat"><div><span>Evidence</span><strong>{evStats.total}</strong><small>{evStats.admitted} admitted • {evStats.offered} offered</small></div><FileText size={22}/></div>
+      <div className="card stat"><div><span>Evidence</span><strong>{evStats.total}</strong><small>{evStats.admitted} admitted • {evStats.hashed} hashed</small></div><FileText size={22}/></div>
       <div className="card stat"><div><span>Authorities</span><strong>{caseFile.citations.length}</strong><small>Validated Corpus citations</small></div><BookOpen size={22}/></div>
     </section>
 
@@ -78,6 +79,8 @@ export function TribunalDashboard(){
       <button className="primary" disabled={!evidenceTitle.trim()||!evidenceDescription.trim()} onClick={addExhibit}>Register exhibit</button>
       <div className="tablewrap"><table><thead><tr><th>Exhibit</th><th>Title</th><th>Kind</th><th>Status</th><th>Integrity</th><th>Custody</th><th>Action</th></tr></thead><tbody>{caseFile.evidence.map(item=><tr key={item.exhibitId}><td className="mono">{item.exhibitId}</td><td>{item.title}</td><td>{item.kind}</td><td>{item.status}</td><td>{item.integrity}</td><td>{item.custody.length} events</td><td>{item.status!=='ADMITTED'?<button onClick={()=>admit(item.exhibitId)}>Admit</button>:'—'}</td></tr>)}</tbody></table></div>
     </section>
+
+    <TribunalPacketPanel caseFile={caseFile} setCaseFile={setCaseFile} opinion={opinion}/>
 
     <section className="card tablecard">
       <div className="paneltitle"><div><span>Case Authority Matrix</span><small>Authority-source-proposition chain for the record</small></div><CheckCircle2 size={18}/></div>
