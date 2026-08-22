@@ -1,8 +1,8 @@
 import {useMemo,useState} from 'react'
 import {
   Activity, AlertTriangle, Banknote, Bitcoin, BookOpen, BriefcaseBusiness,
-  Building2, CircleDollarSign, FileText, Gauge, Gavel, HeartHandshake,
-  Landmark, Network, RefreshCw, Scale, Shield, ShieldCheck, Users, WalletCards
+  Building2, CircleDollarSign, FileText, Gauge, Gavel,
+  Landmark, Network, RefreshCw, Scale, Shield, ShieldCheck, WalletCards
 } from 'lucide-react'
 import {tellers,txs as seedTxs} from './mock'
 import type {Transaction} from './types'
@@ -12,6 +12,7 @@ import {assessmentPolicies,treasuryBoundary,treasuryCouncils,treasuryFunds,treas
 import {BooksDashboard} from './books/BooksDashboard'
 import {CfoDashboard} from './cfo/CfoDashboard'
 import {CorpusDashboard} from './corpus/CorpusDashboard'
+import {TribunalDashboard} from './tribunal/TribunalDashboard'
 
 const money=(n:number)=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(n)
 
@@ -71,15 +72,14 @@ export function App(){
         <section className="principles">{foundationalPrinciples.map(p=><span key={p}>{p}</span>)}</section>
         <section className="stats">
           <Stat label="System Modules" value={`${neoModules.length}`} sub="Integrated domains" Icon={Network}/>
-          <Stat label="Tribunal" value="READY" sub="Case-review foundation" Icon={Gavel}/>
-          <Stat label="Legal Corpus" value="ACTIVE" sub="Immutable source model" Icon={BookOpen}/>
+          <Stat label="Tribunal" value="CITED" sub="Corpus-linked case workflow" Icon={Gavel}/>
+          <Stat label="Legal Corpus" value="INGESTING" sub="Authority + source object model" Icon={BookOpen}/>
           <Stat label="Treasury" value="FOUNDATION" sub="NEO-TMS initialized" Icon={Landmark}/>
         </section>
         <section className="modulegrid">{neoModules.map(m=>{const Icon=iconMap[m.id]||Activity;return <article className="card module" key={m.id}><div className="modulehead"><Icon size={20}/><span className={'status '+m.status.toLowerCase()}>{m.status}</span></div><h2>{m.name}</h2><p className="domain">{m.domain}</p><p>{m.description}</p><div className="boundary"><ShieldCheck size={14}/><span>{m.boundary}</span></div></article>})}</section>
       </>}
 
       {active==='books' && <BooksDashboard/>}
-
       {active==='cfo' && <CfoDashboard/>}
 
       {active==='treasury' && <>
@@ -95,8 +95,7 @@ export function App(){
         <section className="card tablecard"><div className="paneltitle"><div><span>ETHA Transaction Stream</span><small>Authorization, settlement and risk state</small></div><AlertTriangle size={18}/></div><div className="tablewrap"><table><thead><tr><th>ID</th><th>Teller</th><th>Type</th><th>Route</th><th>Value</th><th>Risk</th><th>Status</th></tr></thead><tbody>{txs.map(t=><tr key={t.id}><td className="mono">{t.id}</td><td>{t.tellerId}</td><td>{t.type}</td><td>{t.source} → {t.destination}</td><td>{money(t.fiatValue)}</td><td>{t.risk}</td><td><span className={'pill '+t.status.toLowerCase()}>{t.status}</span></td></tr>)}</tbody></table></div></section>
       </>}
 
-      {active==='tribunal' && <section className="focusgrid"><div className="card focus"><Gavel size={26}/><h2>Case Review Pipeline</h2><p>E-File → docket → jurisdiction review → notice → evidence → record close → NEOsync final opinion → authorized disposition.</p><ul><li>Full-record review standard</li><li>Fact / allegation / evidence separation</li><li>Temple and external authority layers</li><li>Immutable audit trail</li></ul></div><div className="card focus"><HeartHandshake size={26}/><h2>Due Process Boundary</h2><p>The software records and analyzes internal proceedings. It does not impersonate a governmental court or create external jurisdiction by software declaration.</p></div></section>}
-
+      {active==='tribunal' && <TribunalDashboard/>}
       {active==='corpus' && <CorpusDashboard/>}
 
       {active==='security' && <>
