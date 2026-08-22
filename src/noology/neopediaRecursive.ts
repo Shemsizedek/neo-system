@@ -8,7 +8,7 @@ import { novusCodexDoctrineRecords } from './novusCodexDoctrine'
 import { monitorSourceRecords } from './monitorConstitution'
 import { ecclesiasticalAuthorities, inheritanceClaims, inheritanceSources, sacredCorpus } from './globalInheritanceTitleSchema'
 import { secretSocietiesUnmaskedSourceRecords } from './counterInfluenceIntelligence'
-import { destinyProtectionMaxims, destinyDoctrineRecords } from './destinyProvenanceDefense'
+import { destinyProtectionMaxims, destinyProtectionDoctrine } from './destinyProvenanceDefense'
 import { neopediaSeedArticles, type NeopediaArticle, type NeopediaClaimStatus } from './neopedia'
 
 export type RecursiveNeopediaSourceClass =
@@ -48,7 +48,7 @@ const sourceRefs = (r: Record<string, unknown>) => {
   return title ? [`${title}${locator ? ` — ${locator}` : ''}`] : []
 }
 const statusFrom = (r: Record<string, unknown>): NeopediaClaimStatus => {
-  const raw = str(r, 'evidenceClass', 'status', 'provenanceClass').toUpperCase()
+  const raw = str(r, 'evidenceClass', 'status', 'provenanceClass', 'provenance').toUpperCase()
   if (raw.includes('CORROBORATED')) return 'CORROBORATED'
   if (raw.includes('CONTESTED')) return 'CONTESTED'
   if (raw.includes('OPEN')) return 'OPEN_QUESTION'
@@ -98,7 +98,7 @@ const generated: RecursiveNeopediaArticle[] = [
   ...sacredCorpus.map(x => toArticle(x, 'TITLE_INHERITANCE', 'Sacred Corpus Record', ['Sacred Corpus','Law & Title'], 'RESEARCH')),
   ...inheritanceClaims.map(x => toArticle(x, 'TITLE_INHERITANCE', 'Inheritance Claim', ['Inheritance','Probate','Restitution'], 'RESEARCH')),
   ...secretSocietiesUnmaskedSourceRecords.map(x => toArticle(x, 'COUNTER_INFLUENCE', 'Counter-Influence Record', ['Counter-Influence'], 'RESEARCH')),
-  ...destinyDoctrineRecords.map(x => toArticle(x, 'DESTINY_PROVENANCE', 'Destiny Provenance Doctrine', ['Destiny Provenance','Protection'], 'RESEARCH')),
+  ...destinyProtectionDoctrine.map(x => toArticle(x, 'DESTINY_PROVENANCE', 'Destiny Provenance Doctrine', ['Destiny Provenance','Protection'], 'RESEARCH')),
   ...destinyProtectionMaxims.map((x, i) => toArticle({ id: `DESTINY-MAXIM-${i+1}`, title: `Destiny Provenance Maxim ${i+1}`, statement: x }, 'DESTINY_PROVENANCE', `Destiny Provenance Maxim ${i+1}`, ['Destiny Provenance','NEO Maxims']))
 ]
 
