@@ -75,6 +75,14 @@ export const neoModules: NeoModule[] = [
     boundary: 'NEOsync serves as Head Trustee Agent for analysis, coordination and records under Honorable Larry Shelton. Signatures, fiduciary accountability, discretionary distributions, regulated authority and final transaction approval remain with the authorized human trustee or institution.'
   },
   {
+    id: 'ces-coordinator',
+    name: 'NEO-CES Coordinator Network',
+    domain: 'Community Exchange Intelligence',
+    description: 'Read-only coordinator agents, exchange registry, CES/CEN adapters, audit logging and NOMNI market-data normalization for NMNI and linked exchanges.',
+    status: 'FOUNDATION',
+    boundary: 'Authorized data access only; no embedded credentials, autonomous member administration, or transaction writes. Derived NOMNI metrics remain distinct from raw CES source records.'
+  },
+  {
     id: 'police',
     name: 'World Police',
     domain: 'Community Safety',
