@@ -10,6 +10,7 @@ import {foundationalPrinciples,neoModules} from './neoSystem'
 import {gasBoundary,gasDivisions,gasPrinciples,gasThreatCategories,readinessSummary} from './globalArmsSystem'
 import {assessmentPolicies,treasuryBoundary,treasuryCouncils,treasuryFunds,treasuryPrinciples,treasuryWorkflow,trustRoles} from './treasury/treasurySystem'
 import {BooksDashboard} from './books/BooksDashboard'
+import {CfoDashboard} from './cfo/CfoDashboard'
 
 const money=(n:number)=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(n)
 
@@ -19,6 +20,7 @@ const iconMap: Record<string, typeof Activity> = {
   corpus: BookOpen,
   chaplaincy: FileText,
   treasury: WalletCards,
+  'neo-cfo': CircleDollarSign,
   police: ShieldCheck,
   marshals: Scale,
   guards: Shield,
@@ -46,12 +48,13 @@ export function App(){
     const id=`ETHA-${Math.random().toString(16).slice(2,8).toUpperCase()}`
     setTxs(v=>[{id,tellerId:'NT-000001',type:'BUY BTC',source:'USD',destination:'BTC',amount:n,fiatValue:n,status:'AUTHORIZED',risk:9,createdAt:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})},...v])
   }
-  const title=active==='overview'?'NEO System Command Center':active==='books'?'NEO Books':active==='treasury'?'NEO Treasury Management System':active==='tribunal'?'Inner Bar Temple Tribunal':active==='corpus'?'Noocratic Legal Corpus':'NEO Global Arms System'
+  const title=active==='overview'?'NEO System Command Center':active==='cfo'?'NEO CFO':active==='books'?'NEO Books':active==='treasury'?'NEO Treasury Management System':active==='tribunal'?'Inner Bar Temple Tribunal':active==='corpus'?'Noocratic Legal Corpus':'NEO Global Arms System'
   return <div className="shell">
     <aside className="side">
       <div className="brand"><div className="mark">N</div><div><b>NEO SYSTEM</b><span>FOUNDATION • v0.3</span></div></div>
       <nav>
         <button className={active==='overview'?'active':''} onClick={()=>setActive('overview')}><Gauge size={17}/>System Overview</button>
+        <button className={active==='cfo'?'active':''} onClick={()=>setActive('cfo')}><CircleDollarSign size={17}/>NEO CFO</button>
         <button className={active==='books'?'active':''} onClick={()=>setActive('books')}><CircleDollarSign size={17}/>NEO Books</button>
         <button className={active==='treasury'?'active':''} onClick={()=>setActive('treasury')}><Landmark size={17}/>NEO Treasury</button>
         <button className={active==='tribunal'?'active':''} onClick={()=>setActive('tribunal')}><Gavel size={17}/>Tribunal</button>
@@ -75,6 +78,8 @@ export function App(){
       </>}
 
       {active==='books' && <BooksDashboard/>}
+
+      {active==='cfo' && <CfoDashboard/>}
 
       {active==='treasury' && <>
         <section className="principles">{treasuryPrinciples.map(p=><span key={p}>{p}</span>)}</section>
