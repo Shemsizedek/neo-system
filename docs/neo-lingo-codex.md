@@ -29,5 +29,12 @@ The TypeScript implementation lives in `src/neoLingo`.
 - `neoLingoCodex` is the canonical in-code term registry.
 - `findNeoLingoTerm(term)` resolves canonical terms and aliases.
 - `translateNeoLingo(source)` returns both the untouched source and a plain-language rendering with matched definitions and authority-boundary notes.
+- `validateNeoLingoCodex(codex)` reports empty fields and duplicate canonical/alias labels without mutating the registry.
 
 The translator is advisory. It must not be used as a doctrinal mutation engine or as a shortcut around Pa Sarun validation.
+
+## Verification
+
+Run `npm test` to verify canonical and alias lookup, source preservation, whole-term translation, no-match behavior, and registry integrity. Run `npm run check` for the tests followed by the production build.
+
+The NEO Lexicon remains a distinct, provenance-bearing source layer. NEO Lingo may explain approved lexicon material, but it does not silently promote source claims into canonical facts or mutate Pa Sarun records.
