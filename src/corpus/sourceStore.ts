@@ -15,6 +15,8 @@ export interface CorpusSource {
   integrity: SourceIntegrity
   fingerprint?: string
   notes?: string
+  parentSourceId?: string
+  addendumFor?: string
 }
 
 export interface CorpusCitation {
@@ -37,6 +39,28 @@ export const corpusSources: CorpusSource[] = [
     immutable:true,
     integrity:'UNHASHED',
     notes:'Historical transcription supplied in the NEO System working record; preserved without silent correction.'
+  },
+  {
+    sourceId:'SRC-BUL-005-WEB',
+    authorityId:'NLC-BUL-005',
+    kind:'URL',
+    title:'World Temple Letter Bulletin No. 5 — source locator',
+    locator:'https://holytemples.school.blog/2025/02/16/teamwork-triumphs/',
+    suppliedBy:'USER',
+    immutable:true,
+    integrity:'UNHASHED'
+  },
+  {
+    sourceId:'SRC-BUL-005-ADD-001',
+    authorityId:'NLC-BUL-005',
+    kind:'ADDENDUM',
+    title:'Bulletin No. 5 — Indigenous Recovery Doctrine addendum record',
+    suppliedBy:'USER',
+    immutable:true,
+    integrity:'UNHASHED',
+    parentSourceId:'SRC-BUL-005-WEB',
+    addendumFor:'SRC-BUL-005-WEB',
+    notes:'Addendum lineage record only. The historical Bulletin remains unchanged; later interpretation is stored separately.'
   },
   {
     sourceId:'SRC-BUL-007-WEB',
@@ -93,6 +117,16 @@ export async function hashAllSources(sources: CorpusSource[]) {
 
 export function sourcesForAuthority(authorityId: string, sources = corpusSources) {
   return sources.filter(source=>source.authorityId===authorityId)
+}
+
+export function sourceLineage(sourceId: string, sources = corpusSources) {
+  const root = sources.find(source=>source.sourceId===sourceId)
+  if(!root) return {root:undefined,parent:undefined,addenda:[] as CorpusSource[]}
+  const parentId = root.parentSourceId ?? root.addendumFor
+  const parent = parentId ? sources.find(source=>source.sourceId===parentId) : undefined
+  const baseId = parent?.sourceId ?? root.sourceId
+  const addenda = sources.filter(source=>source.addendumFor===baseId || source.parentSourceId===baseId)
+  return {root,parent,addenda}
 }
 
 export function makeCitation(input: Omit<CorpusCitation,'citationId'>): CorpusCitation {
