@@ -1,4 +1,4 @@
-import { DOCTRINE_PROFILE, HUMAN_APPROVAL_ACTIONS, PROVIDER_ROLES } from './policy.mjs'
+import { DOCTRINE_PROFILE, EMERGING_INTERFACE_PROFILE, HUMAN_APPROVAL_ACTIONS, PROVIDER_ROLES } from './policy.mjs'
 
 const DEFAULT_ROUTES = Object.freeze({
   orchestration: ['anthropic', 'openai', 'gemini'],
@@ -26,6 +26,7 @@ export function createNeoRouter({ providers, maxHops = 6, routes = DEFAULT_ROUTE
       candidates,
       approvalRequired: (mission.actions ?? []).some((action) => HUMAN_APPROVAL_ACTIONS.has(action)),
       doctrine: DOCTRINE_PROFILE,
+      emergingInterfaces: EMERGING_INTERFACE_PROFILE,
     }
   }
 

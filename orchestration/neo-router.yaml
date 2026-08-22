@@ -75,3 +75,36 @@ security_baseline:
   - human_approval_gates
   - no_silent_authority_expansion
   - no_claim_of_unhackability
+
+emerging_interface_readiness:
+  profile_id: "NEO-PSITRONIC-READINESS-001"
+  maturity: experimental_unverified
+  scope:
+    - applications
+    - software
+    - web
+    - internet_of_things
+    - media
+    - sensors
+    - devices
+    - wearables
+    - robotics
+    - assistive_interfaces
+  integration_contract:
+    transport: authenticated_event_envelope
+    adapter: sandboxed_capability_provider
+    telemetry: schema_validated_and_minimized
+    actuation: human_approval_required
+  mandatory_controls:
+    - explicit_informed_consent
+    - signed_device_identity
+    - least_privilege_capabilities
+    - encrypted_transport
+    - replay_protection
+    - local_kill_switch
+    - tamper_evident_audit_log
+    - measurable_reproducible_validation
+  evidence_boundary: >
+    Psitronic is a future-facing NEO research classification. The architecture
+    reserves safe interfaces for emerging technologies but does not treat any
+    unverified mechanism as operational, causal, safe, or effective.

@@ -61,3 +61,9 @@ Etheric potential and the role of crystals and metals in technological hardware 
 ## Adding another platform
 
 Implement the adapter contract, declare its capabilities, add it to the relevant route order, and run conformance/security tests. This keeps NEO portable across present and future platforms without rewriting mission logic.
+
+## Psitronic and emerging-interface readiness
+
+`NEO-PSITRONIC-READINESS-001` reserves a vendor-neutral integration boundary for future interfaces across applications, software, the web, IoT, media, sensors, devices, wearables, robotics, and assistive systems. Integrations use authenticated event envelopes and sandboxed capability adapters so new technology can join without receiving blanket system authority.
+
+Any device input must be schema-validated and minimized. Any physical or consequential actuation requires explicit informed consent, signed device identity, least privilege, replay protection, a local kill switch, tamper-evident auditing, and human approval. A psitronic claim stays classified as experimental and unverified until a measurable mechanism and reproducible test demonstrate otherwise. This preserves openness to future technology while keeping the security model grounded and auditable.

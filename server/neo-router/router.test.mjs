@@ -46,3 +46,12 @@ test('exposes both cyclical tesseract perspectives', () => {
   assert.deepEqual(plan.doctrine.tesseract.angelicDescent, [999, 888, 777])
   assert.equal(plan.doctrine.tesseract.behavior, 'cyclical_restart')
 })
+
+test('requires guarded experimental handling for future psitronic interfaces', () => {
+  const router = createNeoRouter({ providers: [provider('anthropic')] })
+  const plan = router.plan({ missionId: 'M-6', objective: 'Assess an emerging device', capability: 'reasoning' })
+  assert.equal(plan.emergingInterfaces.maturity, 'experimental_unverified')
+  assert.ok(plan.emergingInterfaces.surfaces.includes('internet_of_things'))
+  assert.ok(plan.emergingInterfaces.requiredControls.includes('local_kill_switch'))
+  assert.ok(plan.emergingInterfaces.requiredControls.includes('human_approval_for_actuation'))
+})
