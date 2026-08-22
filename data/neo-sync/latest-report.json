@@ -1,0 +1,27 @@
+{
+  "generatedAt": "2026-08-22T07:01:25.527Z",
+  "architecture": "crawler -> hash -> revision diff -> candidate graph relations -> 9-Ethereal quality gate -> Neopedia draft/review queue",
+  "sources": [
+    {
+      "sourceId": "SRC-HOLY-TABLETS-WEB",
+      "title": "The Holy Tablets by Dr. Malachi Z. York",
+      "rootUrl": "https://holytablets.nuwaubianfacts.com/",
+      "pages": 30,
+      "errors": []
+    },
+    {
+      "sourceId": "SRC-WORLD-TEMPLE-WEB",
+      "title": "World Temple — Omniversal Church",
+      "rootUrl": "https://holytemples.school.blog/",
+      "pages": 40,
+      "errors": []
+    }
+  ],
+  "changes": 70,
+  "candidateRelations": 344,
+  "neopediaDrafts": 70,
+  "reviewQueuePath": "data/neo-sync/review-queue.json",
+  "relationQueuePath": "data/neo-sync/candidate-relations.json",
+  "draftsPath": "data/neo-sync/neopedia-drafts.json",
+  "statePath": "data/neo-sync/crawler-state.json"
+}
