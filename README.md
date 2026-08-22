@@ -12,6 +12,7 @@ The repository began as **NEO Teller — ORIGIN**, a Bitcoin / Counterparty XCP 
 - **NEO Algo & World Credit Clock**
 - World Chaplaincy E-File
 - NEO Teller / Treasury sandbox
+- **NEO CFO — Larry Shelton Estate finance command and trustee-agent coordination**
 - Noogle knowledge engine
 - Omnitrix browser shell
 - Bitcoin / Counterparty XCP read-only browser surfaces

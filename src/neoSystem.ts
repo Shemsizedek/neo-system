@@ -67,6 +67,14 @@ export const neoModules: NeoModule[] = [
     boundary: 'Institutional treasury framework only; no live banking, custody, taxation, seizure, legal-tender or governmental authority is created by the software.'
   },
   {
+    id: 'neo-cfo',
+    name: 'NEO CFO',
+    domain: 'Estate Finance, Cash Flow, Credit & Investment Coordination',
+    description: 'Finance command layer for the Larry Shelton Estate, coordinating NEOsync, NEO Books, LEDGER and STEWARD across cash management, bills, credit, investing, trading-risk controls and trustee reporting.',
+    status: 'FOUNDATION',
+    boundary: 'NEOsync serves as Head Trustee Agent for analysis, coordination and records under Honorable Larry Shelton. Signatures, fiduciary accountability, discretionary distributions, regulated authority and final transaction approval remain with the authorized human trustee or institution.'
+  },
+  {
     id: 'police',
     name: 'World Police',
     domain: 'Community Safety',
