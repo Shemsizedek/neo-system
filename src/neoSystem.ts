@@ -19,6 +19,14 @@ export const neoModules: NeoModule[] = [
     boundary: 'Digital decision-support; authorized human officers retain institutional authority.'
   },
   {
+    id: 'central-solutions-control-room',
+    name: 'Central Solutions Control Room',
+    domain: 'Case, Notice, Evidence & Resolution Coordination',
+    description: 'Central operational workspace for case intake, notices, cease-and-desist preparation, invoice records, evidence provenance, resolutions, correspondence and legal/historical research routing across the NEO System.',
+    status: 'FOUNDATION',
+    boundary: 'Administrative decision-support only. Allegations remain allegations until supported; invoices and notices are records or claims rather than adjudications; external service, filing, enforcement and legal effect require authorized human action and applicable external law.'
+  },
+  {
     id: 'tribunal',
     name: 'Inner Bar Temple Tribunal',
     domain: 'Tribunal & Case Review',
