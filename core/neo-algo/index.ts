@@ -30,3 +30,4 @@ export function runNeoAlgo(mission: NeoMission, cycle: NeoCycle = "human"): NeoA
 export * from "./types.js";
 export * from "./risk.js";
 export * from "./cycle.js";
+export * from "./templistCurriculum.js";
