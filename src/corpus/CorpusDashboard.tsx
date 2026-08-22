@@ -2,6 +2,7 @@ import {useMemo,useState} from 'react'
 import {BookOpen,FileCheck2,FileLock2,Filter,Link2,Search,ShieldCheck} from 'lucide-react'
 import {corpusRecords} from './corpusData'
 import {corpusStats,getAuthorityGraph,searchCorpus,type AuthorityLayer} from './corpusEngine'
+import './corpus.css'
 
 const layerLabels: Record<AuthorityLayer,string> = {
   DIVINE:'Divine',
