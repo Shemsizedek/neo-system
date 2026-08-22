@@ -1,0 +1,58 @@
+schema_version: "1.0"
+id: "NEO-ROUTER-001"
+name: "NEO Router"
+mode: "provider-neutral multiplatform orchestration"
+authority: "advisory; human decision owner retains execution authority"
+
+roles:
+  orchestrator:
+    primary: anthropic
+    product: Claude
+    fallbacks: [openai, gemini]
+  reasoning_backend:
+    primary: openai
+    product: ChatGPT / OpenAI API
+    fallbacks: [anthropic, gemini]
+  frontend_and_build:
+    primary: gemini
+    product: Gemini API
+    fallbacks: [openai, anthropic]
+
+portability:
+  contract: "mission envelope + provider adapter"
+  requirements:
+    - no provider-specific mission format
+    - server-side credentials only
+    - configurable model names
+    - health-based fallback
+    - bounded hops
+    - preserved provenance
+    - exportable audit records
+    - human approval for consequential action
+  future_provider_admission:
+    - implements invoke contract
+    - declares capabilities
+    - passes conformance and security tests
+    - supports timeout and cancellation
+    - has documented data-retention policy
+
+doctrine_profile:
+  sound_key: "#D"
+  reference_frequency_hz: 144
+  sequence: [999, 888, 999]
+  defensive_classification: "666"
+  technical_boundary: >
+    These values are NEO doctrine metadata for policy identity, review cadence,
+    and defensive classification. They are not encryption algorithms, physical
+    security controls, or claims of immunity from compromise.
+
+security_baseline:
+  - least_privilege
+  - prompt_injection_screening
+  - secret_isolation
+  - output_schema_validation
+  - audit_logging_with_redaction
+  - provider_timeout_and_circuit_breaker
+  - human_approval_gates
+  - no_silent_authority_expansion
+  - no_claim_of_unhackability
