@@ -4,15 +4,17 @@ import type {TribunalRole} from './rbac'
 export interface ServerSession {token:string;expiresAt:string;user:{id:string;email:string;displayName:string}}
 export interface ServerWorkspace {id:string;name:string;role:TribunalRole;createdAt:string}
 export interface CaseSyncResult {claimNo:string;revision:number;updatedAt:string}
+export interface ServerHealth {ok:boolean;service:string;version:string}
 
 export class TribunalServerApi {
   constructor(public baseUrl='http://localhost:8787', public token=''){}
   private async request<T>(path:string,init:RequestInit={}):Promise<T>{
-    const response=await fetch(`${this.baseUrl}${path}`,{...init,headers:{'content-type':'application/json',...(this.token?{authorization:`Bearer ${this.token}`}:{}) ,...(init.headers||{})}})
+    const response=await fetch(`${this.baseUrl.replace(/\/$/,'')}${path}`,{...init,headers:{'content-type':'application/json',...(this.token?{authorization:`Bearer ${this.token}`}:{}) ,...(init.headers||{})}})
     const payload=await response.json().catch(()=>({error:`HTTP ${response.status}`}))
     if(!response.ok) throw new Error(payload.error||`HTTP ${response.status}`)
     return payload as T
   }
+  health(){return this.request<ServerHealth>('/health')}
   register(input:{email:string;displayName:string;password:string}){return this.request('/v1/auth/register',{method:'POST',body:JSON.stringify(input)})}
   async login(input:{email:string;password:string}){const session=await this.request<ServerSession>('/v1/auth/login',{method:'POST',body:JSON.stringify(input)});this.token=session.token;return session}
   createWorkspace(name:string){return this.request<ServerWorkspace>('/v1/workspaces',{method:'POST',body:JSON.stringify({name})})}
