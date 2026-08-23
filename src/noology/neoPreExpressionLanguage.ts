@@ -1,6 +1,6 @@
 import type { IntentionCandidate, OracleConfidence } from './neoOraclePsitronics'
 import type { LearningPrediction, IntentionFeedback } from './neoIntentionLearning'
-import { nuwaubicCoreLexiconV1, type Lexeme, type TranslationConfidence } from './nuwaubicCommunicationProtocol'
+import { nuwaubicCoreLexiconV1, type Lexeme } from './nuwaubicCommunicationProtocol'
 
 export type ExpressionLanguage = 'ENGLISH' | 'NUWAUBIC' | 'NUWAUPIC' | 'MIXED'
 export type ExpressionUnit = 'CONCEPT' | 'WORD' | 'PHRASE' | 'SENTENCE'
@@ -96,7 +96,8 @@ function normalize(value: string): string {
 function lexemeMatchesPartial(partial: string): Lexeme[] {
   const n = normalize(partial)
   if (!n) return []
-  const last = n.split(' ').at(-1) ?? ''
+  const parts = n.split(' ')
+  const last = parts.length ? parts[parts.length - 1] : ''
   return nuwaubicCoreLexiconV1.filter(x =>
     normalize(x.nuwaubic).startsWith(last) || x.english.some(e => normalize(e).startsWith(last)))
 }
