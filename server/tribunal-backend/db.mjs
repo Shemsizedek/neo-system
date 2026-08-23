@@ -10,6 +10,7 @@ export function openTribunalDb(path=defaultPath){
   db.exec(`
     PRAGMA journal_mode=WAL;
     PRAGMA foreign_keys=ON;
+    CREATE TABLE IF NOT EXISTS schema_meta(version INTEGER NOT NULL,applied_at TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS users(
       id TEXT PRIMARY KEY,
       email TEXT UNIQUE NOT NULL,
@@ -54,6 +55,33 @@ export function openTribunalDb(path=defaultPath){
       updated_at TEXT NOT NULL,
       created_at TEXT NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS efiles(
+      filing_id TEXT PRIMARY KEY,
+      workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+      claim_no TEXT NOT NULL,
+      envelope_json TEXT NOT NULL,
+      filed_by TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS notices(
+      notice_id TEXT PRIMARY KEY,
+      workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+      claim_no TEXT NOT NULL,
+      envelope_json TEXT NOT NULL,
+      status TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS hearings(
+      hearing_id TEXT PRIMARY KEY,
+      workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+      claim_no TEXT NOT NULL,
+      envelope_json TEXT NOT NULL,
+      starts_at TEXT NOT NULL,
+      status TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    );
     CREATE TABLE IF NOT EXISTS audit_log(
       seq INTEGER PRIMARY KEY AUTOINCREMENT,
       workspace_id TEXT NOT NULL,
@@ -66,6 +94,11 @@ export function openTribunalDb(path=defaultPath){
       created_at TEXT NOT NULL
     );
     CREATE INDEX IF NOT EXISTS idx_audit_workspace_seq ON audit_log(workspace_id,seq);
+    CREATE INDEX IF NOT EXISTS idx_efiles_workspace_claim ON efiles(workspace_id,claim_no);
+    CREATE INDEX IF NOT EXISTS idx_notices_workspace_claim ON notices(workspace_id,claim_no);
+    CREATE INDEX IF NOT EXISTS idx_hearings_workspace_claim ON hearings(workspace_id,claim_no);
   `)
+  const current=db.prepare('SELECT MAX(version) AS version FROM schema_meta').get()?.version||0
+  if(current<1)db.prepare('INSERT INTO schema_meta(version,applied_at) VALUES(1,?)').run(new Date().toISOString())
   return db
 }
