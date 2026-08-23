@@ -1,0 +1,71 @@
+import {mkdirSync} from 'node:fs'
+import {dirname,resolve} from 'node:path'
+import {DatabaseSync} from 'node:sqlite'
+
+const defaultPath=resolve(process.cwd(),process.env.NEO_TRIBUNAL_DB || '.data/neo-tribunal.sqlite')
+mkdirSync(dirname(defaultPath),{recursive:true})
+
+export function openTribunalDb(path=defaultPath){
+  const db=new DatabaseSync(path)
+  db.exec(`
+    PRAGMA journal_mode=WAL;
+    PRAGMA foreign_keys=ON;
+    CREATE TABLE IF NOT EXISTS users(
+      id TEXT PRIMARY KEY,
+      email TEXT UNIQUE NOT NULL,
+      display_name TEXT NOT NULL,
+      password_hash TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS sessions(
+      token_hash TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      expires_at TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS workspaces(
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      created_by TEXT NOT NULL REFERENCES users(id),
+      created_at TEXT NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS memberships(
+      workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      role TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      PRIMARY KEY(workspace_id,user_id)
+    );
+    CREATE TABLE IF NOT EXISTS invitations(
+      token_hash TEXT PRIMARY KEY,
+      workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+      email TEXT NOT NULL,
+      role TEXT NOT NULL,
+      expires_at TEXT NOT NULL,
+      accepted_at TEXT,
+      invited_by TEXT NOT NULL REFERENCES users(id),
+      created_at TEXT NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS cases(
+      claim_no TEXT PRIMARY KEY,
+      workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+      envelope_json TEXT NOT NULL,
+      revision INTEGER NOT NULL DEFAULT 1,
+      updated_at TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS audit_log(
+      seq INTEGER PRIMARY KEY AUTOINCREMENT,
+      workspace_id TEXT NOT NULL,
+      actor_user_id TEXT NOT NULL,
+      action TEXT NOT NULL,
+      subject TEXT NOT NULL,
+      payload_hash TEXT NOT NULL,
+      previous_hash TEXT,
+      entry_hash TEXT NOT NULL UNIQUE,
+      created_at TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_audit_workspace_seq ON audit_log(workspace_id,seq);
+  `)
+  return db
+}
