@@ -10,7 +10,8 @@
     "test":"node --test server/neo-router/*.test.mjs server/neo-prime/*.test.mjs core/neo-algo/*.test.mjs server/tribunal-backend/*.test.mjs",
     "preview":"vite preview",
     "crawl:neo":"node scripts/neo-sync-crawl.mjs",
-    "tribunal:server":"node server/tribunal-backend/server.mjs"
+    "tribunal:server":"node server/tribunal-backend/server.mjs",
+    "tribunal:backup":"node server/tribunal-backend/backup.mjs"
   },
   "dependencies": {"react":"^19.1.1","react-dom":"^19.1.1","lucide-react":"^0.468.0"},
   "devDependencies": {"@vitejs/plugin-react":"^4.3.4","vite":"^6.0.7","typescript":"^5.7.2","@types/react":"^19.0.3","@types/react-dom":"^19.0.2"}
