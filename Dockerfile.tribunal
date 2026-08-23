@@ -1,0 +1,12 @@
+FROM node:24-slim
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --omit=dev
+COPY server/tribunal-backend ./server/tribunal-backend
+RUN mkdir -p /app/.data
+ENV PORT=8787
+ENV NEO_TRIBUNAL_DB=.data/neo-tribunal.sqlite
+ENV NEO_TRIBUNAL_MASTER_KEY=change-me-in-production
+VOLUME ["/app/.data"]
+EXPOSE 8787
+CMD ["node","server/tribunal-backend/server.mjs"]
