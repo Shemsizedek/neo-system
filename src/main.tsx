@@ -2,6 +2,7 @@
 import React,{useEffect,useState} from 'react'
 import ReactDOM from 'react-dom/client'
 import { App } from './App'
+import { HomeBase } from './home/HomeBase'
 import { MinerApp } from './miner/MinerApp'
 import { NeoWireApp } from './wire/NeoWireApp'
 import { NeoExplorer } from './explorer/NeoExplorer'
@@ -30,11 +31,24 @@ function RootRouter(){
     }
   },[])
 
+  const open=(section:string)=>{
+    if(section==='overview') window.location.hash='/command'
+    else if(['cfo','books','treasury','tribunal','corpus','security'].includes(section)) window.location.hash=`/command/${section}`
+    else window.location.hash=`/${section}`
+  }
+
+  const isHome=route==='/'||route===''||route==='/home'
+  const isCommand=route==='/command'||route.startsWith('/command/')
   const isMiner=route==='/miner'||route.startsWith('/miner/')
   const isWire=route==='/wire'||route.startsWith('/wire/')
   const isExplorer=route==='/explorer'||route.startsWith('/explorer/')
 
-  return isExplorer?<NeoExplorer/>:isWire?<NeoWireApp/>:isMiner?<MinerApp/>:<App/>
+  if(isHome) return <HomeBase onOpen={open}/>
+  if(isExplorer) return <NeoExplorer/>
+  if(isWire) return <NeoWireApp/>
+  if(isMiner) return <MinerApp/>
+  if(isCommand) return <App/>
+  return <HomeBase onOpen={open}/>
 }
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
