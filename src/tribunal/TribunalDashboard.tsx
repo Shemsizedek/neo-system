@@ -6,6 +6,7 @@ import {createEvidence,evidenceStats,setEvidenceStatus,type EvidenceKind} from '
 import {createOpinion,renderOpinionText,updateOpinionSection,validateOpinion,type TribunalOpinion} from './opinionBuilder'
 import {addCitationToCase,addEvidenceToCase,advanceCase,caseReadiness,citationMatrix,replaceEvidence,tribunalCases,type TribunalCase} from './tribunalEngine'
 import {TribunalPacketPanel} from './TribunalPacketPanel'
+import {CaseOperationsPanel} from './CaseOperationsPanel'
 
 export function TribunalDashboard(){
   const [caseFile,setCaseFile]=useState<TribunalCase>(tribunalCases[0])
@@ -57,6 +58,8 @@ export function TribunalDashboard(){
       <div className="card focus"><Gavel size={26}/><h2>Case Review Pipeline</h2><p>Intake → jurisdiction review → notice → evidence → record close → NEOsync opinion → authorized internal disposition.</p><p><b>Readiness:</b> parties {readiness.hasParties?'✓':'—'} • statement {readiness.hasStatement?'✓':'—'} • evidence {readiness.evidenceItems} • authority {readiness.hasAuthority?'✓':'—'}</p><button className="primary" onClick={()=>setCaseFile(current=>advanceCase(current))}>Advance demonstration docket</button></div>
       <div className="card focus"><ShieldCheck size={26}/><h2>Due Process Boundary</h2><p>The Tribunal module is an internal records, analysis and adjudicative-workflow system. Software does not create external court jurisdiction, arrest power or governmental recognition.</p><p><b>Record closure:</b> {readiness.canCloseRecord?'eligible when lifecycle reaches record close':'additional record material required'}</p></div>
     </section>
+
+    <CaseOperationsPanel caseFile={caseFile}/>
 
     <section className="card panel">
       <div className="paneltitle"><div><span>Attach Corpus Authority</span><small>Every Tribunal proposition links to a specific authority and source object</small></div><Link2 size={18}/></div>
