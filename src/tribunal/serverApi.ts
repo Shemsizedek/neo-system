@@ -7,6 +7,9 @@ export interface CaseSyncResult {claimNo:string;revision:number;updatedAt:string
 export interface ServerHealth {ok:boolean;service:string;version:string;schema?:number;time?:string}
 export interface ServerMember {userId:string;email:string;displayName:string;role:TribunalRole;createdAt:string}
 export interface OpsReport {workspaceId:string;generatedAt:string;members:number;cases:number;efiles:number;notices:number;hearings:number;deliveries:number;auditEntries:number;activeSessions:number;audit:{valid:boolean;count:number;head:string|null}}
+export interface CommTemplate {id:string;name:string;channel:string;subjectTemplate:string;bodyTemplate:string;createdAt:string}
+export interface CommOutboxItem {id:string;noticeId?:string;channel:string;destination:string;subject:string;body:string;status:string;attemptCount:number;nextAttemptAt?:string|null;lastError?:string|null;providerRef?:string|null;receipt?:unknown;createdAt:string}
+export interface CommReport {workspaceId:string;templates:number;providers:number;queued:number;delivered:number;deadLetters:number;calendarExports:number;generatedAt:string}
 
 export class TribunalServerApi {
   constructor(public baseUrl='http://localhost:8787', public token=''){}
@@ -36,6 +39,16 @@ export class TribunalServerApi {
   recordDelivery(workspaceId:string,input:{noticeId:string;adapter:string;destination:string;status?:string;providerRef?:string;error?:string}){return this.request(`/v1/workspaces/${encodeURIComponent(workspaceId)}/deliveries`,{method:'POST',body:JSON.stringify(input)})}
   listDeliveries(workspaceId:string,noticeId=''){return this.request<{items:unknown[]}>(`/v1/workspaces/${encodeURIComponent(workspaceId)}/deliveries?noticeId=${encodeURIComponent(noticeId)}`)}
   operationsReport(workspaceId:string){return this.request<OpsReport>(`/v1/workspaces/${encodeURIComponent(workspaceId)}/reports/operations`)}
+  createCommTemplate(workspaceId:string,input:{name:string;channel:string;subjectTemplate?:string;bodyTemplate:string}){return this.request<CommTemplate>(`/v1/workspaces/${encodeURIComponent(workspaceId)}/communications/templates`,{method:'POST',body:JSON.stringify(input)})}
+  listCommTemplates(workspaceId:string){return this.request<{items:CommTemplate[]}>(`/v1/workspaces/${encodeURIComponent(workspaceId)}/communications/templates`)}
+  saveProviderConfig(workspaceId:string,input:{id?:string;providerType:string;label:string;enabled?:boolean;secretConfig:Record<string,unknown>}){return this.request(`/v1/workspaces/${encodeURIComponent(workspaceId)}/communications/providers`,{method:'POST',body:JSON.stringify(input)})}
+  listProviderConfigs(workspaceId:string){return this.request<{items:Array<{id:string;providerType:string;label:string;enabled:boolean;configFingerprint:string;updatedAt:string}>}>(`/v1/workspaces/${encodeURIComponent(workspaceId)}/communications/providers`)}
+  queueCommunication(workspaceId:string,input:{noticeId?:string;channel:string;destination:string;subject?:string;body?:string;templateId?:string;templateData?:Record<string,unknown>}){return this.request<CommOutboxItem>(`/v1/workspaces/${encodeURIComponent(workspaceId)}/communications/outbox`,{method:'POST',body:JSON.stringify(input)})}
+  listOutbox(workspaceId:string,status=''){return this.request<{items:CommOutboxItem[]}>(`/v1/workspaces/${encodeURIComponent(workspaceId)}/communications/outbox?status=${encodeURIComponent(status)}`)}
+  processCommunication(workspaceId:string,id:string,input:{outcome?:'DELIVERED'|'FAILED';providerRef?:string;receipt?:unknown;error?:string;maxAttempts?:number}={}){return this.request<CommOutboxItem>(`/v1/workspaces/${encodeURIComponent(workspaceId)}/communications/outbox/${encodeURIComponent(id)}/process`,{method:'POST',body:JSON.stringify(input)})}
+  retryCommunication(workspaceId:string,id:string){return this.request<CommOutboxItem>(`/v1/workspaces/${encodeURIComponent(workspaceId)}/communications/outbox/${encodeURIComponent(id)}/retry`,{method:'POST'})}
+  communicationsReport(workspaceId:string){return this.request<CommReport>(`/v1/workspaces/${encodeURIComponent(workspaceId)}/communications/report`)}
+  async hearingCalendarIcs(workspaceId:string,hearingId:string){const response=await fetch(`${this.baseUrl.replace(/\/$/,'')}/v1/workspaces/${encodeURIComponent(workspaceId)}/hearings/${encodeURIComponent(hearingId)}/calendar.ics`,{headers:{...(this.token?{authorization:`Bearer ${this.token}`}:{})}});if(!response.ok)throw new Error(`HTTP ${response.status}`);return {content:await response.text(),payloadHash:response.headers.get('x-neo-payload-sha256'),exportId:response.headers.get('x-neo-export-id')}}
   exportAudit(workspaceId:string,afterSeq=0){return this.request(`/v1/workspaces/${encodeURIComponent(workspaceId)}/audit/export?afterSeq=${afterSeq}`)}
   verifyAudit(workspaceId:string){return this.request<{valid:boolean;count:number;head:string|null}>(`/v1/workspaces/${encodeURIComponent(workspaceId)}/audit/verify`)}
 }
