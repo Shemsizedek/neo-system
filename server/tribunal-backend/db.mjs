@@ -22,15 +22,23 @@ export function openTribunalDb(path=defaultPath){
     CREATE TABLE IF NOT EXISTS notices(notice_id TEXT PRIMARY KEY,workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,claim_no TEXT NOT NULL,envelope_json TEXT NOT NULL,status TEXT NOT NULL,updated_at TEXT NOT NULL,created_at TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS hearings(hearing_id TEXT PRIMARY KEY,workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,claim_no TEXT NOT NULL,envelope_json TEXT NOT NULL,starts_at TEXT NOT NULL,status TEXT NOT NULL,updated_at TEXT NOT NULL,created_at TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS delivery_attempts(id TEXT PRIMARY KEY,workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,notice_id TEXT NOT NULL,adapter TEXT NOT NULL,destination TEXT NOT NULL,status TEXT NOT NULL,provider_ref TEXT,error TEXT,created_at TEXT NOT NULL);
+    CREATE TABLE IF NOT EXISTS communication_templates(id TEXT PRIMARY KEY,workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,name TEXT NOT NULL,channel TEXT NOT NULL,subject_template TEXT NOT NULL,body_template TEXT NOT NULL,created_by TEXT NOT NULL,updated_at TEXT NOT NULL,created_at TEXT NOT NULL);
+    CREATE TABLE IF NOT EXISTS provider_configs(id TEXT PRIMARY KEY,workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,provider_type TEXT NOT NULL,label TEXT NOT NULL,config_envelope TEXT NOT NULL,enabled INTEGER NOT NULL DEFAULT 0,created_by TEXT NOT NULL,updated_at TEXT NOT NULL,created_at TEXT NOT NULL);
+    CREATE TABLE IF NOT EXISTS communication_outbox(id TEXT PRIMARY KEY,workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,notice_id TEXT,channel TEXT NOT NULL,destination TEXT NOT NULL,subject TEXT NOT NULL,body TEXT NOT NULL,status TEXT NOT NULL,attempt_count INTEGER NOT NULL DEFAULT 0,next_attempt_at TEXT,last_error TEXT,provider_ref TEXT,receipt_json TEXT,created_by TEXT NOT NULL,updated_at TEXT NOT NULL,created_at TEXT NOT NULL);
+    CREATE TABLE IF NOT EXISTS calendar_exports(id TEXT PRIMARY KEY,workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,hearing_id TEXT NOT NULL,format TEXT NOT NULL,payload_hash TEXT NOT NULL,created_by TEXT NOT NULL,created_at TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS audit_log(seq INTEGER PRIMARY KEY AUTOINCREMENT,workspace_id TEXT NOT NULL,actor_user_id TEXT NOT NULL,action TEXT NOT NULL,subject TEXT NOT NULL,payload_hash TEXT NOT NULL,previous_hash TEXT,entry_hash TEXT NOT NULL UNIQUE,created_at TEXT NOT NULL);
     CREATE INDEX IF NOT EXISTS idx_audit_workspace_seq ON audit_log(workspace_id,seq);
     CREATE INDEX IF NOT EXISTS idx_efiles_workspace_claim ON efiles(workspace_id,claim_no);
     CREATE INDEX IF NOT EXISTS idx_notices_workspace_claim ON notices(workspace_id,claim_no);
     CREATE INDEX IF NOT EXISTS idx_hearings_workspace_claim ON hearings(workspace_id,claim_no);
     CREATE INDEX IF NOT EXISTS idx_delivery_workspace_notice ON delivery_attempts(workspace_id,notice_id);
+    CREATE INDEX IF NOT EXISTS idx_templates_workspace ON communication_templates(workspace_id,created_at);
+    CREATE INDEX IF NOT EXISTS idx_outbox_workspace_status ON communication_outbox(workspace_id,status,next_attempt_at);
+    CREATE INDEX IF NOT EXISTS idx_calendar_workspace_hearing ON calendar_exports(workspace_id,hearing_id);
   `)
   const current=db.prepare('SELECT MAX(version) AS version FROM schema_meta').get()?.version||0
   if(current<1)db.prepare('INSERT INTO schema_meta(version,applied_at) VALUES(1,?)').run(new Date().toISOString())
   if(current<2)db.prepare('INSERT INTO schema_meta(version,applied_at) VALUES(2,?)').run(new Date().toISOString())
+  if(current<3)db.prepare('INSERT INTO schema_meta(version,applied_at) VALUES(3,?)').run(new Date().toISOString())
   return db
 }
