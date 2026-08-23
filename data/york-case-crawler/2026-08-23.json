@@ -1,0 +1,53 @@
+{
+  "crawler": "NEO-YORK-CASE-CRAWLER",
+  "runDate": "2026-08-23",
+  "docket": "5:02-cr-00027-CAR",
+  "meaningfulUpdates": [
+    {
+      "id": "YORK-2026-08-23-001",
+      "evidenceClass": "COURT_DOCKET_PRIMARY_METADATA",
+      "title": "In re Dwight York, No. 25-11486 (11th Cir.)",
+      "status": "NEW_TO_REGISTRY",
+      "dates": ["2025-05-01", "2025-05-08", "2025-05-19", "2025-06-02", "2025-06-03"],
+      "summary": "York sought Eleventh Circuit authorization to file a successive Section 2255 motion based on asserted newly discovered evidence of factual innocence. The court denied authorization on May 19, 2025. A panel-rehearing petition was filed June 2; the clerk stated June 3 that no action would be taken because reconsideration is not permitted in a successive habeas proceeding under 11th Cir. R. 22-3(b).",
+      "rootSource": "https://dockets.justia.com/docket/circuit-courts/ca11/25-11486",
+      "missingEvidence": ["Full text of May 1 emergency application", "Full text of May 8 memorandum", "Full text of May 19 Eleventh Circuit order"],
+      "notes": ["Docket metadata establishes filing and disposition, not the truth of the factual-innocence allegations."]
+    },
+    {
+      "id": "YORK-2026-08-23-002",
+      "evidenceClass": "COURT_DOCKET_PRIMARY_METADATA",
+      "title": "York v. Macon County Police Department, No. 5:25-cv-00507-CAR-CHW (M.D. Ga.)",
+      "status": "NEW_TO_REGISTRY",
+      "dates": ["2025-11-18", "2025-11-21", "2025-12-18", "2025-12-22", "2026-01-21"],
+      "summary": "York filed a pro se habeas petition on November 18, 2025. The magistrate judge recommended dismissal as an unauthorized second or successive Section 2255 motion; Judge C. Ashley Royal adopted the recommendation and dismissed without prejudice for lack of jurisdiction on December 18, 2025, denying a certificate of appealability. Judgment entered December 22. Mail containing the order and judgment was returned as undeliverable on January 21, 2026.",
+      "rootSource": "https://dockets.justia.com/docket/georgia/gamdce/5%3A2025cv00507/139313",
+      "missingEvidence": ["Full text of the November 18 petition is not publicly mirrored in the sources located during this run."],
+      "notes": ["The returned mail is procedurally notable but does not by itself establish a due-process violation; service history would need fuller docket review."]
+    },
+    {
+      "id": "YORK-2026-08-23-003",
+      "evidenceClass": "OFFICIAL_COURT_ORDER_VS_CURRENT_SECONDARY_CLAIM",
+      "title": "Medical-diagnosis contradiction relevant to compassionate release",
+      "status": "MATERIAL_CONTRADICTION_UNRESOLVED",
+      "dates": ["2018-03-22", "2026-02-13", "2026-04-07"],
+      "summary": "A 2018 District of Colorado order on GovInfo records that BOP testing and the summary-judgment record treated York's condition as idiopathic angioedema/urticaria rather than hereditary angioedema; the order also noted York's expert view that idiopathic angioedema can be potentially life-threatening. Current 2026 media reports describe York's February 13 compassionate-release filing as asserting hereditary angioedema. The April 7, 2026 M.D. Georgia order confirms a pending compassionate-release motion and counsel-status issue but does not resolve the diagnosis.",
+      "primarySource2018": "https://www.govinfo.gov/content/pkg/USCOURTS-cod-1_16-cv-01754/pdf/USCOURTS-cod-1_16-cv-01754-0.pdf",
+      "primarySource2026Order": "https://www.govinfo.gov/app/collection/USCOURTS",
+      "secondarySource2026": "https://www.usmagazine.com/crime-news/news/jailed-leader-of-egyptian-themed-ufo-cult-seeks-early-release/",
+      "missingEvidence": ["The February 13, 2026 compassionate-release motion and current medical exhibits are needed to determine whether later testing changed the diagnosis or whether the filing uses a disputed historical diagnosis."],
+      "notes": ["Do not treat the 2018 order as a timeless medical diagnosis; later evidence could supersede it.", "Do not treat a media paraphrase of the 2026 motion as proof of the present diagnosis."]
+    }
+  ],
+  "noMaterialUpdateFound": [
+    "No publicly indexed filing after M.D. Georgia criminal docket Document 562 (filed 2026-04-07) was located in this run.",
+    "No newly indexed merits opinion altering the 2005 direct-appeal affirmance was located.",
+    "No new authenticated trial transcript or forfeiture/property order was located in publicly indexed sources during this run."
+  ],
+  "evidenceHandling": {
+    "repetitionIsCorroboration": false,
+    "persecutionInference": false,
+    "misconductInference": false,
+    "equalScrutiny": true
+  }
+}
