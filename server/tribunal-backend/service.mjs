@@ -70,5 +70,4 @@ export class TribunalService{
   exportAudit(principal,workspaceId,afterSeq=0){this.authorize(principal,workspaceId,'REVIEWER');const entries=this.db.prepare('SELECT * FROM audit_log WHERE workspace_id=? AND seq>? ORDER BY seq').all(workspaceId,Number(afterSeq)||0);return {workspaceId,fromSeq:Number(afterSeq)||0,toSeq:entries.at(-1)?.seq||Number(afterSeq)||0,entries,replicaDigest:sha256(JSON.stringify(entries.map(e=>e.entry_hash)))}}
 
   verifyAudit(workspaceId){const entries=this.db.prepare('SELECT * FROM audit_log WHERE workspace_id=? ORDER BY seq').all(workspaceId);let previous=null;for(const entry of entries){const expected=sha256(JSON.stringify({workspaceId:entry.workspace_id,actorUserId:entry.actor_user_id,action:entry.action,subject:entry.subject,payloadHash:entry.payload_hash,previousHash:previous,createdAt:entry.created_at}));if(entry.previous_hash!==previous||entry.entry_hash!==expected)return {valid:false,seq:entry.seq};previous=entry.entry_hash}return {valid:true,count:entries.length,head:previous}}
-  }
 }
