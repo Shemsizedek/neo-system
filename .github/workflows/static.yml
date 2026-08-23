@@ -1,3 +1,4 @@
+# NEO Ecosystem GitHub Pages deployment
 name: Build and deploy NEO Ecosystem to Pages
 
 on:
