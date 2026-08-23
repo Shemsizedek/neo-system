@@ -33,8 +33,13 @@ export class TribunalService{
 
   createWorkspace(principal,{name}){
     if(!name?.trim())throw new Error('Workspace name is required.')
-    const id=randomUUID(),createdAt=now();const tx=this.db.transaction(()=>{this.db.prepare('INSERT INTO workspaces(id,name,created_by,created_at) VALUES(?,?,?,?)').run(id,name.trim(),principal.userId,createdAt);this.db.prepare('INSERT INTO memberships(workspace_id,user_id,role,created_at) VALUES(?,?,?,?)').run(id,principal.userId,'GRAND_SHEIK',createdAt)})
-    tx();this.audit(principal,id,'WORKSPACE_CREATED',id,{name:name.trim()});return {id,name:name.trim(),role:'GRAND_SHEIK',createdAt}
+    const id=randomUUID(),createdAt=now();this.db.exec('BEGIN IMMEDIATE')
+    try{
+      this.db.prepare('INSERT INTO workspaces(id,name,created_by,created_at) VALUES(?,?,?,?)').run(id,name.trim(),principal.userId,createdAt)
+      this.db.prepare('INSERT INTO memberships(workspace_id,user_id,role,created_at) VALUES(?,?,?,?)').run(id,principal.userId,'GRAND_SHEIK',createdAt)
+      this.db.exec('COMMIT')
+    }catch(error){this.db.exec('ROLLBACK');throw error}
+    this.audit(principal,id,'WORKSPACE_CREATED',id,{name:name.trim()});return {id,name:name.trim(),role:'GRAND_SHEIK',createdAt}
   }
 
   membership(principal,workspaceId){const m=row(this.db.prepare('SELECT * FROM memberships WHERE workspace_id=? AND user_id=?'),workspaceId,principal.userId);if(!m)throw new Error('Workspace membership required.');return m}
