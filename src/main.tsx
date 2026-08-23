@@ -7,6 +7,7 @@ import { MinerApp } from './miner/MinerApp'
 import { NeoWireApp } from './wire/NeoWireApp'
 import { NeoExplorer } from './explorer/NeoExplorer'
 import './styles.css'
+import './home/home.css'
 import './explorer/explorer.css'
 
 function resolveRoute(){
@@ -32,8 +33,7 @@ function RootRouter(){
   },[])
 
   const open=(section:string)=>{
-    if(section==='overview') window.location.hash='/command'
-    else if(['cfo','books','treasury','tribunal','corpus','security'].includes(section)) window.location.hash=`/command/${section}`
+    if(section==='overview'||['cfo','books','treasury','tribunal','corpus','security'].includes(section)) window.location.hash='/command'
     else window.location.hash=`/${section}`
   }
 
