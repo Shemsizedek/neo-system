@@ -8,6 +8,7 @@ import {addCitationToCase,addEvidenceToCase,advanceCase,caseReadiness,citationMa
 import {TribunalPacketPanel} from './TribunalPacketPanel'
 import {CaseOperationsPanel} from './CaseOperationsPanel'
 import {ServerOperationsPanel} from './ServerOperationsPanel'
+import {CommunicationsConsole} from './CommunicationsConsole'
 
 export function TribunalDashboard(){
   const [caseFile,setCaseFile]=useState<TribunalCase>(tribunalCases[0])
@@ -41,6 +42,7 @@ export function TribunalDashboard(){
     <section className="focusgrid"><div className="card focus"><Gavel size={26}/><h2>Case Review Pipeline</h2><p>Intake → jurisdiction review → notice → evidence → record close → NEOsync opinion → authorized internal disposition.</p><p><b>Readiness:</b> parties {readiness.hasParties?'✓':'—'} • statement {readiness.hasStatement?'✓':'—'} • evidence {readiness.evidenceItems} • authority {readiness.hasAuthority?'✓':'—'}</p><button className="primary" onClick={()=>setCaseFile(current=>advanceCase(current))}>Advance demonstration docket</button></div><div className="card focus"><ShieldCheck size={26}/><h2>Due Process Boundary</h2><p>The Tribunal module is an internal records, analysis and adjudicative-workflow system. Software does not create external court jurisdiction, arrest power or governmental recognition.</p><p><b>Record closure:</b> {readiness.canCloseRecord?'eligible when lifecycle reaches record close':'additional record material required'}</p></div></section>
 
     <ServerOperationsPanel caseFile={caseFile} setCaseFile={setCaseFile}/>
+    <CommunicationsConsole/>
     <CaseOperationsPanel caseFile={caseFile}/>
 
     <section className="card panel"><div className="paneltitle"><div><span>Attach Corpus Authority</span><small>Every Tribunal proposition links to a specific authority and source object</small></div><Link2 size={18}/></div><div className="tribunalcitegrid"><label>Authority<select value={authorityId} onChange={e=>{const next=e.target.value;setAuthorityId(next);setSourceId(sourcesForAuthority(next)[0]?.sourceId??'')}}>{corpusRecords.filter(r=>sourcesForAuthority(r.id).length).map(r=><option value={r.id} key={r.id}>{r.id} — {r.shortTitle??r.title}</option>)}</select></label><label>Source<select value={sourceId} onChange={e=>setSourceId(e.target.value)}>{availableSources.map(s=><option value={s.sourceId} key={s.sourceId}>{s.sourceId} — {s.title}</option>)}</select></label></div><label>Proposition<textarea value={proposition} onChange={e=>setProposition(e.target.value)} rows={3}/></label><div className="route"><span>LINK</span><b>{authority?.id??'—'} → {sourceId||'select source'} → {caseFile.claimNo}</b></div><button className="primary" disabled={!sourceId||!proposition.trim()} onClick={attach}>Attach validated citation</button></section>
