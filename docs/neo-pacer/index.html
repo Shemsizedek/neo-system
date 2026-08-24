@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="description" content="NEO-PACER — Public Access to Noocratic Ecclesiastical Records" />
+  <title>NEO-PACER</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="brand">NEO-PACER</div>
+      <div class="sub">Public Access to Noocratic Ecclesiastical Records</div>
+      <nav>
+        <button class="nav active" data-view="dashboard">Dashboard</button>
+        <button class="nav" data-view="cases">Case Registry</button>
+        <button class="nav" data-view="evidence">Evidence Vault</button>
+        <button class="nav" data-view="title">NEO Title Auditor</button>
+      </nav>
+      <div class="doctrine">Immutable Record Doctrine<br><span>Original records remain preserved; corrections and findings are additive.</span></div>
+    </aside>
+    <main>
+      <header class="topbar">
+        <div>
+          <div class="eyebrow">NEO SYSTEM · TRIBUNAL RECORDS</div>
+          <h1 id="page-title">Command Dashboard</h1>
+        </div>
+        <div class="status"><span class="dot"></span> GitHub source of truth</div>
+      </header>
+
+      <section id="dashboard" class="view active">
+        <div class="hero">
+          <div>
+            <h2>Evidence-first tribunal intelligence.</h2>
+            <p>Search cases, inspect evidence status, and audit title chains directly from the NEO-System GitHub record.</p>
+          </div>
+          <a class="cta" href="https://github.com/Shemsizedek/neo-system" target="_blank" rel="noreferrer">Open Repository</a>
+        </div>
+        <div class="stats" id="stats"></div>
+        <h3>Active Matters</h3>
+        <div class="grid" id="case-cards"></div>
+      </section>
+
+      <section id="cases" class="view">
+        <div class="toolbar"><input id="case-search" placeholder="Search cases, captions, classifications…" /></div>
+        <div class="table-wrap"><table><thead><tr><th>Case No.</th><th>Caption</th><th>Class</th><th>Status</th></tr></thead><tbody id="case-table"></tbody></table></div>
+      </section>
+
+      <section id="evidence" class="view">
+        <div class="toolbar"><input id="evidence-search" placeholder="Search evidence, source, notes…" /></div>
+        <div class="table-wrap"><table><thead><tr><th>ID</th><th>Title</th><th>Class</th><th>Authentication</th><th>Score</th></tr></thead><tbody id="evidence-table"></tbody></table></div>
+      </section>
+
+      <section id="title" class="view">
+        <div class="toolbar"><select id="title-case"></select></div>
+        <div class="timeline" id="title-chain"></div>
+      </section>
+
+      <section id="case-detail" class="view">
+        <button id="back-cases" class="ghost">← Back to cases</button>
+        <div id="case-detail-content"></div>
+      </section>
+
+      <footer>
+        <span>NEO-PACER v1.2 · GitHub-backed public registry</span>
+        <span>Public presentation does not itself create external civil, criminal, or sovereign jurisdiction.</span>
+      </footer>
+    </main>
+  </div>
+  <script src="./app.js" defer></script>
+</body>
+</html>
