@@ -1,0 +1,28 @@
+{
+  "platform": "NEO Mining Thermal Control",
+  "version": "0.10.0",
+  "coolingModes": ["AIR","IMMERSION"],
+  "air": {
+    "fanChannels": 4,
+    "tachFeedback": true,
+    "failSafeFullSpeed": true,
+    "zones": ["INLET","CONTROLLER","HASHBOARD_A","HASHBOARD_B","HASHBOARD_C","PSU_BOUNDARY","OUTLET"]
+  },
+  "immersion": {
+    "optional": true,
+    "signals": ["coolant_inlet_c","coolant_outlet_c","tank_c","pump_status","pump_speed","flow_rate","pressure_delta","leak_detect","heat_exchanger_c"]
+  },
+  "states": ["NORMAL","WARNING","THROTTLE","CRITICAL","SHUTDOWN_REQUIRED","LATCHED"],
+  "defaultPolicy": {
+    "warningC": 75,
+    "throttleC": 82,
+    "criticalC": 90,
+    "emergencyC": 95,
+    "recoveryHysteresisC": 8
+  },
+  "principles": {
+    "localSafetyLoop": true,
+    "cloudIndependent": true,
+    "remoteCommandsCannotBypassThermalTrip": true
+  }
+}
