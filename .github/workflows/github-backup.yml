@@ -1,0 +1,50 @@
+name: NEO GitHub Backup Build
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+  schedule:
+    - cron: "17 5 * * *"
+
+permissions:
+  contents: read
+
+jobs:
+  backup-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test
+
+      - name: Build static NEO System
+        run: npm run build
+
+      - name: Package source snapshot
+        run: git archive --format=zip --output=neo-system-source-${{ github.sha }}.zip HEAD
+
+      - name: Upload deployable static backup
+        uses: actions/upload-artifact@v4
+        with:
+          name: neo-system-static-${{ github.sha }}
+          path: dist/
+          retention-days: 30
+
+      - name: Upload source backup
+        uses: actions/upload-artifact@v4
+        with:
+          name: neo-system-source-${{ github.sha }}
+          path: neo-system-source-${{ github.sha }}.zip
+          retention-days: 30
