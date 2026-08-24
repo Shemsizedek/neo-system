@@ -25,3 +25,4 @@ export { createInstitutionalIdentity, registerSigningKey, rotateSigningKey, revo
 export { createExecutionContext, createReplayGuard, evaluateExecution, executeZeroTrust } from './zero-trust-execution.mjs'
 export { createWorkloadIdentity, createExternalKeyRef, issueEphemeralCredential, validateEphemeralCredential, createSecretBroker, signWorkerLease, verifyWorkerLease, createRevocationRegistry, secureRuntimeDecision } from './secure-runtime.mjs'
 export { createBuildProvenance, signBuildProvenance, verifyBuildProvenance, evaluateSupplyChain, createRuntimeAttestation, evaluateRuntimeAdmission, quarantineRecord, createArtifactManifest } from './runtime-attestation.mjs'
+export { createCompliancePolicy, createPolicyException, exceptionActive, evaluateCompliance, detectComplianceDrift, collectComplianceEvidence, propagateComplianceEnforcement, buildComplianceDashboard } from './continuous-compliance.mjs'
