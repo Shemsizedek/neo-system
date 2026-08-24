@@ -1,0 +1,23 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "title":"NEO Miner Critical Supplier Qualification",
+  "type":"object",
+  "required":["supplierId","manufacturer","partNumber","category","status","lifecycleStatus","traceability"],
+  "properties":{
+    "supplierId":{"type":"string"},
+    "manufacturer":{"type":"string"},
+    "manufacturingLocation":{"type":"string"},
+    "partNumber":{"type":"string"},
+    "revision":{"type":"string"},
+    "category":{"type":"string"},
+    "status":{"enum":["CANDIDATE","QUALIFIED","CONDITIONAL","DISQUALIFIED"]},
+    "approvedAlternates":{"type":"array","items":{"type":"string"}},
+    "lifecycleStatus":{"type":"string"},
+    "leadTimeDays":{"type":"integer","minimum":0},
+    "incomingInspectionPlan":{"type":"string"},
+    "changeNotificationRequired":{"type":"boolean"},
+    "traceability":{"type":"string"},
+    "certificates":{"type":"array","items":{"type":"string"}},
+    "notes":{"type":"string"}
+  }
+}
