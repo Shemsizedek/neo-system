@@ -5,6 +5,9 @@ import type { Rail, RailQuote } from './rails/types';
 import DevicePanel from './devices/DevicePanel';
 import MerchantOpsPanel from './merchant/MerchantOpsPanel';
 import SyncPanel from './sync/SyncPanel';
+import AuthPanel from './auth/AuthPanel';
+import type { Session } from './auth/session';
+import { currentSession } from './auth/session';
 import { loadMerchantOps, saveMerchantOps } from './merchant/store';
 import type { CatalogItem } from './merchant/types';
 
@@ -21,6 +24,7 @@ function loadStored<T>(key:string,fallback:T):T{
 
 export default function App(){
   const [ops,setOps]=useState(loadMerchantOps);
+  const [session,setSession]=useState<Session|null>(currentSession());
   const [cart,setCart]=useState<CartLine[]>(()=>loadStored(CART_KEY,[]));
   const [rail,setRail]=useState<Rail>('BTC');
   const [checkout,setCheckout]=useState(false);
@@ -73,11 +77,12 @@ export default function App(){
   const reset=()=>{setCart([]);setCheckout(false);setStatus('idle');setQuote(null);setMessage('');};
 
   return <div className="app-shell">
-    <aside className="sidebar"><div><div className="brand">NEO Counter</div><div className="tag">Bitcoin Commerce Network</div></div><nav>{['Register','Transactions','Customers','Catalog','Devices','Sync','Treasury','Settings'].map((x,i)=><button key={x} className={i===0?'active':''}>{x}</button>)}</nav><div className="mode">Live read-only rails · signing disabled</div></aside>
+    <aside className="sidebar"><div><div className="brand">NEO Counter</div><div className="tag">Bitcoin Commerce Network</div></div><nav>{['Register','Transactions','Customers','Catalog','Devices','Sync','Treasury','Settings'].map((x,i)=><button key={x} className={i===0?'active':''}>{x}</button>)}</nav><div className="mode">{session?`${session.staffId} · ${session.terminalId}`:'Signed out'} · signing disabled</div></aside>
     <main>
       <header><div><h1>Merchant Register</h1><p>{location?.name} · {taxRule?.enabled?`${(taxRule.rate*100).toFixed(2)}% tax`:'Tax disabled'}</p></div><div className="header-actions"><span className={`net ${online?'online':'offline'}`}>{online?'Online':'Offline'}</span><button className="terminal-btn" onClick={toggleFullscreen}>{fullscreen?'Exit Fullscreen':'Terminal Mode'}</button><div className="merchant">{ops.merchant.name}</div></div></header>
       <section className="grid"><div className="panel catalog"><h2>Catalog</h2><div className="product-grid">{products.map(p=><button className="product" key={p.id} onClick={()=>add(p)}><span>{p.category} · {p.sku}</span><strong>{p.name}</strong><b>${(p.price/100).toFixed(2)}</b>{p.inventoryTracked&&<small>{p.quantity} available</small>}</button>)}</div></div><div className="panel cart"><h2>Current Sale</h2>{cart.length===0?<div className="empty">Tap an item to start a sale.</div>:cart.map(l=><div className="line" key={l.id}><div><strong>{l.name}</strong><small>{l.qty} × ${(l.price/100).toFixed(2)}</small></div><button aria-label={`Remove one ${l.name}`} onClick={()=>remove(l.id)}>−</button></div>)}<div className="totals"><div><span>Subtotal</span><b>${(subtotal/100).toFixed(2)}</b></div><div><span>{taxRule?.name||'Tax'}</span><b>${(tax/100).toFixed(2)}</b></div><div className="grand"><span>Total</span><b>${(total/100).toFixed(2)}</b></div></div><button className="pay" disabled={!cart.length} onClick={openCheckout}>Charge ${(total/100).toFixed(2)}</button></div></section>
-      <SyncPanel state={ops} onRemote={setOps} online={online}/>
+      <AuthPanel merchantId={ops.merchant.id} onSession={setSession}/>
+      <SyncPanel state={ops} onRemote={setOps} online={online} session={session}/>
       <MerchantOpsPanel state={ops} onChange={setOps}/>
       <DevicePanel />
       <section className="panel tx"><div className="section-head"><h2>Recent transactions</h2><span>{transactions.length} settled</span></div>{transactions.length===0?<div className="empty">No transactions yet.</div>:transactions.map(t=><div className="txrow" key={t.id}><span>{t.id}</span><span>{t.rail}</span><strong>${(t.total/100).toFixed(2)}</strong><em>{t.status}</em></div>)}</section>
