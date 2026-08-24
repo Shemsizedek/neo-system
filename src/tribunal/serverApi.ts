@@ -4,7 +4,7 @@ import type {TribunalRole} from './rbac'
 export interface ServerSession {token:string;expiresAt:string;user:{id:string;email:string;displayName:string}}
 export interface ServerWorkspace {id:string;name:string;role:TribunalRole;createdAt:string}
 export interface CaseSyncResult {claimNo:string;revision:number;updatedAt:string}
-export interface ServerHealth {ok:boolean;service:string;version:string;schema?:number;time?:string;communicationsWorker?:string;serviceAutomation?:string}
+export interface ServerHealth {ok:boolean;service:string;version:string;schema?:number;time?:string;communicationsWorker?:string;serviceAutomation?:string;serviceLedger?:string}
 export interface ServerMember {userId:string;email:string;displayName:string;role:TribunalRole;createdAt:string}
 export interface OpsReport {workspaceId:string;generatedAt:string;members:number;cases:number;efiles:number;notices:number;hearings:number;deliveries:number;auditEntries:number;activeSessions:number;audit:{valid:boolean;count:number;head:string|null}}
 export interface CommTemplate {id:string;name:string;channel:string;subjectTemplate:string;bodyTemplate:string;createdAt:string}
@@ -12,6 +12,8 @@ export interface CommOutboxItem {id:string;noticeId?:string;channel:string;desti
 export interface CommReport {workspaceId:string;templates:number;providers:number;queued:number;delivered:number;deadLetters:number;calendarExports:number;generatedAt:string}
 export interface CommAdapterStatus {type:string;mode:string;description:string;ready:boolean;configs:Array<{id:string;label:string;enabled:boolean;updatedAt:string}>}
 export interface ProviderHealth {workspaceId:string;generatedAt:string;providers:Array<{id:string;type:string;label:string;enabled:boolean;updatedAt:string;pending:number;deadLetters:number}>;queue:{pending:number;deadLetters:number;oldestPending:string|null}}
+export interface ServiceRecipient {id:string;claimNo:string;noticeId:string;recipientName:string;destination:string;channel:string;status:string;deadlineAt?:string|null;servedAt?:string|null;lastAttemptAt?:string|null;updatedAt?:string;createdAt:string}
+export interface ServiceCompliance {workspaceId:string;claimNo:string;summary:{total:number;served:number;pending:number;overdue:number;failed:number};complete:boolean;recipients:ServiceRecipient[];generatedAt:string;boundary:string}
 
 export class TribunalServerApi {
   constructor(public baseUrl='http://localhost:8787', public token=''){}
@@ -57,6 +59,13 @@ export class TribunalServerApi {
   communicationsAuditBundle(workspaceId:string,noticeId=''){return this.request(`/v1/workspaces/${encodeURIComponent(workspaceId)}/communications/audit-bundle?noticeId=${encodeURIComponent(noticeId)}`)}
   buildServicePackage(workspaceId:string,input:{noticeId:string;hearingId?:string}){return this.request(`/v1/workspaces/${encodeURIComponent(workspaceId)}/service/package`,{method:'POST',body:JSON.stringify(input)})}
   queueNoticeService(workspaceId:string,input:{noticeId:string;hearingId?:string;destinations:Array<{channel?:string;providerType?:string;destination:string;subject?:string;body?:string}>}){return this.request(`/v1/workspaces/${encodeURIComponent(workspaceId)}/service/queue`,{method:'POST',body:JSON.stringify(input)})}
+  registerServiceRecipient(workspaceId:string,input:{claimNo:string;noticeId:string;recipientName?:string;destination:string;channel:string;deadlineAt?:string}){return this.request<ServiceRecipient>(`/v1/workspaces/${encodeURIComponent(workspaceId)}/service/recipients`,{method:'POST',body:JSON.stringify(input)})}
+  listServiceRecipients(workspaceId:string,claimNo=''){return this.request<{items:ServiceRecipient[]}>(`/v1/workspaces/${encodeURIComponent(workspaceId)}/service/recipients?claimNo=${encodeURIComponent(claimNo)}`)}
+  recordServiceAttempt(workspaceId:string,input:{recipientId:string;communicationId?:string;status?:string;providerRef?:string;error?:string;evidence?:unknown}){return this.request(`/v1/workspaces/${encodeURIComponent(workspaceId)}/service/attempts`,{method:'POST',body:JSON.stringify(input)})}
+  issueProofOfService(workspaceId:string,input:{recipientId:string;proofType?:string;statement?:string}){return this.request(`/v1/workspaces/${encodeURIComponent(workspaceId)}/service/proofs`,{method:'POST',body:JSON.stringify(input)})}
+  listProofsOfService(workspaceId:string,claimNo=''){return this.request<{items:unknown[]}>(`/v1/workspaces/${encodeURIComponent(workspaceId)}/service/proofs?claimNo=${encodeURIComponent(claimNo)}`)}
+  serviceCompliance(workspaceId:string,claimNo:string){return this.request<ServiceCompliance>(`/v1/workspaces/${encodeURIComponent(workspaceId)}/service/compliance/${encodeURIComponent(claimNo)}`)}
+  verifyServiceLedger(workspaceId:string){return this.request<{valid:boolean;count:number;head:string|null;failedAt?:string}>(`/v1/workspaces/${encodeURIComponent(workspaceId)}/service/ledger/verify`)}
   verifyProviderCallback(workspaceId:string,input:{payload:unknown;signature:string}){return this.request<{valid:boolean}>(`/v1/workspaces/${encodeURIComponent(workspaceId)}/provider-callback/verify`,{method:'POST',body:JSON.stringify(input)})}
   async hearingCalendarIcs(workspaceId:string,hearingId:string){const response=await fetch(`${this.baseUrl.replace(/\/$/,'')}/v1/workspaces/${encodeURIComponent(workspaceId)}/hearings/${encodeURIComponent(hearingId)}/calendar.ics`,{headers:{...(this.token?{authorization:`Bearer ${this.token}`}:{})}});if(!response.ok)throw new Error(`HTTP ${response.status}`);return {content:await response.text(),payloadHash:response.headers.get('x-neo-payload-sha256'),exportId:response.headers.get('x-neo-export-id')}}
   exportAudit(workspaceId:string,afterSeq=0){return this.request(`/v1/workspaces/${encodeURIComponent(workspaceId)}/audit/export?afterSeq=${afterSeq}`)}
