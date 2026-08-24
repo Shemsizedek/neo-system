@@ -1,0 +1,25 @@
+{
+  "version": "0.14.0",
+  "name": "NEO Miner One End-of-Line Test",
+  "tests": [
+    {"id":"EOL-001","name":"Controller boot","required":true},
+    {"id":"EOL-002","name":"Secure identity present","required":true},
+    {"id":"EOL-003","name":"Ethernet link and network stack","required":true},
+    {"id":"EOL-004","name":"Expected hashboards enumerated","required":true},
+    {"id":"EOL-005","name":"ASIC chain communication","required":true},
+    {"id":"EOL-006","name":"Fan or cooling devices detected","required":true},
+    {"id":"EOL-007","name":"Thermal sensors plausible","required":true},
+    {"id":"EOL-008","name":"Power telemetry plausible","required":true},
+    {"id":"EOL-009","name":"Controlled-load mining work accepted","required":true},
+    {"id":"EOL-010","name":"Accepted share or deterministic proof observed","required":true},
+    {"id":"EOL-011","name":"Emergency shutdown path available","required":true},
+    {"id":"EOL-012","name":"No unresolved CRITICAL alarm","required":true},
+    {"id":"EOL-013","name":"Firmware hash matches approved release","required":true},
+    {"id":"EOL-014","name":"Serial and production record match","required":true}
+  ],
+  "rules": {
+    "simulation_data_may_pass": false,
+    "all_required_tests_must_pass": true,
+    "failed_identity_or_safety_test_disposition": "QUARANTINE"
+  }
+}
