@@ -1,0 +1,23 @@
+{
+  "platform": "NEO Miner Chassis",
+  "version": "0.11.0",
+  "fieldReplaceableUnits": [
+    {"id": "FRU-FILTER", "name": "Intake Filter Cassette", "toolLight": true},
+    {"id": "FRU-FAN-FRONT", "name": "Front Fan Module", "toolLight": true},
+    {"id": "FRU-FAN-REAR", "name": "Rear Fan Module", "toolLight": true},
+    {"id": "FRU-CONTROLLER", "name": "NEO Miner Controller Module", "toolLight": false},
+    {"id": "FRU-HB-1", "name": "Hashboard Slot 1", "toolLight": false},
+    {"id": "FRU-HB-2", "name": "Hashboard Slot 2", "toolLight": false},
+    {"id": "FRU-HB-3", "name": "Hashboard Slot 3", "toolLight": false},
+    {"id": "FRU-DC-HARNESS", "name": "Low-Voltage DC Harness Set", "toolLight": false},
+    {"id": "FRU-SENSOR-HARNESS", "name": "Thermal/Sensor Harness Set", "toolLight": false},
+    {"id": "FRU-PSU-PDU", "name": "PSU/PDU Module Variant", "toolLight": false}
+  ],
+  "serviceRules": [
+    "POWER_DOWN_BEFORE_HASHBOARD_SERVICE",
+    "VERIFY_DC_BUS_SAFE_STATE",
+    "DO_NOT_SERVICE_FANS_WITH_UNGUARDED_ROTORS",
+    "RETAIN_GROUNDING_AND_BONDING_HARDWARE",
+    "REPLACE_THERMAL_INTERFACE_MATERIAL_WHEN_REQUIRED"
+  ]
+}
