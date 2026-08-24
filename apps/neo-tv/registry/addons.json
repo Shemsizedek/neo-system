@@ -1,0 +1,42 @@
+{
+  "schemaVersion": "0.2.0",
+  "registry": "NEO TV Add-on Registry",
+  "policy": {
+    "green": "Licensed, public-domain, user-owned, official or otherwise authorized source.",
+    "yellow": "User-supplied source requiring authorization verification before activation.",
+    "red": "Known unauthorized distribution, credential theft, DRM circumvention or malicious source; blocked from official distribution."
+  },
+  "addons": [
+    {
+      "id": "neo.live.demo",
+      "name": "NEO Live Demo Provider",
+      "version": "0.2.0",
+      "type": "live-tv",
+      "publisher": "NEO System",
+      "integrity": "green",
+      "status": "installed",
+      "entry": "providers/demo-live.provider.json",
+      "permissions": ["catalog:read", "epg:read", "playback:request"]
+    },
+    {
+      "id": "neo.local.media",
+      "name": "NEO Local Media",
+      "version": "0.2.0",
+      "type": "media-source",
+      "publisher": "NEO System",
+      "integrity": "green",
+      "status": "planned",
+      "permissions": ["library:read", "library:index"]
+    },
+    {
+      "id": "neo.sync.entertainment",
+      "name": "NEOsync Entertainment",
+      "version": "0.2.0",
+      "type": "ai-orchestrator",
+      "publisher": "NEO System",
+      "integrity": "green",
+      "status": "planned",
+      "permissions": ["catalog:read", "search:execute", "recommendations:read"]
+    }
+  ]
+}
