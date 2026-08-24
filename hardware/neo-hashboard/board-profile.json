@@ -1,0 +1,29 @@
+{
+  "product": "NEO Hashboard",
+  "version": "0.9.0",
+  "revision": "A",
+  "asic_strategy": "COMMERCIAL_ASIC_FIRST",
+  "controller_interfaces": ["SPI", "UART", "I2C", "GPIO_RESET_ENABLE"],
+  "telemetry": [
+    "input_voltage_v",
+    "input_current_a",
+    "input_power_w",
+    "core_voltage_v",
+    "board_temperature_c",
+    "hottest_sensor_c",
+    "chain_count",
+    "active_chain_count",
+    "reported_hashrate_th",
+    "hardware_error_rate",
+    "board_uptime_seconds"
+  ],
+  "states": ["OFFLINE", "INITIALIZING", "HEALTHY", "DEGRADED", "THROTTLED", "FAULT", "SHUTDOWN", "MAINTENANCE"],
+  "required_protections": ["OVERCURRENT", "OVERTEMPERATURE", "UNDERVOLTAGE_LOCKOUT", "CONTROLLED_ENABLE", "INPUT_PROTECTION"],
+  "thermal_policy": {
+    "warning_c": 80,
+    "throttle_c": 90,
+    "shutdown_c": 100,
+    "restart_hysteresis_c": 15
+  },
+  "simulation_only": true
+}
