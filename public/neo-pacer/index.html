@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>NEO-PACER</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <aside>
+    <div class="brand">NEO-PACER</div>
+    <div class="sub">Public Access to Noocratic Ecclesiastical Records</div>
+    <button data-view="cases">Case Registry</button>
+    <button data-view="evidence">Evidence Vault</button>
+    <button data-view="title">NEO Title Auditor</button>
+    <div class="rule">Immutable Record Doctrine: originals remain preserved; later findings are additive.</div>
+  </aside>
+  <main>
+    <header>
+      <div><h1>NEO-PACER</h1><p>GitHub-backed tribunal, title-audit, evidence, and investigation registry.</p></div>
+      <input id="search" placeholder="Search cases or evidence" />
+    </header>
+    <section id="content"><div class="loading">Loading registry…</div></section>
+  </main>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

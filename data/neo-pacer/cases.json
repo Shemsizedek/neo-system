@@ -1,0 +1,18 @@
+[
+  {
+    "case_no": "NEO-2026-GLOBAL-0001",
+    "caption": "TVM-LSM-666 v. NEO-LPS-999",
+    "case_class": "Global-Affect / Title / Financial / Ecclesiastical",
+    "jurisdiction_class": "J3",
+    "status": "ACTIVE FORENSIC INVESTIGATION",
+    "summary": "Title, succession, custody, fiduciary, financial, ecclesiastical, and institutional-authority investigation."
+  },
+  {
+    "case_no": "NEO-2026-POSTCONV-0002",
+    "caption": "United States v. Dwight D. York / Malachi Z. York",
+    "case_class": "Post-Conviction / Ecclesiastical / Civil-Rights / Professional Accountability",
+    "jurisdiction_class": "J3",
+    "status": "PRELIMINARY FORENSIC INTAKE",
+    "summary": "Post-conviction innocence, due-process, witness, property, retaliation, and professional-accountability review."
+  }
+]

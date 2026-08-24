@@ -1,0 +1,6 @@
+[
+  {"evidence_id":"NEO-2026-GLOBAL-0001-EX-0001","case_no":"NEO-2026-GLOBAL-0001","title":"TVM Affidavit","evidence_class":"T1","authentication_status":"UNRESOLVED","score":50,"notes":"Primary case affidavit; internal architecture reviewed."},
+  {"evidence_id":"NEO-2026-GLOBAL-0001-EX-0002","case_no":"NEO-2026-GLOBAL-0001","title":"World Treasury chronology","evidence_class":"C2","authentication_status":"PROVISIONALLY_CORROBORATED","score":35,"notes":"Same-ecosystem chronology; useful for dates and instrument names, not issuer authentication."},
+  {"evidence_id":"NEO-2026-GLOBAL-0001-EX-0003","case_no":"NEO-2026-GLOBAL-0001","title":"King Solomon Trust succession claims","evidence_class":"C2","authentication_status":"PROVISIONALLY_CORROBORATED","score":35,"notes":"Later successor-claim ecosystem."},
+  {"evidence_id":"NEO-2026-GLOBAL-0001-EX-0004","case_no":"NEO-2026-GLOBAL-0001","title":"2018 purported nullification of TVM immunity","evidence_class":"C2","authentication_status":"CONTESTED","score":32,"notes":"Adverse same-ecosystem instrument; authority and jurisdiction unresolved."}
+]
