@@ -1,0 +1,15 @@
+{
+  "name": "PoolPayoutEvent",
+  "type": "object",
+  "properties": {
+    "payout_id": {"type":"string"},
+    "pool_id": {"type":"string"},
+    "txid": {"type":"string"},
+    "gross_btc": {"type":"number"},
+    "fee_btc": {"type":"number"},
+    "received_at": {"type":"string","format":"date-time"},
+    "confirmations": {"type":"integer"},
+    "verified": {"type":"boolean","default":false}
+  },
+  "required": ["payout_id","pool_id","txid","gross_btc","received_at"]
+}
