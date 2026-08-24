@@ -1,0 +1,32 @@
+name: NEO Router Worker v4
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "11 * * * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: neo-router-worker-v4
+  cancel-in-progress: false
+
+jobs:
+  worker:
+    runs-on: ubuntu-latest
+    env:
+      UPSTASH_REDIS_REST_URL: ${{ secrets.UPSTASH_REDIS_REST_URL }}
+      UPSTASH_REDIS_REST_TOKEN: ${{ secrets.UPSTASH_REDIS_REST_TOKEN }}
+      NEO_ROUTER_STATE_KEY: ${{ secrets.NEO_ROUTER_STATE_KEY }}
+      NEO_ROUTER_WORKER_ID: github-actions-worker-v4
+      NEO_ROUTER_WORKER_CONCURRENCY: "2"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Execute governed mission tick
+        run: npm run router:worker
