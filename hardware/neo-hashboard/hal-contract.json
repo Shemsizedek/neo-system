@@ -1,0 +1,37 @@
+{
+  "contract": "NEO_HASHBOARD_HAL",
+  "version": "0.9.0",
+  "read": [
+    "get_identity",
+    "get_board_status",
+    "get_chain_status",
+    "get_power_telemetry",
+    "get_thermal_telemetry",
+    "get_hashrate",
+    "get_error_counters"
+  ],
+  "control": [
+    "initialize",
+    "enable_board",
+    "disable_board",
+    "reset_chain",
+    "set_clock_profile",
+    "set_voltage_profile",
+    "run_diagnostics"
+  ],
+  "control_rules": {
+    "default_mode": "MONITOR_ONLY",
+    "profile_changes_require_authorization": true,
+    "unsafe_overclock_profiles_prohibited": true,
+    "emergency_shutdown_may_override_software": true
+  },
+  "events": [
+    "BOARD_ONLINE",
+    "BOARD_OFFLINE",
+    "CHAIN_DEGRADED",
+    "THERMAL_WARNING",
+    "THERMAL_SHUTDOWN",
+    "POWER_FAULT",
+    "ASIC_ENUMERATION_MISMATCH"
+  ]
+}
