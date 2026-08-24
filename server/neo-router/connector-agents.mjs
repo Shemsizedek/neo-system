@@ -1,7 +1,7 @@
 function need(value,name){if(!value)throw new Error(`${name} is not configured`);return value}
 function approvedWrite(action,ctx){if(action.mutating&&!ctx?.approved)throw new Error(`Approval required for mutating action: ${action.type}`)}
 async function jsonFetch(url,{token,method='GET',body,headers={}}={}){
-  const res=await fetch(url,{method,headers:{Accept:'application/json',...(token?{Authorization:`Bearer ${token}`}:{})...(body?{'Content-Type':'application/json'}:{}),...headers},body:body?JSON.stringify(body):undefined,signal:AbortSignal.timeout(20000)})
+  const res=await fetch(url,{method,headers:{Accept:'application/json',...(token?{Authorization:`Bearer ${token}`}:{}) ,...(body?{'Content-Type':'application/json'}:{}),...headers},body:body?JSON.stringify(body):undefined,signal:AbortSignal.timeout(20000)})
   const text=await res.text();let data=null;try{data=text?JSON.parse(text):null}catch{data={raw:text}}
   if(!res.ok)throw new Error(`Connector request failed ${res.status}: ${data?.message??data?.error??text}`)
   return data
