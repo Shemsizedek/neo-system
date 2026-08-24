@@ -27,3 +27,11 @@ export async function discoverFromSubnet(prefix,start=1,end=254,options={}){
   for(let i=start;i<=end;i++) hosts.push(`${prefix}${i}`)
   return discoverHosts(hosts,options)
 }
+
+export async function discoverMiners(config={}){
+  const ports=Array.isArray(config.ports)?config.ports:[4028]
+  const timeoutMs=Number(config.timeoutMs||600)
+  if(Array.isArray(config.hosts)&&config.hosts.length) return discoverHosts(config.hosts,{ports,timeoutMs})
+  if(config.subnetPrefix) return discoverFromSubnet(config.subnetPrefix,Number(config.start||1),Number(config.end||254),{ports,timeoutMs})
+  return []
+}
