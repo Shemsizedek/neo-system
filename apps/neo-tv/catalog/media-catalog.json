@@ -1,0 +1,38 @@
+{
+  "schemaVersion": "0.2.0",
+  "catalog": "NEO TV Unified Media Catalog",
+  "generatedBy": "NEO System",
+  "items": [
+    {
+      "id": "neo-live-001",
+      "kind": "channel",
+      "title": "NEO Live Preview",
+      "source": "neo.live.demo",
+      "integrity": "green",
+      "genres": ["News", "Community"],
+      "live": true,
+      "playback": {"mode": "demo", "uri": null},
+      "metadata": {"description": "Placeholder channel record for authorized-provider integration testing."}
+    },
+    {
+      "id": "neo-cinema-001",
+      "kind": "movie",
+      "title": "NEO Cinema Library",
+      "source": "neo.local.media",
+      "integrity": "green",
+      "live": false,
+      "playback": {"mode": "library", "uri": null},
+      "metadata": {"description": "Placeholder catalog item representing user-owned or licensed cinema content."}
+    },
+    {
+      "id": "neo-music-001",
+      "kind": "audio",
+      "title": "NEO Music Library",
+      "source": "neo.local.media",
+      "integrity": "green",
+      "live": false,
+      "playback": {"mode": "library", "uri": null},
+      "metadata": {"description": "Placeholder catalog item representing authorized music content."}
+    }
+  ]
+}
