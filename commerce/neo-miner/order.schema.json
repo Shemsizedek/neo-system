@@ -1,0 +1,27 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "title":"NEO Miner Commerce Order",
+  "type":"object",
+  "properties":{
+    "order_id":{"type":"string"},
+    "customer_id":{"type":"string"},
+    "product_class":{"type":"string","enum":["PHYSICAL_MINER","DIGITAL_MINER","HOSTING","ENTERPRISE"]},
+    "sku":{"type":"string"},
+    "quantity":{"type":"number","minimum":0},
+    "hashrate_th":{"type":"number","minimum":0},
+    "quote_id":{"type":"string"},
+    "payment_currency":{"type":"string"},
+    "payment_status":{"type":"string","enum":["PENDING","REVIEW","PAID","FAILED","REFUNDED","CHARGEBACK"]},
+    "reservation_type":{"type":"string","enum":["PHYSICAL_INVENTORY","PRODUCTION_SLOT","HASHPOWER_CAPACITY","HOSTING_SLOT"]},
+    "reservation_id":{"type":"string"},
+    "contract_id":{"type":"string"},
+    "fulfillment_id":{"type":"string"},
+    "activation_id":{"type":"string"},
+    "status":{"type":"string","enum":["CART","QUOTED","PAYMENT_PENDING","PAYMENT_REVIEW","PAID","RESERVED","CONTRACT_PENDING","READY_TO_FULFILL","FULFILLING","SHIPPED","ACTIVATION_PENDING","ACTIVE","COMPLETED","CANCELLED","REFUND_PENDING","REFUNDED","DISPUTED","CHARGEBACK","FAILED"]},
+    "jurisdiction":{"type":"string"},
+    "simulation":{"type":"boolean","default":true},
+    "created_at":{"type":"string","format":"date-time"},
+    "updated_at":{"type":"string","format":"date-time"}
+  },
+  "required":["order_id","customer_id","product_class","sku","payment_currency","payment_status","status","simulation","created_at"]
+}
