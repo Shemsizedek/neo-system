@@ -1,0 +1,20 @@
+{
+  "version": "0.6.0",
+  "policy": {
+    "purpose": "Registry for lawful public television, public-access, government, educational, FAST, and free-to-air provider integrations.",
+    "acceptedSourceClasses": ["green", "yellow"],
+    "requirements": [
+      "Provider must expose an official or otherwise authorized playback source.",
+      "Geographic and platform restrictions must be respected.",
+      "No credential bypass, DRM circumvention, scraped private feeds, or unauthorized rebroadcasting.",
+      "Embedding or playback must comply with the provider's terms and applicable rights."
+    ]
+  },
+  "providerClasses": [
+    {"id":"public-broadcaster","name":"Public Broadcaster","description":"National, regional, state, municipal, educational, or community public broadcasters."},
+    {"id":"public-access","name":"Public Access","description":"Community and municipal public, educational, and governmental access channels."},
+    {"id":"free-to-air","name":"Free-to-Air","description":"Authorized over-the-air services made available through official digital feeds or tuner adapters."},
+    {"id":"fast","name":"FAST","description":"Free ad-supported streaming television providers with authorized integration paths."}
+  ],
+  "providers": []
+}
