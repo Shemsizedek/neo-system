@@ -1,147 +1,35 @@
 import { randomUUID } from 'node:crypto'
 
-export const MISSION_STATUS = Object.freeze({
-  QUEUED: 'queued',
-  RUNNING: 'running',
-  AWAITING_APPROVAL: 'awaiting_approval',
-  COMPLETED: 'completed',
-  FAILED: 'failed',
-  CANCELLED: 'cancelled',
+export const MISSION_STATUS=Object.freeze({QUEUED:'queued',BLOCKED:'blocked',RUNNING:'running',RETRY_WAIT:'retry_wait',AWAITING_APPROVAL:'awaiting_approval',COMPLETED:'completed',FAILED:'failed',CANCELLED:'cancelled'})
+const TERMINAL=new Set([MISSION_STATUS.COMPLETED,MISSION_STATUS.FAILED,MISSION_STATUS.CANCELLED])
+const ALLOWED=Object.freeze({
+ [MISSION_STATUS.QUEUED]:new Set([MISSION_STATUS.BLOCKED,MISSION_STATUS.RUNNING,MISSION_STATUS.CANCELLED]),
+ [MISSION_STATUS.BLOCKED]:new Set([MISSION_STATUS.QUEUED,MISSION_STATUS.CANCELLED]),
+ [MISSION_STATUS.RUNNING]:new Set([MISSION_STATUS.RETRY_WAIT,MISSION_STATUS.AWAITING_APPROVAL,MISSION_STATUS.COMPLETED,MISSION_STATUS.FAILED,MISSION_STATUS.CANCELLED]),
+ [MISSION_STATUS.RETRY_WAIT]:new Set([MISSION_STATUS.QUEUED,MISSION_STATUS.FAILED,MISSION_STATUS.CANCELLED]),
+ [MISSION_STATUS.AWAITING_APPROVAL]:new Set([MISSION_STATUS.RUNNING,MISSION_STATUS.CANCELLED]),
+ [MISSION_STATUS.COMPLETED]:new Set(),[MISSION_STATUS.FAILED]:new Set(),[MISSION_STATUS.CANCELLED]:new Set(),
 })
+function now(){return new Date().toISOString()} function clone(v){return structuredClone(v)}
 
-const TERMINAL = new Set([MISSION_STATUS.COMPLETED, MISSION_STATUS.FAILED, MISSION_STATUS.CANCELLED])
-const ALLOWED = Object.freeze({
-  [MISSION_STATUS.QUEUED]: new Set([MISSION_STATUS.RUNNING, MISSION_STATUS.CANCELLED]),
-  [MISSION_STATUS.RUNNING]: new Set([MISSION_STATUS.AWAITING_APPROVAL, MISSION_STATUS.COMPLETED, MISSION_STATUS.FAILED, MISSION_STATUS.CANCELLED]),
-  [MISSION_STATUS.AWAITING_APPROVAL]: new Set([MISSION_STATUS.RUNNING, MISSION_STATUS.CANCELLED]),
-  [MISSION_STATUS.COMPLETED]: new Set(),
-  [MISSION_STATUS.FAILED]: new Set(),
-  [MISSION_STATUS.CANCELLED]: new Set(),
-})
-
-function now() { return new Date().toISOString() }
-function clone(value) { return structuredClone(value) }
-
-export function createMissionEngine({ clock = now, idFactory = randomUUID } = {}) {
-  const missions = new Map()
-  const events = []
-  const approvals = new Map()
-  const connectorHealth = new Map()
-
-  function emit(type, missionId, detail = {}) {
-    const event = { id: idFactory(), type, missionId: missionId ?? null, timestamp: clock(), detail: clone(detail) }
-    events.unshift(event)
-    return event
-  }
-
-  function queue(input) {
-    if (!input?.objective) throw new TypeError('objective is required')
-    const id = input.id ?? `NEO-MISSION-${idFactory()}`
-    if (missions.has(id)) throw new Error(`Mission already exists: ${id}`)
-    const mission = {
-      id,
-      objective: input.objective,
-      priority: input.priority ?? 'normal',
-      status: MISSION_STATUS.QUEUED,
-      route: input.route ?? [],
-      actions: input.actions ?? [],
-      provenance: input.provenance ?? [],
-      createdAt: clock(),
-      updatedAt: clock(),
-      result: null,
-      error: null,
-    }
-    missions.set(id, mission)
-    emit('mission.queued', id, { priority: mission.priority, route: mission.route })
-    return clone(mission)
-  }
-
-  function get(id) {
-    const mission = missions.get(id)
-    return mission ? clone(mission) : null
-  }
-
-  function list({ status } = {}) {
-    return [...missions.values()].filter((m) => !status || m.status === status).map(clone)
-  }
-
-  function transition(id, nextStatus, detail = {}) {
-    const mission = missions.get(id)
-    if (!mission) throw new Error(`Unknown mission: ${id}`)
-    if (!ALLOWED[mission.status]?.has(nextStatus)) throw new Error(`Invalid mission transition: ${mission.status} -> ${nextStatus}`)
-    const previous = mission.status
-    mission.status = nextStatus
-    mission.updatedAt = clock()
-    if (nextStatus === MISSION_STATUS.COMPLETED) mission.result = detail.result ?? null
-    if (nextStatus === MISSION_STATUS.FAILED) mission.error = detail.error ?? 'Mission failed'
-    emit('mission.transition', id, { previous, next: nextStatus, ...detail })
-    return clone(mission)
-  }
-
-  function requestApproval(id, action, context = {}) {
-    const mission = missions.get(id)
-    if (!mission) throw new Error(`Unknown mission: ${id}`)
-    if (mission.status !== MISSION_STATUS.RUNNING) throw new Error('Approval can only be requested by a running mission')
-    const approval = {
-      id: `NEO-APPROVAL-${idFactory()}`,
-      missionId: id,
-      action,
-      context: clone(context),
-      status: 'pending',
-      requestedAt: clock(),
-      decidedAt: null,
-      decision: null,
-    }
-    approvals.set(approval.id, approval)
-    transition(id, MISSION_STATUS.AWAITING_APPROVAL, { approvalId: approval.id, action })
-    emit('approval.requested', id, { approvalId: approval.id, action })
-    return clone(approval)
-  }
-
-  function decideApproval(approvalId, decision, actor = 'human') {
-    const approval = approvals.get(approvalId)
-    if (!approval) throw new Error(`Unknown approval: ${approvalId}`)
-    if (approval.status !== 'pending') throw new Error('Approval already decided')
-    if (!['approved', 'rejected'].includes(decision)) throw new TypeError('decision must be approved or rejected')
-    approval.status = decision
-    approval.decision = { actor, value: decision }
-    approval.decidedAt = clock()
-    emit(`approval.${decision}`, approval.missionId, { approvalId, actor })
-    if (decision === 'approved') transition(approval.missionId, MISSION_STATUS.RUNNING, { approvalId })
-    else transition(approval.missionId, MISSION_STATUS.CANCELLED, { approvalId, reason: 'approval_rejected' })
-    return clone(approval)
-  }
-
-  function listApprovals({ status } = {}) {
-    return [...approvals.values()].filter((a) => !status || a.status === status).map(clone)
-  }
-
-  function heartbeat(connectorId, state, detail = {}) {
-    if (!connectorId || !state) throw new TypeError('connectorId and state are required')
-    const heartbeat = { connectorId, state, detail: clone(detail), checkedAt: clock() }
-    connectorHealth.set(connectorId, heartbeat)
-    emit('connector.heartbeat', null, heartbeat)
-    return clone(heartbeat)
-  }
-
-  function telemetry({ eventLimit = 50 } = {}) {
-    const missionList = list()
-    return {
-      generatedAt: clock(),
-      summary: {
-        total: missionList.length,
-        queued: missionList.filter((m) => m.status === MISSION_STATUS.QUEUED).length,
-        running: missionList.filter((m) => m.status === MISSION_STATUS.RUNNING).length,
-        awaitingApproval: missionList.filter((m) => m.status === MISSION_STATUS.AWAITING_APPROVAL).length,
-        terminal: missionList.filter((m) => TERMINAL.has(m.status)).length,
-        pendingApprovals: listApprovals({ status: 'pending' }).length,
-      },
-      missions: missionList,
-      approvals: listApprovals(),
-      connectors: [...connectorHealth.values()].map(clone),
-      events: events.slice(0, eventLimit).map(clone),
-    }
-  }
-
-  return Object.freeze({ queue, get, list, transition, requestApproval, decideApproval, listApprovals, heartbeat, telemetry })
+export function createMissionEngine({clock=now,idFactory=randomUUID,initialState=null}={}){
+ const missions=new Map(),events=[],approvals=new Map(),connectorHealth=new Map()
+ function emit(type,missionId,detail={}){const e={id:idFactory(),type,missionId:missionId??null,timestamp:clock(),detail:clone(detail)};events.unshift(e);return e}
+ function hydrate(state){if(!state)return;missions.clear();approvals.clear();connectorHealth.clear();events.splice(0);for(const m of state.missions??[])missions.set(m.id,clone(m));for(const a of state.approvals??[])approvals.set(a.id,clone(a));for(const h of state.connectors??[])connectorHealth.set(h.connectorId,clone(h));events.push(...(state.events??[]).map(clone))}
+ function snapshot(){return {schemaVersion:3,savedAt:clock(),missions:[...missions.values()].map(clone),approvals:[...approvals.values()].map(clone),connectors:[...connectorHealth.values()].map(clone),events:events.slice(0,500).map(clone)}}
+ hydrate(initialState)
+ function queue(input){if(!input?.objective)throw new TypeError('objective is required');const id=input.id??`NEO-MISSION-${idFactory()}`;if(missions.has(id))throw new Error(`Mission already exists: ${id}`);const retry=input.retryPolicy??{maxAttempts:3,baseDelayMs:30000};const m={id,objective:input.objective,priority:input.priority??'normal',status:MISSION_STATUS.QUEUED,route:input.route??[],actions:input.actions??[],dependencies:input.dependencies??[],retryPolicy:retry,attempts:0,nextAttemptAt:null,provenance:input.provenance??[],createdAt:clock(),updatedAt:clock(),result:null,error:null};missions.set(id,m);emit('mission.queued',id,{priority:m.priority,route:m.route,dependencies:m.dependencies});return clone(m)}
+ function get(id){const m=missions.get(id);return m?clone(m):null} function list({status}={}){return [...missions.values()].filter(m=>!status||m.status===status).map(clone)}
+ function dependenciesSatisfied(m){return (m.dependencies??[]).every(id=>missions.get(id)?.status===MISSION_STATUS.COMPLETED)}
+ function transition(id,next,detail={}){const m=missions.get(id);if(!m)throw new Error(`Unknown mission: ${id}`);if(!ALLOWED[m.status]?.has(next))throw new Error(`Invalid mission transition: ${m.status} -> ${next}`);const prev=m.status;m.status=next;m.updatedAt=clock();if(next===MISSION_STATUS.RUNNING){m.attempts+=1;m.nextAttemptAt=null}if(next===MISSION_STATUS.COMPLETED)m.result=detail.result??null;if(next===MISSION_STATUS.FAILED)m.error=detail.error??'Mission failed';emit('mission.transition',id,{previous:prev,next,...detail});return clone(m)}
+ function prepare(id){const m=missions.get(id);if(!m)throw new Error(`Unknown mission: ${id}`);if(m.status!==MISSION_STATUS.QUEUED)throw new Error('Only queued missions can be prepared');if(!dependenciesSatisfied(m))return transition(id,MISSION_STATUS.BLOCKED,{reason:'dependencies_incomplete'});return transition(id,MISSION_STATUS.RUNNING)}
+ function refreshBlocked(){for(const m of missions.values())if(m.status===MISSION_STATUS.BLOCKED&&dependenciesSatisfied(m))transition(m.id,MISSION_STATUS.QUEUED,{reason:'dependencies_satisfied'});return list()}
+ function scheduleRetry(id,error){const m=missions.get(id);if(!m)throw new Error(`Unknown mission: ${id}`);if(m.status!==MISSION_STATUS.RUNNING)throw new Error('Only running missions can retry');const max=m.retryPolicy?.maxAttempts??3;if(m.attempts>=max)return transition(id,MISSION_STATUS.FAILED,{error:String(error??'retry budget exhausted')});const base=m.retryPolicy?.baseDelayMs??30000,delay=base*Math.max(1,2**Math.max(0,m.attempts-1));const nextAt=new Date(Date.parse(clock())+delay).toISOString();m.nextAttemptAt=nextAt;return transition(id,MISSION_STATUS.RETRY_WAIT,{error:String(error??'retry scheduled'),delayMs:delay,nextAttemptAt:nextAt})}
+ function releaseRetries(at=clock()){for(const m of missions.values())if(m.status===MISSION_STATUS.RETRY_WAIT&&m.nextAttemptAt&&Date.parse(m.nextAttemptAt)<=Date.parse(at))transition(m.id,MISSION_STATUS.QUEUED,{reason:'retry_due'});return list()}
+ function requestApproval(id,action,context={}){const m=missions.get(id);if(!m)throw new Error(`Unknown mission: ${id}`);if(m.status!==MISSION_STATUS.RUNNING)throw new Error('Approval can only be requested by a running mission');const a={id:`NEO-APPROVAL-${idFactory()}`,missionId:id,action,context:clone(context),status:'pending',requestedAt:clock(),decidedAt:null,decision:null};approvals.set(a.id,a);transition(id,MISSION_STATUS.AWAITING_APPROVAL,{approvalId:a.id,action});emit('approval.requested',id,{approvalId:a.id,action});return clone(a)}
+ function decideApproval(approvalId,decision,actor='human'){const a=approvals.get(approvalId);if(!a)throw new Error(`Unknown approval: ${approvalId}`);if(a.status!=='pending')throw new Error('Approval already decided');if(!['approved','rejected'].includes(decision))throw new TypeError('decision must be approved or rejected');a.status=decision;a.decision={actor,value:decision};a.decidedAt=clock();emit(`approval.${decision}`,a.missionId,{approvalId,actor});if(decision==='approved')transition(a.missionId,MISSION_STATUS.RUNNING,{approvalId});else transition(a.missionId,MISSION_STATUS.CANCELLED,{approvalId,reason:'approval_rejected'});return clone(a)}
+ function listApprovals({status}={}){return [...approvals.values()].filter(a=>!status||a.status===status).map(clone)}
+ function heartbeat(connectorId,state,detail={}){if(!connectorId||!state)throw new TypeError('connectorId and state are required');const h={connectorId,state,detail:clone(detail),checkedAt:clock()};connectorHealth.set(connectorId,h);emit('connector.heartbeat',null,h);return clone(h)}
+ function telemetry({eventLimit=50}={}){const ml=list();return {generatedAt:clock(),summary:{total:ml.length,queued:ml.filter(m=>m.status===MISSION_STATUS.QUEUED).length,blocked:ml.filter(m=>m.status===MISSION_STATUS.BLOCKED).length,running:ml.filter(m=>m.status===MISSION_STATUS.RUNNING).length,retryWait:ml.filter(m=>m.status===MISSION_STATUS.RETRY_WAIT).length,awaitingApproval:ml.filter(m=>m.status===MISSION_STATUS.AWAITING_APPROVAL).length,terminal:ml.filter(m=>TERMINAL.has(m.status)).length,pendingApprovals:listApprovals({status:'pending'}).length},missions:ml,approvals:listApprovals(),connectors:[...connectorHealth.values()].map(clone),events:events.slice(0,eventLimit).map(clone)}}
+ return Object.freeze({queue,get,list,prepare,refreshBlocked,releaseRetries,transition,scheduleRetry,requestApproval,decideApproval,listApprovals,heartbeat,telemetry,snapshot})
 }
