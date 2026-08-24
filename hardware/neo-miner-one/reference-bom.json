@@ -1,0 +1,30 @@
+{
+  "product": "NEO Miner One",
+  "revision": "A-reference",
+  "status": "REFERENCE_ONLY",
+  "categories": [
+    {"category":"compute","requirement":"ARM64 compute module, >=4 GB RAM, Linux, eMMC/NVMe, GbE, USB, PCIe, I2C/SPI/UART/GPIO/PWM","preferred":"replaceable module"},
+    {"category":"security","requirement":"current-production secure element or TPM-class root of trust with protected keys and ECC/SHA-256","note":"Do not lock production BOM to ATECC608B; source a current recommended device"},
+    {"category":"network","requirement":"1x Gigabit Ethernet RJ45 with magnetics, ESD protection and LEDs"},
+    {"category":"watchdog","requirement":"independent hardware watchdog with reset-reason visibility where practical"},
+    {"category":"storage","requirement":"eMMC or NVMe; A/B update support preferred"},
+    {"category":"power_input","requirement":"12V or 24V auxiliary DC input with fuse/polyfuse, reverse-polarity protection, TVS and filtering"},
+    {"category":"power_5v","requirement":"high-efficiency buck regulator sized for compute module and USB peak load"},
+    {"category":"power_3v3","requirement":"regulated 3.3V logic rail for security, sensors and I/O"},
+    {"category":"fan_control","requirement":"4 independent PWM fan outputs and 4 tachometer inputs with fail-safe full-speed state"},
+    {"category":"thermal","requirement":"minimum PCB, inlet and outlet digital temperature sensors"},
+    {"category":"power_monitoring","requirement":"auxiliary voltage/current/power telemetry; expansion for PSU sensing"},
+    {"category":"hashboard_io","requirement":"UART/SPI/I2C/GPIO through replaceable vendor daughterboards with level shifting/isolation as required"},
+    {"category":"industrial_io","requirement":"optional CAN or RS-485 transceiver footprint"},
+    {"category":"service","requirement":"USB-C recovery/service, UART debug, reset and recovery buttons"},
+    {"category":"indicators","requirement":"power/system/network/miner/fault LEDs"},
+    {"category":"pcb","requirement":"4-layer minimum, protected external I/O, test pads, fixture-friendly manufacturing access"},
+    {"category":"enclosure","requirement":"metal or flame-rated polymer enclosure with airflow path, service access and labels"}
+  ],
+  "excluded_from_revision_a": [
+    "mains switching",
+    "direct multi-kilowatt ASIC power conversion",
+    "proprietary SHA-256 ASIC silicon",
+    "uncertified high-voltage control"
+  ]
+}

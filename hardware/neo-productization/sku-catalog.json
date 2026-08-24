@@ -1,0 +1,16 @@
+{
+  "version": "0.15",
+  "currency": "USD",
+  "physicalSkus": [
+    {"sku":"NEO-M1-AIR","name":"NEO Miner One","category":"PHYSICAL_MINER","cooling":"AIR","status":"PLANNING","msrp":null,"wholesale":null,"targetGrossMarginPct":35,"warrantyMonths":12},
+    {"sku":"NEO-MP-AIR","name":"NEO Miner Pro","category":"PHYSICAL_MINER","cooling":"AIR","status":"PLANNING","msrp":null,"wholesale":null,"targetGrossMarginPct":35,"warrantyMonths":12},
+    {"sku":"NEO-MR-RACK","name":"NEO Miner Rack","category":"RACK_SYSTEM","cooling":"AIR","status":"PLANNING","msrp":null,"wholesale":null,"targetGrossMarginPct":30,"warrantyMonths":12},
+    {"sku":"NEO-MIR-IMM","name":"NEO Immersion Rack","category":"IMMERSION_SYSTEM","cooling":"IMMERSION","status":"PLANNING","msrp":null,"wholesale":null,"targetGrossMarginPct":30,"warrantyMonths":12}
+  ],
+  "digitalSkus": [
+    {"sku":"DNEO-SPARK-25T","name":"Digital NEO Miner Spark","hashrateTh":25,"status":"PLANNING","backingRequired":true,"guaranteedBtc":false},
+    {"sku":"DNEO-CORE-100T","name":"Digital NEO Miner Core","hashrateTh":100,"status":"PLANNING","backingRequired":true,"guaranteedBtc":false},
+    {"sku":"DNEO-TITAN-500T","name":"Digital NEO Miner Titan","hashrateTh":500,"status":"PLANNING","backingRequired":true,"guaranteedBtc":false},
+    {"sku":"DNEO-SOV-1P","name":"Digital NEO Miner Sovereign","hashrateTh":1000,"status":"PLANNING","backingRequired":true,"guaranteedBtc":false}
+  ]
+}

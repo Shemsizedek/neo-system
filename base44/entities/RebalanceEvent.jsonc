@@ -1,0 +1,15 @@
+{
+  "name":"RebalanceEvent",
+  "type":"object",
+  "properties":{
+    "event_id":{"type":"string"},
+    "allocation_id":{"type":"string"},
+    "failed_miner_id":{"type":"string"},
+    "replacement_miner_id":{"type":["string","null"]},
+    "shifted_hashrate_th":{"type":"number"},
+    "reason":{"type":"string"},
+    "occurred_at":{"type":"string","format":"date-time"},
+    "status":{"type":"string","enum":["COMPLETED","CAPACITY_SHORTFALL"]}
+  },
+  "required":["event_id","allocation_id","failed_miner_id","status"]
+}

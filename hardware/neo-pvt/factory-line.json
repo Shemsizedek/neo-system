@@ -1,0 +1,35 @@
+{
+  "version": "0.14.0",
+  "product": "NEO Miner One",
+  "stations": [
+    {"id":"ST01","name":"Incoming Inspection","critical":true,"target_cycle_min":6},
+    {"id":"ST02","name":"Controller Board Test","critical":true,"target_cycle_min":5},
+    {"id":"ST03","name":"Hashboard Incoming Test","critical":true,"target_cycle_min":8},
+    {"id":"ST04","name":"PSU/PDU Inspection","critical":true,"target_cycle_min":4},
+    {"id":"ST05","name":"Chassis Preparation","critical":false,"target_cycle_min":5},
+    {"id":"ST06","name":"Subassembly Build","critical":true,"target_cycle_min":10},
+    {"id":"ST07","name":"Final Mechanical Assembly","critical":true,"target_cycle_min":10},
+    {"id":"ST08","name":"Harness Verification","critical":true,"target_cycle_min":4},
+    {"id":"ST09","name":"Secure Identity Provisioning","critical":true,"target_cycle_min":3},
+    {"id":"ST10","name":"Firmware Load","critical":true,"target_cycle_min":4},
+    {"id":"ST11","name":"Calibration","critical":true,"target_cycle_min":6},
+    {"id":"ST12","name":"Electrical Safety Pre-Check","critical":true,"target_cycle_min":4},
+    {"id":"ST13","name":"Power-On Functional Test","critical":true,"target_cycle_min":6},
+    {"id":"ST14","name":"End-of-Line Mining Test","critical":true,"target_cycle_min":12},
+    {"id":"ST15","name":"Thermal/Fan Verification","critical":true,"target_cycle_min":8},
+    {"id":"ST16","name":"Burn-In Sampling","critical":false,"target_cycle_min":120},
+    {"id":"ST17","name":"Final Quality Audit","critical":true,"target_cycle_min":5},
+    {"id":"ST18","name":"Label/Serialization Check","critical":true,"target_cycle_min":3},
+    {"id":"ST19","name":"Packaging","critical":true,"target_cycle_min":6},
+    {"id":"ST20","name":"Finished Goods Release","critical":true,"target_cycle_min":3}
+  ],
+  "pilot_targets": {
+    "pvt0_units": "5-10",
+    "pvt1_units": "20-50",
+    "pvt2_units": "50-200",
+    "pvt1_fpy_min_pct": 90,
+    "release_fpy_min_pct": 95,
+    "traceability_required_pct": 100,
+    "eol_completion_required_pct": 100
+  }
+}

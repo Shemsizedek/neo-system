@@ -1,0 +1,25 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "title":"NEO Miner Customer Activation",
+  "type":"object",
+  "required":["activationId","customerId","productSku","productType","status"],
+  "properties":{
+    "activationId":{"type":"string"},
+    "customerId":{"type":"string"},
+    "orderId":{"type":["string","null"]},
+    "productSku":{"type":"string"},
+    "productType":{"type":"string","enum":["PHYSICAL","DIGITAL"]},
+    "serialNumber":{"type":["string","null"]},
+    "deviceIdentityId":{"type":["string","null"]},
+    "contractId":{"type":["string","null"]},
+    "paymentCurrency":{"type":["string","null"]},
+    "paymentStatus":{"type":"string","enum":["NOT_REQUIRED","PENDING","CONFIRMED","FAILED","REFUNDED"]},
+    "complianceStatus":{"type":"string","enum":["NOT_REQUIRED","PENDING","CLEARED","RESTRICTED","BLOCKED"]},
+    "capacityBackingVerified":{"type":["boolean","null"]},
+    "poolConfigured":{"type":"boolean"},
+    "walletConfigured":{"type":"boolean"},
+    "acceptanceTestPassed":{"type":"boolean"},
+    "activatedAt":{"type":["string","null"],"format":"date-time"},
+    "status":{"type":"string","enum":["DRAFT","AWAITING_PAYMENT","AWAITING_COMPLIANCE","AWAITING_PROVISIONING","READY","ACTIVE","SUSPENDED","CANCELLED"]}
+  }
+}

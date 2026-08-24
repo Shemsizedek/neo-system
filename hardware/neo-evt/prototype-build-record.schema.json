@@ -1,0 +1,20 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "title":"NEO Miner One EVT Prototype Build Record",
+  "type":"object",
+  "required":["unitSerial","lot","assemblyDate","hardwareRevisions","softwareRevisions","testDisposition"],
+  "properties":{
+    "unitSerial":{"type":"string","pattern":"^NEO-EVT-[A-Z0-9-]+$"},
+    "lot":{"type":"string"},
+    "assemblyDate":{"type":"string","format":"date-time"},
+    "technician":{"type":"string"},
+    "hardwareRevisions":{"type":"object","properties":{"controller":{"type":"string"},"hashboard":{"type":"string"},"powerThermal":{"type":"string"},"chassis":{"type":"string"},"harness":{"type":"string"}},"additionalProperties":false},
+    "softwareRevisions":{"type":"object","properties":{"controllerOs":{"type":"string"},"minerAgent":{"type":"string"},"testSoftware":{"type":"string"}},"additionalProperties":false},
+    "firmwareImageSha256":{"type":"string","pattern":"^[a-fA-F0-9]{64}$"},
+    "keyProvisioned":{"type":"boolean"},
+    "deviations":{"type":"array","items":{"type":"string"}},
+    "rework":{"type":"array","items":{"type":"string"}},
+    "testDisposition":{"type":"string","enum":["PASS","FAIL","HOLD","REWORK"]}
+  },
+  "additionalProperties":false
+}

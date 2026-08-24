@@ -1,0 +1,14 @@
+{
+  "name":"CapacityReservation",
+  "type":"object",
+  "properties":{
+    "reservation_id":{"type":"string"},
+    "order_id":{"type":"string"},
+    "customer_id":{"type":"string"},
+    "hashrate_th":{"type":"number"},
+    "expires_at":{"type":"string","format":"date-time"},
+    "status":{"type":"string","enum":["ACTIVE","CONVERTED","EXPIRED","CANCELLED"]},
+    "simulation":{"type":"boolean","default":true}
+  },
+  "required":["reservation_id","order_id","hashrate_th","expires_at","status"]
+}

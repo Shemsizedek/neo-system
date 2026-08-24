@@ -1,0 +1,21 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "title":"NEO Miner One EVT Test Result",
+  "type":"object",
+  "required":["testId","unitSerial","timestamp","result","operator"],
+  "properties":{
+    "testId":{"type":"string"},
+    "unitSerial":{"type":"string"},
+    "timestamp":{"type":"string","format":"date-time"},
+    "operator":{"type":"string"},
+    "fixtureRevision":{"type":"string"},
+    "softwareRevision":{"type":"string"},
+    "instrumentation":{"type":"array","items":{"type":"string"}},
+    "measurements":{"type":"object","additionalProperties":{"type":["number","string","boolean"]}},
+    "result":{"type":"string","enum":["PASS","FAIL","BLOCKED","NOT_RUN"]},
+    "severity":{"type":"string","enum":["BLOCKER","MAJOR","MINOR","OBSERVATION"]},
+    "notes":{"type":"string"},
+    "evidenceRefs":{"type":"array","items":{"type":"string"}}
+  },
+  "additionalProperties":false
+}

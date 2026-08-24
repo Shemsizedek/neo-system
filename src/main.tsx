@@ -4,6 +4,8 @@ import ReactDOM from 'react-dom/client'
 import { App } from './App'
 import { HomeBase } from './home/HomeBase'
 import { MinerApp } from './miner/MinerApp'
+import { GeneratorApp } from './miner/GeneratorApp'
+import { StorefrontApp } from './miner/StorefrontApp'
 import { NeoWireApp } from './wire/NeoWireApp'
 import { NeoExplorer } from './explorer/NeoExplorer'
 import { NEOpayApp } from './neopay/NEOpayApp'
@@ -40,7 +42,9 @@ function RootRouter(){
 
   const isHome=route==='/'||route===''||route==='/home'
   const isCommand=route==='/command'||route.startsWith('/command/')
+  const isGenerator=route==='/generator'||route.startsWith('/generator/')
   const isMiner=route==='/miner'||route.startsWith('/miner/')
+  const isMinerStore=route==='/miner-store'||route.startsWith('/miner-store/')
   const isWire=route==='/wire'||route.startsWith('/wire/')
   const isExplorer=route==='/explorer'||route.startsWith('/explorer/')
   const isNEOpay=route==='/neopay'||route.startsWith('/neopay/')
@@ -49,6 +53,8 @@ function RootRouter(){
   if(isNEOpay) return <NEOpayApp/>
   if(isExplorer) return <NeoExplorer/>
   if(isWire) return <NeoWireApp/>
+  if(isMinerStore) return <StorefrontApp/>
+  if(isGenerator) return <GeneratorApp/>
   if(isMiner) return <MinerApp/>
   if(isCommand) return <App/>
   return <HomeBase onOpen={open}/>

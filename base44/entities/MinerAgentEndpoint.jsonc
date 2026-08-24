@@ -1,0 +1,15 @@
+{
+  "name": "MinerAgentEndpoint",
+  "type": "object",
+  "properties": {
+    "agent_id": {"type":"string"},
+    "miner_id": {"type":"string"},
+    "base_url": {"type":"string"},
+    "public_key_id": {"type":"string"},
+    "status": {"type":"string","enum":["DISCONNECTED","CONNECTING","CONNECTED","DEGRADED","ERROR"]},
+    "last_seen_at": {"type":["string","null"],"format":"date-time"},
+    "tls_required": {"type":"boolean","default":true},
+    "enabled": {"type":"boolean","default":false}
+  },
+  "required": ["agent_id","miner_id","status"]
+}

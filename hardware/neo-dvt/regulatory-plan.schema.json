@@ -1,0 +1,24 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "title":"NEO Miner Regulatory Plan",
+  "type":"object",
+  "required":["product","targetMarkets","status"],
+  "properties":{
+    "product":{"type":"string"},
+    "status":{"enum":["PLANNING","PRE_COMPLIANCE","FORMAL_TESTING","COMPLETE"]},
+    "targetMarkets":{"type":"array","items":{"type":"object","required":["market","emcRoute","safetyRoute","markingStatus"],"properties":{
+      "market":{"type":"string"},
+      "emcRoute":{"type":"string"},
+      "safetyRoute":{"type":"string"},
+      "nationalDeviations":{"type":"array","items":{"type":"string"}},
+      "lab":{"type":"string"},
+      "reportIds":{"type":"array","items":{"type":"string"}},
+      "markingStatus":{"enum":["NOT_AUTHORIZED","PENDING","AUTHORIZED"]},
+      "notes":{"type":"string"}
+    }}},
+    "productSafetyStandardCandidate":{"type":"string"},
+    "emcStandardCandidates":{"type":"array","items":{"type":"string"}},
+    "documentationOwner":{"type":"string"},
+    "approvedBy":{"type":"string"}
+  }
+}

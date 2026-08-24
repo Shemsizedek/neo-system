@@ -1,0 +1,17 @@
+{
+  "name":"SettlementBatch",
+  "type":"object",
+  "properties":{
+    "settlement_id":{"type":"string"},
+    "contract_id":{"type":"string"},
+    "gross_btc":{"type":"number"},
+    "pool_fee_btc":{"type":"number"},
+    "service_fee_btc":{"type":"number"},
+    "net_btc":{"type":"number"},
+    "destination_ledger":{"type":"string","enum":["HASHVAULT_CUSTOMER","HASHVAULT_TREASURY"]},
+    "status":{"type":"string","enum":["DRAFT","APPROVED","SETTLED"]},
+    "source_attribution_ids":{"type":"array","items":{"type":"string"}},
+    "simulation":{"type":"boolean","default":true}
+  },
+  "required":["settlement_id","contract_id","status","simulation"]
+}

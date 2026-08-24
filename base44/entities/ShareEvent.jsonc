@@ -1,0 +1,16 @@
+{
+  "name": "ShareEvent",
+  "type": "object",
+  "properties": {
+    "event_id": {"type":"string"},
+    "allocation_id": {"type":"string"},
+    "miner_id": {"type":"string"},
+    "worker_id": {"type":"string"},
+    "accepted": {"type":"boolean"},
+    "difficulty_units": {"type":"number"},
+    "received_at": {"type":"string","format":"date-time"},
+    "source": {"type":"string","enum":["MINER_AGENT","POOL_GATEWAY"]},
+    "verified": {"type":"boolean","default":false}
+  },
+  "required": ["event_id","allocation_id","miner_id","received_at","source"]
+}

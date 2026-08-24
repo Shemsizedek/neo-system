@@ -1,0 +1,22 @@
+{
+  "version":"0.15",
+  "product":"NEO Miner",
+  "gate":"COMMERCIAL_RELEASE",
+  "requirements":[
+    {"id":"CR-001","name":"PVT production release passed","blocking":true},
+    {"id":"CR-002","name":"Target-market regulatory obligations resolved","blocking":true},
+    {"id":"CR-003","name":"Production BOM frozen and approved","blocking":true},
+    {"id":"CR-004","name":"Approved suppliers and alternates documented","blocking":true},
+    {"id":"CR-005","name":"Factory work instructions and EOL fixtures validated","blocking":true},
+    {"id":"CR-006","name":"Signed reproducible firmware release available","blocking":true},
+    {"id":"CR-007","name":"Secure identity provisioning operational","blocking":true},
+    {"id":"CR-008","name":"Warranty and RMA workflow operational","blocking":true},
+    {"id":"CR-009","name":"Installation, safety and customer documentation approved","blocking":true},
+    {"id":"CR-010","name":"Product liability and commercial terms reviewed","blocking":true},
+    {"id":"CR-011","name":"Advertised payment rails verified live","blocking":true},
+    {"id":"CR-012","name":"Digital NEO Miner backing controls verified","blocking":true},
+    {"id":"CR-013","name":"Support SLA staffing and escalation path active","blocking":true},
+    {"id":"CR-014","name":"Fulfillment and shipment traceability validated","blocking":true}
+  ],
+  "decision":{"status":"BLOCKED","approvedBy":null,"approvedAt":null,"notes":"Planning artifact only; no product is commercially released by this file."}
+}

@@ -1,0 +1,24 @@
+{
+  "agentId": "MAG-TX-001",
+  "minerId": "NEO-MINER-TX-000001",
+  "gatewayUrl": "https://neo-gateway.example/api/v1/miner-agent/events",
+  "privateKeyPath": "/etc/neo-miner-agent/agent-ed25519-private.pem",
+  "pollIntervalMs": 5000,
+  "adapter": "reference",
+  "host": "192.168.1.100",
+  "port": 4028,
+  "timeoutMs": 2500,
+  "allowControl": false,
+  "referenceTelemetry": {
+    "hashrateTh": 120,
+    "powerW": 3300,
+    "temperatureC": 68,
+    "fanRpm": 5400,
+    "acceptedShares": 0,
+    "rejectedShares": 0,
+    "uptimeSeconds": 0,
+    "pool": "NEO Pool Primary",
+    "worker": "NEO-FARM01-MINER0001",
+    "firmware": "REFERENCE"
+  }
+}

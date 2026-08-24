@@ -1,0 +1,22 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "title":"NEO Miner Refund",
+  "type":"object",
+  "properties":{
+    "refund_id":{"type":"string"},
+    "order_id":{"type":"string"},
+    "payment_id":{"type":"string"},
+    "product_class":{"type":"string","enum":["PHYSICAL_MINER","DIGITAL_MINER","HOSTING","ENTERPRISE"]},
+    "reason":{"type":"string"},
+    "requested_amount":{"type":"number","minimum":0},
+    "eligible_amount":{"type":"number","minimum":0},
+    "currency":{"type":"string"},
+    "non_refundable_amount":{"type":"number","minimum":0},
+    "status":{"type":"string","enum":["REQUESTED","UNDER_REVIEW","APPROVED","PARTIALLY_APPROVED","REJECTED","SETTLEMENT_PENDING","REFUNDED","FAILED"]},
+    "settlement_reference":{"type":"string"},
+    "requested_at":{"type":"string","format":"date-time"},
+    "resolved_at":{"type":["string","null"],"format":"date-time"},
+    "simulation":{"type":"boolean","default":true}
+  },
+  "required":["refund_id","order_id","product_class","requested_amount","eligible_amount","currency","status","requested_at","simulation"]
+}

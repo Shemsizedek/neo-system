@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "NEO Miner One RMA Record",
+  "type": "object",
+  "required": ["rma_id","unit_serial","opened_at","reported_fault","status"],
+  "properties": {
+    "rma_id": {"type":"string"},
+    "unit_serial": {"type":"string"},
+    "opened_at": {"type":"string","format":"date-time"},
+    "reported_fault": {"type":"string"},
+    "telemetry_reference": {"type":"string"},
+    "incoming_verification": {"type":"string"},
+    "root_cause_code": {"type":"string"},
+    "parts_replaced": {"type":"array","items":{"type":"string"}},
+    "repair_action": {"type":"string"},
+    "retest_result": {"type":"string","enum":["NOT_RUN","PASS","FAIL"]},
+    "disposition": {"type":"string","enum":["RETURN_TO_CUSTOMER","REPLACE_UNIT","SCRAP","ENGINEERING_HOLD"]},
+    "fleet_action_required": {"type":"boolean"},
+    "status": {"type":"string","enum":["OPEN","IN_DIAGNOSIS","IN_REPAIR","RETEST","CLOSED"]},
+    "closed_at": {"type":["string","null"],"format":"date-time"}
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "program":"NEO Miner One EVT",
+  "bomRevision":"EVT-A",
+  "status":"CONTROLLED_PROTOTYPE",
+  "lines":[
+    {"internalPart":"NEO-CTRL-001","category":"controller","description":"NEO Miner One controller assembly","quantity":1,"lifecycle":"PROTOTYPE","risk":"HIGH","qualification":"REQUIRED"},
+    {"internalPart":"NEO-HB-001","category":"hashboard","description":"Commercial-ASIC-based NEO hashboard/reference board","quantity":3,"lifecycle":"PROTOTYPE","risk":"HIGH","qualification":"REQUIRED"},
+    {"internalPart":"NEO-PWR-001","category":"power","description":"Qualified external PSU / prototype PDU assembly","quantity":1,"lifecycle":"PROTOTYPE","risk":"HIGH","qualification":"REQUIRED"},
+    {"internalPart":"NEO-FAN-001","category":"cooling","description":"High-static-pressure PWM fan","quantity":4,"lifecycle":"ACTIVE","risk":"MEDIUM","qualification":"REQUIRED"},
+    {"internalPart":"NEO-CHS-001","category":"mechanical","description":"NEO Miner chassis EVT fabrication","quantity":1,"lifecycle":"PROTOTYPE","risk":"MEDIUM","qualification":"REQUIRED"},
+    {"internalPart":"NEO-HRN-001","category":"harness","description":"Controller/hashboard/power cable harness set","quantity":1,"lifecycle":"PROTOTYPE","risk":"HIGH","qualification":"REQUIRED"},
+    {"internalPart":"NEO-TIM-001","category":"thermal","description":"Thermal interface material set","quantity":1,"lifecycle":"ACTIVE","risk":"MEDIUM","qualification":"REQUIRED"},
+    {"internalPart":"NEO-FLT-001","category":"filter","description":"Replaceable inlet filter","quantity":1,"lifecycle":"ACTIVE","risk":"LOW","qualification":"REQUIRED"}
+  ],
+  "rules":[
+    "Manufacturer and manufacturer part numbers must be populated before purchase release.",
+    "Any substitution of HIGH-risk items requires engineering approval and a new BOM revision.",
+    "Prototype BOM approval does not constitute production qualification."
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "contract": "NEO Power & Thermal Telemetry",
+  "version": "0.10.0",
+  "required": [
+    "timestamp",
+    "dc_bus_voltage_v",
+    "dc_bus_current_a",
+    "dc_bus_power_w",
+    "energy_interval_kwh",
+    "hashboard_power",
+    "cooling_mode",
+    "thermal_zones",
+    "safety_state"
+  ],
+  "hashboard_power": {
+    "shape": [{"board_id":"string","voltage_v":"number","current_a":"number","power_w":"number","enabled":"boolean","fault":"string|null"}]
+  },
+  "thermal_zones": {
+    "shape": [{"zone":"string","temperature_c":"number","state":"NORMAL|WARNING|THROTTLE|CRITICAL|EMERGENCY"}]
+  },
+  "optional": [
+    "fan_rpm",
+    "fan_pwm_pct",
+    "pump_status",
+    "flow_rate",
+    "leak_detect",
+    "cooling_overhead_w",
+    "facility_overhead_w",
+    "electricity_rate_per_kwh",
+    "tariff_id",
+    "recovered_heat_kwh"
+  ],
+  "derived": ["j_per_th","electricity_cost_hour","electricity_cost_day","electricity_cost_per_th","electricity_cost_per_btc"]
+}

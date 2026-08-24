@@ -1,0 +1,17 @@
+{
+  "name": "HashpowerAllocation",
+  "type": "object",
+  "properties": {
+    "allocation_id": {"type":"string"},
+    "digital_miner_id": {"type":"string"},
+    "contract_id": {"type":"string"},
+    "target_hashrate_th": {"type":"number"},
+    "delivered_hashrate_th": {"type":"number"},
+    "source_miner_ids": {"type":"array","items":{"type":"string"}},
+    "pool_id": {"type":"string"},
+    "protocol": {"type":"string","enum":["STRATUM_V1","STRATUM_V2"]},
+    "status": {"type":"string","enum":["PENDING","ALLOCATED","MINING","DEGRADED","SUSPENDED","COMPLETED"]},
+    "simulation": {"type":"boolean","default":true}
+  },
+  "required": ["allocation_id","digital_miner_id","contract_id","target_hashrate_th","status"]
+}

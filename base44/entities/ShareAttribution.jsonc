@@ -1,0 +1,17 @@
+{
+  "name":"ShareAttribution",
+  "type":"object",
+  "properties":{
+    "attribution_id":{"type":"string"},
+    "contract_id":{"type":"string"},
+    "allocation_id":{"type":"string"},
+    "accepted_shares":{"type":"integer"},
+    "rejected_shares":{"type":"integer"},
+    "difficulty_units":{"type":"number"},
+    "attributed_btc":{"type":"number"},
+    "period_start":{"type":"string","format":"date-time"},
+    "period_end":{"type":"string","format":"date-time"},
+    "status":{"type":"string","enum":["ESTIMATED","VERIFIED"]}
+  },
+  "required":["attribution_id","contract_id","allocation_id","status"]
+}

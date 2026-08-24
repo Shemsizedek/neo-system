@@ -1,0 +1,24 @@
+{
+  "program": "NEO Miner One EVT",
+  "version": "0.12",
+  "tests": [
+    {"id":"EVT-ELEC-001","domain":"electrical","name":"Controller low-voltage rail bring-up","mandatory":true,"severity_on_fail":"BLOCKER"},
+    {"id":"EVT-ID-001","domain":"security","name":"Device identity provisioning and verification","mandatory":true,"severity_on_fail":"BLOCKER"},
+    {"id":"EVT-NET-001","domain":"network","name":"Ethernet and gateway connectivity","mandatory":true,"severity_on_fail":"MAJOR"},
+    {"id":"EVT-HB-001","domain":"hashboard","name":"Enumerate all configured hashboards","mandatory":true,"severity_on_fail":"MAJOR"},
+    {"id":"EVT-MINE-001","domain":"mining","name":"Sustained accepted-share mining session","mandatory":true,"severity_on_fail":"MAJOR"},
+    {"id":"EVT-PWR-001","domain":"power","name":"Per-branch power telemetry correlation","mandatory":true,"severity_on_fail":"MAJOR"},
+    {"id":"EVT-THERM-001","domain":"thermal","name":"Full-load thermal characterization","mandatory":true,"severity_on_fail":"MAJOR"},
+    {"id":"EVT-SAFE-001","domain":"safety","name":"Thermal throttle transition","mandatory":true,"severity_on_fail":"BLOCKER"},
+    {"id":"EVT-SAFE-002","domain":"safety","name":"Emergency shutdown transition","mandatory":true,"severity_on_fail":"BLOCKER"},
+    {"id":"EVT-FAN-001","domain":"cooling","name":"Single fan failure response","mandatory":true,"severity_on_fail":"BLOCKER"},
+    {"id":"EVT-WDOG-001","domain":"recovery","name":"Miner Agent watchdog restart","mandatory":true,"severity_on_fail":"MAJOR"},
+    {"id":"EVT-NET-002","domain":"recovery","name":"Pool disconnect and failover","mandatory":true,"severity_on_fail":"MAJOR"},
+    {"id":"EVT-OTA-001","domain":"software","name":"Valid signed OTA staging","mandatory":true,"severity_on_fail":"MAJOR"},
+    {"id":"EVT-OTA-002","domain":"software","name":"Invalid OTA signature rejection","mandatory":true,"severity_on_fail":"BLOCKER"},
+    {"id":"EVT-MECH-001","domain":"mechanical","name":"Hashboard and controller service cycle","mandatory":true,"severity_on_fail":"MINOR"},
+    {"id":"EVT-AIR-001","domain":"airflow","name":"Airflow recirculation inspection","mandatory":true,"severity_on_fail":"MAJOR"},
+    {"id":"EVT-ACOU-001","domain":"acoustic","name":"Full-load acoustic characterization","mandatory":false,"severity_on_fail":"OBSERVATION"},
+    {"id":"EVT-BURN-001","domain":"reliability","name":"Controlled continuous burn-in","mandatory":true,"severity_on_fail":"MAJOR"}
+  ]
+}

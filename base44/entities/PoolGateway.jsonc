@@ -1,0 +1,13 @@
+{
+  "name": "PoolGateway",
+  "type": "object",
+  "properties": {
+    "gateway_id": {"type":"string"},
+    "pool_name": {"type":"string"},
+    "protocol": {"type":"string","enum":["STRATUM_V1","STRATUM_V2"]},
+    "endpoint": {"type":"string"},
+    "status": {"type":"string","enum":["DISCONNECTED","CONNECTING","CONNECTED","DEGRADED","ERROR"]},
+    "enabled": {"type":"boolean","default":false}
+  },
+  "required": ["gateway_id","pool_name","protocol","status"]
+}

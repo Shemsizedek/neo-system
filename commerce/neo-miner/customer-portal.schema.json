@@ -1,0 +1,14 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "title":"NEO Miner Customer Portal Record",
+  "type":"object",
+  "properties":{
+    "customer_id":{"type":"string"},
+    "order_ids":{"type":"array","items":{"type":"string"}},
+    "physical_devices":{"type":"array","items":{"type":"object","properties":{"serial_number":{"type":"string"},"sku":{"type":"string"},"activation_status":{"type":"string"},"fleet_status":{"type":"string"}},"required":["serial_number","sku","activation_status"]}},
+    "digital_contracts":{"type":"array","items":{"type":"object","properties":{"contract_id":{"type":"string"},"product_id":{"type":"string"},"contracted_hashrate_th":{"type":"number"},"delivered_hashrate_th":{"type":"number"},"sla_pct":{"type":"number"},"btc_estimated":{"type":"number"},"btc_verified":{"type":"number"},"btc_settled":{"type":"number"},"settlement_status":{"type":"string","enum":["NONE","PENDING","VERIFIED","SETTLED"]},"simulation":{"type":"boolean"}},"required":["contract_id","contracted_hashrate_th","settlement_status","simulation"]}},
+    "currency_preferences":{"type":"array","items":{"type":"string"}},
+    "updated_at":{"type":"string","format":"date-time"}
+  },
+  "required":["customer_id","order_ids","physical_devices","digital_contracts","updated_at"]
+}
