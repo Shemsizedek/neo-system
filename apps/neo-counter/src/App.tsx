@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { getReadOnlyRail } from './rails';
 import type { Rail, RailQuote } from './rails/types';
+import DevicePanel from './devices/DevicePanel';
 
 type Product = { id:string; name:string; price:number; category:string };
 type CartLine = Product & { qty:number };
@@ -130,7 +131,7 @@ export default function App(){
   return <div className="app-shell">
     <aside className="sidebar">
       <div><div className="brand">NEO Counter</div><div className="tag">Bitcoin Commerce Network</div></div>
-      <nav>{['Register','Transactions','Customers','Catalog','Treasury','Settings'].map((x,i)=><button key={x} className={i===0?'active':''}>{x}</button>)}</nav>
+      <nav>{['Register','Transactions','Customers','Catalog','Devices','Treasury','Settings'].map((x,i)=><button key={x} className={i===0?'active':''}>{x}</button>)}</nav>
       <div className="mode">Live read-only rails · signing disabled</div>
     </aside>
 
@@ -144,10 +145,12 @@ export default function App(){
         </div>
       </section>
 
+      <DevicePanel />
+
       <section className="panel tx"><div className="section-head"><h2>Recent transactions</h2><span>{transactions.length} settled</span></div>{transactions.length===0?<div className="empty">No transactions yet.</div>:transactions.map(t=><div className="txrow" key={t.id}><span>{t.id}</span><span>{t.rail}</span><strong>${(t.total/100).toFixed(2)}</strong><em>{t.status}</em></div>)}</section>
     </main>
 
-    <nav className="mobile-nav" aria-label="NEO Counter mobile navigation"><button className="active">Register</button><button>Transactions</button><button>Catalog</button><button>Settings</button></nav>
+    <nav className="mobile-nav" aria-label="NEO Counter mobile navigation"><button className="active">Register</button><button>Transactions</button><button>Catalog</button><button>Devices</button></nav>
 
     {checkout&&<div className="modal-wrap"><div className="modal">
       <div className="modal-head"><div><h2>Payment Intent</h2><small>{paymentId}</small></div><button aria-label="Close checkout" onClick={()=>setCheckout(false)}>×</button></div>
