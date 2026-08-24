@@ -1,0 +1,26 @@
+{
+  "product":"NEO Miner One",
+  "revision":"A-reference",
+  "fixture_version":"0.1",
+  "tests":[
+    {"id":"PWR-001","name":"Input protection and idle current","required":true},
+    {"id":"PWR-005","name":"5V rail regulation under load","required":true},
+    {"id":"PWR-033","name":"3.3V rail regulation under load","required":true},
+    {"id":"BOOT-001","name":"Compute module boot to controller health endpoint","required":true},
+    {"id":"NET-001","name":"Gigabit Ethernet link and packet test","required":true},
+    {"id":"SEC-001","name":"Secure element identity read","required":true},
+    {"id":"SEC-002","name":"Secure element signing challenge","required":true},
+    {"id":"WDT-001","name":"Independent watchdog reset test","required":true},
+    {"id":"STO-001","name":"Storage read/write and active-slot detection","required":true},
+    {"id":"FAN-001","name":"Fan PWM sweep channels 1-4","required":true},
+    {"id":"FAN-002","name":"Fan tach capture channels 1-4","required":true},
+    {"id":"TMP-001","name":"PCB/inlet/outlet temperature sensor enumeration","required":true},
+    {"id":"BUS-001","name":"I2C loopback/enumeration","required":true},
+    {"id":"BUS-002","name":"SPI fixture loopback","required":true},
+    {"id":"BUS-003","name":"UART channels loopback","required":true},
+    {"id":"GPIO-001","name":"GPIO fixture toggle/readback","required":true},
+    {"id":"USB-001","name":"USB-C recovery interface enumeration","required":true},
+    {"id":"ID-001","name":"Program board serial and manufacturing record","required":true}
+  ],
+  "release_gate":"All required tests PASS and manufacturing identity is issued before shipment."
+}
