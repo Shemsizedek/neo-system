@@ -1,0 +1,22 @@
+{
+  "product": "NEO Hashboard",
+  "version": "0.9.0",
+  "tests": [
+    {"id":"HB-001","name":"Visual inspection","required":true},
+    {"id":"HB-002","name":"Continuity and shorts","required":true},
+    {"id":"HB-003","name":"Board identity programming","required":true},
+    {"id":"HB-004","name":"Auxiliary rail validation","required":true},
+    {"id":"HB-005","name":"Core rail validation","required":true},
+    {"id":"HB-006","name":"Controller communication","required":true},
+    {"id":"HB-007","name":"Temperature sensor validation","required":true},
+    {"id":"HB-008","name":"ASIC enumeration","required":true},
+    {"id":"HB-009","name":"Low-frequency hashing","required":true},
+    {"id":"HB-010","name":"Nominal hashing","required":true},
+    {"id":"HB-011","name":"Thermal soak","required":true},
+    {"id":"HB-012","name":"Power telemetry correlation","required":true},
+    {"id":"HB-013","name":"Fault shutdown verification","required":true},
+    {"id":"HB-014","name":"Signed final test record","required":true}
+  ],
+  "pass_rule": "ALL_REQUIRED_PASS",
+  "production_enabled": false
+}
