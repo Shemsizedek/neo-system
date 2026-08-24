@@ -12,3 +12,5 @@ export { createMemoryDeadLetterQueue, createRedisDeadLetterQueue } from './dead-
 export { DEFAULT_WORKER_PROFILES, createWorkerFleet } from './worker-fleet.mjs'
 export { createGitHubAgent, createAsanaAgent, createGmailAgent, createAirbyteAgent, createLiveConnectorAgents } from './connector-agents.mjs'
 export { decomposeMission, reconcileMissionPlan, releaseReadinessPlan } from './mission-planner.mjs'
+export { DEFAULT_EVENT_RULES, createMemoryEventStore, createRedisEventStore, matchEventRule, ingestRouterEvent } from './event-engine.mjs'
+export { verifyGitHubSignature, verifyBearer, normalizeInboundEvent } from './event-security.mjs'
