@@ -1,0 +1,15 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "neo-counter-api",
+  "main": "src/worker.mjs",
+  "compatibility_date": "2026-08-24",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "neo-counter"
+    }
+  ],
+  "vars": {
+    "NEO_COUNTER_ALLOWED_ORIGIN": "https://shemsizedek.github.io"
+  }
+}
