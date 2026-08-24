@@ -26,6 +26,9 @@ export function openTribunalDb(path=defaultPath){
     CREATE TABLE IF NOT EXISTS provider_configs(id TEXT PRIMARY KEY,workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,provider_type TEXT NOT NULL,label TEXT NOT NULL,config_envelope TEXT NOT NULL,enabled INTEGER NOT NULL DEFAULT 0,created_by TEXT NOT NULL,updated_at TEXT NOT NULL,created_at TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS communication_outbox(id TEXT PRIMARY KEY,workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,notice_id TEXT,channel TEXT NOT NULL,destination TEXT NOT NULL,subject TEXT NOT NULL,body TEXT NOT NULL,status TEXT NOT NULL,attempt_count INTEGER NOT NULL DEFAULT 0,next_attempt_at TEXT,last_error TEXT,provider_ref TEXT,receipt_json TEXT,created_by TEXT NOT NULL,updated_at TEXT NOT NULL,created_at TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS calendar_exports(id TEXT PRIMARY KEY,workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,hearing_id TEXT NOT NULL,format TEXT NOT NULL,payload_hash TEXT NOT NULL,created_by TEXT NOT NULL,created_at TEXT NOT NULL);
+    CREATE TABLE IF NOT EXISTS service_recipients(id TEXT PRIMARY KEY,workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,claim_no TEXT NOT NULL,notice_id TEXT NOT NULL,recipient_name TEXT NOT NULL,destination TEXT NOT NULL,channel TEXT NOT NULL,status TEXT NOT NULL,deadline_at TEXT,served_at TEXT,last_attempt_at TEXT,created_by TEXT NOT NULL,updated_at TEXT NOT NULL,created_at TEXT NOT NULL,UNIQUE(workspace_id,notice_id,destination,channel));
+    CREATE TABLE IF NOT EXISTS service_ledger(seq INTEGER PRIMARY KEY AUTOINCREMENT,entry_id TEXT UNIQUE NOT NULL,workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,claim_no TEXT NOT NULL,notice_id TEXT NOT NULL,recipient_id TEXT,communication_id TEXT,action TEXT NOT NULL,status TEXT NOT NULL,evidence_hash TEXT,previous_hash TEXT,entry_hash TEXT NOT NULL UNIQUE,actor_user_id TEXT NOT NULL,details_json TEXT NOT NULL,created_at TEXT NOT NULL);
+    CREATE TABLE IF NOT EXISTS service_proofs(id TEXT PRIMARY KEY,workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,claim_no TEXT NOT NULL,notice_id TEXT NOT NULL,recipient_id TEXT NOT NULL,proof_type TEXT NOT NULL,statement TEXT NOT NULL,payload_hash TEXT NOT NULL,ledger_head TEXT,created_by TEXT NOT NULL,created_at TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS audit_log(seq INTEGER PRIMARY KEY AUTOINCREMENT,workspace_id TEXT NOT NULL,actor_user_id TEXT NOT NULL,action TEXT NOT NULL,subject TEXT NOT NULL,payload_hash TEXT NOT NULL,previous_hash TEXT,entry_hash TEXT NOT NULL UNIQUE,created_at TEXT NOT NULL);
     CREATE INDEX IF NOT EXISTS idx_audit_workspace_seq ON audit_log(workspace_id,seq);
     CREATE INDEX IF NOT EXISTS idx_efiles_workspace_claim ON efiles(workspace_id,claim_no);
@@ -35,10 +38,14 @@ export function openTribunalDb(path=defaultPath){
     CREATE INDEX IF NOT EXISTS idx_templates_workspace ON communication_templates(workspace_id,created_at);
     CREATE INDEX IF NOT EXISTS idx_outbox_workspace_status ON communication_outbox(workspace_id,status,next_attempt_at);
     CREATE INDEX IF NOT EXISTS idx_calendar_workspace_hearing ON calendar_exports(workspace_id,hearing_id);
+    CREATE INDEX IF NOT EXISTS idx_service_recipient_claim ON service_recipients(workspace_id,claim_no,notice_id);
+    CREATE INDEX IF NOT EXISTS idx_service_ledger_claim ON service_ledger(workspace_id,claim_no,seq);
+    CREATE INDEX IF NOT EXISTS idx_service_deadline ON service_recipients(workspace_id,status,deadline_at);
   `)
   const current=db.prepare('SELECT MAX(version) AS version FROM schema_meta').get()?.version||0
   if(current<1)db.prepare('INSERT INTO schema_meta(version,applied_at) VALUES(1,?)').run(new Date().toISOString())
   if(current<2)db.prepare('INSERT INTO schema_meta(version,applied_at) VALUES(2,?)').run(new Date().toISOString())
   if(current<3)db.prepare('INSERT INTO schema_meta(version,applied_at) VALUES(3,?)').run(new Date().toISOString())
+  if(current<4)db.prepare('INSERT INTO schema_meta(version,applied_at) VALUES(4,?)').run(new Date().toISOString())
   return db
 }
