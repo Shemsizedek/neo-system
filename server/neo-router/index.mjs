@@ -24,3 +24,4 @@ export { createGovernancePolicy, evaluateAuthority, evaluateQuorum, detectConfli
 export { createInstitutionalIdentity, registerSigningKey, rotateSigningKey, revokeSigningKey, issueCapability, evaluateCapability, signAttestation, verifyAttestation, createMissionProvenance } from './identity-trust.mjs'
 export { createExecutionContext, createReplayGuard, evaluateExecution, executeZeroTrust } from './zero-trust-execution.mjs'
 export { createWorkloadIdentity, createExternalKeyRef, issueEphemeralCredential, validateEphemeralCredential, createSecretBroker, signWorkerLease, verifyWorkerLease, createRevocationRegistry, secureRuntimeDecision } from './secure-runtime.mjs'
+export { createBuildProvenance, signBuildProvenance, verifyBuildProvenance, evaluateSupplyChain, createRuntimeAttestation, evaluateRuntimeAdmission, quarantineRecord, createArtifactManifest } from './runtime-attestation.mjs'
