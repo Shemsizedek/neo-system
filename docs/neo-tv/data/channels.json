@@ -1,11 +1,13 @@
 {
-  "version": "0.5.0",
+  "version": "0.6.0",
   "channels": [
     {
       "id": "neo-origin",
       "name": "NEO Origin",
       "number": "001",
       "group": "NEO",
+      "audience": "general",
+      "kidsSafe": false,
       "sourceClass": "green",
       "streamUrl": null,
       "description": "Reserved first-party NEO TV channel slot. No stream is bundled in this build."
@@ -15,6 +17,8 @@
       "name": "NEO Knowledge",
       "number": "010",
       "group": "Education",
+      "audience": "family",
+      "kidsSafe": true,
       "sourceClass": "green",
       "streamUrl": null,
       "description": "Reserved educational channel slot for authorized NEO programming."
@@ -24,6 +28,8 @@
       "name": "Authorized Stream Test",
       "number": "900",
       "group": "Developer",
+      "audience": "unrated",
+      "kidsSafe": false,
       "sourceClass": "yellow",
       "streamUrl": null,
       "description": "Developer slot for a user-supplied authorized media URL."
