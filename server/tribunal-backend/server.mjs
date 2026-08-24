@@ -5,6 +5,7 @@ import {changePassword,consumePasswordReset,issuePasswordReset,listDeliveries,op
 import {communicationsReport,createTemplate,hearingIcs,listOutbox,listProviderConfigs,listTemplates,processCommunication,queueCommunication,retryDeadLetter,saveProviderConfig} from './communications.mjs'
 import {acknowledgeProviderReceipt,adapterStatus,runCommunicationWorker} from './providerWorkers.mjs'
 import {buildServicePackage,communicationsAuditBundle,providerHealth,queueNoticeService,verifyProviderCallback} from './serviceNotice.mjs'
+import {issueProofOfService,listProofs,listServiceRecipients,recordServiceAttempt,registerServiceRecipient,serviceCompliance,verifyServiceLedger} from './serviceLedger.mjs'
 
 const db=openTribunalDb();const service=new TribunalService(db);const port=Number(process.env.PORT||8787)
 const hits=new Map()
@@ -19,7 +20,7 @@ const server=createServer(async(req,res)=>{
   if(!rateLimit(req))return json(res,429,{error:'Rate limit exceeded.'})
   const url=new URL(req.url,'http://localhost')
   try{
-    if(req.method==='GET'&&url.pathname==='/health')return json(res,200,{ok:true,service:'neo-tribunal-backend',version:'1.4',schema:3,time:new Date().toISOString(),communicationsWorker:'scheduler-ready',serviceAutomation:'ready'})
+    if(req.method==='GET'&&url.pathname==='/health')return json(res,200,{ok:true,service:'neo-tribunal-backend',version:'1.5',schema:4,time:new Date().toISOString(),communicationsWorker:'scheduler-ready',serviceAutomation:'ready',serviceLedger:'hash-chained'})
     if(req.method==='POST'&&url.pathname==='/v1/auth/register')return json(res,201,service.register(await body(req)))
     if(req.method==='POST'&&url.pathname==='/v1/auth/login')return json(res,200,service.login(await body(req)))
     if(req.method==='POST'&&url.pathname==='/v1/auth/reset/consume')return json(res,200,consumePasswordReset(db,await body(req)))
@@ -55,6 +56,11 @@ const server=createServer(async(req,res)=>{
     p=match(url.pathname,'/v1/workspaces/:workspaceId/communications/audit-bundle');if(p&&req.method==='GET')return json(res,200,communicationsAuditBundle(db,service,principal,p.workspaceId,{noticeId:url.searchParams.get('noticeId')||''}))
     p=match(url.pathname,'/v1/workspaces/:workspaceId/service/package');if(p&&req.method==='POST')return json(res,200,buildServicePackage(db,service,principal,p.workspaceId,await body(req)))
     p=match(url.pathname,'/v1/workspaces/:workspaceId/service/queue');if(p&&req.method==='POST')return json(res,201,queueNoticeService(db,service,principal,p.workspaceId,await body(req)))
+    p=match(url.pathname,'/v1/workspaces/:workspaceId/service/recipients');if(p&&req.method==='POST')return json(res,201,registerServiceRecipient(db,service,principal,p.workspaceId,await body(req)));if(p&&req.method==='GET')return json(res,200,{items:listServiceRecipients(db,service,principal,p.workspaceId,url.searchParams.get('claimNo')||'')})
+    p=match(url.pathname,'/v1/workspaces/:workspaceId/service/attempts');if(p&&req.method==='POST')return json(res,201,recordServiceAttempt(db,service,principal,p.workspaceId,await body(req)))
+    p=match(url.pathname,'/v1/workspaces/:workspaceId/service/proofs');if(p&&req.method==='POST')return json(res,201,issueProofOfService(db,service,principal,p.workspaceId,await body(req)));if(p&&req.method==='GET')return json(res,200,{items:listProofs(db,service,principal,p.workspaceId,url.searchParams.get('claimNo')||'')})
+    p=match(url.pathname,'/v1/workspaces/:workspaceId/service/compliance/:claimNo');if(p&&req.method==='GET')return json(res,200,serviceCompliance(db,service,principal,p.workspaceId,p.claimNo))
+    p=match(url.pathname,'/v1/workspaces/:workspaceId/service/ledger/verify');if(p&&req.method==='GET')return json(res,200,verifyServiceLedger(db,service,principal,p.workspaceId))
     p=match(url.pathname,'/v1/workspaces/:workspaceId/provider-callback/verify');if(p&&req.method==='POST'){service.authorize(principal,p.workspaceId,'CLERK');const input=await body(req);return json(res,200,{valid:verifyProviderCallback(input.payload,input.signature)})}
     p=match(url.pathname,'/v1/workspaces/:workspaceId/hearings/:hearingId/calendar.ics');if(p&&req.method==='GET'){const item=hearingIcs(db,service,principal,p.workspaceId,p.hearingId);return json(res,200,item.content,{'content-type':'text/calendar; charset=utf-8','x-neo-payload-sha256':item.payloadHash,'x-neo-export-id':item.exportId})}
 
@@ -63,4 +69,4 @@ const server=createServer(async(req,res)=>{
     return json(res,404,{error:'Not found'})
   }catch(error){const message=error instanceof Error?error.message:String(error);const status=/Authentication|required|credentials/i.test(message)?401:/membership|role|invitation email/i.test(message)?403:/conflict/i.test(message)?409:400;return json(res,status,{error:message})}
 })
-server.listen(port,()=>console.log(JSON.stringify({level:'info',event:'server_started',service:'neo-tribunal-backend',version:'1.4',schema:3,communicationsWorker:'scheduler-ready',serviceAutomation:'ready',port})))
+server.listen(port,()=>console.log(JSON.stringify({level:'info',event:'server_started',service:'neo-tribunal-backend',version:'1.5',schema:4,communicationsWorker:'scheduler-ready',serviceAutomation:'ready',serviceLedger:'hash-chained',port})))
