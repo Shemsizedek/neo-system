@@ -1,0 +1,23 @@
+{
+  "contract": "NEO Miner Hardware Abstraction Layer",
+  "version": "0.8.0",
+  "device_classes": ["controller","fan","temperature","power-monitor","hashboard-adapter","secure-element","watchdog","storage","network"],
+  "operations": {
+    "controller": ["get_identity","get_board_revision","get_serial","get_uptime","reboot"],
+    "fan": ["read_rpm","set_pwm","get_fault","set_fail_safe"],
+    "temperature": ["read_celsius","get_zone"],
+    "power-monitor": ["read_voltage","read_current","read_watts","get_faults"],
+    "hashboard-adapter": ["identify","read_telemetry","restart","set_pool","set_worker","set_mode"],
+    "secure-element": ["get_public_identity","sign_digest","verify_boot_measurement"],
+    "watchdog": ["heartbeat","get_last_reset_reason","set_timeout"],
+    "storage": ["get_health","get_active_slot","get_update_slot"],
+    "network": ["get_link","get_mac","get_addresses"]
+  },
+  "safety_rules": [
+    "Fan fail-safe must not depend exclusively on user-space software.",
+    "Hashboard control operations require explicit local policy authorization.",
+    "Private key material must not be returned by the HAL.",
+    "Unknown daughterboards are read-only until identified and approved.",
+    "High-voltage/mains control is outside revision A HAL."
+  ]
+}
