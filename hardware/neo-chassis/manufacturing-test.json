@@ -1,0 +1,22 @@
+{
+  "platform": "NEO Miner Chassis",
+  "version": "0.11.0",
+  "acceptanceTests": [
+    {"id":"MCH-001","name":"Critical envelope dimensions","method":"fixture/CMM","required":true},
+    {"id":"MCH-002","name":"Hashboard rail alignment","method":"go/no-go fixture","required":true},
+    {"id":"MCH-003","name":"Fan aperture and guard alignment","method":"fixture/visual","required":true},
+    {"id":"MCH-004","name":"Controller mounting datum","method":"fixture","required":true},
+    {"id":"MCH-005","name":"PSU/PDU bay geometry","method":"fixture","required":true},
+    {"id":"MCH-006","name":"Panel fit and latch operation","method":"manual","required":true},
+    {"id":"MCH-007","name":"Fastener torque audit","method":"torque witness/sample","required":true},
+    {"id":"MCH-008","name":"Protective bonding continuity","method":"electrical continuity test","required":true},
+    {"id":"MCH-009","name":"Cable clearance from fan envelope","method":"visual/fixture","required":true},
+    {"id":"MCH-010","name":"Primary airflow obstruction check","method":"visual/fixture","required":true},
+    {"id":"MCH-011","name":"Filter cassette insertion/removal","method":"manual cycle","required":true},
+    {"id":"MCH-012","name":"Hashboard insertion/removal","method":"manual cycle","required":true},
+    {"id":"MCH-013","name":"Chassis label placement","method":"visual","required":true},
+    {"id":"MCH-014","name":"Rack support fit","method":"rack fixture","required":true},
+    {"id":"MCH-015","name":"Vibration/rattle screening","method":"production screening profile","required":false}
+  ],
+  "releaseRule": "No production release until all required mechanical tests pass and thermal validation is complete."
+}
