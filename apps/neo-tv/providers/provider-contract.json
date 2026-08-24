@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://neo-system.local/schemas/neo-tv-provider-contract-v0.2.json",
+  "title": "NEO TV Provider Adapter Contract",
+  "type": "object",
+  "required": ["id", "name", "version", "integrity", "capabilities"],
+  "properties": {
+    "id": {"type": "string"},
+    "name": {"type": "string"},
+    "version": {"type": "string"},
+    "integrity": {"enum": ["green", "yellow", "red"]},
+    "capabilities": {
+      "type": "array",
+      "items": {"enum": ["catalog", "search", "live", "epg", "playback", "recording", "metadata", "auth"]},
+      "uniqueItems": true
+    },
+    "endpoints": {
+      "type": "object",
+      "properties": {
+        "catalog": {"type": ["string", "null"]},
+        "search": {"type": ["string", "null"]},
+        "epg": {"type": ["string", "null"]},
+        "playback": {"type": ["string", "null"]}
+      }
+    },
+    "authorization": {
+      "type": "object",
+      "properties": {
+        "mode": {"enum": ["none", "user-token", "oauth2", "api-key", "device-code"]},
+        "userControlled": {"type": "boolean"}
+      }
+    }
+  }
+}
