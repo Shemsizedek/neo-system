@@ -1,0 +1,20 @@
+{
+  "listenHost": "127.0.0.1",
+  "listenPort": 8787,
+  "agentConfigPath": "/etc/neo-miner-agent/config.json",
+  "allowLocalDiscovery": true,
+  "discovery": {
+    "subnet": "192.168.1.0/24",
+    "ports": [4028, 4029],
+    "timeoutMs": 400
+  },
+  "watchdog": {
+    "enabled": true,
+    "restartDelayMs": 3000
+  },
+  "ota": {
+    "enabled": false,
+    "manifestUrl": "https://updates.example.invalid/neo-miner-controller/manifest.json",
+    "publicKeyPath": "/etc/neo-miner-controller/update-signing-public.pem"
+  }
+}
