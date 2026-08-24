@@ -1,0 +1,41 @@
+{
+  "platform": "NEO Miner Chassis",
+  "version": "0.11.0",
+  "coolingVariants": ["AIR", "IMMERSION_READY"],
+  "referenceEnvelope": {
+    "rackWidthIn": 19,
+    "heightClass": "3U-4U target",
+    "depthMm": {"min": 450, "max": 650},
+    "massKgTargetMax": 18
+  },
+  "zones": [
+    "INTAKE_FILTER",
+    "INLET_FANS",
+    "HASHBOARD_TUNNEL",
+    "EXHAUST_FANS",
+    "CONTROLLER_COMPARTMENT",
+    "PSU_PDU_BAY",
+    "SERVICE_IO",
+    "CABLE_MANAGEMENT"
+  ],
+  "hashboardSlots": 3,
+  "fanPositions": 4,
+  "airflowDirection": "FRONT_TO_BACK",
+  "serviceability": {
+    "individualHashboardRemoval": true,
+    "fanReplacementWithoutHashboardRemoval": true,
+    "controllerIndependentAccess": true,
+    "filterToolLightReplacement": true
+  },
+  "mounting": {
+    "rack": true,
+    "standalone": true,
+    "rearSupportRecommended": true
+  },
+  "safety": {
+    "controllerSeparatedFromHighHeatExhaust": true,
+    "lowVoltageServiceZone": true,
+    "mainsIntegrationRequiresSeparateCertification": true
+  },
+  "status": "REFERENCE_ONLY"
+}
