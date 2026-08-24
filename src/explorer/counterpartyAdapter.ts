@@ -13,6 +13,7 @@ export type CounterpartyOrder={
 export type CounterpartyBalance={asset:string;quantity?:number;quantity_normalized?:string|number}
 export type CounterpartyHolder={address?:string;address_quantity?:number;quantity?:number;quantity_normalized?:string|number}
 export type CounterpartyDispenser={asset?:string;give_quantity?:number;give_quantity_normalized?:string|number;satoshirate?:number;status?:number|string}
+export type CounterpartyAssetInfo={asset?:string;asset_longname?:string;issuer?:string;owner?:string;description?:string;divisible?:boolean;locked?:boolean;supply?:number;supply_normalized?:string|number}
 
 export type CounterpartySnapshot={
   pair:string
@@ -21,6 +22,7 @@ export type CounterpartySnapshot={
   balances:CounterpartyBalance[]
   holders:CounterpartyHolder[]
   dispensers:CounterpartyDispenser[]
+  assetInfo:CounterpartyAssetInfo|null
   observedAt:string
 }
 
@@ -75,6 +77,14 @@ export class CounterpartyV2MarketAdapter implements MarketAdapter{
     return Array.isArray(result)?result as CounterpartyBalance[]:[]
   }
 
+  async getAssetInfo(asset:string){
+    try{
+      const result=await this.getResult(`/assets/${encodeURIComponent(asset)}`)
+      if(Array.isArray(result))return (result[0]??null) as CounterpartyAssetInfo|null
+      return result&&typeof result==='object'?result as CounterpartyAssetInfo:null
+    }catch{return null}
+  }
+
   async getAssetHolders(asset:string){
     const result=await this.getResult(`/assets/${encodeURIComponent(asset)}/holders?limit=1000`)
     return Array.isArray(result)?result as CounterpartyHolder[]:[]
@@ -87,13 +97,14 @@ export class CounterpartyV2MarketAdapter implements MarketAdapter{
 
   async snapshot(pair:string,foundationAddress:string):Promise<CounterpartySnapshot>{
     const [base]=pair.split('/')
-    const [quote,balances,holders,dispensers]=await Promise.all([
+    const [quote,balances,holders,dispensers,assetInfo]=await Promise.all([
       this.getQuote(pair),
       this.getFoundationBalances(foundationAddress),
       this.getAssetHolders(base),
       this.getAssetDispensers(base),
+      this.getAssetInfo(base),
     ])
     const ordersResult=await this.getResult(`/assets/${encodeURIComponent(base)}/orders?status=open&limit=100`)
-    return {pair,quote,orders:Array.isArray(ordersResult)?ordersResult as CounterpartyOrder[]:[],balances,holders,dispensers,observedAt:new Date().toISOString()}
+    return {pair,quote,orders:Array.isArray(ordersResult)?ordersResult as CounterpartyOrder[]:[],balances,holders,dispensers,assetInfo,observedAt:new Date().toISOString()}
   }
 }
