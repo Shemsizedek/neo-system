@@ -1,0 +1,32 @@
+{
+  "version": "0.3.0",
+  "channels": [
+    {
+      "id": "neo-origin",
+      "name": "NEO Origin",
+      "number": "001",
+      "group": "NEO",
+      "sourceClass": "green",
+      "streamUrl": null,
+      "description": "Reserved first-party NEO TV channel slot. No stream is bundled in this build."
+    },
+    {
+      "id": "neo-knowledge",
+      "name": "NEO Knowledge",
+      "number": "010",
+      "group": "Education",
+      "sourceClass": "green",
+      "streamUrl": null,
+      "description": "Reserved educational channel slot for authorized NEO programming."
+    },
+    {
+      "id": "neo-live-demo",
+      "name": "Authorized Stream Test",
+      "number": "900",
+      "group": "Developer",
+      "sourceClass": "yellow",
+      "streamUrl": null,
+      "description": "Developer slot for a user-supplied authorized media URL."
+    }
+  ]
+}
