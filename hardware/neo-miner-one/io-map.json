@@ -1,0 +1,27 @@
+{
+  "product": "NEO Miner One",
+  "revision": "A-reference",
+  "interfaces": {
+    "ethernet": {"count":1,"speed":"1GbE","required":true},
+    "usb_service": {"count":1,"connector":"USB-C","required":true},
+    "uart_debug": {"count":1,"logic_level":"3.3V","required":true},
+    "fan_pwm": {"count":4,"frequency_target_hz":25000,"fail_safe":"FULL_SPEED"},
+    "fan_tach": {"count":4,"input_protection":true},
+    "i2c": {"buses":2,"uses":["secure-element","temperature-sensors","daughterboard-id"]},
+    "spi": {"buses":1,"uses":["hashboard-adapter","industrial-expansion"]},
+    "uart_hashboard": {"channels":4,"level_shifted":true},
+    "gpio": {"minimum":12,"uses":["reset","enable","fault","presence","future-expansion"]},
+    "can_rs485": {"optional":true,"population":"DNP_BY_DEFAULT"},
+    "nvme_pcie": {"optional":true,"recommended":true},
+    "buttons": ["RESET","RECOVERY_PROVISION"],
+    "leds": ["POWER","SYSTEM","NETWORK","MINER","FAULT"]
+  },
+  "sensors": {
+    "pcb_temperature": true,
+    "inlet_temperature": true,
+    "outlet_temperature": true,
+    "input_voltage": true,
+    "input_current": true
+  },
+  "test_points": ["VIN","5V","3V3","GND","I2C_SCL","I2C_SDA","SPI_CLK","UART_TX","UART_RX","WATCHDOG","RESET"]
+}
