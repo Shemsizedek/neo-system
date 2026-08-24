@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "NEO Miner One Nonconformance Record",
+  "type": "object",
+  "required": ["ncr_id","unit_serial","detected_at","severity","category","disposition","status"],
+  "properties": {
+    "ncr_id": {"type":"string"},
+    "unit_serial": {"type":"string"},
+    "detected_at": {"type":"string","format":"date-time"},
+    "station_id": {"type":"string"},
+    "severity": {"type":"string","enum":["MINOR","MAJOR","CRITICAL"]},
+    "category": {"type":"string","enum":["MECHANICAL","ELECTRICAL","THERMAL","FIRMWARE","SECURITY","IDENTITY","SUPPLIER","PACKAGING","PROCESS","OTHER"]},
+    "symptom": {"type":"string"},
+    "root_cause": {"type":"string"},
+    "disposition": {"type":"string","enum":["USE_AS_IS","REWORK","REPAIR","RETURN_TO_SUPPLIER","SCRAP","QUARANTINE"]},
+    "corrective_action": {"type":"string"},
+    "retest_required": {"type":"boolean"},
+    "retest_result": {"type":"string","enum":["NOT_RUN","PASS","FAIL"]},
+    "status": {"type":"string","enum":["OPEN","CONTAINED","CLOSED"]},
+    "approval_reference": {"type":"string"}
+  }
+}
