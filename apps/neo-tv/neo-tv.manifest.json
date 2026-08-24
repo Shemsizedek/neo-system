@@ -1,0 +1,49 @@
+{
+  "id": "neo-tv",
+  "name": "NEO TV Hub",
+  "version": "0.1.0-origin",
+  "status": "prototype",
+  "parentSystem": "NEO System",
+  "productClass": "entertainment-operating-system",
+  "frontend": {
+    "type": "github-pages",
+    "path": "docs/neo-tv/index.html",
+    "publicPath": "/neo-system/neo-tv/"
+  },
+  "backend": {
+    "type": "github-repository",
+    "repository": "Shemsizedek/neo-system",
+    "mode": "manifest-and-content-source"
+  },
+  "modules": [
+    "neo-live",
+    "neo-cinema",
+    "neo-music",
+    "neo-games",
+    "neo-gallery",
+    "neo-addons",
+    "neo-media-vault",
+    "neosync-entertainment"
+  ],
+  "addonSecurity": {
+    "classification": ["GREEN", "YELLOW", "RED"],
+    "officialDistributionAllows": ["GREEN"],
+    "requiresReview": ["YELLOW"],
+    "blocked": ["RED"]
+  },
+  "contentPolicy": {
+    "bundledUnauthorizedStreams": false,
+    "drmCircumvention": false,
+    "credentialTheft": false,
+    "authorizedSourcesOnly": true
+  },
+  "roadmap": [
+    "media-library",
+    "provider-adapter-api",
+    "live-tv-epg-pvr",
+    "addon-sdk",
+    "neosync-orchestration",
+    "remote-and-web-control",
+    "neo-ecosystem-commerce"
+  ]
+}
