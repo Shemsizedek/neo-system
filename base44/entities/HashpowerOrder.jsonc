@@ -1,0 +1,18 @@
+{
+  "name":"HashpowerOrder",
+  "type":"object",
+  "properties":{
+    "order_id":{"type":"string"},
+    "side":{"type":"string","enum":["ASK","BID"]},
+    "seller":{"type":"string"},
+    "hashrate_th":{"type":"number"},
+    "term_months":{"type":"integer"},
+    "price_usd_per_th_month":{"type":"number"},
+    "payment_currency":{"type":"string"},
+    "backing_status":{"type":"string","enum":["VERIFIED","PENDING"]},
+    "sla_pct":{"type":"number"},
+    "status":{"type":"string","enum":["OPEN","RESERVED","FILLED","CANCELLED"]},
+    "simulation":{"type":"boolean","default":true}
+  },
+  "required":["order_id","side","hashrate_th","term_months","status"]
+}
