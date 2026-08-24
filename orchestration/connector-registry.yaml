@@ -1,0 +1,92 @@
+schema_version: "1.0"
+id: "NEO-CONNECTOR-REGISTRY-001"
+owner: "NEO Router / ORIGIN"
+policy: "least privilege; native-first when capability is available; Airbyte as shared integration fabric"
+
+resolution_order:
+  - native_connector
+  - airbyte_agent_engine
+  - provider_adapter
+
+connectors:
+  github_native:
+    platform: github
+    transport: native
+    role: primary_software_system_of_record
+    repository: Shemsizedek/neo-system
+    capabilities:
+      read: [repository, branch, commit, issue, pull_request, workflow_status]
+      write: [branch, file, issue, pull_request, workflow_rerun]
+      approval_gated: [merge, destructive_operation, production_deployment]
+
+  airbyte_github:
+    platform: github
+    transport: airbyte
+    role: shared_context_fabric
+    runtime_binding: AIRBYTE_GITHUB_CONNECTOR_ID
+    capabilities:
+      verified: [repository_read]
+      deferred_until_schema_discovery: [write]
+
+  airbyte_gitlab:
+    platform: gitlab
+    transport: airbyte
+    runtime_binding: AIRBYTE_GITLAB_CONNECTOR_ID
+    capabilities:
+      verified: [project_read]
+      deferred_until_schema_discovery: [write]
+
+  airbyte_asana:
+    platform: asana
+    transport: airbyte
+    runtime_binding: AIRBYTE_ASANA_CONNECTOR_ID
+    capabilities:
+      intended: [task_read, task_write]
+
+  airbyte_gmail:
+    platform: gmail
+    transport: airbyte
+    runtime_binding: AIRBYTE_GMAIL_CONNECTOR_ID
+    capabilities:
+      intended: [message_read]
+      approval_gated: [message_send]
+
+  airbyte_search_console:
+    platform: google-search-console
+    transport: airbyte
+    runtime_binding: AIRBYTE_SEARCH_CONSOLE_CONNECTOR_ID
+    capabilities:
+      intended: [search_performance_read]
+
+  airbyte_tiktok_marketing:
+    platform: tiktok-marketing
+    transport: airbyte
+    runtime_binding: AIRBYTE_TIKTOK_MARKETING_CONNECTOR_ID
+    capabilities:
+      intended: [analytics_read]
+      approval_gated: [campaign_write, publication]
+
+mission_metadata:
+  required:
+    - identity
+    - mission_id
+    - platform
+    - capability
+    - permission_scope
+    - provenance
+  write_required:
+    - approval_state
+    - audit_event_id
+  result_required:
+    - connector_id
+    - transport
+    - status
+    - timestamp
+    - provenance
+
+security:
+  commit_secrets: false
+  connector_instance_ids_in_source: false
+  credentials: runtime_secret_store_only
+  authority_expansion: forbidden
+  audit: required
