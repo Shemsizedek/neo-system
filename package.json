@@ -22,6 +22,6 @@
     "neo-counter:server":"node server/neo-counter-backend/server.mjs",
     "neo-counter:server:test":"node --test server/neo-counter-backend/*.test.mjs"
   },
-  "dependencies": {"react":"^19.1.1","react-dom":"^19.1.1","lucide-react":"^0.468.0"},
+  "dependencies": {"@neondatabase/serverless":"^1.0.2","react":"^19.1.1","react-dom":"^19.1.1","lucide-react":"^0.468.0"},
   "devDependencies": {"@vitejs/plugin-react":"^4.3.4","vite":"^6.0.7","typescript":"^5.7.2","@types/react":"^19.0.3","@types/react-dom":"^19.0.2"}
 }
