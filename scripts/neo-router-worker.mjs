@@ -2,6 +2,11 @@ import { createPersistentMissionRuntime } from '../server/neo-router/mission-run
 import { createWorkerRuntime } from '../server/neo-router/worker-runtime.mjs'
 
 const runtime = createPersistentMissionRuntime()
+if (!runtime.store.durable) {
+  console.error('NEO Router worker refused to run: durable mission storage is not configured.')
+  process.exit(2)
+}
+
 const adapters = {
   'router-housekeeping': async (action) => ({ ok:true, type:action.type ?? 'housekeeping', executedAt:new Date().toISOString() }),
 }
