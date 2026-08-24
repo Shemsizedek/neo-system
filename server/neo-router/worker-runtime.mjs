@@ -35,6 +35,12 @@ export function createWorkerRuntime({ engine, adapters = {}, workerId = 'neo-wor
     return needed.every(c=>capabilitySet.has(c))
   }
 
+  function approvedFor(missionId, action){
+    if(!action.approvalRequired)return true
+    const actionKey=action.id??action.type??'high_impact_action'
+    return engine.listApprovals().some(a=>a.missionId===missionId&&a.status==='approved'&&(a.context?.action?.id??a.action)===actionKey)
+  }
+
   async function executeMission(mission) {
     if (!(await leaseManager.acquire(mission.id, workerId, leaseTtlMs))) return { missionId: mission.id, skipped: 'lease_unavailable' }
     active.add(mission.id)
@@ -45,13 +51,17 @@ export function createWorkerRuntime({ engine, adapters = {}, workerId = 'neo-wor
 
       const results = []
       for (const action of current.actions ?? []) {
-        if (action.approvalRequired) {
-          const approval = engine.requestApproval(current.id, action.type ?? 'high_impact_action', { action, workerId, role })
+        const actionKey=action.id??action.type??'high_impact_action'
+        const approved=approvedFor(current.id,action)
+        if (action.approvalRequired && !approved) {
+          const existing=engine.listApprovals({status:'pending'}).find(a=>a.missionId===current.id&&(a.context?.action?.id??a.action)===actionKey)
+          if(existing)return { missionId: current.id, awaitingApproval: existing.id, results }
+          const approval = engine.requestApproval(current.id, actionKey, { action:{...action,id:actionKey}, workerId, role })
           return { missionId: current.id, awaitingApproval: approval.id, results }
         }
         const adapter = adapters[action.connector]
         if (!adapter) throw new Error(`No adapter registered for ${action.connector}`)
-        results.push(await adapter(action, { mission: current, workerId, role }))
+        results.push(await adapter(action, { mission: current, workerId, role, approved }))
       }
       engine.transition(current.id, MISSION_STATUS.COMPLETED, { result: results, workerId, role })
       return { missionId: current.id, completed: true, results }
