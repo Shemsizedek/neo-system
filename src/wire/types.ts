@@ -1,4 +1,4 @@
-export type SettlementRail='Bitcoin'|'Lightning'|'Counterparty XCP'
+export type SettlementRail='Bitcoin'|'Lightning'|'Counterparty XCP'|'CES Mutual Credit'
 export type WireStatus='DEMO_PENDING'|'DEMO_SETTLED'|'DEMO_PAID'
 
 export interface WireTransaction{
