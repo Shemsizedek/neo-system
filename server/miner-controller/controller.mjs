@@ -29,9 +29,14 @@ export function controllerSnapshot({startedAt,agentState='UNKNOWN',lastAgentHear
   }
 }
 
+function dashboardHtml(){
+  return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>NEO Miner Controller</title><style>body{margin:0;font-family:system-ui;background:#071011;color:#e9f5f2}main{max-width:880px;margin:40px auto;padding:20px}.card{background:#0d191b;border:1px solid #203637;border-radius:14px;padding:20px;margin-bottom:14px}h1{margin:0 0 6px}.muted{color:#7f9997}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.kpi{background:#091315;border:1px solid #183031;border-radius:10px;padding:12px}.kpi b{display:block;font-size:20px;margin-top:5px}.ok{color:#6fe0d1}.warn{color:#e8bd70}button{background:#54dacb;border:0;border-radius:8px;padding:10px 14px;font-weight:800;cursor:pointer}@media(max-width:700px){.grid{grid-template-columns:1fr 1fr}}</style></head><body><main><div class="card"><div class="muted">NEO MINER CONTROLLER • LOCAL APPLIANCE</div><h1>ORIGIN Edge Console</h1><p class="muted">Local status only. Keep this interface on localhost or a trusted management network.</p></div><div class="grid"><div class="kpi">Agent<b id="agent">—</b></div><div class="kpi">Host<b id="host">—</b></div><div class="kpi">Uptime<b id="uptime">—</b></div><div class="kpi">ASICs<b id="devices">—</b></div></div><div class="card"><button id="discover">Discover ASICs</button><pre id="detail" class="muted">Loading…</pre></div></main><script>async function refresh(){const r=await fetch('/status');const s=await r.json();agent.textContent=s.agentState;host.textContent=s.hostname;uptime.textContent=Math.floor(s.uptimeSeconds/60)+' min';devices.textContent=s.discoveredMiners.length;detail.textContent=JSON.stringify(s,null,2)}discover.onclick=async()=>{discover.disabled=true;await fetch('/discover',{method:'POST'});await refresh();discover.disabled=false};refresh();setInterval(refresh,5000)</script></body></html>`
+}
+
 export function createLocalApi({config,getState,runDiscovery}){
   return http.createServer(async(req,res)=>{
     const send=(status,data)=>{res.writeHead(status,{'content-type':'application/json','cache-control':'no-store'});res.end(JSON.stringify(data))}
+    if(req.method==='GET'&&(req.url==='/'||req.url==='/dashboard')){res.writeHead(200,{'content-type':'text/html; charset=utf-8','cache-control':'no-store'});return res.end(dashboardHtml())}
     if(req.method==='GET'&&req.url==='/health') return send(200,{ok:true,service:'neo-miner-controller',time:now()})
     if(req.method==='GET'&&req.url==='/status') return send(200,getState())
     if(req.method==='POST'&&req.url==='/discover'){
