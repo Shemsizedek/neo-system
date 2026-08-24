@@ -1,11 +1,11 @@
-import { createPostgresContext, PgVersionConflictError } from '../../server/neo-counter-backend/postgres.mjs';
+import { createRedisContext, RedisVersionConflictError } from '../../server/neo-counter-backend/redis-rest.mjs';
 
 const ALLOWED_ORIGIN=process.env.NEO_COUNTER_ALLOWED_ORIGIN||'https://shemsizedek.github.io';
 let contextPromise;
 
 function context(){
   if(!contextPromise){
-    const ctx=createPostgresContext();
+    const ctx=createRedisContext();
     contextPromise=ctx.init().then(()=>ctx);
   }
   return contextPromise;
@@ -30,7 +30,7 @@ export default async function handler(req,res){
     if(req.method==='OPTIONS'){cors(res);return res.status(204).end();}
     const ctx=await context();
     const path=requestPath(req);
-    if(path==='/health') return send(res,200,{ok:true,service:'neo-counter-backend',storage:'postgres'});
+    if(path==='/health') return send(res,200,{ok:true,service:'neo-counter-backend',storage:'redis-rest'});
 
     if(path==='/session'&&req.method==='POST'){
       const session=await ctx.createSession(req.body||{});
@@ -59,7 +59,7 @@ export default async function handler(req,res){
       const permission=envelope.entity==='merchant_ops'?'settings':'register';
       if(!ctx.can(principal,permission,envelope.merchantId)) return send(res,403,{error:'forbidden'});
       try{return send(res,200,await ctx.putEnvelope(envelope));}
-      catch(error){if(error instanceof PgVersionConflictError)return send(res,409,error.remote||{error:'version_conflict'});throw error;}
+      catch(error){if(error instanceof RedisVersionConflictError)return send(res,409,error.remote||{error:'version_conflict'});throw error;}
     }
 
     const events=path.match(/^\/merchant\/([^/]+)\/events$/);
