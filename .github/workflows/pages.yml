@@ -50,6 +50,12 @@ jobs:
           cp -R apps/neo-counter/dist/. dist/apps/neo-counter/
           test -f dist/apps/neo-counter/index.html
 
+      - name: Add NEO TV Hub to Pages artifact
+        run: |
+          mkdir -p dist/neo-tv
+          cp -R docs/neo-tv/. dist/neo-tv/
+          test -f dist/neo-tv/index.html
+
       - name: Configure Pages
         uses: actions/configure-pages@v5
 
