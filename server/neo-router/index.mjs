@@ -18,3 +18,4 @@ export { DEFAULT_COMMAND_POLICIES, loadCommandPolicies, classifyEvent, correlate
 export { createCommandEngine } from './command-engine.mjs'
 export { buildOperationsCommandCenter } from './operations-command-center.mjs'
 export { createStrategicObjective, planCampaign, scoreObjective, buildAfterActionReview, strategicDashboard } from './strategic-command.mjs'
+export { createPortfolio, prioritizePortfolio, detectResourceConflicts, allocatePortfolioCapacity, portfolioRiskView, buildPortfolioCommandView } from './portfolio-command.mjs'
