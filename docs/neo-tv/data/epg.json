@@ -1,0 +1,11 @@
+{
+  "version": "0.4.0",
+  "generated": "static-seed",
+  "programs": [
+    {"channelId":"neo-origin","title":"NEO Origin","subtitle":"Welcome to NEO TV","start":"00:00","end":"01:00","category":"NEO Originals"},
+    {"channelId":"neo-origin","title":"NEO System Showcase","subtitle":"Apps, infrastructure and creator network","start":"01:00","end":"02:00","category":"Technology"},
+    {"channelId":"neo-knowledge","title":"Knowledge Hour","subtitle":"Education and documentary programming slot","start":"00:00","end":"01:00","category":"Education"},
+    {"channelId":"neo-knowledge","title":"Global Classroom","subtitle":"Future GISD and NEO University programming slot","start":"01:00","end":"02:00","category":"Education"},
+    {"channelId":"authorized-test","title":"Authorized Stream Test","subtitle":"Browser playback validation slot","start":"00:00","end":"02:00","category":"System"}
+  ]
+}
