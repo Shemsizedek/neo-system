@@ -47,3 +47,30 @@ export interface PaymentQuote {
   fee: number
   status: 'ACTIVE' | 'PAID' | 'EXPIRED'
 }
+
+export interface DigitalMinerProduct {
+  id: string
+  name: string
+  tier: 'SPARK' | 'CORE' | 'TITAN' | 'SOVEREIGN'
+  allocatedHashrateTh: number
+  referenceEfficiencyJTh: number
+  termMonths: number
+  basePriceUsd: number
+  serviceFeePct: number
+  backingMode: 'REAL_HASHRATE_REQUIRED' | 'SIMULATION_ONLY'
+  status: 'AVAILABLE' | 'WAITLIST' | 'DISABLED'
+}
+
+export interface HashpowerAllocation {
+  id: string
+  digitalMinerId: string
+  contractId: string
+  customer: string
+  targetHashrateTh: number
+  deliveredHashrateTh: number
+  sourceMinerIds: string[]
+  pool: string
+  protocol: 'STRATUM_V1' | 'STRATUM_V2'
+  status: 'PENDING' | 'ALLOCATED' | 'MINING' | 'DEGRADED' | 'SUSPENDED' | 'COMPLETED'
+  simulation: boolean
+}
