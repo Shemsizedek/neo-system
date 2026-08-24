@@ -30,11 +30,23 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build
+      - name: Build NEO System
         run: npm run build
 
       - name: Verify NEO JARVIS artifact
         run: test -f dist/neo-jarvis/index.html
+
+      - name: Build NEO Counter
+        working-directory: apps/neo-counter
+        run: |
+          npm install
+          npm run build
+
+      - name: Add NEO Counter to Pages artifact
+        run: |
+          mkdir -p dist/apps/neo-counter
+          cp -R apps/neo-counter/dist/. dist/apps/neo-counter/
+          test -f dist/apps/neo-counter/index.html
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
