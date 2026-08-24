@@ -1,0 +1,19 @@
+{
+  "platform": "NEO Mining Power & Thermal Platform",
+  "version": "0.10.0",
+  "dcDomains": [
+    {"id":"DC_BUS_MAIN","purpose":"Hashboard power","telemetry":["voltage","current","power"]},
+    {"id":"AUX_12V","purpose":"Fans, pumps, auxiliaries","telemetry":["voltage","current"]},
+    {"id":"AUX_5V","purpose":"Controller peripherals","telemetry":["voltage"]},
+    {"id":"LOGIC_3V3","purpose":"Logic and sensors","telemetry":["voltage"]}
+  ],
+  "hashboardBranches": 3,
+  "branchCapabilities": ["voltage_sense","current_sense","power_estimate","presence_detect","fault_latch","enable_request"],
+  "operatingModes": ["PERFORMANCE","BALANCED","EFFICIENCY","LOW_POWER","STANDBY","EMERGENCY_OFF"],
+  "safety": {
+    "localHardwareProtectionAuthoritative": true,
+    "remoteOverrideOfHardLimits": false,
+    "cloudRequiredForSafety": false,
+    "hardFaultResetRequiresPolicy": true
+  }
+}
