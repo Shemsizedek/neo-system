@@ -1,0 +1,125 @@
+name: Deploy NEO Counter Backend
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'api/neo-counter/**'
+      - 'server/neo-counter-backend/**'
+      - 'vercel.neo-counter.json'
+      - '.github/workflows/neo-counter-backend-deploy.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: neo-counter-backend-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: neo-counter-backend
+    env:
+      VERCEL_SCOPE: neo-b2f7
+      NEO_COUNTER_PROJECT_NAME: neo-counter-api
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run NEO Counter backend tests
+        run: npm run neo-counter:server:test
+
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+
+      - name: Prepare isolated Vercel configuration
+        run: cp vercel.neo-counter.json vercel.json
+
+      - name: Validate required secrets
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          UPSTASH_REDIS_REST_URL: ${{ secrets.UPSTASH_REDIS_REST_URL }}
+          UPSTASH_REDIS_REST_TOKEN: ${{ secrets.UPSTASH_REDIS_REST_TOKEN }}
+          NEO_COUNTER_TERMINALS_JSON: ${{ secrets.NEO_COUNTER_TERMINALS_JSON }}
+          NEO_COUNTER_STAFF_JSON: ${{ secrets.NEO_COUNTER_STAFF_JSON }}
+        run: |
+          test -n "$VERCEL_TOKEN"
+          test -n "$UPSTASH_REDIS_REST_URL"
+          test -n "$UPSTASH_REDIS_REST_TOKEN"
+          test -n "$NEO_COUNTER_TERMINALS_JSON"
+          test -n "$NEO_COUNTER_STAFF_JSON"
+
+      - name: Link backend project
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: vercel link --yes --project "$NEO_COUNTER_PROJECT_NAME" --scope "$VERCEL_SCOPE" --token "$VERCEL_TOKEN"
+
+      - name: Configure production environment
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          UPSTASH_REDIS_REST_URL: ${{ secrets.UPSTASH_REDIS_REST_URL }}
+          UPSTASH_REDIS_REST_TOKEN: ${{ secrets.UPSTASH_REDIS_REST_TOKEN }}
+          NEO_COUNTER_TERMINALS_JSON: ${{ secrets.NEO_COUNTER_TERMINALS_JSON }}
+          NEO_COUNTER_STAFF_JSON: ${{ secrets.NEO_COUNTER_STAFF_JSON }}
+          NEO_COUNTER_API_KEY_HASH: ${{ secrets.NEO_COUNTER_API_KEY_HASH }}
+        run: |
+          add_env() {
+            local name="$1"
+            local value="$2"
+            if [ -n "$value" ]; then
+              printf '%s' "$value" | vercel env rm "$name" production --yes --scope "$VERCEL_SCOPE" --token "$VERCEL_TOKEN" >/dev/null 2>&1 || true
+              printf '%s' "$value" | vercel env add "$name" production --scope "$VERCEL_SCOPE" --token "$VERCEL_TOKEN"
+            fi
+          }
+          add_env UPSTASH_REDIS_REST_URL "$UPSTASH_REDIS_REST_URL"
+          add_env UPSTASH_REDIS_REST_TOKEN "$UPSTASH_REDIS_REST_TOKEN"
+          add_env NEO_COUNTER_ALLOWED_ORIGIN 'https://shemsizedek.github.io'
+          add_env NEO_COUNTER_TERMINALS_JSON "$NEO_COUNTER_TERMINALS_JSON"
+          add_env NEO_COUNTER_STAFF_JSON "$NEO_COUNTER_STAFF_JSON"
+          add_env NEO_COUNTER_SESSION_TTL_MS '28800000'
+          add_env NEO_COUNTER_API_KEY_HASH "$NEO_COUNTER_API_KEY_HASH"
+
+      - name: Deploy production API
+        id: deploy
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          URL=$(vercel deploy --prod --yes --scope "$VERCEL_SCOPE" --token "$VERCEL_TOKEN")
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+          echo "api_endpoint=${URL%/}/api/neo-counter" >> "$GITHUB_OUTPUT"
+
+      - name: Verify backend health
+        env:
+          API_ENDPOINT: ${{ steps.deploy.outputs.api_endpoint }}
+        run: |
+          RESPONSE=$(curl --fail --silent --show-error --retry 5 --retry-delay 3 "$API_ENDPOINT/health")
+          echo "$RESPONSE"
+          echo "$RESPONSE" | grep -q '"ok":true'
+
+      - name: Publish activation summary
+        env:
+          DEPLOYMENT_URL: ${{ steps.deploy.outputs.url }}
+          API_ENDPOINT: ${{ steps.deploy.outputs.api_endpoint }}
+        run: |
+          {
+            echo '## NEO Counter backend activated'
+            echo
+            echo "Deployment: $DEPLOYMENT_URL"
+            echo
+            echo "GitHub Pages variable to set:"
+            echo
+            echo '`NEO_COUNTER_SYNC_ENDPOINT`'
+            echo
+            echo "Value: \`$API_ENDPOINT\`"
+          } >> "$GITHUB_STEP_SUMMARY"
