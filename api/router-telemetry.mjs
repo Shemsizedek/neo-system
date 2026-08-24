@@ -1,7 +1,9 @@
 import { createPersistentMissionRuntime } from '../server/neo-router/mission-runtime.mjs'
 import { runtimeBindingHealth } from '../server/neo-router/runtime-bindings.mjs'
+import { createRedisEventStore } from '../server/neo-router/event-engine.mjs'
 
 const runtime=createPersistentMissionRuntime()
+const eventStore=createRedisEventStore()
 
 async function initialize(){
   await runtime.withEngine(engine=>{
@@ -21,5 +23,7 @@ export default async function handler(req,res){
   if(req.method!=='GET'){res.setHeader('Allow','GET');return res.status(405).json({error:'read_only_endpoint'})}
   await initialize()
   res.setHeader('Cache-Control','no-store')
-  return res.status(200).json(await runtime.telemetry({eventLimit:50}))
+  const telemetry=await runtime.telemetry({eventLimit:50})
+  const inboundEvents=await eventStore.list(50)
+  return res.status(200).json({...telemetry,inboundEvents,eventStore:{mode:eventStore.mode,durable:eventStore.durable}})
 }
