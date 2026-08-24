@@ -22,3 +22,4 @@ export { createPortfolio, prioritizePortfolio, detectResourceConflicts, allocate
 export { buildExecutiveDocket, buildExecutiveBrief } from './executive-command.mjs'
 export { createGovernancePolicy, evaluateAuthority, evaluateQuorum, detectConflicts, createDecisionRecord, appendGovernanceLedger, verifyGovernanceLedger, governanceDecisionView } from './institutional-governance.mjs'
 export { createInstitutionalIdentity, registerSigningKey, rotateSigningKey, revokeSigningKey, issueCapability, evaluateCapability, signAttestation, verifyAttestation, createMissionProvenance } from './identity-trust.mjs'
+export { createExecutionContext, createReplayGuard, evaluateExecution, executeZeroTrust } from './zero-trust-execution.mjs'
