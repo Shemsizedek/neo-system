@@ -1,0 +1,17 @@
+{
+  "name": "DigitalMiner",
+  "type": "object",
+  "properties": {
+    "digital_miner_id": {"type":"string"},
+    "product_tier": {"type":"string","enum":["SPARK","CORE","TITAN","SOVEREIGN"]},
+    "customer_id": {"type":"string"},
+    "contract_id": {"type":"string"},
+    "allocated_hashrate_th": {"type":"number"},
+    "reference_efficiency_j_th": {"type":"number"},
+    "term_months": {"type":"integer"},
+    "backing_mode": {"type":"string","enum":["REAL_HASHRATE_REQUIRED","SIMULATION_ONLY"]},
+    "status": {"type":"string","enum":["PENDING","ACTIVE","DEGRADED","SUSPENDED","COMPLETED","CANCELLED"]},
+    "simulation": {"type":"boolean","default":true}
+  },
+  "required": ["digital_miner_id","contract_id","allocated_hashrate_th","backing_mode","status"]
+}
