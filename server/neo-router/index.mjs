@@ -27,3 +27,4 @@ export { createWorkloadIdentity, createExternalKeyRef, issueEphemeralCredential,
 export { createBuildProvenance, signBuildProvenance, verifyBuildProvenance, evaluateSupplyChain, createRuntimeAttestation, evaluateRuntimeAdmission, quarantineRecord, createArtifactManifest } from './runtime-attestation.mjs'
 export { createCompliancePolicy, createPolicyException, exceptionActive, evaluateCompliance, detectComplianceDrift, collectComplianceEvidence, propagateComplianceEnforcement, buildComplianceDashboard } from './continuous-compliance.mjs'
 export { normalizeSecuritySignal, correlateSecuritySignals, createIncidentCase, preserveForensicEvidence, selectContainmentPlaybook, executeDefensiveResponse, securityPosture } from './security-operations.mjs'
+export { createServiceObjective, verifyBackup, evaluateRecoveryReadiness, chooseFailoverRoute, createRecoveryManifest, verifyRecoveryManifest, runContinuityExercise, continuityDashboard } from './resilience-continuity.mjs'
