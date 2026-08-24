@@ -1,39 +1,25 @@
-import { createMissionEngine, MISSION_STATUS } from '../server/neo-router/mission-engine.mjs'
+import { createPersistentMissionRuntime } from '../server/neo-router/mission-runtime.mjs'
 import { runtimeBindingHealth } from '../server/neo-router/runtime-bindings.mjs'
 
-const engine = createMissionEngine()
-let initialized = false
+const runtime=createPersistentMissionRuntime()
 
-function initialize() {
-  if (initialized) return
-  initialized = true
-
-  engine.queue({
-    id: 'NEO-ROUTER-MISSION-001',
-    objective: 'Triage and safely rebase stale neo-system pull requests, rerun CI, preserve provenance, and stop at approval gates before consequential merges.',
-    priority: 'high',
-    route: ['github-native', 'asana-native', 'airbyte-agent-engine'],
-    provenance: ['github:Shemsizedek/neo-system', 'asana:1217756114723188'],
+async function initialize(){
+  await runtime.withEngine(engine=>{
+    if(!engine.get('NEO-ROUTER-MISSION-001')){
+      engine.queue({id:'NEO-ROUTER-MISSION-001',objective:'Triage and safely rebase stale neo-system pull requests, rerun CI, preserve provenance, and stop at approval gates before consequential merges.',priority:'high',route:['github-native','asana-native','airbyte-agent-engine'],provenance:['github:Shemsizedek/neo-system','asana:1217756114723188']})
+      engine.prepare('NEO-ROUTER-MISSION-001')
+      engine.heartbeat('github-native','healthy',{role:'primary_software_system_of_record'})
+      engine.heartbeat('asana-native','healthy',{role:'mission_execution_tracker'})
+      engine.heartbeat('airbyte-agent-engine','degraded',{reason:'schema_discovery_error',fallback:'native_connectors'})
+      const bindings=runtimeBindingHealth(process.env)
+      for(const binding of Object.values(bindings.bindings)) engine.heartbeat(binding.connector,binding.bound?'bound':'unbound',{envKey:binding.envKey})
+    }
   })
-  engine.transition('NEO-ROUTER-MISSION-001', MISSION_STATUS.RUNNING)
-
-  engine.heartbeat('github-native', 'healthy', { role: 'primary_software_system_of_record' })
-  engine.heartbeat('asana-native', 'healthy', { role: 'mission_execution_tracker' })
-  engine.heartbeat('airbyte-agent-engine', 'degraded', { reason: 'schema_discovery_error', fallback: 'native_connectors' })
-
-  const bindings = runtimeBindingHealth(process.env)
-  for (const binding of Object.values(bindings.bindings)) {
-    engine.heartbeat(binding.connector, binding.bound ? 'bound' : 'unbound', { envKey: binding.envKey })
-  }
 }
 
-export default function handler(req, res) {
-  if (req.method !== 'GET') {
-    res.setHeader('Allow', 'GET')
-    return res.status(405).json({ error: 'read_only_endpoint' })
-  }
-
-  initialize()
-  res.setHeader('Cache-Control', 'no-store')
-  return res.status(200).json(engine.telemetry({ eventLimit: 30 }))
+export default async function handler(req,res){
+  if(req.method!=='GET'){res.setHeader('Allow','GET');return res.status(405).json({error:'read_only_endpoint'})}
+  await initialize()
+  res.setHeader('Cache-Control','no-store')
+  return res.status(200).json(await runtime.telemetry({eventLimit:50}))
 }
