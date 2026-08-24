@@ -6,20 +6,20 @@ export function createLeaseManager({ clock = () => Date.now() } = {}) {
   const leases = new Map()
   return {
     mode:'memory',durable:false,
-    async acquire(key, owner, ttlMs = 60000) {
+    acquire(key, owner, ttlMs = 60000) {
       const now = clock()
       const current = leases.get(key)
       if (current && current.expiresAt > now && current.owner !== owner) return false
       leases.set(key, { owner, expiresAt: now + ttlMs })
       return true
     },
-    async release(key, owner) {
+    release(key, owner) {
       const current = leases.get(key)
       if (!current || current.owner !== owner) return false
       leases.delete(key)
       return true
     },
-    async inspect(key) { return leases.get(key) ?? null },
+    inspect(key) { return leases.get(key) ?? null },
   }
 }
 
