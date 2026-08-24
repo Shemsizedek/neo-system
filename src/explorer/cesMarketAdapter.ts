@@ -20,7 +20,7 @@ export class CesMarketAdapter implements MarketAdapter{
   ){}
 
   async getQuote(pair:string):Promise<MarketQuote|null>{
-    const records=await this.ces.getRecords(this.exchange,this.agent,['OFFER','TRADE'] as never)
+    const records=await this.ces.getRecords(this.exchange,this.agent,['OFFER','TRANSACTION'])
     return normalizeCesQuote(pair,records,this.exchange.xid)
   }
 }
@@ -46,10 +46,10 @@ export function normalizeCesQuote(pair:string,records:CesNormalizedRecord[],exch
     const amount=numberFrom(payload.amount??payload.quantity??payload.volume)
     const side=String(payload.side??payload.type??'').toLowerCase()
     if(price&&price>0){
-      if(record.kind==='TRADE')last=price
+      if(record.kind==='TRANSACTION')last=price
       if(side.includes('buy')||side.includes('bid'))bid=bid==null?price:Math.max(bid,price)
       if(side.includes('sell')||side.includes('ask'))ask=ask==null?price:Math.min(ask,price)
-      if(amount&&record.kind==='TRADE')volume24h+=amount
+      if(amount&&record.kind==='TRANSACTION')volume24h+=amount
     }
     if(record.observedAt>latest)latest=record.observedAt
   }
