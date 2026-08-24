@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "NEO Miner One Production Record",
+  "type": "object",
+  "required": ["unit_serial","build_timestamp","controller_serial","hashboard_serials","firmware_hash","eol_result","traceability_complete"],
+  "properties": {
+    "unit_serial": {"type":"string"},
+    "build_timestamp": {"type":"string","format":"date-time"},
+    "controller_serial": {"type":"string"},
+    "controller_revision": {"type":"string"},
+    "hashboard_serials": {"type":"array","items":{"type":"string"},"minItems":1},
+    "psu_pdu_serial": {"type":"string"},
+    "chassis_revision": {"type":"string"},
+    "public_device_identity": {"type":"string"},
+    "firmware_hash": {"type":"string"},
+    "software_release": {"type":"string"},
+    "fixture_ids": {"type":"array","items":{"type":"string"}},
+    "calibration_record_id": {"type":"string"},
+    "eol_result": {"type":"string","enum":["PASS","FAIL","QUARANTINE"]},
+    "nonconformance_ids": {"type":"array","items":{"type":"string"}},
+    "traceability_complete": {"type":"boolean"},
+    "release_status": {"type":"string","enum":["HOLD","RELEASED","QUARANTINED"]}
+  }
+}
