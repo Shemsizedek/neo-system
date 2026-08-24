@@ -17,3 +17,4 @@ export { verifyGitHubSignature, verifyBearer, normalizeInboundEvent } from './ev
 export { DEFAULT_COMMAND_POLICIES, loadCommandPolicies, classifyEvent, correlateEvents, buildCommandResponse, assessMissionSla } from './policy-intelligence.mjs'
 export { createCommandEngine } from './command-engine.mjs'
 export { buildOperationsCommandCenter } from './operations-command-center.mjs'
+export { createStrategicObjective, planCampaign, scoreObjective, buildAfterActionReview, strategicDashboard } from './strategic-command.mjs'
