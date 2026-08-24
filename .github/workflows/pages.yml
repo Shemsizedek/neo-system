@@ -38,6 +38,8 @@ jobs:
 
       - name: Build NEO Counter
         working-directory: apps/neo-counter
+        env:
+          VITE_NEO_COUNTER_SYNC_ENDPOINT: ${{ vars.NEO_COUNTER_SYNC_ENDPOINT }}
         run: |
           npm install
           npm run build
