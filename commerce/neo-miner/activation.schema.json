@@ -1,0 +1,22 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "title":"NEO Miner Activation",
+  "type":"object",
+  "properties":{
+    "activation_id":{"type":"string"},
+    "order_id":{"type":"string"},
+    "customer_id":{"type":"string"},
+    "activation_type":{"type":"string","enum":["PHYSICAL_DEVICE","DIGITAL_HASHPOWER"]},
+    "serial_number":{"type":"string"},
+    "miner_id":{"type":"string"},
+    "contract_id":{"type":"string"},
+    "allocation_id":{"type":"string"},
+    "capacity_backed":{"type":"boolean"},
+    "payment_confirmed":{"type":"boolean"},
+    "compliance_cleared":{"type":"boolean"},
+    "status":{"type":"string","enum":["PENDING","ELIGIBLE","ACTIVE","SUSPENDED","FAILED","REVOKED"]},
+    "activated_at":{"type":["string","null"],"format":"date-time"},
+    "simulation":{"type":"boolean","default":true}
+  },
+  "required":["activation_id","order_id","customer_id","activation_type","payment_confirmed","compliance_cleared","status","simulation"]
+}
