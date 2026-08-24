@@ -41,9 +41,7 @@ jobs:
         run: |
           mkdir -p dist
           if [ ! -f dist/index.html ]; then
-            cat > dist/index.html <<'HTML'
-          <!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>NEO System</title><style>body{font-family:system-ui;background:#050505;color:#fff;padding:40px}a{color:#fff}</style></head><body><h1>NEO System</h1><p>Static fallback shell active.</p><p><a href="./neo-tv/">Open NEO TV Hub</a></p></body></html>
-          HTML
+            cp index.html dist/index.html
           fi
 
       - name: Verify NEO JARVIS artifact
@@ -60,30 +58,19 @@ jobs:
           npm install
           npm run build
 
-      - name: Publish NEO Counter route
+      - name: Publish NEO Counter routes
         run: |
-          mkdir -p dist/apps/neo-counter
+          mkdir -p dist/neo-counter dist/apps/neo-counter
           if [ "${{ steps.counter_build.outcome }}" = "success" ] && [ -f apps/neo-counter/dist/index.html ]; then
+            cp -R apps/neo-counter/dist/. dist/neo-counter/
             cp -R apps/neo-counter/dist/. dist/apps/neo-counter/
-            echo "NEO Counter compiled application published."
+            echo "NEO Counter compiled app published at /neo-counter/ and /apps/neo-counter/."
           else
-            cat > dist/apps/neo-counter/index.html <<'HTML'
-          <!doctype html>
-          <html lang="en">
-          <head>
-            <meta charset="utf-8">
-            <meta name="viewport" content="width=device-width,initial-scale=1">
-            <meta name="theme-color" content="#080a0d">
-            <title>NEO Counter</title>
-            <style>
-              *{box-sizing:border-box}body{margin:0;min-height:100vh;background:#080a0d;color:#f4f3ed;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;display:grid;place-items:center;padding:24px}.card{width:min(780px,100%);border:1px solid #302b20;border-radius:24px;padding:clamp(28px,7vw,58px);background:linear-gradient(180deg,#121419,#0c0e12);box-shadow:0 24px 80px #0009}.eyebrow{font-size:11px;letter-spacing:.18em;color:#c7a75d;font-weight:800}.card h1{font-size:clamp(42px,9vw,76px);line-height:.95;margin:18px 0}.card p{color:#a3a7ae;line-height:1.7}.status{display:inline-block;margin-top:16px;border:1px solid #5c4b25;border-radius:999px;padding:9px 12px;color:#d3bd83;font-size:11px}.links{display:flex;gap:10px;flex-wrap:wrap;margin-top:26px}.links a{color:#111;text-decoration:none;background:#c7a75d;border-radius:999px;padding:11px 14px;font-weight:800;font-size:12px}.links a.secondary{background:#171a20;color:#f4f3ed;border:1px solid #343841}
-            </style>
-          </head>
-          <body><main class="card"><div class="eyebrow">NEO ECOSYSTEM • GITHUB PRIMARY</div><h1>NEO Counter</h1><p>The public route is online, but the compiled POS interface did not complete this deployment. GitHub remains the primary source and deployment authority while the application build is recovered.</p><div class="status">RECOVERY SHELL ACTIVE — ROUTE HEALTHY</div><div class="links"><a href="../../">NEO Ecosystem</a><a class="secondary" href="https://github.com/Shemsizedek/neo-system/tree/main/apps/neo-counter">Source on GitHub</a></div></main></body>
-          </html>
-          HTML
-            echo "NEO Counter recovery shell published."
+            cp neo-counter/index.html dist/neo-counter/index.html
+            cp neo-counter/index.html dist/apps/neo-counter/index.html
+            echo "NEO Counter static recovery shell published at both routes."
           fi
+          test -f dist/neo-counter/index.html
           test -f dist/apps/neo-counter/index.html
 
       - name: Add NEO TV Hub to Pages artifact
@@ -91,14 +78,13 @@ jobs:
           mkdir -p dist/neo-tv
           cp -R docs/neo-tv/. dist/neo-tv/
           test -f dist/neo-tv/index.html
-          echo "NEO TV artifact ready: dist/neo-tv/index.html"
 
       - name: Pages build summary
         run: |
           echo "Root install: ${{ steps.root_install.outcome }}" >> "$GITHUB_STEP_SUMMARY"
           echo "Root build: ${{ steps.root_build.outcome }}" >> "$GITHUB_STEP_SUMMARY"
           echo "NEO Counter build: ${{ steps.counter_build.outcome }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "NEO Counter route: guaranteed" >> "$GITHUB_STEP_SUMMARY"
+          echo "NEO Counter routes: /neo-counter/ + /apps/neo-counter/" >> "$GITHUB_STEP_SUMMARY"
           echo "NEO TV: included" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Configure Pages
