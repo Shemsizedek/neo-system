@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import './styles.css';
 import './merchant/merchant.css';
+import './auth/auth.css';
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
