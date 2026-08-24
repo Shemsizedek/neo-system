@@ -1,0 +1,23 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "title":"NEO Miner Fulfillment",
+  "type":"object",
+  "properties":{
+    "fulfillment_id":{"type":"string"},
+    "order_id":{"type":"string"},
+    "fulfillment_type":{"type":"string","enum":["PHYSICAL","DIGITAL"]},
+    "warehouse_or_farm_id":{"type":"string"},
+    "serial_numbers":{"type":"array","items":{"type":"string"}},
+    "capacity_reservation_id":{"type":"string"},
+    "allocation_id":{"type":"string"},
+    "contracted_hashrate_th":{"type":"number","minimum":0},
+    "carrier":{"type":"string"},
+    "tracking_reference":{"type":"string"},
+    "destination_jurisdiction":{"type":"string"},
+    "status":{"type":"string","enum":["PENDING","RESERVED","PICKING","PACKED","SHIPPED","DELIVERED","DIGITAL_ALLOCATED","FAILED","CANCELLED"]},
+    "created_at":{"type":"string","format":"date-time"},
+    "completed_at":{"type":["string","null"],"format":"date-time"},
+    "simulation":{"type":"boolean","default":true}
+  },
+  "required":["fulfillment_id","order_id","fulfillment_type","status","created_at","simulation"]
+}
