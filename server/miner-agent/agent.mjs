@@ -1,7 +1,7 @@
 import crypto from 'node:crypto'
 import fs from 'node:fs/promises'
 import process from 'node:process'
-import {createReferenceAdapter} from './adapters/reference.mjs'
+import {createAdapter} from './adapters/index.mjs'
 
 const sleep=(ms)=>new Promise(r=>setTimeout(r,ms))
 const now=()=>new Date().toISOString()
@@ -38,7 +38,7 @@ export async function loadConfig(path){
   return cfg
 }
 
-export async function runAgent(config,{fetchImpl=fetch,adapter=createReferenceAdapter(config)}={}){
+export async function runAgent(config,{fetchImpl=fetch,adapter=createAdapter(config)}={}){
   const privateKeyPem=await fs.readFile(config.privateKeyPath,'utf8')
   let stopped=false
   const stop=()=>{stopped=true}
@@ -54,7 +54,7 @@ export async function runAgent(config,{fetchImpl=fetch,adapter=createReferenceAd
       await sleep(Number(config.pollIntervalMs))
     }
   }
-  return {stop,loop}
+  return {stop,loop,adapter}
 }
 
 async function main(){
