@@ -4,13 +4,14 @@ import type {TribunalRole} from './rbac'
 export interface ServerSession {token:string;expiresAt:string;user:{id:string;email:string;displayName:string}}
 export interface ServerWorkspace {id:string;name:string;role:TribunalRole;createdAt:string}
 export interface CaseSyncResult {claimNo:string;revision:number;updatedAt:string}
-export interface ServerHealth {ok:boolean;service:string;version:string;schema?:number;time?:string;communicationsWorker?:string}
+export interface ServerHealth {ok:boolean;service:string;version:string;schema?:number;time?:string;communicationsWorker?:string;serviceAutomation?:string}
 export interface ServerMember {userId:string;email:string;displayName:string;role:TribunalRole;createdAt:string}
 export interface OpsReport {workspaceId:string;generatedAt:string;members:number;cases:number;efiles:number;notices:number;hearings:number;deliveries:number;auditEntries:number;activeSessions:number;audit:{valid:boolean;count:number;head:string|null}}
 export interface CommTemplate {id:string;name:string;channel:string;subjectTemplate:string;bodyTemplate:string;createdAt:string}
 export interface CommOutboxItem {id:string;noticeId?:string;channel:string;destination:string;subject:string;body:string;status:string;attemptCount:number;nextAttemptAt?:string|null;lastError?:string|null;providerRef?:string|null;receipt?:unknown;createdAt:string}
 export interface CommReport {workspaceId:string;templates:number;providers:number;queued:number;delivered:number;deadLetters:number;calendarExports:number;generatedAt:string}
 export interface CommAdapterStatus {type:string;mode:string;description:string;ready:boolean;configs:Array<{id:string;label:string;enabled:boolean;updatedAt:string}>}
+export interface ProviderHealth {workspaceId:string;generatedAt:string;providers:Array<{id:string;type:string;label:string;enabled:boolean;updatedAt:string;pending:number;deadLetters:number}>;queue:{pending:number;deadLetters:number;oldestPending:string|null}}
 
 export class TribunalServerApi {
   constructor(public baseUrl='http://localhost:8787', public token=''){}
@@ -52,6 +53,11 @@ export class TribunalServerApi {
   retryCommunication(workspaceId:string,id:string){return this.request<CommOutboxItem>(`/v1/workspaces/${encodeURIComponent(workspaceId)}/communications/outbox/${encodeURIComponent(id)}/retry`,{method:'POST'})}
   runCommWorker(workspaceId:string,input:{limit?:number;maxAttempts?:number}={}){return this.request<{workspaceId:string;processed:number;results:unknown[];ranAt:string}>(`/v1/workspaces/${encodeURIComponent(workspaceId)}/communications/worker/run`,{method:'POST',body:JSON.stringify(input)})}
   communicationsReport(workspaceId:string){return this.request<CommReport>(`/v1/workspaces/${encodeURIComponent(workspaceId)}/communications/report`)}
+  providerHealth(workspaceId:string){return this.request<ProviderHealth>(`/v1/workspaces/${encodeURIComponent(workspaceId)}/communications/provider-health`)}
+  communicationsAuditBundle(workspaceId:string,noticeId=''){return this.request(`/v1/workspaces/${encodeURIComponent(workspaceId)}/communications/audit-bundle?noticeId=${encodeURIComponent(noticeId)}`)}
+  buildServicePackage(workspaceId:string,input:{noticeId:string;hearingId?:string}){return this.request(`/v1/workspaces/${encodeURIComponent(workspaceId)}/service/package`,{method:'POST',body:JSON.stringify(input)})}
+  queueNoticeService(workspaceId:string,input:{noticeId:string;hearingId?:string;destinations:Array<{channel?:string;providerType?:string;destination:string;subject?:string;body?:string}>}){return this.request(`/v1/workspaces/${encodeURIComponent(workspaceId)}/service/queue`,{method:'POST',body:JSON.stringify(input)})}
+  verifyProviderCallback(workspaceId:string,input:{payload:unknown;signature:string}){return this.request<{valid:boolean}>(`/v1/workspaces/${encodeURIComponent(workspaceId)}/provider-callback/verify`,{method:'POST',body:JSON.stringify(input)})}
   async hearingCalendarIcs(workspaceId:string,hearingId:string){const response=await fetch(`${this.baseUrl.replace(/\/$/,'')}/v1/workspaces/${encodeURIComponent(workspaceId)}/hearings/${encodeURIComponent(hearingId)}/calendar.ics`,{headers:{...(this.token?{authorization:`Bearer ${this.token}`}:{})}});if(!response.ok)throw new Error(`HTTP ${response.status}`);return {content:await response.text(),payloadHash:response.headers.get('x-neo-payload-sha256'),exportId:response.headers.get('x-neo-export-id')}}
   exportAudit(workspaceId:string,afterSeq=0){return this.request(`/v1/workspaces/${encodeURIComponent(workspaceId)}/audit/export?afterSeq=${afterSeq}`)}
   verifyAudit(workspaceId:string){return this.request<{valid:boolean;count:number;head:string|null}>(`/v1/workspaces/${encodeURIComponent(workspaceId)}/audit/verify`)}
