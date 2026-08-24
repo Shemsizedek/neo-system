@@ -1,6 +1,7 @@
 import crypto from 'node:crypto'
 const clone=v=>structuredClone(v)
-const stable=v=>JSON.stringify(v,Object.keys(v).sort())
+function canonical(v){if(Array.isArray(v))return v.map(canonical);if(v&&typeof v==='object')return Object.fromEntries(Object.keys(v).sort().map(k=>[k,canonical(v[k])]));return v}
+const stable=v=>JSON.stringify(canonical(v))
 export function createGovernancePolicy(input={}){if(!input.id||!input.version)throw new TypeError('policy id and version are required');return {id:input.id,version:input.version,title:input.title??input.id,authority:input.authority??'Executive Command',rules:clone(input.rules??{}),effectiveAt:input.effectiveAt??new Date().toISOString(),supersedes:input.supersedes??null}}
 export function evaluateAuthority({actor,action,delegations=[]}={}){const grants=delegations.filter(d=>d.actor===actor&&d.active!==false);const grant=grants.find(d=>(d.actions??[]).includes(action)||(d.actions??[]).includes('*'));return {authorized:Boolean(grant),delegationId:grant?.id??null,scope:grant?.scope??null}}
 export function evaluateQuorum({members=[],votes=[],quorum=0.5,threshold=0.5}={}){const eligible=members.filter(m=>m.active!==false),cast=votes.filter(v=>eligible.some(m=>m.id===v.memberId));const participation=eligible.length?cast.length/eligible.length:0,yes=cast.filter(v=>v.vote==='yes').length,no=cast.filter(v=>v.vote==='no').length,decisive=yes+no,approval=decisive?yes/decisive:0;return {eligible:eligible.length,cast:cast.length,participation,quorumMet:participation>=quorum,approval,approved:participation>=quorum&&approval>=threshold}}
