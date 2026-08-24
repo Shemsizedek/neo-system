@@ -14,3 +14,5 @@ export { createGitHubAgent, createAsanaAgent, createGmailAgent, createAirbyteAge
 export { decomposeMission, reconcileMissionPlan, releaseReadinessPlan } from './mission-planner.mjs'
 export { DEFAULT_EVENT_RULES, createMemoryEventStore, createRedisEventStore, matchEventRule, ingestRouterEvent } from './event-engine.mjs'
 export { verifyGitHubSignature, verifyBearer, normalizeInboundEvent } from './event-security.mjs'
+export { DEFAULT_COMMAND_POLICIES, loadCommandPolicies, classifyEvent, correlateEvents, buildCommandResponse, assessMissionSla } from './policy-intelligence.mjs'
+export { createCommandEngine } from './command-engine.mjs'
