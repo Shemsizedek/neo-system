@@ -3,3 +3,4 @@ export { createAnthropicAdapter, createOpenAIAdapter, createGeminiAdapter, provi
 export { DOCTRINE_PROFILE, EMERGING_INTERFACE_PROFILE, HUMAN_APPROVAL_ACTIONS, PROVIDER_ROLES } from './policy.mjs'
 export { CONNECTOR_ACCESS, DEFAULT_CONNECTORS, createConnectorRegistry } from './connectors.mjs'
 export { AIRBYTE_BINDINGS, resolveRuntimeBindings, runtimeBindingHealth } from './runtime-bindings.mjs'
+export { MISSION_STATUS, createMissionEngine } from './mission-engine.mjs'
