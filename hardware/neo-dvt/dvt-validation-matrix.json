@@ -1,0 +1,21 @@
+{
+  "program": "NEO Miner One DVT",
+  "version": "0.13.0",
+  "status": "PLANNING",
+  "tests": [
+    {"id":"DVT-EMC-001","category":"EMC","name":"Conducted emissions pre-scan","severity":"BLOCKER","evidence":"lab data + mitigation log"},
+    {"id":"DVT-EMC-002","category":"EMC","name":"Radiated emissions pre-scan","severity":"BLOCKER","evidence":"lab data + mitigation log"},
+    {"id":"DVT-SAF-001","category":"Safety","name":"Hazard-based safety review","severity":"BLOCKER","evidence":"hazard file + disposition"},
+    {"id":"DVT-SAF-002","category":"Safety","name":"Protective earth and bonding verification","severity":"BLOCKER","evidence":"measured continuity records"},
+    {"id":"DVT-THERM-001","category":"Thermal","name":"Production-intent full-load thermal characterization","severity":"BLOCKER","evidence":"thermal maps + telemetry"},
+    {"id":"DVT-REL-001","category":"Reliability","name":"Extended mining burn-in","severity":"MAJOR","evidence":"runtime + fault log"},
+    {"id":"DVT-REL-002","category":"Reliability","name":"Power-cycle endurance","severity":"MAJOR","evidence":"cycle counter + failures"},
+    {"id":"DVT-MECH-001","category":"Mechanical","name":"Rack vibration test","severity":"MAJOR","evidence":"fixture profile + inspection"},
+    {"id":"DVT-MECH-002","category":"Mechanical","name":"Packaged shipping vibration/handling test","severity":"MAJOR","evidence":"test record + post-test inspection"},
+    {"id":"DVT-DFM-001","category":"Manufacturing","name":"Production-intent assembly repeatability","severity":"BLOCKER","evidence":"yield + defect pareto"},
+    {"id":"DVT-EOL-001","category":"Manufacturing","name":"End-of-line test coverage","severity":"BLOCKER","evidence":"fixture results + coverage map"},
+    {"id":"DVT-SEC-001","category":"Security","name":"Secure identity provisioning and traceability","severity":"BLOCKER","evidence":"serial-to-key records"},
+    {"id":"DVT-OTA-001","category":"Software","name":"Signed OTA reject/accept/rollback validation","severity":"MAJOR","evidence":"event log + artifact hashes"},
+    {"id":"DVT-SUP-001","category":"SupplyChain","name":"Critical supplier qualification","severity":"BLOCKER","evidence":"approved vendor list + lifecycle review"}
+  ]
+}
