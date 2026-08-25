@@ -35,6 +35,9 @@ jobs:
           VITE_NEOPAY_API_BASE: ${{ vars.NEOPAY_API_BASE }}
         run: npm run build
 
+      - name: Build Pages platform API snapshots
+        run: node scripts/build-pages-platform-api.mjs
+
       - name: Verify Pages artifact root
         run: |
           test -f dist/index.html
@@ -45,6 +48,14 @@ jobs:
 
       - name: Verify NEO PACER artifact
         run: test -f dist/neo-pacer/index.html
+
+      - name: Verify expanded NEO platform routes and APIs
+        run: |
+          for platform in neopay neo-teller neo-books neo-prime neo-exchange neo-generator neo-miner; do
+            test -f "dist/$platform/index.html"
+            test -f "dist/api/platforms/$platform.json"
+          done
+          test -f dist/api/platforms/index.json
 
       - name: Build NEO Counter
         working-directory: apps/neo-counter
@@ -80,6 +91,14 @@ jobs:
           echo "NEO PACER: /neo-pacer/" >> "$GITHUB_STEP_SUMMARY"
           echo "NEO Counter: /neo-counter/ + /apps/neo-counter/" >> "$GITHUB_STEP_SUMMARY"
           echo "NEO TV: /neo-tv/" >> "$GITHUB_STEP_SUMMARY"
+          echo "NEOpay: /neopay/" >> "$GITHUB_STEP_SUMMARY"
+          echo "NEO Teller: /neo-teller/" >> "$GITHUB_STEP_SUMMARY"
+          echo "NEO Books: /neo-books/" >> "$GITHUB_STEP_SUMMARY"
+          echo "NEO Prime: /neo-prime/" >> "$GITHUB_STEP_SUMMARY"
+          echo "NEO Exchange: /neo-exchange/" >> "$GITHUB_STEP_SUMMARY"
+          echo "NEO Generator: /neo-generator/" >> "$GITHUB_STEP_SUMMARY"
+          echo "NEO Miner: /neo-miner/" >> "$GITHUB_STEP_SUMMARY"
+          echo "Pages API registry: /api/platforms/index.json" >> "$GITHUB_STEP_SUMMARY"
           echo "SPA fallback: /404.html" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Configure Pages
