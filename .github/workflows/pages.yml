@@ -35,6 +35,8 @@ jobs:
       - name: Build NEO System
         id: root_build
         continue-on-error: true
+        env:
+          VITE_NEOPAY_API_BASE: ${{ vars.NEOPAY_API_BASE }}
         run: npm run build
 
       - name: Ensure Pages artifact root
@@ -83,6 +85,7 @@ jobs:
         run: |
           echo "Root install: ${{ steps.root_install.outcome }}" >> "$GITHUB_STEP_SUMMARY"
           echo "Root build: ${{ steps.root_build.outcome }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "NEOpay API base configured: ${{ vars.NEOPAY_API_BASE != '' }}" >> "$GITHUB_STEP_SUMMARY"
           echo "NEO Counter build: ${{ steps.counter_build.outcome }}" >> "$GITHUB_STEP_SUMMARY"
           echo "NEO Counter routes: /neo-counter/ + /apps/neo-counter/" >> "$GITHUB_STEP_SUMMARY"
           echo "NEO TV: included" >> "$GITHUB_STEP_SUMMARY"
