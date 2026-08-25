@@ -1,45 +1,38 @@
 import http from 'node:http'
+import {buildComposeUrl,normalizeComposition,assertNoSecrets} from './composer.mjs'
+import {acceptSignedTransaction,buildSigningHandoff,listWalletAdapters} from './wallet-handoff.mjs'
 
 const PORT=Number(process.env.NEO_TELLER_PORT||8787)
 const CP=(process.env.COUNTERPARTY_API_URL||'').replace(/\/$/,'')
 const BTC=(process.env.BITCOIN_ELECTRS_URL||'https://blockstream.info/api').replace(/\/$/,'')
 
-async function getJson(url){const r=await fetch(url,{headers:{accept:'application/json','user-agent':'neo-teller/0.2'}});if(!r.ok)throw new Error(`${r.status} ${r.statusText}`);return r.json()}
-async function getText(url){const r=await fetch(url,{headers:{accept:'text/plain','user-agent':'neo-teller/0.2'}});if(!r.ok)throw new Error(`${r.status} ${r.statusText}`);return r.text()}
+async function getJson(url){const r=await fetch(url,{headers:{accept:'application/json','user-agent':'neo-teller/0.4'}});if(!r.ok)throw new Error(`${r.status} ${r.statusText}`);return r.json()}
+async function getText(url){const r=await fetch(url,{headers:{accept:'text/plain','user-agent':'neo-teller/0.4'}});if(!r.ok)throw new Error(`${r.status} ${r.statusText}`);return r.text()}
+async function readBody(req){const chunks=[];for await(const chunk of req)chunks.push(chunk);if(chunks.reduce((n,c)=>n+c.length,0)>64_000)throw new Error('REQUEST_TOO_LARGE');return JSON.parse(Buffer.concat(chunks).toString('utf8')||'{}')}
 
-async function counterpartyAsset(asset){
-  if(!CP) return {status:'UNAVAILABLE',source:'COUNTERPARTY_API_URL not configured'}
-  try{
-    const data=await getJson(`${CP}/v2/assets/${encodeURIComponent(asset)}`)
-    const row=data?.result??data
-    return {status:'VERIFIED',issuer:row?.issuer,divisible:row?.divisible,locked:row?.locked,source:CP}
-  }catch(e){return {status:'UNAVAILABLE',source:CP,error:e instanceof Error?e.message:String(e)}}
-}
-
-async function counterpartyHealth(){
-  if(!CP) return {status:'OFFLINE',source:'COUNTERPARTY_API_URL not configured'}
-  for(const path of ['/v2/','/v2/healthz','/healthz']){
-    try{const data=await getJson(`${CP}${path}`);return {status:'ONLINE',source:CP,version:data?.version??data?.result?.version}}
-    catch{}
-  }
-  return {status:'OFFLINE',source:CP}
-}
-
-async function bitcoinHealth(){
-  try{const height=Number((await getText(`${BTC}/blocks/tip/height`)).trim());return {status:'ONLINE',source:BTC,blockHeight:Number.isFinite(height)?height:undefined}}
-  catch{return {status:'OFFLINE',source:BTC}}
-}
-
+async function counterpartyAsset(asset){if(!CP)return{status:'UNAVAILABLE',source:'COUNTERPARTY_API_URL not configured'};try{const data=await getJson(`${CP}/v2/assets/${encodeURIComponent(asset)}`);const row=data?.result??data;return{status:'VERIFIED',issuer:row?.issuer,divisible:row?.divisible,locked:row?.locked,source:CP}}catch(e){return{status:'UNAVAILABLE',source:CP,error:e instanceof Error?e.message:String(e)}}}
+async function counterpartyHealth(){if(!CP)return{status:'OFFLINE',source:'COUNTERPARTY_API_URL not configured'};for(const path of ['/v2/','/v2/healthz','/healthz']){try{const data=await getJson(`${CP}${path}`);return{status:'ONLINE',source:CP,version:data?.version??data?.result?.version}}catch{}}return{status:'OFFLINE',source:CP}}
+async function bitcoinHealth(){try{const height=Number((await getText(`${BTC}/blocks/tip/height`)).trim());return{status:'ONLINE',source:BTC,blockHeight:Number.isFinite(height)?height:undefined}}catch{return{status:'OFFLINE',source:BTC}}}
 function json(res,status,body){res.writeHead(status,{'content-type':'application/json','access-control-allow-origin':'*','cache-control':'no-store'});res.end(JSON.stringify(body))}
 
 const server=http.createServer(async(req,res)=>{
-  if(req.method==='OPTIONS'){res.writeHead(204,{'access-control-allow-origin':'*','access-control-allow-methods':'GET,OPTIONS','access-control-allow-headers':'content-type,accept'});return res.end()}
-  if(req.method==='GET'&&req.url==='/health') return json(res,200,{ok:true,service:'neo-teller-backend',mode:'READ_ONLY'})
+  if(req.method==='OPTIONS'){res.writeHead(204,{'access-control-allow-origin':'*','access-control-allow-methods':'GET,POST,OPTIONS','access-control-allow-headers':'content-type,accept'});return res.end()}
+  if(req.method==='GET'&&req.url==='/health')return json(res,200,{ok:true,service:'neo-teller-backend',mode:'NON_CUSTODIAL'})
   if(req.method==='GET'&&req.url==='/api/v1/teller/network'){
     const[counterparty,bitcoin,NOMNI,XCP]=await Promise.all([counterpartyHealth(),bitcoinHealth(),counterpartyAsset('NOMNI'),counterpartyAsset('XCP')])
-    return json(res,200,{observedAt:new Date().toISOString(),counterparty,bitcoin,assets:{NOMNI,XCP},capabilities:{readOnly:true,compose:false,sign:false,broadcast:false}})
+    return json(res,200,{observedAt:new Date().toISOString(),counterparty,bitcoin,assets:{NOMNI,XCP},capabilities:{readOnly:true,compose:true,sign:false,broadcast:false,walletHandoff:true}})
+  }
+  if(req.method==='GET'&&req.url==='/api/v1/teller/wallet-adapters')return json(res,200,{adapters:listWalletAdapters(),privateKeyTransfer:false})
+  if(req.method==='POST'&&req.url==='/api/v1/teller/compose/send'){
+    try{if(!CP)throw new Error('COUNTERPARTY_API_URL_NOT_CONFIGURED');const body=await readBody(req);assertNoSecrets(body);const {url,intent}=buildComposeUrl(CP,body);const payload=await getJson(url);return json(res,200,normalizeComposition(payload,intent))}catch(e){return json(res,400,{error:e instanceof Error?e.message:String(e)})}
+  }
+  if(req.method==='POST'&&req.url==='/api/v1/teller/signing-handoff'){
+    try{return json(res,200,buildSigningHandoff(await readBody(req)))}catch(e){return json(res,400,{error:e instanceof Error?e.message:String(e)})}
+  }
+  if(req.method==='POST'&&req.url==='/api/v1/teller/signed-transaction'){
+    try{return json(res,200,acceptSignedTransaction(await readBody(req)))}catch(e){return json(res,400,{error:e instanceof Error?e.message:String(e)})}
   }
   return json(res,404,{error:'NOT_FOUND'})
 })
 
-server.listen(PORT,()=>console.log(`NEO Teller read-only gateway listening on :${PORT}`))
+server.listen(PORT,()=>console.log(`NEO Teller non-custodial gateway listening on :${PORT}`))
