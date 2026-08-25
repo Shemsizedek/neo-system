@@ -1,0 +1,18 @@
+{
+  "id": "FIN-007",
+  "case": "TVMLSM666 v. NEOLPS999",
+  "title": "Funds Flow & Beneficial Ownership Reconstruction",
+  "status": "ACTIVE",
+  "principle": "Title, custody, control, beneficial ownership, collateral, possession, and transfer authority are separate evidentiary elements.",
+  "required_fields": [
+    "event_id","date","source_entity","source_asset","legal_title_holder","beneficial_owner","trustee","custodian","account_holder","control_person","instrument_id","asset_lot_id","quantity_or_value","encumbrance","transfer_instrument","receiving_entity","ledger_evidence","present_disposition"
+  ],
+  "transaction_classes": [
+    "ecclesiastical_contribution","legacy_or_devise","trust_settlement","custody_deposit","collateral_pledge","certificate_issuance","account_transfer","bullion_movement","ecclesiastical_recovery_or_reversion_claim"
+  ],
+  "anti_double_counting": true,
+  "ecclesiastical_transfer_bridge": [
+    "source_ecclesiastical_title","defect_reversion_or_succession_rule","identified_successor","operative_transfer_instrument","acceptance_by_omniversal_church_world_temple","treasury_or_custody_entry","present_asset_record"
+  ],
+  "next": "FIN-008 Asset Recovery & Claims Reconciliation Matrix"
+}
