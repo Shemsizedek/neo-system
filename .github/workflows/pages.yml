@@ -30,6 +30,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Build Noogle native index snapshot
+        run: npm run crawl:noogle
+
       - name: Build NEO System
         env:
           VITE_NEOPAY_API_BASE: ${{ vars.NEOPAY_API_BASE }}
@@ -56,6 +59,7 @@ jobs:
           test -f dist/noogle/index.html
           test -f dist/noogle/app.js
           test -f dist/noogle/styles.css
+          test -f dist/api/noogle/index.json
 
       - name: Verify Pages artifact root
         run: |
@@ -107,6 +111,7 @@ jobs:
         run: |
           echo "Root build: verified" >> "$GITHUB_STEP_SUMMARY"
           echo "Noogle: /noogle/" >> "$GITHUB_STEP_SUMMARY"
+          echo "Noogle native index: /api/noogle/index.json" >> "$GITHUB_STEP_SUMMARY"
           echo "NEO JARVIS: /neo-jarvis/" >> "$GITHUB_STEP_SUMMARY"
           echo "NEO PACER: /neo-pacer/" >> "$GITHUB_STEP_SUMMARY"
           echo "NEO Counter: /neo-counter/ + /apps/neo-counter/" >> "$GITHUB_STEP_SUMMARY"
