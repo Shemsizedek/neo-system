@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Noogle Index Document v1",
+  "type": "object",
+  "required": ["id", "title", "url", "sourceClass", "evidenceState", "retrievedAt", "contentHash"],
+  "properties": {
+    "id": {"type": "string"},
+    "title": {"type": "string"},
+    "url": {"type": "string", "format": "uri"},
+    "canonicalUrl": {"type": "string", "format": "uri"},
+    "summary": {"type": "string"},
+    "language": {"type": "string"},
+    "sourceClass": {"enum": ["primary", "community", "scholarly", "reference", "archive", "onchain", "other"]},
+    "evidenceState": {"enum": ["primary", "scholarly", "community-attributed", "reference", "archival", "onchain", "unverified"]},
+    "publisher": {"type": "string"},
+    "authors": {"type": "array", "items": {"type": "string"}},
+    "retrievedAt": {"type": "string", "format": "date-time"},
+    "publishedAt": {"type": ["string", "null"], "format": "date-time"},
+    "contentHash": {"type": "string"},
+    "communities": {"type": "array", "items": {"type": "string"}},
+    "communityTerms": {"type": "array", "items": {"type": "object", "required": ["term", "community", "attribution"], "properties": {"term": {"type": "string"}, "community": {"type": "string"}, "attribution": {"type": "string"}, "aliases": {"type": "array", "items": {"type": "string"}}}}},
+    "rank": {"type": "object", "properties": {"score": {"type": "number"}, "reasons": {"type": "array", "items": {"type": "string"}}}}
+  }
+}
