@@ -3,7 +3,9 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Noogle / Omnitrix</title>
+  <meta name="theme-color" content="#07110d" />
+  <meta name="description" content="Noogle — The NEO Way of Search. Live provenance-first search with public knowledge, Bitcoin and Counterparty XCP data." />
+  <title>Noogle — The NEO Way of Search</title>
   <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
@@ -13,8 +15,8 @@
       <div class="subtitle">The NEO Way of Search</div>
       <nav id="modeNav" class="mode-nav" aria-label="Search modes"></nav>
       <div class="status-card">
-        <div><span class="dot"></span> Omnitrix online</div>
-        <small>Prototype mode · read-only</small>
+        <div><span class="dot"></span> Omnitrix <strong id="apiStatus">CONNECTING</strong></div>
+        <small>Live public APIs · read-only financial surfaces · provenance shown per result</small>
       </div>
     </aside>
 
@@ -22,9 +24,9 @@
       <header class="browser-bar">
         <button class="nav-button" title="Back" disabled>←</button>
         <button class="nav-button" title="Forward" disabled>→</button>
-        <button class="nav-button" title="Reload">↻</button>
+        <button class="nav-button" title="Reload" onclick="location.reload()">↻</button>
         <form id="searchForm" class="address-form">
-          <input id="queryInput" autocomplete="off" placeholder="Search Noogle or enter a concept..." />
+          <input id="queryInput" autocomplete="off" placeholder="Search Noogle, a BTC address, txid, or Counterparty asset..." />
         </form>
         <button id="commandButton" class="command-button">OMNITRIX</button>
       </header>
@@ -32,11 +34,11 @@
       <section class="hero">
         <p class="eyebrow">NOOLOGICAL KNOWLEDGE ENGINE</p>
         <h1>Search the world. Understand the knowledge.</h1>
-        <p class="hero-copy">A provenance-first search workspace for Noology, Indigenous ontology, history, nature, Bitcoin, Counterparty XCP, and the wider NEO ecosystem.</p>
+        <p class="hero-copy">Live, provenance-first discovery across public reference, scholarly, archival, Bitcoin, and Counterparty XCP data. Indigenous context is treated as its own ontology layer rather than flattened into generic historical labeling.</p>
         <div class="hero-search">
           <form id="heroForm">
             <input id="heroInput" autocomplete="off" placeholder="What do you want to understand?" />
-            <button>Search</button>
+            <button>Search Noogle</button>
           </form>
         </div>
       </section>
@@ -58,7 +60,7 @@
             <p class="eyebrow">OMNITRIX INTELLIGENCE</p>
             <h3>Knowledge Card</h3>
             <div id="knowledgeCard" class="knowledge-card">
-              <p>Run a search to inspect provenance, evidence status, and related knowledge.</p>
+              <p>Run a search to inspect provenance, evidence status, and source class.</p>
             </div>
           </section>
 
@@ -68,11 +70,13 @@
                 <p class="eyebrow">NEO WALLET</p>
                 <h3>Bitcoin / XCP</h3>
               </div>
-              <span class="badge safe">READ ONLY</span>
+              <span class="badge safe">LIVE READS</span>
             </div>
-            <div class="metric-row"><span>BTC</span><strong>—</strong></div>
-            <div class="metric-row"><span>XCP</span><strong>—</strong></div>
-            <p class="muted">No wallet adapter connected. Private keys are never requested by this prototype.</p>
+            <div class="metric-row"><span>BTC/USD</span><strong id="btcValue">Connecting…</strong></div>
+            <div class="metric-row"><span>Bitcoin API</span><strong id="btcNetwork">Connecting…</strong></div>
+            <div class="metric-row"><span>Counterparty</span><strong id="xcpValue">Connecting…</strong></div>
+            <div class="metric-row"><span>XCP API</span><strong id="xcpNetwork">Connecting…</strong></div>
+            <p class="muted">Noogle performs live read-only inspection. It never asks for seed phrases, private keys, or wallet passwords. Signing and broadcasting are separate user-controlled operations and are not enabled here.</p>
           </section>
 
           <section class="panel miner-panel">
@@ -81,12 +85,12 @@
                 <p class="eyebrow">NEO MINER</p>
                 <h3>Miner Control</h3>
               </div>
-              <span class="badge warning">OFFLINE</span>
+              <span class="badge warning">ADAPTER REQUIRED</span>
             </div>
             <div class="metric-row"><span>Hashrate</span><strong>—</strong></div>
             <div class="metric-row"><span>Pool</span><strong>Not connected</strong></div>
             <div class="metric-row"><span>BTC payout</span><strong>—</strong></div>
-            <p class="muted">Hardware and pool adapters will be added in a later phase.</p>
+            <p class="muted">GitHub Pages cannot directly control mining hardware. Omnitrix will consume miner telemetry only after a secure authenticated miner adapter is connected.</p>
           </section>
         </aside>
       </section>
