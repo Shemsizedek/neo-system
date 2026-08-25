@@ -1,0 +1,31 @@
+{
+  "case_no": "NEO-2026-GLOBAL-0001",
+  "module": "FIN-003",
+  "status": "ACTIVE",
+  "benchmark": {
+    "world_gold_council_above_ground_end_2025_tonnes": 220700,
+    "world_gold_council_central_bank_official_tonnes": 38600,
+    "world_gold_council_2025_mine_production_initial_tonnes": 3672,
+    "note": "Benchmarks are external physical-scale controls, not dispositive findings on any individual historical claim."
+  },
+  "asserted_lots": [
+    {"asset_lot_id":"FIN003-LOT-001","asserted_tonnes":1715000,"context":"China / 1952 narrative","status":"UNRESOLVED","duplicate_status":"UNKNOWN","physical_plausibility":"CRITICAL_REVIEW"},
+    {"asset_lot_id":"FIN003-LOT-002","asserted_tonnes":217000,"context":"1957 narrative","status":"UNRESOLVED","duplicate_status":"UNKNOWN","physical_plausibility":"CRITICAL_REVIEW"},
+    {"asset_lot_id":"FIN003-LOT-003","asserted_tonnes":10000,"context":"National Bank of Dubai","status":"UNRESOLVED","duplicate_status":"UNKNOWN","physical_plausibility":"REQUIRES_CUSTODY_PROOF"},
+    {"asset_lot_id":"FIN003-LOT-004","asserted_tonnes":11000,"context":"Banco de Oro","status":"UNRESOLVED","duplicate_status":"UNKNOWN","physical_plausibility":"REQUIRES_CUSTODY_PROOF"},
+    {"asset_lot_id":"FIN003-LOT-005","asserted_tonnes":12000,"context":"PNB","status":"UNRESOLVED","duplicate_status":"UNKNOWN","physical_plausibility":"REQUIRES_CUSTODY_PROOF"},
+    {"asset_lot_id":"FIN003-LOT-006","asserted_tonnes":1181336675,"context":"Certificate of Entitlement claim","status":"UNRESOLVED","duplicate_status":"UNKNOWN","physical_plausibility":"CRITICAL_UNIT_DUPLICATION_PHYSICAL_IMPOSSIBILITY_REVIEW"}
+  ],
+  "classification_rules": [
+    "ORIGINAL_PHYSICAL_DEPOSIT",
+    "TRANSFER_EXISTING_LOT",
+    "CUSTODY_RECEIPT_EXISTING_LOT",
+    "CERTIFICATE_RENEWAL_REISSUE",
+    "COLLATERALIZATION_ENCUMBRANCE",
+    "BENEFICIAL_INTEREST_ACCOUNTING_CLAIM",
+    "DUPLICATE_REFERENCE",
+    "NOTIONAL_OR_UNIT_MISLABEL",
+    "AUTHENTICATED_DISTINCT_PHYSICAL_LOT"
+  ],
+  "publication_rule": "Do not publish a consolidated bullion total as a finding until unique-lot, duplication, unit, custody, assay and transfer reconciliation is complete."
+}
