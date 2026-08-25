@@ -1,0 +1,21 @@
+{
+  "id": "FIN-005",
+  "case": "TVMLSM666 v. NEOLPS999",
+  "title": "Signatory & Authority Verification Matrix",
+  "status": "ACTIVE",
+  "principle": "Identity and office compatibility do not authenticate a disputed instrument; signature authenticity and legal authority are independent elements.",
+  "signatories": [
+    {"name":"Elpidio Quirino","asserted_role":"Philippine President / asserted signatory","office_status":"VERIFIED_BY_OFFICIAL_CONTROL","instrument_status":"PENDING"},
+    {"name":"Miguel Cuaderno Sr.","asserted_role":"Central Bank Governor / asserted monetary signatory","office_status":"REQUIRES_PRIMARY_ARCHIVE","instrument_status":"PENDING"},
+    {"name":"Fred Ruiz Castro","asserted_role":"Chief Justice / asserted 11 Aug 1976 signatory","office_status":"VERIFIED_1976_COMPATIBLE","instrument_status":"PENDING_SUPREME_COURT_DOCKET_AUTHENTICATION"},
+    {"name":"Enrique A. Agana","asserted_role":"Judge / asserted 3957-P signatory","office_status":"PENDING_PRIMARY_JUDICIAL_RECORD","instrument_status":"PENDING"},
+    {"name":"Harry S. Truman","asserted_role":"U.S. President / asserted multinational signatory","office_status":"HISTORICALLY_ESTABLISHED","instrument_status":"PENDING"},
+    {"name":"Dwight D. Eisenhower","asserted_role":"asserted multinational signatory","office_status":"DATE_CAPACITY_TEST_REQUIRED","instrument_status":"PENDING"},
+    {"name":"Chiang Kai-shek","asserted_role":"asserted multinational signatory","office_status":"DATE_CAPACITY_TEST_REQUIRED","instrument_status":"PENDING"},
+    {"name":"Mao Zedong","asserted_role":"asserted multinational signatory","office_status":"DATE_CAPACITY_TEST_REQUIRED","instrument_status":"PENDING"},
+    {"name":"Zhou Enlai","asserted_role":"asserted multinational signatory","office_status":"DATE_CAPACITY_TEST_REQUIRED","instrument_status":"PENDING"},
+    {"name":"Francisco Franco","asserted_role":"asserted multinational signatory","office_status":"DATE_CAPACITY_TEST_REQUIRED","instrument_status":"PENDING"},
+    {"name":"Ferdinand Marcos","asserted_role":"named in financial/title corpus","office_status":"INSTRUMENT_DATE_CAPACITY_TEST_REQUIRED","instrument_status":"PENDING"}
+  ],
+  "next": "FIN-006 Chronology & Impossibility Audit"
+}
