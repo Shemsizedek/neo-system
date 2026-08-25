@@ -7,7 +7,7 @@
 
 * { box-sizing: border-box; }
 body { margin: 0; min-height: 100vh; background: radial-gradient(circle at top, #10271c 0, #07110d 45%, #040806 100%); }
-button, input { font: inherit; }
+button, input, textarea, select { font: inherit; }
 button { cursor: pointer; }
 a { color: #83efaa; text-decoration: none; }
 a:hover { text-decoration: underline; }
@@ -66,6 +66,11 @@ h2, h3 { margin: 0; }
 .metric-row { display: flex; justify-content: space-between; gap: 16px; padding: 11px 0; border-bottom: 1px solid rgba(255,255,255,.06); color: #9eb0a5; }
 .metric-row strong { color: white; text-align: right; }
 .muted { color: #71867a; font-size: .82rem; line-height: 1.5; }
+.submission-form { display: grid; gap: 16px; }
+.submission-form label { display: grid; gap: 7px; color: #cdd9d1; font-size: .82rem; font-weight: 700; }
+.submission-form input, .submission-form textarea, .submission-form select { width: 100%; border: 1px solid rgba(255,255,255,.12); border-radius: 10px; background: rgba(255,255,255,.045); color: #fff; padding: 11px 12px; outline: none; }
+.submission-form input:focus, .submission-form textarea:focus, .submission-form select:focus { border-color: rgba(99,232,148,.6); box-shadow: 0 0 0 3px rgba(99,232,148,.08); }
+.submission-form button { border: 0; border-radius: 10px; padding: 12px 16px; background: #63e894; color: #062311; font-weight: 800; }
 
 @media (max-width: 950px) {
   .app-shell { grid-template-columns: 1fr; }
