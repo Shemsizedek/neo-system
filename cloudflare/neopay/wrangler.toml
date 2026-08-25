@@ -1,0 +1,8 @@
+name = "neopay-api"
+main = "worker.mjs"
+compatibility_date = "2026-08-24"
+workers_dev = true
+
+[vars]
+COUNTERPARTY_API = "https://api.counterparty.io:4000/v2"
+ALLOWED_ORIGIN = "https://shemsizedek.github.io"
