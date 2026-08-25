@@ -28,31 +28,25 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        id: root_install
-        continue-on-error: true
         run: npm ci
 
       - name: Build NEO System
-        id: root_build
-        continue-on-error: true
         env:
           VITE_NEOPAY_API_BASE: ${{ vars.NEOPAY_API_BASE }}
         run: npm run build
 
-      - name: Ensure Pages artifact root
+      - name: Verify Pages artifact root
         run: |
-          mkdir -p dist
-          if [ ! -f dist/index.html ]; then
-            cp index.html dist/index.html
-          fi
+          test -f dist/index.html
+          test -d dist/assets
 
       - name: Verify NEO JARVIS artifact
-        continue-on-error: true
         run: test -f dist/neo-jarvis/index.html
 
+      - name: Verify NEO PACER artifact
+        run: test -f dist/neo-pacer/index.html
+
       - name: Build NEO Counter
-        id: counter_build
-        continue-on-error: true
         working-directory: apps/neo-counter
         env:
           VITE_NEO_COUNTER_SYNC_ENDPOINT: ${{ vars.NEO_COUNTER_SYNC_ENDPOINT }}
@@ -62,33 +56,31 @@ jobs:
 
       - name: Publish NEO Counter routes
         run: |
+          test -f apps/neo-counter/dist/index.html
           mkdir -p dist/neo-counter dist/apps/neo-counter
-          if [ "${{ steps.counter_build.outcome }}" = "success" ] && [ -f apps/neo-counter/dist/index.html ]; then
-            cp -R apps/neo-counter/dist/. dist/neo-counter/
-            cp -R apps/neo-counter/dist/. dist/apps/neo-counter/
-            echo "NEO Counter compiled app published at /neo-counter/ and /apps/neo-counter/."
-          else
-            cp neo-counter/index.html dist/neo-counter/index.html
-            cp neo-counter/index.html dist/apps/neo-counter/index.html
-            echo "NEO Counter static recovery shell published at both routes."
-          fi
+          cp -R apps/neo-counter/dist/. dist/neo-counter/
+          cp -R apps/neo-counter/dist/. dist/apps/neo-counter/
           test -f dist/neo-counter/index.html
           test -f dist/apps/neo-counter/index.html
 
       - name: Add NEO TV Hub to Pages artifact
         run: |
+          test -f docs/neo-tv/index.html
           mkdir -p dist/neo-tv
           cp -R docs/neo-tv/. dist/neo-tv/
           test -f dist/neo-tv/index.html
 
+      - name: Add SPA 404 fallback
+        run: cp dist/index.html dist/404.html
+
       - name: Pages build summary
         run: |
-          echo "Root install: ${{ steps.root_install.outcome }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "Root build: ${{ steps.root_build.outcome }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "NEOpay API base configured: ${{ vars.NEOPAY_API_BASE != '' }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "NEO Counter build: ${{ steps.counter_build.outcome }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "NEO Counter routes: /neo-counter/ + /apps/neo-counter/" >> "$GITHUB_STEP_SUMMARY"
-          echo "NEO TV: included" >> "$GITHUB_STEP_SUMMARY"
+          echo "Root build: verified" >> "$GITHUB_STEP_SUMMARY"
+          echo "NEO JARVIS: /neo-jarvis/" >> "$GITHUB_STEP_SUMMARY"
+          echo "NEO PACER: /neo-pacer/" >> "$GITHUB_STEP_SUMMARY"
+          echo "NEO Counter: /neo-counter/ + /apps/neo-counter/" >> "$GITHUB_STEP_SUMMARY"
+          echo "NEO TV: /neo-tv/" >> "$GITHUB_STEP_SUMMARY"
+          echo "SPA fallback: /404.html" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
