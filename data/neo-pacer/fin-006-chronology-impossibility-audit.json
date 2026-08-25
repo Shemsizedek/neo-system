@@ -1,0 +1,30 @@
+{
+  "id": "FIN-006",
+  "case": "TVMLSM666 v. NEOLPS999",
+  "title": "Chronology & Impossibility Audit",
+  "status": "ACTIVE",
+  "principle": "A later document may corroborate that an earlier claim existed, but cannot by itself prove that the earlier transaction occurred.",
+  "flags": [
+    {"id":"F-006-01","title":"1949 event vs later Certificate of Entitlement","status":"OPEN"},
+    {"id":"F-006-02","title":"1970 vs 1976 certificate references","status":"OPEN"},
+    {"id":"F-006-03","title":"1971/1974 clarificatory-order date anomaly","status":"OPEN"},
+    {"id":"F-006-04","title":"1976 Supreme Court issuance gap","status":"OPEN"},
+    {"id":"F-006-05","title":"Retroactive authority risk","status":"OPEN"},
+    {"id":"F-006-06","title":"Successor-entity naming and transfer issue","status":"OPEN"},
+    {"id":"F-006-07","title":"Duplicate bullion event risk","status":"OPEN"},
+    {"id":"F-006-08","title":"Later-publication vs contemporaneous-proof distinction","status":"OPEN"}
+  ],
+  "impossibility_categories": [
+    "OFFICE_DATE_IMPOSSIBILITY",
+    "INSTITUTION_DATE_IMPOSSIBILITY",
+    "STATUTORY_ANACHRONISM",
+    "TECHNOLOGY_ANACHRONISM",
+    "GEOGRAPHIC_OR_JURISDICTION_CONFLICT",
+    "DUPLICATE_ASSET_CHRONOLOGY",
+    "RETROACTIVE_VALIDATION",
+    "SUCCESSOR_MISMATCH",
+    "JUDICIAL_SEQUENCE_CONFLICT",
+    "DOCUMENT_GENERATION_ANOMALY"
+  ],
+  "next": "FIN-007 Funds Flow & Beneficial Ownership Reconstruction"
+}
