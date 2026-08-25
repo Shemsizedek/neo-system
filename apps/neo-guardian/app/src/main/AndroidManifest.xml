@@ -7,11 +7,14 @@
         android:allowBackup="false"
         android:fullBackupContent="false"
         android:label="NEO Guardian"
+        android:icon="@drawable/neo_guardian_logo"
+        android:roundIcon="@drawable/neo_guardian_logo"
         android:usesCleartextTraffic="false"
         android:theme="@android:style/Theme.Material.NoActionBar">
         <activity
             android:name=".MainActivity"
-            android:exported="true">
+            android:exported="true"
+            android:screenOrientation="unspecified">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
