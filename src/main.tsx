@@ -9,6 +9,7 @@ import { StorefrontApp } from './miner/StorefrontApp'
 import { NeoWireApp } from './wire/NeoWireApp'
 import { NeoExplorer } from './explorer/NeoExplorer'
 import { NEOpayApp } from './neopay/NEOpayApp'
+import { TellerDashboard } from './teller/TellerDashboard'
 import './styles.css'
 import './home/home.css'
 import './explorer/explorer.css'
@@ -48,8 +49,10 @@ function RootRouter(){
   const isWire=route==='/wire'||route.startsWith('/wire/')
   const isExplorer=route==='/explorer'||route.startsWith('/explorer/')
   const isNEOpay=route==='/neopay'||route.startsWith('/neopay/')
+  const isTeller=route==='/teller'||route.startsWith('/teller/')
 
   if(isHome) return <HomeBase onOpen={open}/>
+  if(isTeller) return <TellerDashboard/>
   if(isNEOpay) return <NEOpayApp/>
   if(isExplorer) return <NeoExplorer/>
   if(isWire) return <NeoWireApp/>
