@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "sources": [
+    {
+      "id": "noogle-origin",
+      "name": "Noogle Origin Specification",
+      "url": "https://shemsizedek.github.io/neo-system/noogle/",
+      "type": "first-party",
+      "community": null,
+      "enabled": true,
+      "crawl": {"maxDepth": 1, "intervalHours": 24}
+    }
+  ],
+  "policy": {
+    "allowPublicHttpOnly": true,
+    "respectRobotsTxt": true,
+    "denyPrivateNetworks": true,
+    "denyAuthenticationBypass": true,
+    "denyPaywallBypass": true,
+    "requireAttributionForCommunitySources": true
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Noogle Community Source Submission",
+  "type": "object",
+  "required": ["title", "url", "submittedBy", "attribution", "sourceClass"],
+  "properties": {
+    "title": {"type": "string"},
+    "url": {"type": "string", "format": "uri", "pattern": "^https?://"},
+    "submittedBy": {"type": "string"},
+    "community": {"type": ["string", "null"]},
+    "attribution": {"type": "string"},
+    "sourceClass": {"enum": ["community", "primary", "scholarly", "reference", "archive", "other"]},
+    "communityTerms": {"type": "array", "items": {"type": "object", "required": ["term", "community", "attribution"], "properties": {"term": {"type": "string"}, "community": {"type": "string"}, "attribution": {"type": "string"}, "aliases": {"type": "array", "items": {"type": "string"}}}}},
+    "notes": {"type": "string"},
+    "consentToIndex": {"const": true}
+  }
+}
