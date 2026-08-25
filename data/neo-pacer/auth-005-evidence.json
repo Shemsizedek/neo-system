@@ -1,0 +1,79 @@
+{
+  "auth_id": "AUTH-005",
+  "case_no": "NEO-2026-GLOBAL-0001",
+  "instrument": "1972 Judgment / Compromise Agreement",
+  "evidence": [
+    {
+      "evidence_id": "NEO-2026-GLOBAL-0001-EX-0023",
+      "title": "Supreme Court E-Library — Lagcao v. Judge Gako",
+      "evidence_class": "P1",
+      "authentication_status": "VERIFIED",
+      "score": 94,
+      "source_ref": "https://elibrary.judiciary.gov.ph/thebookshelf/showdocs/1/44135",
+      "notes": "Official Supreme Court record confirms later litigation reliance on a 4 Feb 1972 decision, alleged entry of judgment, writs and related 3957-P materials; it does not authenticate the underlying Tallano ownership theory."
+    },
+    {
+      "evidence_id": "NEO-2026-GLOBAL-0001-EX-0024",
+      "title": "Supreme Court E-Library — Lihaylihay v. Treasurer of the Philippines",
+      "evidence_class": "P1",
+      "authentication_status": "VERIFIED",
+      "score": 94,
+      "source_ref": "https://elibrary.judiciary.gov.ph/thebookshelf/showdocs/1/64362",
+      "notes": "Official Supreme Court decision reproduces the petitioner's allegation that Judge Agana issued a 4 Feb 1972 order concerning alleged gold and diamonds; reproduction is not a merits finding that the asset allegation is true."
+    },
+    {
+      "evidence_id": "NEO-2026-GLOBAL-0001-EX-0025",
+      "title": "Supreme Court E-Library — Rhema International Livelihood Foundation v. Hibix",
+      "evidence_class": "P1",
+      "authentication_status": "VERIFIED",
+      "score": 94,
+      "source_ref": "https://elibrary.judiciary.gov.ph/thebookshelf/showdocs/1/65589",
+      "notes": "Official Supreme Court decision records later attempted enforcement of a 3957-P writ and the existence of a Court of Appeals injunction against enforcement of the relevant order."
+    },
+    {
+      "evidence_id": "NEO-2026-GLOBAL-0001-EX-0026",
+      "title": "137-page research copy — Decision with Compromise Agreement dated 4 Feb 1972",
+      "evidence_class": "C1",
+      "authentication_status": "UNRESOLVED",
+      "score": 56,
+      "source_ref": "https://www.creativeimage.jp/foundation/_pdf/Decision%20with%20Compromise%20Agreement%20of%201972.pdf",
+      "notes": "Public reproduction bears the 3957-P caption and contains broad compromise/reconveyance provisions. Requires comparison with a certified original judicial record."
+    },
+    {
+      "evidence_id": "NEO-2026-GLOBAL-0001-EX-0027",
+      "title": "Court of Appeals CA-G.R. SP Nos. 70014 / 104604 public reproduction",
+      "evidence_class": "C1",
+      "authentication_status": "STRONGLY_CORROBORATED",
+      "score": 74,
+      "source_ref": "https://es.scribd.com/document/956165450/CA-G-R-SP-Nos-70014-y-104604-DECISION",
+      "notes": "Public reproduction describes the Republic's jurisdiction, notice, reconstitution and extrinsic-fraud challenges and records material disputes over 3957-P. Certified CA rollo/disposition remains the preferred P1 source."
+    }
+  ],
+  "contradictions": [
+    {
+      "id": "CF-005-A",
+      "severity": "HIGH",
+      "description": "Later appellate material questions why the purported 4 Feb 1972 Decision with Compromise Agreement bears the same date as the purported filing of the amended petition. Original docket timestamps and hearing minutes are required."
+    },
+    {
+      "id": "CF-005-B",
+      "severity": "CRITICAL",
+      "description": "The original 1972 record and the later post-fire reconstitution proceedings must be separated. Invalidity of a reconstitution process does not automatically prove nonexistence of an original judgment, and existence of an original judgment does not establish the validity of later reconstructed copies."
+    },
+    {
+      "id": "CF-005-C",
+      "severity": "CRITICAL",
+      "description": "The Republic challenged subject-matter jurisdiction to reconstitute Torrens titles in what it characterized as an ordinary civil action for quieting/recovery. This directly affects legal effect even if a document is physically authentic."
+    },
+    {
+      "id": "CF-005-D",
+      "severity": "HIGH",
+      "description": "The Republic alleged failure to satisfy mandatory publication and notice requirements to occupants, adjoining owners and interested parties. Due-process compliance must be established from the primary record."
+    },
+    {
+      "id": "CF-005-E",
+      "severity": "HIGH",
+      "description": "Official Supreme Court litigation confirms downstream 3957-P enforcement was enjoined by the Court of Appeals. Present enforceability cannot be assumed without the complete appellate history."
+    }
+  ]
+}
