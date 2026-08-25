@@ -1,5 +1,6 @@
 import http from 'node:http';
 import { pathToFileURL } from 'node:url';
+import { createNeoPrimeMarketData } from '../neo-prime/market-data.mjs';
 
 export const PLATFORM_REGISTRY = {
   neopay: { name: 'NEOpay', source: ['apps/neopay', 'src/neopay'], services: ['wallet', 'portfolio', 'transaction-compose', 'dex-quotes'] },
@@ -22,52 +23,64 @@ function json(res, status, body) {
   res.end(payload);
 }
 
-export function createNeoPlatformApi({ now = () => new Date().toISOString() } = {}) {
-  return http.createServer((req, res) => {
-    if (req.method === 'OPTIONS') {
-      res.writeHead(204, {
-        'access-control-allow-origin': '*',
-        'access-control-allow-methods': 'GET,OPTIONS',
-        'access-control-allow-headers': 'content-type,authorization'
-      });
-      return res.end();
-    }
-
-    if (req.method !== 'GET') return json(res, 405, { error: 'method_not_allowed', readOnly: true });
-
-    const url = new URL(req.url || '/', 'http://neo.local');
-    if (url.pathname === '/health') {
-      return json(res, 200, { service: 'neo-platform-api', status: 'ok', generatedAt: now(), platforms: Object.keys(PLATFORM_REGISTRY).length });
-    }
-    if (url.pathname === '/api/v1/platforms') {
-      return json(res, 200, {
-        apiVersion: 'v1',
-        generatedAt: now(),
-        platforms: Object.entries(PLATFORM_REGISTRY).map(([id, value]) => ({ id, name: value.name, services: value.services }))
-      });
-    }
-
-    const match = url.pathname.match(/^\/api\/v1\/platforms\/([^/]+)(?:\/(health|capabilities))?$/);
-    if (match) {
-      const [, id, action = 'capabilities'] = match;
-      const platform = PLATFORM_REGISTRY[id];
-      if (!platform) return json(res, 404, { error: 'platform_not_found', platform: id });
-      if (action === 'health') {
-        return json(res, 200, { platform: id, name: platform.name, status: 'ok', generatedAt: now(), readOnly: true });
+export function createNeoPlatformApi({ now = () => new Date().toISOString(), marketData = createNeoPrimeMarketData({ now }) } = {}) {
+  return http.createServer(async (req, res) => {
+    try {
+      if (req.method === 'OPTIONS') {
+        res.writeHead(204, {
+          'access-control-allow-origin': '*',
+          'access-control-allow-methods': 'GET,OPTIONS',
+          'access-control-allow-headers': 'content-type,authorization'
+        });
+        return res.end();
       }
-      return json(res, 200, {
-        platform: id,
-        name: platform.name,
-        status: 'ready',
-        generatedAt: now(),
-        readOnly: true,
-        source: platform.source,
-        services: platform.services,
-        transactionalExecution: 'disabled-until-auth-and-runtime-binding'
-      });
-    }
 
-    return json(res, 404, { error: 'not_found' });
+      if (req.method !== 'GET') return json(res, 405, { error: 'method_not_allowed', readOnly: true });
+
+      const url = new URL(req.url || '/', 'http://neo.local');
+      if (url.pathname === '/health') {
+        return json(res, 200, { service: 'neo-platform-api', status: 'ok', generatedAt: now(), platforms: Object.keys(PLATFORM_REGISTRY).length });
+      }
+      if (url.pathname === '/api/v1/platforms') {
+        return json(res, 200, {
+          apiVersion: 'v1',
+          generatedAt: now(),
+          platforms: Object.entries(PLATFORM_REGISTRY).map(([id, value]) => ({ id, name: value.name, services: value.services }))
+        });
+      }
+
+      if (url.pathname === '/api/v1/prime/markets') {
+        const assets = (url.searchParams.get('assets') || 'XCP,NOMNI').split(',').map((v) => v.trim()).filter(Boolean).slice(0, 20);
+        return json(res, 200, await marketData.snapshot({ assets }));
+      }
+
+      const primeAssetMatch = url.pathname.match(/^\/api\/v1\/prime\/assets\/([^/]+)$/);
+      if (primeAssetMatch) return json(res, 200, await marketData.asset(primeAssetMatch[1]));
+
+      const match = url.pathname.match(/^\/api\/v1\/platforms\/([^/]+)(?:\/(health|capabilities))?$/);
+      if (match) {
+        const [, id, action = 'capabilities'] = match;
+        const platform = PLATFORM_REGISTRY[id];
+        if (!platform) return json(res, 404, { error: 'platform_not_found', platform: id });
+        if (action === 'health') {
+          return json(res, 200, { platform: id, name: platform.name, status: 'ok', generatedAt: now(), readOnly: true });
+        }
+        return json(res, 200, {
+          platform: id,
+          name: platform.name,
+          status: 'ready',
+          generatedAt: now(),
+          readOnly: true,
+          source: platform.source,
+          services: platform.services,
+          transactionalExecution: 'disabled-until-auth-and-runtime-binding'
+        });
+      }
+
+      return json(res, 404, { error: 'not_found' });
+    } catch (error) {
+      return json(res, 502, { error: 'upstream_failure', message: error?.message || 'unknown error' });
+    }
   });
 }
 
