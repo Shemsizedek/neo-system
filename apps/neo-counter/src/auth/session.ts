@@ -7,7 +7,7 @@ let current:Session|null=null;
 function base(){return ENDPOINT.replace(/\/$/,'');}
 export function sessionToken(){return token;}
 export function currentSession(){return current;}
-export function authHeaders(){return token?{authorization:`Bearer ${token}`}:{}};
+export function authHeaders():Record<string,string>{return token?{authorization:`Bearer ${token}`}:{}};
 
 export async function login(input:{merchantId:string;terminalId:string;terminalSecret:string;staffId:string;pin:string}):Promise<Session>{
   if(!ENDPOINT) throw new Error('NEO Counter backend endpoint is not configured.');
