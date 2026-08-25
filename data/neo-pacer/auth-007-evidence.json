@@ -1,0 +1,38 @@
+[
+  {
+    "evidence_id":"NEO-2026-GLOBAL-0001-AUTH007-EX-01",
+    "title":"Republic/OSG Petition for Annulment — 19 Jan 1976 Clarificatory Decision references",
+    "evidence_class":"C1",
+    "authentication_status":"UNRESOLVED",
+    "score":60,
+    "source_ref":"https://www.scribd.com/document/237514225/Petition-for-Annulment-of-Judgment",
+    "notes":"Adversarial pleading reproduction identifies and discusses the alleged 19 Jan 1976 Clarificatory Decision and preserves statements that some parties were unaware of it until 1998. Requires official court-file authentication."
+  },
+  {
+    "evidence_id":"NEO-2026-GLOBAL-0001-AUTH007-EX-02",
+    "title":"Acopiado Estate court-decision archive — 19 Jan 1976 Clarificatory Order",
+    "evidence_class":"C2",
+    "authentication_status":"PROVISIONALLY_CORROBORATED",
+    "score":42,
+    "source_ref":"https://acopiadoestate.com/court-decisions/",
+    "notes":"Claimant/successor-side archive specifically lists an original 19 Jan 1976 clarificatory instrument in 3957-P. Useful provenance lead; not independent judiciary authentication."
+  },
+  {
+    "evidence_id":"NEO-2026-GLOBAL-0001-AUTH007-EX-03",
+    "title":"Tallano historical legal brief — 19 Jan 1976 Clarificatory Decision",
+    "evidence_class":"C2",
+    "authentication_status":"PROVISIONALLY_CORROBORATED",
+    "score":40,
+    "source_ref":"https://www.creativeimage.jp/foundation/_pdf/The%20True%20Story%20of%20the%20Tallano%20%28TALA%29%20Estate.pdf",
+    "notes":"Claimant-side legal-history publication states Judge Agana issued a clarificatory decision on 19 Jan 1976 and asserts finality. Finality and enforceability require independent court records."
+  },
+  {
+    "evidence_id":"NEO-2026-GLOBAL-0001-AUTH007-EX-04",
+    "title":"Reported 2009 Court of Appeals disposition — CA-G.R. SP Nos. 70014 and 104604",
+    "evidence_class":"C1",
+    "authentication_status":"UNRESOLVED",
+    "score":62,
+    "source_ref":"https://hrrodriguezestateissues.blogspot.com/2014/06/a-short-review-of-pasay-rtc-branch-111.html",
+    "notes":"Secondary reproduction reports that the CA declared reconstitution proceedings void and annulled listed 3957-P instruments including the 19 Jan 1976 Clarificatory Decision. Must be replaced/elevated by certified CA record before final legal-effect finding."
+  }
+]
