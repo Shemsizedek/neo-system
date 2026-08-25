@@ -1,0 +1,32 @@
+name: Noogle Source Registry Refresh
+
+on:
+  schedule:
+    - cron: '17 */6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Refresh Noogle source health
+        run: node scripts/noogle-source-refresh.mjs
+
+      - name: Upload source health artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: noogle-source-health
+          path: apps/noogle/index/generated/source-health.json
+          if-no-files-found: error
+          retention-days: 30
