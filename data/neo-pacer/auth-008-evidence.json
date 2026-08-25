@@ -1,0 +1,43 @@
+{
+  "auth_id": "AUTH-008",
+  "case_no": "NEO-2026-GLOBAL-0001",
+  "instrument": "Purported 11 August 1976 Supreme Court Order / Writ of Execution",
+  "status": "UNRESOLVED — CLAIMANT-SIDE DOCUMENTARY EXISTENCE CORROBORATED / SUPREME COURT DOCKET, ISSUANCE AUTHORITY, SIGNATURE, AND LEGAL-EFFECT AUTHENTICATION PENDING",
+  "evidence": [
+    {
+      "id": "EX-0026",
+      "class": "claimant-side publication",
+      "source": "Acopiado Estate — Court Decisions",
+      "finding": "Lists an asserted ORIGINAL Supreme Court Order for Writ of Execution dated 11 August 1976.",
+      "weight": "corroborates asserted existence; not independent judicial authentication"
+    },
+    {
+      "id": "EX-0027",
+      "class": "claimant-side affidavit/publication",
+      "source": "Acopiado Estate — Administrator / Biography",
+      "finding": "Attributes the 11 August 1976 order to Chief Justice Fred Ruiz Castro and Judge Enrique A. Agana and reproduces claimed operative language.",
+      "weight": "content/provenance lead requiring original-record authentication"
+    },
+    {
+      "id": "EX-0028",
+      "class": "adverse government pleading",
+      "source": "Republic Petition for Annulment, Civil Case 3957-P / CA-G.R. SP 70014 materials",
+      "finding": "Documents extensive government challenge to the authenticity/jurisdiction/reconstitution/enforcement of the 3957-P instrument chain.",
+      "weight": "high-value adverse procedural evidence; underlying certified appellate record required"
+    },
+    {
+      "id": "EX-0029",
+      "class": "official later judicial decision",
+      "source": "Philippine Supreme Court E-Library, G.R. Nos. 225353-54",
+      "finding": "Records later enforcement controversy tied to LRC Civil Case 3957-P and an earlier Court of Appeals injunction against enforcement of an associated order.",
+      "weight": "official corroboration that enforcement history is contested; does not independently authenticate the 11 Aug 1976 instrument"
+    }
+  ],
+  "contradictions": [
+    {"id":"C-008-01","issue":"No exact Supreme Court docket bridge presently established for the alleged order."},
+    {"id":"C-008-02","issue":"Claimed dual signature by Chief Justice Castro and trial Judge Agana requires direct archival authentication."},
+    {"id":"C-008-03","issue":"Circulated international-jurisdiction language requires institutional and legal-capacity verification."},
+    {"id":"C-008-04","issue":"Later injunction/enforcement litigation prevents inference of present enforceability."},
+    {"id":"C-008-05","issue":"Original versus later reconstituted/certified-copy provenance must be separated."}
+  ]
+}
