@@ -46,6 +46,17 @@ jobs:
           cp dist/index.html dist/neopay/index.html
           test -f dist/neopay/index.html
 
+      - name: Publish Noogle live interface
+        run: |
+          test -f apps/noogle/web/index.html
+          test -f apps/noogle/web/app.js
+          test -f apps/noogle/web/styles.css
+          mkdir -p dist/noogle
+          cp -R apps/noogle/web/. dist/noogle/
+          test -f dist/noogle/index.html
+          test -f dist/noogle/app.js
+          test -f dist/noogle/styles.css
+
       - name: Verify Pages artifact root
         run: |
           test -f dist/index.html
@@ -95,6 +106,7 @@ jobs:
       - name: Pages build summary
         run: |
           echo "Root build: verified" >> "$GITHUB_STEP_SUMMARY"
+          echo "Noogle: /noogle/" >> "$GITHUB_STEP_SUMMARY"
           echo "NEO JARVIS: /neo-jarvis/" >> "$GITHUB_STEP_SUMMARY"
           echo "NEO PACER: /neo-pacer/" >> "$GITHUB_STEP_SUMMARY"
           echo "NEO Counter: /neo-counter/ + /apps/neo-counter/" >> "$GITHUB_STEP_SUMMARY"
