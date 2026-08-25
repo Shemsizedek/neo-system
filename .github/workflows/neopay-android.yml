@@ -1,0 +1,53 @@
+name: Build NEOpay Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'src/neopay/**'
+      - 'public/neopay-logo.svg'
+      - 'mobile/neopay-android/**'
+      - '.github/workflows/neopay-android.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.10.2'
+
+      - name: Build debug APK
+        working-directory: mobile/neopay-android
+        run: gradle :app:assembleDebug --no-daemon
+
+      - name: Verify APK
+        run: test -f mobile/neopay-android/app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Stage artifact
+        run: |
+          mkdir -p release
+          cp mobile/neopay-android/app/build/outputs/apk/debug/app-debug.apk release/NEOpay-debug.apk
+          sha256sum release/NEOpay-debug.apk > release/NEOpay-debug.apk.sha256
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: NEOpay-Android-${{ github.sha }}
+          path: release/
+          if-no-files-found: error
+          retention-days: 30
