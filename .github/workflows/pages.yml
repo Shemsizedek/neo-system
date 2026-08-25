@@ -33,10 +33,18 @@ jobs:
       - name: Build NEO System
         env:
           VITE_NEOPAY_API_BASE: ${{ vars.NEOPAY_API_BASE }}
+          VITE_NEOPAY_COUNTERPARTY_API: ${{ vars.NEOPAY_COUNTERPARTY_API }}
+          VITE_NEOPAY_BITCOIN_API: ${{ vars.NEOPAY_BITCOIN_API }}
         run: npm run build
 
       - name: Build Pages platform API snapshots
         run: node scripts/build-pages-platform-api.mjs
+
+      - name: Publish NEOpay application route
+        run: |
+          mkdir -p dist/neopay
+          cp dist/index.html dist/neopay/index.html
+          test -f dist/neopay/index.html
 
       - name: Verify Pages artifact root
         run: |
@@ -91,7 +99,7 @@ jobs:
           echo "NEO PACER: /neo-pacer/" >> "$GITHUB_STEP_SUMMARY"
           echo "NEO Counter: /neo-counter/ + /apps/neo-counter/" >> "$GITHUB_STEP_SUMMARY"
           echo "NEO TV: /neo-tv/" >> "$GITHUB_STEP_SUMMARY"
-          echo "NEOpay: /neopay/" >> "$GITHUB_STEP_SUMMARY"
+          echo "NEOpay application: /neopay/" >> "$GITHUB_STEP_SUMMARY"
           echo "NEO Teller: /neo-teller/" >> "$GITHUB_STEP_SUMMARY"
           echo "NEO Books: /neo-books/" >> "$GITHUB_STEP_SUMMARY"
           echo "NEO Prime: /neo-prime/" >> "$GITHUB_STEP_SUMMARY"
