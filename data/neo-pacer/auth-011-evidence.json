@@ -1,0 +1,44 @@
+[
+  {
+    "id":"AUTH-011-E1",
+    "class":"P1",
+    "source":"Republic Act No. 7653, Section 132",
+    "status":"VERIFIED",
+    "finding":"Creates the transfer framework: selected former Central Bank assets/liabilities may be transferred to BSP; non-transferred items remain with CB-BOL."
+  },
+  {
+    "id":"AUTH-011-E2",
+    "class":"P1",
+    "source":"Administrative Order No. 100, 30 Nov 1993",
+    "status":"VERIFIED",
+    "finding":"Approves specific transferred assets and liabilities identified in a Committee of Seven report with balance sheets, annexes and schedules; effective 3 Jul 1993."
+  },
+  {
+    "id":"AUTH-011-E3",
+    "class":"P1",
+    "source":"Executive Order No. 169, 17 Apr 1994",
+    "status":"VERIFIED",
+    "finding":"Continues former Central Bank as CB-BOL to administer and liquidate assets/liabilities not transferred to BSP."
+  },
+  {
+    "id":"AUTH-011-E4",
+    "class":"P1",
+    "source":"Republic Act No. 11211, Section 46",
+    "status":"VERIFIED",
+    "finding":"Amends Section 132(b) while retaining the statutory liquidation framework for former Central Bank net liabilities."
+  },
+  {
+    "id":"AUTH-011-E5",
+    "class":"P1",
+    "source":"Philippine Supreme Court — Banco Filipino / CB-BOL jurisprudence",
+    "status":"VERIFIED",
+    "finding":"Confirms that BSP and CB-BOL are distinct successor destinations depending on whether the specific former Central Bank asset/liability was transferred or retained."
+  },
+  {
+    "id":"AUTH-011-E6",
+    "class":"GAP",
+    "source":"Committee of Seven 50-page transfer schedules and COA audit records",
+    "status":"NOT YET ACQUIRED",
+    "finding":"These records are necessary to determine whether any specific TVM-LSM-666-related liability was transferred to BSP, retained by CB-BOL, or otherwise treated."
+  }
+]
