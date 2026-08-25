@@ -8,7 +8,7 @@ import { GeneratorApp } from './miner/GeneratorApp'
 import { StorefrontApp } from './miner/StorefrontApp'
 import { NeoWireApp } from './wire/NeoWireApp'
 import { NeoExplorer } from './explorer/NeoExplorer'
-import { NEOpayApp } from './neopay/NEOpayApp'
+import { NEOpayWallet } from './neopay/NEOpayWallet'
 import { TellerDashboard } from './teller/TellerDashboard'
 import './styles.css'
 import './home/home.css'
@@ -53,7 +53,7 @@ function RootRouter(){
 
   if(isHome) return <HomeBase onOpen={open}/>
   if(isTeller) return <TellerDashboard/>
-  if(isNEOpay) return <NEOpayApp/>
+  if(isNEOpay) return <NEOpayWallet/>
   if(isExplorer) return <NeoExplorer/>
   if(isWire) return <NeoWireApp/>
   if(isMinerStore) return <StorefrontApp/>
