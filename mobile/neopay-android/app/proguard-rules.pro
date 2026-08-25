@@ -1,0 +1,1 @@
+# NEOpay release rules
