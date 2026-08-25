@@ -14,87 +14,21 @@
       <div class="brand">NOOGLE</div>
       <div class="subtitle">The NEO Way of Search</div>
       <nav id="modeNav" class="mode-nav" aria-label="Search modes"></nav>
-      <div class="status-card">
-        <div><span class="dot"></span> Omnitrix <strong id="apiStatus">CONNECTING</strong></div>
-        <small>Live public APIs · read-only financial surfaces · provenance shown per result</small>
-      </div>
-      <div class="status-card">
-        <strong>NOOGLE INDEX</strong>
-        <small><a href="./status.html">View index health</a><br><a href="./submit.html">Submit a source</a></small>
-      </div>
+      <div class="status-card"><div><span class="dot"></span> Omnitrix <strong id="apiStatus">CONNECTING</strong></div><small>Live public APIs · read-only financial surfaces · provenance shown per result</small></div>
+      <div class="status-card"><strong>NOOGLE INDEX</strong><small><a href="./status.html">View index health</a><br><a href="./submit.html">Submit a source</a></small></div>
     </aside>
-
     <main class="workspace">
-      <header class="browser-bar">
-        <button class="nav-button" title="Back" disabled>←</button>
-        <button class="nav-button" title="Forward" disabled>→</button>
-        <button class="nav-button" title="Reload" onclick="location.reload()">↻</button>
-        <form id="searchForm" class="address-form">
-          <input id="queryInput" autocomplete="off" placeholder="Search Noogle, a BTC address, txid, or Counterparty asset..." />
-        </form>
-        <button id="commandButton" class="command-button">OMNITRIX</button>
-      </header>
-
-      <section class="hero">
-        <p class="eyebrow">NOOLOGICAL KNOWLEDGE ENGINE</p>
-        <h1>Search the world. Understand the knowledge.</h1>
-        <p class="hero-copy">Live, provenance-first discovery across public reference, scholarly, archival, Bitcoin, and Counterparty XCP data. Indigenous context is treated as its own ontology layer rather than flattened into generic historical labeling.</p>
-        <div class="hero-search">
-          <form id="heroForm">
-            <input id="heroInput" autocomplete="off" placeholder="What do you want to understand?" />
-            <button>Search Noogle</button>
-          </form>
-        </div>
-        <p class="muted"><a href="./status.html">Index health</a> · <a href="./submit.html">Submit a source</a></p>
-      </section>
-
-      <section class="content-grid">
-        <div class="panel results-panel">
-          <div class="panel-header">
-            <div>
-              <p class="eyebrow">ACTIVE MODE</p>
-              <h2 id="activeMode">STANDARD</h2>
-            </div>
-            <span id="resultCount" class="badge">0 results</span>
-          </div>
-          <div id="results" class="results"></div>
-        </div>
-
-        <aside class="right-rail">
-          <section class="panel intel-panel">
-            <p class="eyebrow">OMNITRIX INTELLIGENCE</p>
-            <h3>Knowledge Card</h3>
-            <div id="knowledgeCard" class="knowledge-card"><p>Run a search to inspect provenance, evidence status, and source class.</p></div>
-          </section>
-
-          <section class="panel intel-panel">
-            <div class="panel-header compact"><div><p class="eyebrow">NATIVE INDEX</p><h3>Corpus Health</h3></div><span id="indexHealthBadge" class="badge">CHECKING</span></div>
-            <div class="metric-row"><span>Documents</span><strong id="nativeDocCount">—</strong></div>
-            <div class="metric-row"><span>Sources</span><strong id="nativeSourceCount">—</strong></div>
-            <div class="metric-row"><span>Reachable</span><strong id="nativeReachable">—</strong></div>
-            <p class="muted"><a href="./status.html">Open full index health →</a></p>
-          </section>
-
-          <section class="panel finance-panel">
-            <div class="panel-header compact"><div><p class="eyebrow">NEO WALLET</p><h3>Bitcoin / XCP</h3></div><span class="badge safe">LIVE READS</span></div>
-            <div class="metric-row"><span>BTC/USD</span><strong id="btcValue">Connecting…</strong></div>
-            <div class="metric-row"><span>Bitcoin API</span><strong id="btcNetwork">Connecting…</strong></div>
-            <div class="metric-row"><span>Counterparty</span><strong id="xcpValue">Connecting…</strong></div>
-            <div class="metric-row"><span>XCP API</span><strong id="xcpNetwork">Connecting…</strong></div>
-            <p class="muted">Noogle performs live read-only inspection. It never asks for seed phrases, private keys, or wallet passwords.</p>
-          </section>
-
-          <section class="panel miner-panel">
-            <div class="panel-header compact"><div><p class="eyebrow">NEO MINER</p><h3>Miner Control</h3></div><span class="badge warning">ADAPTER REQUIRED</span></div>
-            <div class="metric-row"><span>Hashrate</span><strong>—</strong></div>
-            <div class="metric-row"><span>Pool</span><strong>Not connected</strong></div>
-            <div class="metric-row"><span>BTC payout</span><strong>—</strong></div>
-            <p class="muted">GitHub Pages cannot directly control mining hardware. Omnitrix will consume telemetry only after a secure authenticated miner adapter is connected.</p>
-          </section>
-        </aside>
-      </section>
+      <header class="browser-bar"><button class="nav-button" title="Back" disabled>←</button><button class="nav-button" title="Forward" disabled>→</button><button class="nav-button" title="Reload" onclick="location.reload()">↻</button><form id="searchForm" class="address-form"><input id="queryInput" autocomplete="off" placeholder="Search Noogle, a BTC address, txid, or Counterparty asset..." /></form><button id="commandButton" class="command-button">OMNITRIX</button></header>
+      <section class="hero"><p class="eyebrow">NOOLOGICAL KNOWLEDGE ENGINE</p><h1>Search the world. Understand the knowledge.</h1><p class="hero-copy">Live, provenance-first discovery across public reference, scholarly, archival, Bitcoin, and Counterparty XCP data. Indigenous context is treated as its own ontology layer rather than flattened into generic historical labeling.</p><div class="hero-search"><form id="heroForm"><input id="heroInput" autocomplete="off" placeholder="What do you want to understand?" /><button>Search Noogle</button></form></div><p class="muted"><a href="./status.html">Index health</a> · <a href="./submit.html">Submit a source</a></p></section>
+      <section class="content-grid"><div class="panel results-panel"><div class="panel-header"><div><p class="eyebrow">ACTIVE MODE</p><h2 id="activeMode">STANDARD</h2></div><span id="resultCount" class="badge">0 results</span></div><div id="results" class="results"></div></div><aside class="right-rail">
+        <section class="panel intel-panel"><p class="eyebrow">OMNITRIX INTELLIGENCE</p><h3>Knowledge Card</h3><div id="knowledgeCard" class="knowledge-card"><p>Run a search to inspect provenance, evidence status, and source class.</p></div></section>
+        <section class="panel intel-panel"><div class="panel-header compact"><div><p class="eyebrow">NATIVE INDEX</p><h3>Corpus Health</h3></div><span id="indexHealthBadge" class="badge">CHECKING</span></div><div class="metric-row"><span>Documents</span><strong id="nativeDocCount">—</strong></div><div class="metric-row"><span>Sources</span><strong id="nativeSourceCount">—</strong></div><div class="metric-row"><span>Reachable</span><strong id="nativeReachable">—</strong></div><p class="muted"><a href="./status.html">Open full index health →</a></p></section>
+        <section class="panel finance-panel"><div class="panel-header compact"><div><p class="eyebrow">NEO WALLET</p><h3>Bitcoin / XCP</h3></div><span class="badge safe">LIVE READS</span></div><div class="metric-row"><span>BTC/USD</span><strong id="btcValue">Connecting…</strong></div><div class="metric-row"><span>Bitcoin API</span><strong id="btcNetwork">Connecting…</strong></div><div class="metric-row"><span>Counterparty</span><strong id="xcpValue">Connecting…</strong></div><div class="metric-row"><span>XCP API</span><strong id="xcpNetwork">Connecting…</strong></div><p class="muted">Noogle performs live read-only inspection. It never asks for seed phrases, private keys, or wallet passwords.</p></section>
+        <section class="panel miner-panel"><div class="panel-header compact"><div><p class="eyebrow">NEO MINER</p><h3>Miner Control</h3></div><span class="badge warning">ADAPTER REQUIRED</span></div><div class="metric-row"><span>Hashrate</span><strong>—</strong></div><div class="metric-row"><span>Pool</span><strong>Not connected</strong></div><div class="metric-row"><span>BTC payout</span><strong>—</strong></div><p class="muted">GitHub Pages cannot directly control mining hardware. Omnitrix will consume telemetry only after a secure authenticated miner adapter is connected.</p></section>
+      </aside></section>
     </main>
   </div>
   <script src="./app.js"></script>
+  <script src="./health.js"></script>
 </body>
 </html>
