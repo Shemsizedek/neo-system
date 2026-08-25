@@ -19,5 +19,5 @@ export class MockReceiptPrinter implements ReceiptPrinterAdapter{
 export class MockPaymentTerminal implements PaymentTerminalAdapter{
   readonly kind='PAYMENT_TERMINAL' as const;
   async pair(){return paired('NEO NFC/EMV Terminal Simulator','PAYMENT_TERMINAL');}
-  async capabilities(){return ['NFC','EMV','MSR'] as const;}
+  async capabilities():Promise<('NFC'|'EMV'|'MSR')[]>{return ['NFC','EMV','MSR'];}
 }
