@@ -83,9 +83,9 @@ export function createEvidenceVault(path='data/neo-evidence-vault.sqlite'){
     }catch(error){db.exec('ROLLBACK');throw error;}
   };
 
-  const listEvidence=(asset,limit=200)=>db.prepare('SELECT * FROM evidence_records WHERE asset=? ORDER BY created_at DESC LIMIT ?').all(String(asset).toUpperCase(),Math.min(Number(limit)||200,500)).map(mapRecord);
+  const listEvidence=(asset,limit=200)=>db.prepare('SELECT * FROM evidence_records WHERE asset=? ORDER BY created_at DESC, rowid DESC LIMIT ?').all(String(asset).toUpperCase(),Math.min(Number(limit)||200,500)).map(mapRecord);
   const getEvidence=id=>mapRecord(db.prepare('SELECT * FROM evidence_records WHERE id=?').get(id));
-  const listAudit=(asset,limit=500)=>db.prepare('SELECT * FROM evidence_events WHERE asset=? ORDER BY created_at DESC LIMIT ?').all(String(asset).toUpperCase(),Math.min(Number(limit)||500,1000)).map(row=>({id:row.id,evidenceId:row.evidence_id,asset:row.asset,eventType:row.event_type,actor:row.actor,payload:JSON.parse(row.payload_json),createdAt:row.created_at}));
+  const listAudit=(asset,limit=500)=>db.prepare('SELECT * FROM evidence_events WHERE asset=? ORDER BY created_at DESC, rowid DESC LIMIT ?').all(String(asset).toUpperCase(),Math.min(Number(limit)||500,1000)).map(row=>({id:row.id,evidenceId:row.evidence_id,asset:row.asset,eventType:row.event_type,actor:row.actor,payload:JSON.parse(row.payload_json),createdAt:row.created_at}));
 
   return {db,createEvidence,reviewEvidence,listEvidence,getEvidence,listAudit,close:()=>db.close()};
 }
