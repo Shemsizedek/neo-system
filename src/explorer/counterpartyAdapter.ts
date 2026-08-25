@@ -14,12 +14,27 @@ export type CounterpartyBalance={asset:string;quantity?:number;quantity_normaliz
 export type CounterpartyHolder={address?:string;address_quantity?:number;quantity?:number;quantity_normalized?:string|number}
 export type CounterpartyDispenser={asset?:string;give_quantity?:number;give_quantity_normalized?:string|number;satoshirate?:number;status?:number|string}
 export type CounterpartyAssetInfo={asset?:string;asset_longname?:string;issuer?:string;owner?:string;description?:string;divisible?:boolean;locked?:boolean;supply?:number;supply_normalized?:string|number}
+export type CounterpartyIssuance={
+  asset?:string
+  source?:string
+  issuer?:string
+  quantity?:number
+  quantity_normalized?:string|number
+  description?:string
+  divisible?:boolean
+  locked?:boolean
+  status?:string
+  block_index?:number
+  tx_hash?:string
+  tx_index?:number
+}
 
 export type CounterpartySnapshot={
   pair:string
   quote:MarketQuote|null
   orders:CounterpartyOrder[]
   balances:CounterpartyBalance[]
+  issuances:CounterpartyIssuance[]
   holders:CounterpartyHolder[]
   dispensers:CounterpartyDispenser[]
   assetInfo:CounterpartyAssetInfo|null
@@ -77,6 +92,22 @@ export class CounterpartyV2MarketAdapter implements MarketAdapter{
     return Array.isArray(result)?result as CounterpartyBalance[]:[]
   }
 
+  async getAddressIssuances(address:string){
+    const paths=[
+      `/addresses/${encodeURIComponent(address)}/issuances?limit=1000`,
+      `/issuances?source=${encodeURIComponent(address)}&limit=1000`,
+    ]
+    for(const path of paths){
+      try{
+        const result=await this.getResult(path)
+        if(Array.isArray(result))return result as CounterpartyIssuance[]
+      }catch{
+        // Try the alternate supported query form before failing closed.
+      }
+    }
+    return []
+  }
+
   async getAssetInfo(asset:string){
     try{
       const result=await this.getResult(`/assets/${encodeURIComponent(asset)}`)
@@ -97,14 +128,15 @@ export class CounterpartyV2MarketAdapter implements MarketAdapter{
 
   async snapshot(pair:string,foundationAddress:string):Promise<CounterpartySnapshot>{
     const [base]=pair.split('/')
-    const [quote,balances,holders,dispensers,assetInfo]=await Promise.all([
+    const [quote,balances,issuances,holders,dispensers,assetInfo]=await Promise.all([
       this.getQuote(pair),
       this.getFoundationBalances(foundationAddress),
+      this.getAddressIssuances(foundationAddress),
       this.getAssetHolders(base),
       this.getAssetDispensers(base),
       this.getAssetInfo(base),
     ])
     const ordersResult=await this.getResult(`/assets/${encodeURIComponent(base)}/orders?status=open&limit=100`)
-    return {pair,quote,orders:Array.isArray(ordersResult)?ordersResult as CounterpartyOrder[]:[],balances,holders,dispensers,assetInfo,observedAt:new Date().toISOString()}
+    return {pair,quote,orders:Array.isArray(ordersResult)?ordersResult as CounterpartyOrder[]:[],balances,issuances,holders,dispensers,assetInfo,observedAt:new Date().toISOString()}
   }
 }
