@@ -1,4 +1,4 @@
-name: NEO-PACER GitHub Pages
+name: NEO-PACER Pages Validation
 
 on:
   workflow_dispatch:
@@ -8,28 +8,19 @@ on:
       - 'docs/neo-pacer/**'
       - 'data/neo-pacer/**'
       - '.github/workflows/neo-pacer-pages.yml'
+      - '.github/workflows/pages.yml'
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: neo-pacer-pages
-  cancel-in-progress: true
 
 jobs:
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+  validate:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: docs/neo-pacer
-      - name: Deploy NEO-PACER to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Validate NEO-PACER static bundle
+        run: |
+          test -f docs/neo-pacer/index.html
+          test -f docs/neo-pacer/app.js
+          test -f docs/neo-pacer/styles.css
+          echo "NEO-PACER validated. Canonical deployment is owned by pages.yml." >> "$GITHUB_STEP_SUMMARY"
