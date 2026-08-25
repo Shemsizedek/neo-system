@@ -1,0 +1,40 @@
+{
+  "id": "FIN-008_ECC-008",
+  "case": "TVMLSM666 v. NEOLPS999",
+  "title": "Asset Recovery & Claims Reconciliation Matrix",
+  "status": "ACTIVE",
+  "recovery_levels": {
+    "R0": "ASSERTED",
+    "R1": "INTERNALLY_AUTHORIZED",
+    "R2": "EXTERNALLY_CORROBORATED",
+    "R3": "TITLE_BRIDGE_IDENTIFIED",
+    "R4": "TITLE_BRIDGE_AUTHENTICATED",
+    "R5": "CUSTODY_RECONCILED",
+    "R6": "BENEFICIAL_OWNERSHIP_RECONCILED",
+    "R7": "RECOVERY_READY"
+  },
+  "claims": [
+    {"id":"AR-001","asset":"OCT T-01-4 / Hacienda Filipina Archipelago","status":"UNRESOLVED_REGISTRY_AUTHENTICATION_REQUIRED","level":"R2"},
+    {"id":"AR-002","asset":"1949 Proclamation / Gift of Love entitlement","status":"UNRESOLVED","level":"R1"},
+    {"id":"AR-003","asset":"1950 BMBSA interests","status":"UNRESOLVED","level":"R1"},
+    {"id":"AR-004","asset":"1952 testamentary interests","status":"UNRESOLVED","level":"R1"},
+    {"id":"AR-005","asset":"1962 testamentary interests","status":"UNRESOLVED","level":"R1"},
+    {"id":"AR-006","asset":"3957-P judicially asserted rights","status":"UNRESOLVED_STRONG_LITIGATION_CORROBORATION_EFFECT_PENDING","level":"R2"},
+    {"id":"AR-007","asset":"1976 CBP Certificate of Entitlement / custody instruments","status":"UNRESOLVED","level":"R1"},
+    {"id":"AR-008","asset":"Gold and bullion lots","status":"ACTIVE_RECONCILIATION","level":"R1"},
+    {"id":"AR-009","asset":"Omniversal Church internally acquired ecclesiastical property","status":"GOVERNANCE_FRAMEWORK_DOCUMENTED_ASSET_SPECIFIC_TITLE_REQUIRED","level":"R1"},
+    {"id":"AR-010","asset":"Claimed Universal Church to Omniversal Church recovered property","status":"DOCTRINAL_CLAIM_DOCUMENTED_TRANSFER_NOT_ESTABLISHED","level":"R0"},
+    {"id":"AR-011","asset":"World Treasury of Merit / NOMNI treasury assets","status":"INTERNAL_SYSTEM_DOCUMENTED_EXTERNAL_STATUS_ASSET_SPECIFIC","level":"R1"}
+  ],
+  "integrity_flags": [
+    "CLAIMANT_CUSTODIAN_CONFLATION",
+    "TRUSTEE_BENEFICIAL_OWNER_CONFLATION",
+    "ECCLESIASTICAL_AUTHORITY_AS_AUTOMATIC_SECULAR_CONVEYANCE",
+    "LATER_COVENANT_USED_TO_PROVE_EARLIER_TRANSFER",
+    "DUPLICATE_BULLION_LOT",
+    "UNREGISTERED_TITLE_V_REGISTERED_TITLE",
+    "SELF_AUTHORED_FINANCING_STATEMENT_AS_THIRD_PARTY_CONSENT",
+    "HISTORICAL_TITLE_CRITIQUE_AS_AUTOMATIC_PRESENT_VESTING"
+  ],
+  "next": "FIN-009 / ECC-009 Recovery Demand & Evidence Sufficiency Engine"
+}
