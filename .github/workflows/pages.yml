@@ -33,6 +33,9 @@ jobs:
       - name: Build Noogle native index snapshot
         run: npm run crawl:noogle
 
+      - name: Refresh Noogle source health
+        run: node scripts/noogle-source-refresh.mjs
+
       - name: Build NEO System
         env:
           VITE_NEOPAY_API_BASE: ${{ vars.NEOPAY_API_BASE }}
@@ -54,12 +57,22 @@ jobs:
           test -f apps/noogle/web/index.html
           test -f apps/noogle/web/app.js
           test -f apps/noogle/web/styles.css
-          mkdir -p dist/noogle
+          test -f apps/noogle/web/health.js
+          test -f apps/noogle/web/status.html
+          test -f apps/noogle/web/submit.html
+          mkdir -p dist/noogle dist/api/noogle
           cp -R apps/noogle/web/. dist/noogle/
+          cp apps/noogle/index/generated/source-health.json dist/api/noogle/source-health.json
+          cp apps/noogle/index/sources.json dist/api/noogle/sources.json
           test -f dist/noogle/index.html
           test -f dist/noogle/app.js
           test -f dist/noogle/styles.css
+          test -f dist/noogle/health.js
+          test -f dist/noogle/status.html
+          test -f dist/noogle/submit.html
           test -f dist/api/noogle/index.json
+          test -f dist/api/noogle/source-health.json
+          test -f dist/api/noogle/sources.json
 
       - name: Verify Pages artifact root
         run: |
@@ -111,7 +124,10 @@ jobs:
         run: |
           echo "Root build: verified" >> "$GITHUB_STEP_SUMMARY"
           echo "Noogle: /noogle/" >> "$GITHUB_STEP_SUMMARY"
+          echo "Noogle status: /noogle/status.html" >> "$GITHUB_STEP_SUMMARY"
+          echo "Noogle submissions: /noogle/submit.html" >> "$GITHUB_STEP_SUMMARY"
           echo "Noogle native index: /api/noogle/index.json" >> "$GITHUB_STEP_SUMMARY"
+          echo "Noogle source health: /api/noogle/source-health.json" >> "$GITHUB_STEP_SUMMARY"
           echo "NEO JARVIS: /neo-jarvis/" >> "$GITHUB_STEP_SUMMARY"
           echo "NEO PACER: /neo-pacer/" >> "$GITHUB_STEP_SUMMARY"
           echo "NEO Counter: /neo-counter/ + /apps/neo-counter/" >> "$GITHUB_STEP_SUMMARY"
