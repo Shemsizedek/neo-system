@@ -3,6 +3,7 @@ import{ShieldCheck,X}from'lucide-react'
 import{neoPaySigner,type SignerState}from'./signer'
 import{SecuritySettings}from'./SecuritySettings'
 import{loadSecurityPreferences,type SecurityPreferences}from'./walletSecurity'
+import'./security.css'
 
 function applyPrivacy(prefs:SecurityPreferences){document.documentElement.classList.toggle('neopay-privacy',prefs.privacyMode)}
 
