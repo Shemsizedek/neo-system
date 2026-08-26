@@ -1,5 +1,5 @@
 name: Omnitrix APK
-# v2.1.0 brand completion + NEO Market Matrix
+# v2.2.0 branded receive center + wallet UX gate
 
 on:
   push:
@@ -30,10 +30,10 @@ jobs:
       - name: Prepare consumer APK
         run: |
           mkdir -p release
-          cp apps/omnitrix-android/app/build/outputs/apk/debug/app-debug.apk release/Omnitrix-Browser-v2.1.0.apk
-          sha256sum release/Omnitrix-Browser-v2.1.0.apk > release/Omnitrix-Browser-v2.1.0.apk.sha256
+          cp apps/omnitrix-android/app/build/outputs/apk/debug/app-debug.apk release/Omnitrix-Browser-v2.2.0.apk
+          sha256sum release/Omnitrix-Browser-v2.2.0.apk > release/Omnitrix-Browser-v2.2.0.apk.sha256
       - uses: actions/upload-artifact@v4
         with:
-          name: Omnitrix-Browser-APK-v2.1.0
+          name: Omnitrix-Browser-APK-v2.2.0
           path: release/*
           if-no-files-found: error
