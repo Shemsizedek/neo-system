@@ -1,4 +1,5 @@
 import{routedFetch}from'./routerClient'
+import{clearPendingTransactionReview,registerBroadcastReceipt}from'./receiptCenter'
 
 async function getJson<T>(path:string):Promise<T>{
   const{res}=await routedFetch('btc.read',path,{headers:{Accept:'application/json'}})
@@ -26,11 +27,14 @@ export async function getBitcoinTransactionStatus(txid:string){
 }
 export async function broadcastBitcoinTransaction(hex:string){
   if(!/^[0-9a-fA-F]+$/.test(hex)||hex.length<100||hex.length%2)throw new Error('Signed transaction is invalid.')
-  const{res}=await routedFetch('btc.broadcast','/tx',{method:'POST',headers:{'Content-Type':'text/plain'},body:hex})
-  const text=await res.text()
-  if(!res.ok)throw new Error(text||`Bitcoin broadcast failed (${res.status})`)
-  const txid=text.trim()
-  if(!/^[0-9a-fA-F]{64}$/.test(txid))throw new Error('Bitcoin provider returned an invalid transaction ID.')
-  return txid
+  try{
+    const{res}=await routedFetch('btc.broadcast','/tx',{method:'POST',headers:{'Content-Type':'text/plain'},body:hex})
+    const text=await res.text()
+    if(!res.ok)throw new Error(text||`Bitcoin broadcast failed (${res.status})`)
+    const txid=text.trim()
+    if(!/^[0-9a-fA-F]{64}$/.test(txid))throw new Error('Bitcoin provider returned an invalid transaction ID.')
+    registerBroadcastReceipt(txid)
+    return txid
+  }catch(e){clearPendingTransactionReview();throw e}
 }
 export function satsToBtc(sats:number){return sats/100_000_000}
