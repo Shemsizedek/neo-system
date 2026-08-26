@@ -2,6 +2,13 @@ name: NEO Router Worker v4
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/neo-router-worker.mjs'
+      - 'server/neo-router/**'
+      - 'data/router/**'
+      - '.github/workflows/neo-router-worker.yml'
   schedule:
     - cron: "11 * * * *"
 
