@@ -14,7 +14,7 @@ import org.bitcoinj.crypto.DumpedPrivateKey;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-/** Omnitrix v2.0 unified non-custodial wallet dashboard. */
+/** Omnitrix v2.1 unified non-custodial wallet dashboard. */
 public class WalletDashboardActivity extends Activity {
     private static final int REQ_UNLOCK=2001;
     private XcpKeyVault vault;
@@ -32,8 +32,8 @@ public class WalletDashboardActivity extends Activity {
 
     private void buildUi(){
         ScrollView scroll=new ScrollView(this);LinearLayout root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setPadding(dp(18),dp(22),dp(18),dp(30));root.setBackgroundColor(Color.rgb(1,5,3));scroll.addView(root);
-        LinearLayout top=new LinearLayout(this);top.setGravity(Gravity.CENTER_VERTICAL);ImageView logo=new ImageView(this);logo.setImageResource(R.drawable.omnitrix_logo);top.addView(logo,new LinearLayout.LayoutParams(dp(56),dp(56)));TextView title=text("  NEO WALLET",25,Color.rgb(227,255,234));top.addView(title);root.addView(top);
-        TextView sub=text("Omnitrix v2.0 · BTC / XCP / NOMNI",12,Color.rgb(103,170,126));sub.setPadding(0,dp(6),0,dp(14));root.addView(sub);
+        LinearLayout top=new LinearLayout(this);top.setGravity(Gravity.CENTER_VERTICAL);ImageView logo=new ImageView(this);logo.setImageResource(R.drawable.omnitrix_logo);logo.setContentDescription("Omnitrix");top.addView(logo,new LinearLayout.LayoutParams(dp(62),dp(62)));TextView title=text("  NEO WALLET",25,Color.rgb(227,255,234));top.addView(title);root.addView(top);
+        TextView sub=text("Omnitrix v2.1 · BTC / XCP / ∞ NOMNI",12,Color.rgb(103,170,126));sub.setPadding(0,dp(6),0,dp(14));root.addView(sub);
         address=text("Wallet address: locked",12,Color.rgb(145,255,171));address.setTextIsSelectable(true);root.addView(address);
         status=text("Authenticate to load public wallet data.",12,Color.rgb(181,214,191));status.setPadding(0,dp(8),0,dp(14));root.addView(status);
 
@@ -41,6 +41,7 @@ public class WalletDashboardActivity extends Activity {
 
         LinearLayout buttons=new LinearLayout(this);buttons.setOrientation(LinearLayout.HORIZONTAL);refresh=primary("REFRESH");send=primary("SEND");Button receive=secondary("RECEIVE");buttons.addView(refresh,new LinearLayout.LayoutParams(0,dp(52),1f));buttons.addView(send,new LinearLayout.LayoutParams(0,dp(52),1f));buttons.addView(receive,new LinearLayout.LayoutParams(0,dp(52),1f));root.addView(buttons);
         refresh.setEnabled(false);send.setEnabled(false);refresh.setOnClickListener(v->load());send.setOnClickListener(v->startActivity(new Intent(this,XcpComposerActivity.class)));receive.setOnClickListener(v->showReceive());
+        Button market=secondary("OPEN NEO MARKET MATRIX");LinearLayout.LayoutParams mlp=new LinearLayout.LayoutParams(-1,dp(50));mlp.setMargins(0,dp(8),0,0);root.addView(market,mlp);market.setOnClickListener(v->startActivity(new Intent(this,MarketMatrixActivity.class)));
 
         TextView h=text("RECENT ACTIVITY",14,Color.rgb(119,255,151));h.setPadding(0,dp(22),0,dp(8));root.addView(h);
         activity=text("No wallet activity loaded yet.",12,Color.rgb(192,226,201));activity.setTextIsSelectable(true);root.addView(activity);
@@ -68,20 +69,17 @@ public class WalletDashboardActivity extends Activity {
     private void load(){
         if(publicAddress.isEmpty()){authenticate();return;}refresh.setEnabled(false);status.setText("Loading BTC, Counterparty balances, prices, and recent activity…");
         io.execute(()->{
-            try{
-                WalletNetwork.WalletSnapshot s=WalletNetwork.load(publicAddress);
-                runOnUiThread(()->render(s));
-            }catch(Exception e){runOnUiThread(()->{refresh.setEnabled(true);status.setText("Wallet refresh failed: "+safe(e));});}
+            try{WalletNetwork.WalletSnapshot s=WalletNetwork.load(publicAddress);runOnUiThread(()->render(s));}
+            catch(Exception e){runOnUiThread(()->{refresh.setEnabled(true);status.setText("Wallet refresh failed: "+safe(e));});}
         });
     }
 
     private void render(WalletNetwork.WalletSnapshot s){
-        refresh.setEnabled(true);
-        double btcAmount=s.btcSats/100000000.0;double usd=btcAmount*s.btcUsd;
+        refresh.setEnabled(true);double btcAmount=s.btcSats/100000000.0;double usd=btcAmount*s.btcUsd;
         btc.setText("BTC\n"+String.format(java.util.Locale.US,"%.8f BTC",btcAmount)+(s.btcUsd>0?String.format(java.util.Locale.US,"\n≈ $%,.2f USD",usd):""));
         WalletNetwork.AssetBalance xb=s.find("XCP"),nb=s.find("NOMNI");
-        xcp.setText("XCP\n"+xb.display()+" XCP\nMarket conversion: next feed gate");
-        nomni.setText("∞ NOMNI\n∞ "+nb.display()+"\nNOMNI/XCP and NOMNI/USD: next DEX feed gate");
+        xcp.setText("XCP\n"+xb.display()+" XCP\nOpen Market Matrix for live conversions");
+        nomni.setText("∞ NOMNI\n∞ "+nb.display()+"\nOpen Market Matrix for NOMNI pairs");
         StringBuilder a=new StringBuilder();for(String row:s.activity){if(a.length()>0)a.append("\n\n");a.append("• ").append(row);}activity.setText(a.length()==0?"No recent activity returned.":a.toString());
         status.setText("Live wallet data loaded. Signing and broadcasting remain separate authenticated actions.");
     }
