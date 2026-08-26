@@ -1,0 +1,3 @@
+import{ShieldAlert,ShieldCheck,TriangleAlert}from'lucide-react'
+import type{RiskLevel}from'./anomalyDetection'
+export function RiskIndicator({score,level,reasons}:{score:number;level:RiskLevel;reasons:string[]}){const Icon=level==='low'?ShieldCheck:level==='elevated'?TriangleAlert:ShieldAlert;return <div className={`neopay-risk neopay-risk-${level}`} role="status" aria-label={`Transaction risk ${level}, ${score} out of 100`}><div className="neopay-risk-head"><Icon size={18}/><strong>{level.toUpperCase()} RISK</strong><b>{score}/100</b></div><div className="neopay-risk-meter"><span style={{width:`${Math.max(2,Math.min(100,score))}%`}}/></div><ul>{reasons.slice(0,4).map((r,i)=><li key={`${i}-${r}`}>{r}</li>)}</ul></div>}
