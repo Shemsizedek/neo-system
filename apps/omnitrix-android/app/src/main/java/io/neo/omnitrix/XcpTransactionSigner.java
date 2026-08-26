@@ -164,7 +164,10 @@ final class XcpTransactionSigner {
 
     private static Transaction copySkeleton(Transaction src,List<Prevout> prevouts,boolean signed,ECKey key,TransactionSignature[] sigs) throws Exception {
         Transaction tx=new Transaction();
-        tx.setVersion(src.getVersion());
+        long version=src.getVersion();
+        if(version<Integer.MIN_VALUE || version>0xffffffffL) throw new IllegalArgumentException("Invalid transaction version");
+        // bitcoinj 0.17.1 setter uses int; cast preserves the serialized 32-bit version field.
+        tx.setVersion((int)version);
         long lockTime=src.lockTime().rawValue();
         if(lockTime<0 || lockTime>0xffffffffL) throw new IllegalArgumentException("Invalid transaction locktime");
         // bitcoinj 0.17.1 uses an int here; the cast intentionally preserves the raw uint32 bits.
