@@ -105,5 +105,8 @@ window.nooglePathfinding = runPathfinding;
 
 document.addEventListener('submit', event => {
   const input = event.target?.querySelector?.('input');
-  if (input?.value) runPathfinding(input.value).catch(() => {});
+  const pair = input?.value ? parseConceptPair(input.value) : null;
+  if (!pair) return;
+  event.stopImmediatePropagation();
+  runPathfinding(input.value).catch(() => {});
 }, true);
