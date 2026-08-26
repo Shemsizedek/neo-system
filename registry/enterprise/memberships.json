@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "classification": "PRIVATE_CONTROL_PLANE",
+  "publish_to_pages": false,
+  "memberships": [
+    {
+      "principal_id": "github:Shemsizedek",
+      "role": "executive_admin",
+      "scope": "system",
+      "organization_ids": ["neo-system", "gisd"],
+      "status": "active"
+    }
+  ]
+}
