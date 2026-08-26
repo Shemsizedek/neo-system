@@ -40,6 +40,8 @@ jobs:
         run: npm run build
       - name: Build Pages platform API snapshots
         run: node scripts/build-pages-platform-api.mjs
+      - name: Build NEO Enterprise public directory
+        run: npm run pages:enterprise
       - name: Publish NEOpay application route
         run: |
           mkdir -p dist/neopay
@@ -104,16 +106,26 @@ jobs:
           for route in neo-hub neo-oracle neo-lingo neo-algo neo-corpus neo-enterprise; do
             test -f "dist/$route/index.html"
           done
+          test -f dist/neo-enterprise/admin/index.html
           test ! -e dist/neo-government
           test ! -e dist/government-workspace
+      - name: Verify NEO Enterprise publication boundary
+        run: |
+          test -f dist/api/enterprise/index.json
+          test -f dist/api/enterprise/organizations.json
+          test -f dist/api/enterprise/roles.json
+          test ! -e dist/api/enterprise/memberships.json
+          ! grep -R "github:Shemsizedek" dist/api/enterprise dist/neo-enterprise
+          ! grep -R "PRIVATE_CONTROL_PLANE" dist/api/enterprise dist/neo-enterprise
       - name: Add SPA 404 fallback
         run: cp dist/index.html dist/404.html
       - name: Pages build summary
         run: |
           echo "Public NEO Hub: /neo-hub/" >> "$GITHUB_STEP_SUMMARY"
-          echo "NEO Enterprise public surface: /neo-enterprise/" >> "$GITHUB_STEP_SUMMARY"
-          echo "Enterprise admin: Cloudflare Access Worker" >> "$GITHUB_STEP_SUMMARY"
-          echo "Private government routes: excluded from GitHub Pages" >> "$GITHUB_STEP_SUMMARY"
+          echo "NEO Enterprise: /neo-enterprise/" >> "$GITHUB_STEP_SUMMARY"
+          echo "Enterprise executive console: /neo-enterprise/admin/" >> "$GITHUB_STEP_SUMMARY"
+          echo "Enterprise public API: /api/enterprise/" >> "$GITHUB_STEP_SUMMARY"
+          echo "Private memberships and government workspace data: excluded from GitHub Pages" >> "$GITHUB_STEP_SUMMARY"
       - name: Configure Pages
         uses: actions/configure-pages@v5
       - name: Upload artifact
