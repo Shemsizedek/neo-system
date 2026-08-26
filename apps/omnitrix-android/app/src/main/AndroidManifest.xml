@@ -3,18 +3,19 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <application
-        android:allowBackup="true"
+        android:allowBackup="false"
         android:label="Omnitrix"
         android:icon="@drawable/omnitrix_logo"
         android:roundIcon="@drawable/omnitrix_logo"
         android:usesCleartextTraffic="false"
         android:theme="@android:style/Theme.Material.Light.NoActionBar">
-        <activity android:name=".MainActivityV14" android:exported="true">
+        <activity android:name=".XcpKeyActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity android:name=".MainActivityV14" android:exported="false" />
         <activity android:name=".MainActivity" android:exported="false" />
     </application>
 </manifest>
