@@ -3,6 +3,7 @@ package io.neo.omnitrix;
 import android.app.*;
 import android.content.*;
 import android.graphics.Color;
+import android.graphics.drawable.GradientDrawable;
 import android.net.nsd.NsdManager;
 import android.net.nsd.NsdServiceInfo;
 import android.os.Bundle;
@@ -24,83 +25,94 @@ public class MainActivity extends Activity {
 
     private WebView web;
     private EditText addressBar;
+    private LinearLayout dock;
+    private LinearLayout header;
     private String pendingNoogleQuery;
+    private int skin = 0;
     private final ExecutorService io = Executors.newSingleThreadExecutor();
     private NsdManager nsd;
     private NsdManager.DiscoveryListener discoveryListener;
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
-        getWindow().setStatusBarColor(Color.rgb(8, 17, 14));
+        getWindow().setStatusBarColor(Color.BLACK);
+        getWindow().setNavigationBarColor(Color.BLACK);
         buildUi();
         configureWeb();
+        applySkin();
         web.loadUrl(NOOGLE);
     }
 
     private void buildUi() {
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
-        root.setBackgroundColor(Color.rgb(247, 249, 248));
+        root.setBackgroundColor(Color.rgb(1, 5, 3));
 
-        LinearLayout bar = new LinearLayout(this);
-        bar.setGravity(Gravity.CENTER_VERTICAL);
-        bar.setPadding(dp(8), dp(7), dp(8), dp(7));
-        bar.setBackgroundColor(Color.WHITE);
+        header = new LinearLayout(this);
+        header.setGravity(Gravity.CENTER_VERTICAL);
+        header.setPadding(dp(8), dp(7), dp(8), dp(7));
 
-        TextView brand = new TextView(this);
-        brand.setText("◎");
-        brand.setTextSize(24);
-        brand.setGravity(Gravity.CENTER);
-        brand.setContentDescription("Omnitrix");
+        ImageView brand = new ImageView(this);
+        brand.setImageResource(R.drawable.omnitrix_logo);
+        brand.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        brand.setContentDescription("Omnitrix home");
+        brand.setPadding(dp(2), dp(2), dp(2), dp(2));
         brand.setOnClickListener(v -> web.loadUrl(NOOGLE));
-        bar.addView(brand, new LinearLayout.LayoutParams(dp(42), dp(44)));
+        header.addView(brand, new LinearLayout.LayoutParams(dp(46), dp(46)));
 
-        Button back = smallButton("‹");
+        Button back = navButton("‹");
         back.setOnClickListener(v -> { if (web.canGoBack()) web.goBack(); });
-        bar.addView(back);
+        header.addView(back);
 
-        Button forward = smallButton("›");
+        Button forward = navButton("›");
         forward.setOnClickListener(v -> { if (web.canGoForward()) web.goForward(); });
-        bar.addView(forward);
+        header.addView(forward);
 
-        Button reload = smallButton("↻");
+        Button reload = navButton("↻");
         reload.setOnClickListener(v -> web.reload());
-        bar.addView(reload);
+        header.addView(reload);
 
         addressBar = new EditText(this);
         addressBar.setSingleLine(true);
-        addressBar.setHint("Search Noogle or enter a web address");
-        addressBar.setTextSize(15);
-        addressBar.setPadding(dp(14), 0, dp(14), 0);
-        addressBar.setBackgroundResource(android.R.drawable.edit_text);
+        addressBar.setHint("Search Noogle or enter a website");
+        addressBar.setHintTextColor(Color.rgb(120, 150, 132));
+        addressBar.setTextColor(Color.WHITE);
+        addressBar.setTextSize(14);
+        addressBar.setPadding(dp(15), 0, dp(15), 0);
         addressBar.setImeOptions(2);
+        addressBar.setVisibility(View.GONE);
         addressBar.setOnEditorActionListener((v, actionId, event) -> {
             navigate(addressBar.getText().toString());
             return true;
         });
-        LinearLayout.LayoutParams addressLp = new LinearLayout.LayoutParams(0, dp(44), 1f);
+        LinearLayout.LayoutParams addressLp = new LinearLayout.LayoutParams(0, dp(42), 1f);
         addressLp.setMargins(dp(6), 0, dp(6), 0);
-        bar.addView(addressBar, addressLp);
+        header.addView(addressBar, addressLp);
 
-        Button miner = smallButton("⚡");
+        Button miner = navButton("⚡");
         miner.setContentDescription("NEO Miner");
         miner.setOnClickListener(v -> showMinerPanel());
-        bar.addView(miner);
-        root.addView(bar, new LinearLayout.LayoutParams(-1, dp(58)));
+        header.addView(miner);
+
+        Button theme = navButton("◐");
+        theme.setContentDescription("Change Omnitrix skin");
+        theme.setOnClickListener(v -> cycleTheme());
+        header.addView(theme);
+
+        root.addView(header, new LinearLayout.LayoutParams(-1, dp(62)));
 
         web = new WebView(this);
         root.addView(web, new LinearLayout.LayoutParams(-1, 0, 1f));
 
-        LinearLayout dock = new LinearLayout(this);
+        dock = new LinearLayout(this);
         dock.setGravity(Gravity.CENTER);
-        dock.setPadding(dp(6), dp(4), dp(6), dp(4));
-        dock.setBackgroundColor(Color.WHITE);
+        dock.setPadding(dp(6), dp(3), dp(6), dp(3));
         addDock(dock, "Noogle", v -> web.loadUrl(NOOGLE));
         addDock(dock, "Bitcoin", v -> web.loadUrl("https://mempool.space/"));
         addDock(dock, "XCP", v -> web.loadUrl("https://tokenscan.io/"));
         addDock(dock, "Miner", v -> showMinerPanel());
-        addDock(dock, "Theme", v -> cycleTheme());
-        root.addView(dock, new LinearLayout.LayoutParams(-1, dp(54)));
+        addDock(dock, "Skin", v -> cycleTheme());
+        root.addView(dock, new LinearLayout.LayoutParams(-1, dp(52)));
 
         setContentView(root);
     }
@@ -117,6 +129,7 @@ public class MainActivity extends Activity {
         s.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
         s.setSafeBrowsingEnabled(true);
         android.webkit.CookieManager.getInstance().setAcceptCookie(true);
+        web.setBackgroundColor(Color.rgb(1, 5, 3));
         web.setWebChromeClient(new WebChromeClient());
         web.setWebViewClient(new WebViewClient() {
             @Override public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest req) {
@@ -125,12 +138,21 @@ public class MainActivity extends Activity {
                 Toast.makeText(MainActivity.this, "Blocked unsafe URL scheme", Toast.LENGTH_SHORT).show();
                 return true;
             }
+
             @Override public void onPageFinished(WebView view, String url) {
-                addressBar.setText(url);
-                if (pendingNoogleQuery != null && url.startsWith(NOOGLE)) {
+                boolean atNoogle = url != null && url.startsWith(NOOGLE);
+                addressBar.setText(url == null ? "" : url);
+                addressBar.setVisibility(atNoogle ? View.GONE : View.VISIBLE);
+                dock.setVisibility(atNoogle ? View.VISIBLE : View.GONE);
+
+                if (atNoogle) {
+                    view.evaluateJavascript("(function(){var b=document.querySelector('.consumer-browser-bar');if(b)b.style.display='none';})()", null);
+                }
+
+                if (pendingNoogleQuery != null && atNoogle) {
                     String q = pendingNoogleQuery.replace("\\", "\\\\").replace("'", "\\'");
                     pendingNoogleQuery = null;
-                    view.evaluateJavascript("(function(){var i=document.getElementById('queryInput');var f=document.getElementById('searchForm');if(i&&f){i.value='" + q + "';f.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));return 'ok';}return 'missing';})()", null);
+                    view.evaluateJavascript("(function(){var i=document.getElementById('heroInput');var f=document.getElementById('heroForm');if(i&&f){i.value='" + q + "';if(f.requestSubmit){f.requestSubmit();}else{f.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));}return 'ok';}return 'missing';})()", null);
                 }
             }
         });
@@ -280,21 +302,41 @@ public class MainActivity extends Activity {
     }
 
     private void cycleTheme() {
-        int current = getWindow().getStatusBarColor();
-        if (current == Color.rgb(8, 17, 14)) {
-            getWindow().setStatusBarColor(Color.BLACK);
-            web.evaluateJavascript("document.documentElement.style.filter='grayscale(.12) contrast(1.05)'", null);
-            Toast.makeText(this, "Omnitrix Graphite skin", Toast.LENGTH_SHORT).show();
-        } else {
-            getWindow().setStatusBarColor(Color.rgb(8, 17, 14));
-            web.evaluateJavascript("document.documentElement.style.filter=''", null);
-            Toast.makeText(this, "Omnitrix NEO skin", Toast.LENGTH_SHORT).show();
-        }
+        skin = (skin + 1) % 3;
+        applySkin();
+        String name = skin == 0 ? "NEO Matrix" : skin == 1 ? "Electric Void" : "Royal Neon";
+        Toast.makeText(this, "Omnitrix " + name + " skin", Toast.LENGTH_SHORT).show();
     }
 
-    private Button smallButton(String label) {
+    private void applySkin() {
+        int accent = skin == 0 ? Color.rgb(101,255,138) : skin == 1 ? Color.rgb(0,217,255) : Color.rgb(174,104,255);
+        int accent2 = skin == 0 ? Color.rgb(0,180,95) : skin == 1 ? Color.rgb(0,96,255) : Color.rgb(255,68,176);
+
+        GradientDrawable top = new GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT,
+            new int[]{Color.rgb(0,5,3), Color.rgb(5,17,11), Color.rgb(0,3,2)});
+        top.setStroke(dp(1), Color.argb(70, Color.red(accent), Color.green(accent), Color.blue(accent)));
+        header.setBackground(top);
+
+        GradientDrawable bottom = new GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT,
+            new int[]{Color.rgb(1,7,4), Color.rgb(5,18,12), Color.rgb(1,7,4)});
+        bottom.setStroke(dp(1), Color.argb(55, Color.red(accent2), Color.green(accent2), Color.blue(accent2)));
+        dock.setBackground(bottom);
+
+        GradientDrawable addressBg = new GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT,
+            new int[]{Color.rgb(6,18,12), Color.rgb(2,11,8)});
+        addressBg.setCornerRadius(dp(24));
+        addressBg.setStroke(dp(1), Color.argb(100, Color.red(accent), Color.green(accent), Color.blue(accent)));
+        addressBar.setBackground(addressBg);
+        addressBar.setHintTextColor(Color.rgb(120, 150, 132));
+
+        getWindow().setStatusBarColor(Color.BLACK);
+        getWindow().setNavigationBarColor(Color.BLACK);
+    }
+
+    private Button navButton(String label) {
         Button b = new Button(this);
         b.setText(label);
+        b.setTextColor(Color.rgb(210,255,225));
         b.setTextSize(18);
         b.setAllCaps(false);
         b.setMinWidth(0);
@@ -308,6 +350,7 @@ public class MainActivity extends Activity {
     private void addDock(LinearLayout dock, String label, View.OnClickListener action) {
         Button b = new Button(this);
         b.setText(label);
+        b.setTextColor(Color.rgb(190,230,204));
         b.setTextSize(11);
         b.setAllCaps(false);
         b.setOnClickListener(action);
