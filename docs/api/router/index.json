@@ -1,0 +1,7 @@
+{
+  "service": "neo-router",
+  "backend": "github-actions",
+  "frontend": "github-pages",
+  "state": "/neo-system/api/router/state.json",
+  "status": "github-primary"
+}
