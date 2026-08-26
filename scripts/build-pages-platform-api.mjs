@@ -1,4 +1,4 @@
-import { mkdir, writeFile } from 'node:fs/promises';
+import { copyFile, mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 const generatedAt = new Date().toISOString();
@@ -83,7 +83,7 @@ await mkdir(outDir, { recursive: true });
 
 for (const [slug, platform] of Object.entries(platforms)) {
   const payload = {
-    apiVersion: '2026-08-25.v1',
+    apiVersion: '2026-08-26.v1',
     platform: slug,
     name: platform.name,
     category: platform.category,
@@ -98,7 +98,7 @@ for (const [slug, platform] of Object.entries(platforms)) {
     limits: {
       readOnly: true,
       transactionalWrites: false,
-      note: 'GitHub Pages is static hosting. Sensitive writes, signing and financial execution require authenticated runtime services.'
+      note: 'GitHub Pages publishes status and routing data. Signing and financial execution remain user-authorized.'
     }
   };
   await writeFile(join(outDir, `${slug}.json`), `${JSON.stringify(payload, null, 2)}\n`, 'utf8');
@@ -106,8 +106,18 @@ for (const [slug, platform] of Object.entries(platforms)) {
 
 await writeFile(
   join(outDir, 'index.json'),
-  `${JSON.stringify({ apiVersion: '2026-08-25.v1', status: 'ready', generatedAt, commit, platforms: Object.keys(platforms).map(slug => `${base}/api/platforms/${slug}.json`) }, null, 2)}\n`,
+  `${JSON.stringify({ apiVersion: '2026-08-26.v1', status: 'ready', generatedAt, commit, platforms: Object.keys(platforms).map(slug => `${base}/api/platforms/${slug}.json`) }, null, 2)}\n`,
   'utf8'
 );
 
-console.log(`Published ${Object.keys(platforms).length} NEO platform API snapshots.`);
+const routerOut = join(process.cwd(), 'dist', 'api', 'router');
+await mkdir(routerOut, { recursive: true });
+await copyFile(join(process.cwd(), 'data', 'router', 'providers.json'), join(routerOut, 'providers.json'));
+await copyFile(join(process.cwd(), 'data', 'router', 'state.json'), join(routerOut, 'state.json'));
+await writeFile(
+  join(routerOut, 'index.json'),
+  `${JSON.stringify({ apiVersion: '2026-08-26.v1', status: 'ready', source: 'github', generatedAt, commit, providers: `${base}/api/router/providers.json`, state: `${base}/api/router/state.json` }, null, 2)}\n`,
+  'utf8'
+);
+
+console.log(`Published ${Object.keys(platforms).length} NEO platform API snapshots and GitHub Router contract.`);
