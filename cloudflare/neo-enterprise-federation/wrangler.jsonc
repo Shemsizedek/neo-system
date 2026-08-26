@@ -8,10 +8,12 @@
   "durable_objects": {
     "bindings": [
       { "name": "ENTERPRISE_STORE", "class_name": "EnterpriseStore", "script_name": "neo-enterprise" },
-      { "name": "POLICY_STORE", "class_name": "PolicyStore" }
+      { "name": "POLICY_STORE", "class_name": "PolicyStore" },
+      { "name": "DELEGATION_STORE", "class_name": "DelegationStore" }
     ]
   },
   "migrations": [
-    { "tag": "v1", "new_sqlite_classes": ["PolicyStore"] }
+    { "tag": "v1", "new_sqlite_classes": ["PolicyStore"] },
+    { "tag": "v2", "new_sqlite_classes": ["DelegationStore"] }
   ]
 }
