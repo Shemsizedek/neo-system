@@ -3,20 +3,74 @@ export type RouterProvider={id:string;name?:string;baseUrl:string;priority:numbe
 type RouterConfig={version:number;policy?:{timeoutMs?:number};providers:RouterProvider[]}
 type RouterState={providers?:Record<string,{healthy?:boolean;checkedAt?:string}>}
 
-const FALLBACK:RouterConfig={version:1,policy:{timeoutMs:12000},providers:[
-  {id:'bitcoin-blockstream',baseUrl:'https://blockstream.info/api',priority:10,enabled:true,cors:true,capabilities:['btc.read','btc.broadcast']},
-  {id:'bitcoin-mempool',baseUrl:'https://mempool.space/api',priority:20,enabled:true,cors:true,capabilities:['btc.read','btc.broadcast']},
-  {id:'counterparty-core',baseUrl:'https://api.counterparty.io:4000',priority:10,enabled:true,cors:true,capabilities:['counterparty.read','counterparty.compose']}
-]}
+function envUrl(name:'VITE_NEOPAY_API_BASE'|'VITE_NEOPAY_COUNTERPARTY_API'|'VITE_NEOPAY_BITCOIN_API'){
+  const value=String(import.meta.env[name]||'').trim()
+  return value.replace(/\/$/,'')
+}
+
+function fallbackProviders():RouterProvider[]{
+  const gateway=envUrl('VITE_NEOPAY_API_BASE')
+  const counterpartyOverride=envUrl('VITE_NEOPAY_COUNTERPARTY_API')
+  const bitcoinOverride=envUrl('VITE_NEOPAY_BITCOIN_API')
+  const providers:RouterProvider[]=[]
+
+  if(gateway)providers.push({
+    id:'neopay-gateway',
+    name:'NEOpay Production Gateway',
+    baseUrl:gateway,
+    priority:1,
+    enabled:true,
+    cors:true,
+    capabilities:['counterparty.read','counterparty.compose']
+  })
+
+  if(counterpartyOverride&&counterpartyOverride!==gateway)providers.push({
+    id:'counterparty-configured',
+    name:'Configured Counterparty API',
+    baseUrl:counterpartyOverride,
+    priority:5,
+    enabled:true,
+    cors:true,
+    capabilities:['counterparty.read','counterparty.compose']
+  })
+
+  if(bitcoinOverride)providers.push({
+    id:'bitcoin-configured',
+    name:'Configured Bitcoin API',
+    baseUrl:bitcoinOverride,
+    priority:5,
+    enabled:true,
+    cors:true,
+    capabilities:['btc.read','btc.broadcast']
+  })
+
+  providers.push(
+    {id:'bitcoin-blockstream',baseUrl:'https://blockstream.info/api',priority:10,enabled:true,cors:true,capabilities:['btc.read','btc.broadcast']},
+    {id:'bitcoin-mempool',baseUrl:'https://mempool.space/api',priority:20,enabled:true,cors:true,capabilities:['btc.read','btc.broadcast']},
+    {id:'counterparty-core',baseUrl:'https://api.counterparty.io:4000',priority:10,enabled:true,cors:true,capabilities:['counterparty.read','counterparty.compose']}
+  )
+  return providers
+}
+
+function fallbackConfig():RouterConfig{return{version:1,policy:{timeoutMs:12000},providers:fallbackProviders()}}
 
 let cache:Promise<{config:RouterConfig;state:RouterState}>|null=null
 function pagesBase(){return String(import.meta.env.BASE_URL||'/neo-system/').replace(/\/?$/,'/')}
 async function jsonOr<T>(url:string,fallback:T):Promise<T>{try{const r=await fetch(url,{headers:{Accept:'application/json'},cache:'no-store'});if(!r.ok)return fallback;return await r.json() as T}catch{return fallback}}
 export function loadRouter(){
-  if(!cache)cache=Promise.all([
-    jsonOr<RouterConfig>(`${pagesBase()}api/router/providers.json`,FALLBACK),
-    jsonOr<RouterState>(`${pagesBase()}api/router/state.json`,{})
-  ]).then(([config,state])=>({config:config?.providers?.length?config:FALLBACK,state}))
+  if(!cache){
+    const fallback=fallbackConfig()
+    cache=Promise.all([
+      jsonOr<RouterConfig>(`${pagesBase()}api/router/providers.json`,fallback),
+      jsonOr<RouterState>(`${pagesBase()}api/router/state.json`,{})
+    ]).then(([config,state])=>{
+      const staticProviders=config?.providers?.length?config.providers:[]
+      const configured=fallbackProviders().filter(p=>p.id==='neopay-gateway'||p.id==='counterparty-configured'||p.id==='bitcoin-configured')
+      const configuredIds=new Set(configured.map(p=>p.id))
+      const providers=[...configured,...staticProviders.filter(p=>!configuredIds.has(p.id))]
+      return{config:{...fallback,...config,providers:providers.length?providers:fallback.providers},state}
+    })
+  }
   return cache
 }
 export function refreshRouter(){cache=null;return loadRouter()}
