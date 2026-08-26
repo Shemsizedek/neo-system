@@ -1,17 +1,13 @@
-export const NEOPAY_API=String(import.meta.env.VITE_NEOPAY_API_BASE||'').replace(/\/$/,'')
-export const COUNTERPARTY_API=String(import.meta.env.VITE_NEOPAY_COUNTERPARTY_API||'https://api.counterparty.io:4000').replace(/\/$/,'')
+import{routedFetch}from'./routerClient'
 
-function apiBase(){return NEOPAY_API||COUNTERPARTY_API}
-async function request<T>(path:string,init?:RequestInit):Promise<T>{
-  const controller=new AbortController(),timeout=window.setTimeout(()=>controller.abort(),15000)
-  try{
-    const headers:Record<string,string>={Accept:'application/json'}
-    if(init?.body)headers['Content-Type']='application/json'
-    const res=await fetch(`${apiBase()}${path}`,{...init,headers:{...headers,...(init?.headers||{})},signal:controller.signal})
-    const text=await res.text(),body=text?JSON.parse(text):{}
-    if(!res.ok)throw new Error(body?.error||body?.message||`Counterparty API returned ${res.status}`)
-    return body as T
-  }finally{window.clearTimeout(timeout)}
+async function request<T>(path:string,init?:RequestInit,capability:'counterparty.read'|'counterparty.compose'='counterparty.read'):Promise<T>{
+  const headers:Record<string,string>={Accept:'application/json'}
+  if(init?.body)headers['Content-Type']='application/json'
+  const{res}=await routedFetch(capability,path,{...init,headers:{...headers,...(init?.headers||{})}})
+  const text=await res.text();let body:any={}
+  try{body=text?JSON.parse(text):{}}catch{body={message:text}}
+  if(!res.ok)throw new Error(body?.error||body?.message||`Counterparty API returned ${res.status}`)
+  return body as T
 }
 
 export function isLikelyBitcoinAddress(address:string){return /^(1|3|bc1)[A-Za-z0-9]{20,90}$/.test(address.trim())}
@@ -35,7 +31,7 @@ export async function composeCounterparty(source:string,action:string,params:Rec
   const qs=new URLSearchParams()
   Object.entries(params).forEach(([k,v])=>{if(v!==undefined)qs.set(k,String(v))})
   qs.set('verbose','true')
-  return request<any>(`/v2/addresses/${encodeURIComponent(source)}/compose/${action}?${qs.toString()}`)
+  return request<any>(`/v2/addresses/${encodeURIComponent(source)}/compose/${action}?${qs.toString()}`,undefined,'counterparty.compose')
 }
 export type ComposeOrderInput={source:string;give_asset:'NOMNI'|'XCP';give_quantity:number;get_asset:'NOMNI'|'XCP';get_quantity:number;expiration?:number;sat_per_vbyte?:number}
 export async function composeOrder(input:ComposeOrderInput){const{source,...params}=input;return composeCounterparty(source,'order',{...params,expiration:input.expiration??8064,sat_per_vbyte:input.sat_per_vbyte??3})}
@@ -43,7 +39,5 @@ export async function composeSend(input:{source:string;destination:string;asset:
 
 export async function broadcastSignedTransaction(signed_tx_hex:string){
   if(!/^[0-9a-fA-F]+$/.test(signed_tx_hex)||signed_tx_hex.length<100||signed_tx_hex.length%2)throw new Error('Signed transaction is invalid.')
-  const base=NEOPAY_API
-  if(!base)throw new Error('Broadcast through the NEOpay service is not configured; use the Bitcoin broadcast path.')
-  return request<any>('/v2/broadcast',{method:'POST',body:JSON.stringify({signed_tx_hex})})
+  throw new Error('Use the Bitcoin broadcast path after local signing.')
 }
