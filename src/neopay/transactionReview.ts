@@ -4,6 +4,7 @@ export type TransactionReview={
   action:string
   source:string
   destination?:string
+  destinationWarning?:string
   asset?:string
   amount?:number
   market?:string
@@ -22,7 +23,6 @@ const DEFAULT_SAT_PER_VBYTE=3
 
 function estimateVbytes(unsignedTxHex:string){
   const bytes=Math.ceil(unsignedTxHex.length/2)
-  // Raw-byte length is a conservative proxy for vbytes before witness data is added.
   return Math.max(140,bytes)
 }
 
@@ -32,6 +32,7 @@ export function buildTransactionReview(unsignedTxHex:string,summary:PreflightSum
     action:String(summary.action||'transaction'),
     source:preflight.source,
     destination:typeof summary.destination==='string'?summary.destination:undefined,
+    destinationWarning:preflight.destinationWarning,
     asset:typeof summary.asset==='string'?summary.asset:undefined,
     amount:Number.isFinite(Number(summary.amount))?Number(summary.amount):undefined,
     market:typeof summary.market==='string'?summary.market:undefined,
@@ -60,6 +61,8 @@ export function requestTransactionApproval(review:TransactionReview){
     `Action: ${review.action.toUpperCase()}`,
     `Amount / Order: ${formatAmount(review)}`,
     review.destination?`Destination: ${review.destination}`:'',
+    review.destinationWarning?'':null,
+    review.destinationWarning?`⚠ SECURITY WARNING: ${review.destinationWarning}`:'',
     review.market?`Market: ${review.market}`:'',
     `Source: ${review.source}`,
     '',
