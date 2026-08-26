@@ -15,6 +15,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity android:name=".WalletDashboardActivity" android:exported="false" />
         <activity android:name=".XcpComposerActivity" android:exported="false" />
         <activity android:name=".XcpSignerActivity" android:exported="false" />
         <activity android:name=".MainActivityV14" android:exported="false" />
