@@ -3,6 +3,7 @@ import{Bitcoin,Send,X}from'lucide-react'
 import{broadcastBitcoinTransaction}from'./bitcoinService'
 import{buildNativeBitcoinTransaction,getBitcoinFeeRates,type BitcoinFeeMode,type BitcoinFeeRates}from'./nativeBitcoin'
 import{neoPaySigner,type SignerState}from'./signer'
+import'./nativeBitcoin.css'
 
 export type NativeBitcoinRequest={destination?:string;amountBtc?:number;label?:string;memo?:string}
 const EVENT='neopay-native-btc-send'
