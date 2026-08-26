@@ -1,7 +1,6 @@
 /// <reference types="vite/client" />
 import React,{useEffect,useState} from 'react'
 import ReactDOM from 'react-dom/client'
-import { App } from './App'
 import { HomeBase } from './home/HomeBase'
 import { MinerApp } from './miner/MinerApp'
 import { GeneratorApp } from './miner/GeneratorApp'
@@ -20,7 +19,6 @@ import './explorer/explorer.css'
 function resolveRoute(){
   const hash=window.location.hash.replace(/^#/,'')
   if(hash.startsWith('/')) return hash
-
   const base=(import.meta.env.BASE_URL||'/').replace(/\/$/,'')
   let path=window.location.pathname
   if(base && base!=='/' && path.startsWith(base)) path=path.slice(base.length)||'/'
@@ -33,15 +31,17 @@ function RootRouter(){
     const sync=()=>setRoute(resolveRoute())
     window.addEventListener('hashchange',sync)
     window.addEventListener('popstate',sync)
-    return()=>{
-      window.removeEventListener('hashchange',sync)
-      window.removeEventListener('popstate',sync)
-    }
+    return()=>{window.removeEventListener('hashchange',sync);window.removeEventListener('popstate',sync)}
   },[])
 
+  const base=(import.meta.env.BASE_URL||'/').replace(/\/$/,'')
+  const governmentBase=(import.meta.env.VITE_NEO_GOVERNMENT_URL||'https://neo-government.neosystem.workers.dev').replace(/\/$/,'')
+  const publicRoute=(name:string)=>`${base}/${name}/`
   const open=(section:string)=>{
-    if(section==='overview'||['cfo','books','treasury','tribunal','corpus','security'].includes(section)) window.location.hash='/command'
-    else window.location.hash=`/${section}`
+    if(['overview','treasury','tribunal','security','router'].includes(section)){window.location.assign(`${governmentBase}/command?module=${encodeURIComponent(section)}`);return}
+    if(section==='cfo'||section==='books'){window.location.assign(publicRoute('neo-books'));return}
+    if(section==='corpus'){window.location.assign(publicRoute('neo-corpus'));return}
+    window.location.hash=`/${section}`
   }
 
   const isHome=route==='/'||route===''||route==='/home'
@@ -53,9 +53,10 @@ function RootRouter(){
   const isExplorer=route==='/explorer'||route.startsWith('/explorer/')
   const isNEOpay=route==='/neopay'||route.startsWith('/neopay/')
   const isTeller=route==='/teller'||route.startsWith('/teller/')
-  const base=(import.meta.env.BASE_URL||'/').replace(/\/$/,'')
   const bankHref=`${base}/neopay/ces.html`
 
+  useEffect(()=>{if(isCommand) window.location.replace(`${governmentBase}/command`)},[isCommand,governmentBase])
+  if(isCommand) return <main style={{padding:24,color:'#d9ffe3',background:'#010503',minHeight:'100vh'}}>Opening authenticated NEO Government Control Plane…</main>
   if(isHome) return <HomeBase onOpen={open}/>
   if(isTeller) return <TellerDashboard/>
   if(isNEOpay) return <div className="neopay-route"><NEOpayWallet/><NEOpaySecurityOverlay/><NEOpayContactCenter/><NativeBitcoinSendOverlay/><a className="neopay-trader-launch" href={bankHref}>∞ NEO Bank</a></div>
@@ -64,10 +65,7 @@ function RootRouter(){
   if(isMinerStore) return <StorefrontApp/>
   if(isGenerator) return <GeneratorApp/>
   if(isMiner) return <MinerApp/>
-  if(isCommand) return <App/>
   return <HomeBase onOpen={open}/>
 }
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode><RootRouter/></React.StrictMode>
-)
+ReactDOM.createRoot(document.getElementById('root')!).render(<React.StrictMode><RootRouter/></React.StrictMode>)

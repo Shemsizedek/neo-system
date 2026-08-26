@@ -1,48 +1,54 @@
 import { createRemoteJWKSet, jwtVerify } from 'jose';
 
-const html = (email = 'authorized executive') => `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>NEO Government Hub</title><style>:root{--bg:#010503;--p:#06110b;--line:#245c3b;--g:#65ff8a;--text:#effff3;--muted:#89a491}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 50% 0,#0b2819,#010503 54%);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,sans-serif}.wrap{max-width:1100px;margin:auto;padding:22px}.head{display:flex;justify-content:space-between;gap:16px;align-items:center;border-bottom:1px solid var(--line);padding-bottom:18px}.seal,.status{color:var(--g);font-weight:900}.status{font-size:11px;letter-spacing:.1em}.identity{margin:18px 0;padding:12px 14px;border:1px solid #2d7046;border-radius:14px;background:#041009;color:#caffd5}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.card{border:1px solid var(--line);border-radius:18px;background:var(--p);padding:18px;min-height:152px}.card p{color:var(--muted);font-size:13px}.card a{display:inline-block;text-decoration:none;border:1px solid #35794e;background:#0a1c12;color:#d9ffe3;border-radius:10px;padding:9px 12px}.foot{margin-top:30px;color:#506b58;font-size:10px}@media(max-width:700px){.grid{grid-template-columns:1fr}}</style></head><body><main class="wrap"><header class="head"><div><div class="seal">∞ NEO SYSTEMS</div><h1>Government Hub</h1></div><div class="status">AUTHENTICATED CONTROL PLANE</div></header><div class="identity">Signed in through Cloudflare Access as ${escapeHtml(email)}</div><section class="grid"><article class="card"><div class="status">EXECUTIVE</div><h2>Command Center</h2><p>Executive directives, approvals, operational controls and private administration.</p><a href="/command">Open Command Center</a></article><article class="card"><div class="status">NEOSYNC</div><h2>Private AI Operations</h2><p>Private NEOsync workspace and administrative orchestration.</p><a href="/neosync">Open NEOsync</a></article><article class="card"><div class="status">SYSTEM</div><h2>Operations</h2><p>Deployment, health, infrastructure and service administration.</p><a href="/operations">Open Operations</a></article></section><div class="foot">NEO GOVERNMENT · PRIVATE EXECUTIVE SURFACE · ACCESS ENFORCED AT THE EDGE</div></main></body></html>`;
+const MODULES=[
+  ['executive','NEOsync Executive Office'],['central-solution','Central Solution Office & Private Chambers'],
+  ['tribunal','Inner Bar Temple Tribunal'],['chaplaincy','World Chaplaincy E-File'],
+  ['treasury','NEO Treasury Management System'],['police','World Police'],['marshals','World Marshals'],
+  ['guards','World Guards'],['defense','World Defense System'],['global-arms','NEO Global Arms System'],['cipher','NEO Cipher']
+];
+const ALLOWED_STATUS=new Set(['READY','ACTIVE','REVIEW','HOLD','CLOSED']);
+const ALLOWED_ACTIONS=new Set(['OPEN','REVIEW','APPROVE','HOLD','COMPLETE','STATUS_CHECK','EXPORT_REQUEST']);
 
-function escapeHtml(value) {
-  return String(value || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function escapeHtml(value){return String(value||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function json(data,status=200){return new Response(JSON.stringify(data),{status,headers:{'content-type':'application/json; charset=utf-8','cache-control':'no-store'}});}
+
+async function authorize(request,env){
+  if(!env.ACCESS_TEAM_DOMAIN||!env.ACCESS_AUD)return{ok:false,status:503,message:'Government access is not configured.'};
+  const token=request.headers.get('CF-Access-Jwt-Assertion');
+  if(!token)return{ok:false,status:401,message:'Authentication required.'};
+  try{
+    const issuer=`https://${env.ACCESS_TEAM_DOMAIN}`;
+    const jwks=createRemoteJWKSet(new URL(`${issuer}/cdn-cgi/access/certs`));
+    const{payload}=await jwtVerify(token,jwks,{issuer,audience:env.ACCESS_AUD});
+    const email=String(payload.email||request.headers.get('Cf-Access-Authenticated-User-Email')||'').toLowerCase();
+    const allow=String(env.ADMIN_EMAILS||'').split(',').map(v=>v.trim().toLowerCase()).filter(Boolean);
+    if(allow.length&&!allow.includes(email))return{ok:false,status:403,message:'Executive authorization required.'};
+    return{ok:true,email,payload};
+  }catch{return{ok:false,status:401,message:'Invalid or expired access session.'};}
 }
 
-async function authorize(request, env) {
-  if (!env.ACCESS_TEAM_DOMAIN || !env.ACCESS_AUD) {
-    return { ok: false, status: 503, message: 'Government access is not configured.' };
-  }
-  const token = request.headers.get('CF-Access-Jwt-Assertion');
-  if (!token) return { ok: false, status: 401, message: 'Authentication required.' };
-  try {
-    const issuer = `https://${env.ACCESS_TEAM_DOMAIN}`;
-    const jwks = createRemoteJWKSet(new URL(`${issuer}/cdn-cgi/access/certs`));
-    const { payload } = await jwtVerify(token, jwks, { issuer, audience: env.ACCESS_AUD });
-    const email = String(payload.email || request.headers.get('Cf-Access-Authenticated-User-Email') || '').toLowerCase();
-    const allow = String(env.ADMIN_EMAILS || '').split(',').map(v => v.trim().toLowerCase()).filter(Boolean);
-    if (allow.length && !allow.includes(email)) return { ok: false, status: 403, message: 'Executive authorization required.' };
-    return { ok: true, email, payload };
-  } catch {
-    return { ok: false, status: 401, message: 'Invalid or expired access session.' };
-  }
+function dashboard(email){
+  const moduleJson=JSON.stringify(MODULES);
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>NEO Government Control Plane</title><style>
+  :root{--bg:#050609;--panel:#101318;--line:#262b32;--gold:#d8b45d;--green:#63e887;--text:#f4f4f1;--muted:#8d939c}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,sans-serif}.wrap{max-width:1180px;margin:auto;padding:22px}.head{display:flex;justify-content:space-between;gap:18px;align-items:center;border-bottom:1px solid var(--line);padding-bottom:18px}.eyebrow{color:var(--gold);font-size:11px;letter-spacing:.16em}.head h1{margin:6px 0 0}.auth{color:var(--green);font-size:12px}.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0}.tabs a{color:var(--text);text-decoration:none;border:1px solid var(--line);padding:9px 12px;border-radius:999px}.stats,.modules{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.card{background:linear-gradient(145deg,#11151b,#0b0e12);border:1px solid var(--line);border-radius:18px;padding:16px}.card h2{font-size:17px;margin:8px 0}.status{font-size:10px;color:var(--gold);letter-spacing:.12em}.module button,.primary{border:1px solid #4b5d50;background:#112019;color:#dfffe7;border-radius:10px;padding:9px 11px;margin:4px 5px 0 0}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}input,textarea,select{width:100%;background:#090c10;color:white;border:1px solid #30363e;border-radius:10px;padding:10px;margin-top:6px}textarea{min-height:90px}.primary{background:var(--gold);color:#18140a;border:0;font-weight:800}.list{display:grid;gap:8px;max-height:360px;overflow:auto}.item{border-bottom:1px solid var(--line);padding:9px 0}.item small{display:block;color:var(--muted)}.footer{color:#59606a;font-size:10px;padding:28px 0}@media(max-width:760px){.stats,.modules,.grid2{grid-template-columns:1fr}.head{align-items:flex-start;flex-direction:column}}</style></head><body><main class="wrap"><header class="head"><div><div class="eyebrow">NEW ETHEREAL ORDER · PRIVATE DIGITAL CONTROL PLANE</div><h1>NEO Government System Map</h1></div><div class="auth">● AUTHENTICATED<br>${escapeHtml(email)}</div></header><nav class="tabs"><a href="/command">Command</a><a href="/neosync">NEOsync</a><a href="/operations">Operations</a><a href="/api/session">Session</a></nav><section class="stats"><article class="card"><span class="status">PRIVATE MODULES</span><h2 id="moduleCount">11</h2><small>Government-only control domains</small></article><article class="card"><span class="status">RECORDS</span><h2 id="recordCount">—</h2><small>Persistent executive records</small></article><article class="card"><span class="status">AUDIT</span><h2 id="auditCount">—</h2><small>Authenticated action trail</small></article></section><h2>System Map</h2><section id="modules" class="modules"></section><section class="grid2"><article class="card"><h2>Create Government Record</h2><label>Module<select id="recordModule"></select></label><label>Type<input id="recordType" value="NOTE"></label><label>Title<input id="recordTitle" placeholder="Record title"></label><label>Body<textarea id="recordBody" placeholder="Executive record, directive, case note, filing note, readiness note…"></textarea></label><button class="primary" id="saveRecord">Save persistent record</button><p id="recordMsg" class="status"></p></article><article class="card"><h2>Recent Records</h2><div id="records" class="list">Loading…</div></article></section><section class="grid2"><article class="card"><h2>Run Administrative Action</h2><label>Module<select id="actionModule"></select></label><label>Action<select id="actionName"><option>OPEN</option><option>REVIEW</option><option>APPROVE</option><option>HOLD</option><option>COMPLETE</option><option>STATUS_CHECK</option><option>EXPORT_REQUEST</option></select></label><label>Note<textarea id="actionNote" placeholder="Administrative note"></textarea></label><button class="primary" id="runAction">Record action</button><p class="status">Actions here create authenticated administrative state and audit records. They do not perform external legal, financial, policing, military, or coercive acts.</p></article><article class="card"><h2>Audit Trail</h2><div id="audit" class="list">Loading…</div></article></section><div class="footer">NEO GOVERNMENT · AUTHENTICATED EDGE · DURABLE PERSISTENT CONTROL STATE</div></main><script>
+const MODULES=${moduleJson};
+const esc=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const opts=MODULES.map(([id,name])=>'<option value="'+id+'">'+esc(name)+'</option>').join('');recordModule.innerHTML=opts;actionModule.innerHTML=opts;
+async function api(path,init){const r=await fetch(path,{...init,headers:{'content-type':'application/json',...(init&&init.headers||{})}});const j=await r.json();if(!r.ok)throw new Error(j.error||'Request failed');return j}
+async function refresh(){const s=await api('/api/snapshot');recordCount.textContent=s.records.length;auditCount.textContent=s.audit.length;modules.innerHTML=s.modules.map(m=>'<article class="card module"><span class="status">'+esc(m.status)+'</span><h2>'+esc(m.name)+'</h2><button onclick="setStatus(\''+m.id+'\',\'ACTIVE\')">Activate</button><button onclick="setStatus(\''+m.id+'\',\'REVIEW\')">Review</button><button onclick="setStatus(\''+m.id+'\',\'HOLD\')">Hold</button></article>').join('');records.innerHTML=s.records.length?s.records.map(r=>'<div class="item"><b>'+esc(r.title)+'</b><small>'+esc(r.module)+' · '+esc(r.type)+' · '+new Date(r.createdAt).toLocaleString()+'</small><div>'+esc(r.body)+'</div></div>').join(''):'No records yet.';audit.innerHTML=s.audit.length?s.audit.map(a=>'<div class="item"><b>'+esc(a.action)+'</b><small>'+esc(a.actor)+' · '+esc(a.module)+' · '+new Date(a.createdAt).toLocaleString()+'</small><div>'+esc(a.note||'')+'</div></div>').join(''):'No audit events yet.'}
+async function setStatus(module,status){await api('/api/modules/'+module+'/status',{method:'POST',body:JSON.stringify({status})});refresh()}
+saveRecord.onclick=async()=>{try{await api('/api/records',{method:'POST',body:JSON.stringify({module:recordModule.value,type:recordType.value,title:recordTitle.value,body:recordBody.value})});recordMsg.textContent='Saved.';recordTitle.value='';recordBody.value='';refresh()}catch(e){recordMsg.textContent=e.message}};
+runAction.onclick=async()=>{await api('/api/actions',{method:'POST',body:JSON.stringify({module:actionModule.value,action:actionName.value,note:actionNote.value})});actionNote.value='';refresh()};refresh().catch(e=>{records.textContent=e.message;audit.textContent=e.message});
+</script></body></html>`;
 }
 
-function json(data, status = 200) {
-  return new Response(JSON.stringify(data), { status, headers: { 'content-type':'application/json; charset=utf-8', 'cache-control':'no-store' } });
+export class GovernmentStore{
+  constructor(state){this.state=state;this.storage=state.storage;}
+  async audit(actor,module,action,note=''){const item={id:crypto.randomUUID(),actor,module,action,note:String(note).slice(0,4000),createdAt:new Date().toISOString()};await this.storage.put(`audit:${Date.now()}:${item.id}`,item);return item;}
+  async snapshot(){const records=[...(await this.storage.list({prefix:'record:'})).values()].sort((a,b)=>b.createdAt.localeCompare(a.createdAt)).slice(0,100);const audit=[...(await this.storage.list({prefix:'audit:'})).values()].sort((a,b)=>b.createdAt.localeCompare(a.createdAt)).slice(0,100);const states=await this.storage.list({prefix:'module:'});const modules=MODULES.map(([id,name])=>({id,name,status:states.get(`module:${id}`)?.status||'READY'}));return{modules,records,audit};}
+  async fetch(request){const url=new URL(request.url);const actor=request.headers.get('x-neo-actor')||'unknown';if(request.method==='GET'&&url.pathname==='/snapshot')return json(await this.snapshot());if(request.method==='POST'&&url.pathname==='/records'){const b=await request.json();if(!MODULES.some(([id])=>id===b.module))return json({error:'Unknown module'},400);const title=String(b.title||'').trim();if(!title)return json({error:'Title required'},400);const record={id:crypto.randomUUID(),module:b.module,type:String(b.type||'NOTE').slice(0,80),title:title.slice(0,240),body:String(b.body||'').slice(0,20000),actor,createdAt:new Date().toISOString()};await this.storage.put(`record:${record.id}`,record);await this.audit(actor,b.module,'RECORD_CREATE',title);return json({ok:true,record},201);}if(request.method==='POST'&&url.pathname==='/actions'){const b=await request.json();if(!MODULES.some(([id])=>id===b.module)||!ALLOWED_ACTIONS.has(String(b.action)))return json({error:'Invalid administrative action'},400);const item=await this.audit(actor,b.module,String(b.action),b.note||'');return json({ok:true,audit:item},201);}const m=url.pathname.match(/^\/modules\/([^/]+)\/status$/);if(request.method==='POST'&&m){const b=await request.json();if(!MODULES.some(([id])=>id===m[1])||!ALLOWED_STATUS.has(String(b.status)))return json({error:'Invalid module status'},400);const state={status:String(b.status),updatedAt:new Date().toISOString(),actor};await this.storage.put(`module:${m[1]}`,state);await this.audit(actor,m[1],'STATUS_CHANGE',state.status);return json({ok:true,state});}return json({error:'Store route not found'},404);}
 }
 
-export default {
-  async fetch(request, env) {
-    const url = new URL(request.url);
-    if (url.pathname === '/health') return json({ ok: true, service: 'neo-government', auth: 'cloudflare-access' });
-    const auth = await authorize(request, env);
-    if (!auth.ok) return json({ ok:false, error:auth.message }, auth.status);
+async function storeFetch(env,auth,path,request){const id=env.GOV_STORE.idFromName('foundation');const stub=env.GOV_STORE.get(id);const init={method:request.method,headers:{'content-type':'application/json','x-neo-actor':auth.email}};if(!['GET','HEAD'].includes(request.method))init.body=await request.text();return stub.fetch(new Request(`https://government-store${path}`,init));}
 
-    if (url.pathname === '/' || url.pathname === '/home') {
-      return new Response(html(auth.email), { headers: { 'content-type':'text/html; charset=utf-8', 'cache-control':'no-store', 'x-robots-tag':'noindex, nofollow' } });
-    }
-    if (url.pathname === '/api/session') return json({ ok:true, email:auth.email, role:'executive-admin' });
-    if (url.pathname === '/command') return json({ ok:true, surface:'command-center', state:'authenticated', message:'Command modules are ready for live operation wiring.' });
-    if (url.pathname === '/neosync') return json({ ok:true, surface:'neosync-private', state:'authenticated' });
-    if (url.pathname === '/operations') return json({ ok:true, surface:'operations', state:'authenticated' });
-    return json({ ok:false, error:'Not found' }, 404);
-  }
-};
+export default{async fetch(request,env){const url=new URL(request.url);if(url.pathname==='/health')return json({ok:true,service:'neo-government',auth:'cloudflare-access',persistence:'durable-object'});const auth=await authorize(request,env);if(!auth.ok)return json({ok:false,error:auth.message},auth.status);if(url.pathname==='/api/session')return json({ok:true,email:auth.email,role:'executive-admin'});if(url.pathname.startsWith('/api/')){const internal=url.pathname.replace('/api','')||'/';return storeFetch(env,auth,internal,request);}if(['/', '/home','/command','/neosync','/operations'].includes(url.pathname))return new Response(dashboard(auth.email),{headers:{'content-type':'text/html; charset=utf-8','cache-control':'no-store','x-robots-tag':'noindex, nofollow','content-security-policy':"default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'"}});return json({ok:false,error:'Not found'},404);}};
