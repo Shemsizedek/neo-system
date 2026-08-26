@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "organizations": [
+    {
+      "id": "neo-system",
+      "name": "NEO System",
+      "profile_type": "organization",
+      "visibility": "public",
+      "workspace_classes": ["social", "business", "government"],
+      "status": "active",
+      "source": "repository",
+      "services": {
+        "wallet": {"platform": "neopay", "enabled": true},
+        "books": {"platform": "neo-books", "enabled": true},
+        "merchant": {"platform": "neo-counter", "enabled": true},
+        "teller": {"platform": "neo-teller", "enabled": true},
+        "markets": {"platform": "neo-prime", "enabled": true}
+      },
+      "public_profile": {
+        "summary": "Integrated financial, commerce, communications and organizational services across the NEO ecosystem."
+      }
+    },
+    {
+      "id": "gisd",
+      "name": "GISD",
+      "profile_type": "institution",
+      "visibility": "public",
+      "workspace_classes": ["social", "business"],
+      "status": "active",
+      "source": "registry/gisd-templist-curriculum.yaml",
+      "services": {
+        "wallet": {"platform": "neopay", "enabled": true},
+        "books": {"platform": "neo-books", "enabled": true},
+        "merchant": {"platform": "neo-counter", "enabled": true}
+      },
+      "public_profile": {
+        "summary": "Education and curriculum organization represented in the canonical NEO registry."
+      }
+    }
+  ]
+}
