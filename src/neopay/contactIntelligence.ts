@@ -4,6 +4,7 @@ import{listReceipts}from'./receiptCenter'
 const CONTACTS_KEY='neopay.contacts.v1'
 
 export type NEOpayContact={id:string;name:string;address:string;cesAccount?:string;note?:string;trusted:boolean;createdAt:string;updatedAt:string}
+export type ParsedPaymentRequest={address:string;amountBtc?:number;label?:string;message?:string}
 
 function safeParse<T>(raw:string|null,fallback:T):T{try{return raw?JSON.parse(raw) as T:fallback}catch{return fallback}}
 function normalize(address:string){return address.trim()}
@@ -43,5 +44,18 @@ export function buildBitcoinPaymentUri(input:{address:string;amountBtc?:number;l
  if(input.label?.trim())params.set('label',input.label.trim().slice(0,80))
  if(input.message?.trim())params.set('message',input.message.trim().slice(0,120))
  const q=params.toString();return`bitcoin:${input.address}${q?`?${q}`:''}`
+}
+
+export function parseBitcoinPaymentRequest(value:string):ParsedPaymentRequest{
+ const raw=value.trim()
+ if(isLikelyBitcoinAddress(raw))return{address:raw}
+ if(!raw.toLowerCase().startsWith('bitcoin:'))throw new Error('Paste a Bitcoin address or bitcoin: payment request.')
+ const body=raw.slice(8),question=body.indexOf('?'),address=decodeURIComponent(question>=0?body.slice(0,question):body)
+ if(!isLikelyBitcoinAddress(address))throw new Error('Payment request contains an invalid Bitcoin address.')
+ const params=new URLSearchParams(question>=0?body.slice(question+1):'')
+ for(const key of params.keys())if(key.startsWith('req-'))throw new Error(`Unsupported required payment parameter: ${key}`)
+ const amountRaw=params.get('amount'),amount=amountRaw===null?undefined:Number(amountRaw)
+ if(amount!==undefined&&(!Number.isFinite(amount)||amount<=0||amount>21_000_000))throw new Error('Payment request contains an invalid BTC amount.')
+ return{address,amountBtc:amount,label:params.get('label')?.slice(0,80)||undefined,message:params.get('message')?.slice(0,120)||undefined}
 }
 export function qrImageUrl(data:string){return`https://quickchart.io/qr?size=240&margin=2&text=${encodeURIComponent(data)}`}
