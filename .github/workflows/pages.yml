@@ -38,7 +38,7 @@ jobs:
 
       - name: Build NEO System
         env:
-          VITE_NEOPAY_API_BASE: ${{ vars.NEOPAY_API_BASE }}
+          VITE_NEOPAY_API_BASE: ${{ vars.NEOPAY_API_BASE || 'https://neopay-api.neosystem.workers.dev' }}
           VITE_NEOPAY_COUNTERPARTY_API: ${{ vars.NEOPAY_COUNTERPARTY_API }}
           VITE_NEOPAY_BITCOIN_API: ${{ vars.NEOPAY_BITCOIN_API }}
         run: npm run build
