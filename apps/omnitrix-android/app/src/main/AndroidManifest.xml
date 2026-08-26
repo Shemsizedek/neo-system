@@ -4,7 +4,7 @@
 
     <application
         android:allowBackup="false"
-        android:label="Omnitrix"
+        android:label="Omnitrix Suit"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:logo="@drawable/omnitrix_logo"
