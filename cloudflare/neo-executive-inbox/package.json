@@ -1,0 +1,8 @@
+{
+  "name": "neo-executive-inbox",
+  "private": true,
+  "type": "module",
+  "scripts": { "deploy": "wrangler deploy" },
+  "dependencies": { "jose": "^5.10.0" },
+  "devDependencies": { "wrangler": "^4.0.0" }
+}
