@@ -1,10 +1,13 @@
 import type{PreflightResult,PreflightSummary}from'./preflight'
+import{contactByAddress}from'./contactIntelligence'
 
 export type TransactionReview={
   action:string
   source:string
   destination?:string
   destinationWarning?:string
+  recipientName?:string
+  recipientCesAccount?:string
   asset?:string
   amount?:number
   market?:string
@@ -28,11 +31,15 @@ function estimateVbytes(unsignedTxHex:string){
 
 export function buildTransactionReview(unsignedTxHex:string,summary:PreflightSummary,preflight:PreflightResult):TransactionReview{
   const estimatedNetworkFeeSats=Math.max(preflight.feeReserveSats,Math.ceil(estimateVbytes(unsignedTxHex)*DEFAULT_SAT_PER_VBYTE))
+  const destination=typeof summary.destination==='string'?summary.destination:undefined
+  const contact=destination?contactByAddress(destination):undefined
   return{
     action:String(summary.action||'transaction'),
     source:preflight.source,
-    destination:typeof summary.destination==='string'?summary.destination:undefined,
+    destination,
     destinationWarning:preflight.destinationWarning,
+    recipientName:contact?.name,
+    recipientCesAccount:contact?.cesAccount,
     asset:typeof summary.asset==='string'?summary.asset:undefined,
     amount:Number.isFinite(Number(summary.amount))?Number(summary.amount):undefined,
     market:typeof summary.market==='string'?summary.market:undefined,
@@ -60,6 +67,7 @@ export function requestTransactionApproval(review:TransactionReview){
     '',
     `Action: ${review.action.toUpperCase()}`,
     `Amount / Order: ${formatAmount(review)}`,
+    review.recipientName?`Recipient: ${review.recipientName}${review.recipientCesAccount?` · CES ${review.recipientCesAccount}`:''}`:'',
     review.destination?`Destination: ${review.destination}`:'',
     review.destinationWarning?'':null,
     review.destinationWarning?`⚠ SECURITY WARNING: ${review.destinationWarning}`:'',
