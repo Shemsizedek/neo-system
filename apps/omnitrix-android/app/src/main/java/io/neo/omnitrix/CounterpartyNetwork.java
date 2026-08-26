@@ -10,6 +10,7 @@ import java.net.*;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Iterator;
 
 /** Network-only Counterparty/Bitcoin transport. This class never receives private keys. */
 final class CounterpartyNetwork {
@@ -96,7 +97,13 @@ final class CounterpartyNetwork {
         if(node instanceof JSONObject) {
             JSONObject o=(JSONObject)node;
             for(String k:keys){ String v=o.optString(k,null); if(v!=null && v.matches("(?i)[0-9a-f]+")) return v; }
-            for(String k:o.keySet()){ Object child=o.opt(k); String v=findString(child,keys); if(v!=null)return v; }
+            Iterator<String> it=o.keys();
+            while(it.hasNext()) {
+                String k=it.next();
+                Object child=o.opt(k);
+                String v=findString(child,keys);
+                if(v!=null)return v;
+            }
         } else if(node instanceof JSONArray) {
             JSONArray a=(JSONArray)node; for(int i=0;i<a.length();i++){String v=findString(a.opt(i),keys);if(v!=null)return v;}
         }
