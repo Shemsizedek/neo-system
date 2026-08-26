@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "roles": {
     "executive_admin": {
       "scope": "system",
@@ -8,11 +8,11 @@
     },
     "organization_admin": {
       "scope": "organization",
-      "permissions": ["organization:read", "organization:update", "workspace:*", "team:*", "wallet:read", "books:read", "merchant:read"]
+      "permissions": ["organization:read", "organization:update", "workspace:*", "team:*", "wallet:read", "wallet:assign", "books:read", "books:create", "merchant:read", "merchant:create"]
     },
     "finance_admin": {
       "scope": "organization",
-      "permissions": ["organization:read", "wallet:read", "wallet:compose", "books:*", "merchant:read"]
+      "permissions": ["organization:read", "wallet:read", "wallet:compose", "wallet:assign", "books:*", "merchant:read"]
     },
     "wallet_operator": {
       "scope": "organization",
