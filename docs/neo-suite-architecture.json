@@ -1,0 +1,10 @@
+{
+  "version":"1.1",
+  "brand":"NEO Systems",
+  "layers":{
+    "consumer":{"surface":"GitHub Pages / Omnitrix","audience":["public consumers"],"products":["Noogle","NEO Oracle","NEO Bank/Pay","NEO Prime + NEOfx","NEO TV","NEO Wire","NEO Miner","NEO Lingo","NEO Algo / World Credit Clock","NEO Books + CFO","NEO Bank CES","Noocratic Legal Corpus"]},
+    "enterprise":{"surface":"public GitHub Pages + authenticated Cloudflare Enterprise console","audience":["sole proprietors","private companies","public companies","institutions"],"capabilities":["organization profiles","teams","roles","permissions","business wallets","NEO Books","NEO Counter","NEO Teller","NEO Prime + NEOfx","CES","audit trail"],"globalExecutiveRole":"EXECUTIVE_ADMIN"},
+    "government":{"surface":"authenticated Cloudflare Government control plane","audience":["authorized private executive users"],"capabilities":["private government modules","module adapter fabric","durable records","audit state","enterprise adapter"]}
+  },
+  "separationRules":["Consumer pages do not expose government controls.","Enterprise private administration is not hosted as a public GitHub Pages control surface.","Government may inspect or proxy allow-listed Enterprise services through the adapter fabric.","NEO Teller and NEO Counter are enterprise/merchant infrastructure rather than consumer-home applications."]
+}
