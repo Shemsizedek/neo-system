@@ -141,33 +141,47 @@ jobs:
           cp -R docs/neo-tv/. dist/neo-tv/
           test -f dist/neo-tv/index.html
 
+      - name: Publish dual-surface NEO hubs and workspaces
+        run: |
+          routes="neo-hub neo-oracle neo-lingo neo-algo neo-corpus neo-government government-workspace public-workspace neo-executive central-solution inner-bar-tribunal world-chaplaincy-efile neo-treasury-government world-police world-marshals world-guards world-defense neo-global-arms neo-cipher"
+          for route in $routes; do
+            test -d "docs/$route"
+            mkdir -p "dist/$route"
+            cp -R "docs/$route/." "dist/$route/"
+          done
+          for route in neo-hub neo-oracle neo-lingo neo-algo neo-corpus neo-government neo-executive central-solution inner-bar-tribunal world-chaplaincy-efile neo-treasury-government world-police world-marshals world-guards world-defense neo-global-arms neo-cipher; do
+            test -f "dist/$route/index.html"
+          done
+          test -f dist/government-workspace/workspace.js
+          test -f dist/government-workspace/styles.css
+          test -f dist/public-workspace/styles.css
+
       - name: Add SPA 404 fallback
         run: cp dist/index.html dist/404.html
 
       - name: Pages build summary
         run: |
-          echo "Root build: verified" >> "$GITHUB_STEP_SUMMARY"
+          echo "Root government system map: /#/command" >> "$GITHUB_STEP_SUMMARY"
+          echo "Public NEO Hub: /neo-hub/" >> "$GITHUB_STEP_SUMMARY"
+          echo "NEO Oracle: /neo-oracle/" >> "$GITHUB_STEP_SUMMARY"
+          echo "NEO Lingo: /neo-lingo/" >> "$GITHUB_STEP_SUMMARY"
+          echo "NEO Algo + World Credit Clock: /neo-algo/" >> "$GITHUB_STEP_SUMMARY"
+          echo "Public Legal Corpus: /neo-corpus/" >> "$GITHUB_STEP_SUMMARY"
           echo "Noogle: /noogle/" >> "$GITHUB_STEP_SUMMARY"
           echo "Omnitrix: /omnitrix/" >> "$GITHUB_STEP_SUMMARY"
           echo "NEOscan: /neoscan/" >> "$GITHUB_STEP_SUMMARY"
-          echo "Noogle status: /noogle/status.html" >> "$GITHUB_STEP_SUMMARY"
-          echo "Noogle submissions: /noogle/submit.html" >> "$GITHUB_STEP_SUMMARY"
-          echo "Noogle native index: /api/noogle/index.json" >> "$GITHUB_STEP_SUMMARY"
-          echo "Noogle crawl report: /api/noogle/crawl-report.json" >> "$GITHUB_STEP_SUMMARY"
-          echo "Noogle knowledge graph: /api/noogle/knowledge-graph.json" >> "$GITHUB_STEP_SUMMARY"
-          echo "Noogle claim graph: /api/noogle/claim-graph.json" >> "$GITHUB_STEP_SUMMARY"
-          echo "Noogle source health: /api/noogle/source-health.json" >> "$GITHUB_STEP_SUMMARY"
           echo "NEO JARVIS: /neo-jarvis/" >> "$GITHUB_STEP_SUMMARY"
           echo "NEO PACER: /neo-pacer/" >> "$GITHUB_STEP_SUMMARY"
           echo "NEO Counter: /neo-counter/ + /apps/neo-counter/" >> "$GITHUB_STEP_SUMMARY"
           echo "NEO TV: /neo-tv/" >> "$GITHUB_STEP_SUMMARY"
           echo "NEOpay application: /neopay/" >> "$GITHUB_STEP_SUMMARY"
           echo "NEO Teller: /neo-teller/" >> "$GITHUB_STEP_SUMMARY"
-          echo "NEO Books: /neo-books/" >> "$GITHUB_STEP_SUMMARY"
+          echo "NEO Books + CFO: /neo-books/" >> "$GITHUB_STEP_SUMMARY"
           echo "NEO Prime: /neo-prime/" >> "$GITHUB_STEP_SUMMARY"
           echo "NEO Exchange: /neo-exchange/" >> "$GITHUB_STEP_SUMMARY"
           echo "NEO Generator: /neo-generator/" >> "$GITHUB_STEP_SUMMARY"
           echo "NEO Miner: /neo-miner/" >> "$GITHUB_STEP_SUMMARY"
+          echo "Private module workspaces published under their named routes" >> "$GITHUB_STEP_SUMMARY"
           echo "Pages API registry: /api/platforms/index.json" >> "$GITHUB_STEP_SUMMARY"
           echo "SPA fallback: /404.html" >> "$GITHUB_STEP_SUMMARY"
 
