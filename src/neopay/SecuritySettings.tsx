@@ -1,0 +1,32 @@
+import{useEffect,useMemo,useState}from'react'
+import{LockKeyhole,ShieldCheck,Trash2,UserRoundPlus}from'lucide-react'
+import type{SignerState}from'./signer'
+import{loadAddressBook,loadSecurityPreferences,removeAddressBookEntry,saveSecurityPreferences,setBlockedAddress,upsertAddressBookEntry,type AddressBookEntry,type SecurityPreferences}from'./walletSecurity'
+
+function publishSecurityChange(prefs:SecurityPreferences){window.dispatchEvent(new CustomEvent('neopay-security-change',{detail:prefs}))}
+function timeLeft(expiresAt?:number){if(!expiresAt)return'Locked';const ms=Math.max(0,expiresAt-Date.now()),m=Math.floor(ms/60000),s=Math.floor((ms%60000)/1000);return`${m}:${String(s).padStart(2,'0')}`}
+
+export function SecuritySettings({signer,onConnect,onLock}:{signer:SignerState;onConnect:()=>void;onLock:()=>void}){
+ const[prefs,setPrefs]=useState<SecurityPreferences>(()=>loadSecurityPreferences()),[book,setBook]=useState<AddressBookEntry[]>(()=>loadAddressBook())
+ const[label,setLabel]=useState(''),[entryAddress,setEntryAddress]=useState(''),[clock,setClock]=useState(()=>Date.now()),[message,setMessage]=useState('')
+ useEffect(()=>{const id=window.setInterval(()=>setClock(Date.now()),1000);return()=>window.clearInterval(id)},[])
+ const remaining=useMemo(()=>{void clock;return signer.connected?timeLeft(signer.expiresAt):'Locked'},[clock,signer.connected,signer.expiresAt])
+ const updatePrefs=(next:SecurityPreferences)=>{setPrefs(next);saveSecurityPreferences(next);publishSecurityChange(next)}
+ const add=()=>{try{setBook(upsertAddressBookEntry(label,entryAddress,true));setLabel('');setEntryAddress('');setMessage('Trusted address saved on this device.')}catch(e:any){setMessage(e.message)}}
+ const remove=(address:string)=>{setBook(removeAddressBookEntry(address));setMessage('Address removed.')}
+ const block=(address:string)=>{const next=setBlockedAddress(address,true);setPrefs(next);publishSecurityChange(next);setMessage('Address blocked. Future sends to it will be refused.')}
+ const unblock=(address:string)=>{const next=setBlockedAddress(address,false);setPrefs(next);publishSecurityChange(next);setMessage('Address unblocked.')}
+ const blocked=new Set(prefs.blockedAddresses.map(x=>x.toLowerCase()))
+ return <>
+  <section className="card security-console"><div className="security-title"><div><ShieldCheck size={22}/><div><h2>Security Center</h2><span>Local controls · private keys never stored by NEOpay</span></div></div><b className={signer.connected?'live':'muted'}>{signer.connected?'Unlocked':'Locked'}</b></div>
+   <div className="security-grid"><div><span>Signer session</span><strong>{remaining}</strong></div><div><span>Network</span><strong>{signer.network||'Bitcoin mainnet'}</strong></div><div><span>Signer</span><strong>{signer.connected?signer.name:'Not connected'}</strong></div></div>
+   <div className="security-actions">{signer.connected?<button className="danger" onClick={onLock}><LockKeyhole size={16}/>Lock & Disconnect</button>:<button className="primary" onClick={onConnect}>Connect Local Signer</button>}</div>
+   <label className="toggle-row"><div><strong>Privacy Mode</strong><span>Hide portfolio and asset balances on screen.</span></div><input type="checkbox" checked={prefs.privacyMode} onChange={e=>updatePrefs({...prefs,privacyMode:e.target.checked})}/></label>
+   <label className="toggle-row"><div><strong>Warn on unknown destinations</strong><span>Flag addresses that are not in your trusted address book.</span></div><input type="checkbox" checked={prefs.warnUnknownDestination} onChange={e=>updatePrefs({...prefs,warnUnknownDestination:e.target.checked})}/></label>
+  </section>
+  <section className="card"><h2>Trusted Address Book</h2><div className="form-row"><input value={label} onChange={e=>setLabel(e.target.value)} placeholder="Name or label"/><input value={entryAddress} onChange={e=>setEntryAddress(e.target.value.trim())} placeholder="Bitcoin address"/></div><button className="primary" onClick={add}><UserRoundPlus size={16}/>Add Trusted Address</button>{message&&<p className="status-line">{message}</p>}
+   {book.length?<div className="address-book">{book.map(entry=><div className="address-entry" key={entry.address}><div><strong>{entry.label}</strong><span>{entry.address}</span></div><div className="address-actions">{blocked.has(entry.address.toLowerCase())?<button onClick={()=>unblock(entry.address)}>Unblock</button>:<button onClick={()=>block(entry.address)}>Block</button>}<button aria-label="Remove address" onClick={()=>remove(entry.address)}><Trash2 size={15}/></button></div></div>)}</div>:<p className="fine">No saved addresses yet. Add frequent recipients so NEOpay can recognize them during transaction review.</p>}
+   {prefs.blockedAddresses.length>0&&<div className="blocked-list"><b>Blocked destinations</b>{prefs.blockedAddresses.map(address=><div key={address}><span>{address}</span><button onClick={()=>unblock(address)}>Unblock</button></div>)}</div>}
+  </section>
+ </>
+}
