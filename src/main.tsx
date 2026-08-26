@@ -51,11 +51,11 @@ function RootRouter(){
   const isNEOpay=route==='/neopay'||route.startsWith('/neopay/')
   const isTeller=route==='/teller'||route.startsWith('/teller/')
   const base=(import.meta.env.BASE_URL||'/').replace(/\/$/,'')
-  const traderHref=`${base}/neopay/ces.html`
+  const bankHref=`${base}/neopay/ces.html`
 
   if(isHome) return <HomeBase onOpen={open}/>
   if(isTeller) return <TellerDashboard/>
-  if(isNEOpay) return <div className="neopay-route"><NEOpayWallet/><a className="neopay-trader-launch" href={traderHref}>⇄ CES Trader</a></div>
+  if(isNEOpay) return <div className="neopay-route"><NEOpayWallet/><a className="neopay-trader-launch" href={bankHref}>∞ NEO Bank</a></div>
   if(isExplorer) return <NeoExplorer/>
   if(isWire) return <NeoWireApp/>
   if(isMinerStore) return <StorefrontApp/>
