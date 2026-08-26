@@ -1,0 +1,1 @@
+window.addEventListener('load',()=>{const q=new URLSearchParams(location.search).get('q');if(!q)return;const input=document.getElementById('queryInput');const hero=document.getElementById('heroInput');if(input)input.value=q;if(hero)hero.value=q;const form=document.getElementById('searchForm');if(form)form.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));});
