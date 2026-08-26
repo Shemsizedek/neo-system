@@ -1,9 +1,10 @@
 import{getBitcoinAddressSummary,getBitcoinUtxos}from'./bitcoinService'
 import{getAddressBalances,getApiHealth,getAsset,isLikelyBitcoinAddress}from'./counterpartyService'
 import{routerProviders}from'./routerClient'
+import{assessDestination}from'./walletSecurity'
 
 export type PreflightSummary=Record<string,string|number|boolean|undefined>
-export type PreflightResult={ok:true;source:string;feeReserveSats:number;spendableSats:number;counterpartyOnline:true;bitcoinReadProvider:string;bitcoinBroadcastProvider:string;counterpartyProvider:string;checkedAt:string}
+export type PreflightResult={ok:true;source:string;feeReserveSats:number;spendableSats:number;counterpartyOnline:true;bitcoinReadProvider:string;bitcoinBroadcastProvider:string;counterpartyProvider:string;checkedAt:string;destinationWarning?:string}
 
 const MIN_FEE_RESERVE_SATS=1_000
 
@@ -44,6 +45,14 @@ export async function runTransactionPreflight(source:string,summary:PreflightSum
   const address=source.trim()
   if(!isLikelyBitcoinAddress(address))throw new Error('Preflight failed: transaction source is not a valid Bitcoin address.')
 
+  let destinationWarning:string|undefined
+  if(String(summary.action||'').toLowerCase()==='send'){
+    const destination=String(summary.destination||'').trim()
+    const assessment=assessDestination(address,destination)
+    if(!assessment.allowed)throw new Error(`Preflight failed: ${assessment.warning||'destination blocked by wallet security policy.'}`)
+    destinationWarning=assessment.warning
+  }
+
   const[cpProviders,btcReadProviders,btcBroadcastProviders]=await Promise.all([
     routerProviders('counterparty.read'),routerProviders('btc.read'),routerProviders('btc.broadcast')
   ])
@@ -69,6 +78,7 @@ export async function runTransactionPreflight(source:string,summary:PreflightSum
     bitcoinReadProvider:btcReadProviders[0].name||btcReadProviders[0].id,
     bitcoinBroadcastProvider:btcBroadcastProviders[0].name||btcBroadcastProviders[0].id,
     counterpartyProvider:cpProviders[0].name||cpProviders[0].id,
-    checkedAt:new Date().toISOString()
+    checkedAt:new Date().toISOString(),
+    destinationWarning
   }
 }
