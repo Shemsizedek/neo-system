@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "source": "github",
+  "policy": {
+    "strategy": "priority-failover",
+    "timeoutMs": 12000,
+    "healthTtlMs": 300000
+  },
+  "providers": [
+    {
+      "id": "bitcoin-blockstream",
+      "name": "Bitcoin Mainnet",
+      "baseUrl": "https://blockstream.info/api",
+      "priority": 10,
+      "enabled": true,
+      "cors": true,
+      "capabilities": ["btc.read", "btc.broadcast"]
+    },
+    {
+      "id": "bitcoin-mempool",
+      "name": "Bitcoin Mainnet Failover",
+      "baseUrl": "https://mempool.space/api",
+      "priority": 20,
+      "enabled": true,
+      "cors": true,
+      "capabilities": ["btc.read", "btc.broadcast"]
+    },
+    {
+      "id": "counterparty-core",
+      "name": "Counterparty Mainnet",
+      "baseUrl": "https://api.counterparty.io:4000",
+      "priority": 10,
+      "enabled": true,
+      "cors": true,
+      "capabilities": ["counterparty.read", "counterparty.compose"]
+    }
+  ]
+}
