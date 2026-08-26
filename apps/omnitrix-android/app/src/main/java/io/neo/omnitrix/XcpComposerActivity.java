@@ -35,8 +35,8 @@ public class XcpComposerActivity extends Activity {
 
     private void buildUi(){
         ScrollView scroll=new ScrollView(this);LinearLayout root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setPadding(dp(20),dp(24),dp(20),dp(28));root.setBackgroundColor(Color.rgb(1,5,3));scroll.addView(root);
-        TextView title=text("OMNITRIX · COUNTERPARTY",24,Color.rgb(226,255,234));root.addView(title);
-        TextView sub=text("Live SEND Composer · v1.9",12,Color.rgb(103,170,126));sub.setPadding(0,dp(5),0,dp(16));root.addView(sub);
+        LinearLayout top=new LinearLayout(this);top.setGravity(Gravity.CENTER_VERTICAL);ImageView logo=new ImageView(this);logo.setImageResource(R.drawable.omnitrix_logo);logo.setContentDescription("Omnitrix");top.addView(logo,new LinearLayout.LayoutParams(dp(58),dp(58)));TextView title=text("  COUNTERPARTY SEND",23,Color.rgb(226,255,234));top.addView(title);root.addView(top);
+        TextView sub=text("Omnitrix v2.1 · XCP Key secured transaction composer",12,Color.rgb(103,170,126));sub.setPadding(0,dp(5),0,dp(16));root.addView(sub);
         TextView guard=text("Compose → review → sign → broadcast. Composition sends only public addresses and transaction parameters to Counterparty API v2. Your XCP Key remains inside the local vault.",13,Color.rgb(174,211,186));guard.setPadding(0,0,0,dp(14));root.addView(guard);
 
         source=text("Source address: locked",13,Color.rgb(135,255,165));source.setTextIsSelectable(true);source.setPadding(0,0,0,dp(14));root.addView(source);
