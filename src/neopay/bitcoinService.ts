@@ -17,11 +17,20 @@ export async function getBitcoinAddressSummary(address:string):Promise<BitcoinAd
 export async function getBitcoinUtxos(address:string){return getJson<any[]>(`/address/${encodeURIComponent(address)}/utxo`)}
 export async function getBitcoinTransactions(address:string){return getJson<any[]>(`/address/${encodeURIComponent(address)}/txs`)}
 export async function getBitcoinTip(){const{res}=await routedFetch('btc.read','/blocks/tip/height');if(!res.ok)throw new Error(`Bitcoin API returned ${res.status}`);return Number(await res.text())}
+export async function getBitcoinTransactionStatus(txid:string){
+ if(!/^[0-9a-fA-F]{64}$/.test(txid))throw new Error('Bitcoin transaction ID is invalid.')
+ const[status,tip]=await Promise.all([getJson<any>(`/tx/${txid}/status`),getBitcoinTip().catch(()=>0)])
+ const confirmed=Boolean(status?.confirmed),blockHeight=confirmed?Number(status?.block_height||0):undefined
+ const confirmations=confirmed&&blockHeight&&tip>=blockHeight?tip-blockHeight+1:confirmed?1:0
+ return{confirmed,blockHeight,confirmations,blockHash:status?.block_hash as string|undefined,blockTime:status?.block_time as number|undefined}
+}
 export async function broadcastBitcoinTransaction(hex:string){
   if(!/^[0-9a-fA-F]+$/.test(hex)||hex.length<100||hex.length%2)throw new Error('Signed transaction is invalid.')
   const{res}=await routedFetch('btc.broadcast','/tx',{method:'POST',headers:{'Content-Type':'text/plain'},body:hex})
   const text=await res.text()
   if(!res.ok)throw new Error(text||`Bitcoin broadcast failed (${res.status})`)
-  return text.trim()
+  const txid=text.trim()
+  if(!/^[0-9a-fA-F]{64}$/.test(txid))throw new Error('Bitcoin provider returned an invalid transaction ID.')
+  return txid
 }
 export function satsToBtc(sats:number){return sats/100_000_000}
