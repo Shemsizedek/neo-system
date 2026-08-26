@@ -8,8 +8,8 @@ android {
         applicationId = "io.neo.omnitrix"
         minSdk = 26
         targetSdk = 35
-        versionCode = 13
-        versionName = "2.2.0"
+        versionCode = 14
+        versionName = "2.3.0"
     }
 
     buildTypes {
@@ -22,4 +22,5 @@ android {
 
 dependencies {
     implementation("org.bitcoinj:bitcoinj-core:0.17.1")
+    implementation("com.google.zxing:core:3.5.3")
 }
