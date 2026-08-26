@@ -2,7 +2,7 @@ const RAW='https://raw.githubusercontent.com/Shemsizedek/neo-system/main/';
 
 export const ADAPTERS=[
   {id:'executive',name:'NEOsync Executive Office',kind:'service-or-repository',env:'NEOSYNC_API_URL',healthPath:'/health',repoPath:'server/neo-router/executive-command.mjs'},
-  {id:'enterprise',name:'NEO Enterprise Suite',kind:'service-or-repository',env:'ENTERPRISE_API_URL',healthPath:'/health',repoPath:'cloudflare/neo-enterprise/src/index.js'},
+  {id:'enterprise',name:'NEO Enterprise Command Federation',kind:'service-or-repository',env:'ENTERPRISE_FEDERATION_URL',healthPath:'/health',repoPath:'cloudflare/neo-enterprise-federation/src/index.js'},
   {id:'central-solution',name:'Central Solution Office & Private Chambers',kind:'government-store',repoPath:'src/neoSystem.ts'},
   {id:'tribunal',name:'Inner Bar Temple Tribunal',kind:'service-or-repository',env:'TRIBUNAL_API_URL',healthPath:'/health',repoPath:'server/tribunal-backend/server.mjs'},
   {id:'chaplaincy',name:'World Chaplaincy E-File',kind:'service-or-repository',env:'TRIBUNAL_API_URL',healthPath:'/health',repoPath:'src/tribunal/efile.ts'},
