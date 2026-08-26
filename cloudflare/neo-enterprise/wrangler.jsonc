@@ -1,0 +1,10 @@
+{
+  "$schema":"node_modules/wrangler/config-schema.json",
+  "name":"neo-enterprise",
+  "main":"src/index.js",
+  "compatibility_date":"2026-08-26",
+  "workers_dev":true,
+  "observability":{"enabled":true},
+  "durable_objects":{"bindings":[{"name":"ENTERPRISE_STORE","class_name":"EnterpriseStore"}]},
+  "migrations":[{"tag":"v1","new_classes":["EnterpriseStore"]}]
+}
