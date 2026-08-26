@@ -25,30 +25,36 @@ public class XcpKeyActivity extends Activity {
     }
 
     private void buildUi() {
+        ScrollView scroll=new ScrollView(this);
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
         root.setGravity(Gravity.CENTER_HORIZONTAL);
-        root.setPadding(dp(24), dp(42), dp(24), dp(28));
+        root.setPadding(dp(24), dp(32), dp(24), dp(28));
         root.setBackgroundColor(Color.rgb(1,5,3));
+        scroll.addView(root);
 
         ImageView logo = new ImageView(this);
         logo.setImageResource(R.drawable.omnitrix_logo);
         logo.setScaleType(ImageView.ScaleType.CENTER_CROP);
-        root.addView(logo, new LinearLayout.LayoutParams(dp(112), dp(112)));
+        root.addView(logo, new LinearLayout.LayoutParams(dp(108), dp(108)));
 
         TextView title = text("OMNITRIX", 28, Color.rgb(225,255,234));
-        title.setGravity(Gravity.CENTER); title.setPadding(0,dp(16),0,dp(4)); root.addView(title);
-        TextView profile = text("NEO-0001 · Founding Profile · v1.9", 13, Color.rgb(113,170,132)); profile.setGravity(Gravity.CENTER); root.addView(profile);
+        title.setGravity(Gravity.CENTER); title.setPadding(0,dp(14),0,dp(4)); root.addView(title);
+        TextView profile = text("NEO-0001 · Founding Profile · v2.0", 13, Color.rgb(113,170,132)); profile.setGravity(Gravity.CENTER); root.addView(profile);
 
-        status = text("", 15, Color.rgb(202,255,217)); status.setGravity(Gravity.CENTER); status.setPadding(0,dp(28),0,dp(20)); root.addView(status);
+        status = text("", 15, Color.rgb(202,255,217)); status.setGravity(Gravity.CENTER); status.setPadding(0,dp(22),0,dp(18)); root.addView(status);
 
-        Button primary = button(vault.hasKey() ? "UNLOCK OMNITRIX" : "SECURE MY XCP KEY");
+        Button primary = button(vault.hasKey() ? "UNLOCK NEO WALLET" : "SECURE MY XCP KEY");
         primary.setOnClickListener(v -> { if (vault.hasKey()) authenticate(REQ_UNLOCK); else authenticate(REQ_IMPORT); });
         root.addView(primary, new LinearLayout.LayoutParams(-1, dp(54)));
 
         if (vault.hasKey()) {
-            Button live = button("LIVE COUNTERPARTY SEND");
-            LinearLayout.LayoutParams llp = new LinearLayout.LayoutParams(-1, dp(52)); llp.setMargins(0,dp(10),0,0); root.addView(live,llp);
+            Button wallet = button("OPEN NEO WALLET DASHBOARD");
+            LinearLayout.LayoutParams wlp0 = new LinearLayout.LayoutParams(-1, dp(52)); wlp0.setMargins(0,dp(10),0,0); root.addView(wallet,wlp0);
+            wallet.setOnClickListener(v -> startActivity(new Intent(this, WalletDashboardActivity.class)));
+
+            Button live = secondary("LIVE COUNTERPARTY SEND");
+            LinearLayout.LayoutParams llp = new LinearLayout.LayoutParams(-1, dp(50)); llp.setMargins(0,dp(10),0,0); root.addView(live,llp);
             live.setOnClickListener(v -> startActivity(new Intent(this, XcpComposerActivity.class)));
 
             Button signer = secondary("OPEN MANUAL XCP SIGNER");
@@ -56,7 +62,7 @@ public class XcpKeyActivity extends Activity {
             signer.setOnClickListener(v -> startActivity(new Intent(this, XcpSignerActivity.class)));
         }
 
-        Button watch = secondary("CONTINUE WITHOUT XCP KEY");
+        Button watch = secondary("OPEN OMNITRIX BROWSER");
         LinearLayout.LayoutParams wlp = new LinearLayout.LayoutParams(-1, dp(50)); wlp.setMargins(0,dp(10),0,0); root.addView(watch,wlp);
         watch.setOnClickListener(v -> openBrowser());
 
@@ -70,9 +76,9 @@ public class XcpKeyActivity extends Activity {
                     .setNegativeButton("Cancel", null).show());
         }
 
-        TextView note = text("Your XCP Key is encrypted by Android Keystore. Omnitrix v1.9 separates public Counterparty composition, local signing, and final Bitcoin broadcast into three explicit gates.", 12, Color.rgb(111,139,121));
-        note.setGravity(Gravity.CENTER); note.setPadding(dp(6),dp(24),dp(6),0); root.addView(note);
-        setContentView(root);
+        TextView note = text("Omnitrix v2.0 adds a unified BTC/XCP/NOMNI dashboard while preserving the v1.9 transaction gates: public compose, local signing, then separately authenticated Bitcoin broadcast.", 12, Color.rgb(111,139,121));
+        note.setGravity(Gravity.CENTER); note.setPadding(dp(6),dp(20),dp(6),0); root.addView(note);
+        setContentView(scroll);
         updateStatus();
     }
 
@@ -101,7 +107,7 @@ public class XcpKeyActivity extends Activity {
     private void onAuthenticated(int requestCode) {
         if (requestCode == REQ_IMPORT) showImportDialog();
         else if (requestCode == REQ_UNLOCK) {
-            try { vault.verifyUnlocked(); openBrowser(); }
+            try { vault.verifyUnlocked(); startActivity(new Intent(this, WalletDashboardActivity.class)); }
             catch (Exception e) { status.setText("XCP Key vault could not unlock. Re-authenticate or re-import the key on this device."); }
         }
     }
