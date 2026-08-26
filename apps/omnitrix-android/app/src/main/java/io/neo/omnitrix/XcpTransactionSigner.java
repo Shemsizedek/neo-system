@@ -163,7 +163,12 @@ final class XcpTransactionSigner {
     }
 
     private static Transaction copySkeleton(Transaction src,List<Prevout> prevouts,boolean signed,ECKey key,TransactionSignature[] sigs) throws Exception {
-        Transaction tx=new Transaction(); tx.setVersion(src.getVersion()); tx.setLockTime(src.lockTime().rawValue());
+        Transaction tx=new Transaction();
+        tx.setVersion(src.getVersion());
+        long lockTime=src.lockTime().rawValue();
+        if(lockTime<0 || lockTime>0xffffffffL) throw new IllegalArgumentException("Invalid transaction locktime");
+        // bitcoinj 0.17.1 uses an int here; the cast intentionally preserves the raw uint32 bits.
+        tx.setLockTime((int)lockTime);
         for(TransactionOutput o:src.getOutputs()) tx.addOutput(new TransactionOutput(tx,o.getValue(),o.getScriptBytes()));
         for(int i=0;i<src.getInputs().size();i++) {
             TransactionInput orig=src.getInput(i); Prevout p=prevouts.get(i);
