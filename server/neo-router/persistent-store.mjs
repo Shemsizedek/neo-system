@@ -1,3 +1,6 @@
+import { mkdir, readFile, rename, writeFile } from 'node:fs/promises'
+import { dirname } from 'node:path'
+
 function clone(v){return structuredClone(v)}
 
 export function createMemoryStateStore(initial=null){
@@ -7,6 +10,28 @@ export function createMemoryStateStore(initial=null){
     durable:false,
     async load(){return value?clone(value):null},
     async save(next){value=clone(next);return {ok:true,mode:'memory'}},
+  })
+}
+
+export function createFileStateStore({file=process.env.NEO_ROUTER_STATE_FILE||'data/router/state.json'}={}){
+  async function loadRaw(){
+    try{return JSON.parse(await readFile(file,'utf8'))}
+    catch(error){if(error?.code==='ENOENT')return null;throw error}
+  }
+  return Object.freeze({
+    mode:'github-file',
+    durable:true,
+    async load(){return await loadRaw()},
+    async save(next){
+      const current=await loadRaw()||{}
+      const now=new Date().toISOString()
+      const payload={...current,...clone(next),version:current.version??1,storage:'github',updatedAt:now,lastRun:{workerId:process.env.NEO_ROUTER_WORKER_ID||'local',at:now,runId:process.env.GITHUB_RUN_ID||null}}
+      await mkdir(dirname(file),{recursive:true})
+      const temp=`${file}.tmp`
+      await writeFile(temp,`${JSON.stringify(payload,null,2)}\n`,'utf8')
+      await rename(temp,file)
+      return {ok:true,mode:'github-file',file}
+    },
   })
 }
 
@@ -30,5 +55,6 @@ export function createUpstashStateStore({url=process.env.UPSTASH_REDIS_REST_URL,
 }
 
 export function createMissionStateStore(options={}){
-  return createUpstashStateStore(options) ?? createMemoryStateStore(options.initial)
+  if(options.mode==='file'||process.env.NEO_ROUTER_STORAGE==='github'||process.env.GITHUB_ACTIONS==='true')return createFileStateStore(options)
+  return createUpstashStateStore(options) ?? createFileStateStore(options)
 }
