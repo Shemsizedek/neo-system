@@ -1,0 +1,17 @@
+:root{--accent:#63e894;--omni-bg:#07110d;--omni-panel:#0d1812}
+body{background:radial-gradient(circle at 50% -20%,color-mix(in srgb,var(--accent) 18%,transparent),transparent 34%),var(--omni-bg);transition:background .35s ease}
+.consumer-shell{grid-template-columns:210px minmax(0,1fr)}
+.consumer-sidebar{background:color-mix(in srgb,var(--omni-bg) 92%,black);padding:20px 16px}
+.product-brand{display:flex;align-items:center;gap:11px}.omnitrix-logo{width:40px;height:40px;flex:0 0 40px}.omnitrix-logo svg{width:100%;height:100%;stroke:var(--accent);stroke-width:2;filter:drop-shadow(0 0 10px color-mix(in srgb,var(--accent) 30%,transparent))}
+.consumer-browser-bar{grid-template-columns:auto auto auto minmax(190px,1fr) auto auto;padding:9px 14px;background:color-mix(in srgb,var(--omni-bg) 90%,transparent)}
+.consumer-browser-bar .address-form input{background:color-mix(in srgb,var(--omni-panel) 90%,white 2%);border-radius:18px;padding:11px 16px}
+.theme-button{border:1px solid rgba(255,255,255,.09);border-radius:18px;background:rgba(255,255,255,.04);color:#dfe9e3;padding:9px 12px;font-size:.75rem}
+.consumer-hero{padding-top:46px}.consumer-hero h1{max-width:900px}.consumer-shortcuts{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}.consumer-shortcuts button{border:1px solid rgba(255,255,255,.09);border-radius:999px;background:rgba(255,255,255,.035);color:#cbd8d0;padding:8px 12px}.consumer-shortcuts button:hover{border-color:color-mix(in srgb,var(--accent) 45%,transparent);color:#fff}
+.consumer-grid{grid-template-columns:minmax(0,1.7fr) minmax(300px,.72fr)}
+.panel{background:color-mix(in srgb,var(--omni-panel) 88%,transparent)}
+.eyebrow,a,.badge.safe{color:var(--accent)}
+.hero-search button,.submission-form button,.miner-actions button{background:var(--accent);color:#06190f}
+.claim-panel{display:grid;gap:12px;margin-top:14px}.claim-card{border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:12px;background:rgba(0,0,0,.1)}.claim-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.claim-head strong{font-size:.83rem;line-height:1.45}.claim-meter{height:5px;border-radius:999px;background:rgba(255,255,255,.07);overflow:hidden;margin:10px 0}.claim-meter span{display:block;height:100%;background:var(--accent)}.evidence-row{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:8px;align-items:center;padding:7px 0;border-top:1px solid rgba(255,255,255,.05);font-size:.74rem}.evidence-row small{color:#71867a}
+.consumer-miner .miner-connect{display:grid;gap:8px;margin-top:14px}.consumer-miner input{width:100%;border:1px solid rgba(255,255,255,.1);border-radius:10px;background:rgba(255,255,255,.045);color:#fff;padding:10px 11px;outline:none}.consumer-miner input:focus{border-color:color-mix(in srgb,var(--accent) 55%,transparent)}.miner-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}.miner-actions button{border:0;border-radius:9px;padding:10px;font-weight:800}.miner-actions button:first-child{background:rgba(255,255,255,.07);color:#e8f1eb}
+@media(max-width:950px){.consumer-shell{grid-template-columns:1fr}.consumer-sidebar{display:none}.consumer-grid{grid-template-columns:1fr}}
+@media(max-width:700px){.consumer-browser-bar{grid-template-columns:auto auto minmax(0,1fr) auto}.consumer-browser-bar .nav-button:nth-child(3),.theme-button span{display:none}.theme-button{padding:9px}.consumer-hero{padding:32px 18px 20px}.content-grid{padding:8px 18px 50px}.evidence-row{grid-template-columns:1fr}.miner-actions{grid-template-columns:1fr}}
