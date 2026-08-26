@@ -1,0 +1,13 @@
+{
+  "$schema":"node_modules/wrangler/config-schema.json",
+  "name":"neo-executive-inbox",
+  "main":"src/index.js",
+  "compatibility_date":"2026-08-26",
+  "workers_dev":true,
+  "observability":{"enabled":true},
+  "durable_objects":{"bindings":[
+    {"name":"GOV_STORE","class_name":"GovernmentStore","script_name":"neo-government"},
+    {"name":"INBOX_STORE","class_name":"InboxStore"}
+  ]},
+  "migrations":[{"tag":"v1","new_sqlite_classes":["InboxStore"]}]
+}
