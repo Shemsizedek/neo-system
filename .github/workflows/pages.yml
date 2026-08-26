@@ -118,18 +118,20 @@ jobs:
           mkdir -p dist/neo-tv
           cp -R docs/neo-tv/. dist/neo-tv/
 
-      - name: Publish public NEO product surfaces only
+      - name: Publish public and enterprise NEO surfaces only
         run: |
-          routes="neo-hub neo-oracle neo-lingo neo-algo neo-corpus public-workspace"
+          routes="neo-hub neo-enterprise neo-oracle neo-lingo neo-algo neo-corpus public-workspace"
           for route in $routes; do
             test -d "docs/$route"
             mkdir -p "dist/$route"
             cp -R "docs/$route/." "dist/$route/"
           done
-          for route in neo-hub neo-oracle neo-lingo neo-algo neo-corpus; do
+          cp docs/neo-suite-architecture.json dist/neo-suite-architecture.json
+          for route in neo-hub neo-enterprise neo-oracle neo-lingo neo-algo neo-corpus; do
             test -f "dist/$route/index.html"
           done
           test -f dist/public-workspace/styles.css
+          test -f dist/neo-suite-architecture.json
           test ! -e dist/neo-government
           test ! -e dist/government-workspace
           test ! -e dist/neo-executive
@@ -149,11 +151,13 @@ jobs:
 
       - name: Pages build summary
         run: |
-          echo "Public NEO Hub: /neo-hub/" >> "$GITHUB_STEP_SUMMARY"
+          echo "Consumer NEO Hub: /neo-hub/" >> "$GITHUB_STEP_SUMMARY"
+          echo "NEO Enterprise Suite: /neo-enterprise/" >> "$GITHUB_STEP_SUMMARY"
           echo "Public AI: /neo-oracle/" >> "$GITHUB_STEP_SUMMARY"
           echo "Public NEO Lingo: /neo-lingo/" >> "$GITHUB_STEP_SUMMARY"
           echo "Public NEO Algo + World Credit Clock: /neo-algo/" >> "$GITHUB_STEP_SUMMARY"
           echo "Public Legal Corpus: /neo-corpus/" >> "$GITHUB_STEP_SUMMARY"
+          echo "NEO Teller and NEO Counter: business infrastructure, not consumer homepage apps" >> "$GITHUB_STEP_SUMMARY"
           echo "Private government routes: excluded from GitHub Pages" >> "$GITHUB_STEP_SUMMARY"
           echo "Private command requests redirect to NEO Government Access gateway" >> "$GITHUB_STEP_SUMMARY"
 
