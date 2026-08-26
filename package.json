@@ -27,6 +27,7 @@
     "neo-teller:server":"node server/neo-teller-backend/server.mjs",
     "neo-platform:server":"node server/neo-platform-api/server.mjs",
     "neo-platform:test":"node --test server/neo-platform-api/*.test.mjs",
+    "neo-enterprise:server":"node server/neo-enterprise/server.mjs",
     "neo-enterprise:test":"node --test server/neo-enterprise/*.test.mjs",
     "pages:platform-api":"node scripts/build-pages-platform-api.mjs",
     "pages:enterprise":"node scripts/build-enterprise-pages.mjs"
