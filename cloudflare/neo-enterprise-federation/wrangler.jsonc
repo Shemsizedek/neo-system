@@ -7,7 +7,11 @@
   "observability": { "enabled": true },
   "durable_objects": {
     "bindings": [
-      { "name": "ENTERPRISE_STORE", "class_name": "EnterpriseStore", "script_name": "neo-enterprise" }
+      { "name": "ENTERPRISE_STORE", "class_name": "EnterpriseStore", "script_name": "neo-enterprise" },
+      { "name": "POLICY_STORE", "class_name": "PolicyStore" }
     ]
-  }
+  },
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["PolicyStore"] }
+  ]
 }
