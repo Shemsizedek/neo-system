@@ -1,0 +1,9 @@
+import{revokeWalletReadiness,type WalletRail}from'./walletSession'
+import{appendAudit}from'./securityAudit'
+const KEY='neopay.emergency.lockdown.v1'
+export type LockdownState={active:boolean;activatedAt?:string;reason?:string;recoveryCode?:string}
+export function lockdownState():LockdownState{try{const v=JSON.parse(localStorage.getItem(KEY)||'{}');return v&&typeof v==='object'?{active:Boolean(v.active),activatedAt:v.activatedAt,reason:v.reason,recoveryCode:v.recoveryCode}:{active:false}}catch{return{active:false}}}
+function code(){return Math.random().toString(36).slice(2,6).toUpperCase()+'-'+Math.random().toString(36).slice(2,6).toUpperCase()}
+export function activateEmergencyLockdown(reason='User activated emergency wallet lockdown.'){for(const rail of['raw','unisat','xverse']as WalletRail[])revokeWalletReadiness(rail,'Emergency lockdown active.');const state:LockdownState={active:true,activatedAt:new Date().toISOString(),reason,recoveryCode:code()};localStorage.setItem(KEY,JSON.stringify(state));appendAudit('wallet_lock',`Emergency lockdown activated. ${reason}`);window.dispatchEvent(new CustomEvent('neopay-lockdown-change',{detail:state}));return state}
+export function requireNotLockedDown(){const s=lockdownState();if(s.active)throw new Error('NEOpay is in Emergency Lockdown. Complete recovery in Security Center before sending or signing.')}
+export function clearEmergencyLockdown(typedCode:string){const s=lockdownState();if(!s.active)return{active:false}as LockdownState;if(!s.recoveryCode||typedCode.trim().toUpperCase()!==s.recoveryCode.toUpperCase())throw new Error('Recovery code does not match.');const next:LockdownState={active:false};localStorage.setItem(KEY,JSON.stringify(next));appendAudit('wallet_unlock','Emergency lockdown recovery completed. Wallet readiness remains revoked until a fresh compatibility test passes.');window.dispatchEvent(new CustomEvent('neopay-lockdown-change',{detail:next}));return next}
