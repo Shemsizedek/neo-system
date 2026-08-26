@@ -131,7 +131,7 @@ public class MainActivity extends Activity {
         s.setSafeBrowsingEnabled(true);
         s.setMediaPlaybackRequiresUserGesture(false);
         s.setUserAgentString(desktopMode ? DESKTOP_UA : MOBILE_UA);
-        CookieManager.getInstance().setAcceptCookie(true);
+        android.webkit.CookieManager.getInstance().setAcceptCookie(true);
         web.setBackgroundColor(Color.rgb(1,5,3));
 
         web.setDownloadListener((url,userAgent,contentDisposition,mimetype,contentLength) -> startDownload(url,userAgent,contentDisposition,mimetype));
@@ -271,7 +271,7 @@ public class MainActivity extends Activity {
         String[] items={"Clear browsing data","Clear cookies","Open Noogle home","Security: HTTPS-only browsing","Skin: "+skinName()};
         new AlertDialog.Builder(this).setTitle("Privacy & Settings").setItems(items,(d,w)->{
             if(w==0){ web.clearCache(true); web.clearHistory(); prefs.edit().remove("history").apply(); Toast.makeText(this,"Browsing data cleared",Toast.LENGTH_SHORT).show(); }
-            else if(w==1){ CookieManager.getInstance().removeAllCookies(null); CookieManager.getInstance().flush(); Toast.makeText(this,"Cookies cleared",Toast.LENGTH_SHORT).show(); }
+            else if(w==1){ android.webkit.CookieManager.getInstance().removeAllCookies(null); android.webkit.CookieManager.getInstance().flush(); Toast.makeText(this,"Cookies cleared",Toast.LENGTH_SHORT).show(); }
             else if(w==2) openInCurrentTab(NOOGLE);
             else if(w==3) Toast.makeText(this,"HTTPS-only direct navigation is active",Toast.LENGTH_LONG).show();
             else if(w==4) cycleTheme();
