@@ -38,7 +38,7 @@ public class XcpKeyActivity extends Activity {
 
         TextView title = text("OMNITRIX", 28, Color.rgb(225,255,234));
         title.setGravity(Gravity.CENTER); title.setPadding(0,dp(16),0,dp(4)); root.addView(title);
-        TextView profile = text("NEO-0001 · Founding Profile · v1.8", 13, Color.rgb(113,170,132)); profile.setGravity(Gravity.CENTER); root.addView(profile);
+        TextView profile = text("NEO-0001 · Founding Profile · v1.9", 13, Color.rgb(113,170,132)); profile.setGravity(Gravity.CENTER); root.addView(profile);
 
         status = text("", 15, Color.rgb(202,255,217)); status.setGravity(Gravity.CENTER); status.setPadding(0,dp(28),0,dp(20)); root.addView(status);
 
@@ -47,8 +47,12 @@ public class XcpKeyActivity extends Activity {
         root.addView(primary, new LinearLayout.LayoutParams(-1, dp(54)));
 
         if (vault.hasKey()) {
-            Button signer = button("OPEN XCP SIGNER");
-            LinearLayout.LayoutParams slp = new LinearLayout.LayoutParams(-1, dp(52)); slp.setMargins(0,dp(10),0,0); root.addView(signer,slp);
+            Button live = button("LIVE COUNTERPARTY SEND");
+            LinearLayout.LayoutParams llp = new LinearLayout.LayoutParams(-1, dp(52)); llp.setMargins(0,dp(10),0,0); root.addView(live,llp);
+            live.setOnClickListener(v -> startActivity(new Intent(this, XcpComposerActivity.class)));
+
+            Button signer = secondary("OPEN MANUAL XCP SIGNER");
+            LinearLayout.LayoutParams slp = new LinearLayout.LayoutParams(-1, dp(50)); slp.setMargins(0,dp(10),0,0); root.addView(signer,slp);
             signer.setOnClickListener(v -> startActivity(new Intent(this, XcpSignerActivity.class)));
         }
 
@@ -66,7 +70,7 @@ public class XcpKeyActivity extends Activity {
                     .setNegativeButton("Cancel", null).show());
         }
 
-        TextView note = text("Your XCP Key is encrypted by Android Keystore. Signing happens locally. Omnitrix never publishes the key to GitHub, Noogle, Counterparty APIs, or a web page.", 12, Color.rgb(111,139,121));
+        TextView note = text("Your XCP Key is encrypted by Android Keystore. Omnitrix v1.9 separates public Counterparty composition, local signing, and final Bitcoin broadcast into three explicit gates.", 12, Color.rgb(111,139,121));
         note.setGravity(Gravity.CENTER); note.setPadding(dp(6),dp(24),dp(6),0); root.addView(note);
         setContentView(root);
         updateStatus();
