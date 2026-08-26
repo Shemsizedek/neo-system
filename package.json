@@ -7,7 +7,7 @@
   "scripts": {
     "dev":"vite",
     "build":"tsc -b && vite build",
-    "test":"node --test server/neo-router/*.test.mjs server/neo-prime/*.test.mjs server/neo-platform-api/*.test.mjs core/neo-algo/*.test.mjs server/tribunal-backend/*.test.mjs server/miner-agent/*.test.mjs server/miner-agent/adapters/*.test.mjs server/miner-controller/*.test.mjs server/miner-commerce/*.test.mjs server/miner-generator/*.test.mjs server/neo-counter-backend/*.test.mjs server/neo-evidence-vault/*.test.mjs",
+    "test":"node --test server/neo-router/*.test.mjs server/neo-prime/*.test.mjs server/neo-platform-api/*.test.mjs core/neo-algo/*.test.mjs server/tribunal-backend/*.test.mjs server/miner-agent/*.test.mjs server/miner-agent/adapters/*.test.mjs server/miner-controller/*.test.mjs server/miner-commerce/*.test.mjs server/miner-generator/*.test.mjs server/neo-counter-backend/*.test.mjs server/neo-evidence-vault/*.test.mjs server/neo-enterprise/*.test.mjs",
     "preview":"vite preview",
     "crawl:neo":"node scripts/neo-sync-crawl.mjs",
     "crawl:noogle":"node scripts/build-noogle-index.mjs",
@@ -27,7 +27,9 @@
     "neo-teller:server":"node server/neo-teller-backend/server.mjs",
     "neo-platform:server":"node server/neo-platform-api/server.mjs",
     "neo-platform:test":"node --test server/neo-platform-api/*.test.mjs",
-    "pages:platform-api":"node scripts/build-pages-platform-api.mjs"
+    "neo-enterprise:test":"node --test server/neo-enterprise/*.test.mjs",
+    "pages:platform-api":"node scripts/build-pages-platform-api.mjs",
+    "pages:enterprise":"node scripts/build-enterprise-pages.mjs"
   },
   "dependencies": {"react":"^19.1.1","react-dom":"^19.1.1","lucide-react":"^0.468.0"},
   "devDependencies": {"@vitejs/plugin-react":"^4.3.4","vite":"^6.0.7","typescript":"^5.7.2","@types/react":"^19.0.3","@types/react-dom":"^19.0.2"}
