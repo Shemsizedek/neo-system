@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "roles": {
+    "executive_admin": {
+      "scope": "system",
+      "description": "Full NEO Enterprise administration across authorized organizations and workspaces.",
+      "permissions": ["enterprise:*"]
+    },
+    "organization_admin": {
+      "scope": "organization",
+      "permissions": ["organization:read", "organization:update", "workspace:*", "team:*", "wallet:read", "books:read", "merchant:read"]
+    },
+    "finance_admin": {
+      "scope": "organization",
+      "permissions": ["organization:read", "wallet:read", "wallet:compose", "books:*", "merchant:read"]
+    },
+    "wallet_operator": {
+      "scope": "organization",
+      "permissions": ["organization:read", "wallet:read", "wallet:compose"]
+    },
+    "books_manager": {
+      "scope": "organization",
+      "permissions": ["organization:read", "books:*"]
+    },
+    "merchant_manager": {
+      "scope": "organization",
+      "permissions": ["organization:read", "merchant:*"]
+    },
+    "team_manager": {
+      "scope": "organization",
+      "permissions": ["organization:read", "team:*"]
+    },
+    "member": {
+      "scope": "organization",
+      "permissions": ["organization:read", "workspace:read"]
+    },
+    "viewer": {
+      "scope": "organization",
+      "permissions": ["organization:read"]
+    }
+  }
+}
