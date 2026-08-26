@@ -1,0 +1,59 @@
+{
+  "version": "1.0",
+  "brand": "NEO Systems",
+  "surfaces": {
+    "consumer": {
+      "name": "NEO Public Social Suite",
+      "audience": ["individual consumers", "public users"],
+      "products": [
+        "Noogle",
+        "NEO Oracle",
+        "NEO Bank/Pay",
+        "NEO Prime + NEOfx",
+        "NEO TV",
+        "NEO Wire",
+        "NEO Miner",
+        "NEO Lingo",
+        "NEO Algo / World Credit Clock",
+        "NEO Books + CFO",
+        "NEO Bank CES",
+        "Noocratic Legal Corpus"
+      ],
+      "excluded": ["NEO Teller", "NEO Counter", "NEO Government Control Plane"]
+    },
+    "enterprise": {
+      "name": "NEO Enterprise Suite",
+      "audience": ["sole proprietors", "private companies", "public companies", "institutions"],
+      "modes": ["public-business", "private-business", "sole-proprietor"],
+      "products": [
+        "NEO Bank/Pay",
+        "NEO Books + CFO",
+        "NEO Prime + NEOfx",
+        "NEO Teller",
+        "NEO Counter",
+        "NEO Bank CES",
+        "NEO Oracle for Business",
+        "NEO Wire",
+        "Noocratic Legal Corpus"
+      ]
+    },
+    "government": {
+      "name": "NEO Government Suite",
+      "audience": ["authorized executive and institutional administrators"],
+      "access": "authenticated-private-control-plane",
+      "products": [
+        "NEOsync Executive Office",
+        "Central Solution Office & Private Chambers",
+        "Inner Bar Temple Tribunal",
+        "World Chaplaincy E-File",
+        "NEO Treasury Management System",
+        "World Police",
+        "World Marshals",
+        "World Guards",
+        "World Defense System",
+        "NEO Global Arms System",
+        "NEO Cipher"
+      ]
+    }
+  }
+}
