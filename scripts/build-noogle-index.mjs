@@ -1,29 +1,37 @@
 import fs from 'node:fs/promises';
 import { NoogleIndexStore } from '../apps/noogle/index/store.mjs';
-import { crawlPublicSource } from '../apps/noogle/index/crawler.mjs';
+import { crawlDomain } from '../apps/noogle/index/domain-crawler.mjs';
 
-const seeds = [
-  { url: 'https://counterparty.io/', sourceClass: 'reference', evidenceState: 'reference', publisher: 'Counterparty' },
-  { url: 'https://mempool.space/', sourceClass: 'reference', evidenceState: 'reference', publisher: 'mempool.space' },
-  { url: 'https://www.openalex.org/', sourceClass: 'scholarly', evidenceState: 'scholarly', publisher: 'OpenAlex' },
-  { url: 'https://archive.org/', sourceClass: 'archive', evidenceState: 'archival', publisher: 'Internet Archive' }
-];
-
+const registry = JSON.parse(await fs.readFile('apps/noogle/index/sources.json', 'utf8'));
 const store = new NoogleIndexStore('data/noogle-index.json');
 await store.load();
 
-for (const seed of seeds) {
+const reports = [];
+for (const source of registry.sources.filter(item => item.enabled)) {
   try {
-    const doc = await crawlPublicSource(seed.url, seed);
-    store.upsert(doc);
-    console.log(`Indexed ${doc.title}`);
+    const report = await crawlDomain(source);
+    for (const doc of report.docs) store.upsert(doc);
+    reports.push({
+      sourceId: report.sourceId,
+      rootUrl: report.rootUrl,
+      crawled: report.crawled,
+      maxDepth: report.maxDepth,
+      maxPages: report.maxPages,
+      robotsUrl: report.robots.url,
+      robotsDisallowCount: report.robots.disallow.length,
+      errors: report.errors
+    });
+    console.log(`Noogle indexed ${report.crawled} page(s) from ${source.name}`);
   } catch (error) {
-    console.warn(`Skipped ${seed.url}: ${error.message}`);
+    reports.push({ sourceId: source.id, rootUrl: source.url, crawled: 0, errors: [{ url: source.url, error: String(error?.message || error) }] });
+    console.warn(`Skipped ${source.url}: ${error.message}`);
   }
 }
 
 await store.save();
 await fs.mkdir('public/api/noogle', { recursive: true });
 const snapshot = JSON.parse(await fs.readFile('data/noogle-index.json', 'utf8'));
+const reportPayload = { generatedAt: new Date().toISOString(), totalDocuments: snapshot.documents.length, sources: reports };
 await fs.writeFile('public/api/noogle/index.json', JSON.stringify(snapshot, null, 2));
+await fs.writeFile('public/api/noogle/crawl-report.json', JSON.stringify(reportPayload, null, 2));
 console.log(`Noogle native index contains ${snapshot.documents.length} documents`);

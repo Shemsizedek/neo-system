@@ -1,14 +1,60 @@
 {
-  "version": 1,
+  "version": 2,
   "sources": [
     {
       "id": "noogle-origin",
       "name": "Noogle Origin Specification",
       "url": "https://shemsizedek.github.io/neo-system/noogle/",
       "type": "first-party",
+      "sourceClass": "reference",
+      "evidenceState": "reference",
       "community": null,
       "enabled": true,
-      "crawl": {"maxDepth": 1, "intervalHours": 24}
+      "crawl": {"maxDepth": 2, "maxPages": 20, "delayMs": 700, "intervalHours": 6}
+    },
+    {
+      "id": "counterparty",
+      "name": "Counterparty",
+      "url": "https://counterparty.io/",
+      "type": "protocol",
+      "sourceClass": "reference",
+      "evidenceState": "reference",
+      "community": null,
+      "enabled": true,
+      "crawl": {"maxDepth": 1, "maxPages": 12, "delayMs": 1000, "intervalHours": 12}
+    },
+    {
+      "id": "mempool-space",
+      "name": "mempool.space",
+      "url": "https://mempool.space/",
+      "type": "bitcoin-infrastructure",
+      "sourceClass": "reference",
+      "evidenceState": "reference",
+      "community": null,
+      "enabled": true,
+      "crawl": {"maxDepth": 1, "maxPages": 8, "delayMs": 1000, "intervalHours": 12}
+    },
+    {
+      "id": "openalex",
+      "name": "OpenAlex",
+      "url": "https://www.openalex.org/",
+      "type": "scholarly",
+      "sourceClass": "scholarly",
+      "evidenceState": "scholarly",
+      "community": null,
+      "enabled": true,
+      "crawl": {"maxDepth": 1, "maxPages": 8, "delayMs": 1200, "intervalHours": 24}
+    },
+    {
+      "id": "internet-archive",
+      "name": "Internet Archive",
+      "url": "https://archive.org/",
+      "type": "archive",
+      "sourceClass": "archive",
+      "evidenceState": "archival",
+      "community": null,
+      "enabled": true,
+      "crawl": {"maxDepth": 1, "maxPages": 8, "delayMs": 1200, "intervalHours": 24}
     }
   ],
   "policy": {
@@ -17,6 +63,11 @@
     "denyPrivateNetworks": true,
     "denyAuthenticationBypass": true,
     "denyPaywallBypass": true,
+    "denyCaptchaBypass": true,
+    "sameHostTraversalOnly": true,
+    "maxDepth": 3,
+    "maxPagesPerSource": 50,
+    "minimumDelayMs": 250,
     "requireAttributionForCommunitySources": true
   }
 }
