@@ -5,16 +5,18 @@
     <application
         android:allowBackup="false"
         android:label="Omnitrix"
-        android:icon="@drawable/omnitrix_logo"
-        android:roundIcon="@drawable/omnitrix_logo"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:logo="@drawable/omnitrix_logo"
         android:usesCleartextTraffic="false"
-        android:theme="@android:style/Theme.Material.Light.NoActionBar">
+        android:theme="@style/Theme.Omnitrix">
         <activity android:name=".XcpKeyActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity android:name=".MarketMatrixActivity" android:exported="false" />
         <activity android:name=".WalletDashboardActivity" android:exported="false" />
         <activity android:name=".XcpComposerActivity" android:exported="false" />
         <activity android:name=".XcpSignerActivity" android:exported="false" />
