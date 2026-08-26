@@ -88,6 +88,16 @@ jobs:
           test -f dist/omnitrix/index.html
           test -f dist/omnitrix/app.js
 
+      - name: Publish NEOscan explorer
+        run: |
+          test -f apps/neoscan/web/index.html
+          test -f apps/neoscan/web/app.js
+          test -f apps/neoscan/web/styles.css
+          mkdir -p dist/neoscan
+          cp -R apps/neoscan/web/. dist/neoscan/
+          test -f dist/neoscan/index.html
+          test -f dist/neoscan/app.js
+
       - name: Verify Pages artifact root
         run: |
           test -f dist/index.html
@@ -139,6 +149,7 @@ jobs:
           echo "Root build: verified" >> "$GITHUB_STEP_SUMMARY"
           echo "Noogle: /noogle/" >> "$GITHUB_STEP_SUMMARY"
           echo "Omnitrix: /omnitrix/" >> "$GITHUB_STEP_SUMMARY"
+          echo "NEOscan: /neoscan/" >> "$GITHUB_STEP_SUMMARY"
           echo "Noogle status: /noogle/status.html" >> "$GITHUB_STEP_SUMMARY"
           echo "Noogle submissions: /noogle/submit.html" >> "$GITHUB_STEP_SUMMARY"
           echo "Noogle native index: /api/noogle/index.json" >> "$GITHUB_STEP_SUMMARY"
