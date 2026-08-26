@@ -1,7 +1,10 @@
-const DISCOVERY_CANDIDATES=['https://127.0.0.1:8787','https://localhost:8787'];
-function validAdapterUrl(value){try{const u=new URL(value);return ['https:','wss:'].includes(u.protocol)}catch{return false}}
-async function fetchTelemetry(base){const url=base.replace(/\/$/,'')+'/api/miner/telemetry';const r=await fetch(url,{headers:{accept:'application/json'},credentials:'omit',signal:AbortSignal.timeout(3500)});if(!r.ok)throw new Error(`Adapter ${r.status}`);const d=await r.json();if(d.verified===false)throw new Error('Unverified telemetry');return d}
-async function discover(){for(const candidate of DISCOVERY_CANDIDATES){try{return{url:candidate,data:await fetchTelemetry(candidate)}}catch{}}return null}
-async function connect(url){if(!validAdapterUrl(url))throw new Error('Use a secure https:// or wss:// adapter URL');if(url.startsWith('wss:'))return connectWs(url);return{url,data:await fetchTelemetry(url),poll:()=>fetchTelemetry(url)}}
-function connectWs(url){return new Promise((resolve,reject)=>{const ws=new WebSocket(url);const timer=setTimeout(()=>{ws.close();reject(new Error('Adapter timeout'))},4000);ws.onopen=()=>{clearTimeout(timer);resolve({url,ws})};ws.onerror=()=>reject(new Error('Secure adapter connection failed'))})}
-window.omnitrixMiner={discover,connect,fetchTelemetry,validAdapterUrl,preferredProtocol:'Stratum V2 / NEO authenticated gateway'};
+const DISCOVERY_CANDIDATES=['http://127.0.0.1:14444','http://localhost:14444','http://127.0.0.1:8787','http://localhost:8787'];
+function validAdapterUrl(value){try{const u=new URL(value);const local=['localhost','127.0.0.1','::1'].includes(u.hostname);return u.protocol==='https:'||u.protocol==='wss:'||(local&&u.protocol==='http:')}catch{return false}}
+function authHeaders(token){return token?{authorization:`Bearer ${token}`}:{}}
+async function fetchJson(url,token){const r=await fetch(url,{headers:{accept:'application/json',...authHeaders(token)},credentials:'omit',signal:AbortSignal.timeout(3500),cache:'no-store'});if(!r.ok)throw new Error(`Adapter ${r.status}`);return r.json()}
+async function fetchTelemetry(base,token=''){const root=base.replace(/\/$/,'');try{return await fetchJson(root+'/status',token)}catch{return fetchJson(root+'/api/miner/telemetry',token)}}
+async function health(base){return fetchJson(base.replace(/\/$/,'')+'/health','')}
+async function discover(){for(const candidate of DISCOVERY_CANDIDATES){try{await health(candidate);return{url:candidate}}catch{}}return null}
+async function connect(url,token=''){if(!validAdapterUrl(url))throw new Error('Use HTTPS, WSS, or a localhost miner URL');if(url.startsWith('wss:'))return connectWs(url,token);const data=await fetchTelemetry(url,token);return{url,data,poll:()=>fetchTelemetry(url,token)}}
+function connectWs(url,token){return new Promise((resolve,reject)=>{const ws=new WebSocket(token?`${url}${url.includes('?')?'&':'?'}token=${encodeURIComponent(token)}`:url);const timer=setTimeout(()=>{ws.close();reject(new Error('Adapter timeout'))},4000);ws.onopen=()=>{clearTimeout(timer);resolve({url,ws})};ws.onerror=()=>reject(new Error('Secure adapter connection failed'))})}
+window.omnitrixMiner={discover,connect,fetchTelemetry,validAdapterUrl,preferredProtocol:'NEO authenticated gateway / Stratum V2 where supported'};
