@@ -1,0 +1,26 @@
+{
+  "id": "FIN-014-AV-001",
+  "case": "TVMLSM666 v. NEOLPS999",
+  "status": "ACTIVE",
+  "source_article": {
+    "title": "Philippine Hoaxes: Of Cabbages and Kings, Grifters and Trolls",
+    "author": "Myles A. Garcia",
+    "date": "2020-09-09",
+    "use": "adverse-source discovery map; conclusions not adopted"
+  },
+  "core_videos": [
+    {"video_id":"whEbg3cH27s","title":"The Lost Prince of the Kingdom of Maharlika","subject":"Philippine archipelago / Maharlika ownership theory","transcript_status":"PENDING"},
+    {"video_id":"-uWczBZxcPw","title":null,"subject":"European royal-house lineage presentation","transcript_status":"PENDING"},
+    {"video_id":"qup3161Sfss","title":null,"subject":"TVM Manhattan tour; 40 Wall Street identified by adverse source around 20:20","transcript_status":"PENDING"},
+    {"video_id":"0sxP4Gswd8s","title":null,"subject":"Approx. two-hour Alpha-Omega World Development Marshall Programme presentation","transcript_status":"PENDING"},
+    {"video_id":"s-Ci9Z3m69E","title":null,"subject":"TVM titles, heraldic crests, Humanitarian Certificate","transcript_status":"PENDING"}
+  ],
+  "secondary_videos": [
+    {"video_id":"OWqvSaOw-FE","status":"QUEUED_FOR_RESOLUTION"},
+    {"video_id":"9PtsVuBlwUQ","status":"QUEUED_FOR_RESOLUTION"},
+    {"video_id":"s9l1Nut9xvQ","status":"QUEUED_FOR_RESOLUTION"},
+    {"video_id":"19BILgcxvRI","status":"QUEUED_FOR_RESOLUTION"}
+  ],
+  "fields": ["timestamp","speaker","claim","person","organization","identifier","instrument","location","property","amount","authority","corroboration","contradiction","neo_node"],
+  "next": "FIN-015 Video-Derived Claim Ledger & Cross-Examination Matrix"
+}
