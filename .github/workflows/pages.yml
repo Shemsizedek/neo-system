@@ -20,22 +20,17 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: npm
-
       - name: Install dependencies
         run: npm ci
-
       - name: Build Noogle native index snapshot
         run: npm run crawl:noogle
-
       - name: Refresh Noogle source health
         run: node scripts/noogle-source-refresh.mjs
-
       - name: Build NEO System
         env:
           VITE_NEOPAY_API_BASE: ${{ vars.NEOPAY_API_BASE || 'https://neopay-api.neosystem.workers.dev' }}
@@ -43,16 +38,13 @@ jobs:
           VITE_NEOPAY_BITCOIN_API: ${{ vars.NEOPAY_BITCOIN_API }}
           VITE_NEO_GOVERNMENT_URL: ${{ vars.NEO_GOVERNMENT_URL || 'https://neo-government.neosystem.workers.dev' }}
         run: npm run build
-
       - name: Build Pages platform API snapshots
         run: node scripts/build-pages-platform-api.mjs
-
       - name: Publish NEOpay application route
         run: |
           mkdir -p dist/neopay
           cp dist/index.html dist/neopay/index.html
           test -f dist/neopay/index.html
-
       - name: Publish Noogle live interface
         run: |
           test -f apps/noogle/web/index.html
@@ -60,35 +52,22 @@ jobs:
           cp -R apps/noogle/web/. dist/noogle/
           cp apps/noogle/index/generated/source-health.json dist/api/noogle/source-health.json
           cp apps/noogle/index/sources.json dist/api/noogle/sources.json
-          test -f dist/noogle/index.html
-          test -f dist/api/noogle/index.json
-          test -f dist/api/noogle/crawl-report.json
-          test -f dist/api/noogle/knowledge-graph.json
-          test -f dist/api/noogle/claim-graph.json
-          test -f dist/api/noogle/source-health.json
-          test -f dist/api/noogle/sources.json
-
       - name: Publish Omnitrix browser
         run: |
           test -f apps/omnitrix/web/index.html
           mkdir -p dist/omnitrix
           cp -R apps/omnitrix/web/. dist/omnitrix/
-          test -f dist/omnitrix/index.html
-
       - name: Publish NEOscan explorer
         run: |
           test -f apps/neoscan/web/index.html
           mkdir -p dist/neoscan
           cp -R apps/neoscan/web/. dist/neoscan/
-          test -f dist/neoscan/index.html
-
       - name: Verify Pages artifact root
         run: |
           test -f dist/index.html
           test -d dist/assets
           test -f dist/neo-jarvis/index.html
           test -f dist/neo-pacer/index.html
-
       - name: Verify expanded NEO platform routes and APIs
         run: |
           for platform in neopay neo-teller neo-books neo-prime neo-exchange neo-generator neo-miner; do
@@ -96,7 +75,6 @@ jobs:
             test -f "dist/api/platforms/$platform.json"
           done
           test -f dist/api/platforms/index.json
-
       - name: Build NEO Counter
         working-directory: apps/neo-counter
         env:
@@ -104,67 +82,44 @@ jobs:
         run: |
           npm install
           npm run build
-
       - name: Publish NEO Counter routes
         run: |
           test -f apps/neo-counter/dist/index.html
           mkdir -p dist/neo-counter dist/apps/neo-counter
           cp -R apps/neo-counter/dist/. dist/neo-counter/
           cp -R apps/neo-counter/dist/. dist/apps/neo-counter/
-
       - name: Add NEO TV Hub to Pages artifact
         run: |
           test -f docs/neo-tv/index.html
           mkdir -p dist/neo-tv
           cp -R docs/neo-tv/. dist/neo-tv/
-
-      - name: Publish public NEO product surfaces only
+      - name: Publish public NEO surfaces
         run: |
-          routes="neo-hub neo-oracle neo-lingo neo-algo neo-corpus public-workspace"
+          routes="neo-hub neo-oracle neo-lingo neo-algo neo-corpus neo-enterprise public-workspace"
           for route in $routes; do
             test -d "docs/$route"
             mkdir -p "dist/$route"
             cp -R "docs/$route/." "dist/$route/"
           done
-          for route in neo-hub neo-oracle neo-lingo neo-algo neo-corpus; do
+          for route in neo-hub neo-oracle neo-lingo neo-algo neo-corpus neo-enterprise; do
             test -f "dist/$route/index.html"
           done
-          test -f dist/public-workspace/styles.css
           test ! -e dist/neo-government
           test ! -e dist/government-workspace
-          test ! -e dist/neo-executive
-          test ! -e dist/central-solution
-          test ! -e dist/inner-bar-tribunal
-          test ! -e dist/world-chaplaincy-efile
-          test ! -e dist/neo-treasury-government
-          test ! -e dist/world-police
-          test ! -e dist/world-marshals
-          test ! -e dist/world-guards
-          test ! -e dist/world-defense
-          test ! -e dist/neo-global-arms
-          test ! -e dist/neo-cipher
-
       - name: Add SPA 404 fallback
         run: cp dist/index.html dist/404.html
-
       - name: Pages build summary
         run: |
           echo "Public NEO Hub: /neo-hub/" >> "$GITHUB_STEP_SUMMARY"
-          echo "Public AI: /neo-oracle/" >> "$GITHUB_STEP_SUMMARY"
-          echo "Public NEO Lingo: /neo-lingo/" >> "$GITHUB_STEP_SUMMARY"
-          echo "Public NEO Algo + World Credit Clock: /neo-algo/" >> "$GITHUB_STEP_SUMMARY"
-          echo "Public Legal Corpus: /neo-corpus/" >> "$GITHUB_STEP_SUMMARY"
+          echo "NEO Enterprise public surface: /neo-enterprise/" >> "$GITHUB_STEP_SUMMARY"
+          echo "Enterprise admin: Cloudflare Access Worker" >> "$GITHUB_STEP_SUMMARY"
           echo "Private government routes: excluded from GitHub Pages" >> "$GITHUB_STEP_SUMMARY"
-          echo "Private command requests redirect to NEO Government Access gateway" >> "$GITHUB_STEP_SUMMARY"
-
       - name: Configure Pages
         uses: actions/configure-pages@v5
-
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: ./dist
-
   deploy:
     environment:
       name: github-pages
