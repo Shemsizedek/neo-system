@@ -5,6 +5,8 @@
     <application
         android:allowBackup="true"
         android:label="Omnitrix"
+        android:icon="@drawable/omnitrix_logo"
+        android:roundIcon="@drawable/omnitrix_logo"
         android:usesCleartextTraffic="false"
         android:theme="@android:style/Theme.Material.Light.NoActionBar">
         <activity android:name=".MainActivity" android:exported="true">

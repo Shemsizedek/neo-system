@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'apps/omnitrix-android/**'
+      - 'apps/noogle/web/**'
       - '.github/workflows/omnitrix-apk.yml'
   workflow_dispatch:
 
@@ -28,10 +29,10 @@ jobs:
       - name: Prepare consumer APK
         run: |
           mkdir -p release
-          cp apps/omnitrix-android/app/build/outputs/apk/debug/app-debug.apk release/Omnitrix-Browser-v1.0.0.apk
-          sha256sum release/Omnitrix-Browser-v1.0.0.apk > release/Omnitrix-Browser-v1.0.0.apk.sha256
+          cp apps/omnitrix-android/app/build/outputs/apk/debug/app-debug.apk release/Omnitrix-Browser-v1.1.0.apk
+          sha256sum release/Omnitrix-Browser-v1.1.0.apk > release/Omnitrix-Browser-v1.1.0.apk.sha256
       - uses: actions/upload-artifact@v4
         with:
-          name: Omnitrix-Browser-APK
+          name: Omnitrix-Browser-APK-v1.1.0
           path: release/*
           if-no-files-found: error
