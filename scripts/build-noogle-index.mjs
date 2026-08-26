@@ -1,6 +1,7 @@
 import fs from 'node:fs/promises';
 import { NoogleIndexStore } from '../apps/noogle/index/store.mjs';
 import { crawlDomain } from '../apps/noogle/index/domain-crawler.mjs';
+import { extractKnowledgeGraph } from '../apps/noogle/index/knowledge-graph.mjs';
 
 const registry = JSON.parse(await fs.readFile('apps/noogle/index/sources.json', 'utf8'));
 const store = new NoogleIndexStore('data/noogle-index.json');
@@ -32,6 +33,9 @@ await store.save();
 await fs.mkdir('public/api/noogle', { recursive: true });
 const snapshot = JSON.parse(await fs.readFile('data/noogle-index.json', 'utf8'));
 const reportPayload = { generatedAt: new Date().toISOString(), totalDocuments: snapshot.documents.length, sources: reports };
+const graph = extractKnowledgeGraph(snapshot.documents);
+
 await fs.writeFile('public/api/noogle/index.json', JSON.stringify(snapshot, null, 2));
 await fs.writeFile('public/api/noogle/crawl-report.json', JSON.stringify(reportPayload, null, 2));
-console.log(`Noogle native index contains ${snapshot.documents.length} documents`);
+await fs.writeFile('public/api/noogle/knowledge-graph.json', JSON.stringify(graph, null, 2));
+console.log(`Noogle native index contains ${snapshot.documents.length} documents and ${graph.nodes.length} graph nodes`);
