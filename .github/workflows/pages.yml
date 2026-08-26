@@ -41,6 +41,7 @@ jobs:
           VITE_NEOPAY_API_BASE: ${{ vars.NEOPAY_API_BASE || 'https://neopay-api.neosystem.workers.dev' }}
           VITE_NEOPAY_COUNTERPARTY_API: ${{ vars.NEOPAY_COUNTERPARTY_API }}
           VITE_NEOPAY_BITCOIN_API: ${{ vars.NEOPAY_BITCOIN_API }}
+          VITE_NEO_GOVERNMENT_URL: ${{ vars.NEO_GOVERNMENT_URL || 'https://neo-government.neosystem.workers.dev' }}
         run: npm run build
 
       - name: Build Pages platform API snapshots
@@ -55,21 +56,11 @@ jobs:
       - name: Publish Noogle live interface
         run: |
           test -f apps/noogle/web/index.html
-          test -f apps/noogle/web/app.js
-          test -f apps/noogle/web/styles.css
-          test -f apps/noogle/web/health.js
-          test -f apps/noogle/web/status.html
-          test -f apps/noogle/web/submit.html
           mkdir -p dist/noogle dist/api/noogle
           cp -R apps/noogle/web/. dist/noogle/
           cp apps/noogle/index/generated/source-health.json dist/api/noogle/source-health.json
           cp apps/noogle/index/sources.json dist/api/noogle/sources.json
           test -f dist/noogle/index.html
-          test -f dist/noogle/app.js
-          test -f dist/noogle/styles.css
-          test -f dist/noogle/health.js
-          test -f dist/noogle/status.html
-          test -f dist/noogle/submit.html
           test -f dist/api/noogle/index.json
           test -f dist/api/noogle/crawl-report.json
           test -f dist/api/noogle/knowledge-graph.json
@@ -80,34 +71,23 @@ jobs:
       - name: Publish Omnitrix browser
         run: |
           test -f apps/omnitrix/web/index.html
-          test -f apps/omnitrix/web/app.js
-          test -f apps/omnitrix/web/styles.css
-          test -f apps/omnitrix/web/miner-bridge.js
           mkdir -p dist/omnitrix
           cp -R apps/omnitrix/web/. dist/omnitrix/
           test -f dist/omnitrix/index.html
-          test -f dist/omnitrix/app.js
 
       - name: Publish NEOscan explorer
         run: |
           test -f apps/neoscan/web/index.html
-          test -f apps/neoscan/web/app.js
-          test -f apps/neoscan/web/styles.css
           mkdir -p dist/neoscan
           cp -R apps/neoscan/web/. dist/neoscan/
           test -f dist/neoscan/index.html
-          test -f dist/neoscan/app.js
 
       - name: Verify Pages artifact root
         run: |
           test -f dist/index.html
           test -d dist/assets
-
-      - name: Verify NEO JARVIS artifact
-        run: test -f dist/neo-jarvis/index.html
-
-      - name: Verify NEO PACER artifact
-        run: test -f dist/neo-pacer/index.html
+          test -f dist/neo-jarvis/index.html
+          test -f dist/neo-pacer/index.html
 
       - name: Verify expanded NEO platform routes and APIs
         run: |
@@ -131,59 +111,51 @@ jobs:
           mkdir -p dist/neo-counter dist/apps/neo-counter
           cp -R apps/neo-counter/dist/. dist/neo-counter/
           cp -R apps/neo-counter/dist/. dist/apps/neo-counter/
-          test -f dist/neo-counter/index.html
-          test -f dist/apps/neo-counter/index.html
 
       - name: Add NEO TV Hub to Pages artifact
         run: |
           test -f docs/neo-tv/index.html
           mkdir -p dist/neo-tv
           cp -R docs/neo-tv/. dist/neo-tv/
-          test -f dist/neo-tv/index.html
 
-      - name: Publish dual-surface NEO hubs and workspaces
+      - name: Publish public NEO product surfaces only
         run: |
-          routes="neo-hub neo-oracle neo-lingo neo-algo neo-corpus neo-government government-workspace public-workspace neo-executive central-solution inner-bar-tribunal world-chaplaincy-efile neo-treasury-government world-police world-marshals world-guards world-defense neo-global-arms neo-cipher"
+          routes="neo-hub neo-oracle neo-lingo neo-algo neo-corpus public-workspace"
           for route in $routes; do
             test -d "docs/$route"
             mkdir -p "dist/$route"
             cp -R "docs/$route/." "dist/$route/"
           done
-          for route in neo-hub neo-oracle neo-lingo neo-algo neo-corpus neo-government neo-executive central-solution inner-bar-tribunal world-chaplaincy-efile neo-treasury-government world-police world-marshals world-guards world-defense neo-global-arms neo-cipher; do
+          for route in neo-hub neo-oracle neo-lingo neo-algo neo-corpus; do
             test -f "dist/$route/index.html"
           done
-          test -f dist/government-workspace/workspace.js
-          test -f dist/government-workspace/styles.css
           test -f dist/public-workspace/styles.css
+          test ! -e dist/neo-government
+          test ! -e dist/government-workspace
+          test ! -e dist/neo-executive
+          test ! -e dist/central-solution
+          test ! -e dist/inner-bar-tribunal
+          test ! -e dist/world-chaplaincy-efile
+          test ! -e dist/neo-treasury-government
+          test ! -e dist/world-police
+          test ! -e dist/world-marshals
+          test ! -e dist/world-guards
+          test ! -e dist/world-defense
+          test ! -e dist/neo-global-arms
+          test ! -e dist/neo-cipher
 
       - name: Add SPA 404 fallback
         run: cp dist/index.html dist/404.html
 
       - name: Pages build summary
         run: |
-          echo "Root government system map: /#/command" >> "$GITHUB_STEP_SUMMARY"
           echo "Public NEO Hub: /neo-hub/" >> "$GITHUB_STEP_SUMMARY"
-          echo "NEO Oracle: /neo-oracle/" >> "$GITHUB_STEP_SUMMARY"
-          echo "NEO Lingo: /neo-lingo/" >> "$GITHUB_STEP_SUMMARY"
-          echo "NEO Algo + World Credit Clock: /neo-algo/" >> "$GITHUB_STEP_SUMMARY"
+          echo "Public AI: /neo-oracle/" >> "$GITHUB_STEP_SUMMARY"
+          echo "Public NEO Lingo: /neo-lingo/" >> "$GITHUB_STEP_SUMMARY"
+          echo "Public NEO Algo + World Credit Clock: /neo-algo/" >> "$GITHUB_STEP_SUMMARY"
           echo "Public Legal Corpus: /neo-corpus/" >> "$GITHUB_STEP_SUMMARY"
-          echo "Noogle: /noogle/" >> "$GITHUB_STEP_SUMMARY"
-          echo "Omnitrix: /omnitrix/" >> "$GITHUB_STEP_SUMMARY"
-          echo "NEOscan: /neoscan/" >> "$GITHUB_STEP_SUMMARY"
-          echo "NEO JARVIS: /neo-jarvis/" >> "$GITHUB_STEP_SUMMARY"
-          echo "NEO PACER: /neo-pacer/" >> "$GITHUB_STEP_SUMMARY"
-          echo "NEO Counter: /neo-counter/ + /apps/neo-counter/" >> "$GITHUB_STEP_SUMMARY"
-          echo "NEO TV: /neo-tv/" >> "$GITHUB_STEP_SUMMARY"
-          echo "NEOpay application: /neopay/" >> "$GITHUB_STEP_SUMMARY"
-          echo "NEO Teller: /neo-teller/" >> "$GITHUB_STEP_SUMMARY"
-          echo "NEO Books + CFO: /neo-books/" >> "$GITHUB_STEP_SUMMARY"
-          echo "NEO Prime: /neo-prime/" >> "$GITHUB_STEP_SUMMARY"
-          echo "NEO Exchange: /neo-exchange/" >> "$GITHUB_STEP_SUMMARY"
-          echo "NEO Generator: /neo-generator/" >> "$GITHUB_STEP_SUMMARY"
-          echo "NEO Miner: /neo-miner/" >> "$GITHUB_STEP_SUMMARY"
-          echo "Private module workspaces published under their named routes" >> "$GITHUB_STEP_SUMMARY"
-          echo "Pages API registry: /api/platforms/index.json" >> "$GITHUB_STEP_SUMMARY"
-          echo "SPA fallback: /404.html" >> "$GITHUB_STEP_SUMMARY"
+          echo "Private government routes: excluded from GitHub Pages" >> "$GITHUB_STEP_SUMMARY"
+          echo "Private command requests redirect to NEO Government Access gateway" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
