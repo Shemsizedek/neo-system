@@ -1,0 +1,29 @@
+{
+  "schema": "neo.omnitrix.profile/v1",
+  "profileId": "NEO-0001",
+  "handle": "NEO",
+  "displayName": "NEO",
+  "profileClass": "founder",
+  "status": "active",
+  "theme": "NEO Matrix",
+  "currencyDisplay": "∞",
+  "home": "omnitrix://new-tab",
+  "services": [
+    "Noogle",
+    "NEOpay",
+    "NEO Explorer",
+    "NEO DEX",
+    "NEO Wire",
+    "NEO TV",
+    "NEOsync",
+    "NEO Miner"
+  ],
+  "privacy": {
+    "localFirst": true,
+    "publishPersonalData": false,
+    "publishWalletSecrets": false,
+    "publishPrivateKeys": false
+  },
+  "created": "2026-08-25",
+  "note": "Founding Omnitrix profile. Public repository contains no authentication secrets, private keys, recovery phrases, or sensitive personal data."
+}
