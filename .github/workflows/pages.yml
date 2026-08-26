@@ -73,8 +73,20 @@ jobs:
           test -f dist/api/noogle/index.json
           test -f dist/api/noogle/crawl-report.json
           test -f dist/api/noogle/knowledge-graph.json
+          test -f dist/api/noogle/claim-graph.json
           test -f dist/api/noogle/source-health.json
           test -f dist/api/noogle/sources.json
+
+      - name: Publish Omnitrix browser
+        run: |
+          test -f apps/omnitrix/web/index.html
+          test -f apps/omnitrix/web/app.js
+          test -f apps/omnitrix/web/styles.css
+          test -f apps/omnitrix/web/miner-bridge.js
+          mkdir -p dist/omnitrix
+          cp -R apps/omnitrix/web/. dist/omnitrix/
+          test -f dist/omnitrix/index.html
+          test -f dist/omnitrix/app.js
 
       - name: Verify Pages artifact root
         run: |
@@ -126,11 +138,13 @@ jobs:
         run: |
           echo "Root build: verified" >> "$GITHUB_STEP_SUMMARY"
           echo "Noogle: /noogle/" >> "$GITHUB_STEP_SUMMARY"
+          echo "Omnitrix: /omnitrix/" >> "$GITHUB_STEP_SUMMARY"
           echo "Noogle status: /noogle/status.html" >> "$GITHUB_STEP_SUMMARY"
           echo "Noogle submissions: /noogle/submit.html" >> "$GITHUB_STEP_SUMMARY"
           echo "Noogle native index: /api/noogle/index.json" >> "$GITHUB_STEP_SUMMARY"
           echo "Noogle crawl report: /api/noogle/crawl-report.json" >> "$GITHUB_STEP_SUMMARY"
           echo "Noogle knowledge graph: /api/noogle/knowledge-graph.json" >> "$GITHUB_STEP_SUMMARY"
+          echo "Noogle claim graph: /api/noogle/claim-graph.json" >> "$GITHUB_STEP_SUMMARY"
           echo "Noogle source health: /api/noogle/source-health.json" >> "$GITHUB_STEP_SUMMARY"
           echo "NEO JARVIS: /neo-jarvis/" >> "$GITHUB_STEP_SUMMARY"
           echo "NEO PACER: /neo-pacer/" >> "$GITHUB_STEP_SUMMARY"
