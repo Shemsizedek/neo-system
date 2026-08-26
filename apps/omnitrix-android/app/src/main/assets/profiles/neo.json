@@ -1,5 +1,5 @@
 {
-  "schema": "neo.omnitrix.profile/v1",
+  "schema": "neo.omnitrix.profile/v2",
   "profileId": "NEO-0001",
   "handle": "NEO",
   "displayName": "NEO",
@@ -8,6 +8,25 @@
   "theme": "NEO Matrix",
   "currencyDisplay": "∞",
   "home": "omnitrix://new-tab",
+  "avatarText": "NEO",
+  "wallet": {
+    "publicAddress": "",
+    "cesAccountNumber": ""
+  },
+  "permissions": {
+    "systemAdmin": true,
+    "manageProfiles": true,
+    "manageApps": true,
+    "manageWalletBindings": true,
+    "approveTransactions": true,
+    "signTransactions": false
+  },
+  "security": {
+    "localOnly": true,
+    "secretStorageAllowed": false,
+    "privateKeyStorageAllowed": false,
+    "recoveryPhraseStorageAllowed": false
+  },
   "services": [
     "Noogle",
     "NEOpay",
@@ -25,5 +44,5 @@
     "publishPrivateKeys": false
   },
   "created": "2026-08-25",
-  "note": "Founding Omnitrix profile. Public repository contains no authentication secrets, private keys, recovery phrases, or sensitive personal data."
+  "note": "Founding Omnitrix profile. Public repository contains no authentication secrets, private keys, recovery phrases, or sensitive personal data. Runtime bindings are stored locally on-device."
 }
