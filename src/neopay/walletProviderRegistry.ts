@@ -1,16 +1,16 @@
 import type{BitcoinSignerProvider,SignerCapabilities}from'./signerAdapters'
+import{discoverPsbtWalletAdapters}from'./psbtWalletAdapters'
 
 export type WalletProviderRecord={id:string;name:string;detected:boolean;compatible:boolean;mode:'raw'|'psbt'|'unavailable';capabilities:SignerCapabilities;note:string}
-
 type UniSatLike={requestAccounts?:()=>Promise<string[]>;getAccounts?:()=>Promise<string[]>;getNetwork?:()=>Promise<string>;signPsbt?:(psbtHex:string,options?:unknown)=>Promise<string>;pushPsbt?:(psbtHex:string)=>Promise<string>}
 declare global{interface Window{unisat?:UniSatLike}}
-
 function caps(partial:Partial<SignerCapabilities>):SignerCapabilities{return{rawTransaction:false,psbt:false,legacy:false,segwit:false,taproot:false,...partial}}
 export function discoverWalletProviders():WalletProviderRecord[]{
  const neo=window.neoBitcoinSigner,raw=!!neo&&typeof neo.connect==='function'&&typeof neo.signRawTransaction==='function'
  const rows:WalletProviderRecord[]=[{id:'neo-injected',name:neo?.name||'NEOpay-compatible injected signer',detected:!!neo,compatible:raw,mode:raw?'raw':'unavailable',capabilities:caps({rawTransaction:raw,psbt:typeof neo?.signPsbt==='function',legacy:raw,segwit:raw,taproot:Boolean(neo?.capabilities?.taproot)}),note:raw?'Ready for NEOpay raw-transaction signing.':'Detected only when a provider exposes connect() and signRawTransaction().'}]
  const u=window.unisat,detected=!!u,psbt=typeof u?.signPsbt==='function'&&typeof u?.pushPsbt==='function'
  rows.push({id:'unisat',name:'UniSat Wallet',detected,compatible:psbt,mode:psbt?'psbt':'unavailable',capabilities:caps({psbt:typeof u?.signPsbt==='function',legacy:false,segwit:true,taproot:true}),note:!detected?'Install/enable UniSat to make its browser provider detectable.':psbt?'Ready for NEOpay PSBT signing and wallet broadcast on native SegWit/Taproot addresses.':'UniSat detected, but signPsbt() and pushPsbt() are both required for NEOpay PSBT settlement.'})
+ for(const a of discoverPsbtWalletAdapters())rows.push({id:a.id,name:a.name,detected:a.detected,compatible:a.detected,mode:a.detected?'psbt':'unavailable',capabilities:caps({psbt:true,legacy:false,segwit:true,taproot:true}),note:a.detected?'Sats Connect PSBT provider detected. NEOpay will request the payment account and wallet approval at send time.':'Install/enable Xverse or provide a Sats Connect request bridge to enable this PSBT rail.'})
  return rows
 }
 export async function connectUniSat(){const u=window.unisat;if(!u)throw new Error('UniSat Wallet is not detected.');const accounts=await u.requestAccounts?.()||await u.getAccounts?.()||[];const address=accounts[0];if(!address)throw new Error('UniSat did not return an account.');const network=String(await u.getNetwork?.()||'livenet').toLowerCase();if(!['livenet','mainnet','bitcoin'].includes(network))throw new Error(`NEOpay requires Bitcoin mainnet. UniSat reported ${network}.`);return{address,network:'mainnet'}}
