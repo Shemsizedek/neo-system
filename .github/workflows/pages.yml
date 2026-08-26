@@ -71,6 +71,7 @@ jobs:
           test -f dist/noogle/status.html
           test -f dist/noogle/submit.html
           test -f dist/api/noogle/index.json
+          test -f dist/api/noogle/crawl-report.json
           test -f dist/api/noogle/source-health.json
           test -f dist/api/noogle/sources.json
 
@@ -127,6 +128,7 @@ jobs:
           echo "Noogle status: /noogle/status.html" >> "$GITHUB_STEP_SUMMARY"
           echo "Noogle submissions: /noogle/submit.html" >> "$GITHUB_STEP_SUMMARY"
           echo "Noogle native index: /api/noogle/index.json" >> "$GITHUB_STEP_SUMMARY"
+          echo "Noogle crawl report: /api/noogle/crawl-report.json" >> "$GITHUB_STEP_SUMMARY"
           echo "Noogle source health: /api/noogle/source-health.json" >> "$GITHUB_STEP_SUMMARY"
           echo "NEO JARVIS: /neo-jarvis/" >> "$GITHUB_STEP_SUMMARY"
           echo "NEO PACER: /neo-pacer/" >> "$GITHUB_STEP_SUMMARY"
