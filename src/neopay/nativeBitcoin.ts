@@ -1,0 +1,40 @@
+import{getBitcoinUtxos}from'./bitcoinService'
+import{isLikelyBitcoinAddress}from'./counterpartyService'
+
+export type BitcoinFeeMode='economy'|'normal'|'priority'
+export type BitcoinFeeRates={economy:number;normal:number;priority:number;source:string;updatedAt:string}
+export type NativeBitcoinPlan={unsignedTxHex:string;amountSats:number;feeSats:number;feeRate:number;changeSats:number;selectedUtxos:number;inputSats:number;destination:string;source:string;feeMode:BitcoinFeeMode}
+
+const DUST_SATS=546
+const MAX_FEE_SATS=200_000
+const B58='123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
+function bytesToHex(bytes:number[]|Uint8Array){return Array.from(bytes).map(x=>x.toString(16).padStart(2,'0')).join('')}
+function hexToBytes(hex:string){if(hex.length%2)throw new Error('Invalid hex.');const out=[];for(let i=0;i<hex.length;i+=2)out.push(parseInt(hex.slice(i,i+2),16));return out}
+function concat(...parts:number[][]){return parts.flat()}
+function u32le(n:number){return[n&255,(n>>>8)&255,(n>>>16)&255,(n>>>24)&255]}
+function u64le(n:number){let x=BigInt(n);const out:number[]=[];for(let i=0;i<8;i++){out.push(Number(x&255n));x>>=8n}return out}
+function varint(n:number){if(n<0xfd)return[n];if(n<=0xffff)return[0xfd,n&255,(n>>>8)&255];if(n<=0xffffffff)return[0xfe,...u32le(n)];throw new Error('Value too large.')}
+function reverseHex(hex:string){return bytesToHex(hexToBytes(hex).reverse())}
+async function sha256(bytes:Uint8Array){return new Uint8Array(await crypto.subtle.digest('SHA-256',bytes))}
+async function verifyBase58Check(raw:number[]){if(raw.length<5)return false;const body=new Uint8Array(raw.slice(0,-4)),check=raw.slice(-4);const a=await sha256(body),b=await sha256(a);return check.every((v,i)=>v===b[i])}
+async function decodeBase58(address:string){let n=0n;for(const c of address){const i=B58.indexOf(c);if(i<0)throw new Error('Invalid Base58 address.');n=n*58n+BigInt(i)}const body:number[]=[];while(n>0n){body.unshift(Number(n&255n));n>>=8n}for(const c of address){if(c==='1')body.unshift(0);else break}if(!(await verifyBase58Check(body)))throw new Error('Bitcoin address checksum is invalid.');return body}
+
+const BECH='qpzry9x8gf2tvdw0s3jn54khce6mua7l'
+function polymod(values:number[]){let chk=1;const gen=[0x3b6a57b2,0x26508e6d,0x1ea119fa,0x3d4233dd,0x2a1462b3];for(const v of values){const top=chk>>>25;chk=(chk&0x1ffffff)<<5^v;for(let i=0;i<5;i++)if((top>>>i)&1)chk^=gen[i]}return chk>>>0}
+function hrpExpand(hrp:string){const out:number[]=[];for(const c of hrp)out.push(c.charCodeAt(0)>>5);out.push(0);for(const c of hrp)out.push(c.charCodeAt(0)&31);return out}
+function convertBits(data:number[],from:number,to:number,pad:boolean){let acc=0,bits=0;const out:number[]=[],maxv=(1<<to)-1;for(const value of data){if(value<0||(value>>from)!==0)throw new Error('Invalid witness program.');acc=(acc<<from)|value;bits+=from;while(bits>=to){bits-=to;out.push((acc>>bits)&maxv)}}if(pad){if(bits)out.push((acc<<(to-bits))&maxv)}else if(bits>=from||((acc<<(to-bits))&maxv))throw new Error('Invalid witness padding.');return out}
+function decodeBech32(address:string){if(address!==address.toLowerCase()&&address!==address.toUpperCase())throw new Error('Mixed-case Bech32 address.');const a=address.toLowerCase(),pos=a.lastIndexOf('1');if(pos<1||pos+7>a.length)throw new Error('Invalid Bech32 address.');const hrp=a.slice(0,pos),data=[...a.slice(pos+1)].map(c=>{const i=BECH.indexOf(c);if(i<0)throw new Error('Invalid Bech32 character.');return i});if(hrp!=='bc')throw new Error('NEOpay native send requires Bitcoin mainnet.');const version=data[0],check=polymod([...hrpExpand(hrp),...data]),expected=version===0?1:0x2bc830a3;if(check!==expected)throw new Error('Bitcoin address checksum is invalid.');const program=convertBits(data.slice(1,-6),5,8,false);if(version>16||program.length<2||program.length>40||version===0&&![20,32].includes(program.length))throw new Error('Unsupported Bitcoin witness address.');return{version,program}}
+export async function addressToScript(address:string){const a=address.trim();if(a.toLowerCase().startsWith('bc1')){const{version,program}=decodeBech32(a);const op=version===0?0x00:0x50+version;return[op,program.length,...program]}const raw=await decodeBase58(a);if(raw.length!==25)throw new Error('Unsupported Bitcoin address length.');const version=raw[0],hash=raw.slice(1,21);if(version===0x00)return[0x76,0xa9,0x14,...hash,0x88,0xac];if(version===0x05)return[0xa9,0x14,...hash,0x87];throw new Error('NEOpay native send requires a Bitcoin mainnet address.')}
+function inputVbytes(source:string){const a=source.toLowerCase();if(a.startsWith('bc1p'))return58;if(a.startsWith('bc1q'))return68;if(source.startsWith('3'))return91;return148}
+async function outputVbytes(address:string){const script=await addressToScript(address);return 8+varint(script.length).length+script.length}
+export async function getBitcoinFeeRates():Promise<BitcoinFeeRates>{try{const r=await fetch('https://mempool.space/api/v1/fees/recommended',{headers:{Accept:'application/json'},cache:'no-store'});if(!r.ok)throw new Error();const x:any=await r.json();return{economy:Math.max(1,Number(x.economyFee||x.hourFee||1)),normal:Math.max(1,Number(x.halfHourFee||x.hourFee||3)),priority:Math.max(1,Number(x.fastestFee||x.halfHourFee||5)),source:'mempool.space',updatedAt:new Date().toISOString()}}catch{return{economy:2,normal:5,priority:10,source:'fallback',updatedAt:new Date().toISOString()}}}
+function estimateFee(inputs:number,outV:number,changeV:number,rate:number){return Math.ceil((10+inputs*148+outV+changeV)*rate)}
+export async function buildNativeBitcoinTransaction(input:{source:string;destination:string;amountBtc:number;feeMode?:BitcoinFeeMode;maxFeeSats?:number}):Promise<NativeBitcoinPlan>{
+ const source=input.source.trim(),destination=input.destination.trim();if(!isLikelyBitcoinAddress(source)||!isLikelyBitcoinAddress(destination))throw new Error('Native Bitcoin send requires valid source and destination addresses.');const amountSats=Math.round(Number(input.amountBtc)*100_000_000);if(!Number.isSafeInteger(amountSats)||amountSats<=0)throw new Error('Enter a valid BTC amount greater than zero.');
+ const feeMode=input.feeMode||'normal',rates=await getBitcoinFeeRates(),feeRate=rates[feeMode],utxos=(await getBitcoinUtxos(source)).filter((u:any)=>u?.status?.confirmed!==false&&Number(u?.value)>0&&/^[0-9a-fA-F]{64}$/.test(String(u?.txid||''))).sort((a:any,b:any)=>Number(b.value)-Number(a.value));if(!utxos.length)throw new Error('No spendable Bitcoin UTXOs are available for this wallet.')
+ const destScript=await addressToScript(destination),changeScript=await addressToScript(source),destV=8+varint(destScript.length).length+destScript.length,changeV=8+varint(changeScript.length).length+changeScript.length,inV=inputVbytes(source);let selected:any[]=[];let total=0,fee=0,change=0
+ for(const u of utxos){selected.push(u);total+=Number(u.value);fee=Math.ceil((10+selected.length*inV+destV+changeV)*feeRate);if(total>=amountSats+fee)break}
+ if(total<amountSats+fee)throw new Error(`Insufficient BTC. Need ${(amountSats+fee)/1e8} BTC including estimated network fee.`);change=total-amountSats-fee;if(change>0&&change<DUST_SATS){fee+=change;change=0}
+ const cap=Math.min(MAX_FEE_SATS,Math.max(1_000,Number(input.maxFeeSats||MAX_FEE_SATS)));if(fee>cap)throw new Error(`Estimated Bitcoin fee ${fee.toLocaleString()} sats exceeds the NEOpay fee cap of ${cap.toLocaleString()} sats.`)
+ const inputs=selected.flatMap(u=>concat(hexToBytes(reverseHex(String(u.txid))),u32le(Number(u.vout)),[0x00],u32le(0xfffffffd)));const outputs:number[][]=[concat(u64le(amountSats),varint(destScript.length),destScript)];if(change>=DUST_SATS)outputs.push(concat(u64le(change),varint(changeScript.length),changeScript));const raw=concat(u32le(2),varint(selected.length),inputs,varint(outputs.length),...outputs,u32le(0));return{unsignedTxHex:bytesToHex(raw),amountSats,feeSats:fee,feeRate,changeSats:change,selectedUtxos:selected.length,inputSats:total,destination,source,feeMode}
+}
