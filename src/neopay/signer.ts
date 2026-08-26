@@ -1,4 +1,5 @@
 import{runTransactionPreflight}from'./preflight'
+import{buildTransactionReview,requestTransactionApproval}from'./transactionReview'
 
 export type SignerState={available:boolean;connected:boolean;name:string;address?:string;network?:string}
 export type SignRequest={unsignedTxHex:string;summary:Record<string,string|number|boolean|undefined>}
@@ -42,7 +43,9 @@ export class NEOpaySigner{
     const source=typeof req.summary?.source==='string'?req.summary.source.trim():''
     if(!source)throw new Error('Transaction source address is missing from the approval summary.')
     if(source.toLowerCase()!==this.session.address.toLowerCase())throw new Error(`Connected wallet ${this.session.address} does not control transaction source ${source}. Load the signer address before approving.`)
-    await runTransactionPreflight(source,req.summary)
+    const preflight=await runTransactionPreflight(source,req.summary)
+    const review=buildTransactionReview(req.unsignedTxHex,req.summary,preflight)
+    if(!requestTransactionApproval(review))throw new Error('Transaction approval cancelled.')
     const signed=await p.signRawTransaction(req.unsignedTxHex)
     if(!/^[0-9a-fA-F]{100,400000}$/.test(String(signed||''))||signed.length%2)throw new Error('Wallet returned an invalid transaction.')
     return signed
