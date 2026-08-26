@@ -1,0 +1,64 @@
+{
+  "schema":"neo.omnitrix.suite/v1",
+  "version":"3.0.0",
+  "brand":"Omnitrix Suit",
+  "profile":"NEO-0001",
+  "categories":[
+    {"id":"search","name":"Search & Information","apps":[
+      {"id":"noogle-search","name":"Noogle Search","description":"Core global web search engine.","status":"live","route":"browser"},
+      {"id":"noogle-maps","name":"Noogle Maps","description":"Navigation, traffic and local business discovery.","status":"foundation"},
+      {"id":"noogle-earth","name":"Noogle Earth","description":"3D virtual globe and geospatial exploration.","status":"foundation"},
+      {"id":"noogle-flights","name":"Noogle Flights","description":"Travel search for flights and itineraries.","status":"foundation"},
+      {"id":"noogle-finance","name":"Noogle Finance","description":"Live market data, portfolio intelligence and financial news.","status":"live","route":"market"},
+      {"id":"noogle-lens","name":"Noogle Lens","description":"Camera-powered visual search and recognition.","status":"foundation"},
+      {"id":"noogle-translate","name":"Noogle Translate","description":"Multilingual translation service.","status":"foundation"},
+      {"id":"noogle-news","name":"Noogle News","description":"Aggregated global news feed.","status":"foundation"}
+    ]},
+    {"id":"productivity","name":"Productivity & Collaboration","apps":[
+      {"id":"neomail","name":"Neomail","description":"NEO email service.","status":"foundation"},
+      {"id":"noogle-cloud","name":"Noogle Cloud","description":"Cloud storage, synchronization and backup.","status":"foundation"},
+      {"id":"noogle-docs","name":"Noogle Docs","description":"Collaborative word processor.","status":"foundation"},
+      {"id":"noogle-sheets","name":"Noogle Sheets","description":"Collaborative spreadsheet editor.","status":"foundation"},
+      {"id":"noogle-slides","name":"Noogle Slides","description":"Presentation authoring software.","status":"foundation"},
+      {"id":"noogle-forms","name":"Noogle Forms","description":"Survey and form creator.","status":"foundation"},
+      {"id":"noogle-calendar","name":"Noogle Calendar","description":"Scheduling and time management.","status":"foundation"},
+      {"id":"noogle-keep","name":"Noogle Keep","description":"Notes, lists and lightweight capture.","status":"foundation"},
+      {"id":"noogle-meet","name":"Noogle Meet","description":"Video conferencing platform.","status":"foundation"},
+      {"id":"noogle-chat","name":"Noogle Chat","description":"Team and community messaging.","status":"foundation"}
+    ]},
+    {"id":"media","name":"Media & Entertainment","apps":[
+      {"id":"neotube","name":"NeoTube","description":"Video sharing and streaming platform.","status":"foundation"},
+      {"id":"neotube-music","name":"NeoTube Music","description":"Music streaming service.","status":"foundation"},
+      {"id":"neotube-tv","name":"NeoTube TV","description":"Live TV and subscription streaming.","status":"foundation"},
+      {"id":"noogle-photos","name":"Noogle Photos","description":"Photo storage, organization and editing.","status":"foundation"},
+      {"id":"noogle-podcasts","name":"Noogle Podcasts","description":"Podcast directory and listening platform.","status":"foundation"},
+      {"id":"noogle-books","name":"Noogle Books","description":"Digital book search, library and preview.","status":"foundation"}
+    ]},
+    {"id":"platforms","name":"Platforms & Operating Systems","apps":[
+      {"id":"android","name":"Android","description":"Android compatibility and application adapter layer.","status":"adapter"},
+      {"id":"omnitrix-os","name":"OmnitrixOS","description":"Operating system foundation for Omnibooks.","status":"foundation"},
+      {"id":"noogle-omnitrix","name":"Noogle Omnitrix","description":"NEO web browser and search surface.","status":"live","route":"browser"},
+      {"id":"noogle-play","name":"Noogle Play Store","description":"Storefront for NEO apps, games, media and compatible external app adapters.","status":"foundation"},
+      {"id":"noogle-tv-os","name":"Noogle TV / Android TV","description":"NEO smart TV operating environment.","status":"foundation"},
+      {"id":"neo-wear","name":"NEO Wear OS","description":"Smartwatch operating environment.","status":"foundation"}
+    ]},
+    {"id":"hardware","name":"Smart Home & Hardware","apps":[
+      {"id":"noogle-home","name":"Noogle Home","description":"Smart speakers, displays, thermostats, cameras and home control.","status":"foundation"},
+      {"id":"neopixel","name":"NeoPixel","description":"NEO smartphones, tablets and smartwatches.","status":"foundation"},
+      {"id":"omnicast","name":"Omnicast","description":"Media streaming and casting devices.","status":"foundation"},
+      {"id":"neofit","name":"NeoFit","description":"Fitness trackers and health software.","status":"foundation"},
+      {"id":"noogle-fi","name":"Noogle Fi Wireless","description":"NEO Wire mobile network and virtual carrier service.","status":"foundation"}
+    ]},
+    {"id":"account","name":"Account & Safety","apps":[
+      {"id":"noogle-account","name":"Noogle Account","description":"Central profile, identity and device management.","status":"live","route":"home"},
+      {"id":"noogle-neo","name":"Noogle Neo","description":"Expanded storage subscription and device backup.","status":"foundation"},
+      {"id":"noogle-pay","name":"Noogle Pay / Wallet","description":"NEOpay wallet and payment system for Noogle.","status":"live","route":"wallet"},
+      {"id":"find-device","name":"Noogle Find My Device","description":"Locate and protect lost NEO hardware.","status":"foundation"},
+      {"id":"authenticator","name":"Noogle Authenticator","description":"Two-factor authentication and local security codes.","status":"foundation"},
+      {"id":"voice","name":"Noogle Voice / Talk","description":"Telephone, VoIP and NEO Wire calling.","status":"foundation"},
+      {"id":"family-link","name":"Noogle Family Link","description":"Parental controls, permissions and screen-time management.","status":"foundation"},
+      {"id":"neo-miner","name":"NEO Miner","description":"Authenticated external Bitcoin miner adapter and telemetry center.","status":"live","route":"miner"}
+    ]}
+  ],
+  "adapterPolicy":{"externalApps":"Launch installed compatible apps through Android intents or approved web/API adapters; do not copy proprietary binaries or private APIs.","identity":"All suite apps inherit the active Omnitrix profile and permission boundary.","secrets":"Private keys, passwords and authentication secrets must never be stored in the public suite registry."}
+}
