@@ -8,7 +8,7 @@ import {controllerSnapshot,loadControllerConfig} from './controller.mjs'
 test('controller snapshot identifies appliance version',()=>{
   const s=controllerSnapshot({startedAt:'2026-01-01T00:00:00.000Z',agentState:'RUNNING',discovered:[{host:'192.168.1.10'}]})
   assert.equal(s.product,'NEO Miner Controller')
-  assert.equal(s.version,'0.7.0')
+  assert.equal(s.version,'0.8.0')
   assert.equal(s.agentState,'RUNNING')
   assert.equal(s.discoveredMiners.length,1)
 })
