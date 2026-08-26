@@ -7,7 +7,7 @@ on:
     paths:
       - 'scripts/neo-router-worker.mjs'
       - 'server/neo-router/**'
-      - 'data/router/**'
+      - 'data/router/providers.json'
       - '.github/workflows/neo-router-worker.yml'
   schedule:
     - cron: "11 * * * *"
@@ -50,5 +50,5 @@ jobs:
           git config user.name "neo-router-bot"
           git config user.email "neo-router-bot@users.noreply.github.com"
           git add data/router/state.json
-          git commit -m "chore(router): persist GitHub worker state [skip ci]"
+          git commit -m "chore(router): persist GitHub worker state"
           git push origin HEAD:main
