@@ -116,7 +116,7 @@ public class MainActivity extends Activity {
         s.setDisplayZoomControls(false);
         s.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
         s.setSafeBrowsingEnabled(true);
-        CookieManager.getInstance().setAcceptCookie(true);
+        android.webkit.CookieManager.getInstance().setAcceptCookie(true);
         web.setWebChromeClient(new WebChromeClient());
         web.setWebViewClient(new WebViewClient() {
             @Override public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest req) {
@@ -147,11 +147,7 @@ public class MainActivity extends Activity {
             web.loadUrl("https://" + value);
         } else {
             pendingNoogleQuery = value;
-            if (web.getUrl() != null && web.getUrl().startsWith(NOOGLE)) {
-                web.loadUrl(NOOGLE);
-            } else {
-                web.loadUrl(NOOGLE);
-            }
+            web.loadUrl(NOOGLE);
         }
     }
 
