@@ -2,6 +2,15 @@
   "version": 1,
   "storage": "github",
   "missions": [],
-  "updatedAt": null,
-  "lastRun": null
+  "updatedAt": "2026-08-26T05:50:05.621Z",
+  "lastRun": {
+    "workerId": "github-actions-worker-v4",
+    "at": "2026-08-26T05:50:05.621Z",
+    "runId": "32935576668"
+  },
+  "schemaVersion": 3,
+  "savedAt": "2026-08-26T05:50:05.620Z",
+  "approvals": [],
+  "connectors": [],
+  "events": []
 }
