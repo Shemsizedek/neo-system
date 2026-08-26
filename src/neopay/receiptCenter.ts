@@ -1,0 +1,104 @@
+import{routedFetch}from'./routerClient'
+import type{TransactionReview}from'./transactionReview'
+
+export type ReceiptState='submitted'|'mempool'|'confirmed'|'failed'
+export type NEOpayReceipt={txid:string;state:ReceiptState;confirmations:number;blockHeight?:number;submittedAt:string;verifiedAt?:string;review:TransactionReview;error?:string}
+
+const STORAGE_KEY='neopay.receipts.v1'
+const EVENT_NAME='neopay:receipts'
+let pendingReview:TransactionReview|null=null
+let monitor:number|undefined
+
+function safeWindow(){return typeof window!=='undefined'}
+function readStore():NEOpayReceipt[]{
+ if(!safeWindow())return[]
+ try{const raw=window.localStorage.getItem(STORAGE_KEY);const parsed=raw?JSON.parse(raw):[];return Array.isArray(parsed)?parsed.slice(0,100):[]}catch{return[]}
+}
+function writeStore(receipts:NEOpayReceipt[]){
+ if(!safeWindow())return
+ try{window.localStorage.setItem(STORAGE_KEY,JSON.stringify(receipts.slice(0,100)))}catch{}
+ window.dispatchEvent(new CustomEvent(EVENT_NAME,{detail:receipts}))
+ renderCenter(receipts)
+}
+export function listReceipts(){return readStore()}
+export function setPendingTransactionReview(review:TransactionReview){pendingReview=review}
+export function clearPendingTransactionReview(){pendingReview=null}
+
+export function registerBroadcastReceipt(txid:string){
+ if(!pendingReview)return null
+ const receipt:NEOpayReceipt={txid,state:'submitted',confirmations:0,submittedAt:new Date().toISOString(),review:pendingReview}
+ pendingReview=null
+ const next=[receipt,...readStore().filter(r=>r.txid!==txid)]
+ writeStore(next)
+ void verifyReceipt(txid)
+ startReceiptMonitor()
+ return receipt
+}
+
+async function statusFor(txid:string){
+ const{res}=await routedFetch('btc.read',`/tx/${encodeURIComponent(txid)}/status`,{headers:{Accept:'application/json'}})
+ if(!res.ok)throw new Error(`Bitcoin status provider returned ${res.status}`)
+ const status:any=await res.json()
+ let tip=0
+ try{const tipRes=(await routedFetch('btc.read','/blocks/tip/height')).res;if(tipRes.ok)tip=Number(await tipRes.text())}catch{}
+ const confirmed=Boolean(status?.confirmed),blockHeight=confirmed?Number(status?.block_height||0):undefined
+ const confirmations=confirmed&&blockHeight&&tip>=blockHeight?tip-blockHeight+1:confirmed?1:0
+ return{confirmed,blockHeight,confirmations}
+}
+
+export async function verifyReceipt(txid:string){
+ const receipts=readStore();const index=receipts.findIndex(r=>r.txid===txid);if(index<0)return null
+ try{
+  const status=await statusFor(txid)
+  receipts[index]={...receipts[index],state:status.confirmed?'confirmed':'mempool',confirmations:status.confirmations,blockHeight:status.blockHeight,verifiedAt:new Date().toISOString(),error:undefined}
+ }catch(e:any){receipts[index]={...receipts[index],verifiedAt:new Date().toISOString(),error:e?.message||'Network verification pending.'}}
+ writeStore(receipts)
+ return receipts[index]
+}
+
+export async function refreshPendingReceipts(){
+ const pending=readStore().filter(r=>r.state!=='confirmed'&&r.state!=='failed').slice(0,20)
+ await Promise.allSettled(pending.map(r=>verifyReceipt(r.txid)))
+ return readStore()
+}
+export function startReceiptMonitor(){
+ if(!safeWindow()||monitor!==undefined)return
+ void refreshPendingReceipts()
+ monitor=window.setInterval(()=>{void refreshPendingReceipts()},30_000)
+}
+export function stopReceiptMonitor(){if(safeWindow()&&monitor!==undefined){window.clearInterval(monitor);monitor=undefined}}
+
+function short(txid:string){return`${txid.slice(0,8)}…${txid.slice(-8)}`}
+function stateLabel(r:NEOpayReceipt){if(r.state==='confirmed')return`Confirmed · ${r.confirmations}`;if(r.state==='mempool')return'In mempool';if(r.state==='failed')return'Failed';return'Submitted'}
+function renderCenter(receipts=readStore()){
+ if(!safeWindow()||!document.body)return
+ let button=document.getElementById('neopay-receipt-button') as HTMLButtonElement|null
+ let panel=document.getElementById('neopay-receipt-center') as HTMLDivElement|null
+ if(!button){
+  button=document.createElement('button');button.id='neopay-receipt-button';button.type='button';button.textContent=`Receipts (${receipts.length})`
+  Object.assign(button.style,{position:'fixed',right:'16px',bottom:'84px',zIndex:'2147483000',padding:'10px 14px',borderRadius:'999px',border:'1px solid currentColor',background:'#050805',color:'#73ff8b',fontWeight:'700',cursor:'pointer'})
+  document.body.appendChild(button)
+ }
+ if(!panel){
+  panel=document.createElement('div');panel.id='neopay-receipt-center'
+  Object.assign(panel.style,{display:'none',position:'fixed',right:'16px',bottom:'132px',zIndex:'2147483000',width:'min(92vw,420px)',maxHeight:'60vh',overflow:'auto',padding:'14px',border:'1px solid #256d36',borderRadius:'16px',background:'#050805',color:'#e9ffed',boxShadow:'0 14px 50px rgba(0,0,0,.45)'})
+  document.body.appendChild(panel)
+  button.onclick=()=>{if(panel)panel.style.display=panel.style.display==='none'?'block':'none'}
+ }
+ button.textContent=`Receipts (${receipts.length})`
+ panel.replaceChildren()
+ const title=document.createElement('div');title.textContent='NEOpay Receipt Center';Object.assign(title.style,{fontWeight:'800',fontSize:'16px',marginBottom:'10px'});panel.appendChild(title)
+ if(!receipts.length){const empty=document.createElement('div');empty.textContent='No locally recorded broadcasts yet.';panel.appendChild(empty);return}
+ receipts.slice(0,20).forEach(r=>{
+  const row=document.createElement('div');Object.assign(row.style,{padding:'10px 0',borderTop:'1px solid #17331d'})
+  const head=document.createElement('div');head.textContent=`${stateLabel(r)} · ${String(r.review.action||'transaction').toUpperCase()}`;Object.assign(head.style,{fontWeight:'700'});row.appendChild(head)
+  const detail=document.createElement('div');detail.textContent=`${r.review.amount??'—'} ${r.review.asset||r.review.market||''} · ${short(r.txid)}`;Object.assign(detail.style,{fontSize:'12px',opacity:'.85',margin:'4px 0'});row.appendChild(detail)
+  const link=document.createElement('a');link.href=`https://mempool.space/tx/${encodeURIComponent(r.txid)}`;link.target='_blank';link.rel='noopener noreferrer';link.textContent='View on Bitcoin explorer';Object.assign(link.style,{fontSize:'12px',color:'#73ff8b'});row.appendChild(link)
+  panel!.appendChild(row)
+ })
+}
+
+if(safeWindow()){
+ const boot=()=>{renderCenter();startReceiptMonitor()}
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else queueMicrotask(boot)
+}
