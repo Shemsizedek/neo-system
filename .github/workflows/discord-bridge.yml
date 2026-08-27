@@ -1,0 +1,83 @@
+name: NEO Discord Bridge
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    types: [opened, reopened, synchronize, closed]
+  issues:
+    types: [opened, reopened, closed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  notify-discord:
+    runs-on: ubuntu-latest
+    env:
+      DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+      REPOSITORY: ${{ github.repository }}
+      ACTOR: ${{ github.actor }}
+      EVENT_NAME: ${{ github.event_name }}
+      REF_NAME: ${{ github.ref_name }}
+      SHA: ${{ github.sha }}
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      PR_URL: ${{ github.event.pull_request.html_url }}
+      ISSUE_URL: ${{ github.event.issue.html_url }}
+      REPO_URL: ${{ github.event.repository.html_url }}
+    steps:
+      - name: Validate Discord secret
+        shell: bash
+        run: |
+          if [ -z "$DISCORD_WEBHOOK_URL" ]; then
+            echo "DISCORD_WEBHOOK_URL is not configured in repository Actions secrets."
+            exit 1
+          fi
+
+      - name: Build notification
+        id: message
+        shell: bash
+        run: |
+          short_sha="${SHA:0:7}"
+
+          case "$EVENT_NAME" in
+            push)
+              message="🚀 **NEO GitHub Push**\nRepository: **${REPOSITORY}**\nBranch: \`${REF_NAME}\`\nCommit: \`${short_sha}\`\nActor: **${ACTOR}**\n${RUN_URL}"
+              ;;
+            pull_request)
+              action='${{ github.event.action }}'
+              number='${{ github.event.pull_request.number }}'
+              title='${{ github.event.pull_request.title }}'
+              message="🔀 **NEO Pull Request ${action}**\nRepository: **${REPOSITORY}**\nPR #${number}: ${title}\nActor: **${ACTOR}**\n${PR_URL}"
+              ;;
+            issues)
+              action='${{ github.event.action }}'
+              number='${{ github.event.issue.number }}'
+              title='${{ github.event.issue.title }}'
+              message="📌 **NEO Issue ${action}**\nRepository: **${REPOSITORY}**\nIssue #${number}: ${title}\nActor: **${ACTOR}**\n${ISSUE_URL}"
+              ;;
+            workflow_dispatch)
+              message="🧪 **NEO Discord Bridge Test**\nRepository: **${REPOSITORY}**\nActor: **${ACTOR}**\n${RUN_URL}"
+              ;;
+            *)
+              message="🤖 **NEO GitHub Event**\nRepository: **${REPOSITORY}**\nEvent: \`${EVENT_NAME}\`\nActor: **${ACTOR}**\n${REPO_URL}"
+              ;;
+          esac
+
+          {
+            echo 'content<<EOF'
+            printf '%b\n' "$message"
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Send to Discord
+        shell: bash
+        env:
+          MESSAGE: ${{ steps.message.outputs.content }}
+        run: |
+          payload="$(jq -n --arg content "$MESSAGE" '{content:$content,allowed_mentions:{parse:[]}}')"
+          curl --fail-with-body --silent --show-error \
+            -H 'Content-Type: application/json' \
+            -d "$payload" \
+            "$DISCORD_WEBHOOK_URL"
