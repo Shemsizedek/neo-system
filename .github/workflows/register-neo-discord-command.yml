@@ -1,0 +1,68 @@
+name: Register NEO Discord Command
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  register:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Register /neo slash command
+        env:
+          DISCORD_APPLICATION_ID: ${{ secrets.DISCORD_APPLICATION_ID }}
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          DISCORD_GUILD_ID: ${{ secrets.DISCORD_GUILD_ID }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "${DISCORD_APPLICATION_ID:-}" ]; then
+            echo "DISCORD_APPLICATION_ID is not configured."
+            exit 1
+          fi
+          if [ -z "${DISCORD_BOT_TOKEN:-}" ]; then
+            echo "DISCORD_BOT_TOKEN is not configured."
+            exit 1
+          fi
+
+          node <<'NODE'
+          const appId = process.env.DISCORD_APPLICATION_ID;
+          const botToken = process.env.DISCORD_BOT_TOKEN;
+          const guildId = (process.env.DISCORD_GUILD_ID || '').trim();
+          const base = 'https://discord.com/api/v10';
+          const url = guildId
+            ? `${base}/applications/${encodeURIComponent(appId)}/guilds/${encodeURIComponent(guildId)}/commands`
+            : `${base}/applications/${encodeURIComponent(appId)}/commands`;
+
+          const command = {
+            name: 'neo',
+            description: 'Ask NEOsync through the NEO Discord gateway',
+            type: 1,
+            options: [
+              {
+                type: 3,
+                name: 'prompt',
+                description: 'What do you want NEOsync to do or answer?',
+                required: true,
+                max_length: 4000
+              }
+            ]
+          };
+
+          const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+              'authorization': `Bot ${botToken}`,
+              'content-type': 'application/json'
+            },
+            body: JSON.stringify(command)
+          });
+          const body = await response.text();
+          if (!response.ok) {
+            throw new Error(`Discord command registration failed ${response.status}: ${body}`);
+          }
+          const parsed = JSON.parse(body);
+          console.log(`Registered /${parsed.name} command (${parsed.id}) ${guildId ? `for guild ${guildId}` : 'globally'}.`);
+          NODE
