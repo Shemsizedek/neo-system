@@ -1,18 +1,20 @@
 const json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:{'content-type':'application/json; charset=utf-8','cache-control':'no-store'}})
 const DISCORD_API='https://discord.com/api/v10'
 
-function hexBytes(hex){
-  if(!/^[0-9a-f]{64}$/i.test(String(hex||'')))throw new Error('DISCORD_PUBLIC_KEY must be a 64-character hex key')
-  const out=new Uint8Array(32)
-  for(let i=0;i<32;i++)out[i]=parseInt(hex.slice(i*2,i*2+2),16)
+function hexBytes(hex,expectedBytes,label='hex value'){
+  const value=String(hex||'')
+  const expectedChars=expectedBytes*2
+  if(!new RegExp(`^[0-9a-f]{${expectedChars}}$`,'i').test(value))throw new Error(`${label} must be ${expectedChars} hex characters`)
+  const out=new Uint8Array(expectedBytes)
+  for(let i=0;i<expectedBytes;i++)out[i]=parseInt(value.slice(i*2,i*2+2),16)
   return out
 }
 async function verifyDiscord(request,env,raw){
   const sig=request.headers.get('x-signature-ed25519')
   const ts=request.headers.get('x-signature-timestamp')
   if(!sig||!ts||!env.DISCORD_PUBLIC_KEY)return false
-  const key=await crypto.subtle.importKey('raw',hexBytes(env.DISCORD_PUBLIC_KEY),{name:'Ed25519'},false,['verify'])
-  const signature=hexBytes(sig)
+  const key=await crypto.subtle.importKey('raw',hexBytes(env.DISCORD_PUBLIC_KEY,32,'DISCORD_PUBLIC_KEY'),{name:'Ed25519'},false,['verify'])
+  const signature=hexBytes(sig,64,'Discord signature')
   const message=new TextEncoder().encode(ts+raw)
   return crypto.subtle.verify({name:'Ed25519'},key,signature,message)
 }
