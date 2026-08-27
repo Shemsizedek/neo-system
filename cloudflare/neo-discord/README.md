@@ -47,3 +47,5 @@ GitHub event notifications:
 6. In Discord, run `/neo prompt:hello`.
 
 The Worker verifies Discord Ed25519 signatures before accepting an interaction, defers the Discord response, calls NEOsync/OpenAI, and edits the original interaction response. The slash command is ephemeral by default.
+
+This gateway connects Discord to the NEOsync/OpenAI service layer. It does not expose or synchronize the private state/history of an individual ChatGPT conversation session.
