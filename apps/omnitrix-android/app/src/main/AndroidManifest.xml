@@ -16,6 +16,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity android:name=".SuiteIntegrationActivity" android:exported="false" />
         <activity android:name=".SuiteWave3Activity" android:exported="false" />
         <activity android:name=".SuiteWave2Activity" android:exported="false" />
         <activity android:name=".SuiteWave1Activity" android:exported="false" />
