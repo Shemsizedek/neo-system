@@ -1,0 +1,44 @@
+name: NEO Discord Bridge
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review, closed]
+  issues:
+    types: [opened, reopened, closed]
+
+permissions:
+  contents: read
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Post event to Discord
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          EVENT_NAME: ${{ github.event_name }}
+          REPOSITORY: ${{ github.repository }}
+          ACTOR: ${{ github.actor }}
+          REF_NAME: ${{ github.ref_name }}
+          SHA: ${{ github.sha }}
+          SERVER_URL: ${{ github.server_url }}
+          RUN_ID: ${{ github.run_id }}
+        shell: bash
+        run: |
+          if [ -z "$DISCORD_WEBHOOK_URL" ]; then
+            echo "DISCORD_WEBHOOK_URL is not configured; skipping notification."
+            exit 0
+          fi
+          node <<'NODE'
+          const webhook=process.env.DISCORD_WEBHOOK_URL;
+          const payload={
+            username:'NEO GitHub Bridge',
+            content:`NEO GitHub event: **${process.env.EVENT_NAME}**\nRepository: \`${process.env.REPOSITORY}\`\nActor: \`${process.env.ACTOR}\`\nRef: \`${process.env.REF_NAME||'n/a'}\`\nCommit: \`${(process.env.SHA||'').slice(0,12)}\`\n${process.env.SERVER_URL}/${process.env.REPOSITORY}/actions/runs/${process.env.RUN_ID}`,
+            allowed_mentions:{parse:[]}
+          };
+          const response=await fetch(webhook,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)});
+          if(!response.ok){throw new Error(`Discord webhook returned ${response.status}: ${await response.text()}`)}
+          NODE
