@@ -1,0 +1,1 @@
+(()=>{const FOUNDER=Object.freeze({productId:'noogle',subjectId:'neo:founder:000001',accountOrdinal:1,role:'founder_owner',reserved:true,verifiedEnrollmentRequired:true,authenticationBypass:false,searchPrivilegeBypass:false});window.NEO_NOOGLE_FOUNDER=FOUNDER;document.dispatchEvent(new CustomEvent('neo:noogle:identity-ready',{detail:FOUNDER}));})();
