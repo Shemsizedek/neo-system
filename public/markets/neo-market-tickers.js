@@ -7,7 +7,7 @@ class NEOMarketTicker extends HTMLElement {
 
   connectedCallback() {
     this.market = (this.getAttribute('market') || 'fx').toLowerCase();
-    this.endpoint = this.getAttribute('endpoint') || `/api/markets/tickers?market=${encodeURIComponent(this.market)}`;
+    this.endpoint = this.resolveEndpoint();
     this.interval = Math.max(10000, Number(this.getAttribute('refresh-ms')) || 30000);
     this.renderShell();
     this.refresh();
@@ -16,6 +16,25 @@ class NEOMarketTicker extends HTMLElement {
 
   disconnectedCallback() {
     if (this.timer) clearInterval(this.timer);
+  }
+
+  resolveEndpoint() {
+    const explicit = this.getAttribute('endpoint');
+    const path = `/api/markets/tickers?market=${encodeURIComponent(this.market)}`;
+    const attrBase = this.getAttribute('api-base');
+    const globalBase = window.NEO_MARKETS_API_BASE;
+    let storedBase = '';
+    let primeBase = '';
+
+    try { storedBase = localStorage.getItem('neoMarketsApiBase') || ''; } catch {}
+    try {
+      const prime = JSON.parse(localStorage.getItem('neoPrimeState.v2') || '{}');
+      if (prime?.endpoint) primeBase = new URL(prime.endpoint).origin;
+    } catch {}
+
+    const base = String(attrBase || globalBase || storedBase || primeBase || '').replace(/\/$/, '');
+    if (base) return `${base}${path}`;
+    return explicit || path;
   }
 
   get definition() {
@@ -68,20 +87,27 @@ class NEOMarketTicker extends HTMLElement {
       const wanted = new Set(this.definition.pairs);
       const rows = quotes.filter(q => wanted.has(String(q.pair || `${q.base}/${q.quote}`).toUpperCase()));
       if (!rows.length) {
-        rail.innerHTML = '<div class="empty">No verified live quotes are available for this ticker.</div>';
+        rail.innerHTML = '<div class="empty">No verified quotes are available for this ticker.</div>';
         state.textContent = 'NO DATA';
         state.className = 'state stale';
         return;
       }
       rail.innerHTML = rows.map(q => this.renderQuote(q)).join('');
-      const stale = rows.some(q => q.status === 'stale');
-      state.textContent = stale ? 'STALE DATA' : 'LIVE';
-      state.className = stale ? 'state stale' : 'state live';
+      const available = rows.filter(q => q.status !== 'unavailable');
+      const stale = available.some(q => q.status === 'stale');
+      if (!available.length) {
+        state.textContent = this.market === 'dex' ? 'NO LIQUIDITY' : 'UNAVAILABLE';
+        state.className = 'state stale';
+      } else {
+        state.textContent = stale ? 'STALE DATA' : 'LIVE';
+        state.className = stale ? 'state stale' : 'state live';
+      }
     } catch (error) {
-      rail.innerHTML = '<div class="empty">Market feed unavailable. No placeholder prices are being shown.</div>';
-      state.textContent = 'FEED OFFLINE';
+      const onPages = location.hostname.endsWith('github.io') && !this.getAttribute('api-base') && !window.NEO_MARKETS_API_BASE;
+      rail.innerHTML = `<div class="empty">${onPages ? 'Live market runtime is not configured for this GitHub Pages session.' : 'Market feed unavailable.'} No placeholder prices are being shown.</div>`;
+      state.textContent = onPages ? 'RUNTIME NEEDED' : 'FEED OFFLINE';
       state.className = 'state error';
-      this.dispatchEvent(new CustomEvent('neo-market-ticker-error', { detail: { market: this.market, error: String(error) } }));
+      this.dispatchEvent(new CustomEvent('neo-market-ticker-error', { detail: { market: this.market, endpoint: this.endpoint, error: String(error) } }));
     }
   }
 
@@ -93,8 +119,9 @@ class NEOMarketTicker extends HTMLElement {
     const sign = change > 0 ? '+' : '';
     const price = value == null || value === '' ? 'Unavailable' : this.formatNumber(value);
     const source = q.source ? ` • ${this.escape(q.source)}` : '';
+    const confidence = q.confidence ? ` • ${this.escape(q.confidence)}` : '';
     const stamp = q.timestamp ? new Date(q.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'time unknown';
-    return `<article class="item"><div class="pair">${this.escape(pair)}</div><div class="price">${this.escape(price)}</div><div class="meta ${cls}">${sign}${Number.isFinite(change) ? change.toFixed(2) : '0.00'}%</div><div class="meta">${this.escape(stamp)}${source}</div></article>`;
+    return `<article class="item"><div class="pair">${this.escape(pair)}</div><div class="price">${this.escape(price)}</div><div class="meta ${cls}">${sign}${Number.isFinite(change) ? change.toFixed(2) : '0.00'}%</div><div class="meta">${this.escape(stamp)}${source}${confidence}</div></article>`;
   }
 
   formatNumber(value) {
@@ -110,6 +137,4 @@ class NEOMarketTicker extends HTMLElement {
   }
 }
 
-if (!customElements.get('neo-market-ticker')) {
-  customElements.define('neo-market-ticker', NEOMarketTicker);
-}
+if (!customElements.get('neo-market-ticker')) customElements.define('neo-market-ticker', NEOMarketTicker);
