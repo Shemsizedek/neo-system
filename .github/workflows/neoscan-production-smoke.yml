@@ -38,8 +38,10 @@ jobs:
         run: |
           set -euo pipefail
           BASE='https://neoscan-statements.neosystem.workers.dev'
-          curl --fail --silent --show-error --retry 5 --retry-delay 2 "$BASE/health" -o health.json
-          curl --fail --silent --show-error --retry 5 --retry-delay 2 "$BASE/ready" -o ready.json
+          curl --fail --silent --show-error --location --retry 5 --retry-delay 2 "$BASE/health" -o health.json
+          curl --fail --silent --show-error --location --retry 5 --retry-delay 2 "$BASE/ready" -o ready.json
+          test -s health.json
+          test -s ready.json
           python - <<'PY'
           import json
           for path, expected in [('health.json','live'),('ready.json','ready')]:
@@ -54,11 +56,12 @@ jobs:
           set -euo pipefail
           BASE='https://neoscan-statements.neosystem.workers.dev'
           ADDRESS='1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa'
-          curl --fail --silent --show-error --retry 5 --retry-delay 2 \
+          curl --fail --silent --show-error --location --retry 5 --retry-delay 2 \
             -H 'Accept: application/json' \
             -H 'Origin: https://shemsizedek.github.io' \
             "$BASE/v1/statements?address=$ADDRESS" \
             -D headers.txt -o statement.json
+          test -s statement.json
           python - <<'PY'
           import json
           data=json.load(open('statement.json'))
