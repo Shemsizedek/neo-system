@@ -2,38 +2,12 @@
   "schema_version": "1.0.0",
   "canonical_subject": "neo:founder:000001",
   "products": {
-    "neopay": {
-      "account_ordinal": 1,
-      "role": "founder_owner",
-      "reserved": true,
-      "verified_enrollment_required": true,
-      "authentication_bypass": false,
-      "wallet_secrets_in_registry": false
-    },
-    "neo-prime": {
-      "account_ordinal": 1,
-      "role": "founder_owner",
-      "reserved": true,
-      "verified_enrollment_required": true,
-      "authentication_bypass": false,
-      "runtime_authority_bypass": false
-    },
-    "noogle": {
-      "account_ordinal": 1,
-      "role": "founder_owner",
-      "reserved": true,
-      "verified_enrollment_required": true,
-      "authentication_bypass": false,
-      "search_privilege_bypass": false
-    },
-    "omnitrix": {
-      "account_ordinal": 1,
-      "role": "founder_owner",
-      "reserved": true,
-      "verified_enrollment_required": true,
-      "authentication_bypass": false,
-      "browser_privilege_bypass": false,
-      "wallet_secrets_in_registry": false
-    }
+    "neopay": {"account_ordinal":1,"role":"founder_owner","reserved":true,"verified_enrollment_required":true,"authentication_bypass":false,"wallet_secrets_in_registry":false},
+    "neo-prime": {"account_ordinal":1,"role":"founder_owner","reserved":true,"verified_enrollment_required":true,"authentication_bypass":false,"runtime_authority_bypass":false},
+    "noogle": {"account_ordinal":1,"role":"founder_owner","reserved":true,"verified_enrollment_required":true,"authentication_bypass":false,"search_privilege_bypass":false},
+    "omnitrix": {"account_ordinal":1,"role":"founder_owner","reserved":true,"verified_enrollment_required":true,"authentication_bypass":false,"browser_privilege_bypass":false,"wallet_secrets_in_registry":false},
+    "neo-telegram": {"account_ordinal":1,"role":"founder_owner","reserved":true,"verified_enrollment_required":true,"authentication_bypass":false,"message_signing_bypass":false,"channel_permission_bypass":false},
+    "neogram": {"account_ordinal":1,"role":"founder_owner","reserved":true,"verified_enrollment_required":true,"authentication_bypass":false,"message_signing_bypass":false,"mailbox_access_bypass":false},
+    "neo-wire": {"account_ordinal":1,"role":"founder_owner","reserved":true,"verified_enrollment_required":true,"authentication_bypass":false,"network_authority_bypass":false,"device_enrollment_bypass":false}
   }
 }
