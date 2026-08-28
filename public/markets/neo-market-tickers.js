@@ -76,38 +76,161 @@ class NEOMarketTicker extends HTMLElement {
       </section>`;
   }
 
-  async refresh() {
+  async fetchJson(url) {
+    const response = await fetch(url, { headers: { accept: 'application/json' }, cache: 'no-store' });
+    if (!response.ok) throw new Error(`HTTP ${response.status} from ${new URL(url, location.href).hostname}`);
+    return response.json();
+  }
+
+  positive(value) {
+    const n = Number(value);
+    return Number.isFinite(n) && n > 0 ? n : null;
+  }
+
+  orderQuantity(order, side) {
+    return this.positive(order?.[`${side}_quantity_normalized`] ?? order?.[`${side}_remaining_normalized`] ?? order?.[`${side}_quantity`] ?? order?.[`${side}_remaining`]);
+  }
+
+  dexBook(orders, pair) {
+    const [base, quote] = pair.split('/');
+    const bids = [];
+    const asks = [];
+    for (const order of Array.isArray(orders) ? orders : []) {
+      if (String(order?.status || '').toLowerCase() !== 'open') continue;
+      const giveAsset = String(order?.give_asset || '').toUpperCase();
+      const getAsset = String(order?.get_asset || '').toUpperCase();
+      const give = this.orderQuantity(order, 'give');
+      const get = this.orderQuantity(order, 'get');
+      if (!give || !get) continue;
+      if (giveAsset === base && getAsset === quote) asks.push(get / give);
+      if (giveAsset === quote && getAsset === base) bids.push(give / get);
+    }
+    const bid = bids.length ? Math.max(...bids) : null;
+    const ask = asks.length ? Math.min(...asks) : null;
+    const mid = bid !== null && ask !== null ? (bid + ask) / 2 : bid ?? ask;
+    return { bid, ask, mid, bidCount: bids.length, askCount: asks.length };
+  }
+
+  browserQuote(pair, values = {}) {
+    const [base, quote] = pair.split('/');
+    return { pair, base, quote, timestamp: new Date().toISOString(), status: 'live', change24h: 0, ...values };
+  }
+
+  unavailable(pair, source, reason) {
+    return this.browserQuote(pair, { bid: null, ask: null, mid: null, last: null, source, status: 'unavailable', confidence: 'unavailable', reason });
+  }
+
+  async browserFallback() {
+    const endpoints = {
+      btc: 'https://mempool.space/api/v1/prices',
+      xcp: 'https://api.coingecko.com/api/v3/simple/price?ids=counterparty&vs_currencies=usd,btc&include_24hr_change=true',
+      dex: 'https://api.counterparty.io:4000/v2/orders?status=open&limit=1000'
+    };
+    const [btcResult, xcpResult, dexResult] = await Promise.allSettled([
+      this.fetchJson(endpoints.btc),
+      this.fetchJson(endpoints.xcp),
+      this.fetchJson(endpoints.dex)
+    ]);
+
+    const btc = btcResult.status === 'fulfilled' ? btcResult.value : null;
+    const xcp = xcpResult.status === 'fulfilled' ? xcpResult.value?.counterparty : null;
+    const orders = dexResult.status === 'fulfilled' ? (dexResult.value?.result || []) : [];
+    const btcUsd = this.positive(btc?.USD ?? btc?.usd ?? btc?.price_usd);
+    const xcpUsd = this.positive(xcp?.usd);
+    const xcpBtc = this.positive(xcp?.btc);
+    const xcpChange = Number(xcp?.usd_24h_change ?? 0);
+
+    const books = Object.fromEntries(['NOMNI/XCP', 'XCP/BTC', 'NOMNI/BTC'].map(pair => [pair, this.dexBook(orders, pair)]));
+
+    if (this.market === 'dex') {
+      return {
+        market: 'dex',
+        code: 'NEODEX',
+        sourceMode: 'browser-public-fallback',
+        quotes: ['NOMNI/XCP', 'XCP/BTC', 'NOMNI/BTC'].map(pair => {
+          const book = books[pair];
+          if (book.mid === null) return this.unavailable(pair, 'Counterparty Core API v2 orders', dexResult.status === 'rejected' ? 'public DEX endpoint unavailable' : 'no executable open orders');
+          return this.browserQuote(pair, {
+            bid: book.bid,
+            ask: book.ask,
+            mid: book.mid,
+            last: null,
+            source: 'Counterparty Core API v2 orders',
+            confidence: book.bid !== null && book.ask !== null ? 'two-sided-book' : 'one-sided-book',
+            bidCount: book.bidCount,
+            askCount: book.askCount,
+            executable: true
+          });
+        })
+      };
+    }
+
+    const nomniXcp = this.positive(books['NOMNI/XCP']?.mid);
+    const directNomniBtc = this.positive(books['NOMNI/BTC']?.mid);
+    const derivedNomniBtc = directNomniBtc ?? (nomniXcp && xcpBtc ? nomniXcp * xcpBtc : null);
+    const nomniUsd = nomniXcp && xcpUsd ? nomniXcp * xcpUsd : (directNomniBtc && btcUsd ? directNomniBtc * btcUsd : null);
+
+    return {
+      market: 'fx',
+      code: 'NEOFX',
+      sourceMode: 'browser-public-fallback',
+      quotes: [
+        btcUsd ? this.browserQuote('BTC/USD', { last: btcUsd, mid: btcUsd, source: 'mempool.space', confidence: 'reference' }) : this.unavailable('BTC/USD', 'mempool.space', 'public BTC price unavailable'),
+        xcpUsd ? this.browserQuote('XCP/USD', { last: xcpUsd, mid: xcpUsd, source: 'CoinGecko', confidence: 'reference', change24h: Number.isFinite(xcpChange) ? xcpChange : 0 }) : this.unavailable('XCP/USD', 'CoinGecko', 'public XCP price unavailable'),
+        nomniUsd ? this.browserQuote('NOMNI/USD', { mid: nomniUsd, source: nomniXcp ? 'Counterparty DEX × CoinGecko XCP/USD' : 'Counterparty DEX × mempool.space BTC/USD', confidence: 'derived-from-dex' }) : this.unavailable('NOMNI/USD', 'NEOfx cross-rate', 'no defensible NOMNI DEX cross-rate'),
+        derivedNomniBtc ? this.browserQuote('NOMNI/BTC', { mid: derivedNomniBtc, source: directNomniBtc ? 'Counterparty DEX' : 'Counterparty DEX × CoinGecko XCP/BTC', confidence: 'derived-from-dex' }) : this.unavailable('NOMNI/BTC', 'Counterparty DEX', 'no defensible NOMNI/BTC cross-rate')
+      ]
+    };
+  }
+
+  renderPayload(payload, mode = 'runtime') {
     const rail = this.shadowRoot.getElementById('rail');
     const state = this.shadowRoot.getElementById('state');
+    const quotes = Array.isArray(payload) ? payload : (payload?.quotes || payload?.data || []);
+    const wanted = new Set(this.definition.pairs);
+    const rows = quotes.filter(q => wanted.has(String(q.pair || `${q.base}/${q.quote}`).toUpperCase()));
+
+    if (!rows.length) {
+      rail.innerHTML = '<div class="empty">No verified quotes are available for this ticker.</div>';
+      state.textContent = 'NO DATA';
+      state.className = 'state stale';
+      return;
+    }
+
+    rail.innerHTML = rows.map(q => this.renderQuote(q)).join('');
+    const available = rows.filter(q => q.status !== 'unavailable');
+    const stale = available.some(q => q.status === 'stale');
+    if (!available.length) {
+      state.textContent = this.market === 'dex' ? 'NO LIQUIDITY' : 'UNAVAILABLE';
+      state.className = 'state stale';
+    } else if (mode === 'browser') {
+      state.textContent = 'LIVE • PUBLIC';
+      state.className = 'state live';
+    } else {
+      state.textContent = stale ? 'STALE DATA' : 'LIVE';
+      state.className = stale ? 'state stale' : 'state live';
+    }
+  }
+
+  async refresh() {
     try {
-      const response = await fetch(this.endpoint, { headers: { accept: 'application/json' }, cache: 'no-store' });
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const payload = await response.json();
-      const quotes = Array.isArray(payload) ? payload : (payload.quotes || payload.data || []);
-      const wanted = new Set(this.definition.pairs);
-      const rows = quotes.filter(q => wanted.has(String(q.pair || `${q.base}/${q.quote}`).toUpperCase()));
-      if (!rows.length) {
-        rail.innerHTML = '<div class="empty">No verified quotes are available for this ticker.</div>';
-        state.textContent = 'NO DATA';
-        state.className = 'state stale';
+      const payload = await this.fetchJson(this.endpoint);
+      this.renderPayload(payload, 'runtime');
+      return;
+    } catch (runtimeError) {
+      try {
+        const payload = await this.browserFallback();
+        this.renderPayload(payload, 'browser');
+        this.dispatchEvent(new CustomEvent('neo-market-ticker-fallback', { detail: { market: this.market, endpoint: this.endpoint, runtimeError: String(runtimeError) } }));
         return;
+      } catch (fallbackError) {
+        const rail = this.shadowRoot.getElementById('rail');
+        const state = this.shadowRoot.getElementById('state');
+        rail.innerHTML = '<div class="empty">Market feed unavailable. No placeholder prices are being shown.</div>';
+        state.textContent = 'FEED OFFLINE';
+        state.className = 'state error';
+        this.dispatchEvent(new CustomEvent('neo-market-ticker-error', { detail: { market: this.market, endpoint: this.endpoint, runtimeError: String(runtimeError), fallbackError: String(fallbackError) } }));
       }
-      rail.innerHTML = rows.map(q => this.renderQuote(q)).join('');
-      const available = rows.filter(q => q.status !== 'unavailable');
-      const stale = available.some(q => q.status === 'stale');
-      if (!available.length) {
-        state.textContent = this.market === 'dex' ? 'NO LIQUIDITY' : 'UNAVAILABLE';
-        state.className = 'state stale';
-      } else {
-        state.textContent = stale ? 'STALE DATA' : 'LIVE';
-        state.className = stale ? 'state stale' : 'state live';
-      }
-    } catch (error) {
-      const onPages = location.hostname.endsWith('github.io') && !this.getAttribute('api-base') && !window.NEO_MARKETS_API_BASE;
-      rail.innerHTML = `<div class="empty">${onPages ? 'Live market runtime is not configured for this GitHub Pages session.' : 'Market feed unavailable.'} No placeholder prices are being shown.</div>`;
-      state.textContent = onPages ? 'RUNTIME NEEDED' : 'FEED OFFLINE';
-      state.className = 'state error';
-      this.dispatchEvent(new CustomEvent('neo-market-ticker-error', { detail: { market: this.market, endpoint: this.endpoint, error: String(error) } }));
     }
   }
 
