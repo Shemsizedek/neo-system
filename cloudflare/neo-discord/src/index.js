@@ -1,22 +1,14 @@
+import { verifyKey } from 'discord-interactions'
+
 const json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:{'content-type':'application/json; charset=utf-8','cache-control':'no-store'}})
 const DISCORD_API='https://discord.com/api/v10'
 
-function hexBytes(hex,expectedBytes,label='hex value'){
-  const value=String(hex||'')
-  const expectedChars=expectedBytes*2
-  if(!new RegExp(`^[0-9a-f]{${expectedChars}}$`,'i').test(value))throw new Error(`${label} must be ${expectedChars} hex characters`)
-  const out=new Uint8Array(expectedBytes)
-  for(let i=0;i<expectedBytes;i++)out[i]=parseInt(value.slice(i*2,i*2+2),16)
-  return out
-}
 async function verifyDiscord(request,env,raw){
-  const sig=request.headers.get('x-signature-ed25519')
-  const ts=request.headers.get('x-signature-timestamp')
-  if(!sig||!ts||!env.DISCORD_PUBLIC_KEY)return false
-  const key=await crypto.subtle.importKey('raw',hexBytes(env.DISCORD_PUBLIC_KEY,32,'DISCORD_PUBLIC_KEY'),{name:'Ed25519'},false,['verify'])
-  const signature=hexBytes(sig,64,'Discord signature')
-  const message=new TextEncoder().encode(ts+raw)
-  return crypto.subtle.verify({name:'Ed25519'},key,signature,message)
+  const sig=request.headers.get('x-signature-ed25519')||''
+  const ts=request.headers.get('x-signature-timestamp')||''
+  const publicKey=String(env.DISCORD_PUBLIC_KEY||'').trim()
+  if(!sig||!ts||!publicKey)return false
+  return verifyKey(raw,sig,ts,publicKey)
 }
 function commandText(interaction){
   const options=interaction?.data?.options||[]
@@ -78,7 +70,7 @@ async function processCommand(interaction,env){
 export default {
   async fetch(request,env,ctx){
     const u=new URL(request.url)
-    if(request.method==='GET'&&u.pathname==='/health')return json({ok:true,service:'neo-discord',version:'1.0',ai:env.NEOSYNC_CHAT_URL?'neosync-upstream':env.OPENAI_API_KEY?'openai':'unconfigured'})
+    if(request.method==='GET'&&u.pathname==='/health')return json({ok:true,service:'neo-discord',version:'1.1',ai:env.NEOSYNC_CHAT_URL?'neosync-upstream':env.OPENAI_API_KEY?'openai':'unconfigured'})
     if(request.method!=='POST'||(u.pathname!=='/'&&u.pathname!=='/discord/interactions'))return json({error:'Not found'},404)
     const raw=await request.text()
     let verified=false

@@ -5,6 +5,9 @@
   "scripts": {
     "deploy": "wrangler deploy"
   },
+  "dependencies": {
+    "discord-interactions": "^4.0.0"
+  },
   "devDependencies": {
     "wrangler": "^4.0.0"
   }
