@@ -22,11 +22,13 @@ export function bestAttributedMarket(snapshot:MarketSnapshot){
 }
 
 export const marketAdapterRoadmap={
-  xcpDex:'Read Counterparty v2 orders, holders, dispensers and Orange Chip™ foundation balances through public/read-only endpoints.',
+  xcpDex:'Read Counterparty v2 orders, holders, dispensers and Orange Chip™ Central Listing Wallet activity through public/read-only endpoints.',
+  tokenScan:'Use TokenScan market/order-book/history endpoints as a separately attributed redundancy source.',
   ces:'Normalize authorized CES offers and trades through the existing CES adapter/coordinator permission model.',
   external:'Add venue-specific connectors without treating one venue as canonical for price.',
   neoDex:'Aggregate attributed quotes and route users to non-custodial Counterparty/Bitcoin execution flows.'
 } as const
 
 export {CounterpartyV2MarketAdapter} from './counterpartyAdapter'
+export {TokenScanMarketAdapter} from './tokenScanAdapter'
 export {CesMarketAdapter,normalizeCesQuote} from './cesMarketAdapter'
