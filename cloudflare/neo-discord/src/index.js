@@ -42,7 +42,7 @@ function extractWorkersAIText(body){
 }
 async function askWorkersAI(env,prompt,a){
   if(!env.AI)throw new Error('Workers AI binding is not configured')
-  const model=String(env.WORKERS_AI_MODEL||'@cf/meta/llama-3.1-8b-instruct')
+  const model=String(env.WORKERS_AI_MODEL||'@cf/meta/llama-3.1-8b-instruct-fp8')
   const system='You are NEOsync operating through an authorized Discord command surface. Be concise, useful, and do not claim to have performed external actions unless a connected tool actually performed them.'
   const result=await env.AI.run(model,{messages:[{role:'system',content:system},{role:'user',content:prompt}]})
   const text=extractWorkersAIText(result)
@@ -93,7 +93,7 @@ async function processCommand(interaction,env){
 export default {
   async fetch(request,env,ctx){
     const u=new URL(request.url)
-    if(request.method==='GET'&&u.pathname==='/health')return json({ok:true,service:'neo-discord',version:'1.2',providers:{neosync_upstream:Boolean(env.NEOSYNC_CHAT_URL),workers_ai:Boolean(env.AI),openai:Boolean(env.OPENAI_API_KEY)},priority:['neosync-upstream','workers-ai','openai']})
+    if(request.method==='GET'&&u.pathname==='/health')return json({ok:true,service:'neo-discord',version:'1.2.1',providers:{neosync_upstream:Boolean(env.NEOSYNC_CHAT_URL),workers_ai:Boolean(env.AI),openai:Boolean(env.OPENAI_API_KEY)},priority:['neosync-upstream','workers-ai','openai'],workers_ai_model:String(env.WORKERS_AI_MODEL||'@cf/meta/llama-3.1-8b-instruct-fp8')})
     if(request.method!=='POST'||(u.pathname!=='/'&&u.pathname!=='/discord/interactions'))return json({error:'Not found'},404)
     const raw=await request.text()
     let verified=false
