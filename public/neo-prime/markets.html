@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="theme-color" content="#07110c" />
+  <title>NEO Prime Markets</title>
+  <style>
+    :root{--bg:#040806;--panel:#08120d;--line:#1d3a28;--text:#eafff0;--muted:#86a792;--accent:#65ff8f}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 50% 0,#0d2115 0,#050a07 45%,#020403 100%);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.shell{max-width:1280px;margin:auto;padding:24px}.top{display:flex;justify-content:space-between;align-items:center;gap:16px}.brand{font-weight:900;letter-spacing:.18em}.back{color:var(--accent);text-decoration:none;font-weight:800}.hero{padding:46px 0 26px}.eyebrow{color:var(--accent);font-size:12px;letter-spacing:.2em;text-transform:uppercase}.hero h1{font-size:clamp(40px,7vw,76px);letter-spacing:-.05em;margin:8px 0}.hero p{color:#b2c7b8;max-width:820px;line-height:1.55}.stack{display:grid;gap:14px}.note{margin-top:18px;border:1px solid var(--line);border-radius:14px;padding:14px;background:rgba(8,18,13,.8);color:var(--muted);font-size:12px;line-height:1.55}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:18px}.card{border:1px solid var(--line);border-radius:12px;padding:13px;background:#07100b}.card b{display:block;margin-bottom:5px}.card span{color:var(--muted);font-size:12px}@media(max-width:760px){.grid{grid-template-columns:1fr}.shell{padding:16px}}
+  </style>
+  <script type="module" src="../markets/neo-market-tickers.js"></script>
+</head>
+<body>
+  <main class="shell">
+    <div class="top"><div class="brand">NEO PRIME • MARKETS</div><a class="back" href="./">← Prime Command</a></div>
+    <section class="hero">
+      <div class="eyebrow">Market Intelligence Layer</div>
+      <h1>NEOfx + NEO DEX</h1>
+      <p>Two distinct tickers share one market-data contract: NEOfx is the reference pricing and foreign-exchange surface; NEO DEX represents executable Counterparty market activity. Prime can consume both without confusing indicative pricing with executable liquidity.</p>
+    </section>
+
+    <section class="stack">
+      <neo-market-ticker market="fx" endpoint="../../api/markets/tickers?market=fx" refresh-ms="30000"></neo-market-ticker>
+      <neo-market-ticker market="dex" endpoint="../../api/markets/tickers?market=dex" refresh-ms="30000"></neo-market-ticker>
+    </section>
+
+    <section class="grid">
+      <div class="card"><b>NEOFX</b><span>BTC, XCP, NOMNI and world-currency reference pricing.</span></div>
+      <div class="card"><b>NEODEX</b><span>Counterparty orderbook/trade ticker for markets with actual executable liquidity.</span></div>
+      <div class="card"><b>Prime Routing</b><span>Both feeds should route through the authenticated NEO backend/Router; GitHub Pages never holds private provider credentials.</span></div>
+    </section>
+
+    <div class="note">Until the backend endpoint returns verified quotes, the tickers intentionally show “feed offline” or “no data” instead of fabricated prices. This is the production-safe behavior.</div>
+  </main>
+</body>
+</html>
