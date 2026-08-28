@@ -1,9 +1,10 @@
 import { verifyKey } from 'discord-interactions'
+import { counterpartyStatus } from './counterparty.js'
 
 const json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:{'content-type':'application/json; charset=utf-8','cache-control':'no-store'}})
 const DISCORD_API='https://discord.com/api/v10'
 const GITHUB_REPO='Shemsizedek/neo-system'
-const SYSTEM_PROMPT='You are NEOsync operating through an authorized Discord command surface. Be concise and useful. Never invent live telemetry, blockchain heights, balances, prices, transaction counts, validator counts, node counts, dates, system health, deployment state, repository state, or external-action results. Only state live/current facts when they were supplied by a connected tool, API, binding, or gateway runtime in this request. If live data is unavailable, say that clearly. Do not claim to have performed external actions unless a connected tool actually performed them.'
+const SYSTEM_PROMPT='You are NEOsync operating through an authorized Discord command surface. Be concise and useful. Never invent live telemetry, blockchain heights, balances, prices, transaction counts, validator counts, node counts, dates, system health, deployment state, repository state, Counterparty state, asset supply, or external-action results. Only state live/current facts when they were supplied by a connected tool, API, binding, or gateway runtime in this request. If live data is unavailable, say that clearly. Do not claim to have performed external actions unless a connected tool actually performed them.'
 
 async function verifyDiscord(request,env,raw){
   const sig=request.headers.get('x-signature-ed25519')||''
@@ -53,6 +54,12 @@ function isGitHubStatusPrompt(prompt){
   const p=normalized(prompt)
   return p.includes('github')&&(p.includes('status')||p.includes('repo')||p.includes('repository')||p.includes('latest commit')||p.includes('open pr')||p.includes('pull request'))
 }
+function isCounterpartyStatusPrompt(prompt){
+  const p=normalized(prompt)
+  const source=p.includes('counterparty')||p.includes('xcp')||p.includes('nomni')
+  const intent=p.includes('status')||p.includes('live')||p.includes('asset')||p.includes('supply')||p.includes('network')||p.includes('bitcoin')
+  return source&&intent
+}
 function gatewayStatus(env){
   const workersModel=String(env.WORKERS_AI_MODEL||'@cf/meta/llama-3.1-8b-instruct-fp8')
   const providers=[]
@@ -60,13 +67,14 @@ function gatewayStatus(env){
   if(env.AI)providers.push(`Cloudflare Workers AI (${workersModel})`)
   if(env.OPENAI_API_KEY)providers.push('OpenAI (configured; quota may vary)')
   return [
-    '**NEO System Gateway Status**','Discord command surface: Online','Gateway: neo-discord-api v1.4',
+    '**NEO System Gateway Status**','Discord command surface: Online','Gateway: neo-discord-api v1.5',
     `Workers AI: ${env.AI?'Online':'Not bound'}`,
     `OpenAI: ${env.OPENAI_API_KEY?'Configured':'Not configured'}`,
     `NEOsync upstream: ${env.NEOSYNC_CHAT_URL?'Configured':'Not configured'}`,
     `Provider priority: ${providers.length?providers.join(' → '):'No AI provider configured'}`,
-    'Live GitHub source: Enabled for Shemsizedek/neo-system','',
-    'Blockchain/market/treasury telemetry: Not reported unless a live data connector is queried.'
+    'Live GitHub source: Enabled for Shemsizedek/neo-system',
+    'Live Counterparty source: Enabled for node/XCP/NOMNI reads','',
+    'Market/treasury telemetry: Not reported unless a live data connector is queried.'
   ].join('\n')
 }
 async function githubFetch(env,path){
@@ -119,6 +127,7 @@ async function askOpenAI(env,prompt){
 async function askNEO(env,prompt,a){
   if(isStatusPrompt(prompt))return gatewayStatus(env)
   if(isGitHubStatusPrompt(prompt))return githubStatus(env)
+  if(isCounterpartyStatusPrompt(prompt))return counterpartyStatus()
   if(env.NEOSYNC_CHAT_URL){
     const headers={'content-type':'application/json','x-neo-surface':'discord','x-neo-actor':a.id}
     if(env.NEOSYNC_CHAT_TOKEN)headers.authorization=`Bearer ${env.NEOSYNC_CHAT_TOKEN}`
@@ -153,7 +162,7 @@ async function processCommand(interaction,env){
 export default {
   async fetch(request,env,ctx){
     const u=new URL(request.url)
-    if(request.method==='GET'&&u.pathname==='/health')return json({ok:true,service:'neo-discord',version:'1.4',providers:{neosync_upstream:Boolean(env.NEOSYNC_CHAT_URL),workers_ai:Boolean(env.AI),openai:Boolean(env.OPENAI_API_KEY),github_live:true},priority:['neosync-upstream','workers-ai','openai'],workers_ai_model:String(env.WORKERS_AI_MODEL||'@cf/meta/llama-3.1-8b-instruct-fp8'),grounded_status:true,live_sources:['github']})
+    if(request.method==='GET'&&u.pathname==='/health')return json({ok:true,service:'neo-discord',version:'1.5',providers:{neosync_upstream:Boolean(env.NEOSYNC_CHAT_URL),workers_ai:Boolean(env.AI),openai:Boolean(env.OPENAI_API_KEY),github_live:true,counterparty_live:true},priority:['neosync-upstream','workers-ai','openai'],workers_ai_model:String(env.WORKERS_AI_MODEL||'@cf/meta/llama-3.1-8b-instruct-fp8'),grounded_status:true,live_sources:['github','counterparty-v2']})
     if(request.method!=='POST'||(u.pathname!=='/'&&u.pathname!=='/discord/interactions'))return json({error:'Not found'},404)
     const raw=await request.text()
     let verified=false
