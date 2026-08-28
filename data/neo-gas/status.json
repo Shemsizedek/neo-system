@@ -3,7 +3,7 @@
   "version": "2.0.0",
   "updatedAt": "2026-08-28T12:39:00-05:00",
   "posture": "DEFENSIVE-INTELLIGENCE",
-  "overallReadiness": 82,
+  "overallReadiness": 84,
   "commandState": "ACTIVE",
   "sourceModel": "GitHub repository is the versioned backend source of truth; GitHub Pages is the frontend delivery surface.",
   "alerts": [
