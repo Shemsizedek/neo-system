@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import {eligibleRails,selectPaymentRail,assertLiveRail} from './paymentRails.mjs'
+import {eligibleRails,selectPaymentRail,assertLiveRail,paymentRailsFromEnv,worldCurrencyCodes} from './paymentRails.mjs'
 import {createCesPaymentRequest,normalizeCesTradeEvent,reconcileCesPayment,cesLiveReadiness} from './cesAdapter.mjs'
 import {normalizeBitcoinPayment,normalizeLightningPayment,normalizeCounterpartyPayment} from './blockchainAdapters.mjs'
 
@@ -12,6 +12,15 @@ test('eligibleRails and live assertion require enabled configured providers',()=
   const rails=[{id:'x',type:'WIRE',currencies:['USD'],status:'ENABLED',provider:'BANK_A',jurisdictions:['GLOBAL']}]
   assert.equal(eligibleRails({currency:'USD',rails}).length,1)
   assert.equal(assertLiveRail(rails[0]),true)
+})
+
+test('production rails load enabled currencies and providers from environment',()=>{
+  const rails=paymentRailsFromEnv({CARD_ENABLED:'true',CARD_PROVIDER:'ACQUIRER_A',PAYMENT_FIAT_CURRENCIES:'USD,EUR,JPY',CARD_JURISDICTIONS:'GLOBAL'})
+  const card=rails.find(r=>r.type==='CARD')
+  assert.equal(card.status,'ENABLED')
+  assert.equal(card.provider,'ACQUIRER_A')
+  assert.deepEqual(card.currencies,['USD','EUR','JPY'])
+  assert.ok(worldCurrencyCodes.includes('USD'))
 })
 
 test('CES payment reconciles only matching posted trade',()=>{
