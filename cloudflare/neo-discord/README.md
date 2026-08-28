@@ -4,11 +4,17 @@ Bidirectional Discord interaction surface for NEOsync.
 
 ## Runtime
 
-Cloudflare Worker: `neo-discord`
+Cloudflare Worker: `neo-discord-api`
 
 Interaction endpoint after deployment:
 
-`https://neo-discord.<your-workers-subdomain>.workers.dev/discord/interactions`
+`https://neo-discord-api.neosystem.workers.dev/discord/interactions`
+
+Health endpoint:
+
+`https://neo-discord-api.neosystem.workers.dev/health`
+
+This Worker is intentionally API-only and uses a distinct Cloudflare service name so static NEO frontend deployments cannot overwrite the Discord gateway.
 
 ## Worker secrets / variables
 
@@ -39,11 +45,11 @@ GitHub event notifications:
 
 ## Bring-up order
 
-1. Merge the bridge PR.
-2. Configure Cloudflare/Worker secrets.
-3. Run **Deploy NEO Discord Gateway**.
-4. Copy the deployed Worker URL and set Discord Developer Portal → Interactions Endpoint URL to `/discord/interactions`.
-5. Run **Register NEO Discord Command**.
+1. Deploy **NEO Discord Gateway**.
+2. Configure `DISCORD_PUBLIC_KEY` and the AI upstream secret on the `neo-discord-api` Worker.
+3. Verify `/health` returns JSON with `ok: true` and `service: neo-discord`.
+4. In Discord Developer Portal, set the Interactions Endpoint URL to `https://neo-discord-api.neosystem.workers.dev/discord/interactions`.
+5. Run **Register NEO Discord Command** if command registration needs refreshing.
 6. In Discord, run `/neo prompt:hello`.
 
 The Worker verifies Discord Ed25519 signatures before accepting an interaction, defers the Discord response, calls NEOsync/OpenAI, and edits the original interaction response. The slash command is ephemeral by default.
