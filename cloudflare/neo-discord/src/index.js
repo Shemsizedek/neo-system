@@ -33,6 +33,29 @@ function extractOpenAIText(body){
   for(const item of body?.output||[]){for(const part of item?.content||[]){if(typeof part?.text==='string')chunks.push(part.text);else if(typeof part?.output_text==='string')chunks.push(part.output_text)}}
   return chunks.join('\n').trim()
 }
+function extractWorkersAIText(body){
+  if(typeof body==='string'&&body.trim())return body.trim()
+  if(typeof body?.response==='string'&&body.response.trim())return body.response.trim()
+  if(typeof body?.result?.response==='string'&&body.result.response.trim())return body.result.response.trim()
+  if(typeof body?.text==='string'&&body.text.trim())return body.text.trim()
+  return ''
+}
+async function askWorkersAI(env,prompt,a){
+  if(!env.AI)throw new Error('Workers AI binding is not configured')
+  const model=String(env.WORKERS_AI_MODEL||'@cf/meta/llama-3.1-8b-instruct')
+  const system='You are NEOsync operating through an authorized Discord command surface. Be concise, useful, and do not claim to have performed external actions unless a connected tool actually performed them.'
+  const result=await env.AI.run(model,{messages:[{role:'system',content:system},{role:'user',content:prompt}]})
+  const text=extractWorkersAIText(result)
+  if(!text)throw new Error('Workers AI returned no text')
+  return text
+}
+async function askOpenAI(env,prompt){
+  if(!env.OPENAI_API_KEY)throw new Error('OPENAI_API_KEY is not configured')
+  const r=await fetch('https://api.openai.com/v1/responses',{method:'POST',headers:{'content-type':'application/json','authorization':`Bearer ${env.OPENAI_API_KEY}`},body:JSON.stringify({model:env.OPENAI_MODEL||'gpt-5-mini',input:[{role:'system',content:'You are NEOsync operating through an authorized Discord command surface. Be concise, useful, and do not claim to have performed external actions unless a connected tool actually performed them.'},{role:'user',content:prompt}]}),signal:AbortSignal.timeout(45000)})
+  const b=await r.json().catch(()=>({}))
+  if(!r.ok)throw new Error(`OpenAI API returned ${r.status}: ${b?.error?.message||'request failed'}`)
+  return extractOpenAIText(b)||'NEOsync returned no text.'
+}
 async function askNEO(env,prompt,a){
   if(env.NEOSYNC_CHAT_URL){
     const headers={'content-type':'application/json','x-neo-surface':'discord','x-neo-actor':a.id}
@@ -43,11 +66,11 @@ async function askNEO(env,prompt,a){
     const text=String(b.reply||b.message||b.output||'').trim()
     if(text)return text
   }
-  if(!env.OPENAI_API_KEY)throw new Error('Neither NEOSYNC_CHAT_URL nor OPENAI_API_KEY is configured')
-  const r=await fetch('https://api.openai.com/v1/responses',{method:'POST',headers:{'content-type':'application/json','authorization':`Bearer ${env.OPENAI_API_KEY}`},body:JSON.stringify({model:env.OPENAI_MODEL||'gpt-5-mini',input:[{role:'system',content:'You are NEOsync operating through an authorized Discord command surface. Be concise, useful, and do not claim to have performed external actions unless a connected tool actually performed them.'},{role:'user',content:prompt}]}),signal:AbortSignal.timeout(45000)})
-  const b=await r.json().catch(()=>({}))
-  if(!r.ok)throw new Error(`OpenAI API returned ${r.status}: ${b?.error?.message||'request failed'}`)
-  return extractOpenAIText(b)||'NEOsync returned no text.'
+
+  const errors=[]
+  try{return await askWorkersAI(env,prompt,a)}catch(err){errors.push(`Workers AI: ${String(err?.message||err)}`)}
+  try{return await askOpenAI(env,prompt)}catch(err){errors.push(`OpenAI: ${String(err?.message||err)}`)}
+  throw new Error(`No AI provider succeeded. ${errors.join(' | ')}`)
 }
 async function editInteraction(interaction,content){
   const text=String(content||'').slice(0,1900)
@@ -70,7 +93,7 @@ async function processCommand(interaction,env){
 export default {
   async fetch(request,env,ctx){
     const u=new URL(request.url)
-    if(request.method==='GET'&&u.pathname==='/health')return json({ok:true,service:'neo-discord',version:'1.1',ai:env.NEOSYNC_CHAT_URL?'neosync-upstream':env.OPENAI_API_KEY?'openai':'unconfigured'})
+    if(request.method==='GET'&&u.pathname==='/health')return json({ok:true,service:'neo-discord',version:'1.2',providers:{neosync_upstream:Boolean(env.NEOSYNC_CHAT_URL),workers_ai:Boolean(env.AI),openai:Boolean(env.OPENAI_API_KEY)},priority:['neosync-upstream','workers-ai','openai']})
     if(request.method!=='POST'||(u.pathname!=='/'&&u.pathname!=='/discord/interactions'))return json({error:'Not found'},404)
     const raw=await request.text()
     let verified=false
