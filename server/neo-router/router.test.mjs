@@ -55,3 +55,21 @@ test('requires guarded experimental handling for future psitronic interfaces', (
   assert.ok(plan.emergingInterfaces.requiredControls.includes('local_kill_switch'))
   assert.ok(plan.emergingInterfaces.requiredControls.includes('human_approval_for_actuation'))
 })
+
+test('routes edge and IoT work to Workers AI first', async () => {
+  const router = createNeoRouter({ providers: [provider('cloudflare'), provider('openai')] })
+  const result = await router.execute({ missionId: 'M-7', objective: 'Process device telemetry', capability: 'internet-of-things' })
+  assert.equal(result.route, 'cloudflare')
+})
+
+test('honors mission provider preference and exclusion without bypassing configuration', () => {
+  const router = createNeoRouter({ providers: [provider('anthropic'), provider('openai'), provider('gemini')] })
+  const plan = router.plan({ missionId: 'M-8', objective: 'Review implementation', capability: 'review', preferredProviders: ['gemini'], excludedProviders: ['openai'] })
+  assert.deepEqual(plan.candidates, ['gemini', 'anthropic'])
+})
+
+test('reports provider mesh readiness without exposing credentials', () => {
+  const router = createNeoRouter({ providers: [provider('anthropic'), provider('cloudflare', { configured: false })] })
+  assert.deepEqual(router.health().configured, ['anthropic'])
+  assert.equal(router.health().providers[1].configured, false)
+})

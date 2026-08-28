@@ -1,15 +1,19 @@
 import { DOCTRINE_PROFILE, EMERGING_INTERFACE_PROFILE, HUMAN_APPROVAL_ACTIONS, PROVIDER_ROLES } from './policy.mjs'
 
 const DEFAULT_ROUTES = Object.freeze({
-  orchestration: ['anthropic', 'openai', 'gemini'],
-  planning: ['anthropic', 'openai', 'gemini'],
-  review: ['anthropic', 'openai', 'gemini'],
-  reasoning: ['openai', 'anthropic', 'gemini'],
-  backend: ['openai', 'anthropic', 'gemini'],
-  'tool-use': ['openai', 'anthropic', 'gemini'],
-  frontend: ['gemini', 'openai', 'anthropic'],
-  design: ['gemini', 'anthropic', 'openai'],
+  orchestration: ['anthropic', 'openai', 'gemini', 'cloudflare'],
+  planning: ['anthropic', 'openai', 'gemini', 'cloudflare'],
+  review: ['anthropic', 'openai', 'gemini', 'cloudflare'],
+  reasoning: ['openai', 'anthropic', 'gemini', 'cloudflare'],
+  backend: ['openai', 'anthropic', 'gemini', 'cloudflare'],
+  'tool-use': ['openai', 'anthropic', 'gemini', 'cloudflare'],
+  frontend: ['gemini', 'openai', 'anthropic', 'cloudflare'],
+  design: ['gemini', 'anthropic', 'openai', 'cloudflare'],
   multimodal: ['gemini', 'openai', 'anthropic'],
+  edge: ['cloudflare', 'openai', 'anthropic', 'gemini'],
+  'internet-of-things': ['cloudflare', 'openai', 'anthropic', 'gemini'],
+  media: ['gemini', 'openai', 'anthropic', 'cloudflare'],
+  resilience: ['cloudflare', 'openai', 'anthropic', 'gemini'],
 })
 
 export function createNeoRouter({ providers, maxHops = 6, routes = DEFAULT_ROUTES } = {}) {
@@ -19,7 +23,10 @@ export function createNeoRouter({ providers, maxHops = 6, routes = DEFAULT_ROUTE
     if (!mission?.missionId || !mission?.objective || !mission?.capability) {
       throw new TypeError('missionId, objective, and capability are required')
     }
-    const candidates = (routes[mission.capability] ?? []).filter((id) => providerMap.get(id)?.configured)
+    const excluded = new Set(mission.excludedProviders ?? [])
+    const eligible = (routes[mission.capability] ?? []).filter((id) => providerMap.get(id)?.configured && !excluded.has(id))
+    const preferred = (mission.preferredProviders ?? []).filter((id) => eligible.includes(id))
+    const candidates = [...new Set([...preferred, ...eligible])]
     return {
       missionId: mission.missionId,
       capability: mission.capability,
@@ -27,6 +34,20 @@ export function createNeoRouter({ providers, maxHops = 6, routes = DEFAULT_ROUTE
       approvalRequired: (mission.actions ?? []).some((action) => HUMAN_APPROVAL_ACTIONS.has(action)),
       doctrine: DOCTRINE_PROFILE,
       emergingInterfaces: EMERGING_INTERFACE_PROFILE,
+    }
+  }
+
+  function health() {
+    const providers = [...providerMap.values()].map(({ id, configured }) => ({
+      id,
+      configured: Boolean(configured),
+      roles: PROVIDER_ROLES[id] ?? [],
+    }))
+    return {
+      ok: providers.some((provider) => provider.configured),
+      configured: providers.filter((provider) => provider.configured).map((provider) => provider.id),
+      providers,
+      capabilities: Object.keys(routes),
     }
   }
 
@@ -56,5 +77,5 @@ export function createNeoRouter({ providers, maxHops = 6, routes = DEFAULT_ROUTE
     return { status: 'blocked', reason: 'All eligible providers failed', failures, ...routePlan }
   }
 
-  return { plan, execute, providerRoles: PROVIDER_ROLES }
+  return { plan, execute, health, providerRoles: PROVIDER_ROLES }
 }

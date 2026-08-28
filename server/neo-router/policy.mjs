@@ -2,6 +2,7 @@ export const PROVIDER_ROLES = Object.freeze({
   anthropic: ['orchestration', 'planning', 'review'],
   openai: ['reasoning', 'backend', 'tool-use'],
   gemini: ['frontend', 'design', 'multimodal'],
+  cloudflare: ['edge', 'internet-of-things', 'resilience', 'low-latency'],
 })
 
 export const HUMAN_APPROVAL_ACTIONS = new Set([

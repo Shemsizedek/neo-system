@@ -17,6 +17,10 @@ roles:
     primary: gemini
     product: Gemini API
     fallbacks: [openai, anthropic]
+  edge_and_devices:
+    primary: cloudflare
+    product: Cloudflare Workers AI
+    fallbacks: [openai, anthropic, gemini]
 
 portability:
   contract: "mission envelope + provider adapter"
@@ -29,6 +33,9 @@ portability:
     - preserved provenance
     - exportable audit records
     - human approval for consequential action
+    - provider timeout and cancellation
+    - per-mission provider preference and exclusion
+    - credential-free health reporting
   future_provider_admission:
     - implements invoke contract
     - declares capabilities
