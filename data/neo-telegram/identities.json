@@ -1,0 +1,23 @@
+{
+  "version": "0.2",
+  "directory": [
+    {
+      "neo_id": "NEO-00000144",
+      "display_name": "NEO Telegram Origin Node",
+      "status": "ACTIVE",
+      "capabilities": ["TEXT", "PAYMENT_REQUEST", "TELEMETRY", "EMERGENCY"],
+      "preferred_transports": ["INTERNET", "MESH"],
+      "public_key": null,
+      "key_state": "UNPROVISIONED"
+    },
+    {
+      "neo_id": "NEO-00000721",
+      "display_name": "Demo Recipient Node",
+      "status": "DEMO",
+      "capabilities": ["TEXT", "TELEMETRY"],
+      "preferred_transports": ["INTERNET"],
+      "public_key": null,
+      "key_state": "UNPROVISIONED"
+    }
+  ]
+}
