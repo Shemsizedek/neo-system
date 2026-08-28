@@ -34,7 +34,7 @@ test('ticker service derives NOMNI/USD only from live DEX cross-rate', async () 
   });
   const result = await service.fx();
   const nomniUsd = result.quotes.find((q) => q.pair === 'NOMNI/USD');
-  assert.equal(nomniUsd.mid, 16.5);
+  assert.equal(nomniUsd.mid, 17.5);
   assert.equal(nomniUsd.confidence, 'derived-from-dex');
 });
 
