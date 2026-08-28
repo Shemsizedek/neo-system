@@ -1,7 +1,11 @@
 (() => {
   const root = document.documentElement;
   const platform = root.dataset.platform;
-  const apiPath = `/neo-system/api/platforms/${platform}.json`;
+  const pathParts = window.location.pathname.split('/').filter(Boolean);
+  const pagesBase = window.location.hostname.endsWith('github.io') && pathParts.length > 0
+    ? `/${pathParts[0]}`
+    : '';
+  const apiPath = `${pagesBase}/api/platforms/${platform}.json`;
   const statusEl = document.querySelector('[data-api-status]');
   const dotEl = document.querySelector('[data-api-dot]');
   const checkedEl = document.querySelector('[data-checked]');
