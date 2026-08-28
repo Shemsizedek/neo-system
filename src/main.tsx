@@ -6,6 +6,7 @@ import { MinerApp } from './miner/MinerApp'
 import { GeneratorApp } from './miner/GeneratorApp'
 import { ProductionStatusApp } from './miner/ProductionStatusApp'
 import { CloudMiningOperationsApp } from './miner/CloudMiningOperationsApp'
+import { InfrastructureOnboardingApp } from './miner/InfrastructureOnboardingApp'
 import { StorefrontApp } from './miner/StorefrontApp'
 import { NeoWireApp } from './wire/NeoWireApp'
 import { NeoExplorer } from './explorer/NeoExplorer'
@@ -54,6 +55,7 @@ function RootRouter(){
   const isGenerator=route==='/generator'||route.startsWith('/generator/')
   const isProduction=route==='/generator-production'||route.startsWith('/generator-production/')
   const isCloudMining=route==='/cloud-mining'||route.startsWith('/cloud-mining/')
+  const isInfrastructure=route==='/infrastructure-onboarding'||route.startsWith('/infrastructure-onboarding/')
   const isMiner=route==='/miner'||route.startsWith('/miner/')
   const isMinerStore=route==='/miner-store'||route.startsWith('/miner-store/')
   const isWire=route==='/wire'||route.startsWith('/wire/')
@@ -71,6 +73,7 @@ function RootRouter(){
   if(isWire) return <NeoWireApp/>
   if(isMinerStore) return <StorefrontApp/>
   if(isProduction) return <ProductionStatusApp/>
+  if(isInfrastructure) return <InfrastructureOnboardingApp/>
   if(isCloudMining) return <CloudMiningOperationsApp/>
   if(isGenerator) return <GeneratorApp/>
   if(isMiner) return <MinerApp/>
