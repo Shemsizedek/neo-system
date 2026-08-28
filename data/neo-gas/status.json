@@ -1,0 +1,42 @@
+{
+  "system": "NEO-GAS",
+  "version": "2.0.0",
+  "updatedAt": "2026-08-28T12:39:00-05:00",
+  "posture": "DEFENSIVE-INTELLIGENCE",
+  "overallReadiness": 82,
+  "commandState": "ACTIVE",
+  "sourceModel": "GitHub repository is the versioned backend source of truth; GitHub Pages is the frontend delivery surface.",
+  "alerts": [
+    {
+      "id": "GAS-ALERT-001",
+      "severity": "AMBER",
+      "domain": "Maritime",
+      "title": "Maritime readiness development",
+      "summary": "Port resilience, shipping-risk analysis and humanitarian routing remain priority capability-development areas."
+    },
+    {
+      "id": "GAS-ALERT-002",
+      "severity": "AMBER",
+      "domain": "Aerospace",
+      "title": "Aerospace awareness development",
+      "summary": "Airspace awareness, communications resilience and emergency aviation planning remain in foundation build-out."
+    }
+  ],
+  "intelligenceRequirements": [
+    "Strategic warning and crisis indicators",
+    "Cyber threat intelligence and defensive incident readiness",
+    "Critical infrastructure continuity",
+    "Maritime and aerospace domain awareness",
+    "Humanitarian logistics and civilian protection",
+    "Economic and supply-chain resilience",
+    "Source provenance, confidence scoring and competing-hypothesis analysis"
+  ],
+  "guardrails": [
+    "No autonomous targeting",
+    "No attack execution",
+    "No weapons construction guidance",
+    "No unlawful weapons acquisition",
+    "No unauthorized surveillance",
+    "No independent governmental police or military authority"
+  ]
+}
