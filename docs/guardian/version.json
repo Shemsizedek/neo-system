@@ -1,0 +1,10 @@
+{
+  "app": "NEO Guardian",
+  "version": "3.0.0",
+  "version_code": 5,
+  "channel": "production",
+  "minimum_android_api": 26,
+  "published_at": "2026-08-28",
+  "download_url": "https://shemsizedek.github.io/neo-system/guardian/",
+  "notes": "Production control center with opt-in live network intelligence, public update feed, clickable remediation links, support, privacy, terms, and the v2 local defense console."
+}
