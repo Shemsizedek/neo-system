@@ -13,6 +13,7 @@ import { SettlementReceiptsApp } from './miner/SettlementReceiptsApp'
 import { StorefrontApp } from './miner/StorefrontApp'
 import { NeoWireApp } from './wire/NeoWireApp'
 import { NeoExplorer } from './explorer/NeoExplorer'
+import { NeoFxApp } from './neofx/NeoFxApp'
 import { NEOpayWallet } from './neopay/NEOpayWallet'
 import { NEOpaySecurityOverlay } from './neopay/NEOpaySecurityOverlay'
 import { NEOpayContactCenter } from './neopay/NEOpayContactCenter'
@@ -22,6 +23,7 @@ import { TellerDashboard } from './teller/TellerDashboard'
 import './styles.css'
 import './home/home.css'
 import './explorer/explorer.css'
+import './neofx/neofx.css'
 
 function resolveRoute(){
   const hash=window.location.hash.replace(/^#/,'')
@@ -55,6 +57,7 @@ function RootRouter(){
   const isMinerStore=route==='/miner-store'||route.startsWith('/miner-store/')
   const isWire=route==='/wire'||route.startsWith('/wire/')
   const isExplorer=route==='/explorer'||route.startsWith('/explorer/')
+  const isNeoFx=route==='/neofx'||route.startsWith('/neofx/')
   const isNEOpay=route==='/neopay'||route.startsWith('/neopay/')
   const isTeller=route==='/teller'||route.startsWith('/teller/')
   const bankHref=`${base}/neopay/ces.html`
@@ -64,6 +67,7 @@ function RootRouter(){
   if(isHome) return <HomeBase onOpen={open}/>
   if(isTeller) return <TellerDashboard/>
   if(isNEOpay) return <div className="neopay-route"><NEOpayWallet/><WalletConnectionCenter/><NEOpaySecurityOverlay/><NEOpayContactCenter/><NativeBitcoinSendOverlay/><a className="neopay-trader-launch" href={bankHref}>∞ NEO Bank</a></div>
+  if(isNeoFx) return <NeoFxApp/>
   if(isExplorer) return <NeoExplorer/>
   if(isWire) return <NeoWireApp/>
   if(isMinerStore) return <StorefrontApp/>
