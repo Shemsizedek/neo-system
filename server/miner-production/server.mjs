@@ -6,6 +6,7 @@ import {liveProviderSnapshot} from './providers.mjs'
 import {createContract,confirmPayment,reserveCapacity,activateContract,markSettlementPending,settleContract} from './contracts.mjs'
 import {createInfrastructureRecord,markInfrastructureVerified,onboardingSummary} from './onboarding.mjs'
 import {createEnrollmentChallenge,verifyEnrollmentChallenge,enrollMiner,registerTelemetry,verifyStratumShare,applyShareResult,fleetSnapshot} from './fleet.mjs'
+import {reconcilePoolPayout,createHashVaultCredit,hashVaultSnapshot,assertNoDuplicateCredit} from './hashvault.mjs'
 
 const PORT=Number(process.env.PORT||8890)
 const API_TOKEN=process.env.NEO_MINER_API_TOKEN||''
@@ -13,6 +14,9 @@ const contracts=new Map()
 const infrastructure=new Map()
 const challenges=new Map()
 const fleet=new Map()
+const verifiedShares=new Map()
+const payoutReconciliations=new Map()
+const hashVaultEntries=[]
 
 function configFromEnv(){
   return {
@@ -28,8 +32,7 @@ function configFromEnv(){
 }
 
 async function runtimeReadiness(){
-  const config=configFromEnv()
-  const configured=evaluateProductionReadiness(config)
+  const config=configFromEnv();const configured=evaluateProductionReadiness(config)
   if(!configured.ready) return {...configured,liveProbe:null}
   const liveProbe=await collectLiveProbe(config)
   if(!liveProbe.ok) return {...configured,ready:false,mode:'BLOCKED',missing:[...configured.missing,'live_probe'],liveProbe}
@@ -42,74 +45,44 @@ const readBody=req=>new Promise((resolve,reject)=>{let raw='';req.on('data',c=>{
 const store=c=>{contracts.set(c.id,c);return c}
 const getContract=id=>{const c=contracts.get(id);if(!c)throw new Error('CONTRACT_NOT_FOUND');return c}
 const verifyMinerSignature=({publicKey,message,signature})=>{try{return crypto.verify(null,Buffer.from(message),publicKey,Buffer.from(signature,'base64'))}catch{return false}}
+const allAttributions=()=>[...payoutReconciliations.values()].flatMap(r=>r.attributions||[])
 
 export const server=http.createServer(async(req,res)=>{
   if(req.method==='OPTIONS'){res.writeHead(204,{'access-control-allow-origin':process.env.CORS_ORIGIN||'https://shemsizedek.github.io','access-control-allow-headers':'authorization,content-type','access-control-allow-methods':'GET,POST,OPTIONS'});return res.end()}
-  if(req.method==='GET'&&req.url==='/health'){
-    const configured=evaluateProductionReadiness(configFromEnv())
-    return json(res,200,{service:'neo-miner-production',status:'UP',mode:configured.mode,time:new Date().toISOString()})
-  }
-  if(req.method==='GET'&&req.url==='/ready'){
-    const readiness=await runtimeReadiness()
-    return json(res,readiness.ready?200:503,readiness)
-  }
-  if(req.method==='GET'&&req.url==='/providers'){
+  if(req.method==='GET'&&req.url==='/health'){const configured=evaluateProductionReadiness(configFromEnv());return json(res,200,{service:'neo-miner-production',status:'UP',mode:configured.mode,time:new Date().toISOString()})}
+  if(req.method==='GET'&&req.url==='/ready'){const readiness=await runtimeReadiness();return json(res,readiness.ready?200:503,readiness)}
+  if(req.method==='GET'&&req.url==='/providers'){if(!authorized(req))return json(res,401,{error:'unauthorized'});return json(res,200,await liveProviderSnapshot())}
+  if(req.method==='GET'&&req.url==='/probe'){if(!authorized(req))return json(res,401,{error:'unauthorized'});return json(res,200,await collectLiveProbe(configFromEnv()))}
+  if(req.method==='GET'&&req.url==='/snapshot'){if(!authorized(req))return json(res,401,{error:'unauthorized'});const readiness=await runtimeReadiness();const f=fleetSnapshot([...fleet.values()]);return json(res,200,buildProductionHealthSnapshot({readiness,minerFleet:{verifiedAgents:f.verifiedIdentities,hashrateTh:f.totalHashrateTh,online:f.online},pool:{connected:Boolean(readiness.liveProbe?.pool?.connected),acceptedShares:f.acceptedShares,rejectedShares:0},payments:{provider:process.env.PAYMENT_PROVIDER,enabledCurrencies:(process.env.ENABLED_CURRENCIES||'').split(',').filter(Boolean),webhookVerified:process.env.PAYMENT_WEBHOOK_VERIFY==='true'},chains:{bitcoinConnected:Boolean(readiness.liveProbe?.bitcoin?.connected),bitcoinHeight:readiness.liveProbe?.bitcoin?.blocks??null,counterpartyConnected:Boolean(readiness.liveProbe?.counterparty?.connected),counterpartyHeight:null}}))}
+
+  if(req.method==='GET'&&req.url==='/hashvault'){
     if(!authorized(req)) return json(res,401,{error:'unauthorized'})
-    return json(res,200,await liveProviderSnapshot())
+    return json(res,200,{summary:hashVaultSnapshot(hashVaultEntries),verifiedShares:verifiedShares.size,reconciledPayouts:payoutReconciliations.size,attributions:allAttributions(),entries:hashVaultEntries})
   }
-  if(req.method==='GET'&&req.url==='/probe'){
+  if(req.method==='POST'&&req.url==='/hashvault/payouts/reconcile'){
     if(!authorized(req)) return json(res,401,{error:'unauthorized'})
-    return json(res,200,await collectLiveProbe(configFromEnv()))
+    try{const body=await readBody(req);if(payoutReconciliations.has(body.payout?.payoutId))throw new Error('PAYOUT_ALREADY_RECONCILED');const r=reconcilePoolPayout({payout:body.payout,verifiedShares:[...verifiedShares.values()]});payoutReconciliations.set(r.payoutId,r);return json(res,201,r)}catch(error){return json(res,409,{error:error.message})}
   }
-  if(req.method==='GET'&&req.url==='/snapshot'){
+  if(req.method==='POST'&&req.url==='/hashvault/credits'){
     if(!authorized(req)) return json(res,401,{error:'unauthorized'})
-    const readiness=await runtimeReadiness();const f=fleetSnapshot([...fleet.values()])
-    return json(res,200,buildProductionHealthSnapshot({readiness,minerFleet:{verifiedAgents:f.verifiedIdentities,hashrateTh:f.totalHashrateTh,online:f.online},pool:{connected:Boolean(readiness.liveProbe?.pool?.connected),acceptedShares:f.acceptedShares,rejectedShares:0},payments:{provider:process.env.PAYMENT_PROVIDER,enabledCurrencies:(process.env.ENABLED_CURRENCIES||'').split(',').filter(Boolean),webhookVerified:process.env.PAYMENT_WEBHOOK_VERIFY==='true'},chains:{bitcoinConnected:Boolean(readiness.liveProbe?.bitcoin?.connected),bitcoinHeight:readiness.liveProbe?.bitcoin?.blocks??null,counterpartyConnected:Boolean(readiness.liveProbe?.counterparty?.connected),counterpartyHeight:null}}))
+    try{const body=await readBody(req);const attribution=allAttributions().find(a=>a.attributionId===body.attributionId);if(!attribution)throw new Error('ATTRIBUTION_NOT_FOUND');const contract=getContract(attribution.contractId);if(contract.customerId!==body.customerId)throw new Error('CUSTOMER_CONTRACT_MISMATCH');assertNoDuplicateCredit(hashVaultEntries,attribution);const entry=createHashVaultCredit({attribution,customerId:body.customerId,poolFeePct:body.poolFeePct,serviceFeePct:body.serviceFeePct,electricityFeeBtc:body.electricityFeeBtc});hashVaultEntries.push(entry);return json(res,201,entry)}catch(error){return json(res,409,{error:error.message})}
   }
-  if(req.method==='GET'&&req.url==='/fleet'){
-    if(!authorized(req)) return json(res,401,{error:'unauthorized'})
-    return json(res,200,{summary:fleetSnapshot([...fleet.values()]),miners:[...fleet.values()]})
-  }
-  if(req.method==='POST'&&req.url==='/fleet/challenge'){
-    if(!authorized(req)) return json(res,401,{error:'unauthorized'})
-    try{const c=createEnrollmentChallenge(await readBody(req));challenges.set(c.challengeId,c);return json(res,201,c)}catch(error){return json(res,400,{error:error.message})}
-  }
-  if(req.method==='POST'&&req.url==='/fleet/enroll'){
-    if(!authorized(req)) return json(res,401,{error:'unauthorized'})
-    try{const body=await readBody(req);const pending=challenges.get(body.challengeId);if(!pending)throw new Error('CHALLENGE_NOT_FOUND');const verified=verifyEnrollmentChallenge(pending,{signature:body.signature,verifySignature:verifyMinerSignature});const miner=enrollMiner({challenge:verified,model:body.model,serial:body.serial,firmware:body.firmware,siteId:body.siteId});challenges.set(verified.challengeId,verified);fleet.set(miner.id,miner);return json(res,201,miner)}catch(error){return json(res,409,{error:error.message})}
-  }
+
+  if(req.method==='GET'&&req.url==='/fleet'){if(!authorized(req))return json(res,401,{error:'unauthorized'});return json(res,200,{summary:fleetSnapshot([...fleet.values()]),miners:[...fleet.values()]})}
+  if(req.method==='POST'&&req.url==='/fleet/challenge'){if(!authorized(req))return json(res,401,{error:'unauthorized'});try{const c=createEnrollmentChallenge(await readBody(req));challenges.set(c.challengeId,c);return json(res,201,c)}catch(error){return json(res,400,{error:error.message})}}
+  if(req.method==='POST'&&req.url==='/fleet/enroll'){if(!authorized(req))return json(res,401,{error:'unauthorized'});try{const body=await readBody(req);const pending=challenges.get(body.challengeId);if(!pending)throw new Error('CHALLENGE_NOT_FOUND');const verified=verifyEnrollmentChallenge(pending,{signature:body.signature,verifySignature:verifyMinerSignature});const miner=enrollMiner({challenge:verified,model:body.model,serial:body.serial,firmware:body.firmware,siteId:body.siteId});challenges.set(verified.challengeId,verified);fleet.set(miner.id,miner);return json(res,201,miner)}catch(error){return json(res,409,{error:error.message})}}
   const telemetryMatch=req.url?.match(/^\/fleet\/([^/]+)\/telemetry$/)
-  if(req.method==='POST'&&telemetryMatch){
-    if(!authorized(req)) return json(res,401,{error:'unauthorized'})
-    try{const miner=fleet.get(telemetryMatch[1]);if(!miner)throw new Error('MINER_NOT_FOUND');const updated=registerTelemetry(miner,await readBody(req));fleet.set(updated.id,updated);return json(res,200,updated)}catch(error){return json(res,409,{error:error.message})}
-  }
-  if(req.method==='POST'&&req.url==='/fleet/shares/verify'){
-    if(!authorized(req)) return json(res,401,{error:'unauthorized'})
-    try{const body=await readBody(req);const miner=fleet.get(body.share?.minerId);if(!miner)throw new Error('MINER_NOT_FOUND');const result=verifyStratumShare({miner,share:body.share,poolReceipt:body.poolReceipt});fleet.set(miner.id,applyShareResult(miner,result));return json(res,200,result)}catch(error){return json(res,409,{error:error.message,accountingEligible:false})}
-  }
-  if(req.method==='GET'&&req.url==='/infrastructure'){
-    if(!authorized(req)) return json(res,401,{error:'unauthorized'})
-    const records=[...infrastructure.values()]
-    return json(res,200,{summary:onboardingSummary(records),records})
-  }
-  if(req.method==='POST'&&req.url==='/infrastructure'){
-    if(!authorized(req)) return json(res,401,{error:'unauthorized'})
-    try{const record=createInfrastructureRecord(await readBody(req));infrastructure.set(record.id,record);return json(res,201,record)}catch(error){return json(res,400,{error:error.message})}
-  }
+  if(req.method==='POST'&&telemetryMatch){if(!authorized(req))return json(res,401,{error:'unauthorized'});try{const miner=fleet.get(telemetryMatch[1]);if(!miner)throw new Error('MINER_NOT_FOUND');const updated=registerTelemetry(miner,await readBody(req));fleet.set(updated.id,updated);return json(res,200,updated)}catch(error){return json(res,409,{error:error.message})}}
+  if(req.method==='POST'&&req.url==='/fleet/shares/verify'){if(!authorized(req))return json(res,401,{error:'unauthorized'});try{const body=await readBody(req);const miner=fleet.get(body.share?.minerId);if(!miner)throw new Error('MINER_NOT_FOUND');const result=verifyStratumShare({miner,share:body.share,poolReceipt:body.poolReceipt});if(verifiedShares.has(result.shareId))throw new Error('SHARE_ALREADY_VERIFIED');fleet.set(miner.id,applyShareResult(miner,result));verifiedShares.set(result.shareId,result);return json(res,200,result)}catch(error){return json(res,409,{error:error.message,accountingEligible:false})}}
+
+  if(req.method==='GET'&&req.url==='/infrastructure'){if(!authorized(req))return json(res,401,{error:'unauthorized'});const records=[...infrastructure.values()];return json(res,200,{summary:onboardingSummary(records),records})}
+  if(req.method==='POST'&&req.url==='/infrastructure'){if(!authorized(req))return json(res,401,{error:'unauthorized'});try{const record=createInfrastructureRecord(await readBody(req));infrastructure.set(record.id,record);return json(res,201,record)}catch(error){return json(res,400,{error:error.message})}}
   const infraMatch=req.url?.match(/^\/infrastructure\/([^/]+)\/verify$/)
-  if(req.method==='POST'&&infraMatch){
-    if(!authorized(req)) return json(res,401,{error:'unauthorized'})
-    try{const record=infrastructure.get(infraMatch[1]);if(!record)throw new Error('INFRASTRUCTURE_NOT_FOUND');const body=await readBody(req);const verified=markInfrastructureVerified(record,{ok:body.ok===true,detail:body.detail});infrastructure.set(verified.id,verified);return json(res,200,verified)}catch(error){return json(res,409,{error:error.message})}
-  }
-  if(req.method==='POST'&&req.url==='/contracts'){
-    if(!authorized(req)) return json(res,401,{error:'unauthorized'})
-    try{return json(res,201,store(createContract(await readBody(req))))}catch(error){return json(res,400,{error:error.message})}
-  }
+  if(req.method==='POST'&&infraMatch){if(!authorized(req))return json(res,401,{error:'unauthorized'});try{const record=infrastructure.get(infraMatch[1]);if(!record)throw new Error('INFRASTRUCTURE_NOT_FOUND');const body=await readBody(req);const verified=markInfrastructureVerified(record,{ok:body.ok===true,detail:body.detail});infrastructure.set(verified.id,verified);return json(res,200,verified)}catch(error){return json(res,409,{error:error.message})}}
+
+  if(req.method==='POST'&&req.url==='/contracts'){if(!authorized(req))return json(res,401,{error:'unauthorized'});try{return json(res,201,store(createContract(await readBody(req))))}catch(error){return json(res,400,{error:error.message})}}
   const match=req.url?.match(/^\/contracts\/([^/]+)\/(payment|reserve|activate|settlement-pending|settle)$/)
-  if(req.method==='POST'&&match){
-    if(!authorized(req)) return json(res,401,{error:'unauthorized'})
-    try{const [,id,action]=match;let c=getContract(id);const body=await readBody(req);if(action==='payment') c=confirmPayment(c,body);if(action==='reserve') c=reserveCapacity(c,body);if(action==='activate'){const readiness=await runtimeReadiness();const activation=assertLiveContractActivation({productionReady:readiness.ready,paymentConfirmed:c.state==='CAPACITY_RESERVED',contractExecuted:true,capacityBacked:true,customerSettlementDestinationVerified:body.settlementDestinationVerified===true,simulation:c.simulation,orderId:body.orderId,contractId:c.id});c=activateContract(c,{...body,activationId:activation.activationId,productionReady:readiness.ready})}if(action==='settlement-pending') c=markSettlementPending(c,body);if(action==='settle') c=settleContract(c,body);return json(res,200,store(c))}catch(error){return json(res,409,{error:error.message})}
-  }
+  if(req.method==='POST'&&match){if(!authorized(req))return json(res,401,{error:'unauthorized'});try{const [,id,action]=match;let c=getContract(id);const body=await readBody(req);if(action==='payment')c=confirmPayment(c,body);if(action==='reserve')c=reserveCapacity(c,body);if(action==='activate'){const readiness=await runtimeReadiness();const activation=assertLiveContractActivation({productionReady:readiness.ready,paymentConfirmed:c.state==='CAPACITY_RESERVED',contractExecuted:true,capacityBacked:true,customerSettlementDestinationVerified:body.settlementDestinationVerified===true,simulation:c.simulation,orderId:body.orderId,contractId:c.id});c=activateContract(c,{...body,activationId:activation.activationId,productionReady:readiness.ready})}if(action==='settlement-pending')c=markSettlementPending(c,body);if(action==='settle')c=settleContract(c,body);return json(res,200,store(c))}catch(error){return json(res,409,{error:error.message})}}
   return json(res,404,{error:'not_found'})
 })
 
