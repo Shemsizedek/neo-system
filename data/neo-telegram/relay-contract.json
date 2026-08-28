@@ -1,0 +1,30 @@
+{
+  "contract": "NEOGRAM-NVSN-RELAY",
+  "version": "0.5",
+  "request_auth": {
+    "headers": ["x-neogram-identity", "x-neogram-timestamp", "x-neogram-nonce", "x-neogram-public-key", "x-neogram-signature"],
+    "canonical_request": "METHOD\\nPATH\\nTIMESTAMP\\nNONCE\\nSHA256_HEX(BODY)",
+    "signature_algorithm": "ECDSA-P256-SHA256"
+  },
+  "operations": [
+    {"method":"POST","path":"/v0.5/relay/register","purpose":"register or refresh a relay-visible public identity binding"},
+    {"method":"POST","path":"/v0.5/messages","purpose":"submit an already encrypted and signed NTP envelope"},
+    {"method":"GET","path":"/v0.5/mailbox/{neo_id}","purpose":"retrieve non-expired encrypted envelopes for the authenticated recipient"},
+    {"method":"POST","path":"/v0.5/messages/{message_id}/ack","purpose":"acknowledge delivery or final receipt"},
+    {"method":"GET","path":"/health","purpose":"relay capability and health metadata"}
+  ],
+  "submission_requirements": {
+    "protocol": "NTP",
+    "version": "1.0",
+    "ciphertext_required": true,
+    "plaintext_payload_forbidden": true,
+    "message_signature_required": true,
+    "nonce_required": true,
+    "expires_at_required": true
+  },
+  "privacy": {
+    "relay_may_read_plaintext": false,
+    "relay_may_receive_private_keys": false,
+    "relay_stores_ciphertext_only": true
+  }
+}
