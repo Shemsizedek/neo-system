@@ -127,6 +127,13 @@ jobs:
           test -f dist/neo-enterprise/admin/index.html
           test ! -e dist/neo-government
           test ! -e dist/government-workspace
+      - name: Publish compatibility aliases
+        run: |
+          mkdir -p dist/neo-wire dist/generator dist/miner dist/teller
+          cp -R dist/neogram/. dist/neo-wire/
+          cp -R dist/neo-generator/. dist/generator/
+          cp -R dist/neo-miner/. dist/miner/
+          cp -R dist/neo-teller/. dist/teller/
       - name: Verify NEO Enterprise publication boundary
         run: |
           test -f dist/api/enterprise/index.json
@@ -137,10 +144,13 @@ jobs:
           ! grep -R "PRIVATE_CONTROL_PLANE" dist/api/enterprise dist/neo-enterprise
       - name: Add SPA 404 fallback
         run: cp dist/index.html dist/404.html
+      - name: Verify all static Pages routes and references
+        run: npm run pages:verify
       - name: Pages build summary
         run: |
           echo "Public NEO Hub: /neo-hub/" >> "$GITHUB_STEP_SUMMARY"
           echo "Neogram: /neogram/" >> "$GITHUB_STEP_SUMMARY"
+          echo "NEO Wire compatibility route: /neo-wire/" >> "$GITHUB_STEP_SUMMARY"
           echo "Legacy NEO Telegram alias: /neo-telegram/" >> "$GITHUB_STEP_SUMMARY"
           echo "Neogram/NTP static API: /api/neo-telegram/" >> "$GITHUB_STEP_SUMMARY"
           echo "Neogram v0.5 relay config: /api/neo-telegram/relay-config.json" >> "$GITHUB_STEP_SUMMARY"
@@ -148,6 +158,7 @@ jobs:
           echo "NEO Enterprise: /neo-enterprise/" >> "$GITHUB_STEP_SUMMARY"
           echo "Enterprise executive console: /neo-enterprise/admin/" >> "$GITHUB_STEP_SUMMARY"
           echo "Enterprise public API: /api/enterprise/" >> "$GITHUB_STEP_SUMMARY"
+          echo "Static integrity gate: passed" >> "$GITHUB_STEP_SUMMARY"
           echo "Private memberships and government workspace data: excluded from GitHub Pages" >> "$GITHUB_STEP_SUMMARY"
       - name: Configure Pages
         uses: actions/configure-pages@v5
