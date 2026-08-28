@@ -1,6 +1,6 @@
 {
   "service": "neo-telegram",
-  "version": "0.3",
+  "version": "0.4",
   "mode": "github-static",
   "status": "prototype",
   "protocol": "NTP/1.0",
@@ -13,8 +13,10 @@
   "routing_registry": true,
   "device_signing": "ECDSA-P256-SHA256 browser-local non-exportable private key",
   "signature_verification": true,
+  "key_agreement": "ECDH-P256",
+  "payload_encryption": "AES-GCM-256",
+  "public_key_binding": "GitHub-published or browser-imported public binding",
   "nonce_replay_protection": "browser-local",
-  "payload_encryption": false,
   "live_relay": false,
   "transports": ["INTERNET", "MESH", "SMS", "RADIO"],
   "settlement": {"bitcoin":"interface-only","lightning":"interface-only","counterparty":"interface-only"}
