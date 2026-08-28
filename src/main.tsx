@@ -5,6 +5,7 @@ import { HomeBase } from './home/HomeBase'
 import { MinerApp } from './miner/MinerApp'
 import { GeneratorApp } from './miner/GeneratorApp'
 import { ProductionStatusApp } from './miner/ProductionStatusApp'
+import { CloudMiningOperationsApp } from './miner/CloudMiningOperationsApp'
 import { StorefrontApp } from './miner/StorefrontApp'
 import { NeoWireApp } from './wire/NeoWireApp'
 import { NeoExplorer } from './explorer/NeoExplorer'
@@ -21,6 +22,8 @@ import './explorer/explorer.css'
 function resolveRoute(){
   const hash=window.location.hash.replace(/^#/,'')
   if(hash.startsWith('/')) return hash
+  const requested=new URLSearchParams(window.location.search).get('route')
+  if(requested) return `/${requested.replace(/^\/+|\/+$/g,'')}`
   const base=(import.meta.env.BASE_URL||'/').replace(/\/$/,'')
   let path=window.location.pathname
   if(base && base!=='/' && path.startsWith(base)) path=path.slice(base.length)||'/'
@@ -50,6 +53,7 @@ function RootRouter(){
   const isCommand=route==='/command'||route.startsWith('/command/')
   const isGenerator=route==='/generator'||route.startsWith('/generator/')
   const isProduction=route==='/generator-production'||route.startsWith('/generator-production/')
+  const isCloudMining=route==='/cloud-mining'||route.startsWith('/cloud-mining/')
   const isMiner=route==='/miner'||route.startsWith('/miner/')
   const isMinerStore=route==='/miner-store'||route.startsWith('/miner-store/')
   const isWire=route==='/wire'||route.startsWith('/wire/')
@@ -67,6 +71,7 @@ function RootRouter(){
   if(isWire) return <NeoWireApp/>
   if(isMinerStore) return <StorefrontApp/>
   if(isProduction) return <ProductionStatusApp/>
+  if(isCloudMining) return <CloudMiningOperationsApp/>
   if(isGenerator) return <GeneratorApp/>
   if(isMiner) return <MinerApp/>
   return <HomeBase onOpen={open}/>
