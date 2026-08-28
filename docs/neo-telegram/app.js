@@ -1,4 +1,5 @@
-const STORAGE_KEY='neo.telegram.v0.2.state';
+const STORAGE_KEY='neo.telegram.v0.3.state';
+const KEY_DB='neo.telegram.keys';
 const defaultTransports=['INTERNET','MESH','SMS','RADIO'];
 const state=loadState();
 const health=document.querySelector('#health');
@@ -6,94 +7,27 @@ const backend=document.querySelector('#backend');
 const typeSelect=document.querySelector('#type');
 const transportSelect=document.querySelector('#transport');
 const destinationInput=document.querySelector('#dest');
-let directory=[];
-let routes=[];
-
-function loadState(){
-  try{
-    const saved=JSON.parse(localStorage.getItem(STORAGE_KEY)||'null');
-    return saved&&typeof saved==='object'?{outbox:saved.outbox||[],inbox:saved.inbox||[]}:{outbox:[],inbox:[]};
-  }catch{return {outbox:[],inbox:[]};}
-}
+let directory=[];let routes=[];let deviceKeys=null;
+function loadState(){try{const saved=JSON.parse(localStorage.getItem(STORAGE_KEY)||'null');return saved&&typeof saved==='object'?{outbox:saved.outbox||[],inbox:saved.inbox||[],seen:saved.seen||{}}:{outbox:[],inbox:[],seen:{}};}catch{return {outbox:[],inbox:[],seen:{}};}}
 function persist(){localStorage.setItem(STORAGE_KEY,JSON.stringify(state));}
-function escapeHtml(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));}
-function renderHealth(transports=defaultTransports){
-  health.innerHTML=transports.map(t=>{
-    const route=routes.find(r=>r.transport===t);
-    const label=route?.state||'READY';
-    const cls=label==='READY'?'ok':'warn';
-    return `<div class="health"><span>${escapeHtml(t)}</span><b class="${cls}">${escapeHtml(label)}</b></div>`;
-  }).join('');
-}
-function renderMailbox(){
-  const outbox=document.querySelector('#outbox');
-  const inbox=document.querySelector('#inbox');
-  outbox.innerHTML=state.outbox.length?state.outbox.map(x=>`<div class="entry"><div><b>${escapeHtml(x.message_id)}</b><br><small>${escapeHtml(x.created_at)}</small></div><div><b>${escapeHtml(x.message.type)}</b><br><small>${escapeHtml(x.source.neo_id)} → ${escapeHtml(x.destination.value)}</small></div><div>${escapeHtml(x.routing.transport_preference[0])}</div><div class="ok">${escapeHtml(x.delivery_state)}</div></div>`).join(''):'<p>No queued telegrams.</p>';
-  inbox.innerHTML=state.inbox.length?state.inbox.map(x=>`<div class="entry"><div><b>${escapeHtml(x.message_id)}</b><br><small>${escapeHtml(x.received_at||x.created_at)}</small></div><div><b>${escapeHtml(x.message.type)}</b><br><small>${escapeHtml(x.source.neo_id)} → ${escapeHtml(x.destination.value)}</small></div><div>${escapeHtml(x.routing.transport_preference[0])}</div><div class="ok">DELIVERED</div></div>`).join(''):'<p>No received telegrams.</p>';
-  document.querySelector('#outboxCount').textContent=state.outbox.length;
-  document.querySelector('#inboxCount').textContent=state.inbox.length;
-}
-function envelope(){
-  const now=new Date();
-  return {
-    protocol:'NTP',version:'1.0',message_id:'ntp:'+crypto.randomUUID(),
-    created_at:now.toISOString(),expires_at:new Date(now.getTime()+86400000).toISOString(),
-    source:{neo_id:'NEO-00000144',device_id:'github-pages-v0.2'},
-    destination:{type:'neo_id',value:destinationInput.value.trim()},
-    message:{type:typeSelect.value,priority:'NORMAL',content_type:'text/plain',encoding:'utf-8',payload:document.querySelector('#payload').value},
-    routing:{mode:'AUTO',hop_limit:12,store_forward:true,transport_preference:[transportSelect.value]},
-    security:{encryption:'REQUIRED',signature_algorithm:'Ed25519',signature:null,state:'UNSIGNED_DEMO'},
-    ack:{requested:true},delivery_state:'QUEUED'
-  };
-}
-function resolveDestination(value){return directory.find(x=>x.neo_id===value)||null;}
-async function loadBackend(){
-  renderHealth();
-  try{
-    const [statusRes,protocolRes,identitiesRes,routesRes]=await Promise.all([
-      fetch('../api/neo-telegram/status.json',{cache:'no-store'}),
-      fetch('../api/neo-telegram/protocol.json',{cache:'no-store'}),
-      fetch('../api/neo-telegram/identities.json',{cache:'no-store'}),
-      fetch('../api/neo-telegram/routes.json',{cache:'no-store'})
-    ]);
-    if(!statusRes.ok||!protocolRes.ok||!identitiesRes.ok||!routesRes.ok)throw new Error('snapshot unavailable');
-    const status=await statusRes.json();
-    const protocol=await protocolRes.json();
-    const identities=await identitiesRes.json();
-    const routeRegistry=await routesRes.json();
-    directory=Array.isArray(identities.directory)?identities.directory:[];
-    routes=Array.isArray(routeRegistry.routes)?routeRegistry.routes:[];
-    backend.textContent='GitHub registry connected';backend.className='ok';
-    if(Array.isArray(status.transports))transportSelect.innerHTML=['AUTO',...status.transports].map(t=>`<option>${escapeHtml(t)}</option>`).join('');
-    if(Array.isArray(protocol.message_types))typeSelect.innerHTML=protocol.message_types.map(t=>`<option>${escapeHtml(t)}</option>`).join('');
-    renderHealth(status.transports||defaultTransports);
-    document.querySelector('#directory').innerHTML=directory.map(x=>`<div class="health"><span>${escapeHtml(x.neo_id)} · ${escapeHtml(x.display_name)}</span><b class="${x.status==='ACTIVE'?'ok':'warn'}">${escapeHtml(x.status)}</b></div>`).join('')||'<p>No identities published.</p>';
-  }catch{
-    backend.textContent='Static backend unavailable';backend.className='warn';
-  }
-}
-
-document.querySelector('#send').onclick=()=>{
-  const destination=destinationInput.value.trim();
-  if(!destination){document.querySelector('#inspector').textContent='Destination is required.';return;}
-  const x=envelope();
-  const identity=resolveDestination(destination);
-  if(directory.length&&!identity)x.delivery_state='UNROUTABLE';
-  state.outbox.unshift(x);persist();renderMailbox();
-  document.querySelector('#inspector').textContent=JSON.stringify(x,null,2);
-};
-document.querySelector('#simulate').onclick=()=>{
-  const queued=state.outbox.find(x=>x.delivery_state==='QUEUED');
-  if(!queued)return;
-  queued.delivery_state='DELIVERED';
-  state.inbox.unshift({...queued,received_at:new Date().toISOString()});
-  persist();renderMailbox();document.querySelector('#inspector').textContent=JSON.stringify(queued,null,2);
-};
-document.querySelector('#clear').onclick=()=>{
-  state.outbox=[];state.inbox=[];persist();renderMailbox();document.querySelector('#inspector').textContent='{}';
-};
-document.querySelector('#export').onclick=()=>{
-  const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
-  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='neo-telegram-mailbox.json';a.click();URL.revokeObjectURL(a.href);
-};
-renderMailbox();loadBackend();
+function escapeHtml(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));}
+function b64(bytes){return btoa(String.fromCharCode(...new Uint8Array(bytes)));}
+function unb64(s){return Uint8Array.from(atob(s),c=>c.charCodeAt(0));}
+function canonical(x){return JSON.stringify(x,Object.keys(x).sort());}
+function signable(x){const copy=structuredClone(x);copy.security.signature=null;copy.security.state='SIGNING';return copy;}
+async function openKeyDb(){return new Promise((resolve,reject)=>{const req=indexedDB.open(KEY_DB,1);req.onupgradeneeded=()=>req.result.createObjectStore('keys');req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);});}
+async function getStoredKey(){const db=await openKeyDb();return new Promise((resolve,reject)=>{const tx=db.transaction('keys','readonly');const req=tx.objectStore('keys').get('device');req.onsuccess=()=>resolve(req.result||null);req.onerror=()=>reject(req.error);});}
+async function storeKey(value){const db=await openKeyDb();return new Promise((resolve,reject)=>{const tx=db.transaction('keys','readwrite');tx.objectStore('keys').put(value,'device');tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error);});}
+async function ensureKeys(){if(deviceKeys)return deviceKeys;deviceKeys=await getStoredKey();if(!deviceKeys){const pair=await crypto.subtle.generateKey({name:'ECDSA',namedCurve:'P-256'},false,['sign','verify']);deviceKeys={privateKey:pair.privateKey,publicKey:pair.publicKey,createdAt:new Date().toISOString()};await storeKey(deviceKeys);}const raw=await crypto.subtle.exportKey('raw',deviceKeys.publicKey);document.querySelector('#keyState').textContent='LOCAL P-256 · '+b64(raw).slice(0,18)+'…';return deviceKeys;}
+async function signEnvelope(x){const keys=await ensureKeys();const bytes=new TextEncoder().encode(canonical(signable(x)));const sig=await crypto.subtle.sign({name:'ECDSA',hash:'SHA-256'},keys.privateKey,bytes);const pub=await crypto.subtle.exportKey('raw',keys.publicKey);x.security={...x.security,signature_algorithm:'ECDSA-P256-SHA256',public_key:b64(pub),signature:b64(sig),state:'SIGNED_LOCAL'};return x;}
+async function verifyEnvelope(x){try{if(!x.security?.signature||!x.security?.public_key)return false;const pub=await crypto.subtle.importKey('raw',unb64(x.security.public_key),{name:'ECDSA',namedCurve:'P-256'},false,['verify']);const bytes=new TextEncoder().encode(canonical(signable(x)));return crypto.subtle.verify({name:'ECDSA',hash:'SHA-256'},pub,unb64(x.security.signature),bytes);}catch{return false;}}
+function renderHealth(transports=defaultTransports){health.innerHTML=transports.map(t=>{const r=routes.find(x=>x.transport===t);const label=r?.state||'READY';return `<div class="health"><span>${escapeHtml(t)}</span><b class="${label==='READY'?'ok':'warn'}">${escapeHtml(label)}</b></div>`;}).join('');}
+function renderMailbox(){const row=x=>`<div class="entry"><div><b>${escapeHtml(x.message_id)}</b><br><small>${escapeHtml(x.created_at)}</small></div><div><b>${escapeHtml(x.message.type)}</b><br><small>${escapeHtml(x.source.neo_id)} → ${escapeHtml(x.destination.value)}</small></div><div>${escapeHtml(x.routing.transport_preference[0])}</div><div class="ok">${escapeHtml(x.delivery_state)}</div></div>`;document.querySelector('#outbox').innerHTML=state.outbox.length?state.outbox.map(row).join(''):'<p>No queued telegrams.</p>';document.querySelector('#inbox').innerHTML=state.inbox.length?state.inbox.map(row).join(''):'<p>No received telegrams.</p>';document.querySelector('#outboxCount').textContent=state.outbox.length;document.querySelector('#inboxCount').textContent=state.inbox.length;}
+function envelope(){const now=new Date();return {protocol:'NTP',version:'1.0',message_id:'ntp:'+crypto.randomUUID(),nonce:crypto.randomUUID(),created_at:now.toISOString(),expires_at:new Date(now.getTime()+86400000).toISOString(),source:{neo_id:'NEO-00000144',device_id:'github-pages-v0.3'},destination:{type:'neo_id',value:destinationInput.value.trim()},message:{type:typeSelect.value,priority:'NORMAL',content_type:'text/plain',encoding:'utf-8',payload:document.querySelector('#payload').value},routing:{mode:'AUTO',hop_limit:12,store_forward:true,transport_preference:[transportSelect.value]},security:{encryption:'NOT_IMPLEMENTED',signature_algorithm:'ECDSA-P256-SHA256',signature:null,state:'UNSIGNED'},ack:{requested:true},delivery_state:'QUEUED'};}
+function resolveDestination(v){return directory.find(x=>x.neo_id===v)||null;}
+async function loadBackend(){renderHealth();try{const rs=await Promise.all(['status','protocol','identities','routes'].map(x=>fetch(`../api/neo-telegram/${x}.json`,{cache:'no-store'})));if(rs.some(x=>!x.ok))throw new Error();const [status,protocol,identities,routeRegistry]=await Promise.all(rs.map(x=>x.json()));directory=identities.directory||[];routes=routeRegistry.routes||[];backend.textContent='GitHub registry connected';backend.className='ok';transportSelect.innerHTML=['AUTO',...(status.transports||defaultTransports)].map(t=>`<option>${escapeHtml(t)}</option>`).join('');typeSelect.innerHTML=(protocol.message_types||[]).map(t=>`<option>${escapeHtml(t)}</option>`).join('');renderHealth(status.transports);document.querySelector('#directory').innerHTML=directory.map(x=>`<div class="health"><span>${escapeHtml(x.neo_id)} · ${escapeHtml(x.display_name)}</span><b class="${x.status==='ACTIVE'?'ok':'warn'}">${escapeHtml(x.status)}</b></div>`).join('');}catch{backend.textContent='Static backend unavailable';backend.className='warn';}}
+document.querySelector('#send').onclick=async()=>{const destination=destinationInput.value.trim();if(!destination)return;const x=envelope();if(directory.length&&!resolveDestination(destination))x.delivery_state='UNROUTABLE';await signEnvelope(x);state.outbox.unshift(x);persist();renderMailbox();document.querySelector('#inspector').textContent=JSON.stringify(x,null,2);};
+document.querySelector('#simulate').onclick=async()=>{const queued=state.outbox.find(x=>x.delivery_state==='QUEUED');if(!queued)return;if(state.seen[queued.nonce]){queued.delivery_state='REPLAY_REJECTED';persist();renderMailbox();return;}const valid=await verifyEnvelope(queued);queued.delivery_state=valid?'VERIFIED_DELIVERED':'SIGNATURE_REJECTED';if(valid){state.seen[queued.nonce]=Date.now();state.inbox.unshift({...queued,received_at:new Date().toISOString()});}persist();renderMailbox();document.querySelector('#inspector').textContent=JSON.stringify({signature_valid:valid,envelope:queued},null,2);};
+document.querySelector('#clear').onclick=()=>{state.outbox=[];state.inbox=[];state.seen={};persist();renderMailbox();document.querySelector('#inspector').textContent='{}';};
+document.querySelector('#export').onclick=()=>{const safe={outbox:state.outbox,inbox:state.inbox};const blob=new Blob([JSON.stringify(safe,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='neo-telegram-mailbox.json';a.click();URL.revokeObjectURL(a.href);};
+renderMailbox();ensureKeys().catch(()=>document.querySelector('#keyState').textContent='KEY ERROR');loadBackend();
