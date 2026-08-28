@@ -1,10 +1,11 @@
 import { verifyKey } from 'discord-interactions'
 import { counterpartyStatus } from './counterparty.js'
+import { treasuryStatus, configuredWallets } from './treasury.js'
 
 const json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:{'content-type':'application/json; charset=utf-8','cache-control':'no-store'}})
 const DISCORD_API='https://discord.com/api/v10'
 const GITHUB_REPO='Shemsizedek/neo-system'
-const SYSTEM_PROMPT='You are NEOsync operating through an authorized Discord command surface. Be concise and useful. Never invent live telemetry, blockchain heights, balances, prices, transaction counts, validator counts, node counts, dates, system health, deployment state, repository state, Counterparty state, asset supply, or external-action results. Only state live/current facts when they were supplied by a connected tool, API, binding, or gateway runtime in this request. If live data is unavailable, say that clearly. Do not claim to have performed external actions unless a connected tool actually performed them.'
+const SYSTEM_PROMPT='You are NEOsync operating through an authorized Discord command surface. Be concise and useful. Never invent live telemetry, blockchain heights, balances, prices, transaction counts, validator counts, node counts, dates, system health, deployment state, repository state, Counterparty state, asset supply, wallet balances, treasury balances, or external-action results. Only state live/current facts when they were supplied by a connected tool, API, binding, or gateway runtime in this request. If live data is unavailable, say that clearly. Do not claim to have performed external actions unless a connected tool actually performed them.'
 
 async function verifyDiscord(request,env,raw){
   const sig=request.headers.get('x-signature-ed25519')||''
@@ -54,6 +55,12 @@ function isGitHubStatusPrompt(prompt){
   const p=normalized(prompt)
   return p.includes('github')&&(p.includes('status')||p.includes('repo')||p.includes('repository')||p.includes('latest commit')||p.includes('open pr')||p.includes('pull request'))
 }
+function isTreasuryPrompt(prompt){
+  const p=normalized(prompt)
+  const source=p.includes('treasury')||p.includes('wallet')||p.includes('address balance')||p.includes('holdings')||p.includes('balances')
+  const intent=p.includes('status')||p.includes('live')||p.includes('balance')||p.includes('holding')||p.includes('btc')||p.includes('xcp')||p.includes('nomni')||p.includes('counterparty')
+  return source&&intent
+}
 function isCounterpartyStatusPrompt(prompt){
   const p=normalized(prompt)
   const source=p.includes('counterparty')||p.includes('xcp')||p.includes('nomni')
@@ -66,16 +73,18 @@ function gatewayStatus(env){
   if(env.NEOSYNC_CHAT_URL)providers.push('NEOsync upstream')
   if(env.AI)providers.push(`Cloudflare Workers AI (${workersModel})`)
   if(env.OPENAI_API_KEY)providers.push('OpenAI (configured; quota may vary)')
+  const walletCount=configuredWallets(env).length
   return [
-    '**NEO System Gateway Status**','Discord command surface: Online','Gateway: neo-discord-api v1.6',
+    '**NEO System Gateway Status**','Discord command surface: Online','Gateway: neo-discord-api v1.7',
     `Workers AI: ${env.AI?'Online':'Not bound'}`,
     `OpenAI: ${env.OPENAI_API_KEY?'Configured':'Not configured'}`,
     `NEOsync upstream: ${env.NEOSYNC_CHAT_URL?'Configured':'Not configured'}`,
     `Provider priority: ${providers.length?providers.join(' → '):'No AI provider configured'}`,
     'Live GitHub source: Enabled for Shemsizedek/neo-system',
     'Live Counterparty source: Enabled for node/XCP/NOMNI reads',
+    `Live treasury source: Enabled; configured public wallets: ${walletCount}`,
     'NEO asset-symbol policy: ∞ tokenized currencies; ₿ BTC; no symbol for ordinary assets/Orange Chip™ Stocks','',
-    'Market/treasury telemetry: Not reported unless a live data connector is queried.'
+    'Treasury reads are read-only through mempool.space + Counterparty v2. No private keys, signing, or broadcasting.'
   ].join('\n')
 }
 async function githubFetch(env,path){
@@ -128,6 +137,7 @@ async function askOpenAI(env,prompt){
 async function askNEO(env,prompt,a){
   if(isStatusPrompt(prompt))return gatewayStatus(env)
   if(isGitHubStatusPrompt(prompt))return githubStatus(env)
+  if(isTreasuryPrompt(prompt))return treasuryStatus(env)
   if(isCounterpartyStatusPrompt(prompt))return counterpartyStatus(env)
   if(env.NEOSYNC_CHAT_URL){
     const headers={'content-type':'application/json','x-neo-surface':'discord','x-neo-actor':a.id}
@@ -163,7 +173,7 @@ async function processCommand(interaction,env){
 export default {
   async fetch(request,env,ctx){
     const u=new URL(request.url)
-    if(request.method==='GET'&&u.pathname==='/health')return json({ok:true,service:'neo-discord',version:'1.6',providers:{neosync_upstream:Boolean(env.NEOSYNC_CHAT_URL),workers_ai:Boolean(env.AI),openai:Boolean(env.OPENAI_API_KEY),github_live:true,counterparty_live:true},priority:['neosync-upstream','workers-ai','openai'],workers_ai_model:String(env.WORKERS_AI_MODEL||'@cf/meta/llama-3.1-8b-instruct-fp8'),grounded_status:true,live_sources:['github','counterparty-v2'],asset_symbol_policy:{tokenized_currency:'∞',bitcoin:'₿',orange_chip_stock:'none',ordinary_asset:'none'}})
+    if(request.method==='GET'&&u.pathname==='/health')return json({ok:true,service:'neo-discord',version:'1.7',providers:{neosync_upstream:Boolean(env.NEOSYNC_CHAT_URL),workers_ai:Boolean(env.AI),openai:Boolean(env.OPENAI_API_KEY),github_live:true,counterparty_live:true,treasury_live:true},priority:['neosync-upstream','workers-ai','openai'],workers_ai_model:String(env.WORKERS_AI_MODEL||'@cf/meta/llama-3.1-8b-instruct-fp8'),grounded_status:true,live_sources:['github','counterparty-v2','mempool-space'],configured_wallets:configuredWallets(env).length,asset_symbol_policy:{tokenized_currency:'∞',bitcoin:'₿',orange_chip_stock:'none',ordinary_asset:'none'}})
     if(request.method!=='POST'||(u.pathname!=='/'&&u.pathname!=='/discord/interactions'))return json({error:'Not found'},404)
     const raw=await request.text()
     let verified=false
