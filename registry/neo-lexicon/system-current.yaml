@@ -1,0 +1,98 @@
+version: 1.0
+id: NEO-LEX-SYS-001
+name: NEO System Current Vocabulary
+parent_system: NEO System
+status: ACTIVE
+mode: canonical-system-vocabulary
+source: GitHub main
+source_commit: 4c93a11d7cd020bead798b9e3abfbfd49764f5ec
+updated_at: 2026-08-28T04:45:00Z
+purpose: >-
+  Preserve current canonical product, protocol, transport, relay, and security terminology
+  from the live NEO System codebase for use by NEO Lingo, NEO Lexicon, NEOsync,
+  and approved downstream defensive-security systems.
+controls:
+  provenance_required: true
+  current_system_terms_are_source_bound: true
+  legacy_names_may_be_aliases: true
+  cryptographic_terms_do_not_override_protocol_implementations: true
+  may_override_pa_sarun: false
+entries:
+  - id: SYS-001
+    canonical_term: Neogram
+    entry_type: product
+    plain_language: NEO secure messaging product
+    aliases:
+      - NEO Telegram
+    relations:
+      - uses_protocol:NTP
+      - uses_transport:NVSN
+    notes: NEO Telegram is retained as a legacy compatibility alias.
+
+  - id: SYS-002
+    canonical_term: NTP
+    entry_type: protocol
+    plain_language: NEO message format and rules
+    aliases:
+      - NEO Telegram Protocol
+    relations:
+      - product:Neogram
+      - transport:NVSN
+
+  - id: SYS-003
+    canonical_term: NVSN
+    entry_type: network
+    plain_language: NEO transport and relay network layer
+    aliases:
+      - NEO Virtual Satellite Network
+    relations:
+      - carries_protocol:NTP
+      - relay:Authenticated Relay
+
+  - id: SYS-004
+    canonical_term: Identity Binding
+    entry_type: security-control
+    plain_language: Cryptographically tying an identity to its public keys
+    relations:
+      - protects:Neogram
+      - verifies:NTP
+
+  - id: SYS-005
+    canonical_term: Authenticated Relay
+    entry_type: security-service
+    plain_language: Secure store-and-forward message relay
+    aliases:
+      - NVSN Relay
+    relations:
+      - transport:NVSN
+      - accepts:Secure Envelope
+    controls:
+      - signed_request_required
+      - timestamp_window
+      - nonce_replay_protection
+      - rate_limits
+      - ttl_limits
+      - encrypted_payload_only
+
+  - id: SYS-006
+    canonical_term: Secure Envelope
+    entry_type: security-object
+    plain_language: Encrypted and signed NTP message package
+    aliases:
+      - Encrypted NTP Envelope
+    relations:
+      - protocol:NTP
+      - carried_by:Authenticated Relay
+    controls:
+      - ciphertext_required
+      - signature_required
+      - nonce_required
+      - expiration_required
+      - plaintext_rejected
+
+security_boundary:
+  private_keys_in_github: false
+  private_keys_in_pages: false
+  plaintext_relay_storage: false
+  autonomous_targeting: false
+  offensive_cyber_operations: false
