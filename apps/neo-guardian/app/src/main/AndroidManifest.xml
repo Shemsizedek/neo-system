@@ -15,6 +15,11 @@
         android:roundIcon="@drawable/neo_guardian_logo"
         android:usesCleartextTraffic="false"
         android:theme="@android:style/Theme.Material.NoActionBar">
+        <meta-data android:name="org.neosystem.identity.SUBJECT_ID" android:value="neo:founder:000001" />
+        <meta-data android:name="org.neosystem.identity.ACCOUNT_ORDINAL" android:value="1" />
+        <meta-data android:name="org.neosystem.identity.ACCOUNT_CLASS" android:value="founder" />
+        <meta-data android:name="org.neosystem.identity.BOOTSTRAP_ROLE" android:value="founder_owner" />
+        <meta-data android:name="org.neosystem.identity.AUTHENTICATION_BYPASS" android:value="false" />
         <activity
             android:name=".ProductionActivity"
             android:exported="true"
