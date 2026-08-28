@@ -30,7 +30,8 @@
     "neo-enterprise:server":"node server/neo-enterprise/server.mjs",
     "neo-enterprise:test":"node --test server/neo-enterprise/*.test.mjs",
     "pages:platform-api":"node scripts/build-pages-platform-api.mjs",
-    "pages:enterprise":"node scripts/build-enterprise-pages.mjs"
+    "pages:enterprise":"node scripts/build-enterprise-pages.mjs",
+    "pages:verify":"node scripts/verify-pages-static.mjs"
   },
   "dependencies": {"react":"^19.1.1","react-dom":"^19.1.1","lucide-react":"^0.468.0"},
   "devDependencies": {"@vitejs/plugin-react":"^4.3.4","vite":"^6.0.7","typescript":"^5.7.2","@types/react":"^19.0.3","@types/react-dom":"^19.0.2"}
