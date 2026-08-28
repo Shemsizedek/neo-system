@@ -64,13 +64,14 @@ jobs:
           test -f apps/neoscan/web/index.html
           mkdir -p dist/neoscan
           cp -R apps/neoscan/web/. dist/neoscan/
-      - name: Publish NEO Telegram and GitHub backend snapshots
+      - name: Publish Neogram and GitHub backend snapshots
         run: |
           test -f docs/neo-telegram/index.html
           for file in status protocol identities routes; do
             test -f "data/neo-telegram/$file.json"
           done
-          mkdir -p dist/neo-telegram dist/api/neo-telegram
+          mkdir -p dist/neogram dist/neo-telegram dist/api/neo-telegram
+          cp -R docs/neo-telegram/. dist/neogram/
           cp -R docs/neo-telegram/. dist/neo-telegram/
           for file in status protocol identities routes; do
             cp "data/neo-telegram/$file.json" "dist/api/neo-telegram/$file.json"
@@ -82,6 +83,7 @@ jobs:
           test -d dist/assets
           test -f dist/neo-jarvis/index.html
           test -f dist/neo-pacer/index.html
+          test -f dist/neogram/index.html
           test -f dist/neo-telegram/index.html
           for file in status protocol identities routes build; do
             test -f "dist/api/neo-telegram/$file.json"
@@ -138,10 +140,9 @@ jobs:
       - name: Pages build summary
         run: |
           echo "Public NEO Hub: /neo-hub/" >> "$GITHUB_STEP_SUMMARY"
-          echo "NEO Telegram: /neo-telegram/" >> "$GITHUB_STEP_SUMMARY"
-          echo "NEO Telegram static API: /api/neo-telegram/" >> "$GITHUB_STEP_SUMMARY"
-          echo "NEO Telegram v0.2 identity registry: /api/neo-telegram/identities.json" >> "$GITHUB_STEP_SUMMARY"
-          echo "NEO Telegram v0.2 route registry: /api/neo-telegram/routes.json" >> "$GITHUB_STEP_SUMMARY"
+          echo "Neogram: /neogram/" >> "$GITHUB_STEP_SUMMARY"
+          echo "Legacy NEO Telegram alias: /neo-telegram/" >> "$GITHUB_STEP_SUMMARY"
+          echo "Neogram/NTP static API: /api/neo-telegram/" >> "$GITHUB_STEP_SUMMARY"
           echo "NEO Enterprise: /neo-enterprise/" >> "$GITHUB_STEP_SUMMARY"
           echo "Enterprise executive console: /neo-enterprise/admin/" >> "$GITHUB_STEP_SUMMARY"
           echo "Enterprise public API: /api/enterprise/" >> "$GITHUB_STEP_SUMMARY"
