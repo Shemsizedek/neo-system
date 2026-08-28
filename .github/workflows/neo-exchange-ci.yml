@@ -1,0 +1,38 @@
+name: NEO Exchange CI
+
+on:
+  push:
+    branches:
+      - feat/neo-exchange-origin
+    paths:
+      - 'apps/neo-exchange/**'
+      - 'api/neo-exchange/**'
+      - '.github/workflows/neo-exchange-ci.yml'
+  pull_request:
+    paths:
+      - 'apps/neo-exchange/**'
+      - 'api/neo-exchange/**'
+      - '.github/workflows/pages.yml'
+      - '.github/workflows/neo-exchange-ci.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Check backend syntax
+        run: node --check api/neo-exchange/server.mjs
+      - name: Install frontend dependencies
+        working-directory: apps/neo-exchange
+        run: npm install
+      - name: Build GitHub Pages frontend
+        working-directory: apps/neo-exchange
+        run: npm run build -- --base=/neo-system/neo-exchange/
+      - name: Verify artifact
+        run: test -f apps/neo-exchange/dist/index.html
