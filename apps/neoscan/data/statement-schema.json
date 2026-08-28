@@ -1,0 +1,17 @@
+{
+  "schema":"neo.statement.v1",
+  "description":"Provenance-preserving public accounting envelope for NEO Statements.",
+  "sources":{
+    "bitcoin":{"class":"onchain","authority":"Bitcoin network","unitPolicy":"BTC only","verification":"txid/block confirmation"},
+    "counterparty":{"class":"onchain-overlay","authority":"Counterparty on Bitcoin","unitPolicy":"asset-native quantities","verification":"Counterparty event plus Bitcoin anchoring"},
+    "ces":{"class":"external-ledger","authority":"configured CES provider","unitPolicy":"preserve source unit","verification":"connector receipt/source reference required"},
+    "offline":{"class":"attested-ledger","authority":"declared record custodian","unitPolicy":"preserve recorded unit","verification":"attestation plus immutable source reference required"}
+  },
+  "entry":{"required":["source","reference","unit","amount","observedAt","verificationStatus"],"verificationStatus":["verified","pending","unverified","unavailable"]},
+  "rules":[
+    "Never label CES or offline balances as Bitcoin or Counterparty balances.",
+    "Never sum unlike units without an explicit valuation record and timestamp.",
+    "Public totals must retain source provenance.",
+    "Unverified entries may be displayed but must not be represented as verified accounting facts."
+  ]
+}

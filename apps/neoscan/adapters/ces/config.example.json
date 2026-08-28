@@ -1,0 +1,6 @@
+{
+  "endpoint":"https://your-ces-provider.example/api/",
+  "network":"your-ces-network",
+  "account":"YOUR_CES_ACCOUNT_NUMBER",
+  "authMode":"bearer"
+}
