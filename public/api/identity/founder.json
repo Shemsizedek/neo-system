@@ -1,0 +1,12 @@
+{
+  "schema_version": "1.0.0",
+  "subject_id": "neo:founder:000001",
+  "ordinal": 1,
+  "account_class": "founder",
+  "bootstrap_role": "founder_owner",
+  "reserved": true,
+  "deletable": false,
+  "recyclable": false,
+  "authentication_bypass": false,
+  "public_fields_only": true
+}
