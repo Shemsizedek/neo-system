@@ -1,0 +1,10 @@
+{
+  "protocol": "NTP",
+  "version": "1.0",
+  "message_types": ["TEXT", "VOICE_SIGNAL", "PAYMENT", "PAYMENT_REQUEST", "INVOICE", "IDENTITY", "TELEMETRY", "ROUTING", "DISCOVERY", "BROADCAST", "EMERGENCY", "SYSTEM", "ACK", "ERROR"],
+  "delivery_states": ["CREATED", "SIGNED", "QUEUED", "ROUTED", "RELAYED", "DELIVERED", "ACKNOWLEDGED", "EXPIRED", "REJECTED", "UNROUTABLE", "FAILED"],
+  "security": {
+    "signature_algorithm": "Ed25519",
+    "demo_signatures": false
+  }
+}

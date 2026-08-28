@@ -1,0 +1,17 @@
+{
+  "service": "neo-telegram",
+  "mode": "github-static",
+  "status": "prototype",
+  "protocol": "NTP/1.0",
+  "network": "NVSN",
+  "bridge": "NVSN-NT-BRIDGE-001",
+  "backend": "GitHub repository + GitHub Actions static API",
+  "frontend": "GitHub Pages",
+  "persistent_messaging": false,
+  "transports": ["INTERNET", "MESH", "SMS", "RADIO"],
+  "settlement": {
+    "bitcoin": "interface-only",
+    "lightning": "interface-only",
+    "counterparty": "interface-only"
+  }
+}

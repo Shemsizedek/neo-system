@@ -1,1 +1,42 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>NEO Telegram</title><link rel="stylesheet" href="./styles.css"></head><body><main class="shell"><header><div><span class="eyebrow">NTP-1.0 / NVSN</span><h1>NEO Telegram</h1><p>One identity. One message protocol. Many transports.</p></div><div class="status">● DEMO NODE ONLINE</div></header><section class="grid"><article class="card composer"><h2>Compose Telegram</h2><label>Destination<input id="dest" value="NEO-00000721"></label><label>Type<select id="type"><option>TEXT</option><option>PAYMENT_REQUEST</option><option>TELEMETRY</option><option>EMERGENCY</option></select></label><label>Payload<textarea id="payload">Hello from NEO Telegram.</textarea></label><label>Transport<select id="transport"><option>AUTO</option><option>INTERNET</option><option>MESH</option><option>SMS</option><option>RADIO</option></select></label><button id="send">Create Signed Demo Envelope</button><small>No private keys or real payments are used in this prototype.</small></article><article class="card"><h2>Node</h2><dl><dt>NEO ID</dt><dd>NEO-00000144</dd><dt>Protocol</dt><dd>NTP/1.0</dd><dt>Bridge</dt><dd>NVSN-NT-BRIDGE-001</dd><dt>Routing</dt><dd>Store-and-forward ready</dd></dl><h2>Transport Health</h2><div id="health"></div></article></section><section class="card"><div class="section-head"><h2>Telegram Ledger</h2><button class="ghost" id="clear">Clear Demo</button></div><div id="ledger"></div></section><section class="card"><h2>Envelope Inspector</h2><pre id="inspector">{}</pre></section></main><script src="./app.js"></script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>NEO Telegram</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+<main class="shell">
+  <header>
+    <div><span class="eyebrow">NTP-1.0 / NVSN</span><h1>NEO Telegram</h1><p>One identity. One message protocol. Many transports.</p></div>
+    <div class="status">● GITHUB PAGES NODE</div>
+  </header>
+  <section class="grid">
+    <article class="card composer">
+      <h2>Compose Telegram</h2>
+      <label>Destination<input id="dest" value="NEO-00000721"></label>
+      <label>Type<select id="type"><option>TEXT</option><option>PAYMENT_REQUEST</option><option>TELEMETRY</option><option>EMERGENCY</option></select></label>
+      <label>Payload<textarea id="payload">Hello from NEO Telegram.</textarea></label>
+      <label>Transport<select id="transport"><option>AUTO</option><option>INTERNET</option><option>MESH</option><option>SMS</option><option>RADIO</option></select></label>
+      <button id="send">Create Demo Envelope</button>
+      <small>Unsigned demo envelope. No private keys or real payments are used.</small>
+    </article>
+    <article class="card">
+      <h2>Node</h2>
+      <dl>
+        <dt>NEO ID</dt><dd>NEO-00000144</dd>
+        <dt>Protocol</dt><dd>NTP/1.0</dd>
+        <dt>Bridge</dt><dd>NVSN-NT-BRIDGE-001</dd>
+        <dt>Routing</dt><dd>Store-and-forward ready</dd>
+        <dt>Backend</dt><dd id="backend">Connecting…</dd>
+      </dl>
+      <h2>Transport Health</h2><div id="health"></div>
+    </article>
+  </section>
+  <section class="card"><div class="section-head"><h2>Telegram Ledger</h2><button class="ghost" id="clear">Clear Demo</button></div><div id="ledger"></div></section>
+  <section class="card"><h2>Envelope Inspector</h2><pre id="inspector">{}</pre></section>
+</main>
+<script src="./app.js"></script>
+</body>
+</html>
