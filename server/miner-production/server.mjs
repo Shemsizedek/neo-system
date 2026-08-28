@@ -3,10 +3,12 @@ import {evaluateProductionReadiness,buildProductionHealthSnapshot,assertLiveCont
 import {collectLiveProbe} from './liveClients.mjs'
 import {liveProviderSnapshot} from './providers.mjs'
 import {createContract,confirmPayment,reserveCapacity,activateContract,markSettlementPending,settleContract} from './contracts.mjs'
+import {createInfrastructureRecord,markInfrastructureVerified,onboardingSummary} from './onboarding.mjs'
 
 const PORT=Number(process.env.PORT||8890)
 const API_TOKEN=process.env.NEO_MINER_API_TOKEN||''
 const contracts=new Map()
+const infrastructure=new Map()
 
 function configFromEnv(){
   return {
@@ -58,6 +60,26 @@ export const server=http.createServer(async(req,res)=>{
     if(!authorized(req)) return json(res,401,{error:'unauthorized'})
     const readiness=await runtimeReadiness()
     return json(res,200,buildProductionHealthSnapshot({readiness,minerFleet:{verifiedAgents:Number(process.env.VERIFIED_MINER_AGENTS||0),hashrateTh:Number(process.env.FLEET_HASHRATE_TH||0),online:Number(process.env.MINERS_ONLINE||0)},pool:{connected:Boolean(readiness.liveProbe?.pool?.connected),acceptedShares:Number(process.env.ACCEPTED_SHARES||0),rejectedShares:Number(process.env.REJECTED_SHARES||0)},payments:{provider:process.env.PAYMENT_PROVIDER,enabledCurrencies:(process.env.ENABLED_CURRENCIES||'').split(',').filter(Boolean),webhookVerified:process.env.PAYMENT_WEBHOOK_VERIFY==='true'},chains:{bitcoinConnected:Boolean(readiness.liveProbe?.bitcoin?.connected),bitcoinHeight:readiness.liveProbe?.bitcoin?.blocks??null,counterpartyConnected:Boolean(readiness.liveProbe?.counterparty?.connected),counterpartyHeight:null}}))
+  }
+  if(req.method==='GET'&&req.url==='/infrastructure'){
+    if(!authorized(req)) return json(res,401,{error:'unauthorized'})
+    const records=[...infrastructure.values()]
+    return json(res,200,{summary:onboardingSummary(records),records})
+  }
+  if(req.method==='POST'&&req.url==='/infrastructure'){
+    if(!authorized(req)) return json(res,401,{error:'unauthorized'})
+    try{const record=createInfrastructureRecord(await readBody(req));infrastructure.set(record.id,record);return json(res,201,record)}catch(error){return json(res,400,{error:error.message})}
+  }
+  const infraMatch=req.url?.match(/^\/infrastructure\/([^/]+)\/verify$/)
+  if(req.method==='POST'&&infraMatch){
+    if(!authorized(req)) return json(res,401,{error:'unauthorized'})
+    try{
+      const record=infrastructure.get(infraMatch[1]);if(!record)throw new Error('INFRASTRUCTURE_NOT_FOUND')
+      const body=await readBody(req)
+      const verified=markInfrastructureVerified(record,{ok:body.ok===true,detail:body.detail})
+      infrastructure.set(verified.id,verified)
+      return json(res,200,verified)
+    }catch(error){return json(res,409,{error:error.message})}
   }
   if(req.method==='POST'&&req.url==='/contracts'){
     if(!authorized(req)) return json(res,401,{error:'unauthorized'})
