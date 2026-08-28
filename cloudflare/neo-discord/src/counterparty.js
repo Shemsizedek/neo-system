@@ -11,12 +11,28 @@ async function get(path){
   return {result:body?.result,headers:r.headers}
 }
 
+function normalizeQuantity(value,divisible){
+  if(value===null||value===undefined)return 'unknown'
+  if(!divisible)return String(value)
+  const raw=String(value)
+  if(!/^-?\d+$/.test(raw))return raw
+  try{
+    const n=BigInt(raw)
+    const negative=n<0n
+    const abs=negative?-n:n
+    const whole=abs/100000000n
+    const fraction=String(abs%100000000n).padStart(8,'0').replace(/0+$/,'')
+    return `${negative?'-':''}${whole}${fraction?'.'+fraction:''}`
+  }catch{return raw}
+}
+
 function summarizeAsset(name,result){
   const a=result&&typeof result==='object'?result:{}
-  const supply=a.supply_normalized??a.supply??'unknown'
-  const divisible=typeof a.divisible==='boolean'?String(a.divisible):'unknown'
+  const divisible=a.divisible===true
+  const supply=a.supply_normalized??normalizeQuantity(a.supply,divisible)
+  const divisibleText=typeof a.divisible==='boolean'?String(a.divisible):'unknown'
   const locked=typeof a.locked==='boolean'?String(a.locked):'unknown'
-  return [`${name}:`,`  supply: ${supply}`,`  divisible: ${divisible}`,`  locked: ${locked}`].join('\n')
+  return [`${name}:`,`  supply: ${supply}`,`  divisible: ${divisibleText}`,`  locked: ${locked}`].join('\n')
 }
 
 export async function counterpartyStatus(){
@@ -35,6 +51,6 @@ export async function counterpartyStatus(){
     `Bitcoin height: ${s.backend_height??root.headers.get('x-bitcoin-height')??'unknown'}`,
     `Counterparty height: ${s.counterparty_height??root.headers.get('x-counterparty-height')??'unknown'}`,
     '',summarizeAsset('XCP',xcp.result),'',summarizeAsset('NOMNI',nomni.result),'',
-    'Source: live Counterparty Core API v2. No market price is inferred.'
+    'Source: live Counterparty Core API v2. Divisible asset quantities are normalized to display units. No market price is inferred.'
   ].join('\n')
 }
