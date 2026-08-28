@@ -1,0 +1,34 @@
+{
+  "version": "0.2",
+  "routing_mode": "CAPABILITY_DIRECTORY",
+  "routes": [
+    {
+      "transport": "INTERNET",
+      "state": "READY",
+      "priority": 10,
+      "store_forward": true,
+      "live_relay": false
+    },
+    {
+      "transport": "MESH",
+      "state": "PLANNED",
+      "priority": 20,
+      "store_forward": true,
+      "live_relay": false
+    },
+    {
+      "transport": "SMS",
+      "state": "PLANNED",
+      "priority": 30,
+      "store_forward": true,
+      "live_relay": false
+    },
+    {
+      "transport": "RADIO",
+      "state": "PLANNED",
+      "priority": 40,
+      "store_forward": true,
+      "live_relay": false
+    }
+  ]
+}
