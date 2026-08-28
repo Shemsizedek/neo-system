@@ -64,6 +64,18 @@ jobs:
           test -f apps/neoscan/web/index.html
           mkdir -p dist/neoscan
           cp -R apps/neoscan/web/. dist/neoscan/
+      - name: Build NEO Exchange ORIGIN terminal
+        working-directory: apps/neo-exchange
+        run: |
+          npm install
+          npm run build -- --base=/neo-system/neo-exchange/
+      - name: Publish NEO Exchange ORIGIN terminal
+        run: |
+          test -f apps/neo-exchange/dist/index.html
+          rm -rf dist/neo-exchange
+          mkdir -p dist/neo-exchange
+          cp -R apps/neo-exchange/dist/. dist/neo-exchange/
+          test -f dist/neo-exchange/index.html
       - name: Publish Neogram and GitHub backend snapshots
         run: |
           test -f docs/neo-telegram/index.html
@@ -144,6 +156,7 @@ jobs:
       - name: Pages build summary
         run: |
           echo "Public NEO Hub: /neo-hub/" >> "$GITHUB_STEP_SUMMARY"
+          echo "NEO Exchange ORIGIN: /neo-exchange/" >> "$GITHUB_STEP_SUMMARY"
           echo "NEO Guardian: /guardian/" >> "$GITHUB_STEP_SUMMARY"
           echo "Guardian live version API: /guardian/version.json" >> "$GITHUB_STEP_SUMMARY"
           echo "Neogram: /neogram/" >> "$GITHUB_STEP_SUMMARY"
