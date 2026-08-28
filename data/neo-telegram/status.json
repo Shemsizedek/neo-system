@@ -1,9 +1,12 @@
 {
-  "service": "neo-telegram",
+  "service": "neogram",
+  "product_name": "Neogram",
+  "legacy_name": "NEO Telegram",
   "version": "0.4",
   "mode": "github-static",
   "status": "prototype",
   "protocol": "NTP/1.0",
+  "protocol_name": "NEO Telegram Protocol",
   "network": "NVSN",
   "bridge": "NVSN-NT-BRIDGE-001",
   "backend": "GitHub repository + GitHub Actions static API",
