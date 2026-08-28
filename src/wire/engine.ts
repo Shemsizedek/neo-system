@@ -7,10 +7,11 @@ export const networkServices:NetworkService[]=[
   {id:'btc',name:'Bitcoin Gateway',status:'READY',description:'Final settlement boundary'},
   {id:'ln',name:'Lightning Router',status:'READY',description:'Instant micropayment boundary'},
   {id:'xcp',name:'Counterparty API',status:'READY',description:'XCP and tokenized asset layer'},
+  {id:'noogle-fi',name:'Noogle Fi Service Fabric',status:'ACTIVE',description:'Background telecom provider discovery, routing, health, and failover for NEO Wire'},
   {id:'ces',name:'CES Coordinator Gateway',status:'SANDBOX',description:'Mutual-credit account and trade reconciliation layer'},
-  {id:'sms',name:'SMS Gateway',status:'SANDBOX',description:'Authenticated command transport'},
-  {id:'ivr',name:'IVR Gateway',status:'SANDBOX',description:'Telephone banking interaction model'},
-  {id:'nvsn',name:'NVSN Bridge',status:'READY',description:'Virtual satellite routing integration point'},
+  {id:'sms',name:'SMS Gateway',status:'SANDBOX',description:'Routed through Noogle Fi provider adapters'},
+  {id:'ivr',name:'IVR Gateway',status:'SANDBOX',description:'Routed through Noogle Fi provider adapters'},
+  {id:'nvsn',name:'NVSN Bridge',status:'READY',description:'Virtual satellite routing integration through Noogle Fi'},
   {id:'fx',name:'World Currency Engine',status:'READY',description:'Multi-currency quote and display layer'}
 ]
 
