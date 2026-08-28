@@ -2,7 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { bootstrapProductFounder, getProductFounderBinding, assertProductFounderInvariant } from './products.mjs';
 
-for (const productId of ['neopay','neo-prime','noogle','omnitrix']) {
+const products=['neopay','neo-prime','noogle','omnitrix','neo-telegram','neogram','neo-wire'];
+
+for (const productId of products) {
   test(`${productId} reserves canonical founder as account #1`, () => {
     const binding = getProductFounderBinding(productId);
     assert.equal(binding.subjectId, 'neo:founder:000001');
@@ -17,7 +19,7 @@ for (const productId of ['neopay','neo-prime','noogle','omnitrix']) {
 }
 
 test('product bootstrap is idempotent', () => {
-  for (const productId of ['neopay','neo-prime','noogle','omnitrix']) {
+  for (const productId of products) {
     const first = bootstrapProductFounder(productId, []);
     const second = bootstrapProductFounder(productId, first.records);
     assert.equal(second.created, false);
@@ -26,15 +28,19 @@ test('product bootstrap is idempotent', () => {
 });
 
 test('account #1 cannot be occupied by another principal', () => {
-  for (const productId of ['neo-prime','noogle','omnitrix']) {
+  for (const productId of products) {
     assert.throws(() => bootstrapProductFounder(productId, [{productId, accountOrdinal:1, subjectId:'neo:user:000002'}]), /occupied/);
   }
 });
 
-test('Noogle and Omnitrix identity bindings do not create privilege bypasses', () => {
-  const noogle = getProductFounderBinding('noogle');
-  const omnitrix = getProductFounderBinding('omnitrix');
-  assert.equal(noogle.search_privilege_bypass, false);
-  assert.equal(omnitrix.browser_privilege_bypass, false);
-  assert.equal(omnitrix.wallet_secrets_in_registry, false);
+test('communications bindings do not create privilege bypasses', () => {
+  const telegram = getProductFounderBinding('neo-telegram');
+  const neogram = getProductFounderBinding('neogram');
+  const wire = getProductFounderBinding('neo-wire');
+  assert.equal(telegram.message_signing_bypass, false);
+  assert.equal(telegram.channel_permission_bypass, false);
+  assert.equal(neogram.message_signing_bypass, false);
+  assert.equal(neogram.mailbox_access_bypass, false);
+  assert.equal(wire.network_authority_bypass, false);
+  assert.equal(wire.device_enrollment_bypass, false);
 });
