@@ -38,14 +38,28 @@ jobs:
         run: |
           set -euo pipefail
           BASE='https://neoscan-statements.neosystem.workers.dev'
-          curl --fail --silent --show-error --location --retry 5 --retry-delay 2 "$BASE/health" -o health.json
-          curl --fail --silent --show-error --location --retry 5 --retry-delay 2 "$BASE/ready" -o ready.json
+          curl --fail --silent --show-error --location --retry 5 --retry-delay 2 -D health.headers "$BASE/health" -o health.json
+          curl --fail --silent --show-error --location --retry 5 --retry-delay 2 -D ready.headers "$BASE/ready" -o ready.json
+          echo '--- health headers ---'
+          cat health.headers
+          echo '--- health body preview ---'
+          head -c 500 health.json || true
+          echo
+          echo '--- ready headers ---'
+          cat ready.headers
+          echo '--- ready body preview ---'
+          head -c 500 ready.json || true
+          echo
           test -s health.json
           test -s ready.json
           python - <<'PY'
           import json
           for path, expected in [('health.json','live'),('ready.json','ready')]:
-              data=json.load(open(path))
+              raw=open(path,'rb').read()
+              try:
+                  data=json.loads(raw)
+              except Exception as exc:
+                  raise AssertionError(f'{path} is not JSON: {raw[:500]!r}') from exc
               assert data.get('ok') is True, data
               assert data.get('status') == expected, data
           PY
@@ -64,7 +78,11 @@ jobs:
           test -s statement.json
           python - <<'PY'
           import json
-          data=json.load(open('statement.json'))
+          raw=open('statement.json','rb').read()
+          try:
+              data=json.loads(raw)
+          except Exception as exc:
+              raise AssertionError(f'statement response is not JSON: {raw[:500]!r}') from exc
           assert data.get('ok') is True, data
           assert data.get('requestId'), data
           statement=data.get('data') or {}
