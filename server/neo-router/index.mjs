@@ -29,3 +29,4 @@ export { createCompliancePolicy, createPolicyException, exceptionActive, evaluat
 export { normalizeSecuritySignal, correlateSecuritySignals, createIncidentCase, preserveForensicEvidence, selectContainmentPlaybook, executeDefensiveResponse, securityPosture } from './security-operations.mjs'
 export { createServiceObjective, verifyBackup, evaluateRecoveryReadiness, chooseFailoverRoute, createRecoveryManifest, verifyRecoveryManifest, runContinuityExercise, continuityDashboard } from './resilience-continuity.mjs'
 export { createServiceTelemetry, buildDependencyMap, calculateSli, detectReliabilityAnomalies, correlateRootCause, forecastReliability, generateReliabilityMissions, buildReliabilityCommandView } from './reliability-intelligence.mjs'
+export { proposeRemediation, simulateRemediation, authorizeRemediation, executeRemediation, verifyRemediation, decideRollback, executeRollback, runAutonomousControlLoop } from './autonomous-operations.mjs'
