@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "neo-gas-status.schema.json",
+  "title": "NEO-GAS Status Snapshot",
+  "type": "object",
+  "required": [
+    "system",
+    "version",
+    "updatedAt",
+    "posture",
+    "overallReadiness",
+    "commandState",
+    "sourceModel",
+    "alerts",
+    "intelligenceRequirements",
+    "guardrails"
+  ],
+  "properties": {
+    "system": { "const": "NEO-GAS" },
+    "version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+    "updatedAt": { "type": "string", "format": "date-time" },
+    "posture": { "type": "string" },
+    "overallReadiness": { "type": "integer", "minimum": 0, "maximum": 100 },
+    "commandState": { "type": "string" },
+    "sourceModel": { "type": "string" },
+    "alerts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "severity", "domain", "title", "summary"],
+        "properties": {
+          "id": { "type": "string" },
+          "severity": { "enum": ["GREEN", "AMBER", "RED"] },
+          "domain": { "type": "string" },
+          "title": { "type": "string" },
+          "summary": { "type": "string" }
+        },
+        "additionalProperties": true
+      }
+    },
+    "intelligenceRequirements": { "type": "array", "items": { "type": "string" } },
+    "guardrails": { "type": "array", "items": { "type": "string" } }
+  },
+  "additionalProperties": true
+}
