@@ -67,13 +67,14 @@ function gatewayStatus(env){
   if(env.AI)providers.push(`Cloudflare Workers AI (${workersModel})`)
   if(env.OPENAI_API_KEY)providers.push('OpenAI (configured; quota may vary)')
   return [
-    '**NEO System Gateway Status**','Discord command surface: Online','Gateway: neo-discord-api v1.5',
+    '**NEO System Gateway Status**','Discord command surface: Online','Gateway: neo-discord-api v1.6',
     `Workers AI: ${env.AI?'Online':'Not bound'}`,
     `OpenAI: ${env.OPENAI_API_KEY?'Configured':'Not configured'}`,
     `NEOsync upstream: ${env.NEOSYNC_CHAT_URL?'Configured':'Not configured'}`,
     `Provider priority: ${providers.length?providers.join(' → '):'No AI provider configured'}`,
     'Live GitHub source: Enabled for Shemsizedek/neo-system',
-    'Live Counterparty source: Enabled for node/XCP/NOMNI reads','',
+    'Live Counterparty source: Enabled for node/XCP/NOMNI reads',
+    'NEO asset-symbol policy: ∞ tokenized currencies; ₿ BTC; no symbol for ordinary assets/Orange Chip™ Stocks','',
     'Market/treasury telemetry: Not reported unless a live data connector is queried.'
   ].join('\n')
 }
@@ -127,7 +128,7 @@ async function askOpenAI(env,prompt){
 async function askNEO(env,prompt,a){
   if(isStatusPrompt(prompt))return gatewayStatus(env)
   if(isGitHubStatusPrompt(prompt))return githubStatus(env)
-  if(isCounterpartyStatusPrompt(prompt))return counterpartyStatus()
+  if(isCounterpartyStatusPrompt(prompt))return counterpartyStatus(env)
   if(env.NEOSYNC_CHAT_URL){
     const headers={'content-type':'application/json','x-neo-surface':'discord','x-neo-actor':a.id}
     if(env.NEOSYNC_CHAT_TOKEN)headers.authorization=`Bearer ${env.NEOSYNC_CHAT_TOKEN}`
@@ -162,7 +163,7 @@ async function processCommand(interaction,env){
 export default {
   async fetch(request,env,ctx){
     const u=new URL(request.url)
-    if(request.method==='GET'&&u.pathname==='/health')return json({ok:true,service:'neo-discord',version:'1.5',providers:{neosync_upstream:Boolean(env.NEOSYNC_CHAT_URL),workers_ai:Boolean(env.AI),openai:Boolean(env.OPENAI_API_KEY),github_live:true,counterparty_live:true},priority:['neosync-upstream','workers-ai','openai'],workers_ai_model:String(env.WORKERS_AI_MODEL||'@cf/meta/llama-3.1-8b-instruct-fp8'),grounded_status:true,live_sources:['github','counterparty-v2']})
+    if(request.method==='GET'&&u.pathname==='/health')return json({ok:true,service:'neo-discord',version:'1.6',providers:{neosync_upstream:Boolean(env.NEOSYNC_CHAT_URL),workers_ai:Boolean(env.AI),openai:Boolean(env.OPENAI_API_KEY),github_live:true,counterparty_live:true},priority:['neosync-upstream','workers-ai','openai'],workers_ai_model:String(env.WORKERS_AI_MODEL||'@cf/meta/llama-3.1-8b-instruct-fp8'),grounded_status:true,live_sources:['github','counterparty-v2'],asset_symbol_policy:{tokenized_currency:'∞',bitcoin:'₿',orange_chip_stock:'none',ordinary_asset:'none'}})
     if(request.method!=='POST'||(u.pathname!=='/'&&u.pathname!=='/discord/interactions'))return json({error:'Not found'},404)
     const raw=await request.text()
     let verified=false
