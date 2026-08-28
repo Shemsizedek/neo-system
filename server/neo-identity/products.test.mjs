@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { bootstrapProductFounder, getProductFounderBinding, assertProductFounderInvariant } from './products.mjs';
 
-const products=['neopay','neo-prime','noogle','omnitrix','neo-telegram','neogram','neo-wire'];
+const products=['neopay','neo-prime','noogle','omnitrix','neo-telegram','neogram','neo-wire','neo-counter','neo-teller','neo-device-registry'];
 
 for (const productId of products) {
   test(`${productId} reserves canonical founder as account #1`, () => {
@@ -43,4 +43,20 @@ test('communications bindings do not create privilege bypasses', () => {
   assert.equal(neogram.mailbox_access_bypass, false);
   assert.equal(wire.network_authority_bypass, false);
   assert.equal(wire.device_enrollment_bypass, false);
+});
+
+test('transaction and device bindings do not create money-movement or hardware bypasses', () => {
+  const counter = getProductFounderBinding('neo-counter');
+  const teller = getProductFounderBinding('neo-teller');
+  const devices = getProductFounderBinding('neo-device-registry');
+  assert.equal(counter.transaction_approval_bypass, false);
+  assert.equal(counter.terminal_authentication_bypass, false);
+  assert.equal(counter.payment_credential_storage, false);
+  assert.equal(teller.cash_dispense_bypass, false);
+  assert.equal(teller.transaction_approval_bypass, false);
+  assert.equal(teller.device_enrollment_bypass, false);
+  assert.equal(teller.payment_credential_storage, false);
+  assert.equal(devices.device_attestation_bypass, false);
+  assert.equal(devices.device_enrollment_bypass, false);
+  assert.equal(devices.private_device_keys_in_registry, false);
 });
