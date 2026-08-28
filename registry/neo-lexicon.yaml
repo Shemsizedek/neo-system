@@ -1,15 +1,16 @@
-version: 1.0
+version: 1.1
 id: neo-lexicon
 name: NEO Lexicon
 parent_system: NEO System
 mode: source-bound-semantic-registry
 status: active
 purpose: >-
-  Maintain structured NEO vocabulary, language, script, symbol, relationship, provenance, and source-claim records for NEO Lingo, NEOsync, and approved downstream systems.
+  Maintain structured NEO vocabulary, language, script, symbol, relationship, provenance, source-claim, and current-system terminology records for NEO Lingo, NEOsync, and approved downstream systems.
 controls:
   preserve_source_terminology: true
   provenance_required: true
   distinguish_source_claims_from_verified_facts: true
+  distinguish_current_system_terms_from_source_claims: true
   may_override_pa_sarun: false
   may_override_temple_doctrine: false
   cryptographic_dictionary_words_as_keys: false
@@ -18,6 +19,12 @@ sources:
     title: First Language
     path: registry/neo-lexicon/source-001-first-language.yaml
     status: SOURCE-BOUND
+system_vocabularies:
+  - id: NEO-LEX-SYS-001
+    title: NEO System Current Vocabulary
+    path: registry/neo-lexicon/system-current.yaml
+    status: ACTIVE
+    provenance: GitHub main
 runtime:
   module: src/neoLexicon
   exports:

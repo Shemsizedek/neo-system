@@ -41,6 +41,47 @@ export const neoLingoCodex: NeoLingoTerm[] = [
     laymanTranslation: 'Operating rules / Standard operating procedure',
     definition: 'The core rules governing agent behavior, output formatting, and response logic.',
     preserveSourceTerm: true
+  },
+  {
+    term: 'Neogram',
+    aliases: ['NEO Telegram'],
+    laymanTranslation: 'NEO secure messaging product',
+    definition: 'The official public product name for the NEO messaging application. NEO Telegram remains a legacy compatibility name while NTP remains the underlying protocol.',
+    preserveSourceTerm: true
+  },
+  {
+    term: 'NTP',
+    aliases: ['NEO Telegram Protocol'],
+    laymanTranslation: 'NEO message format and rules',
+    definition: 'The protocol that defines Neogram message envelopes, signing, encryption metadata, routing fields, and message-state semantics.',
+    preserveSourceTerm: true
+  },
+  {
+    term: 'NVSN',
+    aliases: ['NEO Virtual Satellite Network'],
+    laymanTranslation: 'NEO transport and relay network layer',
+    definition: 'The network and transport layer used to route or relay NTP messages between authenticated identities and compatible NEO communication endpoints.',
+    preserveSourceTerm: true
+  },
+  {
+    term: 'Identity Binding',
+    laymanTranslation: 'Cryptographically tying an identity to its public keys',
+    definition: 'A security control that associates a NEO identity with signing and encryption public-key material so messages and relay requests can be verified.',
+    preserveSourceTerm: true
+  },
+  {
+    term: 'Authenticated Relay',
+    aliases: ['NVSN Relay'],
+    laymanTranslation: 'A secure store-and-forward message relay',
+    definition: 'A relay service that authenticates requests, rejects replay attempts, stores encrypted envelopes rather than plaintext, applies rate and TTL limits, and delivers messages to the intended authenticated identity.',
+    preserveSourceTerm: true
+  },
+  {
+    term: 'Secure Envelope',
+    aliases: ['Encrypted NTP Envelope'],
+    laymanTranslation: 'An encrypted and signed message package',
+    definition: 'A structured NTP message object containing ciphertext, integrity/signature metadata, routing information, nonce and expiration controls without exposing the plaintext payload to the relay.',
+    preserveSourceTerm: true
   }
 ]
 
