@@ -16,17 +16,27 @@
 <div class="card metric"><span>ACTIVE ALERTS</span><strong id="alertCount">--</strong><small>Defensive command alerts</small></div>
 <div class="card metric"><span>POSTURE</span><strong id="posture" style="font-size:20px">--</strong><small>No offensive execution</small></div>
 </div>
-<section class="card section"><h2>Operating Boundary</h2><p class="boundary">NEO-GAS is a defensive intelligence and resilience platform. It does not implement autonomous targeting, attack execution, weapons construction, unlawful weapons acquisition, unauthorized surveillance, or independent governmental police/military authority.</p><p class="muted" id="sourceModel"></p></section>
+<section class="card section"><h2>Operating Boundary</h2><p class="boundary">NEO-GAS is a defensive intelligence and resilience platform. It does not implement autonomous targeting, attack execution, weapons construction, unlawful weapons acquisition, unauthorized surveillance, or independent governmental police/military authority.</p><p class="muted" id="sourceModel"></p><p class="muted" id="buildMeta"></p></section>
 <section class="card section"><h2>Command Alerts</h2><div id="alerts"><p class="muted">Loading GitHub backend…</p></div></section>
 <div class="grid section"><section class="card"><h2>Priority Intelligence Requirements</h2><ul id="requirements"></ul></section><section class="card"><h2>System Guardrails</h2><ul id="guardrails"></ul></section></div>
 <div class="footer">NEO-GAS v2 • Intelligence before action • Defense before force • Civilian protection first</div>
 </main>
 <script>
-const BACKEND='https://raw.githubusercontent.com/Shemsizedek/neo-system/main/data/neo-gas/status.json';
+const API_BASE='/neo-system/api/neo-gas';
+const FALLBACK='https://raw.githubusercontent.com/Shemsizedek/neo-system/main/data/neo-gas/status.json';
 const byId=id=>document.getElementById(id);
-fetch(BACKEND,{cache:'no-store'}).then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.json()}).then(d=>{
- byId('sync').textContent='GITHUB BACKEND ONLINE';byId('readiness').textContent=d.overallReadiness+'%';byId('version').textContent=d.version;byId('alertCount').textContent=d.alerts.length;byId('posture').textContent=d.posture;byId('command').textContent=d.commandState+' • '+new Date(d.updatedAt).toLocaleString();byId('sourceModel').textContent=d.sourceModel;
+async function fetchJson(url){const r=await fetch(url,{cache:'no-store'});if(!r.ok)throw new Error('HTTP '+r.status);return r.json()}
+async function loadStatus(){
+ try{return {data:await fetchJson(API_BASE+'/status.json'),source:'PAGES API ONLINE'}}
+ catch(primaryError){
+   try{return {data:await fetchJson(FALLBACK),source:'GITHUB FALLBACK ONLINE'}}
+   catch(fallbackError){throw new Error(`Pages API: ${primaryError.message}; GitHub fallback: ${fallbackError.message}`)}
+ }
+}
+Promise.all([loadStatus(),fetchJson(API_BASE+'/build.json').catch(()=>null)]).then(([result,build])=>{
+ const d=result.data;byId('sync').textContent=result.source;byId('readiness').textContent=d.overallReadiness+'%';byId('version').textContent=d.version;byId('alertCount').textContent=d.alerts.length;byId('posture').textContent=d.posture;byId('command').textContent=d.commandState+' • '+new Date(d.updatedAt).toLocaleString();byId('sourceModel').textContent=d.sourceModel;
+ if(build)byId('buildMeta').textContent=`API ${build.apiVersion} • Build ${String(build.commit).slice(0,12)} • ${new Date(build.generatedAt).toLocaleString()}`;
  byId('alerts').innerHTML=d.alerts.length?d.alerts.map(a=>`<div class="alert"><div class="level ${a.severity}">${a.severity}</div><div>${a.domain}</div><div><b>${a.title}</b><div class="muted" style="margin-top:6px">${a.summary}</div></div></div>`).join(''):'<p class="muted">No active alerts.</p>';
  byId('requirements').innerHTML=d.intelligenceRequirements.map(x=>`<li>${x}</li>`).join('');byId('guardrails').innerHTML=d.guardrails.map(x=>`<li>${x}</li>`).join('');
-}).catch(e=>{byId('sync').textContent='BACKEND DEGRADED';byId('alerts').innerHTML='<p class="muted">GitHub backend unavailable. '+e.message+'</p>'});
+}).catch(e=>{byId('sync').textContent='BACKEND DEGRADED';byId('alerts').innerHTML='<p class="muted">NEO-GAS backend unavailable. '+e.message+'</p>'});
 </script></body></html>
