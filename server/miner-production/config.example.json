@@ -1,0 +1,38 @@
+{
+  "bitcoin": {
+    "enabled": false,
+    "rpcUrl": "http://127.0.0.1:8332",
+    "secretRef": "env://BITCOIN_RPC_AUTH"
+  },
+  "counterparty": {
+    "enabled": false,
+    "apiUrl": "https://YOUR_COUNTERPARTY_API/api/v2"
+  },
+  "pool": {
+    "enabled": false,
+    "endpoint": "stratum+ssl://YOUR_POOL:3333"
+  },
+  "miners": {
+    "enabled": false,
+    "verifiedAgentCount": 0
+  },
+  "fx": {
+    "enabled": false,
+    "apiUrl": "https://YOUR_FX_PROVIDER/latest",
+    "source": "YOUR_PROVIDER"
+  },
+  "payments": {
+    "enabled": false,
+    "provider": "YOUR_PAYMENT_PROVIDER",
+    "secretRef": "env://PAYMENT_PROVIDER_SECRET",
+    "webhookSignatureVerification": false
+  },
+  "storage": {
+    "contracts": "PERSISTENT",
+    "settlements": "PERSISTENT"
+  },
+  "compliance": {
+    "enabled": false,
+    "activationPolicy": "FAIL_CLOSED"
+  }
+}
