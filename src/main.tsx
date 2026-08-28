@@ -4,6 +4,7 @@ import ReactDOM from 'react-dom/client'
 import { HomeBase } from './home/HomeBase'
 import { MinerApp } from './miner/MinerApp'
 import { GeneratorApp } from './miner/GeneratorApp'
+import { ProductionStatusApp } from './miner/ProductionStatusApp'
 import { StorefrontApp } from './miner/StorefrontApp'
 import { NeoWireApp } from './wire/NeoWireApp'
 import { NeoExplorer } from './explorer/NeoExplorer'
@@ -48,6 +49,7 @@ function RootRouter(){
   const isHome=route==='/'||route===''||route==='/home'
   const isCommand=route==='/command'||route.startsWith('/command/')
   const isGenerator=route==='/generator'||route.startsWith('/generator/')
+  const isProduction=route==='/generator-production'||route.startsWith('/generator-production/')
   const isMiner=route==='/miner'||route.startsWith('/miner/')
   const isMinerStore=route==='/miner-store'||route.startsWith('/miner-store/')
   const isWire=route==='/wire'||route.startsWith('/wire/')
@@ -64,6 +66,7 @@ function RootRouter(){
   if(isExplorer) return <NeoExplorer/>
   if(isWire) return <NeoWireApp/>
   if(isMinerStore) return <StorefrontApp/>
+  if(isProduction) return <ProductionStatusApp/>
   if(isGenerator) return <GeneratorApp/>
   if(isMiner) return <MinerApp/>
   return <HomeBase onOpen={open}/>
