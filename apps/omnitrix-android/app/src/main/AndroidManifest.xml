@@ -16,6 +16,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity android:name=".CloudProviderActivity" android:exported="false" />
         <activity android:name=".NeoCloudHubActivity" android:exported="false" />
         <activity android:name=".SuiteIntegrationActivity" android:exported="false" />
         <activity android:name=".SuiteWave3Activity" android:exported="false" />
