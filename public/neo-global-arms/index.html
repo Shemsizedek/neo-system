@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>NEO-GAS Command Intelligence</title>
+<style>
+:root{font-family:Inter,system-ui,sans-serif;color:#e8edf5;background:#080b11}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at top,#151d2c,#080b11 45%);min-height:100vh}.shell{max-width:1200px;margin:auto;padding:28px}.top{display:flex;justify-content:space-between;gap:20px;align-items:flex-start}.eyebrow{letter-spacing:.16em;text-transform:uppercase;font-size:12px;color:#91a0b8}h1{font-size:clamp(30px,5vw,56px);margin:8px 0}.badge{border:1px solid #344158;border-radius:999px;padding:10px 14px;font-size:12px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px;margin:24px 0}.card{border:1px solid #202b3d;background:rgba(15,20,30,.88);border-radius:16px;padding:18px;box-shadow:0 12px 40px rgba(0,0,0,.2)}.metric span,.muted{color:#91a0b8;font-size:12px}.metric strong{display:block;font-size:30px;margin:8px 0}.section{margin-top:28px}.section h2{font-size:18px}.alert{display:grid;grid-template-columns:110px 100px 1fr;gap:12px;align-items:start;border-top:1px solid #202b3d;padding:14px 0}.alert:first-child{border-top:0}.level{font-weight:800}.AMBER{color:#f1b74b}.RED{color:#f06b6b}.GREEN{color:#76d09b}ul{line-height:1.8;padding-left:20px}.boundary{border-left:3px solid #7889a8;padding-left:14px;color:#b9c5d6}.footer{margin:32px 0 8px;color:#7889a8;font-size:12px}@media(max-width:700px){.top{display:block}.badge{display:inline-block;margin-top:12px}.alert{grid-template-columns:1fr}.shell{padding:18px}}
+</style>
+</head>
+<body><main class="shell">
+<div class="top"><div><div class="eyebrow">New Ethereal Order • Defense Intelligence & Strategic Resilience</div><h1>NEO-GAS Command Intelligence</h1><p class="muted">GitHub backend • GitHub Pages frontend • Defensive intelligence only</p></div><div class="badge" id="sync">SYNCING BACKEND</div></div>
+<div class="grid">
+<div class="card metric"><span>OVERALL READINESS</span><strong id="readiness">--%</strong><small id="command">Loading</small></div>
+<div class="card metric"><span>SYSTEM VERSION</span><strong id="version">--</strong><small>Versioned in GitHub</small></div>
+<div class="card metric"><span>ACTIVE ALERTS</span><strong id="alertCount">--</strong><small>Defensive command alerts</small></div>
+<div class="card metric"><span>POSTURE</span><strong id="posture" style="font-size:20px">--</strong><small>No offensive execution</small></div>
+</div>
+<section class="card section"><h2>Operating Boundary</h2><p class="boundary">NEO-GAS is a defensive intelligence and resilience platform. It does not implement autonomous targeting, attack execution, weapons construction, unlawful weapons acquisition, unauthorized surveillance, or independent governmental police/military authority.</p><p class="muted" id="sourceModel"></p></section>
+<section class="card section"><h2>Command Alerts</h2><div id="alerts"><p class="muted">Loading GitHub backend…</p></div></section>
+<div class="grid section"><section class="card"><h2>Priority Intelligence Requirements</h2><ul id="requirements"></ul></section><section class="card"><h2>System Guardrails</h2><ul id="guardrails"></ul></section></div>
+<div class="footer">NEO-GAS v2 • Intelligence before action • Defense before force • Civilian protection first</div>
+</main>
+<script>
+const BACKEND='https://raw.githubusercontent.com/Shemsizedek/neo-system/main/data/neo-gas/status.json';
+const byId=id=>document.getElementById(id);
+fetch(BACKEND,{cache:'no-store'}).then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.json()}).then(d=>{
+ byId('sync').textContent='GITHUB BACKEND ONLINE';byId('readiness').textContent=d.overallReadiness+'%';byId('version').textContent=d.version;byId('alertCount').textContent=d.alerts.length;byId('posture').textContent=d.posture;byId('command').textContent=d.commandState+' • '+new Date(d.updatedAt).toLocaleString();byId('sourceModel').textContent=d.sourceModel;
+ byId('alerts').innerHTML=d.alerts.length?d.alerts.map(a=>`<div class="alert"><div class="level ${a.severity}">${a.severity}</div><div>${a.domain}</div><div><b>${a.title}</b><div class="muted" style="margin-top:6px">${a.summary}</div></div></div>`).join(''):'<p class="muted">No active alerts.</p>';
+ byId('requirements').innerHTML=d.intelligenceRequirements.map(x=>`<li>${x}</li>`).join('');byId('guardrails').innerHTML=d.guardrails.map(x=>`<li>${x}</li>`).join('');
+}).catch(e=>{byId('sync').textContent='BACKEND DEGRADED';byId('alerts').innerHTML='<p class="muted">GitHub backend unavailable. '+e.message+'</p>'});
+</script></body></html>
