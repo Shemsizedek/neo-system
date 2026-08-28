@@ -17,6 +17,23 @@
       "verified_enrollment_required": true,
       "authentication_bypass": false,
       "runtime_authority_bypass": false
+    },
+    "noogle": {
+      "account_ordinal": 1,
+      "role": "founder_owner",
+      "reserved": true,
+      "verified_enrollment_required": true,
+      "authentication_bypass": false,
+      "search_privilege_bypass": false
+    },
+    "omnitrix": {
+      "account_ordinal": 1,
+      "role": "founder_owner",
+      "reserved": true,
+      "verified_enrollment_required": true,
+      "authentication_bypass": false,
+      "browser_privilege_bypass": false,
+      "wallet_secrets_in_registry": false
     }
   }
 }
