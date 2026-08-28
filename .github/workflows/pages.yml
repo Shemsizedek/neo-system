@@ -81,10 +81,14 @@ jobs:
         run: |
           test -f dist/index.html
           test -d dist/assets
-          test -f dist/neo-jarvis/index.html
+          test -f dist/neo-prime/index.html
           test -f dist/neo-pacer/index.html
           test -f dist/neogram/index.html
           test -f dist/neo-telegram/index.html
+          test -f dist/guardian/index.html
+          test -f dist/guardian/privacy.html
+          test -f dist/guardian/terms.html
+          test -f dist/guardian/version.json
           for file in status protocol identities routes relay-config relay-contract build; do
             test -f "dist/api/neo-telegram/$file.json"
           done
@@ -140,6 +144,8 @@ jobs:
       - name: Pages build summary
         run: |
           echo "Public NEO Hub: /neo-hub/" >> "$GITHUB_STEP_SUMMARY"
+          echo "NEO Guardian: /guardian/" >> "$GITHUB_STEP_SUMMARY"
+          echo "Guardian live version API: /guardian/version.json" >> "$GITHUB_STEP_SUMMARY"
           echo "Neogram: /neogram/" >> "$GITHUB_STEP_SUMMARY"
           echo "Legacy NEO Telegram alias: /neo-telegram/" >> "$GITHUB_STEP_SUMMARY"
           echo "Neogram/NTP static API: /api/neo-telegram/" >> "$GITHUB_STEP_SUMMARY"
