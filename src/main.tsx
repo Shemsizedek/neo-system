@@ -9,6 +9,7 @@ import { CloudMiningOperationsApp } from './miner/CloudMiningOperationsApp'
 import { InfrastructureOnboardingApp } from './miner/InfrastructureOnboardingApp'
 import { FleetEnrollmentApp } from './miner/FleetEnrollmentApp'
 import { HashVaultApp } from './miner/HashVaultApp'
+import { SettlementReceiptsApp } from './miner/SettlementReceiptsApp'
 import { StorefrontApp } from './miner/StorefrontApp'
 import { NeoWireApp } from './wire/NeoWireApp'
 import { NeoExplorer } from './explorer/NeoExplorer'
@@ -35,22 +36,11 @@ function resolveRoute(){
 
 function RootRouter(){
   const[route,setRoute]=useState(resolveRoute)
-  useEffect(()=>{
-    const sync=()=>setRoute(resolveRoute())
-    window.addEventListener('hashchange',sync)
-    window.addEventListener('popstate',sync)
-    return()=>{window.removeEventListener('hashchange',sync);window.removeEventListener('popstate',sync)}
-  },[])
-
+  useEffect(()=>{const sync=()=>setRoute(resolveRoute());window.addEventListener('hashchange',sync);window.addEventListener('popstate',sync);return()=>{window.removeEventListener('hashchange',sync);window.removeEventListener('popstate',sync)}},[])
   const base=(import.meta.env.BASE_URL||'/').replace(/\/$/,'')
   const governmentBase=(import.meta.env.VITE_NEO_GOVERNMENT_URL||'https://neo-government.neosystem.workers.dev').replace(/\/$/,'')
   const publicRoute=(name:string)=>`${base}/${name}/`
-  const open=(section:string)=>{
-    if(['overview','treasury','tribunal','security','router'].includes(section)){window.location.assign(`${governmentBase}/command?module=${encodeURIComponent(section)}`);return}
-    if(section==='cfo'||section==='books'){window.location.assign(publicRoute('neo-books'));return}
-    if(section==='corpus'){window.location.assign(publicRoute('neo-corpus'));return}
-    window.location.hash=`/${section}`
-  }
+  const open=(section:string)=>{if(['overview','treasury','tribunal','security','router'].includes(section)){window.location.assign(`${governmentBase}/command?module=${encodeURIComponent(section)}`);return}if(section==='cfo'||section==='books'){window.location.assign(publicRoute('neo-books'));return}if(section==='corpus'){window.location.assign(publicRoute('neo-corpus'));return}window.location.hash=`/${section}`}
 
   const isHome=route==='/'||route===''||route==='/home'
   const isCommand=route==='/command'||route.startsWith('/command/')
@@ -60,6 +50,7 @@ function RootRouter(){
   const isInfrastructure=route==='/infrastructure-onboarding'||route.startsWith('/infrastructure-onboarding/')
   const isFleet=route==='/miner-fleet'||route.startsWith('/miner-fleet/')
   const isHashVault=route==='/hashvault'||route.startsWith('/hashvault/')
+  const isReceipts=route==='/settlement-receipts'||route.startsWith('/settlement-receipts/')
   const isMiner=route==='/miner'||route.startsWith('/miner/')
   const isMinerStore=route==='/miner-store'||route.startsWith('/miner-store/')
   const isWire=route==='/wire'||route.startsWith('/wire/')
@@ -80,6 +71,7 @@ function RootRouter(){
   if(isInfrastructure) return <InfrastructureOnboardingApp/>
   if(isFleet) return <FleetEnrollmentApp/>
   if(isHashVault) return <HashVaultApp/>
+  if(isReceipts) return <SettlementReceiptsApp/>
   if(isCloudMining) return <CloudMiningOperationsApp/>
   if(isGenerator) return <GeneratorApp/>
   if(isMiner) return <MinerApp/>
