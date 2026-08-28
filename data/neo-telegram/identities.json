@@ -1,5 +1,6 @@
 {
-  "version": "0.2",
+  "version": "0.4",
+  "binding_policy": "USER_PUBLISHED_PUBLIC_KEYS_ONLY",
   "directory": [
     {
       "neo_id": "NEO-00000144",
@@ -7,8 +8,11 @@
       "status": "ACTIVE",
       "capabilities": ["TEXT", "PAYMENT_REQUEST", "TELEMETRY", "EMERGENCY"],
       "preferred_transports": ["INTERNET", "MESH"],
-      "public_key": null,
-      "key_state": "UNPROVISIONED"
+      "signing_public_key": null,
+      "signing_fingerprint": null,
+      "encryption_public_key": null,
+      "encryption_fingerprint": null,
+      "key_state": "LOCAL_KEY_AVAILABLE_PUBLISH_BINDING_TO_ACTIVATE"
     },
     {
       "neo_id": "NEO-00000721",
@@ -16,7 +20,10 @@
       "status": "DEMO",
       "capabilities": ["TEXT", "TELEMETRY"],
       "preferred_transports": ["INTERNET"],
-      "public_key": null,
+      "signing_public_key": null,
+      "signing_fingerprint": null,
+      "encryption_public_key": null,
+      "encryption_fingerprint": null,
       "key_state": "UNPROVISIONED"
     }
   ]
