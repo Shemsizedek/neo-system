@@ -1,0 +1,22 @@
+{
+  "schema_version": "1.0.0",
+  "canonical_subject": "neo:founder:000001",
+  "products": {
+    "neopay": {
+      "account_ordinal": 1,
+      "role": "founder_owner",
+      "reserved": true,
+      "verified_enrollment_required": true,
+      "authentication_bypass": false,
+      "wallet_secrets_in_registry": false
+    },
+    "neo-prime": {
+      "account_ordinal": 1,
+      "role": "founder_owner",
+      "reserved": true,
+      "verified_enrollment_required": true,
+      "authentication_bypass": false,
+      "runtime_authority_bypass": false
+    }
+  }
+}
