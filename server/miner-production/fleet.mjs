@@ -33,10 +33,11 @@ export function verifyStratumShare({miner,share,poolReceipt}){
   if(miner?.trust!=='VERIFIED_IDENTITY') throw new Error('UNVERIFIED_MINER')
   if(miner?.state!=='ONLINE') throw new Error('MINER_OFFLINE')
   if(!share?.shareId||share.minerId!==miner.id) throw new Error('SHARE_MINER_MISMATCH')
+  if(!share.contractId||!share.allocationId) throw new Error('SHARE_CONTRACT_PROVENANCE_REQUIRED')
   if(share.simulation===true) throw new Error('SIMULATION_SHARE_BLOCKED')
   if(!poolReceipt?.accepted||poolReceipt.shareId!==share.shareId) throw new Error('POOL_ACCEPTANCE_NOT_VERIFIED')
   if(!poolReceipt.poolId||!poolReceipt.receivedAt) throw new Error('POOL_RECEIPT_INCOMPLETE')
-  return {shareId:share.shareId,minerId:miner.id,poolId:poolReceipt.poolId,difficulty:n(share.difficulty),accepted:true,verified:true,jobId:share.jobId||null,receivedAt:poolReceipt.receivedAt,verifiedAt:now(),accountingEligible:true}
+  return {shareId:share.shareId,minerId:miner.id,contractId:share.contractId,allocationId:share.allocationId,poolId:poolReceipt.poolId,difficulty:n(share.difficulty),accepted:true,verified:true,jobId:share.jobId||null,receivedAt:poolReceipt.receivedAt,verifiedAt:now(),accountingEligible:true}
 }
 
 export function applyShareResult(miner,result){
