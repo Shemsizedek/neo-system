@@ -67,13 +67,13 @@ jobs:
       - name: Publish Neogram and GitHub backend snapshots
         run: |
           test -f docs/neo-telegram/index.html
-          for file in status protocol identities routes; do
+          for file in status protocol identities routes relay-config relay-contract; do
             test -f "data/neo-telegram/$file.json"
           done
           mkdir -p dist/neogram dist/neo-telegram dist/api/neo-telegram
           cp -R docs/neo-telegram/. dist/neogram/
           cp -R docs/neo-telegram/. dist/neo-telegram/
-          for file in status protocol identities routes; do
+          for file in status protocol identities routes relay-config relay-contract; do
             cp "data/neo-telegram/$file.json" "dist/api/neo-telegram/$file.json"
           done
           printf '{"commit":"%s","generated_at":"%s","source":"GitHub Actions"}\n' "$GITHUB_SHA" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > dist/api/neo-telegram/build.json
@@ -85,7 +85,7 @@ jobs:
           test -f dist/neo-pacer/index.html
           test -f dist/neogram/index.html
           test -f dist/neo-telegram/index.html
-          for file in status protocol identities routes build; do
+          for file in status protocol identities routes relay-config relay-contract build; do
             test -f "dist/api/neo-telegram/$file.json"
           done
       - name: Verify expanded NEO platform routes and APIs
@@ -143,6 +143,8 @@ jobs:
           echo "Neogram: /neogram/" >> "$GITHUB_STEP_SUMMARY"
           echo "Legacy NEO Telegram alias: /neo-telegram/" >> "$GITHUB_STEP_SUMMARY"
           echo "Neogram/NTP static API: /api/neo-telegram/" >> "$GITHUB_STEP_SUMMARY"
+          echo "Neogram v0.5 relay config: /api/neo-telegram/relay-config.json" >> "$GITHUB_STEP_SUMMARY"
+          echo "Neogram v0.5 relay contract: /api/neo-telegram/relay-contract.json" >> "$GITHUB_STEP_SUMMARY"
           echo "NEO Enterprise: /neo-enterprise/" >> "$GITHUB_STEP_SUMMARY"
           echo "Enterprise executive console: /neo-enterprise/admin/" >> "$GITHUB_STEP_SUMMARY"
           echo "Enterprise public API: /api/enterprise/" >> "$GITHUB_STEP_SUMMARY"

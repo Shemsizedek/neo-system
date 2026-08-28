@@ -1,33 +1,56 @@
-# NEO Telegram Reference Node v0.1
+# Neogram NVSN Relay Reference v0.5
 
-Reference backend for NTP-1.0 / NVSN integration.
+Neogram is the public messaging product. NTP (NEO Telegram Protocol) remains the underlying message protocol, and NVSN remains the network/transport layer.
 
 ## GitHub-first deployment model
 
-GitHub is the canonical source-of-truth for the NEO Telegram prototype. GitHub Actions publishes the public frontend and versioned backend snapshots to GitHub Pages.
+GitHub is the canonical source of protocol, relay configuration, and deployment metadata. GitHub Pages publishes the public Neogram interface and the non-secret relay contract snapshots.
 
-Public Pages surfaces after deployment:
-- `/neo-telegram/` — browser frontend
-- `/api/neo-telegram/status.json` — service/network status snapshot
-- `/api/neo-telegram/protocol.json` — NTP protocol registry
-- `/api/neo-telegram/build.json` — deployed commit/build metadata
+Public Pages surfaces:
+- `/neogram/` — canonical browser frontend
+- `/neo-telegram/` — legacy compatibility alias
+- `/api/neo-telegram/status.json` — product/network status
+- `/api/neo-telegram/protocol.json` — NTP registry
+- `/api/neo-telegram/identities.json` — public identity-binding registry
+- `/api/neo-telegram/routes.json` — transport capability registry
+- `/api/neo-telegram/relay-config.json` — relay limits and policy
+- `/api/neo-telegram/relay-contract.json` — authenticated relay API contract
 
-The static API snapshots live in `data/neo-telegram/` and are copied into the Pages artifact by `.github/workflows/pages.yml`.
+GitHub Pages is static hosting. It does not execute the writable relay. `server.mjs` is the reference implementation for an authorized runtime environment.
 
-## Reference runtime
+## Authenticated request contract
 
-```bash
-cd apps/neo-telegram
-npm start
+Every protected relay request uses:
+- `x-neogram-identity`
+- `x-neogram-timestamp`
+- `x-neogram-nonce`
+- `x-neogram-public-key`
+- `x-neogram-signature`
+
+The signature covers:
+
+```text
+METHOD
+PATH
+TIMESTAMP
+NONCE
+SHA256_HEX(BODY)
 ```
 
-Runtime endpoints:
-- `GET /health`
-- `GET /api/telegrams`
-- `POST /api/telegrams`
+The reference algorithm is ECDSA P-256 with SHA-256. Requests outside the allowed clock-skew window or with a reused nonce are rejected.
 
-GitHub Pages is static hosting, so it does not execute this persistent Node service. The Node service remains the reference runtime for a future writable NVSN relay/API without changing the NTP envelope contract.
+## Relay operations
 
-## Safety boundary
+- `POST /v0.5/relay/register` — register/refresh the authenticated identity's public relay binding.
+- `POST /v0.5/messages` — submit an already encrypted and signed NTP envelope.
+- `GET /v0.5/mailbox/{neo_id}` — retrieve ciphertext envelopes addressed to the authenticated identity.
+- `POST /v0.5/messages/{message_id}/ack` — acknowledge receipt.
+- `GET /health` — inspect relay capability metadata.
 
-This is a DEMO reference node. Browser-generated messages are explicitly unsigned. No private keys are stored, no live NVSN routing occurs, and no Bitcoin/Lightning/Counterparty transaction is created or broadcast.
+## Store-and-forward policy
+
+The relay rejects plaintext payloads. Stored objects must contain encrypted message ciphertext, an NTP signature, nonce, destination, and expiration. The relay applies message-size, TTL, request replay, and per-identity rate limits and removes expired items from its in-memory reference store.
+
+## Security boundary
+
+Private signing and encryption keys never belong in GitHub, GitHub Pages, relay configuration, or relay storage. The relay should only see public identity material, routing metadata, encrypted payloads, signatures, and delivery state. The current relay runtime is a reference prototype and is explicitly not a live NVSN production service.

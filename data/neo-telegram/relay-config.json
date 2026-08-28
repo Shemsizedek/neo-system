@@ -1,0 +1,32 @@
+{
+  "version": "0.5",
+  "product": "Neogram",
+  "protocol": "NTP/1.0",
+  "network": "NVSN",
+  "mode": "REFERENCE_CONTRACT",
+  "relay_id": "nvsn-relay-reference-001",
+  "live": false,
+  "authentication": {
+    "scheme": "NTP-SIGNED-REQUEST-V1",
+    "algorithm": "ECDSA-P256-SHA256",
+    "max_clock_skew_seconds": 300,
+    "nonce_ttl_seconds": 600
+  },
+  "storage": {
+    "plaintext_allowed": false,
+    "encrypted_envelopes_only": true,
+    "default_ttl_seconds": 86400,
+    "max_ttl_seconds": 604800,
+    "max_envelope_bytes": 262144
+  },
+  "rate_limits": {
+    "submit_per_identity_per_minute": 60,
+    "mailbox_reads_per_identity_per_minute": 120,
+    "ack_per_identity_per_minute": 120
+  },
+  "delivery": {
+    "store_forward": true,
+    "ack_required": true,
+    "states": ["ACCEPTED", "STORED", "DELIVERED", "ACKNOWLEDGED", "EXPIRED", "REJECTED"]
+  }
+}
