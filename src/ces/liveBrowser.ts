@@ -3,12 +3,16 @@ import type { CesExchange, CesRecordKind } from './types'
 import type { CesCoordinatorBrowser, CesRawRecord, CesSession } from './session'
 import type { CesBrowserDriver, CesLegacySelectors } from './browserDriver'
 import { conservativeLegacySelectors } from './browserDriver'
+import type { CesCollectionPolicy } from './collectionPolicy'
+import { assertKindAllowed, defaultCesCollectionPolicy } from './collectionPolicy'
+import { routeForKind } from './routeMap'
 
 export type CesLiveBrowserOptions = {
   loginUrl?: string
   selectors?: CesLegacySelectors
   loginTimeoutMs?: number
   maxRetries?: number
+  collectionPolicy?: CesCollectionPolicy
 }
 
 export class LiveLegacyCesCoordinatorBrowser implements CesCoordinatorBrowser {
@@ -16,6 +20,7 @@ export class LiveLegacyCesCoordinatorBrowser implements CesCoordinatorBrowser {
   private readonly selectors: CesLegacySelectors
   private readonly loginTimeoutMs: number
   private readonly maxRetries: number
+  private readonly policy: CesCollectionPolicy
 
   constructor(
     private readonly driverFactory: () => Promise<CesBrowserDriver>,
@@ -25,6 +30,7 @@ export class LiveLegacyCesCoordinatorBrowser implements CesCoordinatorBrowser {
     this.selectors = options.selectors ?? conservativeLegacySelectors
     this.loginTimeoutMs = options.loginTimeoutMs ?? 15_000
     this.maxRetries = options.maxRetries ?? 2
+    this.policy = options.collectionPolicy ?? defaultCesCollectionPolicy
   }
 
   async login(exchange: CesExchange, credentials: CesCredentials): Promise<CesSession> {
@@ -53,21 +59,24 @@ export class LiveLegacyCesCoordinatorBrowser implements CesCoordinatorBrowser {
   async collect(session: CesSession, exchange: CesExchange, kinds: CesRecordKind[]): Promise<CesRawRecord[]> {
     const driver = (session as CesSession & { driver?: CesBrowserDriver }).driver
     if (!driver) throw new Error('CES browser session is missing its driver')
-
+    if (this.policy.requireExchangeMatch && session.exchangeId !== exchange.xid) {
+      throw new Error(`CES session exchange mismatch: ${session.exchangeId} != ${exchange.xid}`)
+    }
     if (await this.isExpired(driver)) throw new Error(`CES session expired for ${exchange.xid}`)
 
     const output: CesRawRecord[] = []
     for (const kind of kinds) {
-      output.push(...(await this.collectKindWithRetry(driver, kind)))
+      assertKindAllowed(this.policy, kind)
+      output.push(...(await this.collectKindWithRetry(driver, exchange, kind)))
     }
     return output
   }
 
-  private async collectKindWithRetry(driver: CesBrowserDriver, kind: CesRecordKind): Promise<CesRawRecord[]> {
+  private async collectKindWithRetry(driver: CesBrowserDriver, exchange: CesExchange, kind: CesRecordKind): Promise<CesRawRecord[]> {
     let lastError: unknown
     for (let attempt = 0; attempt <= this.maxRetries; attempt += 1) {
       try {
-        return await this.collectKind(driver, kind)
+        return await this.collectKind(driver, exchange, kind)
       } catch (error) {
         lastError = error
         if (await this.isExpired(driver)) throw new Error('CES authenticated session expired during collection')
@@ -76,12 +85,17 @@ export class LiveLegacyCesCoordinatorBrowser implements CesCoordinatorBrowser {
     throw lastError instanceof Error ? lastError : new Error(`Failed to collect ${kind}`)
   }
 
-  private async collectKind(driver: CesBrowserDriver, kind: CesRecordKind): Promise<CesRawRecord[]> {
+  private async collectKind(driver: CesBrowserDriver, exchange: CesExchange, kind: CesRecordKind): Promise<CesRawRecord[]> {
+    const route = routeForKind(kind)
     const selector = this.selectorFor(kind)
-    if (!selector) return []
+    if (!route || !selector) return []
+    if (route.dataClass === 'AUTHORIZED' && !this.policy.allowAuthorizedRawText) return []
+
+    await driver.open(new URL(route.urlPattern, exchange.serverUrl).toString())
+    if (await this.isExpired(driver)) throw new Error(`CES session expired while opening ${kind}`)
     if (!(await driver.exists(selector))) return []
 
-    const rows = await driver.texts(selector)
+    const rows = (await driver.texts(selector)).slice(0, this.policy.maxRowsPerKind)
     return rows
       .map((text) => text.trim())
       .filter(Boolean)
@@ -90,7 +104,8 @@ export class LiveLegacyCesCoordinatorBrowser implements CesCoordinatorBrowser {
         payload: {
           rawText: text,
           rowIndex: index,
-          extraction: 'legacy-browser-text-v1'
+          extraction: 'legacy-browser-text-v1',
+          dataClass: route.dataClass
         }
       }))
   }
