@@ -14,7 +14,7 @@ function response({status=200,contentType='application/json',body={}}={}){
 test('requires short-lived authorized session material and never stores it in status',async()=>{
   let seenCookie=null;
   const transport=createCesAuthorizedSessionTransport({
-    baseUrl:'https://ces.example',account:'CES-001',
+    readUrl:'https://connector.example/ces/read-only',account:'CES-001',
     fetchImpl:async(_url,options)=>{seenCookie=options.headers.cookie;return response({body:{balances:[],transactions:[]}});}
   });
   await assert.rejects(()=>transport.readSnapshot({}),/session material is required/);
@@ -26,17 +26,17 @@ test('requires short-lived authorized session material and never stores it in st
 });
 
 test('fails closed on expired sessions',async()=>{
-  const transport=createCesAuthorizedSessionTransport({baseUrl:'https://ces.example',account:'CES-001',fetchImpl:async()=>response({status:401})});
+  const transport=createCesAuthorizedSessionTransport({readUrl:'https://connector.example/ces/read-only',account:'CES-001',fetchImpl:async()=>response({status:401})});
   await assert.rejects(()=>transport.readSnapshot({sessionCookie:'expired'}),/expired or unauthorized/);
 });
 
 test('rejects malformed non-json responses',async()=>{
-  const transport=createCesAuthorizedSessionTransport({baseUrl:'https://ces.example',account:'CES-001',fetchImpl:async()=>response({contentType:'text/html',body:'login'})});
+  const transport=createCesAuthorizedSessionTransport({readUrl:'https://connector.example/ces/read-only',account:'CES-001',fetchImpl:async()=>response({contentType:'text/html',body:'login'})});
   await assert.rejects(()=>transport.readSnapshot({sessionCookie:'session=ok'}),/malformed response/);
 });
 
 test('supports zero-data snapshots without inventing balances or activity',async()=>{
-  const transport=createCesAuthorizedSessionTransport({baseUrl:'https://ces.example',account:'CES-001',network:'CEN',fetchImpl:async()=>response({body:{balances:[],transactions:[]}})});
+  const transport=createCesAuthorizedSessionTransport({readUrl:'https://connector.example/ces/read-only',account:'CES-001',network:'CEN',fetchImpl:async()=>response({body:{balances:[],transactions:[]}})});
   const snapshot=await transport.readSnapshot({sessionCookie:'session=ok'});
   assert.deepEqual(snapshot.balances,[]);
   assert.deepEqual(snapshot.transactions,[]);
