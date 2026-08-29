@@ -6,7 +6,7 @@ function clean(value){return String(value??'').trim();}
 
 export function createCesAuthorizedSessionTransport(config={}){
   const fetchImpl=config.fetchImpl||fetch;
-  const baseUrl=clean(config.baseUrl).replace(/\/$/,'');
+  const readUrl=clean(config.readUrl);
   const network=clean(config.network)||null;
   const account=clean(config.account);
 
@@ -14,8 +14,8 @@ export function createCesAuthorizedSessionTransport(config={}){
     return {
       schema:CES_SESSION_TRANSPORT_SCHEMA,
       readOnly:true,
-      configured:Boolean(baseUrl&&account),
-      baseUrl:baseUrl||null,
+      configured:Boolean(readUrl&&account),
+      readUrl:readUrl||null,
       network,
       account:account||null,
       credentialPersistence:false
@@ -23,11 +23,11 @@ export function createCesAuthorizedSessionTransport(config={}){
   }
 
   async function readSnapshot({sessionCookie,signal}={}){
-    if(!baseUrl||!account)throw new Error('CES session transport is not configured');
+    if(!readUrl||!account)throw new Error('CES session transport is not configured');
     const cookie=clean(sessionCookie);
     if(!cookie)throw new Error('Authorized CES session material is required');
 
-    const response=await fetchImpl(`${baseUrl}/neo-export/read-only?account=${encodeURIComponent(account)}`,{
+    const response=await fetchImpl(readUrl,{
       method:'GET',
       headers:{accept:'application/json',cookie},
       redirect:'error',
@@ -49,7 +49,7 @@ export function createCesAuthorizedSessionTransport(config={}){
       network:payload.network||network,
       provenance:{
         method:'authorized-session',
-        reference:clean(payload?.provenance?.reference)||`${baseUrl}:${account}`
+        reference:clean(payload?.provenance?.reference)||`${readUrl}:${account}`
       }
     });
   }
