@@ -1,3 +1,5 @@
+import { inventoryCesForms, classifyCesForm } from './ces-form-mapper.mjs';
+
 const DEFAULT_BASE_URL = 'https://www.community-exchange.org';
 
 export function createCesSessionAdapter({
@@ -27,8 +29,6 @@ export function createCesSessionAdapter({
       throw new Error(`missing CES credentials for ${exchange.exchangeId}`);
     }
 
-    // Stage 1 deliberately supports configurable form metadata because CES installations
-    // can expose different coordinator/member login forms. No credential is stored here.
     const loginPage = await request(credentials.loginPath || '/');
     const html = await loginPage.text();
     const csrf = csrfParser(html, credentials);
@@ -61,15 +61,37 @@ export function createCesSessionAdapter({
     return operation({ exchange, request });
   }
 
+  async function discoverForms(exchange, path) {
+    return withSession(exchange, async ({ request: sessionRequest }) => {
+      const response = await sessionRequest(path);
+      const html = await response.text();
+      const pageUrl = new URL(path, baseUrl).toString();
+      const forms = inventoryCesForms(html, { pageUrl }).map((form) => ({
+        ...form,
+        classification: classifyCesForm(form),
+      }));
+      return {
+        ok: response.ok,
+        mode: 'discovery-read-only',
+        path,
+        status: response.status,
+        forms,
+      };
+    });
+  }
+
   return {
     login,
+    discoverForms,
     reviewTransaction(payload) {
+      const path = payload.path || payload.discoveryPath;
+      if (path) return discoverForms(payload.exchange, path);
       return withSession(payload.exchange, async ({ exchange }) => ({
         ok: true,
         mode: 'session-ready',
         operation: 'reviewTransaction',
         exchange,
-        message: 'Authenticated CES session established. Transaction scraping/selector mapping is the next adapter layer.',
+        message: 'Authenticated CES session established. Supply a discovery path to inventory transaction forms without submitting them.',
       }));
     },
     approveTransaction(payload) {
@@ -78,7 +100,7 @@ export function createCesSessionAdapter({
         mode: 'guarded',
         operation: 'approveTransaction',
         exchange,
-        message: 'Approval endpoint/form mapping is not configured; no CES write action was taken.',
+        message: 'Approval remains disabled until an exact CES form fingerprint is reviewed and allowlisted.',
       }));
     },
     issueVDollars(payload) {
@@ -87,18 +109,30 @@ export function createCesSessionAdapter({
         mode: 'guarded',
         operation: 'issueVDollars',
         exchange,
-        message: 'V-Dollar issuance form mapping is not configured; no CES value movement was performed.',
+        message: 'V-Dollar issuance remains disabled until an exact CES form fingerprint is reviewed and allowlisted.',
       }));
     },
     uploadPublication(payload) {
-      return withSession(payload.exchange, async ({ exchange }) => ({ ok: false, mode: 'guarded', operation: 'uploadPublication', exchange }));
+      return withSession(payload.exchange, async ({ exchange }) => ({
+        ok: false,
+        mode: 'guarded',
+        operation: 'uploadPublication',
+        exchange,
+        message: 'Publication writes remain disabled until the target form is discovered and allowlisted.',
+      }));
     },
     maintainSubscription(payload) {
-      return withSession(payload.exchange, async ({ exchange }) => ({ ok: false, mode: 'guarded', operation: 'maintainSubscription', exchange }));
+      return withSession(payload.exchange, async ({ exchange }) => ({
+        ok: false,
+        mode: 'guarded',
+        operation: 'maintainSubscription',
+        exchange,
+        message: 'Subscription writes remain disabled until the target form is discovered and allowlisted.',
+      }));
     },
     reviewVirtualTrader(payload) {
-      return withSession(payload.exchange, async ({ exchange, request }) => {
-        const response = await request('/win/virtual.asp');
+      return withSession(payload.exchange, async ({ exchange, request: sessionRequest }) => {
+        const response = await sessionRequest('/win/virtual.asp');
         const text = await response.text();
         return {
           ok: response.ok,
@@ -107,17 +141,14 @@ export function createCesSessionAdapter({
           exchange,
           status: response.status,
           pageDetected: /Virtual Trader/i.test(text),
+          forms: inventoryCesForms(text, { pageUrl: new URL('/win/virtual.asp', baseUrl).toString() })
+            .map((form) => ({ ...form, classification: classifyCesForm(form) })),
         };
       });
     },
     reviewInterexchangeSettlement(payload) {
-      return withSession(payload.exchange, async ({ exchange }) => ({
-        ok: true,
-        mode: 'read-only',
-        operation: 'reviewInterexchangeSettlement',
-        exchange,
-        message: 'Session established; settlement table parser is pending selector capture.',
-      }));
+      const path = payload.path || '/win/virtual.asp';
+      return discoverForms(payload.exchange, path);
     },
   };
 }
