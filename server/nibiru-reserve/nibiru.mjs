@@ -2,6 +2,8 @@ import crypto from 'node:crypto';
 import {createCesAdapter} from '../../apps/neoscan/adapters/ces/adapter.mjs';
 import {createReserveLedger} from './ledger.mjs';
 import {NIBIRU_ISO_PROFILE,renderPain001,validatePain001Structure} from './iso20022.mjs';
+import {createSettlementReconciler} from './reconciliation.mjs';
+import {createRecognitionGate} from './recognition.mjs';
 
 const clean=value=>String(value??'').trim();
 const positive=value=>{const amount=Number(value);if(!Number.isFinite(amount)||amount<=0)throw new Error('amount must be positive');return amount};
@@ -10,6 +12,8 @@ const currency=value=>{const code=clean(value).toUpperCase();if(!/^[A-Z]{3}$/.te
 export function createNibiruReserve({now=()=>new Date().toISOString(),cesAdapter=null,ledger=createReserveLedger({now})}={}) {
   const reserveEntries=new Map();
   const messages=new Map();
+  const reconciler=createSettlementReconciler({now,ledger,minimumConfirmations:6});
+  const recognition=createRecognitionGate({now});
 
   function recordCesPosition(input) {
     for(const key of ['cesExchangeId','cesAccountId','unit','externalReference']) if(!clean(input[key])) throw new Error(`${key} is required`);
@@ -83,5 +87,5 @@ export function createNibiruReserve({now=()=>new Date().toISOString(),cesAdapter
     custody:false,bankingAuthority:false
   }}
 
-  return{recordCesPosition,linkBlockchainSettlement,createIsoPaymentEnvelope,renderIsoPayment,syncCes,connectCes,reserveSnapshot,capabilities,reserveEntries,messages,ledger};
+  return{recordCesPosition,linkBlockchainSettlement,createIsoPaymentEnvelope,renderIsoPayment,syncCes,connectCes,reserveSnapshot,capabilities,reserveEntries,messages,ledger,reconciler,recognition};
 }

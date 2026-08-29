@@ -49,10 +49,21 @@ The Origin snapshot therefore reports:
 - `GET /api/v1/nibiru/capabilities`
 - `GET /api/v1/nibiru/reserve-snapshot`
 - `GET /api/v1/nibiru/trial-balance`
+- `GET /api/v1/nibiru/reconciliation`
 - `POST /api/v1/nibiru/ces/positions`
 - `POST /api/v1/nibiru/ces/positions/:id/blockchain-settlement`
 - `POST /api/v1/nibiru/iso20022/payment-envelopes`
 - `GET /api/v1/nibiru/iso20022/payment-envelopes/:id/xml`
+- `POST /api/v1/nibiru/settlements`
+- `POST /api/v1/nibiru/settlements/:id/reconcile`
+- `POST /api/v1/nibiru/recognition-assessments`
+- `POST /api/v1/nibiru/recognition-assessments/:id/approve`
+
+## Reconciliation and recognition
+
+Bitcoin/Counterparty settlement observations require six confirmations before Nibiru records a confirmed memorandum settlement. A changed or non-canonical block hash demotes the settlement to `REORGED` and posts a balanced reversal journal.
+
+CES positions remain non-recognized memorandum balances. Recognition assessment fails closed unless issuer identity, legal obligation, redemption terms, backing account, custodian, fresh attestation, and at least 100% backing evidence are present. Complete evidence only reaches human review; software approval records accounting-policy authority but does not itself create a legal liability, reserve asset, bank deposit, or regulatory status.
 
 ## Production gates
 
