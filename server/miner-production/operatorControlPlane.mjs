@@ -28,9 +28,10 @@ const proxy=async(req,res,session)=>{
   const body=['POST','PUT','PATCH'].includes(req.method||'')?await readBody(req):null
   const headers={'authorization':`Bearer ${INTERNAL_TOKEN}`,'content-type':'application/json','x-neo-operator-id':session.sub,'x-neo-operator-role':session.role}
   if(req.headers['idempotency-key'])headers['idempotency-key']=String(req.headers['idempotency-key'])
-  const upstream=await fetch(`${INTERNAL_API}${req.url}`,{method:req.method,headers,body:body===null?undefined:JSON.stringify({...body,operatorId:body?.operatorId||session.sub})})
-  const text=await upstream.text();let payload;try{payload=text?JSON.parse(text):{}}catch{payload={error:'UPSTREAM_RESPONSE_INVALID'}}
-  return json(res,upstream.status,payload)
+  const payload=body===null?undefined:JSON.stringify({...body,operatorId:session.sub})
+  const upstream=await fetch(`${INTERNAL_API}${req.url}`,{method:req.method,headers,body:payload})
+  const text=await upstream.text();let result;try{result=text?JSON.parse(text):{}}catch{result={error:'UPSTREAM_RESPONSE_INVALID'}}
+  return json(res,upstream.status,result)
 }
 
 export const operatorServer=http.createServer(async(req,res)=>{
