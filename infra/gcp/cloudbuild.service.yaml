@@ -1,6 +1,7 @@
 substitutions:
   _SERVICE_NAME: neo-service
   _SERVICE_DIR: apps/neo-prime
+  _DOCKERFILE: apps/neo-prime/Dockerfile
   _REGION: us-central1
   _ARTIFACT_REPOSITORY: neo-services
 
@@ -9,9 +10,11 @@ steps:
     name: gcr.io/cloud-builders/docker
     args:
       - build
+      - -f
+      - ${_DOCKERFILE}
       - -t
       - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_ARTIFACT_REPOSITORY}/${_SERVICE_NAME}:${SHORT_SHA}
-      - ${_SERVICE_DIR}
+      - .
 
   - id: push
     name: gcr.io/cloud-builders/docker
