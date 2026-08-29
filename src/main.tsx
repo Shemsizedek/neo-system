@@ -11,6 +11,7 @@ import { FleetEnrollmentApp } from './miner/FleetEnrollmentApp'
 import { HashVaultApp } from './miner/HashVaultApp'
 import { SettlementReceiptsApp } from './miner/SettlementReceiptsApp'
 import { TreasuryControlApp } from './miner/TreasuryControlApp'
+import { BitcoinPayoutAdapterApp } from './miner/BitcoinPayoutAdapterApp'
 import { StorefrontApp } from './miner/StorefrontApp'
 import { NeoWireApp } from './wire/NeoWireApp'
 import { NeoExplorer } from './explorer/NeoExplorer'
@@ -55,6 +56,7 @@ function RootRouter(){
   const isHashVault=route==='/hashvault'||route.startsWith('/hashvault/')
   const isReceipts=route==='/settlement-receipts'||route.startsWith('/settlement-receipts/')
   const isTreasury=route==='/miner-treasury'||route.startsWith('/miner-treasury/')
+  const isBitcoinPayout=route==='/bitcoin-payout'||route.startsWith('/bitcoin-payout/')
   const isMiner=route==='/miner'||route.startsWith('/miner/')
   const isMinerStore=route==='/miner-store'||route.startsWith('/miner-store/')
   const isWire=route==='/wire'||route.startsWith('/wire/')
@@ -79,6 +81,7 @@ function RootRouter(){
   if(isHashVault) return <HashVaultApp/>
   if(isReceipts) return <SettlementReceiptsApp/>
   if(isTreasury) return <TreasuryControlApp/>
+  if(isBitcoinPayout) return <BitcoinPayoutAdapterApp/>
   if(isCloudMining) return <CloudMiningOperationsApp/>
   if(isGenerator) return <GeneratorApp/>
   if(isMiner) return <MinerApp/>
