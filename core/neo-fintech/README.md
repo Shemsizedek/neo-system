@@ -47,7 +47,7 @@ The NEOpay review layer lives in `internal/neopayreview` and enforces a review-b
 
 `migrations/002_neopay_transaction_review.sql` adds append-only review, approval, and signer-handoff records. `neopayreview.PrepareHandler` provides the HTTP handler contract, but the standalone binary deliberately does not register it until authentication, durable storage, idempotency middleware, a concrete composer, and an independent decoder/inspector are injected.
 
-Counterparty Core's API v2 exposes transaction parse/unpack helpers for this inspection layer; production integration must use the deployed version's exact endpoint contract rather than reusing assumptions from deprecated API v1.
+Counterparty Core API v2 documents `/transactions/info` and `/transactions/unpack` as the supported parse/unpack helpers. The exact query/body contract must be verified against the deployed Counterparty Core version before wiring the production inspector. Until then, the review service remains fail-closed rather than guessing parameter names or trusting compose-response fields as independent evidence.
 
 The adapter URLs are configuration inputs; adding an adapter does not by itself prove a production provider is available, trusted, synchronized, or authorized. Production deployment must pin the actual Bitcoin/Counterparty endpoints, authenticate protected providers where applicable, verify their operating contract, persist evidence, and define confirmation/finality policy appropriate to the product.
 
