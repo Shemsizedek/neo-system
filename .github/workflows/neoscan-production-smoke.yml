@@ -31,15 +31,15 @@ jobs:
           set -euo pipefail
           CONFIG_URL='https://shemsizedek.github.io/neo-system/neoscan/runtime-config.js'
           CONFIG="$(curl --fail --silent --show-error --location --retry 5 --retry-delay 2 "$CONFIG_URL")"
-          grep -q 'https://neoscan-statements.neosystem.workers.dev' <<<"$CONFIG"
+          grep -q 'https://neoscan-statements-public.neosystem.workers.dev' <<<"$CONFIG"
 
       - name: Verify Statements Worker health and readiness
         shell: bash
         run: |
           set -euo pipefail
-          BASE='https://neoscan-statements.neosystem.workers.dev'
-          curl --fail --silent --show-error --location --retry 5 --retry-delay 2 -D health.headers "$BASE/health" -o health.json
-          curl --fail --silent --show-error --location --retry 5 --retry-delay 2 -D ready.headers "$BASE/ready" -o ready.json
+          BASE='https://neoscan-statements-public.neosystem.workers.dev'
+          curl --fail --silent --show-error --retry 5 --retry-delay 2 -D health.headers "$BASE/health" -o health.json
+          curl --fail --silent --show-error --retry 5 --retry-delay 2 -D ready.headers "$BASE/ready" -o ready.json
           echo '--- health headers ---'
           cat health.headers
           echo '--- health body preview ---'
@@ -62,15 +62,17 @@ jobs:
                   raise AssertionError(f'{path} is not JSON: {raw[:500]!r}') from exc
               assert data.get('ok') is True, data
               assert data.get('status') == expected, data
+              assert data.get('schema') == 'neo.statement.service.v1', data
+              assert data.get('readOnly') is True, data
           PY
 
       - name: Verify end-to-end public statement envelope
         shell: bash
         run: |
           set -euo pipefail
-          BASE='https://neoscan-statements.neosystem.workers.dev'
+          BASE='https://neoscan-statements-public.neosystem.workers.dev'
           ADDRESS='1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa'
-          curl --fail --silent --show-error --location --retry 5 --retry-delay 2 \
+          curl --fail --silent --show-error --retry 5 --retry-delay 2 \
             -H 'Accept: application/json' \
             -H 'Origin: https://shemsizedek.github.io' \
             "$BASE/v1/statements?address=$ADDRESS" \
@@ -89,15 +91,16 @@ jobs:
           assert statement.get('schema') == 'neo.statement.service.v1', statement
           assert statement.get('statementSchema') == 'neo.statement.v1', statement
           sources=statement.get('sources') or {}
-          for name in ('bitcoin','counterparty','ces'):
+          for name in ('bitcoin','counterparty','ces','offline'):
               assert name in sources, (name, sources)
           assert statement.get('consolidatedTotal') is None, statement
+          assert sources['offline'].get('status') == 'unavailable', sources['offline']
           headers=open('headers.txt', encoding='utf-8', errors='ignore').read().lower()
           assert 'access-control-allow-origin: https://shemsizedek.github.io' in headers, headers
           print(json.dumps({
               'schema': statement.get('schema'),
               'statementSchema': statement.get('statementSchema'),
               'reconciliationStatus': statement.get('reconciliationStatus'),
-              'sourceStatuses': {k:(v or {}).get('status') for k,v in sources.items() if k in ('bitcoin','counterparty','ces')}
+              'sourceStatuses': {k:(v or {}).get('status') for k,v in sources.items() if k in ('bitcoin','counterparty','ces','offline')}
           }, indent=2))
           PY
