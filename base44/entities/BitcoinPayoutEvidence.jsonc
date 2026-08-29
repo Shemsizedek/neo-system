@@ -1,0 +1,19 @@
+{
+  "name": "BitcoinPayoutEvidence",
+  "type": "object",
+  "properties": {
+    "evidence_id": {"type": "string"},
+    "production_record_id": {"type": "string"},
+    "txid": {"type": "string", "pattern": "^[0-9a-fA-F]{64}$"},
+    "network": {"type": "string", "enum": ["mainnet", "testnet", "signet"]},
+    "confirmations": {"type": "integer", "minimum": 0},
+    "block_height": {"type": "integer", "minimum": 0},
+    "block_hash": {"type": "string"},
+    "destination_address": {"type": "string"},
+    "amount_btc": {"type": "number", "minimum": 0},
+    "verification_source": {"type": "string", "enum": ["BITCOIN_CORE_RPC", "POOL_API", "MANUAL_REFERENCE"]},
+    "verification_status": {"type": "string", "enum": ["UNVERIFIED", "VERIFIED", "REJECTED"]},
+    "observed_at": {"type": "string"}
+  },
+  "required": ["evidence_id", "production_record_id", "txid", "network", "confirmations", "verification_source", "verification_status", "observed_at"]
+}
