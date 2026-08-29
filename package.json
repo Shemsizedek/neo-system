@@ -12,6 +12,7 @@
     "crawl:neo":"node scripts/neo-sync-crawl.mjs",
     "crawl:noogle":"node scripts/build-noogle-index.mjs",
     "router:worker":"node scripts/neo-router-worker.mjs",
+    "router:health":"node scripts/neo-router-health.mjs",
     "router:gemini:check":"node scripts/neo-router-gemini-check.mjs",
     "tribunal:server":"node server/tribunal-backend/server.mjs",
     "tribunal:backup":"node server/tribunal-backend/backup.mjs",
