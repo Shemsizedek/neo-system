@@ -1,6 +1,7 @@
 import { isDiscordActorAllowed } from './authorization.js'
 import { processNeoCommand, healthSnapshot } from './neo-command.js'
 import { handleRelationsCommand } from './relations.js'
+import { handleServicesCommand } from './service-registry.js'
 
 export const discordJson=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:{'content-type':'application/json; charset=utf-8','cache-control':'no-store'}})
 
@@ -15,6 +16,11 @@ export async function processRelationsCommand(interaction,env,{fetchImpl=fetch}=
   catch(err){await editDiscordInteraction(interaction,`NEO Relations error: ${String(err?.message||err).slice(0,1500)}`,fetchImpl).catch(()=>{})}
 }
 
+export async function processServicesCommand(interaction,{fetchImpl=fetch}={}){
+  try{await editDiscordInteraction(interaction,await handleServicesCommand(interaction),fetchImpl)}
+  catch(err){await editDiscordInteraction(interaction,`NEO Services error: ${String(err?.message||err).slice(0,1500)}`,fetchImpl).catch(()=>{})}
+}
+
 export function healthResponse(env,runtime,transportAdapter){
   return discordJson({...healthSnapshot(env,runtime),transport_adapter:transportAdapter})
 }
@@ -26,6 +32,7 @@ export async function dispatchVerifiedInteraction(interaction,env,runtime,{waitU
   const command=String(interaction?.data?.name||'')
   if(command==='neo')waitUntil(processNeoCommand(interaction,env,runtime,fetchImpl))
   else if(command==='relations')waitUntil(processRelationsCommand(interaction,env,{fetchImpl}))
+  else if(command==='services')waitUntil(processServicesCommand(interaction,{fetchImpl}))
   else return discordJson({type:4,data:{content:'Unknown command.',flags:64,allowed_mentions:{parse:[]}}})
   return discordJson({type:5,data:{flags:64}})
 }

@@ -1,0 +1,33 @@
+{
+  "version": "1.0.0",
+  "planes": {"backend":"github","frontend":"github-pages","serverApi":"discord"},
+  "defaultCommand": "services",
+  "rules": {
+    "transportOwnsBusinessLogic": false,
+    "discordSensitiveExecution": false,
+    "discordApproval": false,
+    "aiApproval": false
+  },
+  "services": [
+    {"id":"gisd","name":"GISD / NEO Cipher","githubPath":"apps/gisd","pagesPath":null,"specializedCommand":null,"visibility":"internal"},
+    {"id":"neo-counter","name":"NEO Counter","githubPath":"apps/neo-counter","pagesPath":"/neo-counter/","specializedCommand":null,"visibility":"public"},
+    {"id":"neo-exchange","name":"NEO Exchange","githubPath":"apps/neo-exchange","pagesPath":"/neo-exchange/","specializedCommand":null,"visibility":"public"},
+    {"id":"neo-guardian","name":"NEO Guardian","githubPath":"apps/neo-guardian","pagesPath":"/guardian/","specializedCommand":null,"visibility":"public"},
+    {"id":"neo-prime","name":"NEO Prime","githubPath":"apps/neo-prime","pagesPath":"/neo-prime/","specializedCommand":"neo","visibility":"public"},
+    {"id":"neo-relations","name":"NEO Relations","githubPath":"apps/neo-relations","pagesPath":"/neo-relations/","specializedCommand":"relations","visibility":"public"},
+    {"id":"neo-telegram","name":"Neogram / NEO Telegram","githubPath":"apps/neo-telegram","pagesPath":"/neogram/","specializedCommand":null,"visibility":"public"},
+    {"id":"neo-tv","name":"NEO TV","githubPath":"apps/neo-tv","pagesPath":"/neo-tv/","specializedCommand":null,"visibility":"public"},
+    {"id":"neopay","name":"NEOpay","githubPath":"apps/neopay","pagesPath":"/neopay/","specializedCommand":null,"visibility":"public"},
+    {"id":"neoscan","name":"NEOscan","githubPath":"apps/neoscan","pagesPath":"/neoscan/","specializedCommand":null,"visibility":"public"},
+    {"id":"noogle","name":"Noogle","githubPath":"apps/noogle","pagesPath":"/noogle/","specializedCommand":null,"visibility":"public"},
+    {"id":"omnitrix-android","name":"Omnitrix Android","githubPath":"apps/omnitrix-android","pagesPath":null,"specializedCommand":null,"visibility":"internal"},
+    {"id":"omnitrix","name":"Omnitrix","githubPath":"apps/omnitrix","pagesPath":"/omnitrix/","specializedCommand":null,"visibility":"public"},
+    {"id":"neo-pacer","name":"NEO-PACER","githubPath":"docs/neo-pacer","pagesPath":"/neo-pacer/","specializedCommand":null,"visibility":"public"},
+    {"id":"neo-enterprise","name":"NEO Enterprise","githubPath":"docs/neo-enterprise","pagesPath":"/neo-enterprise/","specializedCommand":null,"visibility":"public"},
+    {"id":"neo-hub","name":"NEO Hub","githubPath":"docs/neo-hub","pagesPath":"/neo-hub/","specializedCommand":null,"visibility":"public"},
+    {"id":"neo-oracle","name":"NEO Oracle","githubPath":"docs/neo-oracle","pagesPath":"/neo-oracle/","specializedCommand":null,"visibility":"public"},
+    {"id":"neo-lingo","name":"NEO Lingo","githubPath":"docs/neo-lingo","pagesPath":"/neo-lingo/","specializedCommand":null,"visibility":"public"},
+    {"id":"neo-algo","name":"NEO Algo","githubPath":"docs/neo-algo","pagesPath":"/neo-algo/","specializedCommand":null,"visibility":"public"},
+    {"id":"neo-corpus","name":"NEO Corpus","githubPath":"docs/neo-corpus","pagesPath":"/neo-corpus/","specializedCommand":null,"visibility":"public"}
+  ]
+}

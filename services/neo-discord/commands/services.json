@@ -1,0 +1,37 @@
+{
+  "name": "services",
+  "description": "Discover NEO Services across GitHub, GitHub Pages, and Discord",
+  "type": 1,
+  "dm_permission": false,
+  "options": [
+    {
+      "name": "service",
+      "description": "Optional NEO Service id",
+      "type": 3,
+      "required": false,
+      "autocomplete": false,
+      "choices": [
+        {"name":"GISD / NEO Cipher","value":"gisd"},
+        {"name":"NEO Counter","value":"neo-counter"},
+        {"name":"NEO Exchange","value":"neo-exchange"},
+        {"name":"NEO Guardian","value":"neo-guardian"},
+        {"name":"NEO Prime","value":"neo-prime"},
+        {"name":"NEO Relations","value":"neo-relations"},
+        {"name":"Neogram / NEO Telegram","value":"neo-telegram"},
+        {"name":"NEO TV","value":"neo-tv"},
+        {"name":"NEOpay","value":"neopay"},
+        {"name":"NEOscan","value":"neoscan"},
+        {"name":"Noogle","value":"noogle"},
+        {"name":"Omnitrix Android","value":"omnitrix-android"},
+        {"name":"Omnitrix","value":"omnitrix"},
+        {"name":"NEO-PACER","value":"neo-pacer"},
+        {"name":"NEO Enterprise","value":"neo-enterprise"},
+        {"name":"NEO Hub","value":"neo-hub"},
+        {"name":"NEO Oracle","value":"neo-oracle"},
+        {"name":"NEO Lingo","value":"neo-lingo"},
+        {"name":"NEO Algo","value":"neo-algo"},
+        {"name":"NEO Corpus","value":"neo-corpus"}
+      ]
+    }
+  ]
+}
