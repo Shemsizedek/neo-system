@@ -25,6 +25,7 @@ import { NativeBitcoinSendOverlay } from './neopay/NativeBitcoinSendOverlay'
 import { WalletConnectionCenter } from './neopay/WalletConnectionCenter'
 import { TellerDashboard } from './teller/TellerDashboard'
 import { NeoCheckoutLauncher } from './checkout/NeoCheckoutLauncher'
+import { SettlementResultBanner } from './checkout/SettlementResultBanner'
 import './styles.css'
 import './home/home.css'
 import './explorer/explorer.css'
@@ -42,7 +43,7 @@ function resolveRoute(){
 }
 
 function CheckoutShell({serviceId,serviceName,children}:{serviceId:string;serviceName:string;children:React.ReactNode}){
- return <><div style={{padding:'0 18px'}}><NeoCheckoutLauncher serviceId={serviceId} serviceName={serviceName}/></div>{children}</>
+ return <><SettlementResultBanner serviceId={serviceId}/><div style={{padding:'0 18px'}}><NeoCheckoutLauncher serviceId={serviceId} serviceName={serviceName}/></div>{children}</>
 }
 
 function RootRouter(){
