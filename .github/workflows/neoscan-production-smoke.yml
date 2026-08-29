@@ -6,6 +6,8 @@ on:
     branches: [main]
     paths:
       - 'apps/neoscan/**'
+      - 'public/markets/neo-market-tape.js'
+      - 'public/neo-prime/markets.html'
       - 'scripts/build-neoscan-statements-snapshots.mjs'
       - '.github/workflows/pages.yml'
       - '.github/workflows/neoscan-production-smoke.yml'
@@ -47,6 +49,9 @@ jobs:
           grep -q 'NEOscan — Public Explorer' <<<"$HTML"
           grep -q 'market-terminal.js' <<<"$HTML"
           grep -q 'nomni-base-board.js' <<<"$HTML"
+          grep -q 'pair-deeplink.js' <<<"$HTML"
+          grep -q '../markets/neo-market-tape.js' <<<"$HTML"
+          grep -q '<neo-market-tape' <<<"$HTML"
           grep -q 'market-terminal.css' <<<"$HTML"
           grep -q 'NEO Market Terminal' <<<"$HTML"
           grep -q 'data-surface="market"' <<<"$HTML"
@@ -64,6 +69,7 @@ jobs:
           curl --fail --silent --show-error --location "$BASE/nomni-market-policy.js" -o nomni-market-policy.js
           curl --fail --silent --show-error --location "$BASE/market-terminal.js" -o market-terminal.js
           curl --fail --silent --show-error --location "$BASE/nomni-base-board.js" -o nomni-base-board.js
+          curl --fail --silent --show-error --location "$BASE/pair-deeplink.js" -o pair-deeplink.js
           curl --fail --silent --show-error --location "$BASE/market-terminal.css" -o market-terminal.css
           grep -q "primaryAsset:'NOMNI'" nomni-market-policy.js
           grep -q "terminalName:'NEO Market Terminal'" nomni-market-policy.js
@@ -84,8 +90,25 @@ jobs:
           grep -q 'SPREAD %' nomni-base-board.js
           grep -q 'NOMNI Pair Matrix' nomni-base-board.js
           grep -q 'no synthetic market is created' nomni-base-board.js
+          grep -q "get('pair')" pair-deeplink.js
           grep -q '.nomni-base-board' market-terminal.css
           ! grep -qi 'tokenscan' market-terminal.js nomni-base-board.js
+
+      - name: Verify shared NOMNI market tape and NEO Prime market surface
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOT='https://shemsizedek.github.io/neo-system'
+          curl --fail --silent --show-error --location "$ROOT/markets/neo-market-tape.js" -o neo-market-tape.js
+          curl --fail --silent --show-error --location "$ROOT/neo-prime/markets.html" -o prime-markets.html
+          grep -q "const BASE='NOMNI'" neo-market-tape.js
+          grep -q "PRIORITY=\['BTC','NEOCASH','XCP'\]" neo-market-tape.js
+          grep -q 'NOMNI PRIMARY MARKET' neo-market-tape.js
+          grep -q 'terminal-root="../neoscan/"' prime-markets.html
+          grep -q 'NEO Market Tape' prime-markets.html
+          grep -q 'Noocratic Open Market Natural Index' prime-markets.html
+          ! grep -qi 'Counterparty' prime-markets.html
+          ! grep -qi 'tokenscan' neo-market-tape.js prime-markets.html
 
       - name: Verify GitHub-native runtime configuration
         shell: bash
