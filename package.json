@@ -20,7 +20,7 @@
     "miner:controller:test":"node --test server/miner-controller/*.test.mjs",
     "miner:commerce:test":"node --test server/miner-commerce/*.test.mjs",
     "miner:generator:test":"node --test server/miner-generator/*.test.mjs",
-    "miner:production":"node server/miner-production/server.mjs",
+    "miner:production":"node server/miner-production/start.mjs",
     "miner:production:test":"node --test server/miner-production/*.test.mjs",
     "neo-counter:server":"node server/neo-counter-backend/server.mjs",
     "neo-counter:server:test":"node --test server/neo-counter-backend/*.test.mjs",
