@@ -5,7 +5,7 @@ import {evaluateOperatorReadEnv} from '../deployment/operator-read-preflight.mjs
 const base={
   NEO_MINER_OPERATOR_URL:'https://miner.internal.example/discord/snapshot',
   NEO_MINER_OPERATOR_TOKEN:'miner-token',
-  NEO_RELATIONS_OPERATOR_URL:'https://relations.internal.example/intents?status=pending_approval',
+  NEO_RELATIONS_OPERATOR_URL:'https://relations.internal.example/discord/pending-summary?tenantId=neo-prime',
   NEO_RELATIONS_OPERATOR_TOKEN:'relations-token',
   DISCORD_OPERATOR_ROLE_IDS:'123456789012345678'
 }
@@ -49,7 +49,7 @@ test('operator runtime preflight rejects Pages as protected runtime',()=>{
 })
 
 test('operator runtime preflight rejects recursive Discord bridge URLs',()=>{
-  const out=evaluateOperatorReadEnv({...base,NEO_RELATIONS_OPERATOR_URL:'https://neo-discord-api.neosystem.workers.dev/relations'})
+  const out=evaluateOperatorReadEnv({...base,NEO_RELATIONS_OPERATOR_URL:'https://neo-discord-api.neosystem.workers.dev/discord/pending-summary?tenantId=neo-prime'})
   assert.equal(out.ok,false)
   assert.equal(out.code,'NEO_RELATIONS_OPERATOR_URL_DISCORD_BRIDGE_RECURSION_FORBIDDEN')
 })
@@ -58,4 +58,16 @@ test('operator runtime preflight requires the dedicated miner machine-read path'
   const out=evaluateOperatorReadEnv({...base,NEO_MINER_OPERATOR_URL:'https://miner.internal.example/snapshot'})
   assert.equal(out.ok,false)
   assert.equal(out.code,'NEO_MINER_OPERATOR_URL_MACHINE_READ_PATH_REQUIRED')
+})
+
+test('operator runtime preflight requires the Relations aggregate machine-read path',()=>{
+  const out=evaluateOperatorReadEnv({...base,NEO_RELATIONS_OPERATOR_URL:'https://relations.internal.example/intents?tenantId=neo-prime'})
+  assert.equal(out.ok,false)
+  assert.equal(out.code,'NEO_RELATIONS_OPERATOR_URL_MACHINE_READ_PATH_REQUIRED')
+})
+
+test('operator runtime preflight requires Relations tenant scope',()=>{
+  const out=evaluateOperatorReadEnv({...base,NEO_RELATIONS_OPERATOR_URL:'https://relations.internal.example/discord/pending-summary'})
+  assert.equal(out.ok,false)
+  assert.equal(out.code,'NEO_RELATIONS_OPERATOR_URL_TENANT_REQUIRED')
 })
