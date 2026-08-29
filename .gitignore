@@ -5,3 +5,9 @@ dist/
 .env.*
 !.env.example
 .DS_Store
+
+# NEO Miner persistent runtime state — mount this outside the repo in production
+data/*.sqlite
+data/*.sqlite-*
+server/miner-production/data/*.sqlite
+server/miner-production/data/*.sqlite-*
