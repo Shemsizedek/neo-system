@@ -4,13 +4,11 @@ on:
   pull_request:
     paths:
       - 'services/neo-discord/**'
-      - 'cloudflare/neo-discord/**'
       - '.github/workflows/neo-discord-neutral-transport.yml'
   push:
     branches: [main]
     paths:
       - 'services/neo-discord/**'
-      - 'cloudflare/neo-discord/**'
       - '.github/workflows/neo-discord-neutral-transport.yml'
   workflow_dispatch:
 
@@ -25,7 +23,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-      - name: Validate canonical neutral modules
+      - name: Validate canonical core and adapter layout
         run: |
           test -s services/neo-discord/core/relations.js
           test -s services/neo-discord/core/authorization.js
@@ -33,27 +31,24 @@ jobs:
           test -s services/neo-discord/core/counterparty.js
           test -s services/neo-discord/core/treasury.js
           test -s services/neo-discord/core/neo-command.js
-          grep -q "services/neo-discord/core/relations.js" cloudflare/neo-discord/src/relations.js
-          grep -q "services/neo-discord/core/authorization.js" cloudflare/neo-discord/src/index-relations.js
-          grep -q "services/neo-discord/core/neo-command.js" cloudflare/neo-discord/src/index.js
-      - name: Ensure compatibility adapters stay thin
+          test -s services/neo-discord/commands/relations.json
+          test -s services/neo-discord/adapters/cloudflare/worker.js
+          test -s services/neo-discord/adapters/node-http/runtime.js
+      - name: Ensure provider adapter stays transport-only
         run: |
-          test $(wc -l < cloudflare/neo-discord/src/relations.js) -le 5
-          test $(wc -l < cloudflare/neo-discord/src/asset-display.js) -le 5
-          test $(wc -l < cloudflare/neo-discord/src/counterparty.js) -le 5
-          test $(wc -l < cloudflare/neo-discord/src/treasury.js) -le 5
-          ! grep -q "api.github.com/repos" cloudflare/neo-discord/src/relations.js
-          ! grep -q "api.counterparty.io" cloudflare/neo-discord/src/counterparty.js
-          ! grep -q "mempool.space" cloudflare/neo-discord/src/treasury.js
-      - name: Ensure Worker entrypoint does not own domain routing
-        run: |
-          ! grep -q "function isTreasuryPrompt" cloudflare/neo-discord/src/index.js
-          ! grep -q "function isCounterpartyStatusPrompt" cloudflare/neo-discord/src/index.js
-          ! grep -q "async function githubStatus" cloudflare/neo-discord/src/index.js
-          ! grep -q "async function askOpenAI" cloudflare/neo-discord/src/index.js
+          ! grep -q "function isTreasuryPrompt" services/neo-discord/adapters/cloudflare/worker.js
+          ! grep -q "function isCounterpartyStatusPrompt" services/neo-discord/adapters/cloudflare/worker.js
+          ! grep -q "async function githubStatus" services/neo-discord/adapters/cloudflare/worker.js
+          ! grep -q "async function askOpenAI" services/neo-discord/adapters/cloudflare/worker.js
+          grep -q "../../core/neo-command.js" services/neo-discord/adapters/cloudflare/worker.js
+          grep -q "../../core/relations.js" services/neo-discord/adapters/cloudflare/worker.js
+      - name: Validate command manifest
+        run: node -e "const x=require('./services/neo-discord/commands/relations.json'); if(x.name!=='relations'||!Array.isArray(x.options)) process.exit(1)"
       - name: Install Cloudflare adapter dependencies
-        working-directory: cloudflare/neo-discord
+        working-directory: services/neo-discord/adapters/cloudflare
         run: npm install
-      - name: Validate Worker bundle
-        working-directory: cloudflare/neo-discord
-        run: npx wrangler deploy --dry-run --config wrangler.jsonc
+      - name: Validate Cloudflare adapter bundle
+        working-directory: services/neo-discord/adapters/cloudflare
+        run: npm run dry-run
+      - name: Validate portable Node adapter import
+        run: node -e "import('./services/neo-discord/adapters/node-http/runtime.js').then(m=>{const x=m.createNodeRuntimeAdapter(); if(x.id!=='node-http') process.exit(1)})"
