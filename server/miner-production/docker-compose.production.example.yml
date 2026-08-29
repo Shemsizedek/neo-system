@@ -1,0 +1,52 @@
+services:
+  miner-production:
+    image: ghcr.io/shemsizedek/neo-system-miner-production:main
+    restart: unless-stopped
+    env_file:
+      - ./config.production.env
+    environment:
+      PORT: 8890
+      NEO_MINER_DB_PATH: /var/lib/neo-miner/neo-miner.sqlite
+    volumes:
+      - neo-miner-state:/var/lib/neo-miner
+    expose:
+      - "8890"
+    healthcheck:
+      test: ["CMD","node","-e","fetch('http://127.0.0.1:8890/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  miner-operator:
+    image: ghcr.io/shemsizedek/neo-system-miner-operator:main
+    restart: unless-stopped
+    env_file:
+      - ./config.production.env
+    environment:
+      NEO_OPERATOR_PORT: 8891
+      NEO_MINER_INTERNAL_API_URL: http://miner-production:8890
+    depends_on:
+      miner-production:
+        condition: service_healthy
+    expose:
+      - "8891"
+    healthcheck:
+      test: ["CMD","node","-e","fetch('http://127.0.0.1:8891/ready').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN}
+    depends_on:
+      miner-operator:
+        condition: service_healthy
+
+volumes:
+  neo-miner-state:
