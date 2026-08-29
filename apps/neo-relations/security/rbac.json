@@ -1,0 +1,42 @@
+{
+  "version": "1.0.0",
+  "defaultDeny": true,
+  "roles": {
+    "relations.viewer": {
+      "allow": ["tenant.read", "entity.read", "relationship.read", "record.read", "audit.read"]
+    },
+    "relations.operator": {
+      "inherits": ["relations.viewer"],
+      "allow": ["intent.create", "router.event.ingest"]
+    },
+    "relations.approver": {
+      "inherits": ["relations.operator"],
+      "allow": ["intent.approve", "intent.reject"]
+    },
+    "relations.admin": {
+      "inherits": ["relations.approver"],
+      "allow": ["tenant.configure", "rbac.manage"]
+    }
+  },
+  "sensitiveActions": [
+    "entity.create",
+    "entity.update",
+    "relationship.create",
+    "relationship.update",
+    "record.create",
+    "record.update",
+    "payment.execute",
+    "identity.change"
+  ],
+  "approvalPolicy": {
+    "sensitiveActionsRequireApproval": true,
+    "selfApprovalAllowed": false,
+    "discordMayExecuteSensitiveActions": false,
+    "aiMayApprove": false,
+    "aiMayRecommend": true
+  },
+  "tenantBoundary": {
+    "crossTenantReadRequiresPolicy": true,
+    "crossTenantWriteAllowed": false
+  }
+}
