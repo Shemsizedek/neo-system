@@ -21,20 +21,60 @@ const SERVICES=[
   ['neo-corpus','NEO Corpus','docs/neo-corpus','/neo-corpus/',null,'public']
 ].map(([id,name,githubPath,pagesPath,specializedCommand,visibility])=>({id,name,githubPath,pagesPath,specializedCommand,visibility}))
 
+const REPO='Shemsizedek/neo-system'
+const PAGES_ROOT='https://shemsizedek.github.io/neo-system'
+
 export function serviceRegistry(){return SERVICES.map(x=>({...x}))}
 export function findService(id){const key=String(id||'').trim().toLowerCase();return SERVICES.find(x=>x.id===key)||null}
 function option(interaction,name){return interaction?.data?.options?.find(x=>x.name===name)?.value}
+function githubHeaders(env={}){const h={accept:'application/vnd.github+json','user-agent':'neo-discord-services'};if(env.GITHUB_API_TOKEN)h.authorization=`Bearer ${env.GITHUB_API_TOKEN}`;return h}
+function githubContentsUrl(path){return `https://api.github.com/repos/${REPO}/contents/${String(path).split('/').map(encodeURIComponent).join('/')}?ref=main`}
 
 export function formatService(service){
   if(!service)return 'Unknown NEO Service.'
-  const pages=service.pagesPath?`GitHub Pages: https://shemsizedek.github.io/neo-system${service.pagesPath}`:'GitHub Pages: not publicly published'
+  const pages=service.pagesPath?`GitHub Pages: ${PAGES_ROOT}${service.pagesPath}`:'GitHub Pages: not publicly published'
   const command=service.specializedCommand?`Specialized Discord command: /${service.specializedCommand}`:'Specialized Discord command: none; use /services for discovery'
   return [`**${service.name}** (${service.id})`,`Backend: GitHub → ${service.githubPath}`,pages,'Server/API plane: Discord',command,'Sensitive execution: disabled by default'].join('\n')
 }
 
-export async function handleServicesCommand(interaction){
+export async function serviceStatus(service,env={}, {fetchImpl=fetch}={}){
+  if(!service)return 'Unknown NEO Service.'
+  const backendUrl=githubContentsUrl(service.githubPath)
+  let backend='UNREACHABLE',backendDetail=''
+  try{
+    const r=await fetchImpl(backendUrl,{headers:githubHeaders(env),signal:AbortSignal.timeout(10000)})
+    if(r.ok){const body=await r.json().catch(()=>({}));backend='AVAILABLE';backendDetail=body?.type?` (${body.type})`:''}
+    else backend=`HTTP ${r.status}`
+  }catch{backend='UNREACHABLE'}
+
+  let frontend='NOT PUBLISHED'
+  if(service.pagesPath){
+    try{
+      const r=await fetchImpl(`${PAGES_ROOT}${service.pagesPath}`,{method:'GET',headers:{accept:'text/html'},redirect:'follow',signal:AbortSignal.timeout(10000)})
+      frontend=r.ok?'AVAILABLE':`HTTP ${r.status}`
+    }catch{frontend='UNREACHABLE'}
+  }
+
+  return [
+    `**${service.name} — Control-Plane Status**`,
+    `GitHub backend: ${backend}${backendDetail}`,
+    `GitHub path: ${service.githubPath}`,
+    `GitHub Pages frontend: ${frontend}`,
+    service.pagesPath?`Pages route: ${PAGES_ROOT}${service.pagesPath}`:'Pages route: none',
+    'Discord server/API: ACTIVE (read-only status surface)',
+    'Status scope: repository path + published frontend reachability only',
+    'Mutations / approvals / sensitive execution: disabled'
+  ].join('\n').slice(0,1900)
+}
+
+export async function handleServicesCommand(interaction,env={}, {fetchImpl=fetch}={}){
   const requested=option(interaction,'service')
-  if(requested)return formatService(findService(requested))
+  const action=String(option(interaction,'action')||'details').toLowerCase()
+  if(requested){
+    const service=findService(requested)
+    if(action==='status')return serviceStatus(service,env,{fetchImpl})
+    return formatService(service)
+  }
   const publicServices=SERVICES.filter(x=>x.visibility==='public')
   const internal=SERVICES.filter(x=>x.visibility!=='public')
   return [
@@ -44,6 +84,6 @@ export async function handleServicesCommand(interaction){
     '',
     publicServices.map(x=>`• ${x.id}${x.specializedCommand?` → /${x.specializedCommand}`:''}`).join('\n'),
     '',
-    'Use `/services service:<id>` for service details.'
+    'Use `/services service:<id> action:details|status`.'
   ].join('\n').slice(0,1900)
 }

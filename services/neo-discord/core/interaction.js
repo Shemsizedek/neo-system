@@ -16,8 +16,8 @@ export async function processRelationsCommand(interaction,env,{fetchImpl=fetch}=
   catch(err){await editDiscordInteraction(interaction,`NEO Relations error: ${String(err?.message||err).slice(0,1500)}`,fetchImpl).catch(()=>{})}
 }
 
-export async function processServicesCommand(interaction,{fetchImpl=fetch}={}){
-  try{await editDiscordInteraction(interaction,await handleServicesCommand(interaction),fetchImpl)}
+export async function processServicesCommand(interaction,env,{fetchImpl=fetch}={}){
+  try{await editDiscordInteraction(interaction,await handleServicesCommand(interaction,env,{fetchImpl}),fetchImpl)}
   catch(err){await editDiscordInteraction(interaction,`NEO Services error: ${String(err?.message||err).slice(0,1500)}`,fetchImpl).catch(()=>{})}
 }
 
@@ -32,7 +32,7 @@ export async function dispatchVerifiedInteraction(interaction,env,runtime,{waitU
   const command=String(interaction?.data?.name||'')
   if(command==='neo')waitUntil(processNeoCommand(interaction,env,runtime,fetchImpl))
   else if(command==='relations')waitUntil(processRelationsCommand(interaction,env,{fetchImpl}))
-  else if(command==='services')waitUntil(processServicesCommand(interaction,{fetchImpl}))
+  else if(command==='services')waitUntil(processServicesCommand(interaction,env,{fetchImpl}))
   else return discordJson({type:4,data:{content:'Unknown command.',flags:64,allowed_mentions:{parse:[]}}})
   return discordJson({type:5,data:{flags:64}})
 }

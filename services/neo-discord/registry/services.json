@@ -1,12 +1,17 @@
 {
-  "version": "1.0.0",
+  "version": "1.1.0",
   "planes": {"backend":"github","frontend":"github-pages","serverApi":"discord"},
   "defaultCommand": "services",
+  "readActions": {
+    "details": {"grounding":"registry","mutates":false},
+    "status": {"grounding":["github-main-path","github-pages-route"],"mutates":false,"scope":"control-plane-reachability"}
+  },
   "rules": {
     "transportOwnsBusinessLogic": false,
     "discordSensitiveExecution": false,
     "discordApproval": false,
-    "aiApproval": false
+    "aiApproval": false,
+    "serviceStatusMayImplyApplicationHealth": false
   },
   "services": [
     {"id":"gisd","name":"GISD / NEO Cipher","githubPath":"apps/gisd","pagesPath":null,"specializedCommand":null,"visibility":"internal"},
