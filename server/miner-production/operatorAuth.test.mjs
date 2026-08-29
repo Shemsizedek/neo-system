@@ -17,7 +17,7 @@ test('session cookie is HttpOnly and treasury role enforces RBAC plus CSRF',()=>
   const issued=auth.issue(account)
   assert.match(issued.cookie,/HttpOnly/)
   assert.match(issued.cookie,/Secure/)
-  assert.match(issued.cookie,/SameSite=None/)
+  assert.match(issued.cookie,/SameSite=Lax/)
   const req={headers:{cookie:issued.cookie.split(';')[0],'x-csrf-token':issued.csrfToken}}
   const allowed=auth.requirePermission(req,PERMISSIONS.MANAGE_PAYOUTS,{csrf:true})
   assert.equal(allowed.ok,true)
@@ -33,4 +33,9 @@ test('viewer cannot manage treasury',()=>{
   const req={headers:{cookie:issued.cookie.split(';')[0],'x-csrf-token':issued.csrfToken}}
   assert.equal(auth.requirePermission(req,PERMISSIONS.VIEW_OPERATIONS).ok,true)
   assert.equal(auth.requirePermission(req,PERMISSIONS.MANAGE_TREASURY,{csrf:true}).status,403)
+})
+
+test('SameSite=None requires Secure',()=>{
+  const passwordHash=hashOperatorPassword('secure-cookie-passphrase')
+  assert.throws(()=>createOperatorAuth({secret:'z'.repeat(48),accounts:[{id:'viewer',role:'VIEWER',passwordHash}],secure:false,sameSite:'None'}),/OPERATOR_SAMESITE_NONE_REQUIRES_SECURE/)
 })
