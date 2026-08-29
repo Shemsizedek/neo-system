@@ -120,4 +120,6 @@ await writeFile(
   'utf8'
 );
 
-console.log(`Published ${Object.keys(platforms).length} NEO platform API snapshots and GitHub Router contract.`);
+await import('./build-neo-market-snapshot.mjs');
+
+console.log(`Published ${Object.keys(platforms).length} NEO platform API snapshots, canonical NEO market feeds, and GitHub Router contract.`);
