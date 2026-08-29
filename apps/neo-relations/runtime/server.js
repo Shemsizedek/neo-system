@@ -1,4 +1,5 @@
 import http from 'node:http'
+import {timingSafeEqual} from 'node:crypto'
 import {Pool} from 'pg'
 import {RelationsRepository} from './repository.js'
 import {verifyBearer} from './auth.js'
@@ -15,6 +16,14 @@ async function readJson(req){
   return JSON.parse(Buffer.concat(chunks).toString('utf8'))
 }
 
+function csv(value){return String(value||'').split(',').map(v=>v.trim()).filter(Boolean)}
+function bearer(req){return String(req.headers?.authorization||'').replace(/^Bearer\s+/i,'').trim()}
+function tokenMatch(actual,expected){
+  if(!actual||!expected)return false
+  const a=Buffer.from(actual),b=Buffer.from(expected)
+  return a.length===b.length&&timingSafeEqual(a,b)
+}
+
 function mapError(err){
   const message=String(err?.message||'request failed')
   if(/required|must be|invalid|cannot be decided/i.test(message)) return [400,message]
@@ -29,6 +38,16 @@ export function createHandler({repository,verify=verifyBearer,env=process.env}={
     try{
       const url=new URL(req.url,'http://localhost')
       if(req.method==='GET'&&url.pathname==='/health') return json(res,200,{service:'neo-relations',status:'ok',executionWorker:false})
+      if(req.method==='GET'&&url.pathname==='/discord/pending-summary'){
+        const expected=String(env.RELATIONS_DISCORD_OPERATOR_READ_TOKEN||'').trim()
+        if(!tokenMatch(bearer(req),expected))return json(res,401,{error:'RELATIONS_DISCORD_READ_UNAUTHORIZED'})
+        const tenantId=String(url.searchParams.get('tenantId')||'').trim()
+        const allowed=csv(env.RELATIONS_DISCORD_TENANT_IDS)
+        if(!tenantId)return json(res,400,{error:'tenantId is required'})
+        if(!allowed.includes(tenantId))return json(res,403,{error:'tenant boundary denied'})
+        const pendingApprovals=await repository.countPending(tenantId)
+        return json(res,200,{tenantId,pendingApprovals,readOnly:true,recordsIncluded:false})
+      }
 
       const actor=await verify(req,env)
       if(req.method==='GET'&&url.pathname==='/intents'){
