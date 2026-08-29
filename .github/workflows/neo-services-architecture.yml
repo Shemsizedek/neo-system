@@ -83,11 +83,13 @@ jobs:
         run: |
           set -euo pipefail
           owner='.github/workflows/pages.yml'
+          policy='.github/workflows/neo-services-architecture.yml'
           test -s "$owner"
           grep -q 'actions/upload-pages-artifact@' "$owner"
           grep -q 'actions/deploy-pages@' "$owner"
           while IFS= read -r f; do
             [ "$f" = "$owner" ] && continue
+            [ "$f" = "$policy" ] && continue
             if grep -Eq 'actions/(upload-pages-artifact|deploy-pages)@|pages:[[:space:]]*write' "$f"; then
               echo "Unauthorized GitHub Pages deployment authority: $f" >&2
               exit 1
