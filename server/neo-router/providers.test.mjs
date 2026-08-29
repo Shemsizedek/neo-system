@@ -1,6 +1,25 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { createCloudflareWorkersAIAdapter, providersFromEnv } from './providers.mjs'
+import { createCloudflareWorkersAIAdapter, createGeminiAdapter, providersFromEnv } from './providers.mjs'
+
+test('Gemini adapter sends the API key in the x-goog-api-key header', async () => {
+  let request
+  const adapter = createGeminiAdapter({
+    apiKey: 'gemini-secret', model: 'gemini-test',
+    fetchImpl: async (url, options) => {
+      request = { url, options }
+      return {
+        ok: true,
+        json: async () => ({ candidates: [{ content: { parts: [{ text: 'gemini result' }] } }] }),
+      }
+    },
+  })
+  const result = await adapter.invoke({ system: 'policy', prompt: 'mission' })
+  assert.equal(result.text, 'gemini result')
+  assert.equal(request.url, 'https://generativelanguage.googleapis.com/v1beta/models/gemini-test:generateContent')
+  assert.equal(request.options.headers['x-goog-api-key'], 'gemini-secret')
+  assert.ok(!request.url.includes('gemini-secret'))
+})
 
 test('Workers AI adapter uses the authenticated account endpoint', async () => {
   let request
@@ -26,4 +45,9 @@ test('environment config supports all four providers', () => {
   })
   assert.deepEqual(providers.map((provider) => provider.id), ['anthropic', 'openai', 'gemini', 'cloudflare'])
   assert.ok(providers.every((provider) => provider.configured))
+})
+
+test('GOOGLE_API_KEY takes precedence for Gemini', () => {
+  const providers = providersFromEnv({ GOOGLE_API_KEY: 'google-auth-key', GEMINI_API_KEY: 'legacy-key' })
+  assert.equal(providers.find((provider) => provider.id === 'gemini')?.configured, true)
 })
