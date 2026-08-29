@@ -1,6 +1,7 @@
 import { inventoryCesForms, classifyCesForm } from './ces-form-mapper.mjs';
 import { createLegacyCesCrawler } from './ces-legacy-crawler.mjs';
 import { createMemoryCesManifestStore } from './ces-manifest-store.mjs';
+import { generateLegacyRouteCandidates } from './ces-legacy-route-candidates.mjs';
 
 const DEFAULT_BASE_URL = 'https://www.community-exchange.org';
 
@@ -93,12 +94,23 @@ export function createCesSessionAdapter({
         maxLinksPerPage: options.maxLinksPerPage,
       });
       const manifest = await crawler.crawl(exchange);
-      const stored = await manifestStore.save(manifest);
+      const routeCandidates = generateLegacyRouteCandidates(manifest, { minScore: options.minCandidateScore || 25 });
+      const enrichedManifest = {
+        ...manifest,
+        routeCandidates,
+        candidatePolicy: {
+          autoPromotion: false,
+          requiresHumanReview: true,
+          trustedByDefault: false,
+        },
+      };
+      const stored = await manifestStore.save(enrichedManifest);
       return {
         ok: true,
         mode: 'legacy-discovery-read-only',
         persisted: true,
         manifest: stored,
+        routeCandidates,
       };
     });
   }
