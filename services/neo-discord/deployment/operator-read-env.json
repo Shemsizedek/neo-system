@@ -1,0 +1,29 @@
+{
+  "version": "1.0.0",
+  "purpose": "runtime-only protected Discord operator reads",
+  "transport": "cloudflare-worker",
+  "required": [
+    {"name":"NEO_MINER_OPERATOR_URL","kind":"runtime-secret","validation":"https-url"},
+    {"name":"NEO_MINER_OPERATOR_TOKEN","kind":"runtime-secret","validation":"non-empty"},
+    {"name":"NEO_RELATIONS_OPERATOR_URL","kind":"runtime-secret","validation":"https-url"},
+    {"name":"NEO_RELATIONS_OPERATOR_TOKEN","kind":"runtime-secret","validation":"non-empty"}
+  ],
+  "operatorSelectors": {
+    "requireAtLeastOne": true,
+    "fields": [
+      {"name":"DISCORD_OPERATOR_USER_IDS","kind":"runtime-secret","validation":"csv-discord-snowflakes"},
+      {"name":"DISCORD_OPERATOR_ROLE_IDS","kind":"runtime-secret","validation":"csv-discord-snowflakes"}
+    ]
+  },
+  "rules": {
+    "repositoryMayContainValues": false,
+    "githubPagesMayReceiveValues": false,
+    "logValues": false,
+    "protectedReadsOnly": true,
+    "mutations": false,
+    "approvals": false,
+    "signing": false,
+    "payoutRelease": false,
+    "fallbackToPublicSources": false
+  }
+}
