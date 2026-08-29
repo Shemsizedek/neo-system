@@ -4,15 +4,13 @@ NEO Counter is the shared checkout surface for NEO applications and ecosystem pl
 
 ## Stable frontend
 
-`https://shemsizedek.github.io/neo-system/neo-checkout/`
-
-The legacy/register route remains available at `/neo-counter/`.
+`https://shemsizedek.github.io/neo-system/neo-counter/`
 
 ## Browser adapter
 
 Load:
 
-`https://shemsizedek.github.io/neo-system/neo-checkout/neo-checkout.js`
+`https://shemsizedek.github.io/neo-system/neo-counter/neo-checkout.js`
 
 Then redirect:
 
@@ -45,7 +43,7 @@ The checkout route accepts these query parameters:
 
 Example:
 
-`/neo-checkout/?checkout=1&amount=12500&service=neo-miner&order=contract-123&label=NEO%20Mining%20Contract&rail=BTC`
+`/neo-counter/?checkout=1&amount=12500&service=neo-miner&order=contract-123&label=NEO%20Mining%20Contract&rail=BTC`
 
 ## Settlement boundary
 
@@ -54,6 +52,14 @@ The redirect URL, `neo_checkout=success`, payment ID, amount, service ID, order 
 For BTC/XCP/NOMNI checkout, NEO Counter uses its read-only network observation rails. A downstream platform must independently verify the returned blockchain/reference identifier and its required confirmation policy before delivering irreversible goods, services, credits, securities, mining contracts, or other value.
 
 NEO Counter does not place private keys, seed phrases, raw cardholder data, or server-side signing material into GitHub Pages.
+
+## GitHub-native backend snapshots
+
+`/api/neo-counter/runtime.json` identifies the runtime.
+
+`/api/neo-counter/build.json` identifies the deployed build and checkout route.
+
+`/api/neo-counter/services.json` is the canonical registry of NEO ecosystem checkout consumers.
 
 ## Platform adoption
 
