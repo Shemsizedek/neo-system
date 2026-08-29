@@ -33,6 +33,8 @@
     "neo-tokenworks:test":"node --test server/neo-tokenworks/*.test.mjs",
     "nibiru-reserve:server":"node server/nibiru-reserve/server.mjs",
     "nibiru-reserve:test":"node --test server/nibiru-reserve/*.test.mjs",
+    "nibiru-reserve:backup":"node server/nibiru-reserve/backup-cli.mjs create",
+    "nibiru-reserve:recover":"node server/nibiru-reserve/backup-cli.mjs recover",
     "neo-enterprise:server":"node server/neo-enterprise/server.mjs",
     "neo-enterprise:test":"node --test server/neo-enterprise/*.test.mjs",
     "neoscan:statements":"node apps/neoscan/server/server.mjs",
