@@ -1,0 +1,2 @@
+import {createEncryptedBackup,recoverEncryptedBackup} from './backup.mjs';
+const action=process.argv[2],passphrase=process.env.NIBIRU_BACKUP_PASSPHRASE;if(action==='create')console.log(JSON.stringify(createEncryptedBackup({dbPath:process.env.NIBIRU_RESERVE_DB_PATH,outputPath:process.env.NIBIRU_BACKUP_PATH,passphrase}),null,2));else if(action==='recover')console.log(JSON.stringify(recoverEncryptedBackup({backupPath:process.env.NIBIRU_BACKUP_PATH,restorePath:process.env.NIBIRU_RESTORE_PATH,passphrase}),null,2));else throw new Error('usage: backup-cli.mjs create|recover');
