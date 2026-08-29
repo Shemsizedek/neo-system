@@ -4,12 +4,13 @@ import {acceptSignedTransaction,buildSigningHandoff,listWalletAdapters} from './
 import {normalizeBroadcastReceipt,normalizeTransactionStatus,validateBroadcastIntent} from './broadcast.mjs'
 import {buildReceipt,buildSettlementRecord,verifyReceipt} from './settlement.mjs'
 import {buildOperatorReport,reconcileMachine,reconcileSettlement} from './reconciliation.mjs'
+import {buildRemoteLockout,evaluateHeartbeat,hardwareCapabilities,normalizeDeviceRegistration} from './hardware.mjs'
 
 const PORT=Number(process.env.NEO_TELLER_PORT||8787)
 const CP=(process.env.COUNTERPARTY_API_URL||'').replace(/\/$/,'')
 const BTC=(process.env.BITCOIN_ELECTRS_URL||'https://blockstream.info/api').replace(/\/$/,'')
 
-async function request(url,options={}){const r=await fetch(url,{...options,headers:{'user-agent':'neo-teller/0.7',...(options.headers||{})}});if(!r.ok)throw new Error(`${r.status} ${r.statusText}: ${(await r.text()).slice(0,300)}`);return r}
+async function request(url,options={}){const r=await fetch(url,{...options,headers:{'user-agent':'neo-teller/0.8',...(options.headers||{})}});if(!r.ok)throw new Error(`${r.status} ${r.statusText}: ${(await r.text()).slice(0,300)}`);return r}
 async function getJson(url){return (await request(url,{headers:{accept:'application/json'}})).json()}
 async function getText(url){return (await request(url,{headers:{accept:'text/plain'}})).text()}
 async function postText(url,body){return (await request(url,{method:'POST',headers:{'content-type':'text/plain','accept':'text/plain'},body})).text()}
@@ -22,12 +23,13 @@ function json(res,status,body){res.writeHead(status,{'content-type':'application
 
 const server=http.createServer(async(req,res)=>{
   if(req.method==='OPTIONS'){res.writeHead(204,{'access-control-allow-origin':'*','access-control-allow-methods':'GET,POST,OPTIONS','access-control-allow-headers':'content-type,accept'});return res.end()}
-  if(req.method==='GET'&&req.url==='/health')return json(res,200,{ok:true,service:'neo-teller-backend',mode:'NON_CUSTODIAL_RECONCILIATION'})
+  if(req.method==='GET'&&req.url==='/health')return json(res,200,{ok:true,service:'neo-teller-backend',mode:'NON_CUSTODIAL_HARDWARE_ABSTRACTION'})
   if(req.method==='GET'&&req.url==='/api/v1/teller/network'){
     const[counterparty,bitcoin,NOMNI,XCP]=await Promise.all([counterpartyHealth(),bitcoinHealth(),counterpartyAsset('NOMNI'),counterpartyAsset('XCP')])
-    return json(res,200,{observedAt:new Date().toISOString(),counterparty,bitcoin,assets:{NOMNI,XCP},capabilities:{readOnly:true,compose:true,sign:false,broadcast:'EXPLICIT_ONLY',walletHandoff:true,confirmationTracking:true,settlementLedger:true,tamperEvidentReceipts:true,reconciliation:true,atmCashInventory:true}})
+    return json(res,200,{observedAt:new Date().toISOString(),counterparty,bitcoin,assets:{NOMNI,XCP},capabilities:{readOnly:true,compose:true,sign:false,broadcast:'EXPLICIT_ONLY',walletHandoff:true,confirmationTracking:true,settlementLedger:true,tamperEvidentReceipts:true,reconciliation:true,atmCashInventory:true,hardwareAbstraction:true,secureHeartbeat:true,remoteLockout:true,remoteUnlock:false}})
   }
   if(req.method==='GET'&&req.url==='/api/v1/teller/wallet-adapters')return json(res,200,{adapters:listWalletAdapters(),privateKeyTransfer:false})
+  if(req.method==='GET'&&req.url==='/api/v1/teller/hardware/capabilities')return json(res,200,hardwareCapabilities())
   if(req.method==='POST'&&req.url==='/api/v1/teller/compose/send'){
     try{if(!CP)throw new Error('COUNTERPARTY_API_URL_NOT_CONFIGURED');const body=await readBody(req);assertNoSecrets(body);const {url,intent}=buildComposeUrl(CP,body);const payload=await getJson(url);return json(res,200,normalizeComposition(payload,intent))}catch(e){return json(res,400,{error:e instanceof Error?e.message:String(e)})}
   }
@@ -59,7 +61,16 @@ const server=http.createServer(async(req,res)=>{
   if(req.method==='POST'&&req.url==='/api/v1/teller/reconciliation/report'){
     try{return json(res,200,buildOperatorReport(await readBody(req)))}catch(e){return json(res,400,{error:e instanceof Error?e.message:String(e)})}
   }
+  if(req.method==='POST'&&req.url==='/api/v1/teller/hardware/register'){
+    try{return json(res,200,normalizeDeviceRegistration(await readBody(req)))}catch(e){return json(res,400,{error:e instanceof Error?e.message:String(e)})}
+  }
+  if(req.method==='POST'&&req.url==='/api/v1/teller/hardware/heartbeat'){
+    try{return json(res,200,evaluateHeartbeat(await readBody(req)))}catch(e){return json(res,400,{error:e instanceof Error?e.message:String(e)})}
+  }
+  if(req.method==='POST'&&req.url==='/api/v1/teller/hardware/lockout'){
+    try{return json(res,200,buildRemoteLockout(await readBody(req)))}catch(e){return json(res,400,{error:e instanceof Error?e.message:String(e)})}
+  }
   return json(res,404,{error:'NOT_FOUND'})
 })
 
-server.listen(PORT,()=>console.log(`NEO Teller reconciliation gateway listening on :${PORT}`))
+server.listen(PORT,()=>console.log(`NEO Teller hardware-abstraction gateway listening on :${PORT}`))
