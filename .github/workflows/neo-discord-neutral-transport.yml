@@ -24,17 +24,33 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
       - name: Validate canonical neutral modules
         run: |
           test -s services/neo-discord/core/relations.js
           test -s services/neo-discord/core/authorization.js
+          test -s services/neo-discord/core/asset-display.js
+          test -s services/neo-discord/core/counterparty.js
+          test -s services/neo-discord/core/treasury.js
+          test -s services/neo-discord/core/neo-command.js
           grep -q "services/neo-discord/core/relations.js" cloudflare/neo-discord/src/relations.js
           grep -q "services/neo-discord/core/authorization.js" cloudflare/neo-discord/src/index-relations.js
-      - name: Ensure provider adapter is thin
+          grep -q "services/neo-discord/core/neo-command.js" cloudflare/neo-discord/src/index.js
+      - name: Ensure compatibility adapters stay thin
         run: |
           test $(wc -l < cloudflare/neo-discord/src/relations.js) -le 5
+          test $(wc -l < cloudflare/neo-discord/src/asset-display.js) -le 5
+          test $(wc -l < cloudflare/neo-discord/src/counterparty.js) -le 5
+          test $(wc -l < cloudflare/neo-discord/src/treasury.js) -le 5
           ! grep -q "api.github.com/repos" cloudflare/neo-discord/src/relations.js
+          ! grep -q "api.counterparty.io" cloudflare/neo-discord/src/counterparty.js
+          ! grep -q "mempool.space" cloudflare/neo-discord/src/treasury.js
+      - name: Ensure Worker entrypoint does not own domain routing
+        run: |
+          ! grep -q "function isTreasuryPrompt" cloudflare/neo-discord/src/index.js
+          ! grep -q "function isCounterpartyStatusPrompt" cloudflare/neo-discord/src/index.js
+          ! grep -q "async function githubStatus" cloudflare/neo-discord/src/index.js
+          ! grep -q "async function askOpenAI" cloudflare/neo-discord/src/index.js
       - name: Install Cloudflare adapter dependencies
         working-directory: cloudflare/neo-discord
         run: npm install
