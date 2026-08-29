@@ -91,7 +91,7 @@ func (s Store) SaveSignerHandoff(ctx context.Context, handoffID, reviewID, appro
 	if handoffID == "" || reviewID == "" || approvalID == "" || unsignedTxHash == "" || destination == "" {
 		return errors.New("complete signer handoff identity is required")
 	}
-	_, err := s.DB.ExecContext(ctx, `
+	res, err := s.DB.ExecContext(ctx, `
 		INSERT INTO fintech_signer_handoffs
 		(handoff_id, review_id, approval_id, unsigned_tx_hash, destination)
 		SELECT $1, r.review_id, a.approval_id, r.unsigned_tx_hash, $5
@@ -102,5 +102,9 @@ func (s Store) SaveSignerHandoff(ctx context.Context, handoffID, reviewID, appro
 		  AND r.unsigned_tx_hash=$4 AND a.unsigned_tx_hash=$4`,
 		handoffID, reviewID, approvalID, unsignedTxHash, destination,
 	)
-	return err
+	if err != nil { return err }
+	n, err := res.RowsAffected()
+	if err != nil { return err }
+	if n != 1 { return errors.New("signer handoff preconditions not satisfied") }
+	return nil
 }
