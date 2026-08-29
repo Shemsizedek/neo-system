@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>NEO Relations</title>
+  <meta name="description" content="Universal white-label CRM for NEO Services" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="brand">NEO RELATIONS</div>
+      <nav>
+        <button data-view="dashboard" class="active">Dashboard</button>
+        <button data-view="entities">Relationships</button>
+        <button data-view="pipelines">Pipelines</button>
+        <button data-view="cases">Cases</button>
+        <button data-view="services">NEO Services</button>
+      </nav>
+      <div class="status" id="systemStatus">Loading control plane…</div>
+    </aside>
+    <main>
+      <header>
+        <div>
+          <p class="eyebrow">Universal CRM Control Plane</p>
+          <h1>NEO Relations</h1>
+        </div>
+        <select id="tenantSelect" aria-label="CRM tenant"></select>
+      </header>
+
+      <section class="hero">
+        <div>
+          <span class="pill">GitHub Pages Frontend</span>
+          <h2>One relationship graph. Every NEO Service.</h2>
+          <p>White-label relationship management with GitHub-backed configuration and Discord-connected operations.</p>
+        </div>
+        <div class="hero-stat">
+          <strong id="serviceCount">0</strong>
+          <span>service profiles</span>
+        </div>
+      </section>
+
+      <section class="metrics" id="metrics"></section>
+
+      <section class="grid">
+        <article class="panel">
+          <div class="panel-head"><h3>Relationship Graph</h3><span>Canonical entities</span></div>
+          <div id="relationsList" class="list"></div>
+        </article>
+        <article class="panel">
+          <div class="panel-head"><h3>Control Plane</h3><span>Runtime topology</span></div>
+          <div id="controlPlane" class="stack"></div>
+        </article>
+      </section>
+    </main>
+  </div>
+  <script src="./app.js" defer></script>
+</body>
+</html>
