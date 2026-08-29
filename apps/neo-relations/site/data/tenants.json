@@ -1,0 +1,26 @@
+{
+  "tenants": [
+    {
+      "id": "neo-prime",
+      "display_name": "NEO Prime Relations",
+      "objects": ["entities","organizations","relationships","opportunities","cases","tasks"],
+      "modules": ["executive-relations","institutional-relations","case-management","analytics"],
+      "pipelines": ["institutional","executive-service"],
+      "sample_relationships": [
+        {"entity_id":"REL-PRIME-001","name":"Institutional Relationship","role":"Principal","service":"NEO Prime"},
+        {"entity_id":"REL-PRIME-002","name":"Service Counterparty","role":"Counterparty","service":"NEO Prime"}
+      ]
+    },
+    {
+      "id": "neopay",
+      "display_name": "NEOpay Relations",
+      "objects": ["customers","organizations","accounts","cases","tasks","interactions"],
+      "modules": ["customer-relations","onboarding","service-cases","account-support"],
+      "pipelines": ["onboarding","customer-service"],
+      "sample_relationships": [
+        {"entity_id":"REL-PAY-001","name":"Customer Account","role":"Customer","service":"NEOpay"},
+        {"entity_id":"REL-PAY-002","name":"Merchant Account","role":"Merchant","service":"NEOpay"}
+      ]
+    }
+  ]
+}
