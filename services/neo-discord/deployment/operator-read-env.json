@@ -1,10 +1,10 @@
 {
-  "version": "1.0.0",
+  "version": "1.1.0",
   "purpose": "runtime-only protected Discord operator reads",
   "transport": "cloudflare-worker",
   "required": [
-    {"name":"NEO_MINER_OPERATOR_URL","kind":"runtime-secret","validation":"https-url"},
-    {"name":"NEO_MINER_OPERATOR_TOKEN","kind":"runtime-secret","validation":"non-empty"},
+    {"name":"NEO_MINER_OPERATOR_URL","kind":"runtime-secret","validation":"https-url-exact-path:/discord/snapshot"},
+    {"name":"NEO_MINER_OPERATOR_TOKEN","kind":"runtime-secret","validation":"non-empty","runtimePeer":"NEO_DISCORD_OPERATOR_READ_TOKEN"},
     {"name":"NEO_RELATIONS_OPERATOR_URL","kind":"runtime-secret","validation":"https-url"},
     {"name":"NEO_RELATIONS_OPERATOR_TOKEN","kind":"runtime-secret","validation":"non-empty"}
   ],
@@ -24,6 +24,8 @@
     "approvals": false,
     "signing": false,
     "payoutRelease": false,
+    "minerProductionApiPublic": false,
+    "minerReadsMustTraverseOperatorBff": true,
     "fallbackToPublicSources": false
   }
 }
