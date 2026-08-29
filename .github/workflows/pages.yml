@@ -124,16 +124,21 @@ jobs:
             test -f "dist/api/platforms/$platform.json"
           done
           test -f dist/api/platforms/index.json
+      - name: Build NEO Counter GitHub-native backend snapshots
+        run: |
+          node scripts/build-neo-counter-github-backend.mjs
+          test -f dist/api/neo-counter/runtime.json
+          test -f dist/api/neo-counter/build.json
       - name: Build NEO Counter
         working-directory: apps/neo-counter
-        env:
-          VITE_NEO_COUNTER_SYNC_ENDPOINT: ${{ vars.NEO_COUNTER_SYNC_ENDPOINT }}
         run: |
           npm install
           npm run build
       - name: Publish NEO Counter routes
         run: |
           test -f apps/neo-counter/dist/index.html
+          test -f dist/api/neo-counter/runtime.json
+          test -f dist/api/neo-counter/build.json
           mkdir -p dist/neo-counter dist/apps/neo-counter
           cp -R apps/neo-counter/dist/. dist/neo-counter/
           cp -R apps/neo-counter/dist/. dist/apps/neo-counter/
@@ -180,6 +185,8 @@ jobs:
           echo "Neogram/NTP static API: /api/neo-telegram/" >> "$GITHUB_STEP_SUMMARY"
           echo "Neogram v0.5 relay config: /api/neo-telegram/relay-config.json" >> "$GITHUB_STEP_SUMMARY"
           echo "Neogram v0.5 relay contract: /api/neo-telegram/relay-contract.json" >> "$GITHUB_STEP_SUMMARY"
+          echo "NEO Counter: /neo-counter/" >> "$GITHUB_STEP_SUMMARY"
+          echo "NEO Counter GitHub backend snapshots: /api/neo-counter/" >> "$GITHUB_STEP_SUMMARY"
           echo "NEO Enterprise: /neo-enterprise/" >> "$GITHUB_STEP_SUMMARY"
           echo "Enterprise executive console: /neo-enterprise/admin/" >> "$GITHUB_STEP_SUMMARY"
           echo "Enterprise public API: /api/enterprise/" >> "$GITHUB_STEP_SUMMARY"
