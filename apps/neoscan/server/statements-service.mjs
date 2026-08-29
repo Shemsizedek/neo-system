@@ -1,4 +1,5 @@
 import {createCesAdapter} from '../adapters/ces/adapter.mjs';
+import {createCesIngestionStore} from '../adapters/ces/ingestion.mjs';
 
 export const STATEMENT_SERVICE_SCHEMA='neo.statement.service.v1';
 const BTC_DEFAULT='https://mempool.space/api';
@@ -21,11 +22,36 @@ function counterpartyBalances(data,address){
   return rows.map(row=>({source:'counterparty',reference:`address:${address}:${row.asset}`,unit:String(row.asset),amount:Number(row.quantity_normalized??row.quantity??0),observedAt:new Date().toISOString(),verificationStatus:'verified',recordType:'balance'}));
 }
 
+function cesEntries(snapshot){
+  if(!snapshot)return [];
+  return [...(Array.isArray(snapshot.balances)?snapshot.balances:[]),...(Array.isArray(snapshot.transactions)?snapshot.transactions:[])];
+}
+
+function cesOperationalSummary(snapshot){
+  if(!snapshot)return {status:'unavailable',readOnly:true,account:null,network:null,observedAt:null,balanceCount:0,transactionCount:0,units:[]};
+  const units=[...new Set(cesEntries(snapshot).map(entry=>String(entry.unit||'').trim()).filter(Boolean))].sort();
+  return {
+    status:'imported',
+    readOnly:true,
+    account:snapshot.account||null,
+    network:snapshot.network||null,
+    observedAt:snapshot.observedAt||null,
+    provenance:snapshot.provenance||null,
+    balanceCount:Array.isArray(snapshot.balances)?snapshot.balances.length:0,
+    transactionCount:Array.isArray(snapshot.transactions)?snapshot.transactions.length:0,
+    units
+  };
+}
+
 export function createStatementsService(config={}){
   const btcBase=String(config.bitcoinApi||BTC_DEFAULT).replace(/\/$/,'');
   const xcpBase=String(config.counterpartyApi||XCP_DEFAULT).replace(/\/$/,'');
   const fetchImpl=config.fetchImpl||fetch;
   const cesAdapter=config.cesAdapter||createCesAdapter(config.ces||{});
+  const cesStore=config.cesStore||createCesIngestionStore();
+
+  function ingestCesSnapshot(input){return cesStore.ingest(input);}
+  function cesStatus(){return cesOperationalSummary(cesStore.current());}
 
   async function buildPublicStatement({address,cesToken,includeCes=true,signal}={}){
     const account=String(address||'').trim();
@@ -40,20 +66,24 @@ export function createStatementsService(config={}){
       .then(data=>{sources.counterparty={status:'verified',entries:counterpartyBalances(data,account)}})
       .catch(error=>{sources.counterparty={status:'unavailable',entries:[],error:String(error.message||error)}});
 
-    const cesTask=(includeCes&&cesAdapter.status().configured&&cesToken)
-      ? Promise.all([cesAdapter.getBalance({token:cesToken,signal}),cesAdapter.getTransactions({token:cesToken,signal,limit:100})])
-          .then(([balance,transactions])=>{sources.ces={status:'verified',entries:[balance,...transactions]}})
-          .catch(error=>{sources.ces={status:'unavailable',entries:[],error:String(error.message||error)}})
-      : Promise.resolve();
+    const importedSnapshot=includeCes?cesStore.current():null;
+    let cesTask=Promise.resolve();
+    if(importedSnapshot){
+      sources.ces={status:'imported',entries:cesEntries(importedSnapshot),provenance:importedSnapshot.provenance||null};
+    }else if(includeCes&&cesAdapter.status().configured&&cesToken){
+      cesTask=Promise.all([cesAdapter.getBalance({token:cesToken,signal}),cesAdapter.getTransactions({token:cesToken,signal,limit:100})])
+        .then(([balance,transactions])=>{sources.ces={status:'verified',entries:[balance,...transactions]}})
+        .catch(error=>{sources.ces={status:'unavailable',entries:[],error:String(error.message||error)}});
+    }
 
     await Promise.all([btcTask,xcpTask,cesTask]);
-    const verifiedSources=Object.values(sources).filter(source=>source.status==='verified').length;
+    const trustedSources=Object.values(sources).filter(source=>source.status==='verified'||source.status==='imported').length;
     return {
       schema:STATEMENT_SERVICE_SCHEMA,
       statementSchema:'neo.statement.v1',
       account,
       generatedAt:new Date().toISOString(),
-      reconciliationStatus:verifiedSources>=3?'multi-ledger-verified':verifiedSources>0?'partial':'unavailable',
+      reconciliationStatus:trustedSources>=3?'multi-ledger-observed':trustedSources>0?'partial':'unavailable',
       sources,
       consolidatedTotal:null,
       consolidationPolicy:'No unlike units are summed without an explicit valuation rate, timestamp, and source.'
@@ -62,8 +92,9 @@ export function createStatementsService(config={}){
 
   function publicStatus(){
     const ces=cesAdapter.status();
-    return {schema:STATEMENT_SERVICE_SCHEMA,readOnly:true,bitcoinApiConfigured:Boolean(btcBase),counterpartyApiConfigured:Boolean(xcpBase),ces:{configured:ces.configured,network:ces.network,account:ces.account,readOnly:true}};
+    const imported=cesStore.status();
+    return {schema:STATEMENT_SERVICE_SCHEMA,readOnly:true,bitcoinApiConfigured:Boolean(btcBase),counterpartyApiConfigured:Boolean(xcpBase),ces:{configured:imported.loaded||ces.configured,network:imported.network||ces.network,account:imported.account||ces.account,readOnly:true,ingestionLoaded:imported.loaded}};
   }
 
-  return {buildPublicStatement,publicStatus};
+  return {buildPublicStatement,publicStatus,ingestCesSnapshot,cesStatus};
 }
