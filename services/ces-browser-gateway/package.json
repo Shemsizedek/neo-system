@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "wrangler dev --remote",
     "deploy": "wrangler deploy",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "smoke": "node scripts/smoke.mjs"
   },
   "devDependencies": {
     "@cloudflare/puppeteer": "1.1.0",
