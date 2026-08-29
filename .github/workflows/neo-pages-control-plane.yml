@@ -1,0 +1,52 @@
+name: NEO Pages Control Plane
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/pages.yml'
+      - '.github/workflows/neo-pages-control-plane.yml'
+      - 'src/main.tsx'
+      - 'src/neopay/routerClient.ts'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/pages.yml'
+      - '.github/workflows/neo-pages-control-plane.yml'
+      - 'src/main.tsx'
+      - 'src/neopay/routerClient.ts'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-pages-control-plane:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Reject retired standalone Worker defaults
+        shell: bash
+        run: |
+          set -euo pipefail
+          files=(.github/workflows/pages.yml src/main.tsx src/neopay/routerClient.ts)
+          if grep -n -E 'neopay-api\.neosystem\.workers\.dev|neo-government\.neosystem\.workers\.dev' "${files[@]}"; then
+            echo 'Retired standalone Worker service default detected.' >&2
+            exit 1
+          fi
+          if grep -n 'VITE_NEOPAY_API_BASE' "${files[@]}"; then
+            echo 'Retired NEOpay standalone gateway variable detected.' >&2
+            exit 1
+          fi
+          if grep -n 'VITE_NEO_GOVERNMENT_URL' "${files[@]}"; then
+            echo 'Retired NEO Government backend variable detected.' >&2
+            exit 1
+          fi
+      - name: Verify NEO three-plane frontend routing
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q "publicRoute('neo-prime')" src/main.tsx
+          grep -q 'control=discord' src/main.tsx
+          grep -q 'api/router/providers.json' src/neopay/routerClient.ts
+          grep -q 'api/router/state.json' src/neopay/routerClient.ts
+          echo 'GitHub Pages frontend uses GitHub-native routing and Discord control-plane semantics.' >> "$GITHUB_STEP_SUMMARY"
