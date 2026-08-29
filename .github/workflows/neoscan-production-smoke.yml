@@ -46,6 +46,7 @@ jobs:
           HTML="$(curl --fail --silent --show-error --location "$PAGE")"
           grep -q 'NEOscan — Public Explorer' <<<"$HTML"
           grep -q 'market-terminal.js' <<<"$HTML"
+          grep -q 'market-terminal.css' <<<"$HTML"
           grep -q 'NEO Market Terminal' <<<"$HTML"
           grep -q 'data-surface="market"' <<<"$HTML"
           grep -q 'N.O.M.N.I. PRIMARY MARKET' <<<"$HTML"
@@ -53,7 +54,7 @@ jobs:
           ! grep -qi '>NEO Ledger<' <<<"$HTML"
           ! grep -qi 'Counterparty' <<<"$HTML"
 
-      - name: Enforce NEO market identity and terminal drilldowns
+      - name: Enforce NEO Market Terminal v2
         shell: bash
         run: |
           set -euo pipefail
@@ -61,12 +62,22 @@ jobs:
           curl --fail --silent --show-error --location "$BASE/treasury-dashboard.js" -o treasury-dashboard.js
           curl --fail --silent --show-error --location "$BASE/nomni-market-policy.js" -o nomni-market-policy.js
           curl --fail --silent --show-error --location "$BASE/market-terminal.js" -o market-terminal.js
+          curl --fail --silent --show-error --location "$BASE/market-terminal.css" -o market-terminal.css
           grep -q "primaryAsset:'NOMNI'" nomni-market-policy.js
           grep -q "terminalName:'NEO Market Terminal'" nomni-market-policy.js
           grep -q 'XCP — Bitcoin Community Smart-Contract Obligations' nomni-market-policy.js
           grep -q 'data-neoscan-surface="market"' treasury-dashboard.js
           grep -q 'NEO Market Terminal' treasury-dashboard.js
           grep -q "location.hash==='#market'" market-terminal.js
+          grep -q 'Market Depth' market-terminal.js
+          grep -q 'Recent Completed Trades' market-terminal.js
+          grep -q 'NEO Treasury Position' market-terminal.js
+          grep -q 'Bitcoin Settlement' market-terminal.js
+          grep -q 'Holders' market-terminal.js
+          grep -q 'Issuance History' market-terminal.js
+          grep -q 'consolidated' market-terminal.js || true
+          grep -q '.terminal-grid-market' market-terminal.css
+          ! grep -qi 'tokenscan' market-terminal.js
 
       - name: Verify GitHub-native runtime configuration
         shell: bash
