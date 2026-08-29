@@ -60,11 +60,11 @@ export function createGeminiAdapter({ apiKey, model = 'gemini-3.1-pro-preview', 
     id: 'gemini',
     configured: Boolean(apiKey),
     async invoke({ system, prompt, maxTokens = 2048 }) {
-      if (!apiKey) throw new Error('GEMINI_API_KEY is not configured')
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`
+      if (!apiKey) throw new Error('GEMINI_API_KEY or GOOGLE_API_KEY is not configured')
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`
       const body = await requestJson(url, {
         method: 'POST',
-        headers: jsonHeaders(null),
+        headers: jsonHeaders(null, { 'x-goog-api-key': apiKey }),
         body: JSON.stringify({
           system_instruction: { parts: [{ text: system }] },
           contents: [{ role: 'user', parts: [{ text: prompt }] }],
@@ -103,7 +103,7 @@ export function providersFromEnv(env = process.env) {
   return [
     createAnthropicAdapter({ apiKey: env.ANTHROPIC_API_KEY, model: env.ANTHROPIC_MODEL || undefined, timeoutMs }),
     createOpenAIAdapter({ apiKey: env.OPENAI_API_KEY, model: env.OPENAI_MODEL || undefined, timeoutMs }),
-    createGeminiAdapter({ apiKey: env.GEMINI_API_KEY, model: env.GEMINI_MODEL || undefined, timeoutMs }),
+    createGeminiAdapter({ apiKey: env.GOOGLE_API_KEY || env.GEMINI_API_KEY, model: env.GEMINI_MODEL || undefined, timeoutMs }),
     createCloudflareWorkersAIAdapter({ accountId: env.CLOUDFLARE_ACCOUNT_ID, apiToken: env.CLOUDFLARE_API_TOKEN, model: env.CLOUDFLARE_WORKERS_AI_MODEL || undefined, timeoutMs }),
   ]
 }
