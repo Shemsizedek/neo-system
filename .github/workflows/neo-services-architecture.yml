@@ -3,16 +3,20 @@ name: NEO Services Architecture Standard
 on:
   pull_request:
     paths:
-      - 'architecture/neo-services-platform.json'
+      - 'architecture/**'
       - 'services/neo-discord/**'
       - 'apps/**'
+      - '.github/workflows/*cloudflare.yml'
+      - '.github/workflows/deploy-neo-discord.yml'
       - '.github/workflows/neo-services-architecture.yml'
   push:
     branches: [main]
     paths:
-      - 'architecture/neo-services-platform.json'
+      - 'architecture/**'
       - 'services/neo-discord/**'
       - 'apps/**'
+      - '.github/workflows/*cloudflare.yml'
+      - '.github/workflows/deploy-neo-discord.yml'
       - '.github/workflows/neo-services-architecture.yml'
   workflow_dispatch:
 
@@ -39,6 +43,21 @@ jobs:
           if(p.planes.serverApi.transport.mayOwnNeoBusinessLogic!==false) throw new Error('transport bridges may not own NEO business logic')
           if(p.planes.serverApi.transport.mayBecomeNeoBackend!==false) throw new Error('transport bridges may not become the NEO backend')
           NODE
+      - name: Validate NEO Services app inventory
+        run: |
+          node - <<'NODE'
+          const fs=require('fs')
+          const i=require('./architecture/neo-services-normalization.json')
+          const dirs=fs.readdirSync('apps',{withFileTypes:true}).filter(x=>x.isDirectory()).map(x=>x.name).sort()
+          const recorded=i.apps.map(x=>x.id).sort()
+          if(JSON.stringify(dirs)!==JSON.stringify(recorded)) {
+            console.error('NEO Services inventory drift detected', {dirs,recorded})
+            process.exit(1)
+          }
+          if(i.planes.backend!=='github'||i.planes.frontend!=='github-pages'||i.planes.serverApi!=='discord') process.exit(1)
+          if(i.rules.standaloneCloudflareServiceBackend!==false) process.exit(1)
+          if(i.rules.standaloneVercelServiceBackend!==false) process.exit(1)
+          NODE
       - name: Validate Discord transport policy follows platform standard
         run: |
           node services/neo-discord/deployment/evaluate-policy.mjs
@@ -51,6 +70,29 @@ jobs:
             echo 'Privileged secret reference found in a GitHub Pages site tree.' >&2
             exit 1
           fi
+      - name: Reject standalone Cloudflare service deploy authority
+        shell: bash
+        run: |
+          set -euo pipefail
+          for f in .github/workflows/*cloudflare.yml; do
+            [ -e "$f" ] || continue
+            if grep -Eq 'wrangler[^[:space:]]*([[:space:]]+|@latest[[:space:]]+)deploy|cloudflare/wrangler-action|CLOUDFLARE_API_TOKEN|CLOUDFLARE_ACCOUNT_ID|workers\.dev' "$f"; then
+              echo "Standalone Cloudflare NEO service deployment prohibited: $f" >&2
+              exit 1
+            fi
+          done
+      - name: Verify Discord bridge is transport-only
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s .github/workflows/deploy-neo-discord.yml
+          grep -q 'services/neo-discord/adapters/cloudflare' .github/workflows/deploy-neo-discord.yml
+          node - <<'NODE'
+          const i=require('./architecture/neo-services-normalization.json')
+          const bridge=i.allowedTransportBridges.find(x=>x.workflow==='.github/workflows/deploy-neo-discord.yml')
+          if(!bridge||bridge.role!=='thin-discord-https-bridge') process.exit(1)
+          if(bridge.mayOwnNeoBusinessLogic!==false||bridge.mayBecomeNeoBackend!==false) process.exit(1)
+          NODE
       - name: Guard transport adapters from NEO business ownership
         shell: bash
         run: |
