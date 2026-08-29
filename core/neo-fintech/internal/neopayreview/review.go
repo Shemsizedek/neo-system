@@ -9,8 +9,6 @@ import (
 	"time"
 )
 
-// Intent is the exact payment instruction the user expects to sign.
-// Quantity is expressed in exact Counterparty base units and FeeSats in satoshis.
 type Intent struct {
 	Source      string `json:"source"`
 	Destination string `json:"destination"`
@@ -19,14 +17,13 @@ type Intent struct {
 	FeeSats     int64  `json:"fee_sats"`
 }
 
-// Inspection is produced by a decoder that is independent from the compose response.
-// Review approval is forbidden until this decoded result exactly matches Intent.
 type Inspection struct {
-	Source      string `json:"source"`
-	Destination string `json:"destination"`
-	Asset       string `json:"asset"`
-	Quantity    int64  `json:"quantity"`
-	FeeSats     int64  `json:"fee_sats"`
+	Source        string `json:"source"`
+	Destination   string `json:"destination"`
+	Asset         string `json:"asset"`
+	Quantity      int64  `json:"quantity"`
+	FeeSats       int64  `json:"fee_sats"`
+	StructureHash string `json:"structure_hash"`
 }
 
 type Status string
@@ -62,21 +59,13 @@ func New(reviewID, operationID, unsignedTx string, intent Intent, inspection Ins
 	if strings.TrimSpace(reviewID) == "" || strings.TrimSpace(operationID) == "" {
 		return Review{}, errors.New("review_id and operation_id are required")
 	}
-	if err := validateIntent(intent); err != nil {
-		return Review{}, err
-	}
-	if strings.TrimSpace(unsignedTx) == "" {
-		return Review{}, errors.New("unsigned transaction is required")
-	}
+	if err := validateIntent(intent); err != nil { return Review{}, err }
+	if strings.TrimSpace(unsignedTx) == "" { return Review{}, errors.New("unsigned transaction is required") }
+	if strings.TrimSpace(inspection.StructureHash) == "" { return Review{}, errors.New("signature-independent transaction structure hash is required") }
 	h := sha256.Sum256([]byte(strings.TrimSpace(unsignedTx)))
 	r := Review{
-		ReviewID: reviewID,
-		OperationID: operationID,
-		Intent: intent,
-		Inspection: inspection,
-		UnsignedTxHash: hex.EncodeToString(h[:]),
-		Status: StatusPending,
-		CreatedAt: at.UTC(),
+		ReviewID: reviewID, OperationID: operationID, Intent: intent, Inspection: inspection,
+		UnsignedTxHash: hex.EncodeToString(h[:]), Status: StatusPending, CreatedAt: at.UTC(),
 	}
 	if mismatch := compare(intent, inspection); mismatch != "" {
 		r.Status = StatusRejected
@@ -88,35 +77,21 @@ func New(reviewID, operationID, unsignedTx string, intent Intent, inspection Ins
 }
 
 func (r Review) Approve(approvalID, actorID, reason, unsignedTx string, at time.Time) (Approval, Review, error) {
-	if r.Status != StatusVerified {
-		return Approval{}, r, fmt.Errorf("review status %s cannot be approved", r.Status)
-	}
-	if strings.TrimSpace(approvalID) == "" || strings.TrimSpace(actorID) == "" {
-		return Approval{}, r, errors.New("approval_id and actor_id are required")
-	}
+	if r.Status != StatusVerified { return Approval{}, r, fmt.Errorf("review status %s cannot be approved", r.Status) }
+	if strings.TrimSpace(approvalID) == "" || strings.TrimSpace(actorID) == "" { return Approval{}, r, errors.New("approval_id and actor_id are required") }
 	h := sha256.Sum256([]byte(strings.TrimSpace(unsignedTx)))
 	hash := hex.EncodeToString(h[:])
-	if hash != r.UnsignedTxHash {
-		return Approval{}, r, errors.New("unsigned transaction changed after review")
-	}
+	if hash != r.UnsignedTxHash { return Approval{}, r, errors.New("unsigned transaction changed after review") }
 	a := Approval{ApprovalID: approvalID, ReviewID: r.ReviewID, ActorID: actorID, Reason: reason, ApprovedAt: at.UTC(), UnsignedTxHash: hash}
 	r.Status = StatusApproved
 	return a, r, nil
 }
 
 func validateIntent(i Intent) error {
-	if strings.TrimSpace(i.Source) == "" || strings.TrimSpace(i.Destination) == "" {
-		return errors.New("source and destination are required")
-	}
-	if strings.TrimSpace(i.Asset) == "" {
-		return errors.New("asset is required")
-	}
-	if i.Quantity <= 0 {
-		return errors.New("quantity must be positive exact base units")
-	}
-	if i.FeeSats < 0 {
-		return errors.New("fee_sats cannot be negative")
-	}
+	if strings.TrimSpace(i.Source) == "" || strings.TrimSpace(i.Destination) == "" { return errors.New("source and destination are required") }
+	if strings.TrimSpace(i.Asset) == "" { return errors.New("asset is required") }
+	if i.Quantity <= 0 { return errors.New("quantity must be positive exact base units") }
+	if i.FeeSats < 0 { return errors.New("fee_sats cannot be negative") }
 	return nil
 }
 
