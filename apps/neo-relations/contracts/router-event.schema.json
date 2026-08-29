@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://neo-system.local/schemas/relations/router-event.schema.json",
+  "title": "NEO Router Relations Event",
+  "type": "object",
+  "required": ["eventId", "eventType", "source", "tenantId", "occurredAt", "payload"],
+  "properties": {
+    "eventId": {"type": "string", "pattern": "^REV-[A-Z0-9-]{8,}$"},
+    "eventType": {
+      "type": "string",
+      "enum": [
+        "relations.entity.created",
+        "relations.entity.updated",
+        "relations.relationship.changed",
+        "relations.record.changed",
+        "relations.case.opened",
+        "relations.case.escalated",
+        "relations.approval.required",
+        "relations.intent.approved",
+        "relations.intent.rejected",
+        "relations.audit"
+      ]
+    },
+    "source": {"type": "string", "minLength": 1},
+    "tenantId": {"type": "string", "minLength": 1},
+    "actorRef": {"type": ["string", "null"]},
+    "correlationId": {"type": ["string", "null"]},
+    "occurredAt": {"type": "string", "format": "date-time"},
+    "payload": {"type": "object"}
+  },
+  "additionalProperties": false
+}
