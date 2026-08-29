@@ -25,6 +25,13 @@ func main() {
 				"broadcast": false,
 				"server_side_signing": false,
 			}},
+			"neopay_transaction_review": map[string]any{
+				"mode": "compose-inspect-approve-external-signing",
+				"requires_independent_inspector": true,
+				"approval_evidence": "durable",
+				"signer_handoff_audited": true,
+				"public_route_registered": false,
+			},
 			"live_funds_enabled": false,
 		})
 	})
