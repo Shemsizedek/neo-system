@@ -104,10 +104,14 @@ function roleSatisfied(input: {
     return Boolean(input.title.verifiedOwnerAddress) && usable.some(evidence => evidence.actorAddress === input.title.verifiedOwnerAddress)
   }
   if (input.role === 'ISSUER') {
-    return usable.some(evidence => evidence.actorAddress === input.title.issuerAddress)
+    const issuerAddress = input.title.issuerAddress
+    if (!issuerAddress) return false
+    return usable.some(evidence => evidence.actorAddress === issuerAddress)
   }
-  if (input.role === 'RIGHT_HOLDER' && input.proposal.affectedRightId) {
-    return usable.some(evidence => evidence.scope.includes(input.proposal.affectedRightId) || evidence.scope.includes('*'))
+  if (input.role === 'RIGHT_HOLDER') {
+    const affectedRightId = input.proposal.affectedRightId
+    if (!affectedRightId) return false
+    return usable.some(evidence => evidence.scope.includes(affectedRightId) || evidence.scope.includes('*'))
   }
   if (input.proposal.actorAddress) {
     return usable.some(evidence => evidence.actorAddress === input.proposal.actorAddress || evidence.authorizedByAddress === input.proposal.actorAddress)
