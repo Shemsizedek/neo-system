@@ -1,6 +1,7 @@
 (()=>{
   const policy=Object.freeze({
     schema:'neo.market.policy.v1',
+    terminalName:'NEO Market Terminal',
     marketName:'N.O.M.N.I.',
     marketLongName:'Noocratic Open Market Natural Index',
     primaryAsset:'NOMNI',
@@ -19,6 +20,7 @@
   const replacements=[
     [/Counterparty-backed NEO ecosystem asset intelligence and public balances\./g,'NEO-market asset intelligence and public balances, centered on NOMNI.'],
     [/Search NEO ecosystem assets and Counterparty balances from one public explorer\./g,'Search the N.O.M.N.I. market, NOMNI-first NEO assets, and public balances from one explorer.'],
+    [/NEO Ledger/g,'NEO Market Terminal'],
     [/Asset protocol/g,'NEO market layer'],
     [/Counterparty balances/g,'NEO asset balances'],
     [/Counterparty balance/g,'NEO asset balance'],
@@ -39,7 +41,7 @@
     const xcp=[...document.querySelectorAll('.treasury-card span,.holding span')].filter(el=>el.textContent.trim()==='XCP');
     for(const el of xcp){el.title=policy.secondaryAssets.XCP;el.setAttribute('aria-label',policy.secondaryAssets.XCP);el.closest('.treasury-card,.holding')?.classList.add('secondary-asset');}
     const result=document.getElementById('result');
-    if(location.hash==='#ledger'&&result&&!result.querySelector('.nomni-market-banner'))result.insertAdjacentHTML('afterbegin',`<div class="nomni-market-banner"><strong>${policy.marketName}</strong><span>${policy.marketLongName}</span><small>Primary asset: ${policy.primaryAsset} · Bitcoin settlement base · XCP is secondary smart-contract obligation inventory.</small></div>`);
+    if((location.hash==='#market'||location.hash==='#ledger')&&result&&!result.querySelector('.nomni-market-banner'))result.insertAdjacentHTML('afterbegin',`<div class="nomni-market-banner"><strong>${policy.terminalName}</strong><span>${policy.marketName} · ${policy.marketLongName}</span><small>Primary asset: ${policy.primaryAsset} · Bitcoin settlement base · XCP is secondary smart-contract obligation inventory.</small></div>`);
   }
   const observer=new MutationObserver(()=>decorate());window.addEventListener('DOMContentLoaded',()=>{decorate();observer.observe(document.body,{subtree:true,childList:true,characterData:true});});window.addEventListener('hashchange',()=>queueMicrotask(decorate));
 })();
