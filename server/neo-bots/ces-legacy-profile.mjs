@@ -13,79 +13,15 @@ export const CES_LEGACY_PROFILE = Object.freeze({
     virtualTrader: Object.freeze({ key: 'virtual-trader', label: 'Virtual Trader', risk: 'interexchange', mapping: 'mapped' }),
   }),
   routes: Object.freeze({
-    virtualTrader: Object.freeze({
-      key: 'virtual-trader',
-      surface: 'virtual-trader',
-      path: '/win/virtual.asp',
-      method: 'GET',
-      mode: 'read-only',
-      pageMarkers: ['Virtual Trader'],
-    }),
-    transactionReview: Object.freeze({
-      key: 'transaction-review',
-      surface: 'transactions',
-      path: null,
-      method: 'GET',
-      mode: 'discovery-required',
-      pageMarkers: [],
-    }),
-    transactionApproval: Object.freeze({
-      key: 'transaction-approval',
-      surface: 'transactions',
-      path: null,
-      method: 'POST',
-      mode: 'guarded',
-      requiresHumanApproval: true,
-      requiresFingerprint: true,
-    }),
-    vDollarIssue: Object.freeze({
-      key: 'v-dollar-issue',
-      surface: 'manage',
-      path: null,
-      method: 'POST',
-      mode: 'guarded',
-      requiresHumanApproval: true,
-      requiresFingerprint: true,
-    }),
-    publicationUpload: Object.freeze({
-      key: 'publication-upload',
-      surface: 'publications',
-      path: null,
-      method: 'POST',
-      mode: 'guarded',
-      requiresHumanApproval: true,
-      requiresFingerprint: true,
-    }),
-    subscriptionMaintain: Object.freeze({
-      key: 'subscription-maintain',
-      surface: 'memberships',
-      path: null,
-      method: 'POST',
-      mode: 'guarded',
-      requiresHumanApproval: true,
-      requiresFingerprint: true,
-    }),
-    offeringsRead: Object.freeze({
-      key: 'offerings-read',
-      surface: 'offerings',
-      path: null,
-      method: 'GET',
-      mode: 'discovery-required',
-    }),
-    statsRead: Object.freeze({
-      key: 'stats-read',
-      surface: 'stats',
-      path: null,
-      method: 'GET',
-      mode: 'discovery-required',
-    }),
-    manageRead: Object.freeze({
-      key: 'manage-read',
-      surface: 'manage',
-      path: null,
-      method: 'GET',
-      mode: 'discovery-required',
-    }),
+    virtualTrader: Object.freeze({ key: 'virtual-trader', surface: 'virtual-trader', path: '/win/virtual.asp', method: 'GET', mode: 'read-only', pageMarkers: ['Virtual Trader'] }),
+    transactionReview: Object.freeze({ key: 'transaction-review', surface: 'transactions', path: null, method: 'GET', mode: 'discovery-required', pageMarkers: [] }),
+    transactionApproval: Object.freeze({ key: 'transaction-approval', surface: 'transactions', path: null, method: 'POST', mode: 'guarded', requiresHumanApproval: true, requiresFingerprint: true }),
+    vDollarIssue: Object.freeze({ key: 'v-dollar-issue', surface: 'manage', path: null, method: 'POST', mode: 'guarded', requiresHumanApproval: true, requiresFingerprint: true }),
+    publicationUpload: Object.freeze({ key: 'publication-upload', surface: 'publications', path: null, method: 'POST', mode: 'guarded', requiresHumanApproval: true, requiresFingerprint: true }),
+    subscriptionMaintain: Object.freeze({ key: 'subscription-maintain', surface: 'memberships', path: null, method: 'POST', mode: 'guarded', requiresHumanApproval: true, requiresFingerprint: true }),
+    offeringsRead: Object.freeze({ key: 'offerings-read', surface: 'offerings', path: null, method: 'GET', mode: 'discovery-required' }),
+    statsRead: Object.freeze({ key: 'stats-read', surface: 'stats', path: null, method: 'GET', mode: 'discovery-required' }),
+    manageRead: Object.freeze({ key: 'manage-read', surface: 'manage', path: null, method: 'GET', mode: 'discovery-required' }),
   }),
 });
 
@@ -104,9 +40,7 @@ export function getLegacyCesRoute(key) {
 export function listLegacyDiscoveryTargets() {
   return Object.values(CES_LEGACY_PROFILE.surfaces).map((surface) => ({
     ...surface,
-    routes: Object.values(CES_LEGACY_PROFILE.routes)
-      .filter((route) => route.surface === surface.key)
-      .map((route) => route.key),
+    routes: Object.values(CES_LEGACY_PROFILE.routes).filter((route) => route.surface === surface.key).map((route) => route.key),
   }));
 }
 
@@ -124,4 +58,35 @@ export function registerDiscoveredLegacyRoute(profile, key, { path, fingerprint,
   if (!current) throw new Error(`unknown CES legacy route: ${key}`);
   if (current.requiresFingerprint && !fingerprint) throw new Error(`reviewed fingerprint is required for ${key}`);
   return Object.freeze({ ...current, path, fingerprint: fingerprint || null, pageMarkers: [...pageMarkers] });
+}
+
+export function createTrustedLegacyProfile({ exchangeId, trustedRoutes = {} } = {}) {
+  if (!exchangeId) throw new Error('exchangeId is required');
+  const routes = {};
+  for (const [name, route] of Object.entries(CES_LEGACY_PROFILE.routes)) {
+    const promoted = trustedRoutes[route.surface];
+    if (!promoted) {
+      routes[name] = route;
+      continue;
+    }
+    if (promoted.trusted !== true || !promoted.reviewRecord?.reviewer) {
+      throw new Error(`untrusted CES legacy promotion for ${route.surface}`);
+    }
+    routes[name] = Object.freeze({
+      ...route,
+      path: route.path || promoted.path,
+      discovery: Object.freeze({
+        source: promoted.source,
+        confidence: promoted.confidence,
+        score: promoted.score,
+        reviewer: promoted.reviewRecord.reviewer,
+        reviewedAt: promoted.reviewRecord.reviewedAt,
+      }),
+    });
+  }
+  return Object.freeze({
+    ...CES_LEGACY_PROFILE,
+    exchangeId: String(exchangeId).toUpperCase(),
+    routes: Object.freeze(routes),
+  });
 }
