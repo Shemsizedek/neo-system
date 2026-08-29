@@ -1,0 +1,22 @@
+{
+  "name": "MiningProductionRecord",
+  "type": "object",
+  "properties": {
+    "record_id": {"type": "string"},
+    "miner_id": {"type": "string"},
+    "period_start": {"type": "string"},
+    "period_end": {"type": "string"},
+    "gross_btc": {"type": "number", "minimum": 0},
+    "pool_fees_btc": {"type": "number", "minimum": 0},
+    "operating_cost_btc": {"type": "number", "minimum": 0},
+    "net_btc": {"type": "number", "minimum": 0},
+    "treasury_btc": {"type": "number", "minimum": 0},
+    "orange_chip_btc": {"type": "number", "minimum": 0},
+    "contract_holder_btc": {"type": "number", "minimum": 0},
+    "verification_status": {"type": "string", "enum": ["SIMULATED", "UNVERIFIED", "VERIFIED"]},
+    "txid": {"type": "string"},
+    "block_height": {"type": "integer"},
+    "confirmations": {"type": "integer", "minimum": 0}
+  },
+  "required": ["record_id", "miner_id", "period_start", "period_end", "gross_btc", "net_btc", "verification_status"]
+}
