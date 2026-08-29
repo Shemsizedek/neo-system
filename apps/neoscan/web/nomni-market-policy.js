@@ -33,6 +33,13 @@
     [/Counterparty/g,'NEO market']
   ];
   function rewriteText(root=document.body){if(!root)return;const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);const nodes=[];while(walker.nextNode())nodes.push(walker.currentNode);for(const node of nodes){let value=node.nodeValue;for(const [pattern,replacement] of replacements)value=value.replace(pattern,replacement);if(value!==node.nodeValue)node.nodeValue=value;}}
-  function decorate(){rewriteText();const xcp=[...document.querySelectorAll('button,[data-example],.treasury-card span,.holding span')].filter(el=>el.textContent.trim()==='XCP');for(const el of xcp){el.title=policy.secondaryAssets.XCP;el.setAttribute('aria-label',policy.secondaryAssets.XCP);}const result=document.getElementById('result');if(location.hash==='#ledger'&&result&&!result.querySelector('.nomni-market-banner')){result.insertAdjacentHTML('afterbegin',`<div class="nomni-market-banner"><strong>${policy.marketName}</strong><span>${policy.marketLongName}</span><small>Primary asset: ${policy.primaryAsset} · Bitcoin settlement base · XCP is secondary smart-contract obligation inventory.</small></div>`);}}
+  function decorate(){
+    rewriteText();
+    for(const button of [...document.querySelectorAll('[data-example="XCP"]')])button.remove();
+    const xcp=[...document.querySelectorAll('.treasury-card span,.holding span')].filter(el=>el.textContent.trim()==='XCP');
+    for(const el of xcp){el.title=policy.secondaryAssets.XCP;el.setAttribute('aria-label',policy.secondaryAssets.XCP);el.closest('.treasury-card,.holding')?.classList.add('secondary-asset');}
+    const result=document.getElementById('result');
+    if(location.hash==='#ledger'&&result&&!result.querySelector('.nomni-market-banner'))result.insertAdjacentHTML('afterbegin',`<div class="nomni-market-banner"><strong>${policy.marketName}</strong><span>${policy.marketLongName}</span><small>Primary asset: ${policy.primaryAsset} · Bitcoin settlement base · XCP is secondary smart-contract obligation inventory.</small></div>`);
+  }
   const observer=new MutationObserver(()=>decorate());window.addEventListener('DOMContentLoaded',()=>{decorate();observer.observe(document.body,{subtree:true,childList:true,characterData:true});});window.addEventListener('hashchange',()=>queueMicrotask(decorate));
 })();
