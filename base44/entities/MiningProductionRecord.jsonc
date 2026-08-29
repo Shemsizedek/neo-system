@@ -14,9 +14,32 @@
     "orange_chip_btc": {"type": "number", "minimum": 0},
     "contract_holder_btc": {"type": "number", "minimum": 0},
     "verification_status": {"type": "string", "enum": ["SIMULATED", "UNVERIFIED", "VERIFIED"]},
-    "txid": {"type": "string"},
-    "block_height": {"type": "integer"},
+    "txid": {"type": "string", "pattern": "^[0-9a-fA-F]{64}$"},
+    "block_height": {"type": "integer", "minimum": 0},
     "confirmations": {"type": "integer", "minimum": 0}
   },
-  "required": ["record_id", "miner_id", "period_start", "period_end", "gross_btc", "net_btc", "verification_status"]
+  "required": [
+    "record_id", "miner_id", "period_start", "period_end",
+    "gross_btc", "pool_fees_btc", "operating_cost_btc", "net_btc",
+    "treasury_btc", "orange_chip_btc", "contract_holder_btc", "verification_status"
+  ],
+  "allOf": [
+    {
+      "if": {"properties": {"verification_status": {"const": "VERIFIED"}}, "required": ["verification_status"]},
+      "then": {
+        "required": ["txid", "block_height", "confirmations"],
+        "properties": {"confirmations": {"type": "integer", "minimum": 1}}
+      }
+    },
+    {
+      "if": {"properties": {"verification_status": {"const": "SIMULATED"}}, "required": ["verification_status"]},
+      "then": {
+        "not": {"anyOf": [
+          {"required": ["txid"]},
+          {"required": ["block_height"]},
+          {"required": ["confirmations"]}
+        ]}
+      }
+    }
+  ]
 }
