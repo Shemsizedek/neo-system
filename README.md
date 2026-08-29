@@ -17,6 +17,8 @@ The repository began as **NEO Teller — ORIGIN**, a Bitcoin / Counterparty XCP 
 - Omnitrix browser shell
 - Bitcoin / Counterparty XCP read-only browser surfaces
 - NEO Miner dashboard shell
+- NEO Tokenworks / Neopass shared-access and escrow-planning sandbox
+- NEO Banks Tokenworks consumer boundary
 - World Police
 - World Marshals
 - World Guards
