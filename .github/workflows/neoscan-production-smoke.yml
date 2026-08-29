@@ -49,6 +49,21 @@ jobs:
           grep -q 'treasury-dashboard.js' <<<"$HTML"
           grep -q 'data-surface="treasury"' <<<"$HTML"
 
+      - name: Enforce NEOscan-native public identity and treasury drilldowns
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE='https://shemsizedek.github.io/neo-system/neoscan'
+          curl --fail --silent --show-error --location "$BASE/index.html" -o neoscan-index.html
+          curl --fail --silent --show-error --location "$BASE/app.js" -o neoscan-app.js
+          curl --fail --silent --show-error --location "$BASE/treasury-dashboard.js" -o treasury-dashboard.js
+          cat neoscan-index.html neoscan-app.js treasury-dashboard.js > neoscan-public.txt
+          ! grep -qi 'tokenscan' neoscan-public.txt
+          grep -q 'data-neoscan-surface="scan"' treasury-dashboard.js
+          grep -q 'data-neoscan-surface="ledger"' treasury-dashboard.js
+          grep -q 'Asset profile' treasury-dashboard.js
+          grep -q 'NEO Ledger' treasury-dashboard.js
+
       - name: Verify GitHub-native runtime configuration
         shell: bash
         run: |
