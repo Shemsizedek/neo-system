@@ -1,0 +1,78 @@
+name: NEO CES Bridge
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'CES bridge mode'
+        required: true
+        default: 'status'
+        type: choice
+        options:
+          - status
+          - api-readonly
+  push:
+    branches: [main]
+    paths:
+      - 'apps/neoscan/adapters/ces/**'
+      - 'scripts/neo-ces-bridge.mjs'
+      - '.github/workflows/neo-ces-bridge.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: neo-ces-bridge-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Validate CES adapter
+        run: node --test apps/neoscan/adapters/ces/*.test.mjs
+      - name: Run CES bridge gate
+        env:
+          NEO_CES_MODE: ${{ inputs.mode || 'status' }}
+          CES_ENDPOINT: ${{ secrets.CES_ENDPOINT }}
+          CES_NETWORK: ${{ secrets.CES_NETWORK }}
+          CES_ACCOUNT: ${{ secrets.CES_ACCOUNT }}
+          CES_API_TOKEN: ${{ secrets.CES_API_TOKEN }}
+        run: node scripts/neo-ces-bridge.mjs
+
+  discord:
+    if: always()
+    needs: validate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Report CES bridge status to Discord
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          RESULT: ${{ needs.validate.result }}
+          REPOSITORY: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+          SERVER_URL: ${{ github.server_url }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "${DISCORD_WEBHOOK_URL:-}" ]; then
+            echo "DISCORD_WEBHOOK_URL is not configured; skipping notification."
+            exit 0
+          fi
+          node <<'NODE'
+          const payload={
+            username:'NEO Operations',
+            content:[
+              `CES bridge gate: **${process.env.RESULT}**`,
+              `Repository: \`${process.env.REPOSITORY}\``,
+              `${process.env.SERVER_URL}/${process.env.REPOSITORY}/actions/runs/${process.env.RUN_ID}`
+            ].join('\n'),
+            allowed_mentions:{parse:[]}
+          };
+          const r=await fetch(process.env.DISCORD_WEBHOOK_URL,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)});
+          if(!r.ok) throw new Error(`Discord webhook returned ${r.status}: ${await r.text()}`);
+          NODE
