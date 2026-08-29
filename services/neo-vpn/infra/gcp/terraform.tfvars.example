@@ -1,0 +1,14 @@
+project_id = "your-google-cloud-project-id"
+region     = "us-central1"
+zone       = "us-central1-a"
+
+# Keep the default unless a larger gateway is required.
+machine_type = "e2-small"
+
+# Existing VPC network in the project.
+network_name = "default"
+
+# Roaming WireGuard clients may require 0.0.0.0/0 here. Authentication is still
+# cryptographic, but narrowing this list is preferable when client source CIDRs
+# are stable and known.
+wireguard_source_ranges = ["0.0.0.0/0"]
