@@ -10,8 +10,8 @@ async function gh(env,path){
   return b
 }
 
-function opt(interaction,name){
-  return String((interaction?.data?.options||[]).find(x=>x.name===name)?.value||'').trim()
+function subOption(subcommand,name){
+  return String((subcommand?.options||[]).find(x=>x.name===name)?.value||'').trim()
 }
 
 async function fetchTenant(env,tenant){
@@ -28,7 +28,7 @@ async function relationsStatus(env){
     `Repository: ${repo?.full_name||REPO}`,
     `Default branch: ${repo?.default_branch||'unknown'}`,
     `GitHub Pages: ${repo?.has_pages?'Enabled':'Not enabled'}`,
-    `Tenants: ${prime?.name||'NEO Prime'}, ${pay?.name||'NEOpay'}`,
+    `Tenants: ${prime?.displayName||prime?.id||'NEO Prime'}, ${pay?.displayName||pay?.id||'NEOpay'}`,
     'Mode: GitHub-backed CRM control plane',
     'Discord access: Read-only in this gate',
     '',
@@ -38,11 +38,16 @@ async function relationsStatus(env){
 
 async function tenantSummary(env,tenant){
   const cfg=await fetchTenant(env,tenant)
-  const modules=Array.isArray(cfg?.modules)?cfg.modules.join(', '):'not declared'
-  const pipelines=Array.isArray(cfg?.pipelines)?cfg.pipelines.map(x=>x.name||x.id).filter(Boolean).join(', '):'not declared'
+  const modules=cfg?.modules&&typeof cfg.modules==='object'
+    ? Object.entries(cfg.modules).filter(([,enabled])=>enabled===true).map(([name])=>name).join(', ')
+    : 'not declared'
+  const pipelines=cfg?.pipelines&&typeof cfg.pipelines==='object'
+    ? Object.entries(cfg.pipelines).map(([name,stages])=>`${name}: ${Array.isArray(stages)?stages.join(' → '):'configured'}`).join('; ')
+    : 'not declared'
   return [
-    `**NEO Relations Tenant: ${cfg?.name||tenant}**`,
+    `**NEO Relations Tenant: ${cfg?.displayName||cfg?.id||tenant}**`,
     `ID: ${cfg?.id||tenant}`,
+    `Service: ${cfg?.serviceKey||'not declared'}`,
     `Modules: ${modules||'none'}`,
     `Pipelines: ${pipelines||'none'}`,
     'Source: GitHub main branch tenant configuration.'
@@ -58,9 +63,10 @@ async function serviceSummary(env){
 }
 
 export async function handleRelationsCommand(interaction,env){
-  const sub=String(interaction?.data?.options?.[0]?.name||'status')
+  const subcommand=interaction?.data?.options?.[0]||{}
+  const sub=String(subcommand?.name||'status')
   if(sub==='status')return relationsStatus(env)
-  if(sub==='tenant')return tenantSummary(env,opt(interaction?.data?.options?.[0],'name')||'neo-prime')
+  if(sub==='tenant')return tenantSummary(env,subOption(subcommand,'name')||'neo-prime')
   if(sub==='services')return serviceSummary(env)
   return 'Supported `/relations` subcommands in this gate: `status`, `tenant`, `services`.'
 }
