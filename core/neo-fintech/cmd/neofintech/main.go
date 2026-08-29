@@ -19,7 +19,12 @@ func main() {
 			"ledger": "balanced immutable journals",
 			"payments": "explicit lifecycle state machine",
 			"idempotency": "scoped semantic replay control",
-			"rails": []string{},
+			"rails": []map[string]any{{
+				"name": "bitcoin-counterparty",
+				"mode": "read-compose",
+				"broadcast": false,
+				"server_side_signing": false,
+			}},
 			"live_funds_enabled": false,
 		})
 	})
