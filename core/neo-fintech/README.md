@@ -33,6 +33,22 @@ The first concrete rail lives in `internal/rails/bitcoinxcp` and intentionally s
 - `Submit` is disabled: this service does not broadcast transactions.
 - Private-key signing is outside this service boundary.
 
+## Gate 4: NEOpay transaction review and signer handoff
+
+The NEOpay review layer lives in `internal/neopayreview` and enforces a review-before-signing workflow:
+
+1. Capture the exact user intent: source, destination, asset, quantity in base units, and miner fee in satoshis.
+2. Compose an unsigned transaction through an injected compose function.
+3. Decode/inspect those unsigned bytes through a separately injected inspector. If an independent inspector is not configured, the review fails closed.
+4. Compare decoded source, destination, asset, quantity, and fee against the user's intent. Any mismatch becomes durable rejected-review evidence.
+5. Hash the exact unsigned transaction bytes and bind that hash to the review.
+6. Approval is allowed only for a verified review and is rejected if the unsigned transaction bytes change after review.
+7. Persist review, approval, and external signer-handoff evidence separately. No private key, signature, or broadcast result is stored or implied by approval.
+
+`migrations/002_neopay_transaction_review.sql` adds append-only review, approval, and signer-handoff records. `neopayreview.PrepareHandler` provides the HTTP handler contract, but the standalone binary deliberately does not register it until authentication, durable storage, idempotency middleware, a concrete composer, and an independent decoder/inspector are injected.
+
+Counterparty Core's API v2 exposes transaction parse/unpack helpers for this inspection layer; production integration must use the deployed version's exact endpoint contract rather than reusing assumptions from deprecated API v1.
+
 The adapter URLs are configuration inputs; adding an adapter does not by itself prove a production provider is available, trusted, synchronized, or authorized. Production deployment must pin the actual Bitcoin/Counterparty endpoints, authenticate protected providers where applicable, verify their operating contract, persist evidence, and define confirmation/finality policy appropriate to the product.
 
 Run:
@@ -43,4 +59,4 @@ go test ./...
 go run ./cmd/neofintech
 ```
 
-Apply `migrations/001_financial_core.sql` to the selected PostgreSQL database before enabling durable persistence.
+Apply `migrations/001_financial_core.sql` and `migrations/002_neopay_transaction_review.sql` to the selected PostgreSQL database before enabling durable persistence.
