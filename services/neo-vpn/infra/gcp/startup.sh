@@ -42,6 +42,7 @@ table inet neo_vpn_filter {
     ct state established,related accept
     ip protocol icmp accept
     ip6 nexthdr icmpv6 accept
+    ip saddr 35.235.240.0/20 tcp dport 22 accept
     udp dport 51820 accept
   }
 
