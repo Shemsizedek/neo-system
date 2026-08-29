@@ -1,0 +1,9 @@
+{
+  "service": "neo-relations",
+  "overall": "foundation-ready",
+  "frontend": "github-pages",
+  "backbone": "github",
+  "discord": "event-bus-ready",
+  "secrets": "server-side-only",
+  "architecture_version": "2.0.0"
+}

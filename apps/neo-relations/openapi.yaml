@@ -1,0 +1,88 @@
+openapi: 3.1.0
+info:
+  title: NEO Relations API
+  version: 0.1.0
+  description: Universal white-label CRM and relationship graph API for NEO Services.
+servers:
+  - url: /api/relations
+paths:
+  /health:
+    get:
+      summary: Health check
+      responses:
+        '200':
+          description: Healthy
+  /entities:
+    get:
+      summary: List canonical entities
+      parameters:
+        - in: query
+          name: tenantId
+          schema: { type: string }
+        - in: query
+          name: type
+          schema: { type: string, enum: [person, organization, household, service_account] }
+      responses:
+        '200': { description: Entity collection }
+    post:
+      summary: Create canonical entity
+      responses:
+        '201': { description: Entity created }
+  /entities/{entityId}:
+    get:
+      summary: Get canonical entity and service relationships
+      parameters:
+        - in: path
+          name: entityId
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: Entity detail }
+        '404': { description: Entity not found }
+  /relationships:
+    get:
+      summary: List relationships
+      responses:
+        '200': { description: Relationship collection }
+    post:
+      summary: Create service relationship
+      responses:
+        '201': { description: Relationship created }
+  /records:
+    get:
+      summary: List CRM records by tenant and record type
+      parameters:
+        - in: query
+          name: tenantId
+          required: true
+          schema: { type: string }
+        - in: query
+          name: recordType
+          schema:
+            type: string
+            enum: [lead, opportunity, case, task, interaction, note, document, agreement, subscription, account]
+      responses:
+        '200': { description: Record collection }
+    post:
+      summary: Create CRM record
+      responses:
+        '201': { description: Record created }
+  /tenants/{tenantId}:
+    get:
+      summary: Get white-label tenant configuration
+      parameters:
+        - in: path
+          name: tenantId
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: Tenant configuration }
+        '404': { description: Tenant not found }
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+security:
+  - bearerAuth: []

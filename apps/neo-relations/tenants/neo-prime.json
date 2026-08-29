@@ -1,0 +1,37 @@
+{
+  "id": "neo-prime",
+  "product": "NEO Relations",
+  "displayName": "NEO Prime Relations",
+  "serviceKey": "neo-prime",
+  "branding": {
+    "workspaceName": "NEO Prime Relations",
+    "theme": "executive"
+  },
+  "labels": {
+    "contact": "Principal",
+    "organization": "Institution",
+    "lead": "Relationship Prospect",
+    "opportunity": "Strategic Opportunity",
+    "case": "Matter"
+  },
+  "modules": {
+    "contacts": true,
+    "organizations": true,
+    "leads": true,
+    "opportunities": true,
+    "cases": true,
+    "tasks": true,
+    "interactions": true,
+    "agreements": true,
+    "subscriptions": false,
+    "analytics": true
+  },
+  "pipelines": {
+    "strategicRelationship": ["identified", "qualified", "engaged", "diligence", "active", "stewardship"]
+  },
+  "permissions": {
+    "aiMayRecommend": true,
+    "aiMayAuthorizeSensitiveActions": false,
+    "crossTenantReadRequiresPolicy": true
+  }
+}

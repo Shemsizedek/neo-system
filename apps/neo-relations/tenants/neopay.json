@@ -1,0 +1,38 @@
+{
+  "id": "neopay",
+  "product": "NEO Relations",
+  "displayName": "NEOpay Relations",
+  "serviceKey": "neopay",
+  "branding": {
+    "workspaceName": "NEOpay Customer Relations",
+    "theme": "payments"
+  },
+  "labels": {
+    "contact": "Customer",
+    "organization": "Business Customer",
+    "lead": "Prospect",
+    "opportunity": "Account Opportunity",
+    "case": "Service Case"
+  },
+  "modules": {
+    "contacts": true,
+    "organizations": true,
+    "leads": true,
+    "opportunities": true,
+    "cases": true,
+    "tasks": true,
+    "interactions": true,
+    "agreements": true,
+    "subscriptions": true,
+    "analytics": true
+  },
+  "pipelines": {
+    "customerLifecycle": ["prospect", "onboarding", "active", "support", "retention", "inactive"]
+  },
+  "permissions": {
+    "aiMayRecommend": true,
+    "aiMayAuthorizeSensitiveActions": false,
+    "paymentExecutionRequiresExternalApproval": true,
+    "crossTenantReadRequiresPolicy": true
+  }
+}
