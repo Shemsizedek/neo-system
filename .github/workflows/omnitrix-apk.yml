@@ -1,5 +1,5 @@
 name: Omnitrix APK
-# v4.0.0 live file-native suite + background encrypted sync
+# v4.1.0 multi-file workspaces + stable revision restore + durable sync
 
 on:
   push:
@@ -30,10 +30,10 @@ jobs:
       - name: Prepare consumer APK
         run: |
           mkdir -p release
-          cp apps/omnitrix-android/app/build/outputs/apk/debug/app-debug.apk release/Omnitrix-Suit-v4.0.0.apk
-          sha256sum release/Omnitrix-Suit-v4.0.0.apk > release/Omnitrix-Suit-v4.0.0.apk.sha256
+          cp apps/omnitrix-android/app/build/outputs/apk/debug/app-debug.apk release/Omnitrix-Suit-v4.1.0.apk
+          sha256sum release/Omnitrix-Suit-v4.1.0.apk > release/Omnitrix-Suit-v4.1.0.apk.sha256
       - uses: actions/upload-artifact@v4
         with:
-          name: Omnitrix-Suit-APK-v4.0.0
+          name: Omnitrix-Suit-APK-v4.1.0
           path: release/*
           if-no-files-found: error
