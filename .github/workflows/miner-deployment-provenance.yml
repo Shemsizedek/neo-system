@@ -1,0 +1,95 @@
+name: NEO Miner Deployment Provenance
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_promotion_run_id:
+        description: GREEN NEO Miner Release Promotion workflow run ID
+        required: true
+        type: string
+      observed_commit_sha:
+        description: Commit SHA reported by the deployed runtime
+        required: true
+        type: string
+      observed_image_digest:
+        description: Immutable image digest reported by the deployed runtime
+        required: true
+        type: string
+      previous_provenance_run_id:
+        description: Previous successful provenance workflow run ID; leave blank only for genesis record
+        required: false
+        type: string
+      action:
+        description: Deployment action that actually completed
+        required: true
+        default: DEPLOY
+        type: choice
+        options:
+          - DEPLOY
+          - ROLLBACK
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  record:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: neo-miner-production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Test provenance policy
+        run: node --test server/miner-production/releasePromotion.test.mjs server/miner-production/deploymentProvenance.test.mjs
+
+      - name: Download signed release attestation
+        uses: actions/download-artifact@v4
+        with:
+          name: neo-miner-release-attestation-${{ inputs.release_promotion_run_id }}
+          path: .release
+          github-token: ${{ github.token }}
+          run-id: ${{ inputs.release_promotion_run_id }}
+
+      - name: Download prior deployment history
+        if: ${{ inputs.previous_provenance_run_id != '' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: neo-miner-deployment-history-${{ inputs.previous_provenance_run_id }}
+          path: .history
+          github-token: ${{ github.token }}
+          run-id: ${{ inputs.previous_provenance_run_id }}
+
+      - name: Record observed deployment
+        env:
+          NEO_RELEASE_ATTESTATION: .release/release-attestation.json
+          NEO_DEPLOYMENT_HISTORY: .history/deployment-history.json
+          NEO_DEPLOYMENT_HISTORY_OUTPUT: deployment-history.json
+          NEO_DEPLOYMENT_RECORD_OUTPUT: deployment-record.json
+          NEO_RELEASE_ATTESTATION_SIGNING_SECRET: ${{ secrets.NEO_RELEASE_ATTESTATION_SIGNING_SECRET }}
+          NEO_DEPLOYMENT_PROVENANCE_SIGNING_SECRET: ${{ secrets.NEO_DEPLOYMENT_PROVENANCE_SIGNING_SECRET }}
+          NEO_OBSERVED_COMMIT_SHA: ${{ inputs.observed_commit_sha }}
+          NEO_OBSERVED_IMAGE_DIGEST: ${{ inputs.observed_image_digest }}
+          NEO_DEPLOYMENT_ACTION: ${{ inputs.action }}
+        run: node server/miner-production/recordDeployment.mjs
+
+      - name: Publish provenance summary
+        run: |
+          node -e "const r=require('./deployment-record.json'); console.log('### NEO Miner Deployment Provenance\n\n- State: **RECORDED**\n- Action: **'+r.action+'**\n- Commit: `'+r.observed.commitSha+'`\n- Image: `'+r.observed.imageDigest+'`\n- Previous record: `'+(r.previousRecordDigest||'GENESIS')+'`')" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload deployment record
+        uses: actions/upload-artifact@v4
+        with:
+          name: neo-miner-deployment-record-${{ github.run_id }}
+          path: deployment-record.json
+          retention-days: 180
+
+      - name: Upload chained deployment history
+        uses: actions/upload-artifact@v4
+        with:
+          name: neo-miner-deployment-history-${{ github.run_id }}
+          path: deployment-history.json
+          retention-days: 180
