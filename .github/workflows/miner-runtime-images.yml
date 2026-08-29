@@ -46,6 +46,8 @@ jobs:
           file: server/miner-production/Dockerfile
           target: ${{ matrix.target }}
           push: true
+          build-args: |
+            NEO_BUILD_COMMIT_SHA=${{ github.sha }}
           tags: |
             ${{ matrix.image }}:main
             ${{ matrix.image }}:${{ github.sha }}
