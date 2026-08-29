@@ -10,15 +10,19 @@ function mustHttps(name,value){
   if(url.username||url.password)throw new Error(`${name}_CREDENTIALS_IN_URL_FORBIDDEN`)
   if(url.hostname==='shemsizedek.github.io')throw new Error(`${name}_PAGES_RUNTIME_FORBIDDEN`)
   if(url.hostname==='neo-discord-api.neosystem.workers.dev')throw new Error(`${name}_DISCORD_BRIDGE_RECURSION_FORBIDDEN`)
+  return url
 }
 
 export function evaluateOperatorReadEnv(env=process.env){
   const missing=required.filter(name=>!String(env[name]||'').trim())
   if(missing.length)return {ok:false,code:'MISSING_REQUIRED_RUNTIME_VALUES',missing}
 
-  for(const name of ['NEO_MINER_OPERATOR_URL','NEO_RELATIONS_OPERATOR_URL']){
-    try{mustHttps(name,String(env[name]).trim())}catch(error){return {ok:false,code:error.message,missing:[]}}
-  }
+  let minerUrl
+  try{
+    minerUrl=mustHttps('NEO_MINER_OPERATOR_URL',String(env.NEO_MINER_OPERATOR_URL).trim())
+    mustHttps('NEO_RELATIONS_OPERATOR_URL',String(env.NEO_RELATIONS_OPERATOR_URL).trim())
+  }catch(error){return {ok:false,code:error.message,missing:[]}}
+  if(minerUrl.pathname!=='/discord/snapshot')return {ok:false,code:'NEO_MINER_OPERATOR_URL_MACHINE_READ_PATH_REQUIRED',missing:[]}
 
   const selectors=selectorFields.flatMap(name=>csv(env[name]).map(value=>({name,value})))
   if(!selectors.length)return {ok:false,code:'OPERATOR_SELECTOR_REQUIRED',missing:selectorFields}
