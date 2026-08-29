@@ -15,10 +15,10 @@ const fallback:PlatformRuntime={
 };
 
 export async function loadPlatformRuntime():Promise<PlatformRuntime>{
-  const base=import.meta.env.BASE_URL || '/';
-  const url=new URL(`${base.replace(/\/$/,'')}/../api/neo-counter/runtime.json`,window.location.origin);
+  const prefix=window.location.pathname.includes('/neo-system/')?'/neo-system':'';
+  const url=`${window.location.origin}${prefix}/api/neo-counter/runtime.json`;
   try{
-    const res=await fetch(url.toString(),{cache:'no-store'});
+    const res=await fetch(url,{cache:'no-store'});
     if(!res.ok)return fallback;
     return {...fallback,...await res.json()};
   }catch{return fallback;}
