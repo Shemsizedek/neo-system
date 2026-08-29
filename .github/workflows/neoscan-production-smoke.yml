@@ -46,6 +46,7 @@ jobs:
           HTML="$(curl --fail --silent --show-error --location "$PAGE")"
           grep -q 'NEOscan — Public Explorer' <<<"$HTML"
           grep -q 'market-terminal.js' <<<"$HTML"
+          grep -q 'nomni-base-board.js' <<<"$HTML"
           grep -q 'market-terminal.css' <<<"$HTML"
           grep -q 'NEO Market Terminal' <<<"$HTML"
           grep -q 'data-surface="market"' <<<"$HTML"
@@ -54,7 +55,7 @@ jobs:
           ! grep -qi '>NEO Ledger<' <<<"$HTML"
           ! grep -qi 'Counterparty' <<<"$HTML"
 
-      - name: Enforce NEO Market Terminal v2
+      - name: Enforce NEO Market Terminal v3
         shell: bash
         run: |
           set -euo pipefail
@@ -62,6 +63,7 @@ jobs:
           curl --fail --silent --show-error --location "$BASE/treasury-dashboard.js" -o treasury-dashboard.js
           curl --fail --silent --show-error --location "$BASE/nomni-market-policy.js" -o nomni-market-policy.js
           curl --fail --silent --show-error --location "$BASE/market-terminal.js" -o market-terminal.js
+          curl --fail --silent --show-error --location "$BASE/nomni-base-board.js" -o nomni-base-board.js
           curl --fail --silent --show-error --location "$BASE/market-terminal.css" -o market-terminal.css
           grep -q "primaryAsset:'NOMNI'" nomni-market-policy.js
           grep -q "terminalName:'NEO Market Terminal'" nomni-market-policy.js
@@ -75,9 +77,15 @@ jobs:
           grep -q 'Bitcoin Settlement' market-terminal.js
           grep -q 'Holders' market-terminal.js
           grep -q 'Issuance History' market-terminal.js
-          grep -q 'consolidated' market-terminal.js || true
-          grep -q '.terminal-grid-market' market-terminal.css
-          ! grep -qi 'tokenscan' market-terminal.js
+          grep -q "const BASE='NOMNI'" nomni-base-board.js
+          grep -q "PRIORITY=\['BTC','NEOCASH','XCP'\]" nomni-base-board.js
+          grep -q 'BEST BID' nomni-base-board.js
+          grep -q 'BEST ASK' nomni-base-board.js
+          grep -q 'SPREAD %' nomni-base-board.js
+          grep -q 'NOMNI Pair Matrix' nomni-base-board.js
+          grep -q 'no synthetic market is created' nomni-base-board.js
+          grep -q '.nomni-base-board' market-terminal.css
+          ! grep -qi 'tokenscan' market-terminal.js nomni-base-board.js
 
       - name: Verify GitHub-native runtime configuration
         shell: bash
