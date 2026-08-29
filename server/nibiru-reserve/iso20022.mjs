@@ -17,3 +17,12 @@ export function validatePain001Structure(document){
   for(const marker of ['<Document','<CstmrCdtTrfInitn>','<GrpHdr>','<PmtInf>','<CdtTrfTxInf>',NIBIRU_ISO_PROFILE.namespace])if(!document.includes(marker))errors.push(`missing ${marker}`);
   return{valid:errors.length===0,validationLevel:'STRUCTURE_ONLY',officialXsdValidated:false,railProfileValidated:false,errors};
 }
+
+export async function validatePain001Xsd(document,{schemaBytes,expectedSha256,validator}={}){
+  if(!schemaBytes||!expectedSha256)return{valid:false,validationLevel:'XSD_UNAVAILABLE',officialXsdValidated:false,errors:['schema bytes and expected SHA-256 are required']};
+  const crypto=await import('node:crypto');const actualSha256=crypto.createHash('sha256').update(schemaBytes).digest('hex');
+  if(actualSha256!==expectedSha256)return{valid:false,validationLevel:'SCHEMA_HASH_MISMATCH',officialXsdValidated:false,expectedSha256,actualSha256,errors:['schema hash does not match pinned value']};
+  if(typeof validator!=='function')return{valid:false,validationLevel:'VALIDATOR_UNAVAILABLE',officialXsdValidated:false,schemaSha256:actualSha256,errors:['XSD validator is not configured']};
+  const result=await validator({document,schemaBytes});
+  return{valid:result.valid===true,validationLevel:'XSD',officialXsdValidated:result.valid===true,schemaSha256:actualSha256,errors:Array.isArray(result.errors)?result.errors:[]};
+}
