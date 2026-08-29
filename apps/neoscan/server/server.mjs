@@ -21,7 +21,7 @@ function validateEnv(env=process.env){
   if(cesConfigured){
     if(!env.NEOSCAN_CES_ENDPOINT)errors.push('NEOSCAN_CES_ENDPOINT is required when CES is enabled');
     if(!env.NEOSCAN_CES_ACCOUNT)errors.push('NEOSCAN_CES_ACCOUNT is required when CES is enabled');
-    if(!env.NEOSCAN_CES_TOKEN)warnings.push('NEOSCAN_CES_TOKEN is missing; CES reads will remain disabled');
+    if(!env.NEOSCAN_CES_TOKEN)warnings.push('NEOSCAN_CES_TOKEN is missing; legacy CES API reads will remain disabled');
   }
   return {ok:errors.length===0,errors,warnings,port,allowedOrigins,cesConfigured};
 }
@@ -81,13 +81,16 @@ const server=http.createServer(async(req,res)=>{
       if(!envStatus.ok)return send(req,res,503,{ok:false,status:'not-ready',requestId,errors:envStatus.errors});
       return send(req,res,200,{ok:true,status:'ready',requestId,warnings:envStatus.warnings,...service.publicStatus()});
     }
+    if(req.method==='GET'&&url.pathname==='/v1/operations/ces'){
+      return send(req,res,200,{ok:true,requestId,data:service.cesStatus()});
+    }
     if(req.method==='GET'&&url.pathname==='/v1/statements'){
       if(!envStatus.ok)return send(req,res,503,errorEnvelope('service_not_ready','Statement service configuration is invalid',requestId));
       const address=String(url.searchParams.get('address')||'').trim();
       if(!address)return send(req,res,400,errorEnvelope('invalid_request','address is required',requestId));
       if(address.length>120)return send(req,res,400,errorEnvelope('invalid_request','address is too long',requestId));
       const cesToken=process.env.NEOSCAN_CES_TOKEN||null;
-      const statement=await service.buildPublicStatement({address,cesToken,includeCes:Boolean(cesToken)});
+      const statement=await service.buildPublicStatement({address,cesToken,includeCes:true});
       return send(req,res,200,{ok:true,requestId,data:statement});
     }
     return send(req,res,404,errorEnvelope('not_found','Route not found',requestId));
