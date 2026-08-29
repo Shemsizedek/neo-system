@@ -15,6 +15,7 @@ export function acknowledgeIncident(incident,{operatorId,note=''}){
 
 export function resolveIncident(incident,{operatorId,note='',resolutionCode}){
   if(!incident?.id) throw new Error('INCIDENT_REQUIRED')
+  if(incident.manualResolutionAllowed===false) throw new Error('INCIDENT_MANUAL_RESOLUTION_FORBIDDEN')
   if(![INCIDENT_STATES.OPEN,INCIDENT_STATES.ACKNOWLEDGED].includes(incident.state)) throw new Error('INCIDENT_STATE_INVALID')
   if(!operatorId) throw new Error('OPERATOR_ID_REQUIRED')
   if(!resolutionCode) throw new Error('RESOLUTION_CODE_REQUIRED')
