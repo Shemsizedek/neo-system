@@ -30,21 +30,35 @@ export class RemoteCesBrowserDriver implements CesBrowserDriver {
   private closed = false
   private readonly timeoutMs: number
   private readonly allowedOrigins: Set<string>
+  private readonly gatewayUrl: URL
 
   constructor(private readonly options: RemoteBrowserDriverOptions) {
-    if (!options.gatewayUrl.startsWith('https://')) {
+    const gatewayUrl = new URL(options.gatewayUrl)
+    if (gatewayUrl.protocol !== 'https:') {
       throw new Error('CES remote browser gateway must use HTTPS')
     }
     if (!options.bearerToken) throw new Error('CES remote browser gateway token is required')
     if (options.allowedOrigins.length === 0) throw new Error('At least one CES browser origin must be allowed')
 
+    const allowedOrigins = options.allowedOrigins.map((origin) => {
+      const parsed = new URL(origin)
+      if (parsed.protocol !== 'https:') {
+        throw new Error(`CES browser allowed origin must use HTTPS: ${parsed.origin}`)
+      }
+      return parsed.origin
+    })
+
+    this.gatewayUrl = gatewayUrl
     this.timeoutMs = options.requestTimeoutMs ?? 20_000
-    this.allowedOrigins = new Set(options.allowedOrigins.map((origin) => new URL(origin).origin))
+    this.allowedOrigins = new Set(allowedOrigins)
   }
 
   async open(url: string): Promise<void> {
     this.assertOpen()
     const target = new URL(url)
+    if (target.protocol !== 'https:') {
+      throw new Error(`CES remote browser navigation requires HTTPS: ${target.origin}`)
+    }
     if (!this.allowedOrigins.has(target.origin)) {
       throw new Error(`CES remote browser navigation blocked for origin: ${target.origin}`)
     }
@@ -118,7 +132,7 @@ export class RemoteCesBrowserDriver implements CesBrowserDriver {
     const timer = setTimeout(() => controller.abort(), this.timeoutMs)
 
     try {
-      const response = await fetch(new URL('/v1/ces/browser', this.options.gatewayUrl), {
+      const response = await fetch(new URL('/v1/ces/browser', this.gatewayUrl), {
         method: 'POST',
         headers: {
           authorization: `Bearer ${this.options.bearerToken}`,
