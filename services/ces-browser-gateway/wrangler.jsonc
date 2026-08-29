@@ -1,0 +1,28 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "neo-ces-browser-gateway",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-08-29",
+  "browser": {
+    "binding": "BROWSER",
+    "remote": true
+  },
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "CES_BROWSER_SESSIONS",
+        "class_name": "CesBrowserSession"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["CesBrowserSession"]
+    }
+  ],
+  "vars": {
+    "CES_BROWSER_ALLOWED_ORIGINS": "https://www.community-exchange.org",
+    "CES_BROWSER_SESSION_TTL_SECONDS": "300"
+  }
+}
