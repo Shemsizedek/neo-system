@@ -55,7 +55,7 @@ export function createOpenAIAdapter({ apiKey, model = 'gpt-5', fetchImpl, timeou
   }
 }
 
-export function createGeminiAdapter({ apiKey, model = 'gemini-3.1-pro-preview', fetchImpl, timeoutMs } = {}) {
+export function createGeminiAdapter({ apiKey, model = 'gemini-3.7-flash', fetchImpl, timeoutMs } = {}) {
   return {
     id: 'gemini',
     configured: Boolean(apiKey),
