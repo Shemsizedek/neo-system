@@ -31,6 +31,7 @@ const MAX_SELECTOR_LENGTH = 2_000
 const MAX_FILL_VALUE_LENGTH = 16_384
 const MAX_TEXT_ROWS = 1_000
 const MAX_TEXT_LENGTH = 16_384
+const CLICK_NAVIGATION_GRACE_MS = 2_000
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: JSON_HEADERS })
@@ -155,10 +156,13 @@ export class CesBrowserSession extends DurableObject<Env> {
 
       await this.ensurePage()
       const value = await this.execute(body.operation)
+      await this.assertCurrentOrigin()
       await this.ctx.storage.setAlarm(Date.now() + this.ttlMs)
       return json({ ok: true, sessionId: body.sessionId, value })
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Browser command failed'
+      await this.shutdown().catch(() => undefined)
+      await this.ctx.storage.deleteAlarm().catch(() => undefined)
       return json({ ok: false, sessionId: body.sessionId, error: message }, 400)
     }
   }
@@ -191,9 +195,12 @@ export class CesBrowserSession extends DurableObject<Env> {
         await this.page.$eval(operation.selector, (element: any) => { if ('value' in element) element.value = '' })
         await this.page.type(operation.selector, operation.value)
         return null
-      case 'click':
+      case 'click': {
+        const navigation = this.page.waitForNavigation({ waitUntil: 'domcontentloaded', timeout: CLICK_NAVIGATION_GRACE_MS }).catch(() => null)
         await this.page.click(operation.selector)
+        await navigation
         return null
+      }
       case 'waitFor':
         await this.page.waitForSelector(operation.selector, { timeout: operation.timeoutMs ?? 15_000 })
         return null
@@ -207,6 +214,16 @@ export class CesBrowserSession extends DurableObject<Env> {
         return Boolean(await this.page.$(operation.selector))
       default:
         throw new Error('Unsupported browser operation')
+    }
+  }
+
+  private async assertCurrentOrigin() {
+    if (!this.page) throw new Error('Browser page unavailable')
+    const current = this.page.url()
+    if (current === 'about:blank') return
+    const parsed = new URL(current)
+    if (parsed.protocol !== 'https:' || !this.origins.has(parsed.origin)) {
+      throw new Error(`Browser left allowed CES origin: ${parsed.origin}`)
     }
   }
 
