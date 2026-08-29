@@ -24,33 +24,28 @@ export class PersistentStateStore{
   }
   put(kind,id,value,{action='UPSERT',audit=true}={}){
     if(!kind||!id) throw new Error('STORE_KIND_AND_ID_REQUIRED')
-    const at=now(), payload=JSON.stringify(value)
+    const at=now(),payload=JSON.stringify(value)
+    this.db.exec('BEGIN IMMEDIATE')
+    try{this.putStmt.run(kind,String(id),payload,at);if(audit)this.auditStmt.run(`AUD-${crypto.randomUUID()}`,kind,String(id),action,payload,at);this.db.exec('COMMIT');return value}catch(error){this.db.exec('ROLLBACK');throw error}
+  }
+  idempotentPut({scope,key,kind,id,value,action='UPSERT'}){
+    if(!key) throw new Error('IDEMPOTENCY_KEY_REQUIRED')
+    const cached=this.idemGet.get(scope,String(key));if(cached)return {replayed:true,value:JSON.parse(cached.result)}
+    const at=now(),payload=JSON.stringify(value)
     this.db.exec('BEGIN IMMEDIATE')
     try{
+      const again=this.idemGet.get(scope,String(key));if(again){this.db.exec('COMMIT');return {replayed:true,value:JSON.parse(again.result)}}
       this.putStmt.run(kind,String(id),payload,at)
-      if(audit)this.auditStmt.run(`AUD-${crypto.randomUUID()}`,kind,String(id),action,payload,at)
-      this.db.exec('COMMIT')
-      return value
+      this.auditStmt.run(`AUD-${crypto.randomUUID()}`,kind,String(id),action,payload,at)
+      this.idemPut.run(scope,String(key),payload,at)
+      this.db.exec('COMMIT');return {replayed:false,value}
     }catch(error){this.db.exec('ROLLBACK');throw error}
   }
   get(kind,id){return parse(this.getStmt.get(kind,String(id)))}
   list(kind){return this.listStmt.all(kind).map(parse)}
-  appendAudit(kind,entityId,action,payload={}){
-    const event={eventId:`AUD-${crypto.randomUUID()}`,kind,entityId:entityId?String(entityId):null,action,payload,createdAt:now()}
-    this.auditStmt.run(event.eventId,event.kind,event.entityId,event.action,JSON.stringify(payload),event.createdAt)
-    return event
-  }
+  appendAudit(kind,entityId,action,payload={}){const event={eventId:`AUD-${crypto.randomUUID()}`,kind,entityId:entityId?String(entityId):null,action,payload,createdAt:now()};this.auditStmt.run(event.eventId,event.kind,event.entityId,event.action,JSON.stringify(payload),event.createdAt);return event}
   audit(limit=200){return this.db.prepare('SELECT seq,event_id AS eventId,kind,entity_id AS entityId,action,payload,created_at AS createdAt FROM audit_events ORDER BY seq DESC LIMIT ?').all(Math.max(1,Math.min(1000,Number(limit)||200))).map(r=>({...r,payload:JSON.parse(r.payload)}))}
-  idempotent(scope,key,work){
-    if(!key) throw new Error('IDEMPOTENCY_KEY_REQUIRED')
-    const cached=this.idemGet.get(scope,String(key));if(cached)return {replayed:true,value:JSON.parse(cached.result)}
-    this.db.exec('BEGIN IMMEDIATE')
-    try{
-      const again=this.idemGet.get(scope,String(key));if(again){this.db.exec('COMMIT');return {replayed:true,value:JSON.parse(again.result)}}
-      const value=work();this.idemPut.run(scope,String(key),JSON.stringify(value),now());this.db.exec('COMMIT');return {replayed:false,value}
-    }catch(error){this.db.exec('ROLLBACK');throw error}
-  }
   close(){this.db.close()}
 }
 
-export const hydrateMap=(store,kind)=>new Map(store.list(kind).map(v=>[String(v.id||v.shareId||v.payoutId||v.receiptId||v.intentId||v.psbtId),v]))
+export const hydrateMap=(store,kind,key=v=>v.id)=>new Map(store.list(kind).map(v=>[String(key(v)),v]))
