@@ -40,6 +40,6 @@ const handle=createDiscordHttpHandler({
 
 export default {
   fetch(request,env,ctx){
-    return handle(request,env,{waitUntil:(p)=>ctx.waitUntil(p)})
+    return handle(request,env,{waitUntil:(p)=>ctx.waitUntil(p),fetchImpl:ctx.fetchImpl})
   }
 }
