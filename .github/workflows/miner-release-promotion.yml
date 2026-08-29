@@ -1,0 +1,64 @@
+name: NEO Miner Release Promotion
+
+on:
+  workflow_dispatch:
+    inputs:
+      production_attestation_run_id:
+        description: Successful NEO Miner Production Attestation workflow run ID
+        required: true
+        type: string
+      image_digest:
+        description: Immutable production image digest (sha256:...)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  authorize-promotion:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: neo-miner-production
+    steps:
+      - name: Checkout exact release commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Test release promotion policy
+        run: node --test server/miner-production/productionAttestation.test.mjs server/miner-production/releasePromotion.test.mjs
+
+      - name: Download production attestation
+        uses: actions/download-artifact@v4
+        with:
+          name: neo-miner-production-attestation-${{ inputs.production_attestation_run_id }}
+          path: .attestation
+          github-token: ${{ github.token }}
+          run-id: ${{ inputs.production_attestation_run_id }}
+
+      - name: Bind and sign release attestation
+        env:
+          NEO_PRODUCTION_ATTESTATION: .attestation/production-attestation.json
+          NEO_RELEASE_ATTESTATION_OUTPUT: release-attestation.json
+          NEO_RELEASE_COMMIT_SHA: ${{ github.sha }}
+          NEO_RELEASE_IMAGE_DIGEST: ${{ inputs.image_digest }}
+          NEO_RELEASE_ATTESTATION_SIGNING_SECRET: ${{ secrets.NEO_RELEASE_ATTESTATION_SIGNING_SECRET }}
+        run: node server/miner-production/signReleaseAttestation.mjs
+
+      - name: Publish authorization summary
+        run: |
+          node -e "const a=require('./release-attestation.json'); console.log('### NEO Miner Release Promotion Gate\n\n- Authorization: **GREEN**\n- Commit: `'+a.commitSha+'`\n- Image: `'+a.imageDigest+'`\n- Production attestation: **'+a.productionAttestation.state+'**')" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload signed release attestation
+        uses: actions/upload-artifact@v4
+        with:
+          name: neo-miner-release-attestation-${{ github.run_id }}
+          path: release-attestation.json
+          retention-days: 90
