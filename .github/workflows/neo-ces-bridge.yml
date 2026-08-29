@@ -17,6 +17,11 @@ on:
       - 'apps/neoscan/adapters/ces/**'
       - 'scripts/neo-ces-bridge.mjs'
       - '.github/workflows/neo-ces-bridge.yml'
+  pull_request:
+    paths:
+      - 'apps/neoscan/adapters/ces/**'
+      - 'scripts/neo-ces-bridge.mjs'
+      - '.github/workflows/neo-ces-bridge.yml'
 
 permissions:
   contents: read
