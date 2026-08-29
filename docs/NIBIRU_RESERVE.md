@@ -33,12 +33,13 @@ The Origin snapshot therefore reports:
 
 | Port | Origin state |
 |---|---|
-| CES read | Contract defined; live adapter not connected |
+| CES read | Existing `neo.ces.adapter.v1` bound; runtime credentials still required |
 | CES writeback | Disabled |
 | Counterparty observation | Settlement-reference linkage |
 | Transaction compose/sign/broadcast | Disabled |
 | ISO canonical mapping | Enabled |
-| ISO XML and schema validation | Pending |
+| ISO XML | `pain.001.001.13` generation enabled |
+| ISO validation | Structural checks enabled; official XSD and rail profile pending |
 | SWIFT/FedNow/Fedwire | Not connected |
 | NEO Tokenworks/NEO Banks | Registered consumers/components |
 
@@ -47,17 +48,19 @@ The Origin snapshot therefore reports:
 - `GET /health`
 - `GET /api/v1/nibiru/capabilities`
 - `GET /api/v1/nibiru/reserve-snapshot`
+- `GET /api/v1/nibiru/trial-balance`
 - `POST /api/v1/nibiru/ces/positions`
 - `POST /api/v1/nibiru/ces/positions/:id/blockchain-settlement`
 - `POST /api/v1/nibiru/iso20022/payment-envelopes`
+- `GET /api/v1/nibiru/iso20022/payment-envelopes/:id/xml`
 
 ## Production gates
 
-1. Identify and bind the repository's concrete CES adapter.
-2. Define unit issuers, obligations, redemption rules, and ledger authority.
-3. Add double-entry liabilities and segregated backing-asset accounts.
+1. Define unit issuers, obligations, redemption rules, and ledger authority.
+2. Promote memorandum CES postings to recognized liabilities only after that authority is established.
+3. Add segregated backing-asset accounts and independent attestations.
 4. Integrate Counterparty Core v2 with confirmation and reorg reconciliation.
-5. Generate a pinned ISO message version and validate against official schemas.
+5. Load the official `pain.001.001.13` XSD and validate generated XML against it.
 6. Obtain the target rail's usage guide and readiness-portal validation.
 7. Complete BSA/AML, sanctions, Travel Rule, privacy, custody, money-transmission, deposit, stablecoin, lending, and securities analysis.
 8. Add independent reserve attestation; never calculate backing from token price alone.

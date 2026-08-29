@@ -18,8 +18,19 @@ test('links observed Counterparty settlement without enabling custody',()=>{
 
 test('maps a payment into ISO-aligned canonical data without claiming rail validation',()=>{
  const msg=service().createIsoPaymentEnvelope({messageId:'MSG-1',endToEndId:'E2E-1',debtorName:'Alice',debtorAccount:'CES-A',creditorName:'Bob',creditorAccount:'CES-B',amount:25,currency:'USD',purpose:'GDDS',digitalAssetContext:{network:'bitcoin',asset:'NOMNI',address:'1abc',txHash:'tx1'}});
- assert.equal(msg.standard,'ISO 20022');assert.equal(msg.messageDefinition,'pain.001');assert.equal(msg.digitalAssetContext.network,'BITCOIN');
+ assert.equal(msg.standard,'ISO 20022');assert.equal(msg.messageDefinition,'pain.001.001.13');assert.equal(msg.digitalAssetContext.network,'BITCOIN');
  assert.equal(msg.validation.isoSchemaValidated,false);assert.equal(msg.compliance.travelRuleStatus,'NOT_CHECKED');
 });
 
 test('rejects malformed monetary input',()=>assert.throws(()=>service().createIsoPaymentEnvelope({})));
+
+test('renders escaped version-pinned XML without claiming official validation',()=>{
+ const n=service();const msg=n.createIsoPaymentEnvelope({messageId:'MSG-XML',endToEndId:'E2E-XML',debtorName:'A & B',debtorAccount:'CES-A',creditorName:'C < D',creditorAccount:'CES-B',amount:25,currency:'USD',purpose:'GDDS'});
+ const rendered=n.renderIsoPayment(msg.id);assert.match(rendered.document,/pain\.001\.001\.13/);assert.match(rendered.document,/A &amp; B/);assert.equal(rendered.structuralValidation.valid,true);assert.equal(rendered.structuralValidation.officialXsdValidated,false);
+});
+
+test('syncs the real CES adapter contract into a balanced memorandum journal',async()=>{
+ const adapter={status:()=>({schema:'neo.ces.adapter.v1',configured:true,readOnly:true}),getBalance:async()=>({network:'demo',account:'A-1',unit:'CES',amount:12.5,reference:'BAL-1',observedAt:'2026-08-28T00:00:00Z'})};
+ const n=createNibiruReserve({now:()=> '2026-08-29T00:00:00.000Z',cesAdapter:adapter});const synced=await n.syncCes({token:'redacted'});
+ assert.equal(synced.entry.status,'CES_VERIFIED');assert.equal(synced.journal.debits,12.5);assert.equal(n.ledger.trialBalance().balanced,true);
+});
