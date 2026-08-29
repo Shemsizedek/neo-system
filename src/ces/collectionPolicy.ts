@@ -5,6 +5,7 @@ const DEFAULT_ALLOWED: CesRecordKind[] = ['EXCHANGE', 'OFFER', 'WANT', 'BALANCE'
 export type CesCollectionPolicy = {
   allowedKinds: CesRecordKind[]
   denyMemberPrivateFields: boolean
+  allowAuthorizedRawText: boolean
   maxRowsPerKind: number
   requireExchangeMatch: boolean
 }
@@ -12,6 +13,7 @@ export type CesCollectionPolicy = {
 export const defaultCesCollectionPolicy: CesCollectionPolicy = {
   allowedKinds: DEFAULT_ALLOWED,
   denyMemberPrivateFields: true,
+  allowAuthorizedRawText: false,
   maxRowsPerKind: 5_000,
   requireExchangeMatch: true
 }
