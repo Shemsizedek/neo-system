@@ -1,0 +1,38 @@
+{
+  "version": "1.0.0",
+  "name": "NEO Services Three-Plane Standard",
+  "scope": "all-neo-services",
+  "planes": {
+    "frontend": {
+      "primary": "github-pages",
+      "responsibilities": ["static-ui", "public-service-pages", "operator-dashboards-without-secrets"],
+      "forbidden": ["runtime-secrets", "private-signing-keys", "discord-bot-tokens", "privileged-github-tokens"]
+    },
+    "backend": {
+      "primary": "github",
+      "responsibilities": ["source-of-truth", "configuration", "service-contracts", "github-actions-orchestration", "release-gates", "auditable-state"],
+      "constraints": ["github-pages-is-not-a-dynamic-backend", "github-actions-is-not-a-persistent-http-server"]
+    },
+    "serverApi": {
+      "primary": "discord",
+      "responsibilities": ["slash-commands", "interaction-responses", "operator-control-plane", "event-routing", "service-api-surface"],
+      "transport": {
+        "requiresPublicHttpsInteractionEndpoint": true,
+        "classification": "thin-transport-bridge",
+        "mayOwnNeoBusinessLogic": false,
+        "mayBecomeNeoBackend": false
+      }
+    }
+  },
+  "security": {
+    "defaultDeny": true,
+    "secretsRuntimeOnly": true,
+    "discordMayApproveSensitiveActions": false,
+    "aiMayApproveSensitiveActions": false,
+    "crossServiceWritesRequireExplicitPolicy": true
+  },
+  "exceptions": {
+    "allowed": true,
+    "requirements": ["documented-architecture-decision", "explicit-human-approval", "service-specific-security-review"]
+  }
+}
