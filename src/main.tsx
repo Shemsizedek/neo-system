@@ -12,6 +12,7 @@ import { HashVaultApp } from './miner/HashVaultApp'
 import { SettlementReceiptsApp } from './miner/SettlementReceiptsApp'
 import { TreasuryControlApp } from './miner/TreasuryControlApp'
 import { BitcoinPayoutAdapterApp } from './miner/BitcoinPayoutAdapterApp'
+import { PersistenceAuditApp } from './miner/PersistenceAuditApp'
 import { StorefrontApp } from './miner/StorefrontApp'
 import { NeoWireApp } from './wire/NeoWireApp'
 import { NeoExplorer } from './explorer/NeoExplorer'
@@ -57,6 +58,7 @@ function RootRouter(){
   const isReceipts=route==='/settlement-receipts'||route.startsWith('/settlement-receipts/')
   const isTreasury=route==='/miner-treasury'||route.startsWith('/miner-treasury/')
   const isBitcoinPayout=route==='/bitcoin-payout'||route.startsWith('/bitcoin-payout/')
+  const isPersistenceAudit=route==='/persistence-audit'||route.startsWith('/persistence-audit/')
   const isMiner=route==='/miner'||route.startsWith('/miner/')
   const isMinerStore=route==='/miner-store'||route.startsWith('/miner-store/')
   const isWire=route==='/wire'||route.startsWith('/wire/')
@@ -82,6 +84,7 @@ function RootRouter(){
   if(isReceipts) return <SettlementReceiptsApp/>
   if(isTreasury) return <TreasuryControlApp/>
   if(isBitcoinPayout) return <BitcoinPayoutAdapterApp/>
+  if(isPersistenceAudit) return <PersistenceAuditApp/>
   if(isCloudMining) return <CloudMiningOperationsApp/>
   if(isGenerator) return <GeneratorApp/>
   if(isMiner) return <MinerApp/>
