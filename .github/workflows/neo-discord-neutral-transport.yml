@@ -31,24 +31,34 @@ jobs:
           test -s services/neo-discord/core/counterparty.js
           test -s services/neo-discord/core/treasury.js
           test -s services/neo-discord/core/neo-command.js
+          test -s services/neo-discord/core/interaction.js
           test -s services/neo-discord/commands/relations.json
           test -s services/neo-discord/adapters/cloudflare/worker.js
           test -s services/neo-discord/adapters/node-http/runtime.js
+          test -s services/neo-discord/adapters/node-http/handler.js
+          test -s services/neo-discord/adapters/node-http/server.js
+          test -s services/neo-discord/tests/adapter-parity.mjs
       - name: Ensure provider adapter stays transport-only
         run: |
           ! grep -q "function isTreasuryPrompt" services/neo-discord/adapters/cloudflare/worker.js
           ! grep -q "function isCounterpartyStatusPrompt" services/neo-discord/adapters/cloudflare/worker.js
           ! grep -q "async function githubStatus" services/neo-discord/adapters/cloudflare/worker.js
           ! grep -q "async function askOpenAI" services/neo-discord/adapters/cloudflare/worker.js
-          grep -q "../../core/neo-command.js" services/neo-discord/adapters/cloudflare/worker.js
-          grep -q "../../core/relations.js" services/neo-discord/adapters/cloudflare/worker.js
+          grep -q "../../core/interaction.js" services/neo-discord/adapters/cloudflare/worker.js
+          grep -q "createDiscordHttpHandler" services/neo-discord/adapters/cloudflare/worker.js
+          grep -q "createDiscordHttpHandler" services/neo-discord/adapters/node-http/handler.js
       - name: Validate command manifest
         run: node -e "const x=require('./services/neo-discord/commands/relations.json'); if(x.name!=='relations'||!Array.isArray(x.options)) process.exit(1)"
       - name: Install Cloudflare adapter dependencies
         working-directory: services/neo-discord/adapters/cloudflare
         run: npm install
+      - name: Install Node adapter dependencies
+        working-directory: services/neo-discord/adapters/node-http
+        run: npm install
       - name: Validate Cloudflare adapter bundle
         working-directory: services/neo-discord/adapters/cloudflare
         run: npm run dry-run
       - name: Validate portable Node adapter import
-        run: node -e "import('./services/neo-discord/adapters/node-http/runtime.js').then(m=>{const x=m.createNodeRuntimeAdapter(); if(x.id!=='node-http') process.exit(1)})"
+        run: node -e "import('./services/neo-discord/adapters/node-http/handler.js').then(m=>{if(typeof m.createNodeHttpHandler!=='function') process.exit(1)})"
+      - name: Run signed adapter parity suite
+        run: node --test services/neo-discord/tests/adapter-parity.mjs
