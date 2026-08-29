@@ -1,22 +1,11 @@
 import { verifyKey } from 'discord-interactions'
 import base from './index.js'
 import { handleRelationsCommand } from './relations.js'
+import { isDiscordActorAllowed } from '../../../services/neo-discord/core/authorization.js'
 
 const json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:{'content-type':'application/json; charset=utf-8','cache-control':'no-store'}})
 const DISCORD_API='https://discord.com/api/v10'
 
-function actor(interaction){
-  const user=interaction?.member?.user||interaction?.user||{}
-  return {id:String(user.id||''),guildId:String(interaction?.guild_id||'')}
-}
-function allowed(interaction,env){
-  const users=String(env.DISCORD_ALLOWED_USER_IDS||'').split(',').map(x=>x.trim()).filter(Boolean)
-  const guilds=String(env.DISCORD_ALLOWED_GUILD_IDS||'').split(',').map(x=>x.trim()).filter(Boolean)
-  const a=actor(interaction)
-  if(users.length&&!users.includes(a.id))return false
-  if(guilds.length&&a.guildId&&!guilds.includes(a.guildId))return false
-  return true
-}
 async function verify(request,env,raw){
   const sig=request.headers.get('x-signature-ed25519')||''
   const ts=request.headers.get('x-signature-timestamp')||''
@@ -46,7 +35,7 @@ export default {
     let ok=false
     try{ok=await verify(request,env,raw)}catch{}
     if(!ok)return json({error:'Invalid Discord signature'},401)
-    if(!allowed(interaction,env))return json({type:4,data:{content:'This NEO Relations command surface is not authorized for your account or server.',flags:64,allowed_mentions:{parse:[]}}})
+    if(!isDiscordActorAllowed(interaction,env))return json({type:4,data:{content:'This NEO Relations command surface is not authorized for your account or server.',flags:64,allowed_mentions:{parse:[]}}})
     ctx.waitUntil(process(interaction,env))
     return json({type:5,data:{flags:64}})
   }
