@@ -37,7 +37,23 @@ This gate closes the trust gap between composition and signing:
 - Approval handlers load the authoritative persisted review; client-supplied review status or transaction hashes are never trusted.
 - Equivalent completed approval retries return the stored approval/review outcome instead of creating a second approval.
 
-Counterparty Core's current API source exposes `/v2/transactions/info` and `/v2/transactions/unpack`; the `info` path parses the raw transaction and includes unpacked Counterparty message data. Production deployment must still pin an approved Counterparty endpoint, supply real authentication middleware, configure PostgreSQL, and keep server-side signing/broadcast disabled until their separate gates are reviewed.
+## Gate 6: externally signed transaction verification
+
+This gate verifies the transaction again after an external wallet has signed it and before any broadcast capability can be considered:
+
+- Counterparty transaction inspection now derives a SHA-256 `StructureHash` from decoded Bitcoin transaction structure after removing signature/unlocking-only fields such as `script_sig`, input witness data, and root transaction IDs that legitimately change when signatures are added.
+- The signed transaction is independently decoded through the same fail-closed Counterparty send inspector.
+- The decoded signed source, destination, asset, exact quantity, and miner fee must still match the approved NEOpay intent.
+- The signed transaction's signature-independent structure hash must equal the reviewed unsigned structure hash. Output, payload, input-selection, sequence, version, lock-time, or fee-affecting mutations therefore reject the signed transaction.
+- `SignedService` loads the authoritative approved review and approval from PostgreSQL; the caller cannot supply trusted review status or hashes.
+- Both successful and rejected signed-verification evidence are durable.
+- A separate `BroadcastAuthorization` can be recorded only for a verified signed transaction and is bound to its exact signed-transaction hash.
+- Broadcast execution remains disabled. Recording authorization is not a network submission and is not evidence that Bitcoin or Counterparty accepted the transaction.
+- This gate verifies transaction intent/structure, not cryptographic signature validity. Signature validation and actual broadcast/provider result handling remain a separate production gate.
+
+`migrations/003_signed_transaction_verification.sql` adds the reviewed structure hash, signed-verification evidence, and broadcast-authorization evidence.
+
+Counterparty Core's current API source exposes `/v2/transactions/info` and `/v2/transactions/unpack`; the `info` path parses raw transaction hex and includes decoded Bitcoin transaction structure plus unpacked Counterparty message data. Production deployment must pin an approved Counterparty endpoint, supply authentication middleware, configure PostgreSQL, and keep server-side signing and broadcast disabled until those separate gates are reviewed.
 
 Run:
 
@@ -47,4 +63,4 @@ go test ./...
 go run ./cmd/neofintech
 ```
 
-Apply `migrations/001_financial_core.sql` and `migrations/002_neopay_transaction_review.sql` to the selected PostgreSQL database before enabling durable persistence.
+Apply `migrations/001_financial_core.sql`, `migrations/002_neopay_transaction_review.sql`, and `migrations/003_signed_transaction_verification.sql` in order before enabling durable persistence.
