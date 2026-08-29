@@ -1,0 +1,38 @@
+name: NEO Discord Node Standby Readiness
+
+on:
+  pull_request:
+    paths:
+      - 'services/neo-discord/**'
+      - '.github/workflows/neo-discord-node-standby-readiness.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'services/neo-discord/**'
+      - '.github/workflows/neo-discord-node-standby-readiness.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-node-standby:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build portable Node standby image
+        run: docker build -f services/neo-discord/adapters/node-http/Dockerfile -t neo-discord-node-standby .
+      - name: Verify image does not bake runtime secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker history --no-trunc neo-discord-node-standby > /tmp/history.txt
+          if grep -E 'DISCORD_BOT_TOKEN=|DISCORD_PUBLIC_KEY=|GITHUB_API_TOKEN=|OPENAI_API_KEY=' /tmp/history.txt; then
+            echo 'Runtime secret material must not be baked into the standby image.' >&2
+            exit 1
+          fi
+      - name: Run adapter parity suite
+        working-directory: services/neo-discord/adapters/node-http
+        run: |
+          npm install
+          npm test
