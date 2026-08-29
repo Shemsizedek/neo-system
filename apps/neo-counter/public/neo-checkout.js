@@ -1,5 +1,5 @@
 (function(global){
-  const DEFAULT_BASE='https://shemsizedek.github.io/neo-system/neo-checkout/';
+  const DEFAULT_BASE='https://shemsizedek.github.io/neo-system/neo-counter/';
   function url(options){
     if(!options||!Number.isInteger(options.amountCents)||options.amountCents<=0)throw new Error('amountCents must be a positive integer');
     const u=new URL(options.baseUrl||DEFAULT_BASE);
@@ -9,10 +9,13 @@
     u.searchParams.set('order',String(options.orderId||('neo_order_'+crypto.randomUUID())));
     u.searchParams.set('label',String(options.label||options.service||'NEO Service'));
     if(options.rail)u.searchParams.set('rail',String(options.rail));
+    if(options.currency)u.searchParams.set('currency',String(options.currency).toUpperCase());
+    if(options.asset)u.searchParams.set('asset',String(options.asset).toUpperCase());
+    if(Number.isFinite(options.assetAmount)&&options.assetAmount>0)u.searchParams.set('asset_amount',String(options.assetAmount));
     if(options.successUrl)u.searchParams.set('success_url',String(options.successUrl));
     if(options.cancelUrl)u.searchParams.set('cancel_url',String(options.cancelUrl));
     return u.toString();
   }
   function redirect(options){global.location.assign(url(options));}
-  global.NEOCheckout=Object.freeze({version:'1.0.0',url,redirect});
+  global.NEOCheckout=Object.freeze({version:'1.1.0',url,redirect,currencies:'/neo-system/api/neo-counter/currencies.json'});
 })(window);

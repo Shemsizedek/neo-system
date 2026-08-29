@@ -1,0 +1,19 @@
+{
+  "schemaVersion": "2026-08-29.v1",
+  "checkoutBase": "https://shemsizedek.github.io/neo-system/neo-counter/",
+  "adapter": "https://shemsizedek.github.io/neo-system/neo-counter/neo-checkout.js",
+  "services": [
+    {"id":"neopay","name":"NEOpay","page":"/neopay/"},
+    {"id":"neo-teller","name":"NEO Teller","page":"/neo-teller/"},
+    {"id":"neo-books","name":"NEO Books","page":"/neo-books/"},
+    {"id":"neo-prime","name":"NEO Prime","page":"/neo-prime/"},
+    {"id":"neo-exchange","name":"NEO Exchange","page":"/neo-exchange/"},
+    {"id":"neo-generator","name":"NEO Generator","page":"/neo-generator/"},
+    {"id":"neo-miner","name":"NEO Miner","page":"/neo-miner/"},
+    {"id":"neo-wire","name":"NEO Wire","page":"/neo-wire/"},
+    {"id":"noogle","name":"Noogle","page":"/noogle/"},
+    {"id":"neoscan","name":"NEOscan","page":"/neoscan/"},
+    {"id":"neo-enterprise","name":"NEO Enterprise","page":"/neo-enterprise/"},
+    {"id":"neo-counter","name":"NEO Counter","page":"/neo-counter/"}
+  ]
+}
