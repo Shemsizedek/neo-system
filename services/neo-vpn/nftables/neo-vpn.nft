@@ -1,0 +1,50 @@
+#!/usr/sbin/nft -f
+
+flush ruleset
+
+define WAN_IF = "eth0"
+define WG_IF = "wg0"
+define WG_NET = 10.144.0.0/16
+
+table inet neo_filter {
+  chain input {
+    type filter hook input priority 0; policy drop;
+
+    iifname "lo" accept
+    ct state established,related accept
+    ct state invalid drop
+
+    # WireGuard ingress.
+    udp dport 51820 accept
+
+    # ICMP is required for sane network operation and MTU discovery.
+    ip protocol icmp accept
+    ip6 nexthdr icmpv6 accept
+
+    # SSH is intentionally NOT opened here. Manage SSH through your cloud
+    # firewall, console, or a separately restricted rule before applying.
+  }
+
+  chain forward {
+    type filter hook forward priority 0; policy drop;
+
+    ct state established,related accept
+
+    # VPN clients may reach routed destinations through the gateway.
+    iifname $WG_IF ip saddr $WG_NET accept
+
+    # Return traffic to VPN peers.
+    oifname $WG_IF ip daddr $WG_NET accept
+  }
+
+  chain output {
+    type filter hook output priority 0; policy accept;
+  }
+}
+
+table ip neo_nat {
+  chain postrouting {
+    type nat hook postrouting priority srcnat; policy accept;
+    ip saddr $WG_NET oifname $WAN_IF masquerade
+  }
+}
