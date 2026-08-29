@@ -12,14 +12,9 @@ import (
 
 type principalKey struct{}
 
-type Principal struct {
-	ID string
-}
+type Principal struct { ID string }
 
-func WithPrincipal(ctx context.Context, principal Principal) context.Context {
-	return context.WithValue(ctx, principalKey{}, principal)
-}
-
+func WithPrincipal(ctx context.Context, principal Principal) context.Context { return context.WithValue(ctx, principalKey{}, principal) }
 func PrincipalFromContext(ctx context.Context) (Principal, bool) {
 	p, ok := ctx.Value(principalKey{}).(Principal)
 	if !ok || strings.TrimSpace(p.ID) == "" { return Principal{}, false }
@@ -27,22 +22,19 @@ func PrincipalFromContext(ctx context.Context) (Principal, bool) {
 }
 
 type OperationIdentity struct {
-	PrincipalID   string
-	Operation     string
-	TargetID      string
+	PrincipalID string
+	Operation string
+	TargetID string
 	IdempotencyKey string
-	Fingerprint  string
+	Fingerprint string
 }
 
 type OperationResult struct {
-	Review   Review
+	Review Review
 	Approval Approval
-	Exists   bool
+	Exists bool
 }
 
-// OperationRegistry is the durable replay boundary. Implementations must
-// serialize first use with a uniqueness constraint and reject a fingerprint
-// mismatch before any financial or external effect.
 type OperationRegistry interface {
 	Claim(context.Context, OperationIdentity) (OperationResult, bool, error)
 	CompleteReview(context.Context, OperationIdentity, Review) error
@@ -50,35 +42,39 @@ type OperationRegistry interface {
 }
 
 func ReviewOperationIdentity(principalID, idempotencyKey, reviewID, operationID string, intent Intent) (OperationIdentity, error) {
-	if strings.TrimSpace(principalID) == "" || strings.TrimSpace(idempotencyKey) == "" {
-		return OperationIdentity{}, errors.New("principal and idempotency key are required")
-	}
-	canonical, err := json.Marshal(struct {
-		OperationID string `json:"operation_id"`
-		Intent Intent `json:"intent"`
-	}{OperationID: operationID, Intent: intent})
+	if strings.TrimSpace(principalID) == "" || strings.TrimSpace(idempotencyKey) == "" { return OperationIdentity{}, errors.New("principal and idempotency key are required") }
+	canonical, err := json.Marshal(struct { OperationID string `json:"operation_id"`; Intent Intent `json:"intent"` }{operationID, intent})
 	if err != nil { return OperationIdentity{}, err }
 	h := sha256.Sum256(canonical)
-	return OperationIdentity{PrincipalID: principalID, Operation: "neopay_review", TargetID: reviewID, IdempotencyKey: idempotencyKey, Fingerprint: hex.EncodeToString(h[:])}, nil
+	return OperationIdentity{PrincipalID:principalID, Operation:"neopay_review", TargetID:reviewID, IdempotencyKey:idempotencyKey, Fingerprint:hex.EncodeToString(h[:])}, nil
 }
 
 func ApprovalOperationIdentity(principalID, idempotencyKey string, review Review, approvalID, reason string) (OperationIdentity, error) {
-	if strings.TrimSpace(principalID) == "" || strings.TrimSpace(idempotencyKey) == "" {
-		return OperationIdentity{}, errors.New("principal and idempotency key are required")
-	}
-	canonical, err := json.Marshal(struct {
-		ReviewID string `json:"review_id"`
-		ApprovalID string `json:"approval_id"`
-		UnsignedTxHash string `json:"unsigned_tx_hash"`
-		Reason string `json:"reason"`
-	}{ReviewID: review.ReviewID, ApprovalID: approvalID, UnsignedTxHash: review.UnsignedTxHash, Reason: reason})
+	if strings.TrimSpace(principalID) == "" || strings.TrimSpace(idempotencyKey) == "" { return OperationIdentity{}, errors.New("principal and idempotency key are required") }
+	canonical, err := json.Marshal(struct { ReviewID string `json:"review_id"`; ApprovalID string `json:"approval_id"`; UnsignedTxHash string `json:"unsigned_tx_hash"`; Reason string `json:"reason"` }{review.ReviewID, approvalID, review.UnsignedTxHash, reason})
 	if err != nil { return OperationIdentity{}, err }
 	h := sha256.Sum256(canonical)
-	return OperationIdentity{PrincipalID: principalID, Operation: "neopay_approval", TargetID: review.ReviewID, IdempotencyKey: idempotencyKey, Fingerprint: hex.EncodeToString(h[:])}, nil
+	return OperationIdentity{PrincipalID:principalID, Operation:"neopay_approval", TargetID:review.ReviewID, IdempotencyKey:idempotencyKey, Fingerprint:hex.EncodeToString(h[:])}, nil
 }
 
-// ApproveVerified creates an approval only for the authenticated principal and
-// exact transaction hash that was independently verified.
+func PrepareAuthenticated(ctx context.Context, registry OperationRegistry, service Service, reviewID, operationID string, intent Intent, idempotencyKey string) (Review, string, bool, error) {
+	principal, ok := PrincipalFromContext(ctx)
+	if !ok { return Review{}, "", false, errors.New("authenticated principal required") }
+	if registry == nil { return Review{}, "", false, errors.New("operation registry is not configured") }
+	identity, err := ReviewOperationIdentity(principal.ID, idempotencyKey, reviewID, operationID, intent)
+	if err != nil { return Review{}, "", false, err }
+	existing, claimed, err := registry.Claim(ctx, identity)
+	if err != nil { return Review{}, "", false, err }
+	if !claimed {
+		if !existing.Exists || existing.Review.ReviewID == "" { return Review{}, "", false, errors.New("idempotent review is still processing") }
+		return existing.Review, "", true, nil
+	}
+	review, unsignedTx, err := service.Prepare(ctx, reviewID, operationID, intent)
+	if err != nil { return Review{}, "", false, err }
+	if err := registry.CompleteReview(ctx, identity, review); err != nil { return Review{}, "", false, err }
+	return review, unsignedTx, false, nil
+}
+
 func ApproveVerified(ctx context.Context, registry OperationRegistry, review Review, approvalID, reason, unsignedTx, idempotencyKey string, now func() time.Time) (Approval, Review, bool, error) {
 	principal, ok := PrincipalFromContext(ctx)
 	if !ok { return Approval{}, review, false, errors.New("authenticated principal required") }
