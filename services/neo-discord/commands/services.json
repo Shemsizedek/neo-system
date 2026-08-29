@@ -30,7 +30,8 @@
         {"name":"NEO Oracle","value":"neo-oracle"},
         {"name":"NEO Lingo","value":"neo-lingo"},
         {"name":"NEO Algo","value":"neo-algo"},
-        {"name":"NEO Corpus","value":"neo-corpus"}
+        {"name":"NEO Corpus","value":"neo-corpus"},
+        {"name":"NEO Miner","value":"neo-miner"}
       ]
     },
     {
@@ -41,7 +42,8 @@
       "choices": [
         {"name":"Details","value":"details"},
         {"name":"Status","value":"status"},
-        {"name":"Service Read","value":"read"}
+        {"name":"Service Read","value":"read"},
+        {"name":"Operator Read","value":"operator"}
       ]
     }
   ]
