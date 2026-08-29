@@ -1,0 +1,13 @@
+{
+  "name": "MiningAccount",
+  "type": "object",
+  "properties": {
+    "account_id": {"type": "string"},
+    "name": {"type": "string"},
+    "kind": {"type": "string", "enum": ["TREASURY", "ORANGE_CHIP_RESERVE", "OPERATIONS", "CONTRACT_HOLDER"]},
+    "settlement_asset": {"type": "string", "enum": ["BTC", "WORLD_CURRENCY", "XCP"]},
+    "btc_address": {"type": "string"},
+    "status": {"type": "string", "enum": ["ACTIVE", "PENDING", "DISABLED"]}
+  },
+  "required": ["account_id", "name", "kind", "settlement_asset", "status"]
+}
