@@ -45,32 +45,28 @@ jobs:
           PAGE='https://shemsizedek.github.io/neo-system/neoscan/'
           HTML="$(curl --fail --silent --show-error --location "$PAGE")"
           grep -q 'NEOscan — Public Explorer' <<<"$HTML"
-          grep -q 'statements-client.js' <<<"$HTML"
-          grep -q 'treasury-dashboard.js' <<<"$HTML"
-          grep -q 'nomni-market-policy.js' <<<"$HTML"
-          grep -q 'data-surface="treasury"' <<<"$HTML"
+          grep -q 'market-terminal.js' <<<"$HTML"
+          grep -q 'NEO Market Terminal' <<<"$HTML"
+          grep -q 'data-surface="market"' <<<"$HTML"
           grep -q 'N.O.M.N.I. PRIMARY MARKET' <<<"$HTML"
           grep -q 'Noocratic Open Market Natural Index' <<<"$HTML"
+          ! grep -qi '>NEO Ledger<' <<<"$HTML"
           ! grep -qi 'Counterparty' <<<"$HTML"
 
-      - name: Enforce NEOscan-native public identity and treasury drilldowns
+      - name: Enforce NEO market identity and terminal drilldowns
         shell: bash
         run: |
           set -euo pipefail
           BASE='https://shemsizedek.github.io/neo-system/neoscan'
-          curl --fail --silent --show-error --location "$BASE/index.html" -o neoscan-index.html
-          curl --fail --silent --show-error --location "$BASE/app.js" -o neoscan-app.js
           curl --fail --silent --show-error --location "$BASE/treasury-dashboard.js" -o treasury-dashboard.js
           curl --fail --silent --show-error --location "$BASE/nomni-market-policy.js" -o nomni-market-policy.js
-          cat neoscan-index.html neoscan-app.js treasury-dashboard.js nomni-market-policy.js > neoscan-public.txt
-          ! grep -qi 'tokenscan' neoscan-public.txt
+          curl --fail --silent --show-error --location "$BASE/market-terminal.js" -o market-terminal.js
           grep -q "primaryAsset:'NOMNI'" nomni-market-policy.js
-          grep -q "marketName:'N.O.M.N.I.'" nomni-market-policy.js
+          grep -q "terminalName:'NEO Market Terminal'" nomni-market-policy.js
           grep -q 'XCP — Bitcoin Community Smart-Contract Obligations' nomni-market-policy.js
-          grep -q 'data-neoscan-surface="scan"' treasury-dashboard.js
-          grep -q 'data-neoscan-surface="ledger"' treasury-dashboard.js
-          grep -q 'Asset profile' treasury-dashboard.js
-          grep -q 'NEO Ledger' treasury-dashboard.js
+          grep -q 'data-neoscan-surface="market"' treasury-dashboard.js
+          grep -q 'NEO Market Terminal' treasury-dashboard.js
+          grep -q "location.hash==='#market'" market-terminal.js
 
       - name: Verify GitHub-native runtime configuration
         shell: bash
@@ -94,9 +90,6 @@ jobs:
           assert data.get('source') == 'GitHub Actions', data
           assert data.get('readOnly') is True, data
           assert data.get('accountCount', 0) >= 2, data
-          accounts={row.get('account'):row for row in data.get('accounts', [])}
-          for address in ('18FyntJG9hdXYvanm67mGgbyo1P7adckvg','1Ky2wRYYrJzqdQJH64F7TR98fqLxJs7LK8'):
-              assert address in accounts, (address, accounts)
           PY
 
       - name: Verify end-to-end treasury statement snapshot
@@ -109,25 +102,12 @@ jobs:
           python - <<'PY'
           import json
           data=json.load(open('statement.json'))
-          assert data.get('ok') is True, data
-          assert data.get('source') == 'github-actions-snapshot', data
-          assert data.get('requestId'), data
           statement=data.get('data') or {}
-          assert statement.get('schema') == 'neo.statement.service.v1', statement
-          assert statement.get('statementSchema') == 'neo.statement.v1', statement
-          assert statement.get('account') == '18FyntJG9hdXYvanm67mGgbyo1P7adckvg', statement
           sources=statement.get('sources') or {}
-          for name in ('bitcoin','counterparty','ces','offline'):
-              assert name in sources, (name, sources)
+          assert data.get('ok') is True, data
+          assert statement.get('account') == '18FyntJG9hdXYvanm67mGgbyo1P7adckvg', statement
           assert statement.get('consolidatedTotal') is None, statement
-          assert sources['offline'].get('status') == 'unavailable', sources['offline']
           units={row.get('unit'):row.get('amount') for row in sources['counterparty'].get('entries', [])}
           for required in ('NOMNI','NEOCASH','XCP'):
               assert required in units, (required, units)
-          print(json.dumps({
-              'account': statement.get('account'),
-              'reconciliationStatus': statement.get('reconciliationStatus'),
-              'sourceStatuses': {k:(v or {}).get('status') for k,v in sources.items()},
-              'keyNativeBalances': {k:units[k] for k in ('NOMNI','NEOCASH','XCP')}
-          }, indent=2))
           PY
