@@ -1,6 +1,6 @@
 {
   "name": "services",
-  "description": "Discover NEO Services across GitHub, GitHub Pages, and Discord",
+  "description": "Discover and inspect NEO Services across GitHub, GitHub Pages, and Discord",
   "type": 1,
   "dm_permission": false,
   "options": [
@@ -31,6 +31,16 @@
         {"name":"NEO Lingo","value":"neo-lingo"},
         {"name":"NEO Algo","value":"neo-algo"},
         {"name":"NEO Corpus","value":"neo-corpus"}
+      ]
+    },
+    {
+      "name": "action",
+      "description": "Read-only service API action",
+      "type": 3,
+      "required": false,
+      "choices": [
+        {"name":"Details","value":"details"},
+        {"name":"Status","value":"status"}
       ]
     }
   ]
