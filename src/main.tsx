@@ -10,6 +10,7 @@ import { InfrastructureOnboardingApp } from './miner/InfrastructureOnboardingApp
 import { FleetEnrollmentApp } from './miner/FleetEnrollmentApp'
 import { HashVaultApp } from './miner/HashVaultApp'
 import { SettlementReceiptsApp } from './miner/SettlementReceiptsApp'
+import { TreasuryControlApp } from './miner/TreasuryControlApp'
 import { StorefrontApp } from './miner/StorefrontApp'
 import { NeoWireApp } from './wire/NeoWireApp'
 import { NeoExplorer } from './explorer/NeoExplorer'
@@ -53,6 +54,7 @@ function RootRouter(){
   const isFleet=route==='/miner-fleet'||route.startsWith('/miner-fleet/')
   const isHashVault=route==='/hashvault'||route.startsWith('/hashvault/')
   const isReceipts=route==='/settlement-receipts'||route.startsWith('/settlement-receipts/')
+  const isTreasury=route==='/miner-treasury'||route.startsWith('/miner-treasury/')
   const isMiner=route==='/miner'||route.startsWith('/miner/')
   const isMinerStore=route==='/miner-store'||route.startsWith('/miner-store/')
   const isWire=route==='/wire'||route.startsWith('/wire/')
@@ -76,6 +78,7 @@ function RootRouter(){
   if(isFleet) return <FleetEnrollmentApp/>
   if(isHashVault) return <HashVaultApp/>
   if(isReceipts) return <SettlementReceiptsApp/>
+  if(isTreasury) return <TreasuryControlApp/>
   if(isCloudMining) return <CloudMiningOperationsApp/>
   if(isGenerator) return <GeneratorApp/>
   if(isMiner) return <MinerApp/>
