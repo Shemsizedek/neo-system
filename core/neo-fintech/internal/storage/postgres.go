@@ -13,7 +13,6 @@ import (
 
 type Store struct { DB *sql.DB }
 
-// SaveJournal persists a validated journal and all entries atomically.
 func (s Store) SaveJournal(ctx context.Context, j ledger.Journal) error {
 	if s.DB == nil { return errors.New("nil database") }
 	if err := ledger.Validate(j); err != nil { return err }
@@ -27,9 +26,6 @@ func (s Store) SaveJournal(ctx context.Context, j ledger.Journal) error {
 	return tx.Commit()
 }
 
-// ClaimIdempotency atomically establishes the financial operation identity.
-// A uniqueness conflict must be followed by loading the stored record and
-// validating semantic fingerprint reuse before any external side effect.
 func (s Store) ClaimIdempotency(ctx context.Context, r idempotency.Record) (bool, error) {
 	if s.DB == nil { return false, errors.New("nil database") }
 	res, err := s.DB.ExecContext(ctx, `INSERT INTO fintech_idempotency (principal_id, operation, target_id, idempotency_key, fingerprint, provider_operation_id, status) VALUES ($1,$2,$3,$4,$5,$6,$7) ON CONFLICT DO NOTHING`, r.PrincipalID, r.Operation, r.TargetID, r.Key, r.Fingerprint, r.ProviderOperationID, r.Status)
@@ -39,8 +35,6 @@ func (s Store) ClaimIdempotency(ctx context.Context, r idempotency.Record) (bool
 	return n == 1, nil
 }
 
-// SaveTransactionReview stores both intended and independently inspected values.
-// A rejected review is durable evidence and must not be rewritten into approval.
 func (s Store) SaveTransactionReview(ctx context.Context, r neopayreview.Review) error {
 	if s.DB == nil { return errors.New("nil database") }
 	_, err := s.DB.ExecContext(ctx, `
@@ -58,13 +52,16 @@ func (s Store) SaveTransactionReview(ctx context.Context, r neopayreview.Review)
 	return err
 }
 
-// SaveApproval and review status update are one serializable transaction.
-// The transaction hash is repeated on both records to bind approval to exact bytes.
 func (s Store) SaveApproval(ctx context.Context, a neopayreview.Approval) error {
 	if s.DB == nil { return errors.New("nil database") }
 	tx, err := s.DB.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelSerializable})
 	if err != nil { return err }
 	defer tx.Rollback()
+	if err := saveApprovalTx(ctx, tx, a); err != nil { return err }
+	return tx.Commit()
+}
+
+func saveApprovalTx(ctx context.Context, tx *sql.Tx, a neopayreview.Approval) error {
 	res, err := tx.ExecContext(ctx, `
 		UPDATE fintech_transaction_reviews
 		SET status='approved_for_external_signing', updated_at=$1
@@ -81,11 +78,87 @@ func (s Store) SaveApproval(ctx context.Context, a neopayreview.Approval) error 
 		VALUES ($1,$2,$3,$4,$5,$6)`,
 		a.ApprovalID, a.ReviewID, a.ActorID, a.Reason, a.UnsignedTxHash, a.ApprovedAt,
 	); err != nil { return err }
+	return nil
+}
+
+// Claim serializes first use of an authenticated NEOpay review/approval operation.
+// Equivalent replays return the stored outcome; same-key different-input reuse is rejected.
+func (s Store) Claim(ctx context.Context, id neopayreview.OperationIdentity) (neopayreview.OperationResult, bool, error) {
+	if s.DB == nil { return neopayreview.OperationResult{}, false, errors.New("nil database") }
+	res, err := s.DB.ExecContext(ctx, `INSERT INTO fintech_idempotency
+		(principal_id, operation, target_id, idempotency_key, fingerprint, status)
+		VALUES ($1,$2,$3,$4,$5,'processing') ON CONFLICT DO NOTHING`,
+		id.PrincipalID, id.Operation, id.TargetID, id.IdempotencyKey, id.Fingerprint)
+	if err != nil { return neopayreview.OperationResult{}, false, err }
+	n, err := res.RowsAffected()
+	if err != nil { return neopayreview.OperationResult{}, false, err }
+	if n == 1 { return neopayreview.OperationResult{}, true, nil }
+
+	var fingerprint, status string
+	if err := s.DB.QueryRowContext(ctx, `SELECT fingerprint, status FROM fintech_idempotency
+		WHERE principal_id=$1 AND operation=$2 AND target_id=$3 AND idempotency_key=$4`,
+		id.PrincipalID, id.Operation, id.TargetID, id.IdempotencyKey).Scan(&fingerprint, &status); err != nil {
+		return neopayreview.OperationResult{}, false, err
+	}
+	if fingerprint != id.Fingerprint { return neopayreview.OperationResult{}, false, errors.New("idempotency key reused with different semantic input") }
+	if status == "processing" { return neopayreview.OperationResult{}, false, nil }
+	result, err := s.loadOperationResult(ctx, id)
+	if err != nil { return neopayreview.OperationResult{}, false, err }
+	return result, false, nil
+}
+
+func (s Store) CompleteReview(ctx context.Context, id neopayreview.OperationIdentity, r neopayreview.Review) error {
+	if s.DB == nil { return errors.New("nil database") }
+	res, err := s.DB.ExecContext(ctx, `UPDATE fintech_idempotency SET status='succeeded', updated_at=now()
+		WHERE principal_id=$1 AND operation=$2 AND target_id=$3 AND idempotency_key=$4 AND fingerprint=$5 AND status='processing'`,
+		id.PrincipalID, id.Operation, id.TargetID, id.IdempotencyKey, id.Fingerprint)
+	if err != nil { return err }
+	n, err := res.RowsAffected(); if err != nil { return err }
+	if n != 1 { return errors.New("review idempotency completion precondition failed") }
+	return nil
+}
+
+// CompleteApproval couples the approval effect and idempotency success marker in
+// the same serializable transaction.
+func (s Store) CompleteApproval(ctx context.Context, id neopayreview.OperationIdentity, a neopayreview.Approval, r neopayreview.Review) error {
+	if s.DB == nil { return errors.New("nil database") }
+	tx, err := s.DB.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelSerializable})
+	if err != nil { return err }
+	defer tx.Rollback()
+	if err := saveApprovalTx(ctx, tx, a); err != nil { return err }
+	res, err := tx.ExecContext(ctx, `UPDATE fintech_idempotency SET status='succeeded', updated_at=now()
+		WHERE principal_id=$1 AND operation=$2 AND target_id=$3 AND idempotency_key=$4 AND fingerprint=$5 AND status='processing'`,
+		id.PrincipalID, id.Operation, id.TargetID, id.IdempotencyKey, id.Fingerprint)
+	if err != nil { return err }
+	n, err := res.RowsAffected(); if err != nil { return err }
+	if n != 1 { return errors.New("approval idempotency completion precondition failed") }
 	return tx.Commit()
 }
 
-// SaveSignerHandoff records that an already-approved unsigned transaction was
-// handed to an external signer surface. It does not store a key or signature.
+func (s Store) loadOperationResult(ctx context.Context, id neopayreview.OperationIdentity) (neopayreview.OperationResult, error) {
+	var r neopayreview.Review
+	var status string
+	err := s.DB.QueryRowContext(ctx, `SELECT review_id, operation_id, source_ref, destination_ref, asset,
+		quantity_base_units, fee_sats, decoded_source_ref, decoded_destination_ref, decoded_asset,
+		decoded_quantity_base_units, decoded_fee_sats, unsigned_tx_hash, status, COALESCE(mismatch_reason,''), created_at
+		FROM fintech_transaction_reviews WHERE review_id=$1`, id.TargetID).Scan(
+		&r.ReviewID, &r.OperationID, &r.Intent.Source, &r.Intent.Destination, &r.Intent.Asset,
+		&r.Intent.Quantity, &r.Intent.FeeSats, &r.Inspection.Source, &r.Inspection.Destination, &r.Inspection.Asset,
+		&r.Inspection.Quantity, &r.Inspection.FeeSats, &r.UnsignedTxHash, &status, &r.MismatchReason, &r.CreatedAt)
+	if err != nil { return neopayreview.OperationResult{}, err }
+	r.Status = neopayreview.Status(status)
+	result := neopayreview.OperationResult{Review:r, Exists:true}
+	if id.Operation == "neopay_approval" {
+		var a neopayreview.Approval
+		err = s.DB.QueryRowContext(ctx, `SELECT approval_id, review_id, actor_id, reason, approved_at, unsigned_tx_hash
+			FROM fintech_transaction_approvals WHERE review_id=$1`, id.TargetID).Scan(
+			&a.ApprovalID, &a.ReviewID, &a.ActorID, &a.Reason, &a.ApprovedAt, &a.UnsignedTxHash)
+		if err != nil { return neopayreview.OperationResult{}, err }
+		result.Approval = a
+	}
+	return result, nil
+}
+
 func (s Store) SaveSignerHandoff(ctx context.Context, handoffID, reviewID, approvalID, unsignedTxHash, destination string) error {
 	if s.DB == nil { return errors.New("nil database") }
 	if handoffID == "" || reviewID == "" || approvalID == "" || unsignedTxHash == "" || destination == "" {
