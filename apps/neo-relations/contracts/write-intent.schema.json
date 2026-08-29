@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://neo-system.local/schemas/relations/write-intent.schema.json",
+  "title": "NEO Relations Write Intent",
+  "type": "object",
+  "required": ["intentId", "tenantId", "actor", "action", "resource", "status", "createdAt"],
+  "properties": {
+    "intentId": {"type": "string", "pattern": "^RINT-[A-Z0-9-]{8,}$"},
+    "tenantId": {"type": "string", "minLength": 1},
+    "actor": {
+      "type": "object",
+      "required": ["id", "surface"],
+      "properties": {
+        "id": {"type": "string"},
+        "surface": {"type": "string", "enum": ["discord", "pages", "router", "api", "internal"]},
+        "roles": {"type": "array", "items": {"type": "string"}}
+      },
+      "additionalProperties": true
+    },
+    "action": {"type": "string"},
+    "resource": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": {"type": "string", "enum": ["entity", "relationship", "record", "tenant", "other"]},
+        "id": {"type": ["string", "null"]}
+      },
+      "additionalProperties": true
+    },
+    "payload": {"type": "object"},
+    "reason": {"type": "string", "maxLength": 2000},
+    "status": {"type": "string", "enum": ["pending_approval", "approved", "rejected", "executed", "cancelled", "expired"]},
+    "approval": {
+      "type": ["object", "null"],
+      "properties": {
+        "approvedBy": {"type": "string"},
+        "approvedAt": {"type": "string", "format": "date-time"},
+        "decision": {"type": "string", "enum": ["approve", "reject"]}
+      },
+      "additionalProperties": false
+    },
+    "createdAt": {"type": "string", "format": "date-time"},
+    "expiresAt": {"type": ["string", "null"], "format": "date-time"}
+  },
+  "additionalProperties": false
+}
