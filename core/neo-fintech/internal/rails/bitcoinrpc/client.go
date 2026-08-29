@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net"
 	"net/http"
 	"net/url"
@@ -16,21 +17,21 @@ import (
 )
 
 type Config struct {
-	URL              string
-	Username         string
-	Password         string
-	HTTPClient       *http.Client
+	URL                 string
+	Username            string
+	Password            string
+	HTTPClient          *http.Client
 	MaxFeeRateBTCPerKVb string
-	MaxBurnAmountBTC string
+	MaxBurnAmountBTC    string
 }
 
 type Client struct {
-	endpoint         *url.URL
-	username         string
-	password         string
-	http             *http.Client
-	maxFeeRate       string
-	maxBurnAmount    string
+	endpoint      *url.URL
+	username      string
+	password      string
+	http          *http.Client
+	maxFeeRate    string
+	maxBurnAmount string
 }
 
 func New(cfg Config) (*Client, error) {
@@ -83,7 +84,7 @@ func (c *Client) call(ctx context.Context, method string, params any, out any) e
 	defer resp.Body.Close()
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 { return fmt.Errorf("Bitcoin Core HTTP status %d", resp.StatusCode) }
 	var envelope rpcResponse
-	dec := json.NewDecoder(http.MaxBytesReader(nil, resp.Body, 2<<20))
+	dec := json.NewDecoder(io.LimitReader(resp.Body, 2<<20))
 	if err := dec.Decode(&envelope); err != nil { return fmt.Errorf("decode Bitcoin Core RPC response: %w", err) }
 	if envelope.Error != nil { return &RPCError{Code:envelope.Error.Code, Message:envelope.Error.Message} }
 	if out == nil { return nil }
