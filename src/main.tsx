@@ -50,9 +50,9 @@ function RootRouter(){
   const[route,setRoute]=useState(resolveRoute)
   useEffect(()=>{const sync=()=>setRoute(resolveRoute());window.addEventListener('hashchange',sync);window.addEventListener('popstate',sync);return()=>{window.removeEventListener('hashchange',sync);window.removeEventListener('popstate',sync)}},[])
   const base=(import.meta.env.BASE_URL||'/').replace(/\/$/,'')
-  const governmentBase=(import.meta.env.VITE_NEO_GOVERNMENT_URL||'https://neo-government.neosystem.workers.dev').replace(/\/$/,'')
   const publicRoute=(name:string)=>`${base}/${name}/`
-  const open=(section:string)=>{if(['overview','treasury','tribunal','security','router'].includes(section)){window.location.assign(`${governmentBase}/command?module=${encodeURIComponent(section)}`);return}if(section==='cfo'||section==='books'){window.location.assign(publicRoute('neo-books'));return}if(section==='corpus'){window.location.assign(publicRoute('neo-corpus'));return}window.location.hash=`/${section}`}
+  const discordControlRoute=(section:string)=>`${publicRoute('neo-prime')}?module=${encodeURIComponent(section)}&control=discord`
+  const open=(section:string)=>{if(['overview','treasury','tribunal','security','router'].includes(section)){window.location.assign(discordControlRoute(section));return}if(section==='cfo'||section==='books'){window.location.assign(publicRoute('neo-books'));return}if(section==='corpus'){window.location.assign(publicRoute('neo-corpus'));return}window.location.hash=`/${section}`}
 
   const normalized=route.replace(/\/$/,'')||'/'
   const isHome=normalized==='/'||normalized==='/home'
@@ -78,8 +78,8 @@ function RootRouter(){
   const isTeller=normalized==='/teller'||normalized.startsWith('/teller/')
   const bankHref=`${base}/neopay/ces.html`
 
-  useEffect(()=>{if(isCommand) window.location.replace(`${governmentBase}/command`)},[isCommand,governmentBase])
-  if(isCommand) return <main style={{padding:24,color:'#d9ffe3',background:'#010503',minHeight:'100vh'}}>Opening authenticated NEO Government Control Plane…</main>
+  useEffect(()=>{if(isCommand) window.location.replace(discordControlRoute('command'))},[isCommand])
+  if(isCommand) return <main style={{padding:24,color:'#d9ffe3',background:'#010503',minHeight:'100vh'}}>Opening NEO Prime — Discord is the server/API control plane…</main>
   if(isPrime) return <CheckoutShell serviceId="neo-prime" serviceName="NEO Prime"><HomeBase onOpen={open}/></CheckoutShell>
   if(isHome) return <HomeBase onOpen={open}/>
   if(isTeller) return <TellerDashboard/>
