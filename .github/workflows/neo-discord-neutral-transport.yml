@@ -1,0 +1,43 @@
+name: NEO Discord Neutral Transport
+
+on:
+  pull_request:
+    paths:
+      - 'services/neo-discord/**'
+      - 'cloudflare/neo-discord/**'
+      - '.github/workflows/neo-discord-neutral-transport.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'services/neo-discord/**'
+      - 'cloudflare/neo-discord/**'
+      - '.github/workflows/neo-discord-neutral-transport.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-neutral-core:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Validate canonical neutral modules
+        run: |
+          test -s services/neo-discord/core/relations.js
+          test -s services/neo-discord/core/authorization.js
+          grep -q "services/neo-discord/core/relations.js" cloudflare/neo-discord/src/relations.js
+          grep -q "services/neo-discord/core/authorization.js" cloudflare/neo-discord/src/index-relations.js
+      - name: Ensure provider adapter is thin
+        run: |
+          test $(wc -l < cloudflare/neo-discord/src/relations.js) -le 5
+          ! grep -q "api.github.com/repos" cloudflare/neo-discord/src/relations.js
+      - name: Install Cloudflare adapter dependencies
+        working-directory: cloudflare/neo-discord
+        run: npm install
+      - name: Validate Worker bundle
+        working-directory: cloudflare/neo-discord
+        run: npx wrangler deploy --dry-run --config wrangler.jsonc
