@@ -28,6 +28,7 @@ export class PersistentStateStore{
     this.db.exec('BEGIN IMMEDIATE')
     try{this.putStmt.run(kind,String(id),payload,at);if(audit)this.auditStmt.run(`AUD-${crypto.randomUUID()}`,kind,String(id),action,payload,at);this.db.exec('COMMIT');return value}catch(error){this.db.exec('ROLLBACK');throw error}
   }
+  getIdempotent(scope,key){if(!key)return null;const row=this.idemGet.get(scope,String(key));return row?JSON.parse(row.result):null}
   idempotentPut({scope,key,kind,id,value,action='UPSERT'}){
     if(!key) throw new Error('IDEMPOTENCY_KEY_REQUIRED')
     const cached=this.idemGet.get(scope,String(key));if(cached)return {replayed:true,value:JSON.parse(cached.result)}
