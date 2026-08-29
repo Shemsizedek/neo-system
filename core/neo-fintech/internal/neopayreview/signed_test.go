@@ -45,10 +45,9 @@ func TestVerifySignedTransactionFailsClosedWithoutShape(t *testing.T) {
 	if _, err := VerifySignedTransaction("v4", "checker", r, a, "cafebabe", Inspection{Source:"src", Destination:"dst", Asset:"XCP", Quantity:25, FeeSats:700}, time.Unix(3,0)); err == nil { t.Fatal("expected missing structure hash error") }
 }
 
-func TestBroadcastAuthorizationRequiresVerifiedSignedTransaction(t *testing.T) {
-	v := SignedVerification{VerificationID:"v1", ReviewID:"r1", ApprovalID:"a1", SignedTxHash:"signed", Status:SignedVerificationRejected}
-	if _, err := v.AuthorizeBroadcast("b1", "checker", "release", time.Unix(4,0)); err == nil { t.Fatal("expected rejected verification to block authorization") }
-	v.Status = SignedVerificationVerified
-	a, err := v.AuthorizeBroadcast("b1", "checker", "release", time.Unix(4,0)); if err != nil { t.Fatal(err) }
-	if a.SignedTxHash != "signed" { t.Fatal("authorization did not bind signed tx hash") }
+func TestLegacyBroadcastAuthorizationFailsClosed(t *testing.T) {
+	v := SignedVerification{VerificationID:"v1", ReviewID:"r1", ApprovalID:"a1", SignedTxHash:"signed", Status:SignedVerificationVerified}
+	if _, err := v.AuthorizeBroadcast("b1", "checker", "release", time.Unix(4,0)); err == nil {
+		t.Fatal("expected Bitcoin Core validation requirement")
+	}
 }
