@@ -1,30 +1,29 @@
-name: NEO-PACER MCP Cloudflare
+name: Legacy NEO PACER Cloudflare Deployment (Disabled)
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - 'cloudflare/neo-pacer/**'
-      - 'data/neo-pacer/**'
-      - '.github/workflows/neo-pacer-cloudflare.yml'
 
 permissions:
   contents: read
 
 jobs:
-  deploy:
+  architecture-standard:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: cloudflare/neo-pacer
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
-      - name: Deploy NEO-PACER MCP
-        run: npx wrangler@latest deploy
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          node-version: 24
+      - name: Confirm NEO Services three-plane standard
+        run: |
+          node - <<'NODE'
+          const a=require('./architecture/neo-services-platform.json')
+          if(a.planes.backend.primary!=='github') process.exit(1)
+          if(a.planes.frontend.primary!=='github-pages') process.exit(1)
+          if(a.planes.serverApi.primary!=='discord') process.exit(1)
+          NODE
+      - name: Legacy deployment notice
+        run: |
+          echo "Standalone Cloudflare deployment for NEO PACER is disabled."
+          echo "Backend: GitHub | Frontend: GitHub Pages | Server/API: Discord"
+          echo "Cloudflare is permitted only as a thin Discord HTTPS transport bridge."
