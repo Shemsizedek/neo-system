@@ -1,5 +1,5 @@
 {
-  "version": "1.0.0",
+  "version": "1.0.1",
   "standard": "architecture/neo-services-platform.json",
   "scope": "apps-directory",
   "planes": {
@@ -28,7 +28,8 @@
     {"workflow":".github/workflows/neo-enterprise-cloudflare.yml","service":"neo-enterprise","status":"disabled"},
     {"workflow":".github/workflows/neo-enterprise-federation-cloudflare.yml","service":"neo-enterprise-federation","status":"disabled"},
     {"workflow":".github/workflows/neo-government-cloudflare.yml","service":"neo-government","status":"disabled"},
-    {"workflow":".github/workflows/neo-pacer-cloudflare.yml","service":"neo-pacer","status":"disabled"}
+    {"workflow":".github/workflows/neo-pacer-cloudflare.yml","service":"neo-pacer","status":"disabled"},
+    {"workflow":".github/workflows/neoscan-statements-cloudflare.yml","service":"neoscan-statements","status":"disabled"}
   ],
   "allowedTransportBridges": [
     {
