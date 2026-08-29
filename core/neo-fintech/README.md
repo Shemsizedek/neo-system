@@ -1,6 +1,6 @@
 # NEO Fintech Core
 
-A Go 1.24 financial kernel for NEO services. It is intentionally rail-agnostic: BTC, Counterparty/XCP, CES, card/bank, or other adapters must supply authoritative evidence under their own deployed contracts.
+A Go 1.24 financial kernel for NEO services. It is intentionally rail-aware but provider-contract driven: BTC, Counterparty/XCP, CES, card/bank, or other adapters must supply authoritative evidence under their own deployed contracts.
 
 ## Invariants
 
@@ -13,7 +13,7 @@ A Go 1.24 financial kernel for NEO services. It is intentionally rail-agnostic: 
 
 ## Gate 2: durable state and rail contracts
 
-This gate adds:
+This gate added:
 
 - PostgreSQL schema for immutable journals, entries, idempotency claims, provider evidence, and reconciliation exceptions.
 - Serializable journal persistence through `database/sql`.
@@ -21,7 +21,19 @@ This gate adds:
 - A provider-neutral `rails.Adapter` contract with submit/query separation. Acceptance for processing is never treated as financial success.
 - Reconciliation match primitives that require both internal and external evidence and exact currency-preserving amounts.
 
-The service still does **not** move live funds, hold private keys, sign Bitcoin transactions, or claim live BTC/XCP/CES/bank connectivity. A concrete PostgreSQL driver, migrations at deployment, authenticated service boundaries, and verified rail-specific adapters are subsequent gates.
+## Gate 3: Bitcoin + Counterparty/XCP read-compose rail
+
+The first concrete rail lives in `internal/rails/bitcoinxcp` and intentionally supports **read and compose only**:
+
+- Bitcoin transaction lookup returns mempool-observed or block-confirmed evidence with payload hashing.
+- Counterparty API v2 composition uses `/v2/addresses/<address>/compose/send` and returns an unsigned/raw transaction for external review and signing.
+- Counterparty transaction reconciliation uses `/v2/transactions/<tx_hash>/events` rather than inferring token state from Bitcoin confirmation alone.
+- Counterparty readiness headers are checked when present.
+- Asset quantities remain exact integer base units and miner fees are bounded in satoshis by a configured maximum.
+- `Submit` is disabled: this service does not broadcast transactions.
+- Private-key signing is outside this service boundary.
+
+The adapter URLs are configuration inputs; adding an adapter does not by itself prove a production provider is available, trusted, synchronized, or authorized. Production deployment must pin the actual Bitcoin/Counterparty endpoints, authenticate protected providers where applicable, verify their operating contract, persist evidence, and define confirmation/finality policy appropriate to the product.
 
 Run:
 
