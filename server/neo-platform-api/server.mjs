@@ -11,7 +11,8 @@ export const PLATFORM_REGISTRY = {
   'neo-generator': { name: 'NEO Generator', source: ['server/miner-generator'], services: ['products', 'hashpower-quotes', 'contracts-read', 'capacity'] },
   'neo-miner': { name: 'NEO Miner', source: ['src/miner', 'server/miner-agent', 'server/miner-controller', 'server/miner-commerce'], services: ['fleet', 'telemetry', 'jobs-read', 'commerce-read'] },
   'neo-tokenworks': { name: 'NEO Tokenworks', source: ['server/neo-tokenworks'], services: ['neopass', 'address-proof', 'shared-access', 'escrow-planning', 'token-tracking'] },
-  'neo-banks': { name: 'NEO Banks', source: ['server/neo-tokenworks', 'server/neo-teller-backend', 'apps/neopay'], services: ['token-lending-sandbox', 'neopass-consumer', 'escrow-planning', 'compliance-gates'] }
+  'neo-banks': { name: 'NEO Banks', source: ['server/neo-tokenworks', 'server/nibiru-reserve', 'server/neo-teller-backend', 'apps/neopay'], services: ['token-lending-sandbox', 'neopass-consumer', 'ces-position-observation', 'iso-20022-translation', 'compliance-gates'] },
+  'nibiru-reserve': { name: 'Nibiru Reserve System', source: ['server/nibiru-reserve', 'server/neo-tokenworks'], services: ['ces-position-observation', 'blockchain-settlement-linkage', 'reserve-snapshot', 'iso-20022-canonical-mapping', 'reconciliation-gates'] }
 };
 
 function json(res, status, body) {
