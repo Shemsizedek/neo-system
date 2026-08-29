@@ -35,6 +35,22 @@ resource "google_compute_firewall" "wireguard" {
   target_tags   = ["neo-vpn-gateway"]
 }
 
+resource "google_compute_firewall" "iap_ssh" {
+  name    = "neo-vpn-iap-ssh"
+  network = var.network_name
+
+  direction = "INGRESS"
+  priority  = 1000
+
+  allow {
+    protocol = "tcp"
+    ports    = ["22"]
+  }
+
+  source_ranges = ["35.235.240.0/20"]
+  target_tags   = ["neo-vpn-gateway"]
+}
+
 resource "google_compute_instance" "neo_vpn_node_001" {
   name         = "neo-vpn-node-001"
   machine_type = var.machine_type
