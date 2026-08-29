@@ -1,0 +1,82 @@
+name: NEO Market Data Production Smoke
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'public/markets/**'
+      - 'scripts/build-neo-market-snapshot.mjs'
+      - 'scripts/build-pages-platform-api.mjs'
+      - '.github/workflows/pages.yml'
+      - '.github/workflows/neo-market-data-smoke.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for matching canonical NEO market snapshot
+        env:
+          EXPECTED_COMMIT: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          URL='https://shemsizedek.github.io/neo-system/api/markets/neo.json'
+          for attempt in $(seq 1 40); do
+            if curl --fail --silent --show-error --location "$URL?attempt=$attempt" -o neo.json; then
+              ACTUAL="$(python -c "import json; print(json.load(open('neo.json')).get('commit',''))")"
+              if [ "$ACTUAL" = "$EXPECTED_COMMIT" ]; then
+                echo "Canonical NEO market snapshot is current: $ACTUAL"
+                exit 0
+              fi
+              echo "Waiting for Pages: expected $EXPECTED_COMMIT, currently $ACTUAL"
+            fi
+            sleep 5
+          done
+          echo 'Timed out waiting for matching NEO market snapshot.' >&2
+          exit 1
+
+      - name: Verify canonical full feed
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --location 'https://shemsizedek.github.io/neo-system/api/markets/neo.json' -o neo.json
+          python - <<'PY'
+          import json
+          data=json.load(open('neo.json'))
+          assert data['schema']=='neo.market.snapshot.v1', data
+          assert data['market']=='N.O.M.N.I.', data
+          assert data['primaryAsset']=='NOMNI', data
+          assert data['settlementBase']=='Bitcoin', data
+          assert data['readOnly'] is True, data
+          assert data['source']['status'] in ('VERIFIED','UNAVAILABLE'), data
+          assert data['policy']['syntheticPricing'] is False, data
+          assert data['policy']['syntheticLiquidity'] is False, data
+          assert data['policy']['syntheticValuation'] is False, data
+          pairs={p['pair']:p for p in data['pairs']}
+          for pair,symbol in [('NOMNI/BTC','NEO:NOMNI-BTC'),('NOMNI/NEOCASH','NEO:NOMNI-NEOCASH'),('NOMNI/XCP','NEO:NOMNI-XCP')]:
+              assert pair in pairs, (pair,pairs)
+              assert pairs[pair]['symbol']==symbol, pairs[pair]
+              assert pairs[pair]['status'] in ('OPEN','PARTIAL BOOK','NO LIVE ORDERS','UNAVAILABLE'), pairs[pair]
+          assert pairs['NOMNI/XCP']['role']=='SECONDARY OBLIGATION ASSET', pairs['NOMNI/XCP']
+          PY
+
+      - name: Verify lightweight ticker feed and shared consumer
+        run: |
+          set -euo pipefail
+          BASE='https://shemsizedek.github.io/neo-system'
+          curl --fail --silent --show-error --location "$BASE/api/markets/tickers.json" -o tickers.json
+          curl --fail --silent --show-error --location "$BASE/markets/neo-market-tape.js" -o tape.js
+          python - <<'PY'
+          import json
+          data=json.load(open('tickers.json'))
+          assert data['schema']=='neo.market.tickers.v1', data
+          assert data['primaryAsset']=='NOMNI', data
+          assert data['sourceStatus'] in ('VERIFIED','UNAVAILABLE'), data
+          assert len(data['pairs']) >= 3, data
+          PY
+          grep -q '../api/markets/tickers.json' tape.js
+          grep -q 'CANONICAL FEED VERIFIED' tape.js
+          grep -q 'No market state was synthesized' tape.js
+          ! grep -q 'api.counterparty.io' tape.js
