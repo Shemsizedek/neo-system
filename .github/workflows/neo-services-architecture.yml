@@ -6,6 +6,9 @@ on:
       - 'architecture/**'
       - 'services/neo-discord/**'
       - 'apps/**'
+      - 'docs/**'
+      - '.github/workflows/*pages.yml'
+      - '.github/workflows/pages.yml'
       - '.github/workflows/*cloudflare.yml'
       - '.github/workflows/deploy-neo-discord.yml'
       - '.github/workflows/neo-services-architecture.yml'
@@ -15,6 +18,9 @@ on:
       - 'architecture/**'
       - 'services/neo-discord/**'
       - 'apps/**'
+      - 'docs/**'
+      - '.github/workflows/*pages.yml'
+      - '.github/workflows/pages.yml'
       - '.github/workflows/*cloudflare.yml'
       - '.github/workflows/deploy-neo-discord.yml'
       - '.github/workflows/neo-services-architecture.yml'
@@ -57,7 +63,36 @@ jobs:
           if(i.planes.backend!=='github'||i.planes.frontend!=='github-pages'||i.planes.serverApi!=='discord') process.exit(1)
           if(i.rules.standaloneCloudflareServiceBackend!==false) process.exit(1)
           if(i.rules.standaloneVercelServiceBackend!==false) process.exit(1)
+          if(i.rules.singleGitHubPagesDeploymentOwner!==true) process.exit(1)
           NODE
+      - name: Validate canonical Pages route registry
+        run: |
+          node - <<'NODE'
+          const i=require('./architecture/neo-services-normalization.json')
+          const r=require('./architecture/neo-pages-routes.json')
+          if(i.pages.deploymentOwner!=='.github/workflows/pages.yml') throw new Error('pages.yml must own Pages deployment')
+          if(r.deploymentOwner!==i.pages.deploymentOwner) throw new Error('Pages owner mismatch')
+          if(r.rules.singleArtifact!==true||r.rules.singleDeployWorkflow!==true||r.rules.serviceWorkflowsValidationOnly!==true) throw new Error('Pages registry policy invalid')
+          const paths=r.routes.map(x=>x.path)
+          if(new Set(paths).size!==paths.length) throw new Error('duplicate Pages route detected')
+          if(!paths.includes('/neo-relations/')) throw new Error('NEO Relations route not registered')
+          if(!paths.includes('/neo-pacer/')) throw new Error('NEO-PACER route not registered')
+          NODE
+      - name: Enforce single Pages deploy workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          owner='.github/workflows/pages.yml'
+          test -s "$owner"
+          grep -q 'actions/upload-pages-artifact@' "$owner"
+          grep -q 'actions/deploy-pages@' "$owner"
+          while IFS= read -r f; do
+            [ "$f" = "$owner" ] && continue
+            if grep -Eq 'actions/(upload-pages-artifact|deploy-pages)@|pages:[[:space:]]*write' "$f"; then
+              echo "Unauthorized GitHub Pages deployment authority: $f" >&2
+              exit 1
+            fi
+          done < <(find .github/workflows -maxdepth 1 -type f \( -name '*.yml' -o -name '*.yaml' \) -print)
       - name: Validate Discord transport policy follows platform standard
         run: |
           node services/neo-discord/deployment/evaluate-policy.mjs
