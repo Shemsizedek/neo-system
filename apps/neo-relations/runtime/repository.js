@@ -59,6 +59,16 @@ export class RelationsRepository {
     return rows
   }
 
+  async countPending(tenantId){
+    required(tenantId,'tenantId')
+    const {rows}=await this.db.query(
+      `SELECT COUNT(*)::int AS pending_approvals
+       FROM relations_write_intents
+       WHERE tenant_id=$1 AND status='pending_approval'`,[tenantId]
+    )
+    return Number(rows?.[0]?.pending_approvals||0)
+  }
+
   async decide(intentId,decision,reason,actor){
     if(!['approve','reject'].includes(decision)) throw new Error('decision must be approve or reject')
     if(!(hasRole(actor,'approver')||hasRole(actor,'admin'))) throw new Error('approver role required')
