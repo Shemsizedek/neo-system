@@ -1,6 +1,9 @@
 FROM node:24-bookworm-slim AS base
+ARG NEO_BUILD_COMMIT_SHA
 WORKDIR /app
-ENV NODE_ENV=production
+ENV NODE_ENV=production \
+    NEO_BUILD_COMMIT_SHA=${NEO_BUILD_COMMIT_SHA}
+LABEL org.opencontainers.image.revision=${NEO_BUILD_COMMIT_SHA}
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev --ignore-scripts
 COPY server/miner-production ./server/miner-production
@@ -9,7 +12,7 @@ USER node
 
 FROM base AS production
 EXPOSE 8890
-ENV PORT=8890 NEO_MINER_DB_PATH=/var/lib/neo-miner/neo-miner.sqlite
+ENV PORT=8890 NEO_MINER_INTERNAL_PORT=8892 NEO_MINER_DB_PATH=/var/lib/neo-miner/neo-miner.sqlite
 VOLUME ["/var/lib/neo-miner"]
 CMD ["node","server/miner-production/start.mjs"]
 
