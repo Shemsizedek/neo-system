@@ -1,0 +1,27 @@
+{
+  "service": "neo-relations",
+  "architectureVersion": "3.0.0",
+  "frontend": {
+    "primary": "github-pages"
+  },
+  "backend": {
+    "sourceOfTruth": "github",
+    "orchestration": "github-actions",
+    "transactionalWrites": "disabled"
+  },
+  "apiPlane": {
+    "primary": "discord",
+    "surfaces": ["slash-commands", "interaction-responses", "webhooks", "channels"]
+  },
+  "transport": {
+    "discordInteractionEndpointRequired": true,
+    "role": "thin-https-adapter-only"
+  },
+  "security": {
+    "discordDirectSensitiveExecution": false,
+    "discordApproval": false,
+    "aiApproval": false,
+    "executionWorker": false,
+    "githubPagesSecrets": false
+  }
+}
