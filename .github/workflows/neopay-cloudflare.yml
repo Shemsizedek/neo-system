@@ -17,10 +17,10 @@ jobs:
       - name: Confirm NEO Services three-plane standard
         run: |
           node - <<'NODE'
-          const a=require('./architecture/neo-services-three-plane.json')
-          if(a.backend.primary!=='github') process.exit(1)
-          if(a.frontend.primary!=='github-pages') process.exit(1)
-          if(a.serverApi.primary!=='discord') process.exit(1)
+          const a=require('./architecture/neo-services-platform.json')
+          if(a.planes.backend.primary!=='github') process.exit(1)
+          if(a.planes.frontend.primary!=='github-pages') process.exit(1)
+          if(a.planes.serverApi.primary!=='discord') process.exit(1)
           NODE
       - name: Legacy deployment notice
         run: |
