@@ -11,7 +11,7 @@ export async function editDiscordInteraction(interaction,content,fetchImpl=fetch
 }
 
 export async function processRelationsCommand(interaction,env,{fetchImpl=fetch}={}){
-  try{await editDiscordInteraction(interaction,await handleRelationsCommand(interaction,env),fetchImpl)}
+  try{await editDiscordInteraction(interaction,await handleRelationsCommand(interaction,env,{fetchImpl}),fetchImpl)}
   catch(err){await editDiscordInteraction(interaction,`NEO Relations error: ${String(err?.message||err).slice(0,1500)}`,fetchImpl).catch(()=>{})}
 }
 
