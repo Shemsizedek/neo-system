@@ -1,0 +1,14 @@
+{
+  "name": "WatchOnlyWallet",
+  "type": "object",
+  "properties": {
+    "wallet_id": {"type": "string"},
+    "role": {"type": "string", "enum": ["TREASURY", "ORANGE_CHIP", "OPERATIONS", "CUSTOMER"]},
+    "network": {"type": "string", "enum": ["mainnet", "testnet", "signet"]},
+    "address": {"type": "string"},
+    "xpub_fingerprint": {"type": "string"},
+    "status": {"type": "string", "enum": ["ACTIVE", "PENDING", "DISABLED"]},
+    "notes": {"type": "string"}
+  },
+  "required": ["wallet_id", "role", "network", "status"]
+}
