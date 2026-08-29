@@ -40,7 +40,8 @@
       "required": false,
       "choices": [
         {"name":"Details","value":"details"},
-        {"name":"Status","value":"status"}
+        {"name":"Status","value":"status"},
+        {"name":"Service Read","value":"read"}
       ]
     }
   ]

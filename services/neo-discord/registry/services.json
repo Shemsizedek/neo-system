@@ -1,17 +1,27 @@
 {
-  "version": "1.1.0",
+  "version": "1.2.0",
   "planes": {"backend":"github","frontend":"github-pages","serverApi":"discord"},
   "defaultCommand": "services",
   "readActions": {
     "details": {"grounding":"registry","mutates":false},
-    "status": {"grounding":["github-main-path","github-pages-route"],"mutates":false,"scope":"control-plane-reachability"}
+    "status": {"grounding":["github-main-path","github-pages-route"],"mutates":false,"scope":"control-plane-reachability"},
+    "read": {"grounding":"service-specific-approved-read-sources","mutates":false,"scope":"curated-service-read-adapter"}
+  },
+  "readAdapters": {
+    "neopay": ["github-pages:/api/router/providers.json","github-pages:/api/router/state.json"],
+    "neoscan": ["github-pages:/api/neoscan/statements/index.json"],
+    "neo-counter": ["github-pages:/api/neo-counter/runtime.json","github-pages:/api/neo-counter/build.json"],
+    "neo-exchange": ["github-pages:/api/platforms/neo-exchange.json"],
+    "neo-relations": ["github-main:apps/neo-relations/runtime"]
   },
   "rules": {
     "transportOwnsBusinessLogic": false,
     "discordSensitiveExecution": false,
     "discordApproval": false,
     "aiApproval": false,
-    "serviceStatusMayImplyApplicationHealth": false
+    "serviceStatusMayImplyApplicationHealth": false,
+    "readAdaptersMayMutate": false,
+    "readAdaptersMayExposeProtectedRelationsData": false
   },
   "services": [
     {"id":"gisd","name":"GISD / NEO Cipher","githubPath":"apps/gisd","pagesPath":null,"specializedCommand":null,"visibility":"internal"},
