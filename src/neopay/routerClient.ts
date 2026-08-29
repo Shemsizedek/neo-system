@@ -3,28 +3,17 @@ export type RouterProvider={id:string;name?:string;baseUrl:string;priority:numbe
 type RouterConfig={version:number;policy?:{timeoutMs?:number};providers:RouterProvider[]}
 type RouterState={providers?:Record<string,{healthy?:boolean;checkedAt?:string}>}
 
-function envUrl(name:'VITE_NEOPAY_API_BASE'|'VITE_NEOPAY_COUNTERPARTY_API'|'VITE_NEOPAY_BITCOIN_API'){
+function envUrl(name:'VITE_NEOPAY_COUNTERPARTY_API'|'VITE_NEOPAY_BITCOIN_API'){
   const value=String(import.meta.env[name]||'').trim()
   return value.replace(/\/$/,'')
 }
 
 function fallbackProviders():RouterProvider[]{
-  const gateway=envUrl('VITE_NEOPAY_API_BASE')
   const counterpartyOverride=envUrl('VITE_NEOPAY_COUNTERPARTY_API')
   const bitcoinOverride=envUrl('VITE_NEOPAY_BITCOIN_API')
   const providers:RouterProvider[]=[]
 
-  if(gateway)providers.push({
-    id:'neopay-gateway',
-    name:'NEOpay Production Gateway',
-    baseUrl:gateway,
-    priority:1,
-    enabled:true,
-    cors:true,
-    capabilities:['counterparty.read','counterparty.compose']
-  })
-
-  if(counterpartyOverride&&counterpartyOverride!==gateway)providers.push({
+  if(counterpartyOverride)providers.push({
     id:'counterparty-configured',
     name:'Configured Counterparty API',
     baseUrl:counterpartyOverride,
@@ -65,7 +54,7 @@ export function loadRouter(){
       jsonOr<RouterState>(`${pagesBase()}api/router/state.json`,{})
     ]).then(([config,state])=>{
       const staticProviders=config?.providers?.length?config.providers:[]
-      const configured=fallbackProviders().filter(p=>p.id==='neopay-gateway'||p.id==='counterparty-configured'||p.id==='bitcoin-configured')
+      const configured=fallbackProviders().filter(p=>p.id==='counterparty-configured'||p.id==='bitcoin-configured')
       const configuredIds=new Set(configured.map(p=>p.id))
       const providers=[...configured,...staticProviders.filter(p=>!configuredIds.has(p.id))]
       return{config:{...fallback,...config,providers:providers.length?providers:fallback.providers},state}
