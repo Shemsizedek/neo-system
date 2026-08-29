@@ -33,10 +33,8 @@ jobs:
         run: node scripts/noogle-source-refresh.mjs
       - name: Build NEO System
         env:
-          VITE_NEOPAY_API_BASE: ${{ vars.NEOPAY_API_BASE || 'https://neopay-api.neosystem.workers.dev' }}
           VITE_NEOPAY_COUNTERPARTY_API: ${{ vars.NEOPAY_COUNTERPARTY_API }}
           VITE_NEOPAY_BITCOIN_API: ${{ vars.NEOPAY_BITCOIN_API }}
-          VITE_NEO_GOVERNMENT_URL: ${{ vars.NEO_GOVERNMENT_URL || 'https://neo-government.neosystem.workers.dev' }}
           VITE_NEO_MINER_OPERATOR_API: ${{ vars.NEO_MINER_OPERATOR_API }}
         run: npm run build
       - name: Build Pages platform API snapshots
