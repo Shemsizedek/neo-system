@@ -1,0 +1,49 @@
+name: NEO Relations Runtime CI
+
+on:
+  pull_request:
+    paths:
+      - 'apps/neo-relations/runtime/**'
+      - 'apps/neo-relations/schema/**'
+      - '.github/workflows/neo-relations-runtime.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'apps/neo-relations/runtime/**'
+      - 'apps/neo-relations/schema/**'
+      - '.github/workflows/neo-relations-runtime.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test-runtime:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/neo-relations/runtime
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: apps/neo-relations/runtime/package-lock.json
+      - name: Install runtime dependencies
+        run: npm install --package-lock-only && npm ci
+      - name: Run runtime tests
+        run: npm test
+      - name: Validate migration files are present
+        run: |
+          test -s ../schema/relations.sql
+          test -s ../schema/002_controlled_operations.sql
+
+  migration-dry-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify migrations never receive secrets from Pages
+        run: |
+          ! grep -R "DATABASE_URL" apps/neo-relations/site || (echo 'DATABASE_URL must not appear in GitHub Pages assets' && exit 1)
+          ! grep -R "RELATIONS_JWT_SECRET" apps/neo-relations/site || (echo 'JWT secret must not appear in GitHub Pages assets' && exit 1)
