@@ -17,12 +17,14 @@ export function evaluateOperatorReadEnv(env=process.env){
   const missing=required.filter(name=>!String(env[name]||'').trim())
   if(missing.length)return {ok:false,code:'MISSING_REQUIRED_RUNTIME_VALUES',missing}
 
-  let minerUrl
+  let minerUrl,relationsUrl
   try{
     minerUrl=mustHttps('NEO_MINER_OPERATOR_URL',String(env.NEO_MINER_OPERATOR_URL).trim())
-    mustHttps('NEO_RELATIONS_OPERATOR_URL',String(env.NEO_RELATIONS_OPERATOR_URL).trim())
+    relationsUrl=mustHttps('NEO_RELATIONS_OPERATOR_URL',String(env.NEO_RELATIONS_OPERATOR_URL).trim())
   }catch(error){return {ok:false,code:error.message,missing:[]}}
   if(minerUrl.pathname!=='/discord/snapshot')return {ok:false,code:'NEO_MINER_OPERATOR_URL_MACHINE_READ_PATH_REQUIRED',missing:[]}
+  if(relationsUrl.pathname!=='/discord/pending-summary')return {ok:false,code:'NEO_RELATIONS_OPERATOR_URL_MACHINE_READ_PATH_REQUIRED',missing:[]}
+  if(!relationsUrl.searchParams.get('tenantId'))return {ok:false,code:'NEO_RELATIONS_OPERATOR_URL_TENANT_REQUIRED',missing:[]}
 
   const selectors=selectorFields.flatMap(name=>csv(env[name]).map(value=>({name,value})))
   if(!selectors.length)return {ok:false,code:'OPERATOR_SELECTOR_REQUIRED',missing:selectorFields}
