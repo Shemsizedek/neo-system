@@ -105,7 +105,8 @@ function roleSatisfied(input: {
   }
   if (input.role === 'ISSUER') {
     const issuerAddress = input.title.issuerAddress
-    return Boolean(issuerAddress) && usable.some(evidence => evidence.actorAddress === issuerAddress)
+    if (!issuerAddress) return false
+    return usable.some(evidence => evidence.actorAddress === issuerAddress)
   }
   if (input.role === 'RIGHT_HOLDER' && input.proposal.affectedRightId) {
     return usable.some(evidence => evidence.scope.includes(input.proposal.affectedRightId) || evidence.scope.includes('*'))
