@@ -1,12 +1,14 @@
 import http from 'node:http'
 import {createOperatorAuth,PERMISSIONS,parseOperatorAccounts} from './operatorAuth.mjs'
 import {validateOperatorDeploymentPolicy} from './deploymentPolicy.mjs'
+import {DISCORD_MACHINE_READ_PATH,bearerTokenMatches} from './discordMachineRead.mjs'
 
 const PORT=Number(process.env.NEO_OPERATOR_PORT||8891)
 const ORIGIN=process.env.NEO_OPERATOR_ORIGIN||process.env.CORS_ORIGIN||'https://shemsizedek.github.io'
 const PUBLIC_URL=process.env.NEO_OPERATOR_PUBLIC_URL||''
 const INTERNAL_API=(process.env.NEO_MINER_INTERNAL_API_URL||'http://127.0.0.1:8890').replace(/\/$/,'')
 const INTERNAL_TOKEN=process.env.NEO_MINER_API_TOKEN||''
+const DISCORD_READ_TOKEN=process.env.NEO_DISCORD_OPERATOR_READ_TOKEN||''
 const loginAttempts=new Map()
 
 const json=(res,status,body,extra={})=>{res.writeHead(status,{'content-type':'application/json','cache-control':'no-store','access-control-allow-origin':ORIGIN,'access-control-allow-credentials':'true','vary':'Origin','x-content-type-options':'nosniff','referrer-policy':'no-referrer',...extra});res.end(JSON.stringify(body))}
@@ -40,11 +42,23 @@ const proxy=async(req,res,session)=>{
   const text=await upstream.text();let result;try{result=text?JSON.parse(text):{}}catch{result={error:'UPSTREAM_RESPONSE_INVALID'}}
   return json(res,upstream.status,result)
 }
+const proxyDiscordSnapshot=async(res)=>{
+  const upstream=await fetch(`${INTERNAL_API}/snapshot`,{method:'GET',headers:{authorization:`Bearer ${INTERNAL_TOKEN}`,'x-neo-operator-id':'discord-service','x-neo-operator-role':'VIEWER'}})
+  const text=await upstream.text();let result;try{result=text?JSON.parse(text):{}}catch{result={error:'UPSTREAM_RESPONSE_INVALID'}}
+  return json(res,upstream.status,result)
+}
 
 export const operatorServer=http.createServer(async(req,res)=>{
+  if(req.url===DISCORD_MACHINE_READ_PATH){
+    if(req.method!=='GET')return json(res,405,{error:'METHOD_NOT_ALLOWED'},{allow:'GET'})
+    if(!DISCORD_READ_TOKEN)return json(res,503,{error:'DISCORD_MACHINE_READ_NOT_CONFIGURED'})
+    if(!bearerTokenMatches(req.headers.authorization,DISCORD_READ_TOKEN))return json(res,401,{error:'DISCORD_MACHINE_READ_UNAUTHORIZED'})
+    if(!INTERNAL_TOKEN)return json(res,503,{error:'INTERNAL_API_TOKEN_NOT_CONFIGURED'})
+    try{return await proxyDiscordSnapshot(res)}catch(error){return json(res,502,{error:'OPERATOR_UPSTREAM_UNAVAILABLE',detail:String(error?.message||error)})}
+  }
   if(!originAllowed(req))return json(res,403,{error:'OPERATOR_ORIGIN_DENIED'})
   if(req.method==='OPTIONS'){res.writeHead(204,{'access-control-allow-origin':ORIGIN,'access-control-allow-credentials':'true','access-control-allow-headers':'content-type,x-csrf-token,idempotency-key','access-control-allow-methods':'GET,POST,OPTIONS','vary':'Origin'});return res.end()}
-  if(req.method==='GET'&&req.url==='/health')return json(res,200,{service:'neo-miner-operator-control-plane',status:'UP',auth:'SESSION_RBAC',sameSite:process.env.NEO_OPERATOR_COOKIE_SAMESITE||'Lax'})
+  if(req.method==='GET'&&req.url==='/health')return json(res,200,{service:'neo-miner-operator-control-plane',status:'UP',auth:'SESSION_RBAC',sameSite:process.env.NEO_OPERATOR_COOKIE_SAMESITE||'Lax',discordMachineRead:Boolean(DISCORD_READ_TOKEN)})
   if(req.method==='GET'&&req.url==='/ready'){const upstream=await internalHealth();return json(res,upstream.ok?200:503,{service:'neo-miner-operator-control-plane',ready:upstream.ok,internalApi:upstream.ok?'READY':'BLOCKED'})}
   if(req.method==='POST'&&req.url==='/session/login'){
     if(!req.headers.origin)return json(res,403,{error:'OPERATOR_BROWSER_ORIGIN_REQUIRED'})
