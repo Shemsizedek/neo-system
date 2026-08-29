@@ -1,4 +1,4 @@
-name: Deploy NEO Relations to GitHub Pages
+name: NEO Relations Pages Validation
 
 on:
   workflow_dispatch:
@@ -7,44 +7,19 @@ on:
     paths:
       - 'apps/neo-relations/site/**'
       - '.github/workflows/deploy-neo-relations-pages.yml'
+      - '.github/workflows/pages.yml'
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: neo-relations-pages
-  cancel-in-progress: true
 
 jobs:
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+  validate:
     runs-on: ubuntu-latest
-    env:
-      DISCORD_RELATIONS_WEBHOOK_URL: ${{ secrets.DISCORD_RELATIONS_WEBHOOK_URL }}
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: apps/neo-relations/site
-      - name: Deploy NEO Relations
-        id: deployment
-        uses: actions/deploy-pages@v4
-      - name: Notify Discord control plane
-        if: ${{ success() && env.DISCORD_RELATIONS_WEBHOOK_URL != '' }}
-        env:
-          PAGE_URL: ${{ steps.deployment.outputs.page_url }}
+      - name: Validate NEO Relations static bundle
         run: |
-          payload=$(python - <<'PY'
-          import json, os
-          print(json.dumps({"content": f"NEO Relations deployed to GitHub Pages: {os.environ['PAGE_URL']}"}))
-          PY
-          )
-          curl --fail --silent --show-error \
-            -H 'Content-Type: application/json' \
-            -d "$payload" \
-            "$DISCORD_RELATIONS_WEBHOOK_URL"
+          test -f apps/neo-relations/site/index.html
+          test -f apps/neo-relations/site/styles.css
+          test -f apps/neo-relations/site/app.js
+          echo "NEO Relations validated. Canonical deployment is owned by pages.yml at /neo-relations/." >> "$GITHUB_STEP_SUMMARY"
