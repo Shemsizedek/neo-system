@@ -1,9 +1,10 @@
 {
-  "name": "neo-discord",
+  "name": "neo-discord-cloudflare-adapter",
   "private": true,
   "type": "module",
   "scripts": {
-    "deploy": "wrangler deploy"
+    "deploy": "wrangler deploy --config wrangler.jsonc",
+    "dry-run": "wrangler deploy --dry-run --config wrangler.jsonc"
   },
   "dependencies": {
     "discord-interactions": "^4.0.0"

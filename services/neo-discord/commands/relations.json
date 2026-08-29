@@ -1,0 +1,12 @@
+{
+  "name": "relations",
+  "description": "Operate the GitHub-backed NEO Relations control plane through Discord",
+  "options": [
+    {"type":1,"name":"status","description":"Show NEO Relations frontend, backend, and Discord status"},
+    {"type":1,"name":"architecture","description":"Show the primary NEO Relations control-plane architecture"},
+    {"type":1,"name":"tenant","description":"Show a white-label CRM tenant configuration","options":[{"type":3,"name":"name","description":"Tenant name","required":true,"choices":[{"name":"NEO Prime","value":"neo-prime"},{"name":"NEOpay","value":"neopay"}]}]},
+    {"type":1,"name":"services","description":"Show NEO Relations service/control-plane status"},
+    {"type":1,"name":"approvals","description":"Read pending approval-gated CRM intents","options":[{"type":3,"name":"tenant","description":"Tenant whose pending intents should be shown","required":true,"choices":[{"name":"NEO Prime","value":"neo-prime"},{"name":"NEOpay","value":"neopay"}]}]}
+  ],
+  "dm_permission": false
+}
