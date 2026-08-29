@@ -1,0 +1,64 @@
+name: NEO Miner Production Attestation
+
+on:
+  workflow_dispatch:
+    inputs:
+      operator_public_url:
+        description: HTTPS public URL for the operator control plane
+        required: true
+        type: string
+      console_origin:
+        description: HTTPS console origin allowed by operator CORS
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  attest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: neo-miner-production
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Run production model tests
+        run: node --test server/miner-production/productionAttestation.test.mjs server/miner-production/operatorAuth.test.mjs
+
+      - name: Run live authenticated production attestation
+        env:
+          NEO_OPERATOR_PUBLIC_URL: ${{ inputs.operator_public_url }}
+          NEO_OPERATOR_ORIGIN: ${{ inputs.console_origin }}
+          NEO_ATTEST_OPERATOR_ID: ${{ secrets.NEO_ATTEST_OPERATOR_ID }}
+          NEO_ATTEST_OPERATOR_PASSWORD: ${{ secrets.NEO_ATTEST_OPERATOR_PASSWORD }}
+          NEO_ATTESTATION_OUTPUT: production-attestation.json
+        run: node server/miner-production/attestProductionLive.mjs
+
+      - name: Publish attestation summary
+        if: always()
+        shell: bash
+        run: |
+          if [ -f production-attestation.json ]; then
+            node -e "const a=require('./production-attestation.json'); console.log('### NEO Miner Production Attestation\n\n- State: **'+a.state+'**\n- Required checks: '+a.summary.required+'\n- Green: '+a.summary.green+'\n- Blocked: '+a.summary.blocked+'\n- Generated: '+a.generatedAt)" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo '### NEO Miner Production Attestation' >> "$GITHUB_STEP_SUMMARY"
+            echo '' >> "$GITHUB_STEP_SUMMARY"
+            echo '- State: **BLOCKED**' >> "$GITHUB_STEP_SUMMARY"
+            echo '- No attestation artifact was produced.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload sanitized attestation
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: neo-miner-production-attestation-${{ github.run_id }}
+          path: production-attestation.json
+          if-no-files-found: ignore
+          retention-days: 30
