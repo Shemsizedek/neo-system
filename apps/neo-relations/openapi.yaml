@@ -1,8 +1,8 @@
 openapi: 3.1.0
 info:
   title: NEO Relations API
-  version: 0.1.0
-  description: Universal white-label CRM and relationship graph API for NEO Services.
+  version: 0.2.0
+  description: Universal white-label CRM and relationship graph API for NEO Services with approval-gated operations.
 servers:
   - url: /api/relations
 paths:
@@ -10,8 +10,7 @@ paths:
     get:
       summary: Health check
       responses:
-        '200':
-          description: Healthy
+        '200': { description: Healthy }
   /entities:
     get:
       summary: List canonical entities
@@ -25,9 +24,10 @@ paths:
       responses:
         '200': { description: Entity collection }
     post:
-      summary: Create canonical entity
+      summary: Propose canonical entity creation
+      description: Creates a write intent. Does not directly mutate CRM state.
       responses:
-        '201': { description: Entity created }
+        '202': { description: Write intent accepted for approval }
   /entities/{entityId}:
     get:
       summary: Get canonical entity and service relationships
@@ -45,9 +45,10 @@ paths:
       responses:
         '200': { description: Relationship collection }
     post:
-      summary: Create service relationship
+      summary: Propose service relationship creation
+      description: Creates a write intent. Does not directly mutate CRM state.
       responses:
-        '201': { description: Relationship created }
+        '202': { description: Write intent accepted for approval }
   /records:
     get:
       summary: List CRM records by tenant and record type
@@ -64,9 +65,10 @@ paths:
       responses:
         '200': { description: Record collection }
     post:
-      summary: Create CRM record
+      summary: Propose CRM record creation
+      description: Creates a write intent. Does not directly mutate CRM state.
       responses:
-        '201': { description: Record created }
+        '202': { description: Write intent accepted for approval }
   /tenants/{tenantId}:
     get:
       summary: Get white-label tenant configuration
@@ -78,11 +80,113 @@ paths:
       responses:
         '200': { description: Tenant configuration }
         '404': { description: Tenant not found }
+  /intents:
+    get:
+      summary: List write intents visible to the caller's tenant/role
+      parameters:
+        - in: query
+          name: tenantId
+          required: true
+          schema: { type: string }
+        - in: query
+          name: status
+          schema: { type: string, enum: [pending_approval, approved, rejected, executed, cancelled, expired] }
+      responses:
+        '200': { description: Intent collection }
+    post:
+      summary: Create an approval-gated write intent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WriteIntent'
+      responses:
+        '202': { description: Intent accepted }
+        '403': { description: RBAC or tenant boundary denied }
+  /intents/{intentId}/decision:
+    post:
+      summary: Approve or reject a write intent
+      description: Requires approver role. Self-approval is forbidden. AI and Discord surfaces cannot execute the underlying sensitive mutation.
+      parameters:
+        - in: path
+          name: intentId
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [decision]
+              properties:
+                decision: { type: string, enum: [approve, reject] }
+                reason: { type: string, maxLength: 2000 }
+      responses:
+        '200': { description: Decision recorded }
+        '403': { description: Approval policy denied }
+        '404': { description: Intent not found }
+  /router/events:
+    post:
+      summary: Ingest an authenticated NEO Router event
+      description: Validates tenant scope and records an audit event before downstream processing.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RouterEvent'
+      responses:
+        '202': { description: Event accepted }
+        '400': { description: Invalid event envelope }
+        '403': { description: Source or tenant boundary denied }
+  /audit:
+    get:
+      summary: List append-only Relations audit events
+      parameters:
+        - in: query
+          name: tenantId
+          required: true
+          schema: { type: string }
+        - in: query
+          name: correlationId
+          schema: { type: string }
+      responses:
+        '200': { description: Audit event collection }
 components:
   securitySchemes:
     bearerAuth:
       type: http
       scheme: bearer
       bearerFormat: JWT
+  schemas:
+    WriteIntent:
+      type: object
+      required: [intentId, tenantId, actor, action, resource, status, createdAt]
+      properties:
+        intentId: { type: string }
+        tenantId: { type: string }
+        actor: { type: object }
+        action: { type: string }
+        resource: { type: object }
+        payload: { type: object }
+        reason: { type: string }
+        status: { type: string, enum: [pending_approval, approved, rejected, executed, cancelled, expired] }
+        approval: { type: [object, 'null'] }
+        createdAt: { type: string, format: date-time }
+        expiresAt: { type: [string, 'null'], format: date-time }
+    RouterEvent:
+      type: object
+      required: [eventId, eventType, source, tenantId, occurredAt, payload]
+      properties:
+        eventId: { type: string }
+        eventType: { type: string }
+        source: { type: string }
+        tenantId: { type: string }
+        actorRef: { type: [string, 'null'] }
+        correlationId: { type: [string, 'null'] }
+        occurredAt: { type: string, format: date-time }
+        payload: { type: object }
 security:
   - bearerAuth: []
