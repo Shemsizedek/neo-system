@@ -1,17 +1,13 @@
-# NEO Discord transport
+# NEO Discord server/API plane
 
-`services/neo-discord` is the canonical provider-neutral Discord transport and command layer for the NEO System.
+`services/neo-discord` is the canonical Discord server/API/control-plane layer for NEO Services.
 
-Primary responsibilities:
-- Discord command and business handlers
-- actor and guild authorization helpers
-- prompt routing and grounded status responses
-- GitHub-backed control-plane access
-- Counterparty and treasury read-only integrations
-- asset display policy
-- provider-neutral transport contracts
-- Discord command manifests
-- runtime selection and failover policy
+NEO Services standard:
+- GitHub = backend plane: source of truth, configuration, contracts, Actions orchestration, release gates, auditable state.
+- GitHub Pages = frontend plane: static public/operator UI with no privileged secrets.
+- Discord = server/API plane: commands, interaction responses, event routing, operator control, and service API surfaces.
+
+Discord interactions require a public HTTPS endpoint. Any runtime used for that endpoint is a thin transport bridge only. It is not a NEO backend and may not own NEO business logic.
 
 Canonical core:
 - `core/authorization.js`
@@ -22,25 +18,16 @@ Canonical core:
 - `core/counterparty.js`
 - `core/treasury.js`
 
-Runtime adapters:
-- `adapters/cloudflare/` — current production HTTPS transport. Owns Discord signature verification, HTTP handling, and the optional Workers AI binding only.
-- `adapters/node-http/` — portable Node HTTP runtime. Adapter parity with Cloudflare is CI-tested, but it is not a live production deployment yet.
+Transport bridges:
+- `adapters/cloudflare/` — currently deployed HTTPS bridge. It owns Discord signature verification, HTTP transport glue, and optional provider binding only.
+- `adapters/node-http/` — portable transport reference used to prove provider independence. It is not a separate NEO backend or server plane.
 
-Runtime policy:
-- `deployment/runtime-policy.json` is the canonical adapter-selection policy.
-- `deployment/evaluate-policy.mjs` validates the policy and evaluates promotion prerequisites.
-- Current primary: `cloudflare-worker`.
-- Current standby: `node-http`, marked not deployed.
-- Automatic promotion is disabled.
-- A standby promotion must be explicitly dispatched after parity CI, deployment, and health checks succeed.
-- Transport failover may not change authorization policy, approve intents, or enable sensitive execution.
+Canonical architecture contract:
+- `architecture/neo-services-platform.json`
+- `deployment/runtime-policy.json`
 
-Command manifests live under `commands/` and are provider-independent.
+Architecture flow:
 
-Architecture:
+`GitHub backend -> GitHub Pages frontend + Discord server/API plane -> thin HTTPS transport bridge -> services/neo-discord core`
 
-`GitHub Pages frontend -> GitHub source/orchestration -> Discord operator/API surface -> selected thin HTTPS adapter -> services/neo-discord core`
-
-GitHub remains the source of truth and backend orchestration layer. Discord remains the primary operator/API surface. Cloudflare is only the currently selected transport adapter and can be replaced without moving command/business logic.
-
-Secrets remain runtime-only. Direct sensitive execution, AI approval, and Discord approval remain disabled unless a later approved gate changes those policies.
+Secrets remain runtime-only. Transport changes may not alter RBAC, approve intents, enable sensitive execution, or move business logic out of GitHub/Discord-owned NEO service layers.
