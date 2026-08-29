@@ -1,0 +1,63 @@
+name: NEO Services Architecture Standard
+
+on:
+  pull_request:
+    paths:
+      - 'architecture/neo-services-platform.json'
+      - 'services/neo-discord/**'
+      - 'apps/**'
+      - '.github/workflows/neo-services-architecture.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'architecture/neo-services-platform.json'
+      - 'services/neo-discord/**'
+      - 'apps/**'
+      - '.github/workflows/neo-services-architecture.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-three-plane-standard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Validate canonical NEO Services architecture
+        run: |
+          node - <<'NODE'
+          const fs=require('fs')
+          const p=JSON.parse(fs.readFileSync('architecture/neo-services-platform.json','utf8'))
+          if(p.scope!=='all-neo-services') throw new Error('architecture scope must cover all NEO Services')
+          if(p.planes.frontend.primary!=='github-pages') throw new Error('GitHub Pages must be the frontend plane')
+          if(p.planes.backend.primary!=='github') throw new Error('GitHub must be the backend plane')
+          if(p.planes.serverApi.primary!=='discord') throw new Error('Discord must be the server/API plane')
+          if(p.planes.serverApi.transport.mayOwnNeoBusinessLogic!==false) throw new Error('transport bridges may not own NEO business logic')
+          if(p.planes.serverApi.transport.mayBecomeNeoBackend!==false) throw new Error('transport bridges may not become the NEO backend')
+          NODE
+      - name: Validate Discord transport policy follows platform standard
+        run: |
+          node services/neo-discord/deployment/evaluate-policy.mjs
+          node services/neo-discord/tests/runtime-policy.test.mjs
+      - name: Guard GitHub Pages from privileged secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -R -E 'DISCORD_BOT_TOKEN|DISCORD_PUBLIC_KEY|GITHUB_API_TOKEN|OPENAI_API_KEY|CLOUDFLARE_API_TOKEN|PRIVATE_KEY' apps/*/site 2>/dev/null; then
+            echo 'Privileged secret reference found in a GitHub Pages site tree.' >&2
+            exit 1
+          fi
+      - name: Guard transport adapters from NEO business ownership
+        shell: bash
+        run: |
+          set -euo pipefail
+          node - <<'NODE'
+          const p=require('./services/neo-discord/deployment/runtime-policy.json')
+          for (const [name,b] of Object.entries(p.transportBridges)) {
+            if (typeof b==='object' && b.ownsBusinessLogic!==false) throw new Error(`${name} claims NEO business logic`)
+          }
+          NODE

@@ -3,11 +3,13 @@ name: NEO Discord Runtime Policy
 on:
   pull_request:
     paths:
+      - 'architecture/neo-services-platform.json'
       - 'services/neo-discord/**'
       - '.github/workflows/neo-discord-runtime-policy.yml'
   push:
     branches: [main]
     paths:
+      - 'architecture/neo-services-platform.json'
       - 'services/neo-discord/**'
       - '.github/workflows/neo-discord-runtime-policy.yml'
   workflow_dispatch:
@@ -25,19 +27,23 @@ jobs:
           node-version: 24
       - name: Validate runtime policy
         run: node services/neo-discord/deployment/evaluate-policy.mjs
-      - name: Run failover policy tests
+      - name: Run architecture policy tests
         run: node services/neo-discord/tests/runtime-policy.test.mjs
-      - name: Verify adapter paths exist
+      - name: Verify transport bridge paths exist
         run: |
           test -s services/neo-discord/adapters/cloudflare/worker.js
           test -s services/neo-discord/adapters/node-http/server.js
           test -s services/neo-discord/tests/adapter-parity.mjs
-      - name: Verify failover cannot elevate privileges
+      - name: Verify transport cannot elevate privileges or replace planes
         run: |
           node - <<'NODE'
           const p=require('./services/neo-discord/deployment/runtime-policy.json')
-          if(p.failover.automaticPromotion!==false) process.exit(1)
-          if(p.failover.mayChangeAuthorizationPolicy!==false) process.exit(1)
-          if(p.failover.mayEnableSensitiveExecution!==false) process.exit(1)
-          if(p.failover.mayApproveIntents!==false) process.exit(1)
+          if(p.rules.discordIsPrimaryServerApiPlane!==true) process.exit(1)
+          if(p.rules.githubIsPrimaryBackendPlane!==true) process.exit(1)
+          if(p.rules.githubPagesIsPrimaryFrontendPlane!==true) process.exit(1)
+          if(p.rules.transportBridgeMayBecomeBackend!==false) process.exit(1)
+          if(p.rules.automaticTransportPromotion!==false) process.exit(1)
+          if(p.rules.mayChangeAuthorizationPolicy!==false) process.exit(1)
+          if(p.rules.mayEnableSensitiveExecution!==false) process.exit(1)
+          if(p.rules.mayApproveIntents!==false) process.exit(1)
           NODE
