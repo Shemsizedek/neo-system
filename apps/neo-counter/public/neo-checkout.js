@@ -17,5 +17,18 @@
     return u.toString();
   }
   function redirect(options){global.location.assign(url(options));}
-  global.NEOCheckout=Object.freeze({version:'1.1.0',url,redirect,currencies:'/neo-system/api/neo-counter/currencies.json'});
+  function result(search){
+    const p=new URLSearchParams(search||global.location.search);
+    const state=p.get('settlement_state');
+    if(!state)return null;
+    return Object.freeze({
+      checkout:p.get('neo_checkout'),
+      paymentId:p.get('payment_id'),
+      state,
+      confirmed:p.get('settlement_confirmed')==='1',
+      reference:p.get('reference')||null,
+      fulfillmentEligible:state==='SETTLED'&&p.get('settlement_confirmed')==='1'&&Boolean(p.get('reference'))
+    });
+  }
+  global.NEOCheckout=Object.freeze({version:'1.2.0',url,redirect,result,currencies:'/neo-system/api/neo-counter/currencies.json'});
 })(window);
