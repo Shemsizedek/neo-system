@@ -1,0 +1,12 @@
+{
+  "name": "@neo/discord-node-http-adapter",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test parity.test.mjs"
+  },
+  "dependencies": {
+    "discord-interactions": "^4.0.0"
+  }
+}

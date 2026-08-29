@@ -1,0 +1,40 @@
+import http from 'node:http'
+import { createNodeHttpHandler } from './handler.js'
+
+function toWebRequest(req,body){
+  const proto=req.headers['x-forwarded-proto']||'http'
+  const host=req.headers.host||'localhost'
+  const headers=new Headers()
+  for(const [k,v] of Object.entries(req.headers))if(v!==undefined)headers.set(k,Array.isArray(v)?v.join(','):String(v))
+  return new Request(`${proto}://${host}${req.url||'/'}`,{method:req.method,headers,body:['GET','HEAD'].includes(req.method||'GET')?undefined:body})
+}
+
+async function sendWebResponse(res,response){
+  res.statusCode=response.status
+  response.headers.forEach((value,key)=>res.setHeader(key,value))
+  res.end(Buffer.from(await response.arrayBuffer()))
+}
+
+export function createNodeDiscordServer({env=process.env,askRuntimeAI=null,label='Node HTTP'}={}){
+  const handle=createNodeHttpHandler({askRuntimeAI,label})
+  return http.createServer(async(req,res)=>{
+    try{
+      const chunks=[]
+      for await(const chunk of req)chunks.push(chunk)
+      const request=toWebRequest(req,Buffer.concat(chunks))
+      const pending=[]
+      const response=await handle(request,env,{waitUntil:(p)=>pending.push(Promise.resolve(p))})
+      await sendWebResponse(res,response)
+      Promise.allSettled(pending).catch(()=>{})
+    }catch(err){
+      res.statusCode=500
+      res.setHeader('content-type','application/json; charset=utf-8')
+      res.end(JSON.stringify({error:'Node Discord transport error'}))
+    }
+  })
+}
+
+if(import.meta.url===`file://${process.argv[1]}`){
+  const port=Number(process.env.PORT||8788)
+  createNodeDiscordServer().listen(port,()=>console.log(`NEO Discord Node HTTP adapter listening on ${port}`))
+}
