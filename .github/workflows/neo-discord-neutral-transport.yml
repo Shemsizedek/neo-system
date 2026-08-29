@@ -5,11 +5,13 @@ on:
     paths:
       - 'services/neo-discord/**'
       - '.github/workflows/neo-discord-neutral-transport.yml'
+      - '.github/workflows/activate-neo-discord-operator-read.yml'
   push:
     branches: [main]
     paths:
       - 'services/neo-discord/**'
       - '.github/workflows/neo-discord-neutral-transport.yml'
+      - '.github/workflows/activate-neo-discord-operator-read.yml'
   workflow_dispatch:
 
 permissions:
@@ -36,12 +38,15 @@ jobs:
           test -s services/neo-discord/registry/services.json
           test -s services/neo-discord/commands/relations.json
           test -s services/neo-discord/commands/services.json
+          test -s services/neo-discord/deployment/operator-read-env.json
+          test -s services/neo-discord/deployment/operator-read-preflight.mjs
           test -s services/neo-discord/adapters/cloudflare/worker.js
           test -s services/neo-discord/adapters/node-http/runtime.js
           test -s services/neo-discord/adapters/node-http/handler.js
           test -s services/neo-discord/adapters/node-http/server.js
           test -s services/neo-discord/tests/adapter-parity.mjs
           test -s services/neo-discord/tests/service-registry.test.mjs
+          test -s services/neo-discord/tests/operator-read-preflight.test.mjs
       - name: Ensure provider adapter stays transport-only
         run: |
           ! grep -q "function isTreasuryPrompt" services/neo-discord/adapters/cloudflare/worker.js
@@ -61,6 +66,8 @@ jobs:
           NODE
       - name: Validate service registry
         run: node --test services/neo-discord/tests/service-registry.test.mjs
+      - name: Validate operator runtime activation preflight
+        run: node --test services/neo-discord/tests/operator-read-preflight.test.mjs
       - name: Install Cloudflare adapter dependencies
         working-directory: services/neo-discord/adapters/cloudflare
         run: npm install
