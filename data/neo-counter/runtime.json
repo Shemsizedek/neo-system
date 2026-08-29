@@ -1,0 +1,20 @@
+{
+  "service": "neo-counter",
+  "backend": "github-actions-snapshots",
+  "frontend": "github-pages",
+  "mode": "local-first",
+  "sync": {
+    "remoteRequired": false,
+    "externalEndpointOptional": true
+  },
+  "payments": {
+    "signing": "user-controlled",
+    "custody": false,
+    "cardData": false
+  },
+  "routes": {
+    "app": "/neo-system/neo-counter/",
+    "runtime": "/neo-system/api/neo-counter/runtime.json",
+    "build": "/neo-system/api/neo-counter/build.json"
+  }
+}
