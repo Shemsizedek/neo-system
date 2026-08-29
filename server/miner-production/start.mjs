@@ -1,7 +1,9 @@
+import http from 'node:http'
 import {PersistentStateStore} from './persistentStore.mjs'
 import {bitcoinRpcClient,transactionStatus} from './bitcoinWallet.mjs'
 import {runRecoverySweep,createRecoveryIncident,RECOVERY_ACTIONS} from './recovery.mjs'
 import {confirmPayout,createSettlementReceipt} from './payouts.mjs'
+import {runtimeIdentityFromEnv,evaluateRuntimeDrift,buildRuntimeAttestation,isFinancialMutation} from './runtimeIdentity.mjs'
 
 const store=new PersistentStateStore(process.env.NEO_MINER_DB_PATH||'./data/neo-miner.sqlite')
 const payouts=store.list('payout')
@@ -56,8 +58,46 @@ async function reconcile(){
 try{await reconcile()}catch(error){store.appendAudit('recovery',null,'RECOVERY_SWEEP_FAILED',{error:String(error?.message||error)});console.error('NEO Miner recovery supervisor failed closed:',error);process.exitCode=1}
 finally{store.close()}
 
+function currentRuntimeAttestation(){return buildRuntimeAttestation({identity:runtimeIdentityFromEnv()})}
+function publicIdentity(att){return {schema:att.schema,generatedAt:att.generatedAt,identity:att.identity,drift:att.drift,signature:att.signature}}
+
 if(process.exitCode!==1){
   const {server}=await import('./server.mjs')
-  const port=Number(process.env.PORT||8890)
-  server.listen(port,'0.0.0.0',()=>console.log(`NEO Miner production API listening on ${port} after recovery sweep`))
+  const publicPort=Number(process.env.PORT||8890)
+  const internalPort=Number(process.env.NEO_MINER_INTERNAL_PORT||8892)
+  server.listen(internalPort,'127.0.0.1',()=>console.log(`NEO Miner internal API listening on 127.0.0.1:${internalPort}`))
+
+  let lastState=null
+  const monitor=()=>{
+    const drift=evaluateRuntimeDrift(runtimeIdentityFromEnv())
+    if(drift.state!==lastState){
+      console.log(JSON.stringify({event:'NEO_RUNTIME_DRIFT_STATE',state:drift.state,reasons:drift.reasons,time:new Date().toISOString()}))
+      lastState=drift.state
+    }
+  }
+  monitor()
+  const timer=setInterval(monitor,Number(process.env.NEO_RUNTIME_DRIFT_CHECK_MS||30000));timer.unref()
+
+  const guard=http.createServer((req,res)=>{
+    if(req.method==='GET'&&req.url==='/identity'){
+      const att=currentRuntimeAttestation()
+      res.writeHead(att.drift.state==='GREEN'?200:503,{'content-type':'application/json','cache-control':'no-store'})
+      return res.end(JSON.stringify(publicIdentity(att)))
+    }
+    const drift=evaluateRuntimeDrift(runtimeIdentityFromEnv())
+    if(isFinancialMutation(req.method,req.url)&&drift.holdFinancialMutations){
+      res.writeHead(423,{'content-type':'application/json','cache-control':'no-store'})
+      return res.end(JSON.stringify({error:'RUNTIME_IDENTITY_DRIFT_HOLD',state:drift.state,reasons:drift.reasons}))
+    }
+    const upstream=http.request({host:'127.0.0.1',port:internalPort,method:req.method,path:req.url,headers:req.headers},up=>{
+      res.writeHead(up.statusCode||502,up.headers)
+      up.pipe(res)
+    })
+    upstream.on('error',error=>{
+      if(!res.headersSent)res.writeHead(502,{'content-type':'application/json','cache-control':'no-store'})
+      res.end(JSON.stringify({error:'INTERNAL_API_UNAVAILABLE',detail:String(error?.message||error)}))
+    })
+    req.pipe(upstream)
+  })
+  guard.listen(publicPort,'0.0.0.0',()=>console.log(`NEO Miner runtime drift guard listening on ${publicPort}`))
 }
