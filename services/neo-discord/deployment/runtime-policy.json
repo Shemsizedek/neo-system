@@ -1,0 +1,50 @@
+{
+  "version": "1.0.0",
+  "service": "neo-discord",
+  "sourceOfTruth": "github",
+  "controlPlane": "discord",
+  "primaryAdapter": "cloudflare-worker",
+  "standbyAdapter": "node-http",
+  "adapters": {
+    "cloudflare-worker": {
+      "path": "services/neo-discord/adapters/cloudflare",
+      "role": "primary",
+      "healthPath": "/health",
+      "interactionPath": "/discord/interactions",
+      "deployed": true
+    },
+    "node-http": {
+      "path": "services/neo-discord/adapters/node-http",
+      "role": "standby",
+      "healthPath": "/health",
+      "interactionPath": "/discord/interactions",
+      "deployed": false
+    }
+  },
+  "healthPolicy": {
+    "required": {
+      "ok": true,
+      "service": "neo-discord",
+      "grounded_status": true
+    },
+    "timeoutSeconds": 10,
+    "consecutiveFailuresBeforeUnhealthy": 3,
+    "consecutiveSuccessesBeforeRecovery": 2
+  },
+  "failover": {
+    "automaticPromotion": false,
+    "requiresStandbyDeployed": true,
+    "requiresHealthyStandby": true,
+    "requiresAdapterParityCI": true,
+    "requiresExplicitGitHubWorkflowDispatch": true,
+    "changesDiscordInteractionEndpoint": true,
+    "mayChangeAuthorizationPolicy": false,
+    "mayEnableSensitiveExecution": false,
+    "mayApproveIntents": false
+  },
+  "rollback": {
+    "required": true,
+    "target": "last-known-healthy-adapter",
+    "requiresHealthVerification": true
+  }
+}

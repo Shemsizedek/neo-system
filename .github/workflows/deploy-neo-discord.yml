@@ -8,28 +8,50 @@ on:
       - 'services/neo-discord/**'
       - '.github/workflows/deploy-neo-discord.yml'
 
+permissions:
+  contents: read
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: services/neo-discord/adapters/cloudflare
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-      - run: npm install
-      - name: Deploy Discord HTTPS transport adapter
+      - name: Validate runtime policy
+        run: node services/neo-discord/deployment/evaluate-policy.mjs
+      - name: Resolve active transport adapter
+        id: runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          adapter="$(node -p "require('./services/neo-discord/deployment/runtime-policy.json').primaryAdapter")"
+          echo "adapter=$adapter" >> "$GITHUB_OUTPUT"
+          echo "Active Discord transport adapter: $adapter"
+      - name: Reject undeployable active adapter
+        if: ${{ steps.runtime.outputs.adapter != 'cloudflare-worker' }}
+        run: |
+          echo "The active adapter is '${{ steps.runtime.outputs.adapter }}', but this workflow currently has a deployment implementation only for cloudflare-worker."
+          echo "Configure a deployment target for the selected adapter before changing runtime-policy.json."
+          exit 1
+      - name: Install active adapter dependencies
+        if: ${{ steps.runtime.outputs.adapter == 'cloudflare-worker' }}
+        working-directory: services/neo-discord/adapters/cloudflare
+        run: npm install
+      - name: Deploy active Discord HTTPS transport adapter
+        if: ${{ steps.runtime.outputs.adapter == 'cloudflare-worker' }}
+        working-directory: services/neo-discord/adapters/cloudflare
         run: npm run deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-      - name: Verify Discord API health endpoint
+      - name: Verify active Discord API health endpoint
+        if: ${{ steps.runtime.outputs.adapter == 'cloudflare-worker' }}
         shell: bash
         run: |
           set -euo pipefail
           url="https://neo-discord-api.neosystem.workers.dev/health"
           body="$(curl --fail --silent --show-error --retry 6 --retry-delay 5 "$url")"
           echo "$body"
-          node -e 'const x=JSON.parse(process.argv[1]); if(x.ok!==true || x.service!=="neo-discord") process.exit(1)' "$body"
+          node -e 'const x=JSON.parse(process.argv[1]); if(x.ok!==true || x.service!=="neo-discord" || x.grounded_status!==true) process.exit(1)' "$body"
