@@ -1,0 +1,13 @@
+{
+  "name": "ProductionAllocationRule",
+  "type": "object",
+  "properties": {
+    "rule_id": {"type": "string"},
+    "treasury_pct": {"type": "number", "minimum": 0, "maximum": 100},
+    "orange_chip_pct": {"type": "number", "minimum": 0, "maximum": 100},
+    "contract_holder_pct": {"type": "number", "minimum": 0, "maximum": 100},
+    "effective_from": {"type": "string"},
+    "status": {"type": "string", "enum": ["ACTIVE", "INACTIVE"]}
+  },
+  "required": ["rule_id", "treasury_pct", "orange_chip_pct", "contract_holder_pct", "effective_from", "status"]
+}
