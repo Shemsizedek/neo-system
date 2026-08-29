@@ -1,0 +1,32 @@
+{
+  "version": "1.0.0",
+  "deploymentOwner": ".github/workflows/pages.yml",
+  "artifactRoot": "dist",
+  "basePath": "/neo-system/",
+  "routes": [
+    {"service":"neo-prime","path":"/neo-prime/"},
+    {"service":"neopay","path":"/neopay/"},
+    {"service":"neo-counter","path":"/neo-counter/"},
+    {"service":"neo-exchange","path":"/neo-exchange/"},
+    {"service":"neoscan","path":"/neoscan/"},
+    {"service":"neo-relations","path":"/neo-relations/"},
+    {"service":"neo-pacer","path":"/neo-pacer/"},
+    {"service":"neo-tv","path":"/neo-tv/"},
+    {"service":"neo-telegram","path":"/neo-telegram/"},
+    {"service":"neogram","path":"/neogram/"},
+    {"service":"noogle","path":"/noogle/"},
+    {"service":"omnitrix","path":"/omnitrix/"},
+    {"service":"neo-enterprise","path":"/neo-enterprise/"},
+    {"service":"neo-hub","path":"/neo-hub/"},
+    {"service":"neo-oracle","path":"/neo-oracle/"},
+    {"service":"neo-lingo","path":"/neo-lingo/"},
+    {"service":"neo-algo","path":"/neo-algo/"},
+    {"service":"neo-corpus","path":"/neo-corpus/"}
+  ],
+  "rules": {
+    "singleArtifact": true,
+    "singleDeployWorkflow": true,
+    "serviceWorkflowsValidationOnly": true,
+    "privilegedSecretsInPages": false
+  }
+}
