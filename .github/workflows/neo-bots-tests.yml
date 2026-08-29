@@ -38,4 +38,4 @@ jobs:
         run: npm ci
 
       - name: Run NEO Bots tests
-        run: npm run test:neo-bots
+        run: npm run neo-bots:test
