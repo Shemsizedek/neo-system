@@ -29,3 +29,21 @@ export async function dispatchVerifiedInteraction(interaction,env,runtime,{waitU
   else return discordJson({type:4,data:{content:'Unknown command.',flags:64,allowed_mentions:{parse:[]}}})
   return discordJson({type:5,data:{flags:64}})
 }
+
+export function createDiscordHttpHandler({transportAdapter,runtimeFactory,verifySignature}){
+  if(typeof runtimeFactory!=='function')throw new Error('runtimeFactory is required')
+  if(typeof verifySignature!=='function')throw new Error('verifySignature is required')
+  return async function handleDiscordHttpRequest(request,env={},context={}){
+    const u=new URL(request.url)
+    const runtime=runtimeFactory(env)
+    if(request.method==='GET'&&u.pathname==='/health')return healthResponse(env,runtime,transportAdapter)
+    if(request.method!=='POST'||(u.pathname!=='/'&&u.pathname!=='/discord/interactions'))return discordJson({error:'Not found'},404)
+    const raw=await request.text()
+    let verified=false
+    try{verified=await verifySignature({request,env,raw})}catch{}
+    if(!verified)return discordJson({error:'Invalid Discord signature'},401)
+    let interaction
+    try{interaction=JSON.parse(raw)}catch{return discordJson({error:'Invalid JSON'},400)}
+    return dispatchVerifiedInteraction(interaction,env,runtime,{waitUntil:context.waitUntil||((p)=>p),fetchImpl:context.fetchImpl||fetch})
+  }
+}
