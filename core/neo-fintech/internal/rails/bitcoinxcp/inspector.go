@@ -2,10 +2,10 @@ package bitcoinxcp
 
 import (
 	"context"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"net/url"
 	"strings"
 
 	"github.com/Shemsizedek/neo-system/core/neo-fintech/internal/neopayreview"
@@ -19,7 +19,7 @@ func (a *Adapter) InspectUnsigned(ctx context.Context, rawTransaction string) (n
 	if rawTransaction == "" {
 		return neopayreview.Inspection{}, errors.New("raw transaction is required")
 	}
-	if _, err := decodeHex(rawTransaction); err != nil {
+	if _, err := hex.DecodeString(rawTransaction); err != nil {
 		return neopayreview.Inspection{}, errors.New("raw transaction must be hexadecimal")
 	}
 
@@ -74,8 +74,4 @@ func (a *Adapter) InspectUnsigned(ctx context.Context, rawTransaction string) (n
 		Quantity:    send.Quantity,
 		FeeSats:     envelope.Result.Fee,
 	}, nil
-}
-
-func decodeHex(value string) ([]byte, error) {
-	return url.QueryUnescape(value)
 }
