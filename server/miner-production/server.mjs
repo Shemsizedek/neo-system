@@ -8,10 +8,11 @@ import {createInfrastructureRecord,markInfrastructureVerified,onboardingSummary}
 import {createEnrollmentChallenge,verifyEnrollmentChallenge,enrollMiner,registerTelemetry,verifyStratumShare,applyShareResult,fleetSnapshot} from './fleet.mjs'
 import {reconcilePoolPayout,createHashVaultCredit,hashVaultSnapshot,assertNoDuplicateCredit} from './hashvault.mjs'
 import {createPayoutRequest,approvePayout,markBroadcast,confirmPayout,createSettlementReceipt,publicReceipt} from './payouts.mjs'
+import {treasuryPolicy,evaluateTreasuryPayout,buildUnsignedPayout,assertExternalSignerResult,coldReserveAction} from './treasury.mjs'
 
 const PORT=Number(process.env.PORT||8890)
 const API_TOKEN=process.env.NEO_MINER_API_TOKEN||''
-const contracts=new Map(),infrastructure=new Map(),challenges=new Map(),fleet=new Map(),verifiedShares=new Map(),payoutReconciliations=new Map(),payoutRequests=new Map(),receipts=new Map()
+const contracts=new Map(),infrastructure=new Map(),challenges=new Map(),fleet=new Map(),verifiedShares=new Map(),payoutReconciliations=new Map(),payoutRequests=new Map(),receipts=new Map(),signingIntents=new Map(),signedTransactions=new Map()
 const hashVaultEntries=[]
 
 function configFromEnv(){return {bitcoin:{enabled:process.env.BITCOIN_ENABLED==='true',rpcUrl:process.env.BITCOIN_RPC_URL,secretRef:process.env.BITCOIN_RPC_AUTH?'env://BITCOIN_RPC_AUTH':'',auth:process.env.BITCOIN_RPC_AUTH},counterparty:{enabled:process.env.COUNTERPARTY_ENABLED==='true',apiUrl:process.env.COUNTERPARTY_API_URL},pool:{enabled:process.env.MINING_POOL_ENABLED==='true',endpoint:process.env.MINING_POOL_ENDPOINT},miners:{enabled:process.env.MINER_AGENTS_ENABLED==='true',verifiedAgentCount:fleetSnapshot([...fleet.values()]).verifiedIdentities||Number(process.env.VERIFIED_MINER_AGENTS||0)},fx:{enabled:process.env.FX_ENABLED==='true',apiUrl:process.env.FX_API_URL,source:process.env.FX_SOURCE,apiKey:process.env.FX_API_KEY,base:process.env.FX_BASE||'USD',quote:process.env.FX_PROBE_QUOTE||'EUR'},payments:{enabled:process.env.PAYMENTS_ENABLED==='true',provider:process.env.PAYMENT_PROVIDER,secretRef:process.env.PAYMENT_PROVIDER_SECRET?'env://PAYMENT_PROVIDER_SECRET':'',webhookSignatureVerification:process.env.PAYMENT_WEBHOOK_VERIFY==='true'},storage:{contracts:process.env.CONTRACT_STORE||'PERSISTENT',settlements:process.env.SETTLEMENT_STORE||'PERSISTENT'},compliance:{enabled:process.env.COMPLIANCE_ENABLED==='true',activationPolicy:process.env.COMPLIANCE_POLICY||'FAIL_CLOSED'}}}
@@ -24,6 +25,9 @@ const verifyMinerSignature=({publicKey,message,signature})=>{try{return crypto.v
 const allAttributions=()=>[...payoutReconciliations.values()].flatMap(r=>r.attributions||[])
 const customerEntries=id=>hashVaultEntries.filter(e=>e.customerId===id)
 const customerBalance=id=>customerEntries(id).reduce((s,e)=>s+Number(e.netBtc||0),0)-[...payoutRequests.values()].filter(p=>p.customerId===id&&['APPROVED','BROADCAST','CONFIRMING','CONFIRMED'].includes(p.state)).reduce((s,p)=>s+Number(p.amountBtc||0),0)
+const treasuryConfig=()=>treasuryPolicy({dailyLimitBtc:process.env.TREASURY_DAILY_LIMIT_BTC,hotWalletFloorBtc:process.env.TREASURY_HOT_FLOOR_BTC,hotWalletTargetBtc:process.env.TREASURY_HOT_TARGET_BTC,coldReserveMinimumBtc:process.env.TREASURY_COLD_MIN_BTC,requiredConfirmations:process.env.PAYOUT_CONFIRMATIONS,signingMode:process.env.TREASURY_SIGNING_MODE||'EXTERNAL_SIGNER'})
+const utcDay=s=>new Date(s).toISOString().slice(0,10)
+const dailyBroadcastBtc=()=>{const today=utcDay(new Date());return [...payoutRequests.values()].filter(p=>p.broadcastAt&&utcDay(p.broadcastAt)===today).reduce((s,p)=>s+Number(p.amountBtc||0),0)}
 
 export const server=http.createServer(async(req,res)=>{
   if(req.method==='OPTIONS'){res.writeHead(204,{'access-control-allow-origin':process.env.CORS_ORIGIN||'https://shemsizedek.github.io','access-control-allow-headers':'authorization,content-type','access-control-allow-methods':'GET,POST,OPTIONS'});return res.end()}
@@ -33,13 +37,31 @@ export const server=http.createServer(async(req,res)=>{
   if(req.method==='GET'&&req.url==='/probe'){if(!authorized(req))return json(res,401,{error:'unauthorized'});return json(res,200,await collectLiveProbe(configFromEnv()))}
   if(req.method==='GET'&&req.url==='/snapshot'){if(!authorized(req))return json(res,401,{error:'unauthorized'});const readiness=await runtimeReadiness();const f=fleetSnapshot([...fleet.values()]);return json(res,200,buildProductionHealthSnapshot({readiness,minerFleet:{verifiedAgents:f.verifiedIdentities,hashrateTh:f.totalHashrateTh,online:f.online},pool:{connected:Boolean(readiness.liveProbe?.pool?.connected),acceptedShares:f.acceptedShares,rejectedShares:0},payments:{provider:process.env.PAYMENT_PROVIDER,enabledCurrencies:(process.env.ENABLED_CURRENCIES||'').split(',').filter(Boolean),webhookVerified:process.env.PAYMENT_WEBHOOK_VERIFY==='true'},chains:{bitcoinConnected:Boolean(readiness.liveProbe?.bitcoin?.connected),bitcoinHeight:readiness.liveProbe?.bitcoin?.blocks??null,counterpartyConnected:Boolean(readiness.liveProbe?.counterparty?.connected),counterpartyHeight:null}}))}
 
+  if(req.method==='GET'&&req.url==='/treasury'){if(!authorized(req))return json(res,401,{error:'unauthorized'});const hot=Number(process.env.TREASURY_HOT_BALANCE_BTC||0);return json(res,200,{policy:treasuryConfig(),hotWalletBalanceBtc:hot,coldReserveBalanceBtc:Number(process.env.TREASURY_COLD_BALANCE_BTC||0),dailyBroadcastBtc:dailyBroadcastBtc(),reserveAction:coldReserveAction({hotWalletBalanceBtc:hot,policy:treasuryConfig()}),pendingSigningIntents:[...signingIntents.values()].filter(i=>!signedTransactions.has(i.intentId)).length})}
+
   if(req.method==='GET'&&req.url==='/hashvault'){if(!authorized(req))return json(res,401,{error:'unauthorized'});return json(res,200,{summary:hashVaultSnapshot(hashVaultEntries),verifiedShares:verifiedShares.size,reconciledPayouts:payoutReconciliations.size,attributions:allAttributions(),entries:hashVaultEntries,payouts:[...payoutRequests.values()],receipts:[...receipts.values()]})}
   if(req.method==='POST'&&req.url==='/hashvault/payouts/reconcile'){if(!authorized(req))return json(res,401,{error:'unauthorized'});try{const body=await readBody(req);if(payoutReconciliations.has(body.payout?.payoutId))throw new Error('PAYOUT_ALREADY_RECONCILED');const r=reconcilePoolPayout({payout:body.payout,verifiedShares:[...verifiedShares.values()]});payoutReconciliations.set(r.payoutId,r);return json(res,201,r)}catch(error){return json(res,409,{error:error.message})}}
   if(req.method==='POST'&&req.url==='/hashvault/credits'){if(!authorized(req))return json(res,401,{error:'unauthorized'});try{const body=await readBody(req);const attribution=allAttributions().find(a=>a.attributionId===body.attributionId);if(!attribution)throw new Error('ATTRIBUTION_NOT_FOUND');const contract=getContract(attribution.contractId);if(contract.customerId!==body.customerId)throw new Error('CUSTOMER_CONTRACT_MISMATCH');assertNoDuplicateCredit(hashVaultEntries,attribution);const entry=createHashVaultCredit({attribution,customerId:body.customerId,poolFeePct:body.poolFeePct,serviceFeePct:body.serviceFeePct,electricityFeeBtc:body.electricityFeeBtc});hashVaultEntries.push(entry);return json(res,201,entry)}catch(error){return json(res,409,{error:error.message})}}
 
   if(req.method==='POST'&&req.url==='/payouts'){if(!authorized(req))return json(res,401,{error:'unauthorized'});try{const body=await readBody(req);const p=createPayoutRequest({...body,availableBtc:customerBalance(body.customerId),minimumBtc:Number(process.env.PAYOUT_MIN_BTC||0.00001)});payoutRequests.set(p.id,p);return json(res,201,p)}catch(error){return json(res,409,{error:error.message})}}
-  const payoutMatch=req.url?.match(/^\/payouts\/([^/]+)\/(approve|broadcast|confirm)$/)
-  if(req.method==='POST'&&payoutMatch){if(!authorized(req))return json(res,401,{error:'unauthorized'});try{const [,,id,action]=payoutMatch;let p=payoutRequests.get(id);if(!p)throw new Error('PAYOUT_NOT_FOUND');const body=await readBody(req);if(action==='approve')p=approvePayout(p,body);if(action==='broadcast')p=markBroadcast(p,body);if(action==='confirm'){p=confirmPayout(p,{confirmations:body.confirmations,requiredConfirmations:Number(process.env.PAYOUT_CONFIRMATIONS||1)});if(p.state==='CONFIRMED'){const customerLedger=customerEntries(p.customerId);const contractIds=[...new Set(customerLedger.map(e=>e.contractId).filter(Boolean))];const receipt=createSettlementReceipt({payout:p,contractIds,ledgerEntryIds:customerLedger.map(e=>e.id)});receipts.set(receipt.receiptId,receipt)}}payoutRequests.set(p.id,p);return json(res,200,p)}catch(error){return json(res,409,{error:error.message})}}
+  const payoutMatch=req.url?.match(/^\/payouts\/([^/]+)\/(approve|prepare|sign|broadcast|confirm)$/)
+  if(req.method==='POST'&&payoutMatch){if(!authorized(req))return json(res,401,{error:'unauthorized'});try{const [,id,action]=payoutMatch;let p=payoutRequests.get(id);if(!p)throw new Error('PAYOUT_NOT_FOUND');const body=await readBody(req)
+    if(action==='approve')p=approvePayout(p,body)
+    if(action==='prepare'){
+      const assessment=evaluateTreasuryPayout({request:p,policy:treasuryConfig(),hotWalletBalanceBtc:Number(process.env.TREASURY_HOT_BALANCE_BTC||0),dailyBroadcastBtc:dailyBroadcastBtc(),approvals:body.approvals||[]})
+      const intent=buildUnsignedPayout({request:p,feeRateSatVb:Number(body.feeRateSatVb||process.env.TREASURY_FEE_RATE_SAT_VB||5),changeAddressRef:process.env.TREASURY_CHANGE_ADDRESS_REF||'wallet://hot/change'})
+      signingIntents.set(intent.intentId,{...intent,assessment});return json(res,201,{intent:{...intent,rawTransaction:undefined},assessment})
+    }
+    if(action==='sign'){
+      const intent=signingIntents.get(body.intentId);if(!intent||intent.payoutId!==p.id)throw new Error('SIGNING_INTENT_NOT_FOUND')
+      const signed=assertExternalSignerResult({intent,signedTransaction:body.signedTransaction,txid:body.txid});signedTransactions.set(intent.intentId,signed);return json(res,200,signed)
+    }
+    if(action==='broadcast'){
+      const signed=[...signedTransactions.values()].find(s=>s.payoutId===p.id&&s.txid===body.txid);if(!signed)throw new Error('SIGNED_TRANSACTION_NOT_VERIFIED')
+      p=markBroadcast(p,{txid:body.txid})
+    }
+    if(action==='confirm'){p=confirmPayout(p,{confirmations:body.confirmations,requiredConfirmations:Number(process.env.PAYOUT_CONFIRMATIONS||1)});if(p.state==='CONFIRMED'){const customerLedger=customerEntries(p.customerId);const contractIds=[...new Set(customerLedger.map(e=>e.contractId).filter(Boolean))];const receipt=createSettlementReceipt({payout:p,contractIds,ledgerEntryIds:customerLedger.map(e=>e.id)});receipts.set(receipt.receiptId,receipt)}}
+    payoutRequests.set(p.id,p);return json(res,200,p)}catch(error){return json(res,409,{error:error.message})}}
   const receiptMatch=req.url?.match(/^\/receipts\/([^/]+)$/)
   if(req.method==='GET'&&receiptMatch){const receipt=receipts.get(receiptMatch[1]);if(!receipt)return json(res,404,{error:'RECEIPT_NOT_FOUND'});return json(res,200,publicReceipt(receipt))}
 
