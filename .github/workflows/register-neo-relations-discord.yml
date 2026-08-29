@@ -5,7 +5,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'cloudflare/neo-discord/commands/relations.json'
+      - 'services/neo-discord/commands/relations.json'
       - '.github/workflows/register-neo-relations-discord.yml'
 
 permissions:
@@ -18,7 +18,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
       - name: Register or update /relations
         env:
           DISCORD_APPLICATION_ID: ${{ secrets.DISCORD_APPLICATION_ID }}
@@ -29,7 +29,7 @@ jobs:
           const app = process.env.DISCORD_APPLICATION_ID;
           const token = process.env.DISCORD_BOT_TOKEN;
           if (!app || !token) throw new Error('DISCORD_APPLICATION_ID and DISCORD_BOT_TOKEN are required');
-          const command = JSON.parse(fs.readFileSync('cloudflare/neo-discord/commands/relations.json','utf8'));
+          const command = JSON.parse(fs.readFileSync('services/neo-discord/commands/relations.json','utf8'));
           const base = `https://discord.com/api/v10/applications/${app}/commands`;
           const headers = {authorization:`Bot ${token}`,'content-type':'application/json'};
           (async()=>{
