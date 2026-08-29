@@ -1,11 +1,16 @@
 {
   "name": "relations",
-  "description": "Read NEO Relations CRM status from the GitHub-backed control plane",
+  "description": "Operate the GitHub-backed NEO Relations control plane through Discord",
   "options": [
     {
       "type": 1,
       "name": "status",
-      "description": "Show NEO Relations and GitHub Pages status"
+      "description": "Show NEO Relations frontend, backend, and Discord status"
+    },
+    {
+      "type": 1,
+      "name": "architecture",
+      "description": "Show the primary NEO Relations control-plane architecture"
     },
     {
       "type": 1,
