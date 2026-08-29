@@ -67,8 +67,11 @@ export function intentCartItem(intent:NeoCheckoutIntent):CatalogItem{
 
 export function checkoutResultUrl(base:string,status:'success'|'cancel',paymentId:string,reference?:string):string{
   const url=new URL(base);
+  const settled=status==='success'&&Boolean(reference);
   url.searchParams.set('neo_checkout',status);
   url.searchParams.set('payment_id',paymentId);
+  url.searchParams.set('settlement_state',settled?'SETTLED':status==='cancel'?'CANCELLED':'PENDING');
+  url.searchParams.set('settlement_confirmed',settled?'1':'0');
   if(reference)url.searchParams.set('reference',reference);
   return url.toString();
 }
