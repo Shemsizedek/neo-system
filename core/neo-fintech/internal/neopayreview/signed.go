@@ -16,22 +16,23 @@ const (
 )
 
 type SignedVerification struct {
-	VerificationID       string                   `json:"verification_id"`
-	ReviewID             string                   `json:"review_id"`
-	ApprovalID           string                   `json:"approval_id"`
-	ActorID              string                   `json:"actor_id"`
-	SignedTxHash         string                   `json:"signed_tx_hash"`
-	UnsignedStructureHash string                  `json:"unsigned_structure_hash"`
-	SignedStructureHash  string                   `json:"signed_structure_hash"`
-	Inspection           Inspection               `json:"inspection"`
-	Status               SignedVerificationStatus `json:"status"`
-	MismatchReason       string                   `json:"mismatch_reason,omitempty"`
-	VerifiedAt           time.Time                `json:"verified_at"`
+	VerificationID        string                   `json:"verification_id"`
+	ReviewID              string                   `json:"review_id"`
+	ApprovalID            string                   `json:"approval_id"`
+	ActorID               string                   `json:"actor_id"`
+	SignedTxHash          string                   `json:"signed_tx_hash"`
+	UnsignedStructureHash string                   `json:"unsigned_structure_hash"`
+	SignedStructureHash   string                   `json:"signed_structure_hash"`
+	Inspection            Inspection               `json:"inspection"`
+	Status                SignedVerificationStatus `json:"status"`
+	MismatchReason        string                   `json:"mismatch_reason,omitempty"`
+	VerifiedAt            time.Time                `json:"verified_at"`
 }
 
 type BroadcastAuthorization struct {
 	AuthorizationID string    `json:"authorization_id"`
 	VerificationID  string    `json:"verification_id"`
+	ValidationID    string    `json:"validation_id"`
 	ReviewID        string    `json:"review_id"`
 	ApprovalID      string    `json:"approval_id"`
 	ActorID         string    `json:"actor_id"`
@@ -40,10 +41,6 @@ type BroadcastAuthorization struct {
 	AuthorizedAt    time.Time `json:"authorized_at"`
 }
 
-// VerifySignedTransaction rechecks the externally signed transaction against
-// both the approved payment semantics and a signature-independent transaction
-// structure hash. It does not verify cryptographic signatures and does not
-// broadcast; those are separate trust boundaries.
 func VerifySignedTransaction(verificationID, actorID string, review Review, approval Approval, signedTx string, inspection Inspection, at time.Time) (SignedVerification, error) {
 	if strings.TrimSpace(verificationID) == "" || strings.TrimSpace(actorID) == "" {
 		return SignedVerification{}, errors.New("verification_id and actor_id are required")
@@ -76,12 +73,20 @@ func VerifySignedTransaction(verificationID, actorID string, review Review, appr
 	return v, nil
 }
 
+// AuthorizeBroadcast is intentionally fail-closed. Broadcast authority now
+// requires a successful Bitcoin Core consensus/policy validation record.
 func (v SignedVerification) AuthorizeBroadcast(authorizationID, actorID, reason string, at time.Time) (BroadcastAuthorization, error) {
+	return BroadcastAuthorization{}, errors.New("Bitcoin Core consensus validation is required before broadcast authorization")
+}
+
+func (v SignedVerification) authorizeValidatedBroadcast(authorizationID, validationID, actorID, reason string, at time.Time) (BroadcastAuthorization, error) {
 	if v.Status != SignedVerificationVerified { return BroadcastAuthorization{}, errors.New("signed transaction is not verified") }
-	if strings.TrimSpace(authorizationID) == "" || strings.TrimSpace(actorID) == "" { return BroadcastAuthorization{}, errors.New("authorization_id and actor_id are required") }
+	if strings.TrimSpace(authorizationID) == "" || strings.TrimSpace(validationID) == "" || strings.TrimSpace(actorID) == "" {
+		return BroadcastAuthorization{}, errors.New("authorization_id, validation_id and actor_id are required")
+	}
 	return BroadcastAuthorization{
-		AuthorizationID: authorizationID, VerificationID: v.VerificationID, ReviewID: v.ReviewID,
-		ApprovalID: v.ApprovalID, ActorID: actorID, Reason: reason, SignedTxHash: v.SignedTxHash,
-		AuthorizedAt: at.UTC(),
+		AuthorizationID: authorizationID, VerificationID: v.VerificationID, ValidationID: validationID,
+		ReviewID: v.ReviewID, ApprovalID: v.ApprovalID, ActorID: actorID, Reason: reason,
+		SignedTxHash: v.SignedTxHash, AuthorizedAt: at.UTC(),
 	}, nil
 }
