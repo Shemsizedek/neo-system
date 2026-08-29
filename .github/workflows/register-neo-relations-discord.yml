@@ -1,11 +1,11 @@
-name: Register NEO Relations Discord Command
+name: Register Canonical NEO Discord Commands
 
 on:
   workflow_dispatch:
   push:
     branches: [main]
     paths:
-      - 'services/neo-discord/commands/relations.json'
+      - 'services/neo-discord/commands/*.json'
       - '.github/workflows/register-neo-relations-discord.yml'
 
 permissions:
@@ -19,29 +19,29 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-      - name: Register or update /relations
+      - name: Register or update canonical NEO commands
         env:
           DISCORD_APPLICATION_ID: ${{ secrets.DISCORD_APPLICATION_ID }}
           DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
         run: |
           node <<'NODE'
-          const fs = require('fs');
-          const app = process.env.DISCORD_APPLICATION_ID;
-          const token = process.env.DISCORD_BOT_TOKEN;
-          if (!app || !token) throw new Error('DISCORD_APPLICATION_ID and DISCORD_BOT_TOKEN are required');
-          const command = JSON.parse(fs.readFileSync('services/neo-discord/commands/relations.json','utf8'));
-          const base = `https://discord.com/api/v10/applications/${app}/commands`;
-          const headers = {authorization:`Bot ${token}`,'content-type':'application/json'};
+          const fs=require('fs');const path=require('path');
+          const app=process.env.DISCORD_APPLICATION_ID;const token=process.env.DISCORD_BOT_TOKEN;
+          if(!app||!token)throw new Error('DISCORD_APPLICATION_ID and DISCORD_BOT_TOKEN are required');
+          const dir='services/neo-discord/commands';
+          const manifests=fs.readdirSync(dir).filter(x=>x.endsWith('.json')).sort().map(x=>JSON.parse(fs.readFileSync(path.join(dir,x),'utf8')));
+          const base=`https://discord.com/api/v10/applications/${app}/commands`;
+          const headers={authorization:`Bot ${token}`,'content-type':'application/json'};
           (async()=>{
-            const listRes = await fetch(base,{headers});
-            if(!listRes.ok) throw new Error(`Discord list commands failed ${listRes.status}: ${await listRes.text()}`);
-            const commands = await listRes.json();
-            const existing = commands.find(x=>x.name===command.name);
-            const url = existing ? `${base}/${existing.id}` : base;
-            const method = existing ? 'PATCH' : 'POST';
-            const res = await fetch(url,{method,headers,body:JSON.stringify(command)});
-            if(!res.ok) throw new Error(`Discord ${method} failed ${res.status}: ${await res.text()}`);
-            const saved = await res.json();
-            console.log(`Registered /${saved.name} command id ${saved.id}`);
+            const listRes=await fetch(base,{headers});
+            if(!listRes.ok)throw new Error(`Discord list commands failed ${listRes.status}: ${await listRes.text()}`);
+            const existing=await listRes.json();
+            for(const command of manifests){
+              const found=existing.find(x=>x.name===command.name);
+              const url=found?`${base}/${found.id}`:base;const method=found?'PATCH':'POST';
+              const res=await fetch(url,{method,headers,body:JSON.stringify(command)});
+              if(!res.ok)throw new Error(`Discord ${method} /${command.name} failed ${res.status}: ${await res.text()}`);
+              const saved=await res.json();console.log(`Registered /${saved.name} command id ${saved.id}`);
+            }
           })().catch(err=>{console.error(err);process.exit(1)});
           NODE
