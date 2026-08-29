@@ -2,9 +2,20 @@ export const CES_LEGACY_PROFILE = Object.freeze({
   id: 'ces-legacy',
   baseUrl: 'https://www.community-exchange.org',
   default: true,
+  surfaces: Object.freeze({
+    login: Object.freeze({ key: 'login', label: 'Legacy Login', risk: 'authentication', mapping: 'discovery-required' }),
+    transactions: Object.freeze({ key: 'transactions', label: 'Transactions', risk: 'financial', mapping: 'discovery-required' }),
+    offerings: Object.freeze({ key: 'offerings', label: 'Offerings', risk: 'market-data', mapping: 'discovery-required' }),
+    publications: Object.freeze({ key: 'publications', label: 'Publications', risk: 'content-write', mapping: 'discovery-required' }),
+    memberships: Object.freeze({ key: 'memberships', label: 'Memberships', risk: 'account-admin', mapping: 'discovery-required' }),
+    manage: Object.freeze({ key: 'manage', label: 'Manage', risk: 'admin', mapping: 'discovery-required' }),
+    stats: Object.freeze({ key: 'stats', label: 'Stats', risk: 'read-only', mapping: 'discovery-required' }),
+    virtualTrader: Object.freeze({ key: 'virtual-trader', label: 'Virtual Trader', risk: 'interexchange', mapping: 'mapped' }),
+  }),
   routes: Object.freeze({
     virtualTrader: Object.freeze({
       key: 'virtual-trader',
+      surface: 'virtual-trader',
       path: '/win/virtual.asp',
       method: 'GET',
       mode: 'read-only',
@@ -12,6 +23,7 @@ export const CES_LEGACY_PROFILE = Object.freeze({
     }),
     transactionReview: Object.freeze({
       key: 'transaction-review',
+      surface: 'transactions',
       path: null,
       method: 'GET',
       mode: 'discovery-required',
@@ -19,6 +31,7 @@ export const CES_LEGACY_PROFILE = Object.freeze({
     }),
     transactionApproval: Object.freeze({
       key: 'transaction-approval',
+      surface: 'transactions',
       path: null,
       method: 'POST',
       mode: 'guarded',
@@ -27,6 +40,7 @@ export const CES_LEGACY_PROFILE = Object.freeze({
     }),
     vDollarIssue: Object.freeze({
       key: 'v-dollar-issue',
+      surface: 'manage',
       path: null,
       method: 'POST',
       mode: 'guarded',
@@ -35,6 +49,7 @@ export const CES_LEGACY_PROFILE = Object.freeze({
     }),
     publicationUpload: Object.freeze({
       key: 'publication-upload',
+      surface: 'publications',
       path: null,
       method: 'POST',
       mode: 'guarded',
@@ -43,19 +58,56 @@ export const CES_LEGACY_PROFILE = Object.freeze({
     }),
     subscriptionMaintain: Object.freeze({
       key: 'subscription-maintain',
+      surface: 'memberships',
       path: null,
       method: 'POST',
       mode: 'guarded',
       requiresHumanApproval: true,
       requiresFingerprint: true,
     }),
+    offeringsRead: Object.freeze({
+      key: 'offerings-read',
+      surface: 'offerings',
+      path: null,
+      method: 'GET',
+      mode: 'discovery-required',
+    }),
+    statsRead: Object.freeze({
+      key: 'stats-read',
+      surface: 'stats',
+      path: null,
+      method: 'GET',
+      mode: 'discovery-required',
+    }),
+    manageRead: Object.freeze({
+      key: 'manage-read',
+      surface: 'manage',
+      path: null,
+      method: 'GET',
+      mode: 'discovery-required',
+    }),
   }),
 });
+
+export function getLegacyCesSurface(key) {
+  const surface = Object.values(CES_LEGACY_PROFILE.surfaces).find((candidate) => candidate.key === key);
+  if (!surface) throw new Error(`unknown CES legacy surface: ${key}`);
+  return surface;
+}
 
 export function getLegacyCesRoute(key) {
   const route = Object.values(CES_LEGACY_PROFILE.routes).find((candidate) => candidate.key === key);
   if (!route) throw new Error(`unknown CES legacy route: ${key}`);
   return route;
+}
+
+export function listLegacyDiscoveryTargets() {
+  return Object.values(CES_LEGACY_PROFILE.surfaces).map((surface) => ({
+    ...surface,
+    routes: Object.values(CES_LEGACY_PROFILE.routes)
+      .filter((route) => route.surface === surface.key)
+      .map((route) => route.key),
+  }));
 }
 
 export function assertLegacyRouteReady(key, { fingerprint } = {}) {
