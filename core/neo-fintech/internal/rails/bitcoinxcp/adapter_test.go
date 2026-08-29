@@ -6,6 +6,8 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/Shemsizedek/neo-system/core/neo-fintech/internal/rails"
 )
 
 func TestTransactionEvidenceConfirmed(t *testing.T) {
@@ -37,7 +39,7 @@ func TestComposeSendNoBroadcast(t *testing.T) {
 	res, err := a.ComposeSend(context.Background(), ComposeSendRequest{Source: "src", Destination: "dst", Asset: "xcp", Quantity: 100, FeeSats: 1000})
 	if err != nil { t.Fatal(err) }
 	if res.UnsignedTx != "deadbeef" || res.Asset != "XCP" { t.Fatalf("unexpected compose result: %+v", res) }
-	if _, err := a.Submit(context.Background(), structToCommand()); err != ErrBroadcastDisabled { t.Fatalf("expected broadcast disabled, got %v", err) }
+	if _, err := a.Submit(context.Background(), rails.Command{}); err != ErrBroadcastDisabled { t.Fatalf("expected broadcast disabled, got %v", err) }
 }
 
 func TestComposeRejectsExcessiveFee(t *testing.T) {
@@ -46,5 +48,3 @@ func TestComposeRejectsExcessiveFee(t *testing.T) {
 	_, err = a.ComposeSend(context.Background(), ComposeSendRequest{Source: "src", Destination: "dst", Asset: "XCP", Quantity: 1, FeeSats: 1001})
 	if err == nil { t.Fatal("expected excessive fee rejection") }
 }
-
-func structToCommand() rails.Command { return rails.Command{} }
