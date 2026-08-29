@@ -56,4 +56,8 @@ async function reconcile(){
 try{await reconcile()}catch(error){store.appendAudit('recovery',null,'RECOVERY_SWEEP_FAILED',{error:String(error?.message||error)});console.error('NEO Miner recovery supervisor failed closed:',error);process.exitCode=1}
 finally{store.close()}
 
-if(process.exitCode!==1) await import('./server.mjs')
+if(process.exitCode!==1){
+  const {server}=await import('./server.mjs')
+  const port=Number(process.env.PORT||8890)
+  server.listen(port,'0.0.0.0',()=>console.log(`NEO Miner production API listening on ${port} after recovery sweep`))
+}
