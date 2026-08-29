@@ -1,0 +1,4 @@
+(()=>{
+  function apply(){if(location.hash!=='#market')return;const raw=new URLSearchParams(location.search).get('pair');if(!raw)return;const [base,quote]=String(raw).toUpperCase().split('/');if(base!=='NOMNI'||!quote)return;const button=document.querySelector(`[data-base-quote="${CSS.escape(quote)}"]`);if(button){button.click();button.scrollIntoView({block:'nearest',inline:'nearest'});}}
+  const observer=new MutationObserver(()=>queueMicrotask(apply));window.addEventListener('DOMContentLoaded',()=>{observer.observe(document.getElementById('result')||document.body,{childList:true,subtree:true});apply()});window.addEventListener('hashchange',apply);
+})();
