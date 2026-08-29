@@ -1,14 +1,6 @@
 import { verifyKey } from 'discord-interactions'
 import { SYSTEM_PROMPT } from '../../core/neo-command.js'
-import { discordJson, healthResponse, dispatchVerifiedInteraction } from '../../core/interaction.js'
-
-async function verifyDiscord(request,env,raw){
-  const sig=request.headers.get('x-signature-ed25519')||''
-  const ts=request.headers.get('x-signature-timestamp')||''
-  const key=String(env.DISCORD_PUBLIC_KEY||'').trim()
-  if(!sig||!ts||!key)return false
-  return verifyKey(raw,sig,ts,key)
-}
+import { createDiscordHttpHandler } from '../../core/interaction.js'
 
 function extractWorkersAIText(body){
   if(typeof body==='string'&&body.trim())return body.trim()
@@ -22,7 +14,7 @@ function runtimeAdapter(env){
   const model=String(env.WORKERS_AI_MODEL||'@cf/meta/llama-3.1-8b-instruct-fp8')
   return {
     id:'cloudflare-worker',
-    version:'1.1',
+    version:'1.2',
     providerLabel:env.AI?`Cloudflare Workers AI (${model})`:'',
     async askRuntimeAI(prompt,systemPrompt=SYSTEM_PROMPT){
       if(!env.AI)throw new Error('Workers AI binding is not configured')
@@ -34,18 +26,20 @@ function runtimeAdapter(env){
   }
 }
 
+const handle=createDiscordHttpHandler({
+  transportAdapter:'cloudflare-worker',
+  runtimeFactory:runtimeAdapter,
+  verifySignature:async({request,env,raw})=>{
+    const sig=request.headers.get('x-signature-ed25519')||''
+    const ts=request.headers.get('x-signature-timestamp')||''
+    const key=String(env.DISCORD_PUBLIC_KEY||'').trim()
+    if(!sig||!ts||!key)return false
+    return verifyKey(raw,sig,ts,key)
+  }
+})
+
 export default {
-  async fetch(request,env,ctx){
-    const u=new URL(request.url)
-    const runtime=runtimeAdapter(env)
-    if(request.method==='GET'&&u.pathname==='/health')return healthResponse(env,runtime,'cloudflare-worker')
-    if(request.method!=='POST'||(u.pathname!=='/'&&u.pathname!=='/discord/interactions'))return discordJson({error:'Not found'},404)
-    const raw=await request.text()
-    let verified=false
-    try{verified=await verifyDiscord(request,env,raw)}catch{}
-    if(!verified)return discordJson({error:'Invalid Discord signature'},401)
-    let interaction
-    try{interaction=JSON.parse(raw)}catch{return discordJson({error:'Invalid JSON'},400)}
-    return dispatchVerifiedInteraction(interaction,env,runtime,{waitUntil:(p)=>ctx.waitUntil(p)})
+  fetch(request,env,ctx){
+    return handle(request,env,{waitUntil:(p)=>ctx.waitUntil(p)})
   }
 }
