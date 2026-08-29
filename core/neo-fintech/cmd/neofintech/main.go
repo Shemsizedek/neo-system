@@ -31,6 +31,7 @@ func main() {
 				"approval_evidence": "durable",
 				"signer_handoff_audited": true,
 				"public_route_registered": false,
+				"route_registration_requires": []string{"authentication", "idempotency middleware", "PostgreSQL", "composer", "independent inspector"},
 			},
 			"live_funds_enabled": false,
 		})
