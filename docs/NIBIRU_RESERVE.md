@@ -58,6 +58,14 @@ The Origin snapshot therefore reports:
 - `POST /api/v1/nibiru/settlements/:id/reconcile`
 - `POST /api/v1/nibiru/recognition-assessments`
 - `POST /api/v1/nibiru/recognition-assessments/:id/approve`
+- `POST /api/v1/nibiru/attestations/verify`
+- `GET /api/v1/nibiru/audit`
+
+Nibiru durable runtime state uses SQLite with WAL and full synchronous writes. Reserve positions, ISO messages, journals, settlements, recognition assessments, signed attestations, and audit events survive restart. Set `NIBIRU_RESERVE_DB_PATH` to an explicit persistent-volume path in production.
+
+Backing attestations use externally produced Ed25519 signatures verified against configured public trust keys. Cryptographic verification proves that the trusted key signed the exact payload; it does not prove the auditor's license, custody, asset existence, valuation, legal sufficiency, or regulatory endorsement.
+
+Official XSD validation requires three independent inputs: exact schema bytes, a pinned SHA-256 digest, and an actual XSD validator adapter. Missing bytes, hash mismatch, or missing validator fails closed and cannot produce `officialXsdValidated: true`.
 
 ## Reconciliation and recognition
 
