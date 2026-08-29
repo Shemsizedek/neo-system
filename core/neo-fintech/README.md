@@ -21,20 +21,23 @@ The first concrete rail lives in `internal/rails/bitcoinxcp` and intentionally s
 
 ## Gate 4: NEOpay transaction review and signer handoff
 
-The NEOpay review layer lives in `internal/neopayreview` and enforces review-before-signing:
+The NEOpay review layer captures exact user intent, composes unsigned bytes, independently inspects them, compares source/destination/asset/quantity/fee, persists rejected or verified review evidence, binds approval to the exact transaction hash, and records external signer handoff without storing keys or signatures. A mismatch returns HTTP 409 and withholds unsigned transaction bytes.
 
-1. Capture exact user intent: source, destination, asset, quantity in base units, and miner fee in satoshis.
-2. Compose unsigned transaction bytes through an injected compose function.
-3. Decode/inspect those bytes through a separately injected inspector. Missing independent inspection fails closed.
-4. Compare decoded source, destination, asset, quantity, and fee against intent. Any mismatch becomes durable rejected-review evidence.
-5. Bind the review to a SHA-256 hash of the exact unsigned transaction bytes.
-6. Allow approval only for a verified review and reject approval if the unsigned bytes changed after review.
-7. Persist review, approval, and external signer-handoff evidence separately. Approval never stores or implies a private key, signature, or broadcast result.
-8. The review HTTP handler returns HTTP 409 and withholds unsigned transaction bytes when inspection does not match intent.
+## Gate 5: Counterparty independent decode + authenticated idempotent approval
 
-`migrations/002_neopay_transaction_review.sql` adds append-only review, approval, and signer-handoff records. `neopayreview.PrepareHandler` supplies the HTTP review-handler contract, but the standalone binary deliberately does not register it until authentication, durable storage, idempotency middleware, a concrete composer, and an independent decoder/inspector are injected.
+This gate closes the trust gap between composition and signing:
 
-Counterparty Core API v2 documents `/transactions/info` and `/transactions/unpack` as supported transaction parsing helpers. The exact request contract must be verified against the deployed Core version before wiring the production inspector. Until then the service remains fail-closed rather than guessing provider parameters or treating compose-response fields as independent evidence.
+- `bitcoinxcp.InspectUnsigned` calls Counterparty Core API v2 `/v2/transactions/info?rawtransaction=<hex>` and consumes the endpoint's `unpacked_data` result.
+- Only Counterparty `send` and `enhanced_send` message types are accepted by the NEOpay send inspector; unexpected types fail closed before approval.
+- The decoded source, destination, asset, quantity and Bitcoin miner fee are converted into the independent `neopayreview.Inspection` contract.
+- Authenticated review and approval boundaries require a `Principal` injected by upstream authentication and a mandatory `Idempotency-Key`.
+- Idempotency scope is `(principal, operation, target, key)` plus a canonical semantic fingerprint. Same-key/different-input reuse is rejected.
+- PostgreSQL serializes claims using the existing durable `fintech_idempotency` uniqueness constraint.
+- Approval and the idempotency success transition commit in the same serializable database transaction.
+- Approval handlers load the authoritative persisted review; client-supplied review status or transaction hashes are never trusted.
+- Equivalent completed approval retries return the stored approval/review outcome instead of creating a second approval.
+
+Counterparty Core's current API source exposes `/v2/transactions/info` and `/v2/transactions/unpack`; the `info` path parses the raw transaction and includes unpacked Counterparty message data. Production deployment must still pin an approved Counterparty endpoint, supply real authentication middleware, configure PostgreSQL, and keep server-side signing/broadcast disabled until their separate gates are reviewed.
 
 Run:
 
