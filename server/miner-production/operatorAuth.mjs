@@ -36,14 +36,15 @@ export function parseOperatorAccounts(raw=process.env.NEO_OPERATOR_ACCOUNTS_JSON
   return rows.map(row=>{const id=String(row.id||'').trim(),role=String(row.role||'').toUpperCase(),passwordHash=String(row.passwordHash||'');if(!id||!ROLE_PERMISSIONS[role]||!passwordHash)throw new Error('OPERATOR_ACCOUNT_INVALID');return {id,role,passwordHash,displayName:String(row.displayName||id)}})
 }
 
-export function createOperatorAuth({secret=process.env.NEO_OPERATOR_SESSION_SECRET,accounts=parseOperatorAccounts(),ttlSeconds=Number(process.env.NEO_OPERATOR_SESSION_TTL_SEC||1800),cookieName='neo_operator_session',secure=true}={}){
+export function createOperatorAuth({secret=process.env.NEO_OPERATOR_SESSION_SECRET,accounts=parseOperatorAccounts(),ttlSeconds=Number(process.env.NEO_OPERATOR_SESSION_TTL_SEC||1800),cookieName='neo_operator_session',secure=true,sameSite=process.env.NEO_OPERATOR_COOKIE_SAMESITE||'Lax'}={}){
   if(!secret||String(secret).length<32) throw new Error('OPERATOR_SESSION_SECRET_REQUIRED')
+  if(!['Strict','Lax','None'].includes(String(sameSite)))throw new Error('OPERATOR_SAMESITE_INVALID')
+  if(String(sameSite)==='None'&&!secure)throw new Error('OPERATOR_SAMESITE_NONE_REQUIRES_SECURE')
   const accountById=new Map(accounts.map(v=>[v.id,v]))
   const sign=input=>crypto.createHmac('sha256',secret).update(input).digest('base64url')
   const issue=account=>{
     const session={sid:crypto.randomUUID(),sub:account.id,role:account.role,displayName:account.displayName,csrf:crypto.randomBytes(24).toString('base64url'),iat:nowMs(),exp:nowMs()+Math.max(300,ttlSeconds)*1000}
     const payload=b64url(JSON.stringify(session)),token=`${payload}.${sign(payload)}`
-    const sameSite=String(process.env.NEO_OPERATOR_COOKIE_SAMESITE||'None')
     const cookie=`${cookieName}=${token}; Path=/; HttpOnly; ${secure?'Secure; ':''}SameSite=${sameSite}; Max-Age=${Math.max(300,ttlSeconds)}`
     return {session,cookie,csrfToken:session.csrf}
   }
@@ -61,6 +62,6 @@ export function createOperatorAuth({secret=process.env.NEO_OPERATOR_SESSION_SECR
     if(csrf){const supplied=String(req.headers['x-csrf-token']||'');if(!supplied||!timingSafe(supplied,session.csrf))return {ok:false,status:403,error:'CSRF_VALIDATION_FAILED'}}
     return {ok:true,session}
   }
-  const clearCookie=()=>`${cookieName}=; Path=/; HttpOnly; ${secure?'Secure; ':''}SameSite=${String(process.env.NEO_OPERATOR_COOKIE_SAMESITE||'None')}; Max-Age=0`
+  const clearCookie=()=>`${cookieName}=; Path=/; HttpOnly; ${secure?'Secure; ':''}SameSite=${sameSite}; Max-Age=0`
   return {authenticate,issue,sessionFromRequest,hasPermission,requirePermission,clearCookie}
 }
