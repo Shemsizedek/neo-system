@@ -13,43 +13,28 @@ A Go 1.24 financial kernel for NEO services. It is intentionally rail-aware but 
 
 ## Gate 2: durable state and rail contracts
 
-This gate added:
-
-- PostgreSQL schema for immutable journals, entries, idempotency claims, provider evidence, and reconciliation exceptions.
-- Serializable journal persistence through `database/sql`.
-- Atomic idempotency claims backed by a database uniqueness constraint.
-- A provider-neutral `rails.Adapter` contract with submit/query separation. Acceptance for processing is never treated as financial success.
-- Reconciliation match primitives that require both internal and external evidence and exact currency-preserving amounts.
+This gate added PostgreSQL-backed journal/idempotency/evidence schemas, serializable journal persistence, atomic idempotency claims, provider-neutral rail contracts, and item-level reconciliation primitives.
 
 ## Gate 3: Bitcoin + Counterparty/XCP read-compose rail
 
-The first concrete rail lives in `internal/rails/bitcoinxcp` and intentionally supports **read and compose only**:
-
-- Bitcoin transaction lookup returns mempool-observed or block-confirmed evidence with payload hashing.
-- Counterparty API v2 composition uses `/v2/addresses/<address>/compose/send` and returns an unsigned/raw transaction for external review and signing.
-- Counterparty transaction reconciliation uses `/v2/transactions/<tx_hash>/events` rather than inferring token state from Bitcoin confirmation alone.
-- Counterparty readiness headers are checked when present.
-- Asset quantities remain exact integer base units and miner fees are bounded in satoshis by a configured maximum.
-- `Submit` is disabled: this service does not broadcast transactions.
-- Private-key signing is outside this service boundary.
+The first concrete rail lives in `internal/rails/bitcoinxcp` and intentionally supports **read and compose only**. It provides Bitcoin transaction evidence, Counterparty API v2 send composition through `/v2/addresses/<address>/compose/send`, transaction-event reconciliation through `/v2/transactions/<tx_hash>/events`, readiness checks, exact integer asset quantities, and bounded miner fees in satoshis. `Submit` remains disabled and private-key signing remains outside this service boundary.
 
 ## Gate 4: NEOpay transaction review and signer handoff
 
-The NEOpay review layer lives in `internal/neopayreview` and enforces a review-before-signing workflow:
+The NEOpay review layer lives in `internal/neopayreview` and enforces review-before-signing:
 
-1. Capture the exact user intent: source, destination, asset, quantity in base units, and miner fee in satoshis.
-2. Compose an unsigned transaction through an injected compose function.
-3. Decode/inspect those unsigned bytes through a separately injected inspector. If an independent inspector is not configured, the review fails closed.
-4. Compare decoded source, destination, asset, quantity, and fee against the user's intent. Any mismatch becomes durable rejected-review evidence.
-5. Hash the exact unsigned transaction bytes and bind that hash to the review.
-6. Approval is allowed only for a verified review and is rejected if the unsigned transaction bytes change after review.
-7. Persist review, approval, and external signer-handoff evidence separately. No private key, signature, or broadcast result is stored or implied by approval.
+1. Capture exact user intent: source, destination, asset, quantity in base units, and miner fee in satoshis.
+2. Compose unsigned transaction bytes through an injected compose function.
+3. Decode/inspect those bytes through a separately injected inspector. Missing independent inspection fails closed.
+4. Compare decoded source, destination, asset, quantity, and fee against intent. Any mismatch becomes durable rejected-review evidence.
+5. Bind the review to a SHA-256 hash of the exact unsigned transaction bytes.
+6. Allow approval only for a verified review and reject approval if the unsigned bytes changed after review.
+7. Persist review, approval, and external signer-handoff evidence separately. Approval never stores or implies a private key, signature, or broadcast result.
+8. The review HTTP handler returns HTTP 409 and withholds unsigned transaction bytes when inspection does not match intent.
 
-`migrations/002_neopay_transaction_review.sql` adds append-only review, approval, and signer-handoff records. `neopayreview.PrepareHandler` provides the HTTP handler contract, but the standalone binary deliberately does not register it until authentication, durable storage, idempotency middleware, a concrete composer, and an independent decoder/inspector are injected.
+`migrations/002_neopay_transaction_review.sql` adds append-only review, approval, and signer-handoff records. `neopayreview.PrepareHandler` supplies the HTTP review-handler contract, but the standalone binary deliberately does not register it until authentication, durable storage, idempotency middleware, a concrete composer, and an independent decoder/inspector are injected.
 
-Counterparty Core API v2 documents `/transactions/info` and `/transactions/unpack` as the supported parse/unpack helpers. The exact query/body contract must be verified against the deployed Counterparty Core version before wiring the production inspector. Until then, the review service remains fail-closed rather than guessing parameter names or trusting compose-response fields as independent evidence.
-
-The adapter URLs are configuration inputs; adding an adapter does not by itself prove a production provider is available, trusted, synchronized, or authorized. Production deployment must pin the actual Bitcoin/Counterparty endpoints, authenticate protected providers where applicable, verify their operating contract, persist evidence, and define confirmation/finality policy appropriate to the product.
+Counterparty Core API v2 documents `/transactions/info` and `/transactions/unpack` as supported transaction parsing helpers. The exact request contract must be verified against the deployed Core version before wiring the production inspector. Until then the service remains fail-closed rather than guessing provider parameters or treating compose-response fields as independent evidence.
 
 Run:
 
