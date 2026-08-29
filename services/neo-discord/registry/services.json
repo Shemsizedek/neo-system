@@ -1,11 +1,12 @@
 {
-  "version": "1.2.0",
+  "version": "1.3.0",
   "planes": {"backend":"github","frontend":"github-pages","serverApi":"discord"},
   "defaultCommand": "services",
   "readActions": {
     "details": {"grounding":"registry","mutates":false},
     "status": {"grounding":["github-main-path","github-pages-route"],"mutates":false,"scope":"control-plane-reachability"},
-    "read": {"grounding":"service-specific-approved-read-sources","mutates":false,"scope":"curated-service-read-adapter"}
+    "read": {"grounding":"service-specific-approved-read-sources","mutates":false,"scope":"curated-service-read-adapter"},
+    "operator": {"grounding":"configured-authenticated-runtime","mutates":false,"requiresOperator":true,"scope":"protected-aggregate-operational-read"}
   },
   "readAdapters": {
     "neopay": ["github-pages:/api/router/providers.json","github-pages:/api/router/state.json"],
@@ -14,6 +15,10 @@
     "neo-exchange": ["github-pages:/api/platforms/neo-exchange.json"],
     "neo-relations": ["github-main:apps/neo-relations/runtime"]
   },
+  "operatorReadAdapters": {
+    "neo-miner": {"source":"runtime-env:NEO_MINER_OPERATOR_URL","auth":"runtime-secret:NEO_MINER_OPERATOR_TOKEN","mutates":false,"approvedSummary":"operational-scalars-only"},
+    "neo-relations": {"source":"runtime-env:NEO_RELATIONS_OPERATOR_URL","auth":"runtime-secret:NEO_RELATIONS_OPERATOR_TOKEN","mutates":false,"aggregateOnly":true,"pii":false}
+  },
   "rules": {
     "transportOwnsBusinessLogic": false,
     "discordSensitiveExecution": false,
@@ -21,7 +26,12 @@
     "aiApproval": false,
     "serviceStatusMayImplyApplicationHealth": false,
     "readAdaptersMayMutate": false,
-    "readAdaptersMayExposeProtectedRelationsData": false
+    "readAdaptersMayExposeProtectedRelationsData": false,
+    "operatorReadRequiresRbac": true,
+    "operatorReadMutation": false,
+    "operatorReadMayExposeSecrets": false,
+    "operatorReadMayApprove": false,
+    "operatorReadPublicFallback": false
   },
   "services": [
     {"id":"gisd","name":"GISD / NEO Cipher","githubPath":"apps/gisd","pagesPath":null,"specializedCommand":null,"visibility":"internal"},
@@ -43,6 +53,7 @@
     {"id":"neo-oracle","name":"NEO Oracle","githubPath":"docs/neo-oracle","pagesPath":"/neo-oracle/","specializedCommand":null,"visibility":"public"},
     {"id":"neo-lingo","name":"NEO Lingo","githubPath":"docs/neo-lingo","pagesPath":"/neo-lingo/","specializedCommand":null,"visibility":"public"},
     {"id":"neo-algo","name":"NEO Algo","githubPath":"docs/neo-algo","pagesPath":"/neo-algo/","specializedCommand":null,"visibility":"public"},
-    {"id":"neo-corpus","name":"NEO Corpus","githubPath":"docs/neo-corpus","pagesPath":"/neo-corpus/","specializedCommand":null,"visibility":"public"}
+    {"id":"neo-corpus","name":"NEO Corpus","githubPath":"docs/neo-corpus","pagesPath":"/neo-corpus/","specializedCommand":null,"visibility":"public"},
+    {"id":"neo-miner","name":"NEO Miner","githubPath":"server/miner-production","pagesPath":null,"specializedCommand":null,"visibility":"operator"}
   ]
 }
