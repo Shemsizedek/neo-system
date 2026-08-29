@@ -6,6 +6,8 @@ import './styles.css';
 const FOUNDATION_ADDRESS = '1Ky2wRYYrJzqdQJH64F7TR98fqLxJs7LK8';
 const TREASURY_ADDRESS = '18FyntJG9hdXYvanm67mGgbyo1P7adckvg';
 const API_BASE = window.NEO_EXCHANGE_API_BASE || '';
+const CURRENCY_REGISTRY = '/neo-system/api/neo-counter/currencies.json';
+const CHECKOUT_GATEWAY = '/neo-system/neo-counter/';
 
 const fallbackMarkets = [
   { pair: 'BTC/XCP', best_bid: null, best_ask: null, mid: null, status: 'API REQUIRED' },
@@ -30,15 +32,20 @@ function App() {
   const [book, setBook] = useState({ bids: [], asks: [], best_bid: null, best_ask: null, mid: null, spread: null });
   const [feedState, setFeedState] = useState('REFERENCE');
   const [search, setSearch] = useState('');
+  const [checkoutAmount, setCheckoutAmount] = useState('25.00');
+  const [checkoutCurrency, setCheckoutCurrency] = useState('NMNI');
+  const [worldCurrencies, setWorldCurrencies] = useState([]);
 
   useEffect(() => {
     let cancelled = false;
     Promise.allSettled([
       fetch(`${API_BASE}/api/neo-exchange/assets?addresses=${TREASURY_ADDRESS},${FOUNDATION_ADDRESS}`).then(r => { if (!r.ok) throw new Error('assets'); return r.json(); }),
-      fetch(`${API_BASE}/api/neo-exchange/markets`).then(r => { if (!r.ok) throw new Error('markets'); return r.json(); })
-    ]).then(([assetResult, marketResult]) => {
+      fetch(`${API_BASE}/api/neo-exchange/markets`).then(r => { if (!r.ok) throw new Error('markets'); return r.json(); }),
+      fetch(CURRENCY_REGISTRY).then(r => { if (!r.ok) throw new Error('currencies'); return r.json(); })
+    ]).then(([assetResult, marketResult, currencyResult]) => {
       if (cancelled) return;
       if (assetResult.status === 'fulfilled') setAssets(assetResult.value.assets || []);
+      if (currencyResult.status === 'fulfilled') setWorldCurrencies(currencyResult.value.currencies || []);
       if (marketResult.status === 'fulfilled') {
         const liveMarkets = marketResult.value.markets || [];
         setMarkets(liveMarkets);
@@ -79,6 +86,26 @@ function App() {
     const q = search.trim().toUpperCase();
     return assets.filter(a => !q || a.asset?.includes(q)).slice(0, 12);
   }, [assets, search]);
+
+  const checkoutEntry = useMemo(() => worldCurrencies.find(c => c.symbol === checkoutCurrency), [worldCurrencies, checkoutCurrency]);
+  const checkout = () => {
+    const cents = Math.round(Number(checkoutAmount) * 100);
+    if (!Number.isSafeInteger(cents) || cents <= 0) return;
+    const asset = checkoutEntry?.counterpartyAsset || '';
+    const rail = asset === 'BTC' ? 'BTC' : asset === 'NOMNI' ? 'NOMNI' : asset ? 'XCP' : 'BTC';
+    const url = new URL(CHECKOUT_GATEWAY, window.location.origin);
+    url.searchParams.set('checkout', '1');
+    url.searchParams.set('service', 'neo-exchange');
+    url.searchParams.set('order', `neo-exchange-${Date.now()}`);
+    url.searchParams.set('label', `NEO Exchange ${activePair}`);
+    url.searchParams.set('amount', String(cents));
+    url.searchParams.set('currency', checkoutCurrency);
+    url.searchParams.set('rail', rail);
+    if (asset) url.searchParams.set('asset', asset);
+    url.searchParams.set('success_url', window.location.href);
+    url.searchParams.set('cancel_url', window.location.href);
+    window.location.assign(url.toString());
+  };
 
   return <div className="app-shell">
     <header className="topbar">
@@ -141,11 +168,19 @@ function App() {
           <div className="empty-book">Counterparty settles on-chain. This panel will derive positions and realized/unrealized P/L from wallet balances, completed matches and verified valuation feeds.</div>
         </div>
 
+        <div className="panel positions-panel">
+          <div className="panel-header"><div><small>NEO COUNTER</small><h2>World Currency Checkout</h2></div><WalletCards size={18}/></div>
+          <label>Amount (USD)<input value={checkoutAmount} onChange={e=>setCheckoutAmount(e.target.value)} inputMode="decimal"/></label>
+          <label>World Currency<select value={checkoutCurrency} onChange={e=>setCheckoutCurrency(e.target.value)}>{worldCurrencies.map(c=><option key={c.id} value={c.symbol}>{c.symbol} — {c.name}</option>)}</select></label>
+          <button className="submit buy" onClick={checkout}>PAY WITH NEO COUNTER</button>
+          <p className="safety-note">{checkoutEntry?.counterpartyAsset?`Verified settlement asset: ${checkoutEntry.counterpartyAsset}`:`${checkoutCurrency} is available from the shared Treasury catalog; exact Counterparty asset mapping is required before token settlement is auto-verified.`}</p>
+        </div>
+
         <div className="panel footer-terminal">
           <div><span className="status-dot"/><b>Bitcoin rail</b><small>mainnet</small></div>
           <div><span className="status-dot"/><b>Counterparty XCP</b><small>live depth adapter</small></div>
           <div><span className="status-dot muted"/><b>Execution</b><small>review-gated</small></div>
-          <div><span className="status-dot muted"/><b>Base44</b><small>reference build</small></div>
+          <div><span className="status-dot muted"/><b>NEO Counter</b><small>{worldCurrencies.length || '—'} currencies</small></div>
         </div>
       </section>
     </main>
