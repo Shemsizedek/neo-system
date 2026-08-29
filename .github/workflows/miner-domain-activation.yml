@@ -1,0 +1,61 @@
+name: NEO Miner Live Domain Activation
+
+on:
+  workflow_dispatch:
+    inputs:
+      console_origin:
+        description: HTTPS console origin under the NEO private site suffix
+        required: true
+        type: string
+      operator_api:
+        description: HTTPS operator BFF origin routed through Cloudflare Tunnel
+        required: true
+        type: string
+      site_suffix:
+        description: Shared private site suffix for console and operator hosts
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: neo-miner-live-domain-activation
+  cancel-in-progress: false
+
+jobs:
+  activate:
+    runs-on: ubuntu-latest
+    environment: neo-miner-production
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Validate same-site domain and private backend readiness
+        env:
+          NEO_OPERATOR_ORIGIN: ${{ inputs.console_origin }}
+          NEO_MINER_OPERATOR_API: ${{ inputs.operator_api }}
+          NEO_OPERATOR_SITE_SUFFIX: ${{ inputs.site_suffix }}
+        run: npm run miner:domain:activate
+      - name: Run authenticated operator smoke gate
+        env:
+          NEO_OPERATOR_PUBLIC_URL: ${{ inputs.operator_api }}
+          NEO_OPERATOR_ORIGIN: ${{ inputs.console_origin }}
+          NEO_SMOKE_OPERATOR_ID: ${{ secrets.NEO_SMOKE_OPERATOR_ID }}
+          NEO_SMOKE_OPERATOR_PASSWORD: ${{ secrets.NEO_SMOKE_OPERATOR_PASSWORD }}
+        run: node server/miner-production/operatorDeploymentSmoke.mjs
+      - name: Activation summary
+        run: |
+          echo "## NEO Miner live-domain gate" >> "$GITHUB_STEP_SUMMARY"
+          echo "Console origin: ${{ inputs.console_origin }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "Operator API: ${{ inputs.operator_api }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "Site suffix: ${{ inputs.site_suffix }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "Domain, TLS, CORS, backend readiness, anonymous blocking, and authenticated operator smoke checks passed." >> "$GITHUB_STEP_SUMMARY"
+          echo "The private miner-production API was not exposed by this workflow." >> "$GITHUB_STEP_SUMMARY"
