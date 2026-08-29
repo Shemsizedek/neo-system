@@ -1,0 +1,16 @@
+{
+  "schema": "neo.statement.accounts.v1",
+  "description": "Public NEOscan statement snapshot accounts. These are public blockchain addresses only; no credentials or private keys belong in this file.",
+  "accounts": [
+    {
+      "address": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+      "label": "NEO Treasury wallet",
+      "enabled": true
+    },
+    {
+      "address": "1Ky2wRYYrJzqdQJH64F7TR98fqLxJs7LK8",
+      "label": "Orange Chip anchor",
+      "enabled": true
+    }
+  ]
+}

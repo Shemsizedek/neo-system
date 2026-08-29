@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "neo.statement.accounts.v1",
+  "type": "object",
+  "required": ["schema", "accounts"],
+  "properties": {
+    "schema": {"const": "neo.statement.accounts.v1"},
+    "description": {"type": "string"},
+    "accounts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["address", "enabled"],
+        "properties": {
+          "address": {"type": "string", "minLength": 26, "maxLength": 120},
+          "label": {"type": "string"},
+          "enabled": {"type": "boolean"}
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

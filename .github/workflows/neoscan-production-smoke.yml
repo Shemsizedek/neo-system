@@ -6,7 +6,8 @@ on:
     branches: [main]
     paths:
       - 'apps/neoscan/**'
-      - 'cloudflare/neoscan-statements/**'
+      - 'scripts/build-neoscan-statements-snapshots.mjs'
+      - '.github/workflows/pages.yml'
       - '.github/workflows/neoscan-production-smoke.yml'
 
 permissions:
@@ -21,86 +22,62 @@ jobs:
         run: |
           set -euo pipefail
           PAGE='https://shemsizedek.github.io/neo-system/neoscan/'
-          HTML="$(curl --fail --silent --show-error --location --retry 5 --retry-delay 2 "$PAGE")"
+          HTML="$(curl --fail --silent --show-error --location --retry 8 --retry-delay 3 "$PAGE")"
           grep -q 'NEOscan — Public Explorer' <<<"$HTML"
           grep -q 'statements-client.js' <<<"$HTML"
 
-      - name: Verify deployed runtime configuration
+      - name: Verify GitHub-native runtime configuration
         shell: bash
         run: |
           set -euo pipefail
           CONFIG_URL='https://shemsizedek.github.io/neo-system/neoscan/runtime-config.js'
-          CONFIG="$(curl --fail --silent --show-error --location --retry 5 --retry-delay 2 "$CONFIG_URL")"
-          grep -q 'https://neoscan-statements-public.neosystem.workers.dev' <<<"$CONFIG"
+          CONFIG="$(curl --fail --silent --show-error --location --retry 8 --retry-delay 3 "$CONFIG_URL")"
+          grep -q "statementsSnapshotBase:'../api/neoscan/statements'" <<<"$CONFIG"
+          ! grep -q 'neoscan-statements-public.neosystem.workers.dev' <<<"$CONFIG"
 
-      - name: Verify Statements Worker health and readiness
+      - name: Verify public statement manifest
         shell: bash
         run: |
           set -euo pipefail
-          BASE='https://neoscan-statements-public.neosystem.workers.dev'
-          curl --fail --silent --show-error --retry 5 --retry-delay 2 -D health.headers "$BASE/health" -o health.json
-          curl --fail --silent --show-error --retry 5 --retry-delay 2 -D ready.headers "$BASE/ready" -o ready.json
-          echo '--- health headers ---'
-          cat health.headers
-          echo '--- health body preview ---'
-          head -c 500 health.json || true
-          echo
-          echo '--- ready headers ---'
-          cat ready.headers
-          echo '--- ready body preview ---'
-          head -c 500 ready.json || true
-          echo
-          test -s health.json
-          test -s ready.json
+          BASE='https://shemsizedek.github.io/neo-system/api/neoscan/statements'
+          curl --fail --silent --show-error --location --retry 8 --retry-delay 3 "$BASE/index.json" -o index.json
           python - <<'PY'
           import json
-          for path, expected in [('health.json','live'),('ready.json','ready')]:
-              raw=open(path,'rb').read()
-              try:
-                  data=json.loads(raw)
-              except Exception as exc:
-                  raise AssertionError(f'{path} is not JSON: {raw[:500]!r}') from exc
-              assert data.get('ok') is True, data
-              assert data.get('status') == expected, data
-              assert data.get('schema') == 'neo.statement.service.v1', data
-              assert data.get('readOnly') is True, data
+          data=json.load(open('index.json'))
+          assert data.get('schema') == 'neo.statement.snapshot-index.v1', data
+          assert data.get('source') == 'GitHub Actions', data
+          assert data.get('readOnly') is True, data
+          assert data.get('accountCount', 0) >= 2, data
+          accounts={row.get('account'):row for row in data.get('accounts', [])}
+          for address in ('18FyntJG9hdXYvanm67mGgbyo1P7adckvg','1Ky2wRYYrJzqdQJH64F7TR98fqLxJs7LK8'):
+              assert address in accounts, (address, accounts)
           PY
 
-      - name: Verify end-to-end public statement envelope
+      - name: Verify end-to-end treasury statement snapshot
         shell: bash
         run: |
           set -euo pipefail
-          BASE='https://neoscan-statements-public.neosystem.workers.dev'
-          ADDRESS='1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa'
-          curl --fail --silent --show-error --retry 5 --retry-delay 2 \
-            -H 'Accept: application/json' \
-            -H 'Origin: https://shemsizedek.github.io' \
-            "$BASE/v1/statements?address=$ADDRESS" \
-            -D headers.txt -o statement.json
-          test -s statement.json
+          BASE='https://shemsizedek.github.io/neo-system/api/neoscan/statements'
+          ADDRESS='18FyntJG9hdXYvanm67mGgbyo1P7adckvg'
+          curl --fail --silent --show-error --location --retry 8 --retry-delay 3 "$BASE/$ADDRESS.json" -o statement.json
           python - <<'PY'
           import json
-          raw=open('statement.json','rb').read()
-          try:
-              data=json.loads(raw)
-          except Exception as exc:
-              raise AssertionError(f'statement response is not JSON: {raw[:500]!r}') from exc
+          data=json.load(open('statement.json'))
           assert data.get('ok') is True, data
+          assert data.get('source') == 'github-actions-snapshot', data
           assert data.get('requestId'), data
           statement=data.get('data') or {}
           assert statement.get('schema') == 'neo.statement.service.v1', statement
           assert statement.get('statementSchema') == 'neo.statement.v1', statement
+          assert statement.get('account') == '18FyntJG9hdXYvanm67mGgbyo1P7adckvg', statement
           sources=statement.get('sources') or {}
           for name in ('bitcoin','counterparty','ces','offline'):
               assert name in sources, (name, sources)
           assert statement.get('consolidatedTotal') is None, statement
           assert sources['offline'].get('status') == 'unavailable', sources['offline']
-          headers=open('headers.txt', encoding='utf-8', errors='ignore').read().lower()
-          assert 'access-control-allow-origin: https://shemsizedek.github.io' in headers, headers
           print(json.dumps({
-              'schema': statement.get('schema'),
-              'statementSchema': statement.get('statementSchema'),
+              'account': statement.get('account'),
               'reconciliationStatus': statement.get('reconciliationStatus'),
-              'sourceStatuses': {k:(v or {}).get('status') for k,v in sources.items() if k in ('bitcoin','counterparty','ces','offline')}
+              'sourceStatuses': {k:(v or {}).get('status') for k,v in sources.items()}
           }, indent=2))
           PY
