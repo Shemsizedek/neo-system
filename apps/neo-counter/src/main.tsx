@@ -1,9 +1,11 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
+import GitHubRuntimeBanner from './platform/GitHubRuntimeBanner';
 import './styles.css';
 import './merchant/merchant.css';
 import './auth/auth.css';
+import './platform/platform.css';
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
@@ -16,6 +18,7 @@ if ('serviceWorker' in navigator) {
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
+    <GitHubRuntimeBanner />
     <App />
   </React.StrictMode>,
 );
