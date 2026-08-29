@@ -1,0 +1,26 @@
+name: NEO Miner Operator Deployment Smoke
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Verify configured operator deployment
+        env:
+          NEO_OPERATOR_PUBLIC_URL: ${{ vars.NEO_MINER_OPERATOR_API }}
+          NEO_OPERATOR_ORIGIN: ${{ vars.NEO_MINER_OPERATOR_ORIGIN }}
+          NEO_SMOKE_OPERATOR_ID: ${{ secrets.NEO_SMOKE_OPERATOR_ID }}
+          NEO_SMOKE_OPERATOR_PASSWORD: ${{ secrets.NEO_SMOKE_OPERATOR_PASSWORD }}
+        run: node server/miner-production/operatorDeploymentSmoke.mjs
