@@ -20,10 +20,12 @@ export function NeoCheckoutLauncher({serviceId,serviceName,defaultAmountCents=25
  const rail=mappedAsset==='BTC'?'BTC':mappedAsset==='NOMNI'?'NOMNI':mappedAsset?'XCP':'BTC'
  const openCheckout=()=>{
    if(!Number.isSafeInteger(cents)||cents<=0)return
+   const orderId=`${serviceId}-${Date.now()}`
+   sessionStorage.setItem(`neo-checkout-order:${serviceId}`,orderId)
    const url=new URL(GATEWAY,window.location.origin)
    url.searchParams.set('checkout','1')
    url.searchParams.set('service',serviceId)
-   url.searchParams.set('order',`${serviceId}-${Date.now()}`)
+   url.searchParams.set('order',orderId)
    url.searchParams.set('label',label||`${serviceName} Checkout`)
    url.searchParams.set('amount',String(cents))
    url.searchParams.set('currency',currency)
