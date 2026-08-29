@@ -67,17 +67,17 @@ export function gatewayStatus(env={},runtime={}){
   ].join('\n')
 }
 
-async function githubFetch(env,path){
+async function githubFetch(env,path,fetchImpl=fetch){
   const headers={'accept':'application/vnd.github+json','user-agent':'neo-discord-api','x-github-api-version':'2022-11-28'}
   if(env.GITHUB_API_TOKEN)headers.authorization=`Bearer ${env.GITHUB_API_TOKEN}`
-  const r=await fetch(`https://api.github.com/repos/${GITHUB_REPO}${path}`,{headers,signal:AbortSignal.timeout(12000)})
+  const r=await fetchImpl(`https://api.github.com/repos/${GITHUB_REPO}${path}`,{headers,signal:AbortSignal.timeout(12000)})
   const body=await r.json().catch(()=>({}))
   if(!r.ok)throw new Error(`GitHub ${r.status}: ${body?.message||'request failed'}`)
   return body
 }
 
-async function githubStatus(env){
-  const [repo,commit,pulls]=await Promise.all([githubFetch(env,''),githubFetch(env,'/commits?per_page=1'),githubFetch(env,'/pulls?state=open&per_page=20')])
+async function githubStatus(env,fetchImpl){
+  const [repo,commit,pulls]=await Promise.all([githubFetch(env,'',fetchImpl),githubFetch(env,'/commits?per_page=1',fetchImpl),githubFetch(env,'/pulls?state=open&per_page=20',fetchImpl)])
   const latest=Array.isArray(commit)?commit[0]:null
   const openPulls=Array.isArray(pulls)?pulls.length:0
   const latestMessage=String(latest?.commit?.message||'Unknown').split('\n')[0].slice(0,160)
@@ -86,23 +86,23 @@ async function githubStatus(env){
   return ['**NEO GitHub Live Status**',`Repository: ${repo?.full_name||GITHUB_REPO}`,`Default branch: ${repo?.default_branch||'unknown'}`,`Open issues/PRs: ${Number(repo?.open_issues_count??0)}`,`Open pull requests: ${openPulls}`,`Latest commit: ${latestSha} — ${latestMessage}`,`Last push: ${pushed}`,`Visibility: ${repo?.visibility||'unknown'}`,'','Source: live GitHub REST API. No blockchain or market data inferred.'].join('\n')
 }
 
-async function askOpenAI(env,prompt){
+async function askOpenAI(env,prompt,fetchImpl=fetch){
   if(!env.OPENAI_API_KEY)throw new Error('OPENAI_API_KEY is not configured')
-  const r=await fetch('https://api.openai.com/v1/responses',{method:'POST',headers:{'content-type':'application/json','authorization':`Bearer ${env.OPENAI_API_KEY}`},body:JSON.stringify({model:env.OPENAI_MODEL||'gpt-5-mini',input:[{role:'system',content:SYSTEM_PROMPT},{role:'user',content:prompt}]}),signal:AbortSignal.timeout(45000)})
+  const r=await fetchImpl('https://api.openai.com/v1/responses',{method:'POST',headers:{'content-type':'application/json','authorization':`Bearer ${env.OPENAI_API_KEY}`},body:JSON.stringify({model:env.OPENAI_MODEL||'gpt-5-mini',input:[{role:'system',content:SYSTEM_PROMPT},{role:'user',content:prompt}]}),signal:AbortSignal.timeout(45000)})
   const b=await r.json().catch(()=>({}))
   if(!r.ok)throw new Error(`OpenAI API returned ${r.status}: ${b?.error?.message||'request failed'}`)
   return extractOpenAIText(b)||'NEOsync returned no text.'
 }
 
-export async function answerNeoPrompt(env,prompt,a,runtime={}){
+export async function answerNeoPrompt(env,prompt,a,runtime={},fetchImpl=fetch){
   if(isStatusPrompt(prompt))return gatewayStatus(env,runtime)
-  if(isGitHubStatusPrompt(prompt))return githubStatus(env)
+  if(isGitHubStatusPrompt(prompt))return githubStatus(env,fetchImpl)
   if(isTreasuryPrompt(prompt))return treasuryStatus(env)
   if(isCounterpartyStatusPrompt(prompt))return counterpartyStatus(env)
   if(env.NEOSYNC_CHAT_URL){
     const headers={'content-type':'application/json','x-neo-surface':'discord','x-neo-actor':a.id}
     if(env.NEOSYNC_CHAT_TOKEN)headers.authorization=`Bearer ${env.NEOSYNC_CHAT_TOKEN}`
-    const r=await fetch(env.NEOSYNC_CHAT_URL,{method:'POST',headers,body:JSON.stringify({message:prompt,surface:'discord',actor:a}),signal:AbortSignal.timeout(45000)})
+    const r=await fetchImpl(env.NEOSYNC_CHAT_URL,{method:'POST',headers,body:JSON.stringify({message:prompt,surface:'discord',actor:a}),signal:AbortSignal.timeout(45000)})
     if(!r.ok)throw new Error(`NEOsync backend returned ${r.status}`)
     const b=await r.json()
     const text=String(b.reply||b.message||b.output||'').trim()
@@ -112,25 +112,25 @@ export async function answerNeoPrompt(env,prompt,a,runtime={}){
   if(typeof runtime.askRuntimeAI==='function'){
     try{return await runtime.askRuntimeAI(prompt,SYSTEM_PROMPT)}catch(err){errors.push(`${runtime.providerLabel||'Runtime AI'}: ${String(err?.message||err)}`)}
   }
-  try{return await askOpenAI(env,prompt)}catch(err){errors.push(`OpenAI: ${String(err?.message||err)}`)}
+  try{return await askOpenAI(env,prompt,fetchImpl)}catch(err){errors.push(`OpenAI: ${String(err?.message||err)}`)}
   throw new Error(`No AI provider succeeded. ${errors.join(' | ')}`)
 }
 
-export async function editDiscordInteraction(interaction,content){
+export async function editDiscordInteraction(interaction,content,fetchImpl=fetch){
   const text=String(content||'').slice(0,1900)
   const url=`${DISCORD_API}/webhooks/${encodeURIComponent(interaction.application_id)}/${encodeURIComponent(interaction.token)}/messages/@original`
-  const r=await fetch(url,{method:'PATCH',headers:{'content-type':'application/json'},body:JSON.stringify({content:text||'No response.',allowed_mentions:{parse:[]}}),signal:AbortSignal.timeout(15000)})
+  const r=await fetchImpl(url,{method:'PATCH',headers:{'content-type':'application/json'},body:JSON.stringify({content:text||'No response.',allowed_mentions:{parse:[]}}),signal:AbortSignal.timeout(15000)})
   if(!r.ok)throw new Error(`Discord follow-up failed ${r.status}`)
 }
 
-export async function processNeoCommand(interaction,env,runtime={}){
+export async function processNeoCommand(interaction,env,runtime={},fetchImpl=fetch){
   try{
     const prompt=commandText(interaction)
-    if(!prompt){await editDiscordInteraction(interaction,'Give me a prompt, for example: `/neo prompt:Give me the NEO system status.`');return}
-    const reply=await answerNeoPrompt(env,prompt,discordActor(interaction),runtime)
-    await editDiscordInteraction(interaction,reply)
+    if(!prompt){await editDiscordInteraction(interaction,'Give me a prompt, for example: `/neo prompt:Give me the NEO system status.`',fetchImpl);return}
+    const reply=await answerNeoPrompt(env,prompt,discordActor(interaction),runtime,fetchImpl)
+    await editDiscordInteraction(interaction,reply,fetchImpl)
   }catch(err){
-    await editDiscordInteraction(interaction,`NEOsync gateway error: ${String(err?.message||err).slice(0,1500)}`).catch(()=>{})
+    await editDiscordInteraction(interaction,`NEOsync gateway error: ${String(err?.message||err).slice(0,1500)}`,fetchImpl).catch(()=>{})
   }
 }
 
