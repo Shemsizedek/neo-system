@@ -1,10 +1,26 @@
-import {mkdir, writeFile} from 'node:fs/promises';
+import {mkdir, readFile, writeFile} from 'node:fs/promises';
 import path from 'node:path';
 import {createStatementsService} from '../apps/neoscan/server/statements-service.mjs';
 
 const OUT=path.resolve(process.env.NEOSCAN_STATEMENTS_OUT||'dist/api/neoscan/statements');
+const ACCOUNT_REGISTRY=path.resolve(process.env.NEOSCAN_STATEMENT_ACCOUNT_REGISTRY||'apps/neoscan/data/public-statement-accounts.json');
 const rawAccounts=String(process.env.NEOSCAN_STATEMENT_ACCOUNTS||'').trim();
-const accounts=[...new Set(rawAccounts.split(/[\s,]+/).map(v=>v.trim()).filter(Boolean))];
+
+async function loadAccounts(){
+  if(rawAccounts){
+    return [...new Set(rawAccounts.split(/[\s,]+/).map(v=>v.trim()).filter(Boolean))]
+      .map(address=>({address,label:null,source:'environment'}));
+  }
+  const raw=JSON.parse(await readFile(ACCOUNT_REGISTRY,'utf8'));
+  const rows=Array.isArray(raw?.accounts)?raw.accounts:[];
+  const seen=new Set();
+  return rows
+    .filter(row=>row?.enabled!==false&&String(row?.address||'').trim())
+    .map(row=>({address:String(row.address).trim(),label:String(row.label||'').trim()||null,source:'registry'}))
+    .filter(row=>seen.has(row.address)?false:(seen.add(row.address),true));
+}
+
+const accounts=await loadAccounts();
 const generatedAt=new Date().toISOString();
 const commit=process.env.GITHUB_SHA||'local';
 
@@ -28,7 +44,8 @@ const service=createStatementsService({
 await mkdir(OUT,{recursive:true});
 const published=[];
 
-for(const account of accounts){
+for(const accountRow of accounts){
+  const account=accountRow.address;
   const statement=await service.buildPublicStatement({
     address:account,
     includeCes:cesConfigured,
@@ -40,11 +57,18 @@ for(const account of accounts){
     requestId,
     source:'github-actions-snapshot',
     generatedAt,
+    label:accountRow.label,
     data:statement
   };
   const file=`${encodeURIComponent(account)}.json`;
   await writeFile(path.join(OUT,file),`${JSON.stringify(envelope,null,2)}\n`,'utf8');
-  published.push({account,file,reconciliationStatus:statement.reconciliationStatus,generatedAt:statement.generatedAt});
+  published.push({
+    account,
+    label:accountRow.label,
+    file,
+    reconciliationStatus:statement.reconciliationStatus,
+    generatedAt:statement.generatedAt
+  });
 }
 
 const manifest={
