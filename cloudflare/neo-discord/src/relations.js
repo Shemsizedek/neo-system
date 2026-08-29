@@ -98,7 +98,7 @@ async function tenantSummary(env,tenant){
 }
 
 async function serviceSummary(env){
-  const s=await fetchJson(env,'apps/neo-relations/site/status.json')
+  const s=await fetchJson(env,'apps/neo-relations/site/data/status.json')
   return [
     '**NEO Relations Services**',
     `Service: ${s?.service||'neo-relations'}`,
