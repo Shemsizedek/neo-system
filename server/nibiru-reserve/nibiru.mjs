@@ -4,16 +4,18 @@ import {createReserveLedger} from './ledger.mjs';
 import {NIBIRU_ISO_PROFILE,renderPain001,validatePain001Structure} from './iso20022.mjs';
 import {createSettlementReconciler} from './reconciliation.mjs';
 import {createRecognitionGate} from './recognition.mjs';
+import {createAttestationRegistry} from './attestations.mjs';
 
 const clean=value=>String(value??'').trim();
 const positive=value=>{const amount=Number(value);if(!Number.isFinite(amount)||amount<=0)throw new Error('amount must be positive');return amount};
 const currency=value=>{const code=clean(value).toUpperCase();if(!/^[A-Z]{3}$/.test(code))throw new Error('currency must be a three-letter code');return code};
 
-export function createNibiruReserve({now=()=>new Date().toISOString(),cesAdapter=null,ledger=createReserveLedger({now})}={}) {
+export function createNibiruReserve({now=()=>new Date().toISOString(),cesAdapter=null,ledger=createReserveLedger({now}),trustedAttestationKeys={}}={}) {
   const reserveEntries=new Map();
   const messages=new Map();
   const reconciler=createSettlementReconciler({now,ledger,minimumConfirmations:6});
   const recognition=createRecognitionGate({now});
+  const attestations=createAttestationRegistry({now,trustedPublicKeys:trustedAttestationKeys});
 
   function recordCesPosition(input) {
     for(const key of ['cesExchangeId','cesAccountId','unit','externalReference']) if(!clean(input[key])) throw new Error(`${key} is required`);
@@ -84,8 +86,9 @@ export function createNibiruReserve({now=()=>new Date().toISOString(),cesAdapter
     ces:{positionObservation:true,writeback:false,liveAdapterConnected:false},
     blockchain:{settlementLink:true,compose:false,sign:false,broadcast:false},
     iso20022:{canonicalModel:true,messageDefinition:NIBIRU_ISO_PROFILE.messageDefinition,xmlGeneration:true,structureValidation:true,officialXsdValidation:false,swiftConnected:false,fednowConnected:false,fedwireConnected:false},
+    durability:{sqlite:true,wal:true,auditLog:true},attestations:{ed25519Verification:true,privateKeyIngestion:false},
     custody:false,bankingAuthority:false
   }}
 
-  return{recordCesPosition,linkBlockchainSettlement,createIsoPaymentEnvelope,renderIsoPayment,syncCes,connectCes,reserveSnapshot,capabilities,reserveEntries,messages,ledger,reconciler,recognition};
+  return{recordCesPosition,linkBlockchainSettlement,createIsoPaymentEnvelope,renderIsoPayment,syncCes,connectCes,reserveSnapshot,capabilities,reserveEntries,messages,ledger,reconciler,recognition,attestations};
 }
