@@ -20,7 +20,7 @@ const permissionFor=(method,path)=>{
   if(method==='GET'&&path==='/audit')return PERMISSIONS.VIEW_AUDIT
   if(method==='GET'&&path==='/fleet')return PERMISSIONS.VIEW_OPERATIONS
   if(method==='GET'&&path==='/hashvault')return PERMISSIONS.VIEW_OPERATIONS
-  if(method==='GET'&&path==='/incidents')return PERMISSIONS.VIEW_AUDIT
+  if(method==='GET'&&['/incidents','/runtime-drift'].includes(path))return PERMISSIONS.VIEW_AUDIT
   if(method==='POST'&&/^\/incidents\/[^/]+\/(acknowledge|resolve)$/.test(path))return PERMISSIONS.MANAGE_INCIDENTS
   if(method==='POST'&&/^\/payouts\//.test(path))return PERMISSIONS.MANAGE_PAYOUTS
   if(method==='POST'&&/^\/hashvault\//.test(path))return PERMISSIONS.MANAGE_HASHVAULT
