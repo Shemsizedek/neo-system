@@ -1,0 +1,22 @@
+{
+  "schema_version": "1.0",
+  "gateway": "neo-counter",
+  "checkout_route": "/neo-counter/",
+  "adapter": "/neo-counter/neo-checkout.js",
+  "backend": "github-actions-snapshots",
+  "frontend": "github-pages",
+  "settlement_policy": "caller-must-verify-reference",
+  "services": [
+    {"id":"neopay","name":"NEOpay","checkout":true},
+    {"id":"neo-teller","name":"NEO Teller","checkout":true},
+    {"id":"neo-exchange","name":"NEO Exchange","checkout":true},
+    {"id":"neo-miner","name":"NEO Miner","checkout":true},
+    {"id":"neo-generator","name":"NEO Generator","checkout":true},
+    {"id":"neo-wire","name":"NEO Wire","checkout":true},
+    {"id":"neo-prime","name":"NEO Prime","checkout":true},
+    {"id":"neo-books","name":"NEO Books","checkout":true},
+    {"id":"neoscan","name":"NEOscan","checkout":true},
+    {"id":"noogle","name":"Noogle","checkout":true},
+    {"id":"neo-enterprise","name":"NEO Enterprise","checkout":true}
+  ]
+}
