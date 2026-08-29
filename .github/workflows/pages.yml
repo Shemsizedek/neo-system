@@ -64,6 +64,18 @@ jobs:
           test -f apps/neoscan/web/index.html
           mkdir -p dist/neoscan
           cp -R apps/neoscan/web/. dist/neoscan/
+      - name: Build NEOscan GitHub-native statement snapshots
+        env:
+          NEOSCAN_STATEMENT_ACCOUNTS: ${{ vars.NEOSCAN_STATEMENT_ACCOUNTS }}
+          NEOSCAN_BITCOIN_API: ${{ vars.NEOSCAN_BITCOIN_API || 'https://mempool.space/api' }}
+          NEOSCAN_COUNTERPARTY_API: ${{ vars.NEOSCAN_COUNTERPARTY_API || 'https://api.counterparty.io:4000/v2' }}
+          NEOSCAN_CES_ENDPOINT: ${{ vars.NEOSCAN_CES_ENDPOINT }}
+          NEOSCAN_CES_ACCOUNT: ${{ vars.NEOSCAN_CES_ACCOUNT }}
+          NEOSCAN_CES_NETWORK: ${{ vars.NEOSCAN_CES_NETWORK }}
+          NEOSCAN_CES_TOKEN: ${{ secrets.NEOSCAN_CES_TOKEN }}
+        run: |
+          node scripts/build-neoscan-statements-snapshots.mjs
+          test -f dist/api/neoscan/statements/index.json
       - name: Build NEO Exchange ORIGIN terminal
         working-directory: apps/neo-exchange
         run: |
@@ -101,6 +113,7 @@ jobs:
           test -f dist/guardian/privacy.html
           test -f dist/guardian/terms.html
           test -f dist/guardian/version.json
+          test -f dist/api/neoscan/statements/index.json
           for file in status protocol identities routes relay-config relay-contract build; do
             test -f "dist/api/neo-telegram/$file.json"
           done
@@ -159,6 +172,9 @@ jobs:
           echo "NEO Exchange ORIGIN: /neo-exchange/" >> "$GITHUB_STEP_SUMMARY"
           echo "NEO Guardian: /guardian/" >> "$GITHUB_STEP_SUMMARY"
           echo "Guardian live version API: /guardian/version.json" >> "$GITHUB_STEP_SUMMARY"
+          echo "NEOscan: /neoscan/" >> "$GITHUB_STEP_SUMMARY"
+          echo "NEOscan GitHub-native statements: /api/neoscan/statements/" >> "$GITHUB_STEP_SUMMARY"
+          echo "NEO Guardian: /guardian/" >> "$GITHUB_STEP_SUMMARY"
           echo "Neogram: /neogram/" >> "$GITHUB_STEP_SUMMARY"
           echo "Legacy NEO Telegram alias: /neo-telegram/" >> "$GITHUB_STEP_SUMMARY"
           echo "Neogram/NTP static API: /api/neo-telegram/" >> "$GITHUB_STEP_SUMMARY"
