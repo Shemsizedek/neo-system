@@ -7,7 +7,9 @@ export type NeoCheckoutIntent={
   orderId:string;
   label:string;
   amountCents:number;
-  currency:'USD';
+  currency:string;
+  asset?:string;
+  assetAmount?:number;
   rail?:Rail;
   successUrl?:string;
   cancelUrl?:string;
@@ -17,6 +19,7 @@ export type NeoCheckoutIntent={
 const MAX_LABEL=120;
 const MAX_SERVICE=64;
 const MAX_ORDER=96;
+const ASSET_RE=/^[A-Z0-9._-]{1,64}$/;
 
 function safeReturnUrl(value:string|null):string|undefined{
   if(!value)return undefined;
@@ -36,9 +39,14 @@ export function readCheckoutIntent(search=window.location.search):NeoCheckoutInt
   const label=(p.get('label')||service).slice(0,MAX_LABEL);
   const requestedRail=p.get('rail');
   const rail=(['BTC','XCP','NOMNI','USD'] as Rail[]).includes(requestedRail as Rail)?requestedRail as Rail:undefined;
+  const requestedCurrency=(p.get('currency')||'USD').toUpperCase().slice(0,16);
+  const requestedAsset=(p.get('asset')||'').toUpperCase();
+  const asset=ASSET_RE.test(requestedAsset)?requestedAsset:undefined;
+  const rawAssetAmount=Number(p.get('asset_amount'));
+  const assetAmount=Number.isFinite(rawAssetAmount)&&rawAssetAmount>0?rawAssetAmount:undefined;
   if(!Number.isSafeInteger(amountCents)||amountCents<=0||amountCents>100_000_000)return null;
   return {
-    v:'1',service,orderId,label,amountCents,currency:'USD',rail,
+    v:'1',service,orderId,label,amountCents,currency:requestedCurrency,asset,assetAmount,rail,
     successUrl:safeReturnUrl(p.get('success_url')),
     cancelUrl:safeReturnUrl(p.get('cancel_url'))
   };
@@ -49,7 +57,7 @@ export function intentCartItem(intent:NeoCheckoutIntent):CatalogItem{
     id:`gateway:${intent.service}:${intent.orderId}`,
     name:intent.label,
     price:intent.amountCents,
-    category:'NEO Service',
+    category:`NEO Service · ${intent.currency}`,
     sku:intent.orderId,
     inventoryTracked:false,
     quantity:1,
