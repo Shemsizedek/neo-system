@@ -4,15 +4,15 @@ on:
   pull_request:
     paths:
       - 'apps/neo-relations/**'
-      - 'cloudflare/neo-discord/commands/relations.json'
-      - 'cloudflare/neo-discord/src/relations.js'
+      - 'services/neo-discord/commands/relations.json'
+      - 'services/neo-discord/core/relations.js'
       - '.github/workflows/neo-relations-backend.yml'
   push:
     branches: [main]
     paths:
       - 'apps/neo-relations/**'
-      - 'cloudflare/neo-discord/commands/relations.json'
-      - 'cloudflare/neo-discord/src/relations.js'
+      - 'services/neo-discord/commands/relations.json'
+      - 'services/neo-discord/core/relations.js'
       - '.github/workflows/neo-relations-backend.yml'
   workflow_dispatch:
 
@@ -26,7 +26,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
       - name: Validate canonical Relations backend assets
         run: |
           test -s apps/neo-relations/contracts/control-plane.json
@@ -34,13 +34,14 @@ jobs:
           test -s apps/neo-relations/tenants/neo-prime.json
           test -s apps/neo-relations/tenants/neopay.json
           test -s apps/neo-relations/site/data/status.json
-          test -s cloudflare/neo-discord/commands/relations.json
+          test -s services/neo-discord/commands/relations.json
+          test -s services/neo-discord/core/relations.js
           node -e "const fs=require('fs'); const c=JSON.parse(fs.readFileSync('apps/neo-relations/contracts/control-plane.json','utf8')); if(c.frontend.primary!=='github-pages'||c.backend.sourceOfTruth!=='github'||c.apiPlane.primary!=='discord'||c.security.executionWorker!==false) process.exit(1)"
       - name: Verify GitHub Pages contains no privileged runtime secrets
         run: |
           ! grep -R -E 'DATABASE_URL|RELATIONS_JWT_SECRET|DISCORD_BOT_TOKEN|GITHUB_API_TOKEN|VERCEL_TOKEN' apps/neo-relations/site || (echo 'Privileged secret reference found in Pages assets' && exit 1)
       - name: Validate Discord command manifest
-        run: node -e "JSON.parse(require('fs').readFileSync('cloudflare/neo-discord/commands/relations.json','utf8'))"
+        run: node -e "JSON.parse(require('fs').readFileSync('services/neo-discord/commands/relations.json','utf8'))"
 
   backend-summary:
     runs-on: ubuntu-latest
