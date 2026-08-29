@@ -23,4 +23,5 @@ func TestPrepareHandlerWithholdsUnsignedTxOnMismatch(t *testing.T) {
 	PrepareHandler(svc).ServeHTTP(rr, req)
 	if rr.Code != http.StatusConflict { t.Fatalf("expected 409, got %d", rr.Code) }
 	if bytes.Contains(rr.Body.Bytes(), []byte("deadbeef")) { t.Fatal("rejected review leaked unsigned transaction") }
+	if len(w.reviews) != 1 || w.reviews[0].Status != StatusRejected { t.Fatal("rejected review evidence was not persisted") }
 }
