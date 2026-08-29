@@ -48,6 +48,15 @@ jobs:
           mkdir -p dist/neopay
           cp dist/index.html dist/neopay/index.html
           test -f dist/neopay/index.html
+      - name: Publish managed static service routes
+        run: |
+          test -f apps/neo-relations/site/index.html
+          test -f docs/neo-pacer/index.html
+          mkdir -p dist/neo-relations dist/neo-pacer
+          cp -R apps/neo-relations/site/. dist/neo-relations/
+          cp -R docs/neo-pacer/. dist/neo-pacer/
+          test -f dist/neo-relations/index.html
+          test -f dist/neo-pacer/index.html
       - name: Publish Noogle live interface
         run: |
           test -f apps/noogle/web/index.html
@@ -108,6 +117,7 @@ jobs:
           test -d dist/assets
           test -f dist/neo-prime/index.html
           test -f dist/neo-pacer/index.html
+          test -f dist/neo-relations/index.html
           test -f dist/neogram/index.html
           test -f dist/neo-telegram/index.html
           test -f dist/guardian/index.html
@@ -170,17 +180,31 @@ jobs:
           test ! -e dist/api/enterprise/memberships.json
           ! grep -R "github:Shemsizedek" dist/api/enterprise dist/neo-enterprise
           ! grep -R "PRIVATE_CONTROL_PLANE" dist/api/enterprise dist/neo-enterprise
+      - name: Verify canonical Pages route registry
+        run: |
+          node - <<'NODE'
+          const fs=require('fs')
+          const registry=require('./architecture/neo-pages-routes.json')
+          if(registry.deploymentOwner!=='.github/workflows/pages.yml') throw new Error('pages.yml must own Pages deployment')
+          for(const route of registry.routes){
+            const relative=route.path.replace(/^\//,'').replace(/\/$/,'')
+            if(!fs.existsSync(`dist/${relative}/index.html`)) throw new Error(`missing Pages route ${route.path}`)
+          }
+          NODE
       - name: Add SPA 404 fallback
         run: cp dist/index.html dist/404.html
       - name: Pages build summary
         run: |
           echo "Public NEO Hub: /neo-hub/" >> "$GITHUB_STEP_SUMMARY"
+          echo "NEO Prime: /neo-prime/" >> "$GITHUB_STEP_SUMMARY"
+          echo "NEOpay: /neopay/" >> "$GITHUB_STEP_SUMMARY"
+          echo "NEO Relations: /neo-relations/" >> "$GITHUB_STEP_SUMMARY"
+          echo "NEO-PACER: /neo-pacer/" >> "$GITHUB_STEP_SUMMARY"
           echo "NEO Exchange ORIGIN: /neo-exchange/" >> "$GITHUB_STEP_SUMMARY"
           echo "NEO Guardian: /guardian/" >> "$GITHUB_STEP_SUMMARY"
           echo "Guardian live version API: /guardian/version.json" >> "$GITHUB_STEP_SUMMARY"
           echo "NEOscan: /neoscan/" >> "$GITHUB_STEP_SUMMARY"
           echo "NEOscan GitHub-native statements: /api/neoscan/statements/" >> "$GITHUB_STEP_SUMMARY"
-          echo "NEO Guardian: /guardian/" >> "$GITHUB_STEP_SUMMARY"
           echo "Neogram: /neogram/" >> "$GITHUB_STEP_SUMMARY"
           echo "Legacy NEO Telegram alias: /neo-telegram/" >> "$GITHUB_STEP_SUMMARY"
           echo "Neogram/NTP static API: /api/neo-telegram/" >> "$GITHUB_STEP_SUMMARY"

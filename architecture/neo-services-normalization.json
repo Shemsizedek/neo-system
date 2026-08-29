@@ -1,5 +1,5 @@
 {
-  "version": "1.0.1",
+  "version": "1.1.0",
   "standard": "architecture/neo-services-platform.json",
   "scope": "apps-directory",
   "planes": {
@@ -31,6 +31,12 @@
     {"workflow":".github/workflows/neo-pacer-cloudflare.yml","service":"neo-pacer","status":"disabled"},
     {"workflow":".github/workflows/neoscan-statements-cloudflare.yml","service":"neoscan-statements","status":"disabled"}
   ],
+  "pages": {
+    "deploymentOwner": ".github/workflows/pages.yml",
+    "routeRegistry": "architecture/neo-pages-routes.json",
+    "singleArtifact": true,
+    "serviceSpecificDeployments": false
+  },
   "allowedTransportBridges": [
     {
       "workflow": ".github/workflows/deploy-neo-discord.yml",
@@ -43,6 +49,7 @@
     "standaloneCloudflareServiceBackend": false,
     "standaloneVercelServiceBackend": false,
     "githubPagesSecrets": false,
+    "singleGitHubPagesDeploymentOwner": true,
     "transportOwnsBusinessLogic": false
   }
 }
