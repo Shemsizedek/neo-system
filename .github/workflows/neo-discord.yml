@@ -1,4 +1,4 @@
-name: NEO Discord Bridge
+name: NEO Discord Primary Control Plane
 
 on:
   workflow_dispatch:
@@ -8,15 +8,25 @@ on:
     types: [opened, reopened, synchronize, ready_for_review, closed]
   issues:
     types: [opened, reopened, closed]
+  workflow_run:
+    workflows:
+      - "NEO *"
+      - "Deploy NEO *"
+    types: [completed]
 
 permissions:
   contents: read
+  actions: read
+
+concurrency:
+  group: neo-discord-primary-${{ github.event_name }}-${{ github.ref || github.run_id }}
+  cancel-in-progress: false
 
 jobs:
   notify:
     runs-on: ubuntu-latest
     steps:
-      - name: Post event to Discord
+      - name: Post NEO event to Discord primary operations channel
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
           EVENT_NAME: ${{ github.event_name }}
@@ -26,19 +36,42 @@ jobs:
           SHA: ${{ github.sha }}
           SERVER_URL: ${{ github.server_url }}
           RUN_ID: ${{ github.run_id }}
+          WORKFLOW_NAME: ${{ github.event.workflow_run.name }}
+          WORKFLOW_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+          WORKFLOW_URL: ${{ github.event.workflow_run.html_url }}
         shell: bash
         run: |
-          if [ -z "$DISCORD_WEBHOOK_URL" ]; then
-            echo "DISCORD_WEBHOOK_URL is not configured; skipping notification."
+          set -euo pipefail
+          if [ -z "${DISCORD_WEBHOOK_URL:-}" ]; then
+            echo "DISCORD_WEBHOOK_URL is not configured; skipping Discord notification."
             exit 0
           fi
           node <<'NODE'
-          const webhook=process.env.DISCORD_WEBHOOK_URL;
-          const payload={
-            username:'NEO GitHub Bridge',
-            content:`NEO GitHub event: **${process.env.EVENT_NAME}**\nRepository: \`${process.env.REPOSITORY}\`\nActor: \`${process.env.ACTOR}\`\nRef: \`${process.env.REF_NAME||'n/a'}\`\nCommit: \`${(process.env.SHA||'').slice(0,12)}\`\n${process.env.SERVER_URL}/${process.env.REPOSITORY}/actions/runs/${process.env.RUN_ID}`,
-            allowed_mentions:{parse:[]}
+          const webhook = process.env.DISCORD_WEBHOOK_URL;
+          const isWorkflow = process.env.EVENT_NAME === 'workflow_run';
+          const lines = isWorkflow ? [
+            `NEO service workflow: **${process.env.WORKFLOW_NAME || 'unknown'}**`,
+            `Status: **${process.env.WORKFLOW_CONCLUSION || 'unknown'}**`,
+            `Repository: \`${process.env.REPOSITORY}\``,
+            `Actor: \`${process.env.ACTOR}\``,
+            process.env.WORKFLOW_URL || `${process.env.SERVER_URL}/${process.env.REPOSITORY}/actions/runs/${process.env.RUN_ID}`
+          ] : [
+            `NEO GitHub event: **${process.env.EVENT_NAME}**`,
+            `Repository: \`${process.env.REPOSITORY}\``,
+            `Actor: \`${process.env.ACTOR}\``,
+            `Ref: \`${process.env.REF_NAME || 'n/a'}\``,
+            `Commit: \`${(process.env.SHA || '').slice(0,12)}\``,
+            `${process.env.SERVER_URL}/${process.env.REPOSITORY}/actions/runs/${process.env.RUN_ID}`
+          ];
+          const payload = {
+            username: 'NEO Operations',
+            content: lines.join('\n'),
+            allowed_mentions: { parse: [] }
           };
-          const response=await fetch(webhook,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)});
-          if(!response.ok){throw new Error(`Discord webhook returned ${response.status}: ${await response.text()}`)}
+          const response = await fetch(webhook, {
+            method: 'POST',
+            headers: {'content-type':'application/json'},
+            body: JSON.stringify(payload)
+          });
+          if (!response.ok) throw new Error(`Discord webhook returned ${response.status}: ${await response.text()}`);
           NODE
