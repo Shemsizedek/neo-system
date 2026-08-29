@@ -42,12 +42,12 @@ func (s Store) SaveTransactionReview(ctx context.Context, r neopayreview.Review)
 			review_id, operation_id, source_ref, destination_ref, asset,
 			quantity_base_units, fee_sats, decoded_source_ref, decoded_destination_ref,
 			decoded_asset, decoded_quantity_base_units, decoded_fee_sats,
-			unsigned_tx_hash, status, mismatch_reason, created_at, updated_at
-		) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$16)`,
+			unsigned_tx_hash, structure_hash, status, mismatch_reason, created_at, updated_at
+		) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$17)`,
 		r.ReviewID, r.OperationID, r.Intent.Source, r.Intent.Destination, r.Intent.Asset,
 		r.Intent.Quantity, r.Intent.FeeSats, r.Inspection.Source, r.Inspection.Destination,
 		r.Inspection.Asset, r.Inspection.Quantity, r.Inspection.FeeSats,
-		r.UnsignedTxHash, r.Status, r.MismatchReason, r.CreatedAt,
+		r.UnsignedTxHash, r.Inspection.StructureHash, r.Status, r.MismatchReason, r.CreatedAt,
 	)
 	return err
 }
@@ -81,8 +81,6 @@ func saveApprovalTx(ctx context.Context, tx *sql.Tx, a neopayreview.Approval) er
 	return nil
 }
 
-// Claim serializes first use of an authenticated NEOpay review/approval operation.
-// Equivalent replays return the stored outcome; same-key different-input reuse is rejected.
 func (s Store) Claim(ctx context.Context, id neopayreview.OperationIdentity) (neopayreview.OperationResult, bool, error) {
 	if s.DB == nil { return neopayreview.OperationResult{}, false, errors.New("nil database") }
 	res, err := s.DB.ExecContext(ctx, `INSERT INTO fintech_idempotency
@@ -118,8 +116,6 @@ func (s Store) CompleteReview(ctx context.Context, id neopayreview.OperationIden
 	return nil
 }
 
-// CompleteApproval couples the approval effect and idempotency success marker in
-// the same serializable transaction.
 func (s Store) CompleteApproval(ctx context.Context, id neopayreview.OperationIdentity, a neopayreview.Approval, r neopayreview.Review) error {
 	if s.DB == nil { return errors.New("nil database") }
 	tx, err := s.DB.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelSerializable})
@@ -138,14 +134,16 @@ func (s Store) CompleteApproval(ctx context.Context, id neopayreview.OperationId
 func (s Store) loadOperationResult(ctx context.Context, id neopayreview.OperationIdentity) (neopayreview.OperationResult, error) {
 	var r neopayreview.Review
 	var status string
+	var structureHash sql.NullString
 	err := s.DB.QueryRowContext(ctx, `SELECT review_id, operation_id, source_ref, destination_ref, asset,
 		quantity_base_units, fee_sats, decoded_source_ref, decoded_destination_ref, decoded_asset,
-		decoded_quantity_base_units, decoded_fee_sats, unsigned_tx_hash, status, COALESCE(mismatch_reason,''), created_at
+		decoded_quantity_base_units, decoded_fee_sats, unsigned_tx_hash, structure_hash, status, COALESCE(mismatch_reason,''), created_at
 		FROM fintech_transaction_reviews WHERE review_id=$1`, id.TargetID).Scan(
 		&r.ReviewID, &r.OperationID, &r.Intent.Source, &r.Intent.Destination, &r.Intent.Asset,
 		&r.Intent.Quantity, &r.Intent.FeeSats, &r.Inspection.Source, &r.Inspection.Destination, &r.Inspection.Asset,
-		&r.Inspection.Quantity, &r.Inspection.FeeSats, &r.UnsignedTxHash, &status, &r.MismatchReason, &r.CreatedAt)
+		&r.Inspection.Quantity, &r.Inspection.FeeSats, &r.UnsignedTxHash, &structureHash, &status, &r.MismatchReason, &r.CreatedAt)
 	if err != nil { return neopayreview.OperationResult{}, err }
+	r.Inspection.StructureHash = structureHash.String
 	r.Status = neopayreview.Status(status)
 	result := neopayreview.OperationResult{Review:r, Exists:true}
 	if id.Operation == "neopay_approval" {
@@ -157,6 +155,37 @@ func (s Store) loadOperationResult(ctx context.Context, id neopayreview.Operatio
 		result.Approval = a
 	}
 	return result, nil
+}
+
+func (s Store) SaveSignedVerification(ctx context.Context, v neopayreview.SignedVerification) error {
+	if s.DB == nil { return errors.New("nil database") }
+	_, err := s.DB.ExecContext(ctx, `INSERT INTO fintech_signed_transaction_verifications (
+		verification_id, review_id, approval_id, actor_id, signed_tx_hash,
+		unsigned_structure_hash, signed_structure_hash, decoded_source_ref,
+		decoded_destination_ref, decoded_asset, decoded_quantity_base_units,
+		decoded_fee_sats, status, mismatch_reason, verified_at
+	) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)`,
+		v.VerificationID, v.ReviewID, v.ApprovalID, v.ActorID, v.SignedTxHash,
+		v.UnsignedStructureHash, v.SignedStructureHash, v.Inspection.Source,
+		v.Inspection.Destination, v.Inspection.Asset, v.Inspection.Quantity,
+		v.Inspection.FeeSats, v.Status, v.MismatchReason, v.VerifiedAt)
+	return err
+}
+
+func (s Store) SaveBroadcastAuthorization(ctx context.Context, a neopayreview.BroadcastAuthorization) error {
+	if s.DB == nil { return errors.New("nil database") }
+	res, err := s.DB.ExecContext(ctx, `INSERT INTO fintech_broadcast_authorizations (
+		authorization_id, verification_id, review_id, approval_id, actor_id, reason, signed_tx_hash, authorized_at
+	) SELECT $1,v.verification_id,v.review_id,v.approval_id,$5,$6,v.signed_tx_hash,$8
+	  FROM fintech_signed_transaction_verifications v
+	 WHERE v.verification_id=$2 AND v.review_id=$3 AND v.approval_id=$4
+	   AND v.signed_tx_hash=$7 AND v.status='verified'`,
+		a.AuthorizationID, a.VerificationID, a.ReviewID, a.ApprovalID,
+		a.ActorID, a.Reason, a.SignedTxHash, a.AuthorizedAt)
+	if err != nil { return err }
+	n, err := res.RowsAffected(); if err != nil { return err }
+	if n != 1 { return errors.New("broadcast authorization preconditions not satisfied") }
+	return nil
 }
 
 func (s Store) SaveSignerHandoff(ctx context.Context, handoffID, reviewID, approvalID, unsignedTxHash, destination string) error {
