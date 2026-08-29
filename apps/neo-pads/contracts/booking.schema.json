@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "NEO Pads Booking",
+  "type": "object",
+  "required": ["bookingId", "propertyId", "hostWallet", "memberNeopassId", "price", "state", "startsAt", "endsAt"],
+  "properties": {
+    "bookingId": { "type": "string" },
+    "propertyId": { "type": "string" },
+    "hostWallet": { "type": "string" },
+    "memberNeopassId": { "type": "string" },
+    "authorizationAsset": { "const": "HOMESHARES" },
+    "price": {
+      "type": "object",
+      "required": ["amount", "currency", "symbol"],
+      "properties": {
+        "amount": { "type": "number", "minimum": 0 },
+        "currency": { "const": "WORLD_CURRENCY" },
+        "symbol": { "const": "∞" }
+      }
+    },
+    "startsAt": { "type": "string", "format": "date-time" },
+    "endsAt": { "type": "string", "format": "date-time" },
+    "state": {
+      "enum": ["DRAFT", "AVAILABLE", "QUOTED", "RESERVED", "PAYMENT_PENDING", "CONFIRMED", "ACCESS_READY", "CHECKED_IN", "ACTIVE_STAY", "CHECKED_OUT", "SETTLED", "CLOSED", "CANCELLED", "EXPIRED", "REFUNDED", "DISPUTED", "SUSPENDED"]
+    },
+    "entitlement": {
+      "type": "object",
+      "properties": {
+        "type": { "const": "OCCUPANCY" },
+        "status": { "enum": ["PENDING", "ACTIVE", "EXPIRED", "REVOKED"] }
+      }
+    }
+  }
+}

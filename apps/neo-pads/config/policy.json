@@ -1,0 +1,23 @@
+{
+  "service": "NEO_PADS",
+  "version": "0.1.0",
+  "pricing": {
+    "displayCurrency": "WORLD_CURRENCY",
+    "symbol": "∞"
+  },
+  "hostAuthorization": {
+    "network": "counterparty",
+    "asset": "HOMESHARES",
+    "orangeChipWallet": "1Ky2wRYYrJzqdQJH64F7TR98fqLxJs7LK8",
+    "minimumBalance": 1,
+    "capacityRatio": 1,
+    "policyStatus": "MVP_PROVISIONAL",
+    "requiresWalletSignature": true,
+    "requiresPropertyAuthorityVerification": true
+  },
+  "booking": {
+    "underlyingAssetTransfersOnOrdinaryBooking": false,
+    "entitlementType": "OCCUPANCY",
+    "entitlementTimeBounded": true
+  }
+}
