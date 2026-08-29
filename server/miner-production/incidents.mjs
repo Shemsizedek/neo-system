@@ -1,6 +1,7 @@
 const now=()=>new Date().toISOString()
 
 export const INCIDENT_STATES={OPEN:'OPEN',ACKNOWLEDGED:'ACKNOWLEDGED',RESOLVED:'RESOLVED'}
+const VERIFIED_BITCOIN_EVIDENCE=Symbol('VERIFIED_BITCOIN_EVIDENCE')
 
 export function incidentBlocksPayout(incidents=[],payoutId){
   return incidents.some(i=>i.payoutId===payoutId&&i.state!==INCIDENT_STATES.RESOLVED)
@@ -13,13 +14,21 @@ export function acknowledgeIncident(incident,{operatorId,note=''}){
   return {...incident,state:INCIDENT_STATES.ACKNOWLEDGED,acknowledgedBy:operatorId,acknowledgedAt:now(),acknowledgementNote:String(note||''),resolvedAt:null,resolvedBy:null,resolutionNote:null}
 }
 
-export function resolveIncident(incident,{operatorId,note='',resolutionCode}){
+export function markBitcoinEvidenceVerified(evidence){
+  if(evidence?.verified!==true||!evidence?.resolutionCode||!evidence?.verifiedAt)throw new Error('BITCOIN_VERIFIED_EVIDENCE_REQUIRED')
+  const proof={...evidence}
+  Object.defineProperty(proof,VERIFIED_BITCOIN_EVIDENCE,{value:true,enumerable:false,writable:false})
+  return Object.freeze(proof)
+}
+
+export function resolveIncident(incident,{operatorId,note='',resolutionCode,verifiedEvidence}={}){
   if(!incident?.id) throw new Error('INCIDENT_REQUIRED')
   if(incident.manualResolutionAllowed===false) throw new Error('INCIDENT_MANUAL_RESOLUTION_FORBIDDEN')
   if(![INCIDENT_STATES.OPEN,INCIDENT_STATES.ACKNOWLEDGED].includes(incident.state)) throw new Error('INCIDENT_STATE_INVALID')
   if(!operatorId) throw new Error('OPERATOR_ID_REQUIRED')
-  if(!resolutionCode) throw new Error('RESOLUTION_CODE_REQUIRED')
-  return {...incident,state:INCIDENT_STATES.RESOLVED,resolvedBy:operatorId,resolvedAt:now(),resolutionCode:String(resolutionCode),resolutionNote:String(note||'')}
+  if(!verifiedEvidence||verifiedEvidence[VERIFIED_BITCOIN_EVIDENCE]!==true)throw new Error('BITCOIN_EVIDENCE_BACKED_RESOLUTION_REQUIRED')
+  if(resolutionCode!==verifiedEvidence.resolutionCode)throw new Error('BITCOIN_EVIDENCE_RESOLUTION_MISMATCH')
+  return {...incident,state:INCIDENT_STATES.RESOLVED,resolvedBy:operatorId,resolvedAt:now(),resolutionCode:String(resolutionCode),resolutionNote:String(note||''),verifiedEvidence:{...verifiedEvidence}}
 }
 
 export function incidentContext({incident,payout=null,psbts=[],finalizedTransactions=[]}){
