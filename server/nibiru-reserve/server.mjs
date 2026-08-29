@@ -13,10 +13,17 @@ export function createNibiruReserveServer({nibiru=createNibiruReserve()}={}){
   if(req.method==='GET'&&url.pathname==='/api/v1/nibiru/capabilities')return json(res,200,nibiru.capabilities());
   if(req.method==='GET'&&url.pathname==='/api/v1/nibiru/reserve-snapshot')return json(res,200,nibiru.reserveSnapshot());
   if(req.method==='GET'&&url.pathname==='/api/v1/nibiru/trial-balance')return json(res,200,nibiru.ledger.trialBalance());
+  if(req.method==='GET'&&url.pathname==='/api/v1/nibiru/reconciliation')return json(res,200,nibiru.reconciler.snapshot());
   if(req.method==='POST'&&url.pathname==='/api/v1/nibiru/ces/positions')return json(res,201,nibiru.recordCesPosition(await read(req)));
   const link=url.pathname.match(/^\/api\/v1\/nibiru\/ces\/positions\/([^/]+)\/blockchain-settlement$/);
   if(req.method==='POST'&&link){const row=nibiru.linkBlockchainSettlement(link[1],await read(req));return row?json(res,200,row):json(res,404,{error:'position_not_found'})}
   if(req.method==='POST'&&url.pathname==='/api/v1/nibiru/iso20022/payment-envelopes')return json(res,201,nibiru.createIsoPaymentEnvelope(await read(req)));
+  if(req.method==='POST'&&url.pathname==='/api/v1/nibiru/settlements')return json(res,201,nibiru.reconciler.observe(await read(req)));
+  const reconcile=url.pathname.match(/^\/api\/v1\/nibiru\/settlements\/([^/]+)\/reconcile$/);
+  if(req.method==='POST'&&reconcile){const row=nibiru.reconciler.reconcile(reconcile[1],await read(req));return row?json(res,200,row):json(res,404,{error:'settlement_not_found'})}
+  if(req.method==='POST'&&url.pathname==='/api/v1/nibiru/recognition-assessments')return json(res,201,nibiru.recognition.assess(await read(req)));
+  const approve=url.pathname.match(/^\/api\/v1\/nibiru\/recognition-assessments\/([^/]+)\/approve$/);
+  if(req.method==='POST'&&approve){const row=nibiru.recognition.approve(approve[1],await read(req));return row?json(res,200,row):json(res,404,{error:'assessment_not_found'})}
   const render=url.pathname.match(/^\/api\/v1\/nibiru\/iso20022\/payment-envelopes\/([^/]+)\/xml$/);
   if(req.method==='GET'&&render){const row=nibiru.renderIsoPayment(render[1]);return row?json(res,200,row):json(res,404,{error:'message_not_found'})}
   return json(res,404,{error:'not_found'});
