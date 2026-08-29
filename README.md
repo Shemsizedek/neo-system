@@ -19,6 +19,7 @@ The repository began as **NEO Teller — ORIGIN**, a Bitcoin / Counterparty XCP 
 - NEO Miner dashboard shell
 - NEO Tokenworks / Neopass shared-access and escrow-planning sandbox
 - NEO Banks Tokenworks consumer boundary
+- Nibiru Reserve System — CES, blockchain settlement-reference, and ISO 20022 translation sandbox
 - World Police
 - World Marshals
 - World Guards
