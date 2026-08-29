@@ -51,5 +51,5 @@ export function verifyRuntimeAttestation(document,{secret,expectedCommitSha,expe
 
 export function isFinancialMutation(method,url=''){
   if(String(method).toUpperCase()!=='POST')return false
-  return /^\/(payouts(?:\/|$)|hashvault\/(?:credits|payouts\/reconcile)(?:\/|$)|incidents\/[^/]+\/(?:acknowledge|resolve)$)/.test(String(url).split('?')[0])
+  return /^\/(payouts(?:\/|$)|hashvault\/(?:credits|payouts\/reconcile)(?:\/|$)|incidents\/[^/]+\/resolve$)/.test(String(url).split('?')[0])
 }
