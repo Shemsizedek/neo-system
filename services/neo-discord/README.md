@@ -10,8 +10,9 @@ Primary responsibilities:
 - Counterparty and treasury read-only integrations
 - asset display policy
 - provider-neutral transport contracts
+- Discord command manifests
 
-Canonical modules now include:
+Canonical core:
 - `core/authorization.js`
 - `core/relations.js`
 - `core/neo-command.js`
@@ -19,12 +20,16 @@ Canonical modules now include:
 - `core/counterparty.js`
 - `core/treasury.js`
 
-Provider-specific runtimes belong under adapters. The existing Cloudflare Worker is retained only as a deploy/runtime adapter: it verifies Discord signatures, supplies its optional Workers AI binding, and delegates NEO command semantics to this package.
+Runtime adapters:
+- `adapters/cloudflare/` — current production HTTPS transport. Owns Discord signature verification, HTTP handling, and the optional Workers AI binding only.
+- `adapters/node-http/` — portable Node HTTP runtime contract for a future alternate host. It is not a live production deployment yet.
+
+Command manifests live under `commands/` and are provider-independent.
 
 Architecture:
 
-`Discord -> thin HTTPS runtime adapter -> services/neo-discord -> GitHub-backed NEO control plane + approved read-only data sources`
+`GitHub Pages frontend -> GitHub source/orchestration -> Discord operator/API surface -> thin HTTPS adapter -> services/neo-discord core`
 
-GitHub remains the source of truth. Discord remains the primary operator/API surface. Provider adapters must not become the canonical home for NEO business logic.
+GitHub remains the source of truth and backend orchestration layer. Discord remains the primary operator/API surface. Cloudflare is only the currently deployed transport adapter and can be replaced without moving command/business logic.
 
 Secrets remain runtime-only. Direct sensitive execution, AI approval, and Discord approval remain disabled unless a later approved gate changes those policies.
