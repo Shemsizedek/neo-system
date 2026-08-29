@@ -23,7 +23,7 @@ type Inspection struct {
 	Asset         string `json:"asset"`
 	Quantity      int64  `json:"quantity"`
 	FeeSats       int64  `json:"fee_sats"`
-	StructureHash string `json:"structure_hash"`
+	StructureHash string `json:"structure_hash,omitempty"`
 }
 
 type Status string
@@ -61,7 +61,6 @@ func New(reviewID, operationID, unsignedTx string, intent Intent, inspection Ins
 	}
 	if err := validateIntent(intent); err != nil { return Review{}, err }
 	if strings.TrimSpace(unsignedTx) == "" { return Review{}, errors.New("unsigned transaction is required") }
-	if strings.TrimSpace(inspection.StructureHash) == "" { return Review{}, errors.New("signature-independent transaction structure hash is required") }
 	h := sha256.Sum256([]byte(strings.TrimSpace(unsignedTx)))
 	r := Review{
 		ReviewID: reviewID, OperationID: operationID, Intent: intent, Inspection: inspection,
