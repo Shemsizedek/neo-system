@@ -3,9 +3,12 @@ import {PersistentStateStore} from './persistentStore.mjs'
 import {bitcoinRpcClient,transactionStatus} from './bitcoinWallet.mjs'
 import {runRecoverySweep,createRecoveryIncident,RECOVERY_ACTIONS} from './recovery.mjs'
 import {confirmPayout,createSettlementReceipt} from './payouts.mjs'
-import {runtimeIdentityFromEnv,evaluateRuntimeDrift,buildRuntimeAttestation,isFinancialMutation} from './runtimeIdentity.mjs'
+import {runtimeIdentityFromEnv,buildRuntimeAttestation,isFinancialMutation} from './runtimeIdentity.mjs'
+import {activeRuntimeDriftIncidents,reconcileRuntimeDriftIncident} from './driftIncident.mjs'
+import {notifyRuntimeDriftDiscord} from './driftDiscord.mjs'
 
-const store=new PersistentStateStore(process.env.NEO_MINER_DB_PATH||'./data/neo-miner.sqlite')
+const dbPath=process.env.NEO_MINER_DB_PATH||'./data/neo-miner.sqlite'
+const store=new PersistentStateStore(dbPath)
 const payouts=store.list('payout')
 const finalized=store.list('finalized_transaction')
 const receipts=store.list('receipt')
@@ -62,21 +65,30 @@ function currentRuntimeAttestation(){return buildRuntimeAttestation({identity:ru
 function publicIdentity(att){return {schema:att.schema,generatedAt:att.generatedAt,identity:att.identity,drift:att.drift,signature:att.signature}}
 
 if(process.exitCode!==1){
+  const driftStore=new PersistentStateStore(dbPath)
   const {server}=await import('./server.mjs')
   const publicPort=Number(process.env.PORT||8890)
   const internalPort=Number(process.env.NEO_MINER_INTERNAL_PORT||8892)
   server.listen(internalPort,'127.0.0.1',()=>console.log(`NEO Miner internal API listening on 127.0.0.1:${internalPort}`))
 
   let lastState=null
-  const monitor=()=>{
-    const drift=evaluateRuntimeDrift(runtimeIdentityFromEnv())
-    if(drift.state!==lastState){
-      console.log(JSON.stringify({event:'NEO_RUNTIME_DRIFT_STATE',state:drift.state,reasons:drift.reasons,time:new Date().toISOString()}))
-      lastState=drift.state
-    }
+  let monitorRunning=false
+  const monitor=async()=>{
+    if(monitorRunning)return
+    monitorRunning=true
+    try{
+      const attestation=currentRuntimeAttestation()
+      const result=await reconcileRuntimeDriftIncident({store:driftStore,attestation,secret:process.env.NEO_RUNTIME_ATTESTATION_SECRET,notify:event=>notifyRuntimeDriftDiscord(event)})
+      if(attestation.drift.state!==lastState){
+        console.log(JSON.stringify({event:'NEO_RUNTIME_DRIFT_STATE',state:attestation.drift.state,reasons:attestation.drift.reasons,incidentId:result.incident?.id||null,time:new Date().toISOString()}))
+        lastState=attestation.drift.state
+      }
+    }catch(error){
+      console.error('NEO runtime drift supervisor failed closed:',String(error?.message||error))
+    }finally{monitorRunning=false}
   }
-  monitor()
-  const timer=setInterval(monitor,Number(process.env.NEO_RUNTIME_DRIFT_CHECK_MS||30000));timer.unref()
+  await monitor()
+  const timer=setInterval(()=>void monitor(),Number(process.env.NEO_RUNTIME_DRIFT_CHECK_MS||30000));timer.unref()
 
   const guard=http.createServer((req,res)=>{
     if(req.method==='GET'&&req.url==='/identity'){
@@ -84,10 +96,16 @@ if(process.exitCode!==1){
       res.writeHead(att.drift.state==='GREEN'?200:503,{'content-type':'application/json','cache-control':'no-store'})
       return res.end(JSON.stringify(publicIdentity(att)))
     }
-    const drift=evaluateRuntimeDrift(runtimeIdentityFromEnv())
-    if(isFinancialMutation(req.method,req.url)&&drift.holdFinancialMutations){
+    if(req.method==='GET'&&req.url==='/runtime-drift'){
+      const att=currentRuntimeAttestation()
+      const active=activeRuntimeDriftIncidents(driftStore)
+      res.writeHead(200,{'content-type':'application/json','cache-control':'no-store'})
+      return res.end(JSON.stringify({state:att.drift.state,holdFinancialMutations:att.drift.holdFinancialMutations,reasons:att.drift.reasons,activeIncident:active[0]||null,attestation:publicIdentity(att)}))
+    }
+    const att=currentRuntimeAttestation()
+    if(isFinancialMutation(req.method,req.url)&&att.drift.holdFinancialMutations){
       res.writeHead(423,{'content-type':'application/json','cache-control':'no-store'})
-      return res.end(JSON.stringify({error:'RUNTIME_IDENTITY_DRIFT_HOLD',state:drift.state,reasons:drift.reasons}))
+      return res.end(JSON.stringify({error:'RUNTIME_IDENTITY_DRIFT_HOLD',state:att.drift.state,reasons:att.drift.reasons,incidentId:activeRuntimeDriftIncidents(driftStore)[0]?.id||null}))
     }
     const upstream=http.request({host:'127.0.0.1',port:internalPort,method:req.method,path:req.url,headers:req.headers},up=>{
       res.writeHead(up.statusCode||502,up.headers)
