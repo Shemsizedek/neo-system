@@ -71,8 +71,8 @@ func (a *Adapter) Query(ctx context.Context, providerOperationID string) (rails.
 }
 
 type BitcoinTx struct {
-	TxID          string `json:"txid"`
-	Status        struct {
+	TxID string `json:"txid"`
+	Status struct {
 		Confirmed   bool   `json:"confirmed"`
 		BlockHeight int64  `json:"block_height,omitempty"`
 		BlockHash   string `json:"block_hash,omitempty"`
@@ -87,7 +87,7 @@ func (a *Adapter) TransactionEvidence(ctx context.Context, txid string) (rails.E
 	}
 	endpoint := *a.bitcoinBase
 	endpoint.Path = strings.TrimRight(endpoint.Path, "/") + "/tx/" + txid
-	body, err := a.get(ctx, endpoint.String())
+	body, _, err := a.get(ctx, endpoint.String())
 	if err != nil {
 		return rails.Evidence{}, err
 	}
@@ -109,14 +109,7 @@ func (a *Adapter) TransactionEvidence(ctx context.Context, txid string) (rails.E
 			observedAt = time.Unix(tx.Status.BlockTime, 0).UTC()
 		}
 	}
-	return rails.Evidence{
-		ProviderOperationID: txid,
-		ProviderEventID:     tx.Status.BlockHash,
-		Kind:                kind,
-		Authoritative:       authoritative,
-		ObservedAt:          observedAt,
-		PayloadHash:         hex.EncodeToString(h[:]),
-	}, nil
+	return rails.Evidence{ProviderOperationID: txid, ProviderEventID: tx.Status.BlockHash, Kind: kind, Authoritative: authoritative, ObservedAt: observedAt, PayloadHash: hex.EncodeToString(h[:])}, nil
 }
 
 type ComposeSendRequest struct {
@@ -151,7 +144,6 @@ func (a *Adapter) ComposeSend(ctx context.Context, req ComposeSendRequest) (Comp
 	}
 
 	payload := map[string]any{
-		"source": req.Source,
 		"destination": req.Destination,
 		"asset": asset,
 		"quantity": req.Quantity,
@@ -163,10 +155,13 @@ func (a *Adapter) ComposeSend(ctx context.Context, req ComposeSendRequest) (Comp
 		return ComposeResult{}, err
 	}
 	endpoint := *a.counterpartyBase
-	endpoint.Path = strings.TrimRight(endpoint.Path, "/") + "/compose/send"
-	body, err := a.post(ctx, endpoint.String(), encoded)
+	endpoint.Path = strings.TrimRight(endpoint.Path, "/") + "/v2/addresses/" + url.PathEscape(req.Source) + "/compose/send"
+	body, headers, err := a.post(ctx, endpoint.String(), encoded)
 	if err != nil {
 		return ComposeResult{}, err
+	}
+	if ready := headers.Get("X-COUNTERPARTY-READY"); ready != "" && !strings.EqualFold(ready, "true") {
+		return ComposeResult{}, errors.New("Counterparty node is not ready")
 	}
 
 	var envelope struct {
@@ -188,6 +183,53 @@ func (a *Adapter) ComposeSend(ctx context.Context, req ComposeSendRequest) (Comp
 	return ComposeResult{UnsignedTx: unsigned, Source: req.Source, Asset: asset, Quantity: req.Quantity, FeeSats: req.FeeSats}, nil
 }
 
+type CounterpartyEvent struct {
+	Event      string `json:"event"`
+	TxHash     string `json:"tx_hash"`
+	BlockIndex int64  `json:"block_index"`
+	BlockTime  int64  `json:"block_time"`
+}
+
+func (a *Adapter) CounterpartyEvidence(ctx context.Context, txid string) (rails.Evidence, error) {
+	if err := validateTxID(txid); err != nil {
+		return rails.Evidence{}, err
+	}
+	endpoint := *a.counterpartyBase
+	endpoint.Path = strings.TrimRight(endpoint.Path, "/") + "/v2/transactions/" + txid + "/events"
+	body, headers, err := a.get(ctx, endpoint.String())
+	if err != nil {
+		return rails.Evidence{}, err
+	}
+	if ready := headers.Get("X-COUNTERPARTY-READY"); ready != "" && !strings.EqualFold(ready, "true") {
+		return rails.Evidence{}, errors.New("Counterparty node is not ready")
+	}
+	var envelope struct { Result []CounterpartyEvent `json:"result"` }
+	if err := json.Unmarshal(body, &envelope); err != nil {
+		return rails.Evidence{}, fmt.Errorf("decode Counterparty events: %w", err)
+	}
+	if len(envelope.Result) == 0 {
+		return rails.Evidence{}, errors.New("no Counterparty events found for transaction")
+	}
+	var selected CounterpartyEvent
+	for _, event := range envelope.Result {
+		if event.TxHash != "" && event.TxHash != txid {
+			return rails.Evidence{}, errors.New("Counterparty evidence txid mismatch")
+		}
+		if event.Event == "TRANSACTION_PARSED" || event.Event == "SEND" || event.Event == "ENHANCED_SEND" || event.Event == "MPMA_SEND" {
+			selected = event
+		}
+	}
+	if selected.Event == "" {
+		selected = envelope.Result[0]
+	}
+	h := sha256.Sum256(body)
+	observedAt := time.Now().UTC()
+	if selected.BlockTime > 0 {
+		observedAt = time.Unix(selected.BlockTime, 0).UTC()
+	}
+	return rails.Evidence{ProviderOperationID: txid, ProviderEventID: selected.Event, Kind: "counterparty_" + strings.ToLower(selected.Event), Authoritative: selected.BlockIndex > 0, ObservedAt: observedAt, PayloadHash: hex.EncodeToString(h[:])}, nil
+}
+
 func (a *Adapter) ValidateMoney(amount money.Money) error {
 	if amount.Minor <= 0 {
 		return errors.New("amount must be positive")
@@ -198,37 +240,37 @@ func (a *Adapter) ValidateMoney(amount money.Money) error {
 	return nil
 }
 
-func (a *Adapter) get(ctx context.Context, endpoint string) ([]byte, error) {
+func (a *Adapter) get(ctx context.Context, endpoint string) ([]byte, http.Header, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	return a.do(req)
 }
 
-func (a *Adapter) post(ctx context.Context, endpoint string, body []byte) ([]byte, error) {
+func (a *Adapter) post(ctx context.Context, endpoint string, body []byte) ([]byte, http.Header, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, bytes.NewReader(body))
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	req.Header.Set("Content-Type", "application/json")
 	return a.do(req)
 }
 
-func (a *Adapter) do(req *http.Request) ([]byte, error) {
+func (a *Adapter) do(req *http.Request) ([]byte, http.Header, error) {
 	resp, err := a.client.Do(req)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	defer resp.Body.Close()
 	body, err := io.ReadAll(io.LimitReader(resp.Body, 2<<20))
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return nil, fmt.Errorf("rail endpoint status=%d", resp.StatusCode)
+		return nil, resp.Header, fmt.Errorf("rail endpoint status=%d", resp.StatusCode)
 	}
-	return body, nil
+	return body, resp.Header, nil
 }
 
 func validateTxID(txid string) error {
