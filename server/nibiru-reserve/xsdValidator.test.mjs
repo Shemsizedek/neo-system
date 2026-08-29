@@ -1,0 +1,2 @@
+import test from'node:test';import assert from'node:assert/strict';import{createXmllintValidator}from'./xsdValidator.mjs';
+test('xmllint adapter fails closed when executable is unavailable',async()=>{const validate=createXmllintValidator({schemaPath:'/not/a/schema',executable:'definitely-not-installed-nibiru'});const result=await validate({document:'<Document/>'});assert.equal(result.valid,false);assert.ok(result.errors.length)});

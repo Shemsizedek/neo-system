@@ -1,7 +1,10 @@
 import http from 'node:http';
+import {readFileSync} from 'node:fs';
 import {pathToFileURL} from 'node:url';
 import {createNibiruReserve} from './nibiru.mjs';
 import {NibiruPersistentStore,persistNibiru} from './persistentStore.mjs';
+import {loadNibiruRuntimeConfig} from './runtimeConfig.mjs';
+import {createXmllintValidator} from './xsdValidator.mjs';
 
 const json=(res,status,body)=>{const payload=JSON.stringify(body);res.writeHead(status,{'content-type':'application/json; charset=utf-8','content-length':Buffer.byteLength(payload),'access-control-allow-origin':'*','cache-control':'no-store'});res.end(payload)};
 const read=async req=>{const chunks=[];let size=0;for await(const chunk of req){size+=chunk.length;if(size>65536)throw new Error('request_too_large');chunks.push(chunk)}return JSON.parse(Buffer.concat(chunks).toString()||'{}')};
@@ -29,8 +32,17 @@ export function createNibiruReserveServer({nibiru=createNibiruReserve()}={}){
   if(req.method==='POST'&&approve){const row=nibiru.recognition.approve(approve[1],await read(req));return row?json(res,200,row):json(res,404,{error:'assessment_not_found'})}
   const render=url.pathname.match(/^\/api\/v1\/nibiru\/iso20022\/payment-envelopes\/([^/]+)\/xml$/);
   if(req.method==='GET'&&render){const row=nibiru.renderIsoPayment(render[1]);return row?json(res,200,row):json(res,404,{error:'message_not_found'})}
+  const validate=url.pathname.match(/^\/api\/v1\/nibiru\/iso20022\/payment-envelopes\/([^/]+)\/xsd-validation$/);
+  if(req.method==='GET'&&validate){const row=await nibiru.validateIsoPayment(validate[1]);return row?json(res,200,row):json(res,404,{error:'message_not_found'})}
   return json(res,404,{error:'not_found'});
  }catch(error){return json(res,error.message==='request_too_large'?413:400,{error:error.message})}})
 }
-export function startNibiruReserveServer({port=Number(process.env.NIBIRU_RESERVE_PORT||8795),dbPath=process.env.NIBIRU_RESERVE_DB_PATH}={}){const store=new NibiruPersistentStore(dbPath);const nibiru=persistNibiru(createNibiruReserve(),store);nibiru.store=store;const server=createNibiruReserveServer({nibiru});server.on('close',()=>store.close());server.listen(port,()=>console.log(`Nibiru Reserve sandbox listening on :${port}`));return server}
+export function startNibiruReserveServer({port=Number(process.env.NIBIRU_RESERVE_PORT||8795),dbPath=process.env.NIBIRU_RESERVE_DB_PATH,runtimeConfig}={}){
+ const productionRequested=runtimeConfig||['NIBIRU_TRUST_KEYS_PATH','NIBIRU_ISO_XSD_PATH','NIBIRU_ISO_XSD_SHA256'].some(key=>process.env[key]);
+ const config=runtimeConfig||(productionRequested?loadNibiruRuntimeConfig():null);
+ const store=new NibiruPersistentStore(config?.dbPath||dbPath);
+ const isoXsd=config?{schemaBytes:readFileSync(config.isoSchemaPath),expectedSha256:config.isoSchemaSha256,validator:createXmllintValidator({schemaPath:config.isoSchemaPath,executable:config.xsdExecutable})}:null;
+ const nibiru=persistNibiru(createNibiruReserve({trustedAttestationKeys:config?.trustedPublicKeys||{},isoXsd}),store);nibiru.store=store;
+ const server=createNibiruReserveServer({nibiru});server.on('close',()=>store.close());server.listen(port,()=>console.log(`Nibiru Reserve ${config?'production-configured':'sandbox'} listening on :${port}`));return server
+}
 if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href)startNibiruReserveServer();

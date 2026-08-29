@@ -29,6 +29,15 @@ test('renders escaped version-pinned XML without claiming official validation',(
  const rendered=n.renderIsoPayment(msg.id);assert.match(rendered.document,/pain\.001\.001\.13/);assert.match(rendered.document,/A &amp; B/);assert.equal(rendered.structuralValidation.valid,true);assert.equal(rendered.structuralValidation.officialXsdValidated,false);
 });
 
+test('runs the configured hash-pinned XSD gate without authorizing transmission',async()=>{
+ const schemaBytes=Buffer.from('pinned-test-schema');
+ const expectedSha256=(await import('node:crypto')).createHash('sha256').update(schemaBytes).digest('hex');
+ const n=createNibiruReserve({now:()=> '2026-08-29T00:00:00.000Z',isoXsd:{schemaBytes,expectedSha256,validator:async()=>({valid:true,errors:[]})}});
+ const msg=n.createIsoPaymentEnvelope({messageId:'MSG-XSD',endToEndId:'E2E-XSD',debtorName:'Alice',debtorAccount:'CES-A',creditorName:'Bob',creditorAccount:'CES-B',amount:25,currency:'USD',purpose:'GDDS'});
+ const validated=await n.validateIsoPayment(msg.id);
+ assert.equal(validated.xsdValidation.officialXsdValidated,true);assert.equal(validated.transmissionAuthorized,false);assert.equal(n.capabilities().iso20022.officialXsdValidation,true);
+});
+
 test('syncs the real CES adapter contract into a balanced memorandum journal',async()=>{
  const adapter={status:()=>({schema:'neo.ces.adapter.v1',configured:true,readOnly:true}),getBalance:async()=>({network:'demo',account:'A-1',unit:'CES',amount:12.5,reference:'BAL-1',observedAt:'2026-08-28T00:00:00Z'})};
  const n=createNibiruReserve({now:()=> '2026-08-29T00:00:00.000Z',cesAdapter:adapter});const synced=await n.syncCes({token:'redacted'});

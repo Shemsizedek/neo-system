@@ -67,6 +67,19 @@ Backing attestations use externally produced Ed25519 signatures verified against
 
 Official XSD validation requires three independent inputs: exact schema bytes, a pinned SHA-256 digest, and an actual XSD validator adapter. Missing bytes, hash mismatch, or missing validator fails closed and cannot produce `officialXsdValidated: true`.
 
+## Production configuration and recovery
+
+Use `server/nibiru-reserve/config.example.env` as the deployment contract. Attestation trust roots are Ed25519 **public keys** loaded from a JSON file. The official schema path and independently verified SHA-256 digest are required. The `xmllint` adapter uses `--nonet`, a fixed argument array, a 15-second timeout, and no shell.
+
+Encrypted backups use AES-256-GCM with a scrypt-derived key. Creation checkpoints the SQLite WAL and verifies source integrity. Recovery authenticates the ciphertext, refuses to overwrite an existing target, restores to a new path, and runs `PRAGMA integrity_check` before reporting success.
+
+```bash
+npm run nibiru-reserve:backup
+npm run nibiru-reserve:recover
+```
+
+The backup passphrase belongs in the deployment secret manager, never in source, logs, command arguments, or the example configuration.
+
 ## Reconciliation and recognition
 
 Bitcoin/Counterparty settlement observations require six confirmations before Nibiru records a confirmed memorandum settlement. A changed or non-canonical block hash demotes the settlement to `REORGED` and posts a balanced reversal journal.
