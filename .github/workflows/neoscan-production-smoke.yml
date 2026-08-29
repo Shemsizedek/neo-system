@@ -47,7 +47,11 @@ jobs:
           grep -q 'NEOscan — Public Explorer' <<<"$HTML"
           grep -q 'statements-client.js' <<<"$HTML"
           grep -q 'treasury-dashboard.js' <<<"$HTML"
+          grep -q 'nomni-market-policy.js' <<<"$HTML"
           grep -q 'data-surface="treasury"' <<<"$HTML"
+          grep -q 'N.O.M.N.I. PRIMARY MARKET' <<<"$HTML"
+          grep -q 'Noocratic Open Market Natural Index' <<<"$HTML"
+          ! grep -qi 'Counterparty' <<<"$HTML"
 
       - name: Enforce NEOscan-native public identity and treasury drilldowns
         shell: bash
@@ -57,8 +61,12 @@ jobs:
           curl --fail --silent --show-error --location "$BASE/index.html" -o neoscan-index.html
           curl --fail --silent --show-error --location "$BASE/app.js" -o neoscan-app.js
           curl --fail --silent --show-error --location "$BASE/treasury-dashboard.js" -o treasury-dashboard.js
-          cat neoscan-index.html neoscan-app.js treasury-dashboard.js > neoscan-public.txt
+          curl --fail --silent --show-error --location "$BASE/nomni-market-policy.js" -o nomni-market-policy.js
+          cat neoscan-index.html neoscan-app.js treasury-dashboard.js nomni-market-policy.js > neoscan-public.txt
           ! grep -qi 'tokenscan' neoscan-public.txt
+          grep -q "primaryAsset:'NOMNI'" nomni-market-policy.js
+          grep -q "marketName:'N.O.M.N.I.'" nomni-market-policy.js
+          grep -q 'XCP — Bitcoin Community Smart-Contract Obligations' nomni-market-policy.js
           grep -q 'data-neoscan-surface="scan"' treasury-dashboard.js
           grep -q 'data-neoscan-surface="ledger"' treasury-dashboard.js
           grep -q 'Asset profile' treasury-dashboard.js
