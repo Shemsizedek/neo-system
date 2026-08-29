@@ -1,0 +1,77 @@
+name: NEO Miner Rollback Authorization
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_release_promotion_run_id:
+        description: Release Promotion run ID for the rollback target
+        required: true
+        type: string
+      latest_provenance_run_id:
+        description: Latest successful Deployment Provenance workflow run ID
+        required: true
+        type: string
+      current_commit_sha:
+        description: Commit SHA currently reported by production
+        required: true
+        type: string
+      current_image_digest:
+        description: Image digest currently reported by production
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  authorize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: neo-miner-production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Test rollback policy
+        run: node --test server/miner-production/releasePromotion.test.mjs server/miner-production/deploymentProvenance.test.mjs
+
+      - name: Download rollback target release attestation
+        uses: actions/download-artifact@v4
+        with:
+          name: neo-miner-release-attestation-${{ inputs.target_release_promotion_run_id }}
+          path: .target
+          github-token: ${{ github.token }}
+          run-id: ${{ inputs.target_release_promotion_run_id }}
+
+      - name: Download latest deployment history
+        uses: actions/download-artifact@v4
+        with:
+          name: neo-miner-deployment-history-${{ inputs.latest_provenance_run_id }}
+          path: .history
+          github-token: ${{ github.token }}
+          run-id: ${{ inputs.latest_provenance_run_id }}
+
+      - name: Authorize rollback target
+        env:
+          NEO_ROLLBACK_RELEASE_ATTESTATION: .target/release-attestation.json
+          NEO_DEPLOYMENT_HISTORY: .history/deployment-history.json
+          NEO_ROLLBACK_AUTHORIZATION_OUTPUT: rollback-authorization.json
+          NEO_RELEASE_ATTESTATION_SIGNING_SECRET: ${{ secrets.NEO_RELEASE_ATTESTATION_SIGNING_SECRET }}
+          NEO_DEPLOYMENT_PROVENANCE_SIGNING_SECRET: ${{ secrets.NEO_DEPLOYMENT_PROVENANCE_SIGNING_SECRET }}
+          NEO_CURRENT_COMMIT_SHA: ${{ inputs.current_commit_sha }}
+          NEO_CURRENT_IMAGE_DIGEST: ${{ inputs.current_image_digest }}
+        run: node server/miner-production/authorizeRollback.mjs
+
+      - name: Publish rollback summary
+        run: |
+          node -e "const a=require('./rollback-authorization.json'); console.log('### NEO Miner Rollback Authorization\n\n- Authorization: **GREEN**\n- Target commit: `'+a.target.commitSha+'`\n- Target image: `'+a.target.imageDigest+'`\n- Prior deployment: '+a.priorDeployment.deployedAt)" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload rollback authorization
+        uses: actions/upload-artifact@v4
+        with:
+          name: neo-miner-rollback-authorization-${{ github.run_id }}
+          path: rollback-authorization.json
+          retention-days: 30
