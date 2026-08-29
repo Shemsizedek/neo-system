@@ -23,6 +23,8 @@
     "miner:production":"node server/miner-production/start.mjs",
     "miner:operator":"node server/miner-production/operatorControlPlane.mjs",
     "miner:operator:hash":"node server/miner-production/hashOperatorPassword.mjs",
+    "miner:operator:bootstrap":"node server/miner-production/bootstrapOperator.mjs",
+    "miner:domain:activate":"node server/miner-production/domainActivation.mjs",
     "miner:production:test":"node --test server/miner-production/*.test.mjs",
     "neo-counter:server":"node server/neo-counter-backend/server.mjs",
     "neo-counter:server:test":"node --test server/neo-counter-backend/*.test.mjs",
