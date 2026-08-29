@@ -1,3 +1,5 @@
+import { resolveCesInterface } from './ces-interface-policy.mjs';
+
 export const CES_EXCHANGES = {
   NMNI: {
     exchangeId: 'NMNI',
@@ -20,6 +22,7 @@ export const NEO_BANK_BOT = {
   status: 'active',
   requiresHumanApproval: true,
   primaryExchange: 'NMNI',
+  primaryInterface: 'legacy',
   scopes: [
     'ces.transactions.review',
     'ces.transactions.approve',
@@ -55,7 +58,8 @@ export function createNeoBankHandler({ cesAdapter }) {
 
   return async function neoBankHandler(job) {
     const identity = resolveCesIdentity(job.exchangeId || job.payload?.exchangeId);
-    const context = { ...job.payload, exchange: identity };
+    const interfaceMode = resolveCesInterface(job.action, job.interfaceMode || job.payload?.interfaceMode);
+    const context = { ...job.payload, exchange: identity, interfaceMode };
 
     switch (job.action) {
       case 'ces.transactions.review':
@@ -87,6 +91,7 @@ export function createStubCesAdapter() {
     ok: false,
     mode: 'stub',
     operation,
+    interfaceMode: payload.interfaceMode || 'legacy',
     exchange: payload.exchange || null,
     message: 'CES live adapter not configured. No external action was taken.',
   });
