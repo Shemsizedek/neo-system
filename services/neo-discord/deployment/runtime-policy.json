@@ -1,50 +1,38 @@
 {
-  "version": "1.0.0",
+  "version": "2.0.0",
   "service": "neo-discord",
+  "platformStandard": "architecture/neo-services-platform.json",
   "sourceOfTruth": "github",
-  "controlPlane": "discord",
-  "primaryAdapter": "cloudflare-worker",
-  "standbyAdapter": "node-http",
-  "adapters": {
+  "frontendPlane": "github-pages",
+  "serverApiPlane": "discord",
+  "transportBridges": {
+    "active": "cloudflare-worker",
+    "portableReference": "node-http",
     "cloudflare-worker": {
       "path": "services/neo-discord/adapters/cloudflare",
-      "role": "primary",
+      "classification": "thin-transport-bridge",
+      "ownsBusinessLogic": false,
       "healthPath": "/health",
       "interactionPath": "/discord/interactions",
       "deployed": true
     },
     "node-http": {
       "path": "services/neo-discord/adapters/node-http",
-      "role": "standby",
+      "classification": "portable-transport-reference",
+      "ownsBusinessLogic": false,
       "healthPath": "/health",
       "interactionPath": "/discord/interactions",
       "deployed": false
     }
   },
-  "healthPolicy": {
-    "required": {
-      "ok": true,
-      "service": "neo-discord",
-      "grounded_status": true
-    },
-    "timeoutSeconds": 10,
-    "consecutiveFailuresBeforeUnhealthy": 3,
-    "consecutiveSuccessesBeforeRecovery": 2
-  },
-  "failover": {
-    "automaticPromotion": false,
-    "requiresStandbyDeployed": true,
-    "requiresHealthyStandby": true,
-    "requiresAdapterParityCI": true,
-    "requiresExplicitGitHubWorkflowDispatch": true,
-    "changesDiscordInteractionEndpoint": true,
+  "rules": {
+    "discordIsPrimaryServerApiPlane": true,
+    "githubIsPrimaryBackendPlane": true,
+    "githubPagesIsPrimaryFrontendPlane": true,
+    "transportBridgeMayBecomeBackend": false,
+    "automaticTransportPromotion": false,
     "mayChangeAuthorizationPolicy": false,
     "mayEnableSensitiveExecution": false,
     "mayApproveIntents": false
-  },
-  "rollback": {
-    "required": true,
-    "target": "last-known-healthy-adapter",
-    "requiresHealthVerification": true
   }
 }
