@@ -1,7 +1,7 @@
 import crypto from 'node:crypto';
 import {createCesAdapter} from '../../apps/neoscan/adapters/ces/adapter.mjs';
 import {createReserveLedger} from './ledger.mjs';
-import {NIBIRU_ISO_PROFILE,renderPain001,validatePain001Structure} from './iso20022.mjs';
+import {NIBIRU_ISO_PROFILE,renderPain001,validatePain001Structure,validatePain001Xsd} from './iso20022.mjs';
 import {createSettlementReconciler} from './reconciliation.mjs';
 import {createRecognitionGate} from './recognition.mjs';
 import {createAttestationRegistry} from './attestations.mjs';
@@ -10,7 +10,7 @@ const clean=value=>String(value??'').trim();
 const positive=value=>{const amount=Number(value);if(!Number.isFinite(amount)||amount<=0)throw new Error('amount must be positive');return amount};
 const currency=value=>{const code=clean(value).toUpperCase();if(!/^[A-Z]{3}$/.test(code))throw new Error('currency must be a three-letter code');return code};
 
-export function createNibiruReserve({now=()=>new Date().toISOString(),cesAdapter=null,ledger=createReserveLedger({now}),trustedAttestationKeys={}}={}) {
+export function createNibiruReserve({now=()=>new Date().toISOString(),cesAdapter=null,ledger=createReserveLedger({now}),trustedAttestationKeys={},isoXsd=null}={}) {
   const reserveEntries=new Map();
   const messages=new Map();
   const reconciler=createSettlementReconciler({now,ledger,minimumConfirmations:6});
@@ -62,6 +62,12 @@ export function createNibiruReserve({now=()=>new Date().toISOString(),cesAdapter
     return{messageId:record.id,profile:NIBIRU_ISO_PROFILE,document,structuralValidation,transmissionAuthorized:false};
   }
 
+  async function validateIsoPayment(id){
+    const rendered=renderIsoPayment(id);if(!rendered)return null;
+    const xsdValidation=await validatePain001Xsd(rendered.document,isoXsd||{});
+    return{...rendered,xsdValidation,transmissionAuthorized:false};
+  }
+
   async function syncCes({token,signal}={}){
     if(!cesAdapter)throw new Error('CES adapter is not connected');
     const balance=await cesAdapter.getBalance({token,signal});
@@ -71,7 +77,7 @@ export function createNibiruReserve({now=()=>new Date().toISOString(),cesAdapter
     return{entry,journal,adapter:cesAdapter.status()};
   }
 
-  function connectCes(config){return createNibiruReserve({now,cesAdapter:createCesAdapter(config),ledger})}
+  function connectCes(config){return createNibiruReserve({now,cesAdapter:createCesAdapter(config),ledger,trustedAttestationKeys,isoXsd})}
 
   function reserveSnapshot() {
     const rows=[...reserveEntries.values()];
@@ -85,10 +91,10 @@ export function createNibiruReserve({now=()=>new Date().toISOString(),cesAdapter
     components:['neo-tokenworks','neo-banks','ces-port','bitcoin-counterparty-adapter','iso-20022-translation'],
     ces:{positionObservation:true,writeback:false,liveAdapterConnected:false},
     blockchain:{settlementLink:true,compose:false,sign:false,broadcast:false},
-    iso20022:{canonicalModel:true,messageDefinition:NIBIRU_ISO_PROFILE.messageDefinition,xmlGeneration:true,structureValidation:true,officialXsdValidation:false,swiftConnected:false,fednowConnected:false,fedwireConnected:false},
+    iso20022:{canonicalModel:true,messageDefinition:NIBIRU_ISO_PROFILE.messageDefinition,xmlGeneration:true,structureValidation:true,officialXsdValidation:Boolean(isoXsd),swiftConnected:false,fednowConnected:false,fedwireConnected:false},
     durability:{sqlite:true,wal:true,auditLog:true},attestations:{ed25519Verification:true,privateKeyIngestion:false},
     custody:false,bankingAuthority:false
   }}
 
-  return{recordCesPosition,linkBlockchainSettlement,createIsoPaymentEnvelope,renderIsoPayment,syncCes,connectCes,reserveSnapshot,capabilities,reserveEntries,messages,ledger,reconciler,recognition,attestations};
+  return{recordCesPosition,linkBlockchainSettlement,createIsoPaymentEnvelope,renderIsoPayment,validateIsoPayment,syncCes,connectCes,reserveSnapshot,capabilities,reserveEntries,messages,ledger,reconciler,recognition,attestations};
 }
