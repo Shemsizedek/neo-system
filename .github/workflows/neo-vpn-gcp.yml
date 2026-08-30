@@ -63,15 +63,26 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
+      - name: Enforce main branch for production apply
+        if: ${{ inputs.action == 'apply' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${GITHUB_REF}" != "refs/heads/main" ]]; then
+            echo "::error::Production apply is permitted only from refs/heads/main. Current ref: ${GITHUB_REF}"
+            exit 1
+          fi
+
       - name: Validate required GitHub variables
         shell: bash
         env:
           GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
           GCP_WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER }}
           GCP_SERVICE_ACCOUNT: ${{ vars.GCP_SERVICE_ACCOUNT }}
+          GCP_TF_STATE_BUCKET: ${{ vars.GCP_TF_STATE_BUCKET }}
         run: |
           set -euo pipefail
-          for name in GCP_PROJECT_ID GCP_WIF_PROVIDER GCP_SERVICE_ACCOUNT; do
+          for name in GCP_PROJECT_ID GCP_WIF_PROVIDER GCP_SERVICE_ACCOUNT GCP_TF_STATE_BUCKET; do
             if [[ -z "${!name:-}" ]]; then
               echo "::error::$name repository/environment variable is not configured"
               exit 1
@@ -93,8 +104,11 @@ jobs:
       - name: Terraform fmt
         run: terraform fmt -check -recursive
 
-      - name: Terraform init
-        run: terraform init -input=false
+      - name: Terraform init with remote state
+        run: >-
+          terraform init -input=false
+          -backend-config="bucket=${{ vars.GCP_TF_STATE_BUCKET }}"
+          -backend-config="prefix=neo-vpn/node-001"
 
       - name: Terraform validate
         run: terraform validate
@@ -108,7 +122,7 @@ jobs:
         run: terraform plan -input=false -out=tfplan
 
       - name: Terraform apply
-        if: ${{ inputs.action == 'apply' }}
+        if: ${{ inputs.action == 'apply' && github.ref == 'refs/heads/main' }}
         env:
           TF_VAR_project_id: ${{ vars.GCP_PROJECT_ID }}
           TF_VAR_region: ${{ vars.GCP_REGION || 'us-central1' }}
@@ -117,7 +131,7 @@ jobs:
         run: terraform apply -input=false -auto-approve tfplan
 
       - name: Print Node 001 deployment outputs
-        if: ${{ inputs.action == 'apply' }}
+        if: ${{ inputs.action == 'apply' && github.ref == 'refs/heads/main' }}
         run: |
           echo "Node 001 public IP: $(terraform output -raw neo_vpn_node_001_public_ip)"
           echo "NEO VPN VPC: $(terraform output -raw neo_vpn_network_name)"
