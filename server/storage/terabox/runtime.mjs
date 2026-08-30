@@ -1,4 +1,5 @@
 import { buildAuthorizationUrl, completeAuthorization, publicConnectionSummary } from './authorization.mjs';
+import { createTokenStoreFromEnv } from './token-store.mjs';
 
 function required(value, name) {
   if (!value) throw new Error(`${name} is required`);
@@ -8,6 +9,8 @@ function required(value, name) {
 export function createMemoryTokenStore() {
   let record = null;
   return {
+    kind: 'runtime-memory',
+    durable: false,
     async set(next) { record = structuredClone(next); },
     async get() { return record ? structuredClone(record) : null; },
     async clear() { record = null; },
@@ -17,10 +20,11 @@ export function createMemoryTokenStore() {
 export function createTeraBoxRuntime({
   env = process.env,
   fetchImpl,
-  tokenStore = createMemoryTokenStore(),
+  tokenStore,
   completeAuthorizationFn = completeAuthorization,
   now = () => new Date().toISOString(),
 } = {}) {
+  const store = tokenStore || createTokenStoreFromEnv({ env, memoryFactory: createMemoryTokenStore });
   const configured = () => Boolean(env.TERABOX_CLIENT_ID && env.TERABOX_CLIENT_SECRET && env.TERABOX_PRIVATE_SECRET);
 
   return {
@@ -43,7 +47,7 @@ export function createTeraBoxRuntime({
         fetchImpl,
       });
 
-      await tokenStore.set({
+      await store.set({
         accessToken: result.secrets.accessToken,
         refreshToken: result.secrets.refreshToken,
         apiDomain: result.apiDomain,
@@ -57,7 +61,7 @@ export function createTeraBoxRuntime({
     },
 
     async status() {
-      const record = await tokenStore.get();
+      const record = await store.get();
       return {
         service: 'terabox',
         configured: configured(),
@@ -67,13 +71,13 @@ export function createTeraBoxRuntime({
         uploadDomain: record?.uploadDomain ?? null,
         refreshTokenPresent: Boolean(record?.refreshToken),
         connectedAt: record?.connectedAt ?? null,
-        tokenStore: 'runtime-memory',
-        durable: false,
+        tokenStore: store.kind || 'custom',
+        durable: Boolean(store.durable),
       };
     },
 
     async disconnect() {
-      await tokenStore.clear();
+      await store.clear();
       return { service: 'terabox', connected: false };
     },
   };
