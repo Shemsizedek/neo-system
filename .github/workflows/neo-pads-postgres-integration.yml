@@ -34,6 +34,9 @@ jobs:
       NEO_PADS_WEB_ORIGIN: https://example.github.io
       NEOPASS_API_URL: https://neopass.example.test
       NEO_COUNTER_API_URL: https://counter.example.test
+      NEO_COUNTER_CHECKOUT_URL: https://counter.example.test/checkout
+      NEO_PADS_CHECKOUT_RETURN_URL: https://example.github.io/neo-system/apps/neo-pads/checkout-return
+      NEO_PADS_CHECKOUT_CANCEL_URL: https://example.github.io/neo-system/apps/neo-pads/checkout-cancel
       NEO_COUNTER_WEBHOOK_SECRET: test-webhook-secret
       WALLET_SIGNATURE_VERIFY_URL: https://wallet.example.test/verify
       NEO_PADS_OPS_TOKEN: test-ops-token
