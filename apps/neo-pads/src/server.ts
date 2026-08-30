@@ -3,6 +3,8 @@ import express from "express";
 import { getHomesharesBalance } from "./adapters/counterparty.js";
 import { createCheckout } from "./adapters/neo-counter.js";
 import { verifyNeopass } from "./adapters/neopass.js";
+import { createRepository } from "./repository-factory.js";
+import type { BookingRecord, PropertyRecord } from "./repository.js";
 import {
   consumeWalletChallenge,
   createWalletChallenge,
@@ -10,10 +12,9 @@ import {
   verifyWalletSignature,
   verifyWebhookSignature
 } from "./security.js";
-import { RuntimeStore } from "./store.js";
 
 const app = express();
-const store = new RuntimeStore();
+const repository = createRepository();
 
 app.use(cors({ origin: process.env.NEO_PADS_WEB_ORIGIN?.split(",").map((v) => v.trim()) || true }));
 
@@ -21,51 +22,14 @@ const PORT = Number(process.env.PORT ?? 8788);
 const HOMESHARES = "HOMESHARES";
 const ORANGE_CHIP_WALLET = "1Ky2wRYYrJzqdQJH64F7TR98fqLxJs7LK8";
 
-type BookingState =
-  | "PAYMENT_PENDING"
-  | "CONFIRMED"
-  | "REFUNDED"
-  | "CANCELLED"
-  | "DISPUTED";
-
-interface Property {
-  id: string;
-  hostWallet: string;
-  title: string;
-  location: string;
-  priceWorld: number;
-  propertyAuthorityVerified: boolean;
-  status: "PENDING" | "ACTIVE";
-}
-
-interface Booking {
-  id: string;
-  propertyId: string;
-  memberNeopassId: string;
-  startsAt: string;
-  endsAt: string;
-  amountWorld: number;
-  state: BookingState;
-  entitlement: "PENDING" | "ACTIVE" | "EXPIRED" | "REVOKED";
-  checkout?: unknown;
-}
-
 function id(prefix: string) {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-}
-
-function getProperty(propertyId: string) {
-  return store.properties[propertyId] as Property | undefined;
-}
-
-function getBooking(bookingId: string) {
-  return store.bookings[bookingId] as Booking | undefined;
 }
 
 app.post(
   "/counter/payment-webhook",
   express.raw({ type: "application/json", limit: "256kb" }),
-  (req, res) => {
+  async (req, res) => {
     const rawBody = Buffer.isBuffer(req.body) ? req.body : Buffer.from("");
     const signature = req.header("x-neo-signature") ?? undefined;
     if (!verifyWebhookSignature(rawBody, signature)) {
@@ -78,32 +42,24 @@ app.post(
     } catch {
       return res.status(400).json({ error: "invalid_webhook_json" });
     }
-
     if (!event.eventId || !event.bookingId) {
       return res.status(400).json({ error: "event_id_and_booking_id_required" });
     }
 
-    if (store.hasWebhookEvent(event.eventId)) {
-      return res.status(200).json({ duplicate: true, eventId: event.eventId });
+    try {
+      const result = await repository.applyPaymentEvent({
+        eventId: event.eventId,
+        bookingId: event.bookingId,
+        status: String(event.status ?? "UNKNOWN"),
+        rawPayload: rawBody
+      });
+      return res.status(200).json({ eventId: event.eventId, ...result });
+    } catch (error) {
+      if (error instanceof Error && error.message === "booking_not_found") {
+        return res.status(404).json({ error: "booking_not_found" });
+      }
+      return res.status(500).json({ error: "payment_event_persistence_failed" });
     }
-
-    const booking = getBooking(event.bookingId);
-    if (!booking) return res.status(404).json({ error: "booking_not_found" });
-
-    if (event.status === "SETTLED") {
-      booking.state = "CONFIRMED";
-      booking.entitlement = "ACTIVE";
-    } else if (event.status === "REFUNDED") {
-      booking.state = "REFUNDED";
-      booking.entitlement = "REVOKED";
-    } else if (event.status === "DISPUTED") {
-      booking.state = "DISPUTED";
-      booking.entitlement = "REVOKED";
-    }
-
-    store.setBooking(booking.id, booking);
-    store.markWebhookEvent(event.eventId);
-    return res.json({ eventId: event.eventId, booking });
   }
 );
 
@@ -116,7 +72,7 @@ app.get("/health", (_req, res) => {
     pricing: { currency: "WORLD_CURRENCY", symbol: "∞" },
     hostAsset: HOMESHARES,
     orangeChipWallet: ORANGE_CHIP_WALLET,
-    persistence: process.env.NEO_PADS_DATA_FILE ? "file" : "memory"
+    persistence: repository.mode
   });
 });
 
@@ -142,7 +98,7 @@ app.post("/wallets/verify", async (req, res) => {
     const verified = await verifyWalletSignature({ challenge, signature });
     if (!verified) return res.status(403).json({ verified: false, reason: "signature_invalid" });
     consumeWalletChallenge(challengeId);
-    store.markWalletVerified(challenge.wallet, challengeId);
+    await repository.markWalletVerified(challenge.wallet, challengeId);
     return res.json({ verified: true, wallet: challenge.wallet, challengeId });
   } catch (error) {
     return res.status(502).json({
@@ -154,8 +110,7 @@ app.post("/wallets/verify", async (req, res) => {
 
 app.get("/counterparty/:wallet/homeshares", async (req, res) => {
   try {
-    const result = await getHomesharesBalance(req.params.wallet);
-    return res.json(result);
+    return res.json(await getHomesharesBalance(req.params.wallet));
   } catch (error) {
     return res.status(502).json({ error: error instanceof Error ? error.message : "balance_lookup_failed" });
   }
@@ -164,7 +119,7 @@ app.get("/counterparty/:wallet/homeshares", async (req, res) => {
 app.post("/neoworks/host/authorize", async (req, res) => {
   const wallet = String(req.body?.wallet ?? "").trim();
   const propertyAuthorityVerified = req.body?.propertyAuthorityVerified === true;
-  if (!wallet || !store.isWalletVerified(wallet)) {
+  if (!wallet || !(await repository.isWalletVerified(wallet))) {
     return res.status(403).json({ authorized: false, reason: "verified_wallet_required" });
   }
   if (!propertyAuthorityVerified) {
@@ -187,16 +142,16 @@ app.post("/neoworks/host/authorize", async (req, res) => {
   }
 });
 
-app.post("/pads/properties", (req, res) => {
+app.post("/pads/properties", async (req, res) => {
   const { hostWallet, title, location, priceWorld, propertyAuthorityVerified } = req.body ?? {};
   if (!hostWallet || !title || !location || !Number.isFinite(Number(priceWorld))) {
     return res.status(400).json({ error: "invalid_property" });
   }
-  if (!store.isWalletVerified(String(hostWallet))) {
+  if (!(await repository.isWalletVerified(String(hostWallet)))) {
     return res.status(403).json({ error: "verified_host_wallet_required" });
   }
 
-  const property: Property = {
+  const property: PropertyRecord = {
     id: id("NP"),
     hostWallet: String(hostWallet),
     title: String(title),
@@ -205,37 +160,37 @@ app.post("/pads/properties", (req, res) => {
     propertyAuthorityVerified: propertyAuthorityVerified === true,
     status: "PENDING"
   };
-  store.setProperty(property.id, property);
+  await repository.saveProperty(property);
   return res.status(201).json(property);
 });
 
-app.get("/pads/search", (req, res) => {
-  const location = String(req.query.location ?? "").toLowerCase();
-  const results = Object.values(store.properties)
-    .map((value) => value as Property)
-    .filter((property) => property.status === "ACTIVE" && (!location || property.location.toLowerCase().includes(location)));
+app.get("/pads/search", async (req, res) => {
+  const location = String(req.query.location ?? "");
+  const results = await repository.listActiveProperties(location);
   return res.json({ currency: "WORLD_CURRENCY", symbol: "∞", results });
 });
 
 app.post("/pads/properties/:id/activate", async (req, res) => {
-  const property = getProperty(req.params.id);
+  const property = await repository.getProperty(req.params.id);
   if (!property) return res.status(404).json({ error: "property_not_found" });
   if (!property.propertyAuthorityVerified) return res.status(403).json({ error: "property_authority_required" });
-  if (!store.isWalletVerified(property.hostWallet)) return res.status(403).json({ error: "verified_host_wallet_required" });
+  if (!(await repository.isWalletVerified(property.hostWallet))) {
+    return res.status(403).json({ error: "verified_host_wallet_required" });
+  }
 
   try {
     const balance = await getHomesharesBalance(property.hostWallet);
     if (balance.quantity < 1) return res.status(403).json({ error: "homeshares_required", balance: balance.quantity });
     property.status = "ACTIVE";
-    store.setProperty(property.id, property);
+    await repository.saveProperty(property);
     return res.json(property);
   } catch {
     return res.status(502).json({ error: "balance_lookup_failed" });
   }
 });
 
-app.post("/pads/quotes", (req, res) => {
-  const property = getProperty(String(req.body?.propertyId ?? ""));
+app.post("/pads/quotes", async (req, res) => {
+  const property = await repository.getProperty(String(req.body?.propertyId ?? ""));
   if (!property || property.status !== "ACTIVE") return res.status(404).json({ error: "listing_unavailable" });
   const nights = Math.max(1, Number(req.body?.nights ?? 1));
   const amount = property.priceWorld * nights;
@@ -249,7 +204,7 @@ app.post("/pads/quotes", (req, res) => {
 
 app.post("/pads/reservations", async (req, res) => {
   const { propertyId, memberNeopassId, startsAt, endsAt, amountWorld } = req.body ?? {};
-  const property = getProperty(String(propertyId ?? ""));
+  const property = await repository.getProperty(String(propertyId ?? ""));
   if (!property || property.status !== "ACTIVE") return res.status(404).json({ error: "listing_unavailable" });
   if (!memberNeopassId || !startsAt || !endsAt) return res.status(400).json({ error: "invalid_reservation" });
 
@@ -257,14 +212,12 @@ app.post("/pads/reservations", async (req, res) => {
     const authHeader = req.header("authorization");
     const bearer = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : undefined;
     const member = await verifyNeopass(String(memberNeopassId), bearer);
-    if (!member.verified || !member.accessEligible) {
-      return res.status(403).json({ error: "neopass_verification_required" });
-    }
+    if (!member.verified || !member.accessEligible) return res.status(403).json({ error: "neopass_verification_required" });
   } catch {
     return res.status(502).json({ error: "neopass_unavailable" });
   }
 
-  const booking: Booking = {
+  const booking: BookingRecord = {
     id: id("NPB"),
     propertyId: property.id,
     memberNeopassId: String(memberNeopassId),
@@ -274,14 +227,20 @@ app.post("/pads/reservations", async (req, res) => {
     state: "PAYMENT_PENDING",
     entitlement: "PENDING"
   };
-  store.setBooking(booking.id, booking);
-  return res.status(201).json(booking);
+
+  try {
+    await repository.saveBooking(booking);
+    return res.status(201).json(booking);
+  } catch (error: any) {
+    if (error?.code === "23P01") return res.status(409).json({ error: "booking_conflict" });
+    return res.status(500).json({ error: "reservation_persistence_failed" });
+  }
 });
 
 app.post("/pads/reservations/:bookingId/checkout", async (req, res) => {
-  const booking = getBooking(req.params.bookingId);
+  const booking = await repository.getBooking(req.params.bookingId);
   if (!booking) return res.status(404).json({ error: "booking_not_found" });
-  const property = getProperty(booking.propertyId);
+  const property = await repository.getProperty(booking.propertyId);
   if (!property) return res.status(404).json({ error: "property_not_found" });
 
   try {
@@ -292,15 +251,15 @@ app.post("/pads/reservations/:bookingId/checkout", async (req, res) => {
       settlementAsset: req.body?.settlementAsset
     });
     booking.checkout = checkout;
-    store.setBooking(booking.id, booking);
+    await repository.saveBooking(booking);
     return res.status(201).json(checkout);
   } catch (error) {
     return res.status(502).json({ error: error instanceof Error ? error.message : "checkout_failed" });
   }
 });
 
-app.get("/neoworks/entitlements/:bookingId", (req, res) => {
-  const booking = getBooking(req.params.bookingId);
+app.get("/neoworks/entitlements/:bookingId", async (req, res) => {
+  const booking = await repository.getBooking(req.params.bookingId);
   if (!booking) return res.status(404).json({ error: "booking_not_found" });
   return res.json({
     bookingId: booking.id,
@@ -313,6 +272,15 @@ app.get("/neoworks/entitlements/:bookingId", (req, res) => {
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`NEO Pads API listening on :${PORT}`);
+const server = app.listen(PORT, () => {
+  console.log(`NEO Pads API listening on :${PORT} with ${repository.mode} persistence`);
 });
+
+async function shutdown() {
+  server.close(async () => {
+    await repository.close();
+    process.exit(0);
+  });
+}
+process.on("SIGTERM", shutdown);
+process.on("SIGINT", shutdown);
