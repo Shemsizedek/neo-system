@@ -1,4 +1,5 @@
 import net from 'node:net'
+import crypto from 'node:crypto'
 import {authenticateWorker} from './workerAuth.mjs'
 import {validateShareSubmission,classifyVerifiedShare} from './stratumBoundary.mjs'
 import {verifyHeaderTargets} from './shareTarget.mjs'
@@ -22,6 +23,8 @@ export function createStratumGateway({
   notifyResolver,
   difficultyResolver,
   shareVerifier,
+  extranonce1Bytes=4,
+  extranonce2Size=4,
   maxConnections=128,
   maxLineBytes=16*1024,
   idleTimeoutMs=120000,
@@ -34,6 +37,10 @@ export function createStratumGateway({
   if(typeof jobResolver!=='function') throw new Error('JOB_RESOLVER_REQUIRED')
   if(typeof shareRecorder!=='function') throw new Error('SHARE_RECORDER_REQUIRED')
 
+  const wire=Object.freeze({
+    extranonce1Bytes:positiveInteger(extranonce1Bytes,'EXTRANONCE1_BYTES'),
+    extranonce2Size:positiveInteger(extranonce2Size,'EXTRANONCE2_SIZE')
+  })
   const limits=Object.freeze({
     maxConnections:positiveInteger(maxConnections,'MAX_CONNECTIONS'),
     maxLineBytes:positiveInteger(maxLineBytes,'MAX_LINE_BYTES'),
@@ -48,7 +55,7 @@ export function createStratumGateway({
   const sendToAuthorized=payload=>{
     for(const session of sessions){
       if(!session.authorizedWorker||session.socket.destroyed)continue
-      session.socket.write(event(payload))
+      session.socket.write(event(typeof payload==='function'?payload(session):payload))
     }
   }
 
@@ -79,7 +86,7 @@ export function createStratumGateway({
     try{
       if(req.method==='mining.subscribe'){
         session.subscribed=true
-        socket.write(json(req.id,[[['mining.notify','neo-nibiru']], '00000000',4]))
+        socket.write(json(req.id,[[['mining.set_difficulty',`${session.subscriptionId}:diff`],['mining.notify',`${session.subscriptionId}:notify`]],session.extranonce1,wire.extranonce2Size]))
         return
       }
       if(req.method==='mining.authorize'){
@@ -89,7 +96,7 @@ export function createStratumGateway({
         if(ok){
           session.authorizedWorker=workerId
           if(typeof difficultyResolver==='function')socket.write(event(difficultyResolver()))
-          if(typeof notifyResolver==='function')socket.write(event(notifyResolver()))
+          if(typeof notifyResolver==='function')socket.write(event(notifyResolver({extranonce1:session.extranonce1,extranonce2Size:wire.extranonce2Size,workerId})))
         }
         socket.write(json(req.id,ok,null))
         return
@@ -99,13 +106,14 @@ export function createStratumGateway({
         if(!session.authorizedWorker) throw new Error('WORKER_NOT_AUTHORIZED')
         const [workerId,jobId,extranonce2,ntime,nonce,headerHex] = req.params||[]
         if(workerId!==session.authorizedWorker) throw new Error('WORKER_MISMATCH')
+        if(typeof extranonce2!=='string'||extranonce2.length!==wire.extranonce2Size*2||!/^[0-9a-f]+$/i.test(extranonce2))throw new Error('INVALID_EXTRANONCE2')
         const job=await jobResolver(jobId)
         if(!job) throw new Error('STALE_OR_UNKNOWN_JOB')
         if(job.stale) throw new Error('STALE_JOB')
         const raw=validateShareSubmission({job,workerId,nonce,ntime,extranonce2,difficulty:job.difficulty||1})
         let verified
         if(typeof shareVerifier==='function'){
-          const result=await shareVerifier({job,workerId,jobId,extranonce2,ntime,nonce,raw})
+          const result=await shareVerifier({job,workerId,jobId,extranonce1:session.extranonce1,extranonce2,ntime,nonce,raw})
           verified=Object.freeze({...raw,...result,verified:true})
         }else{
           const verification=verifyHeaderTargets({headerHex,difficulty:job.difficulty||1,bits:job.bits})
@@ -131,7 +139,8 @@ export function createStratumGateway({
     socket.setTimeout(limits.idleTimeoutMs)
     let buffer=''
     let processing=Promise.resolve()
-    const session={socket,authorizedWorker:null,subscribed:false,submitWindowStartedAt:Date.now(),submitCount:0}
+    const subscriptionId=crypto.randomBytes(8).toString('hex')
+    const session={socket,subscriptionId,extranonce1:crypto.randomBytes(wire.extranonce1Bytes).toString('hex'),authorizedWorker:null,subscribed:false,submitWindowStartedAt:Date.now(),submitCount:0}
     sessions.add(session)
     const remove=()=>sessions.delete(session)
     socket.on('close',remove)
@@ -192,7 +201,7 @@ export function createStratumGateway({
     start:()=>new Promise((resolve,reject)=>{
       stopping=false
       const onError=error=>{server.off('listening',onListening);reject(error)}
-      const onListening=()=>{server.off('error',onError);resolve({host,port,poolId,limits})}
+      const onListening=()=>{server.off('error',onError);resolve({host,port,poolId,limits,wire})}
       server.once('error',onError)
       server.once('listening',onListening)
       server.listen(port,host)
@@ -201,6 +210,7 @@ export function createStratumGateway({
     broadcastNotify:payload=>sendToAuthorized(payload),
     broadcastDifficulty:payload=>sendToAuthorized(payload),
     sessionCount:()=>sessions.size,
-    limits:()=>limits
+    limits:()=>limits,
+    wire:()=>wire
   })
 }
