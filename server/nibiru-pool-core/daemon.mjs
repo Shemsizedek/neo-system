@@ -64,6 +64,22 @@ export function createWorldMintDaemon({
     return persistCurrentJob()
   }
 
+  async function shareVerifier({job,extranonce2,ntime,nonce,raw}){
+    const current=runtime.currentJob()
+    if(!current||job.jobId!==current.runtimeJobId)throw new Error('STALE_JOB')
+    const solution=runtime.verifyWorkerSolution({extranonce2,ntime,nonce})
+    return {
+      ...raw,
+      verified:true,
+      accepted:solution.submission.accepted,
+      blockCandidate:solution.submission.blockCandidate,
+      computedHash:solution.submission.hash,
+      hash:solution.submission.hash,
+      difficulty:solution.submission.difficulty,
+      verifiedAt:solution.submission.verifiedAt
+    }
+  }
+
   async function blockCandidateHandler({submission}){
     const current=runtime.currentJob()
     if(!current||submission.jobId!==current.runtimeJobId)throw new Error('STALE_JOB')
@@ -133,7 +149,8 @@ export function createWorldMintDaemon({
       shareRecorder:async share=>store.saveShare(share),
       blockCandidateHandler,
       notifyResolver:()=>runtime.notifyMessage(),
-      difficultyResolver:()=>runtime.difficultyUpdate()
+      difficultyResolver:()=>runtime.difficultyUpdate(),
+      shareVerifier
     })
     await gateway.start()
     gateway.broadcastDifficulty?.(runtime.difficultyUpdate())
