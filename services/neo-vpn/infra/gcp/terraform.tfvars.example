@@ -5,8 +5,9 @@ zone       = "us-central1-a"
 # Keep the default unless a larger gateway is required.
 machine_type = "e2-small"
 
-# Existing VPC network in the project.
-network_name = "default"
+# Dedicated Google Cloud subnet for the gateway. This must not overlap the
+# WireGuard overlay network (10.144.0.0/16).
+gateway_subnet_cidr = "10.145.1.0/24"
 
 # Roaming WireGuard clients may require 0.0.0.0/0 here. Authentication is still
 # cryptographic, but narrowing this list is preferable when client source CIDRs

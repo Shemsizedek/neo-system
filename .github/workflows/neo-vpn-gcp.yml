@@ -104,7 +104,7 @@ jobs:
           TF_VAR_project_id: ${{ vars.GCP_PROJECT_ID }}
           TF_VAR_region: ${{ vars.GCP_REGION || 'us-central1' }}
           TF_VAR_zone: ${{ vars.GCP_ZONE || 'us-central1-a' }}
-          TF_VAR_network_name: ${{ vars.GCP_NETWORK_NAME || 'default' }}
+          TF_VAR_gateway_subnet_cidr: ${{ vars.GCP_NEO_VPN_SUBNET || '10.145.1.0/24' }}
         run: terraform plan -input=false -out=tfplan
 
       - name: Terraform apply
@@ -113,9 +113,12 @@ jobs:
           TF_VAR_project_id: ${{ vars.GCP_PROJECT_ID }}
           TF_VAR_region: ${{ vars.GCP_REGION || 'us-central1' }}
           TF_VAR_zone: ${{ vars.GCP_ZONE || 'us-central1-a' }}
-          TF_VAR_network_name: ${{ vars.GCP_NETWORK_NAME || 'default' }}
+          TF_VAR_gateway_subnet_cidr: ${{ vars.GCP_NEO_VPN_SUBNET || '10.145.1.0/24' }}
         run: terraform apply -input=false -auto-approve tfplan
 
-      - name: Print Node 001 public endpoint
+      - name: Print Node 001 deployment outputs
         if: ${{ inputs.action == 'apply' }}
-        run: terraform output -raw neo_vpn_node_001_public_ip
+        run: |
+          echo "Node 001 public IP: $(terraform output -raw neo_vpn_node_001_public_ip)"
+          echo "NEO VPN VPC: $(terraform output -raw neo_vpn_network_name)"
+          echo "Node 001 runtime identity: $(terraform output -raw neo_vpn_node_001_service_account)"
