@@ -1,8 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { bootstrapProductFounder, getProductFounderBinding, assertProductFounderInvariant } from './products.mjs';
+import { authorizeBankingAction, mapExternalCesAccount } from './banking-authority.mjs';
 
-const products=['neopay','neo-prime','noogle','omnitrix','neo-telegram','neogram','neo-wire','neo-counter','neo-teller','neo-device-registry','neo-exchange','neofx','neo-dex'];
+const products=['neopay','neo-prime','noogle','omnitrix','neo-telegram','neogram','neo-wire','neo-counter','neo-teller','neo-device-registry','neo-exchange','neofx','neo-dex','nibiru-reserve','neo-bank','neo-ces','neo-treasury'];
 
 for (const productId of products) {
   test(`${productId} reserves canonical founder as account #1`, () => {
@@ -75,4 +76,43 @@ test('market bindings do not create trading custody settlement or admin bypasses
   assert.equal(fx.pricing_override_bypass, false);
   assert.equal(dex.settlement_bypass, false);
   assert.equal(dex.listing_approval_bypass, false);
+});
+
+test('banking and reserve bindings do not create issuance custody treasury or CES bypasses', () => {
+  const reserve=getProductFounderBinding('nibiru-reserve');
+  const bank=getProductFounderBinding('neo-bank');
+  const ces=getProductFounderBinding('neo-ces');
+  const treasury=getProductFounderBinding('neo-treasury');
+  assert.equal(reserve.reserve_custody_bypass,false);
+  assert.equal(reserve.issuance_authority_bypass,false);
+  assert.equal(reserve.treasury_transfer_bypass,false);
+  assert.equal(reserve.signing_secrets_in_registry,false);
+  assert.equal(bank.transaction_approval_bypass,false);
+  assert.equal(bank.vdollar_issuance_bypass,false);
+  assert.equal(bank.ces_admin_bypass,false);
+  assert.equal(bank.bank_account_impersonation,false);
+  assert.equal(bank.credentials_in_registry,false);
+  assert.equal(ces.external_account_override,false);
+  assert.equal(ces.transaction_approval_bypass,false);
+  assert.equal(ces.issuance_bypass,false);
+  assert.equal(ces.credentials_in_registry,false);
+  assert.equal(treasury.custody_bypass,false);
+  assert.equal(treasury.transfer_approval_bypass,false);
+  assert.equal(treasury.signing_bypass,false);
+  assert.equal(treasury.private_keys_in_registry,false);
+});
+
+test('founder ownership alone cannot authorize banking value movement', () => {
+  const denied=authorizeBankingAction('neo-bank','bank.vdollar.issue',{subjectId:'neo:founder:000001',authenticated:true});
+  assert.equal(denied.allowed,false);
+  const allowed=authorizeBankingAction('neo-bank','bank.vdollar.issue',{subjectId:'neo:founder:000001',authenticated:true,vdollarIssuanceAuthorized:true,stepUpVerified:true});
+  assert.equal(allowed.allowed,true);
+});
+
+test('external CES accounts require verified mapping and never override native numbering', () => {
+  assert.throws(()=>mapExternalCesAccount({exchangeId:'NMNI',externalAccount:'NMNI0000'}),/verified/);
+  const mapping=mapExternalCesAccount({exchangeId:'NMNI',externalAccount:'NMNI0000',verified:true});
+  assert.equal(mapping.subjectId,'neo:founder:000001');
+  assert.equal(mapping.nativeOrdinalOverride,false);
+  assert.equal(mapping.credentialsStored,false);
 });
