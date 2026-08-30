@@ -12,7 +12,6 @@ export function varInt(n){
   const b=Buffer.alloc(9);b[0]=0xff;b.writeBigUInt64LE(v,1);return b
 }
 
-const u32=v=>{const b=Buffer.alloc(4);b.writeUInt32LE(Number(v)>>>0);return b}
 const u64=v=>{const b=Buffer.alloc(8);b.writeBigUInt64LE(BigInt(v));return b}
 
 export function encodeScriptNum(value){
@@ -36,27 +35,40 @@ function output(valueSats,scriptHex){
   return Buffer.concat([u64(valueSats),varInt(script.length),script])
 }
 
-export function buildCoinbase({height,valueSats,payoutScriptHex,extranonce1Hex='',extranonce2Hex='',tag='/NEO-World-Mint/',witnessCommitmentHex=null}={}){
+export function buildCoinbase({height,valueSats,payoutScriptHex,extranonce1Hex='',extranonce2Hex='',extranonce2Size=null,tag='/NEO-World-Mint/',witnessCommitmentHex=null}={}){
   if(!(Number(height)>0))throw new Error('HEIGHT_REQUIRED')
   if(BigInt(valueSats||0)<=0n)throw new Error('COINBASE_VALUE_REQUIRED')
   if(!/^[0-9a-f]+$/i.test(payoutScriptHex||''))throw new Error('PAYOUT_SCRIPT_REQUIRED')
   for(const x of [extranonce1Hex,extranonce2Hex])if(!/^[0-9a-f]*$/i.test(x)||x.length%2)throw new Error('INVALID_EXTRANONCE')
-  const scriptSig=Buffer.concat([bip34HeightPush(height),Buffer.from(tag),Buffer.from(extranonce1Hex+extranonce2Hex,'hex')])
+  const extra2Bytes=extranonce2Size==null?extranonce2Hex.length/2:Number(extranonce2Size)
+  if(!Number.isInteger(extra2Bytes)||extra2Bytes<0)throw new Error('INVALID_EXTRANONCE2_SIZE')
+  if(extranonce2Hex.length&&extranonce2Hex.length!==extra2Bytes*2)throw new Error('INVALID_EXTRANONCE2_SIZE')
+
+  const scriptPrefix=Buffer.concat([bip34HeightPush(height),Buffer.from(tag),Buffer.from(extranonce1Hex,'hex')])
+  const scriptSig=Buffer.concat([scriptPrefix,Buffer.from(extranonce2Hex,'hex')])
   if(scriptSig.length<2||scriptSig.length>100)throw new Error('COINBASE_SCRIPTSIG_SIZE')
-  const vin=Buffer.concat([Buffer.alloc(32),Buffer.from('ffffffff','hex'),varInt(scriptSig.length),scriptSig,Buffer.from('ffffffff','hex')])
+
+  const prevout=Buffer.concat([Buffer.alloc(32),Buffer.from('ffffffff','hex')])
+  const sequence=Buffer.from('ffffffff','hex')
   const outputs=[output(valueSats,payoutScriptHex)]
   if(witnessCommitmentHex)outputs.push(output(0,witnessCommitmentHex))
   const outs=Buffer.concat([varInt(outputs.length),...outputs])
   const version=Buffer.from('02000000','hex'),locktime=Buffer.alloc(4)
-  const stripped=Buffer.concat([version,varInt(1),vin,outs,locktime])
+  const scriptLength=varInt(scriptPrefix.length+extra2Bytes)
+  const prefix=Buffer.concat([version,varInt(1),prevout,scriptLength,scriptPrefix])
+  const suffix=Buffer.concat([sequence,outs,locktime])
+  const stripped=Buffer.concat([prefix,Buffer.from(extranonce2Hex,'hex'),suffix])
+
   let full=stripped
   if(witnessCommitmentHex){
     const witness=Buffer.concat([Buffer.from([1,32]),Buffer.alloc(32)])
-    full=Buffer.concat([version,Buffer.from('0001','hex'),varInt(1),vin,outs,witness,locktime])
+    full=Buffer.concat([version,Buffer.from('0001','hex'),varInt(1),prevout,scriptLength,scriptSig,sequence,outs,witness,locktime])
   }
   return Object.freeze({
     fullHex:full.toString('hex'),
     strippedHex:stripped.toString('hex'),
+    coinbase1Hex:prefix.toString('hex'),
+    coinbase2Hex:suffix.toString('hex'),
     txid:Buffer.from(dsha256(stripped)).reverse().toString('hex'),
     scriptSigHex:scriptSig.toString('hex')
   })
@@ -72,6 +84,32 @@ export function merkleRootFromTxids(txids=[]){
     level=next
   }
   return Buffer.from(level[0]).reverse().toString('hex')
+}
+
+export function merkleBranchForCoinbase(transactionTxids=[]){
+  let level=[null,...transactionTxids.map(h=>{if(!/^[0-9a-f]{64}$/i.test(h))throw new Error('INVALID_TXID');return Buffer.from(h,'hex').reverse()})]
+  const branch=[]
+  let index=0
+  while(level.length>1){
+    if(level.length%2)level.push(level[level.length-1])
+    const sibling=index^1
+    if(level[sibling])branch.push(Buffer.from(level[sibling]).reverse().toString('hex'))
+    const next=[]
+    for(let i=0;i<level.length;i+=2){
+      if(level[i]===null||level[i+1]===null)next.push(null)
+      else next.push(dsha256(Buffer.concat([level[i],level[i+1]])))
+    }
+    index=Math.floor(index/2)
+    level=next
+  }
+  return branch
+}
+
+export function applyMerkleBranch(coinbaseTxid,branch=[]){
+  if(!/^[0-9a-f]{64}$/i.test(coinbaseTxid||''))throw new Error('INVALID_TXID')
+  let hash=Buffer.from(coinbaseTxid,'hex').reverse()
+  for(const sibling of branch){if(!/^[0-9a-f]{64}$/i.test(sibling||''))throw new Error('INVALID_MERKLE_BRANCH');hash=dsha256(Buffer.concat([hash,Buffer.from(sibling,'hex').reverse()]))}
+  return Buffer.from(hash).reverse().toString('hex')
 }
 
 export function serializeHeader({version,previousBlockHash,merkleRoot,time,bits,nonce}){
