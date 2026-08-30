@@ -2,6 +2,7 @@ import { isDiscordActorAllowed } from './authorization.js'
 import { processNeoCommand, healthSnapshot } from './neo-command.js'
 import { handleRelationsCommand } from './relations.js'
 import { handleServicesCommand } from './service-registry.js'
+import { processBotsCommand } from './bots.js'
 
 export const discordJson=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:{'content-type':'application/json; charset=utf-8','cache-control':'no-store'}})
 
@@ -33,6 +34,7 @@ export async function dispatchVerifiedInteraction(interaction,env,runtime,{waitU
   if(command==='neo')waitUntil(processNeoCommand(interaction,env,runtime,fetchImpl))
   else if(command==='relations')waitUntil(processRelationsCommand(interaction,env,{fetchImpl}))
   else if(command==='services')waitUntil(processServicesCommand(interaction,env,{fetchImpl}))
+  else if(command==='bots')waitUntil(processBotsCommand(interaction,env,{fetchImpl}))
   else return discordJson({type:4,data:{content:'Unknown command.',flags:64,allowed_mentions:{parse:[]}}})
   return discordJson({type:5,data:{flags:64}})
 }
