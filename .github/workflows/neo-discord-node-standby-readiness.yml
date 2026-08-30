@@ -45,7 +45,7 @@ jobs:
           for i in {1..20}; do
             if body="$(curl --fail --silent --show-error http://127.0.0.1:8788/neo-bots/health 2>/dev/null)"; then
               echo "$body"
-              node -e 'const x=JSON.parse(process.argv[1]); if(x.ok!==true || x.service!=="neo-bots" || x.liveCesExecutionEnabled!==false) process.exit(1)' "$body"
+              node -e 'const x=JSON.parse(process.argv[1]); if(x.ok!==true || x.service!=="neo-bots-control" || x.liveCesExecutionEnabled!==false) process.exit(1)' "$body"
               exit 0
             fi
             sleep 1
