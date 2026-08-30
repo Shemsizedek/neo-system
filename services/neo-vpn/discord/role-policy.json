@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "roles": {
+    "viewer": ["vpn-status", "vpn-audit", "deployment-status"],
+    "operator": ["vpn-status", "vpn-audit", "deployment-status", "peer-request"],
+    "admin": ["vpn-status", "vpn-audit", "deployment-status", "peer-request", "peer-revoke", "incident-lockdown"]
+  },
+  "principles": {
+    "default": "deny",
+    "discord_role_names_are_not_authority": true,
+    "role_ids_are_runtime_configuration": true,
+    "self_approval_prohibited": true
+  }
+}
