@@ -4,7 +4,8 @@ const REQUIRED_ENV = [
   "DATABASE_URL",
   "NEO_PADS_WEB_ORIGIN",
   "NEOPASS_API_URL",
-  "NEO_COUNTER_API_URL",
+  "NEO_COUNTER_CHECKOUT_URL",
+  "NEO_PADS_CHECKOUT_RETURN_URL",
   "NEO_COUNTER_WEBHOOK_SECRET",
   "WALLET_SIGNATURE_VERIFY_URL",
   "NEO_PADS_OPS_TOKEN",
@@ -45,7 +46,8 @@ function assertUrl(name: string, templateToken?: string) {
   const raw = process.env[name]?.trim();
   if (!raw) throw new Error(`missing_env:${name}`);
   const normalized = templateToken ? raw.replace(templateToken, "test") : raw;
-  new URL(normalized);
+  const url = new URL(normalized);
+  if (process.env.NODE_ENV === "production" && url.protocol !== "https:") throw new Error(`https_required:${name}`);
   if (templateToken && !raw.includes(templateToken)) throw new Error(`invalid_template:${name}`);
 }
 
@@ -73,7 +75,9 @@ export async function runProductionReadiness() {
 
   assertUrl("NEO_PADS_WEB_ORIGIN");
   assertUrl("NEOPASS_API_URL");
-  assertUrl("NEO_COUNTER_API_URL");
+  assertUrl("NEO_COUNTER_CHECKOUT_URL");
+  assertUrl("NEO_PADS_CHECKOUT_RETURN_URL", "{bookingId}");
+  if (present("NEO_PADS_CHECKOUT_CANCEL_URL")) assertUrl("NEO_PADS_CHECKOUT_CANCEL_URL", "{bookingId}");
   assertUrl("WALLET_SIGNATURE_VERIFY_URL");
   assertUrl("NEO_COUNTER_PAYOUT_STATUS_URL", "{payoutId}");
 
@@ -100,6 +104,7 @@ export async function runProductionReadiness() {
     ready: true,
     database: "reachable",
     schema: "current",
+    checkoutContract: "neo-counter-gateway-v1",
     chainConfirmationRequired: requireChain,
     payoutExecutionEnabled: livePayoutsEnabled,
     secretsPrinted: false

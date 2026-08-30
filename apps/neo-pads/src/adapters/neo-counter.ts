@@ -7,40 +7,73 @@ export interface CheckoutRequest {
 
 export interface CheckoutResponse {
   checkoutId: string;
-  status?: string;
-  settlementAsset?: string;
-  [key: string]: unknown;
+  status: "REDIRECT_REQUIRED";
+  checkoutUrl: string;
+  settlementAsset: "BTC" | "XCP" | "NOMNI";
+  commercialPrice: {
+    amount: number;
+    currency: "WORLD_CURRENCY";
+    symbol: "∞";
+  };
 }
 
-function assertCheckoutResponse(value: unknown): CheckoutResponse {
-  if (!value || typeof value !== "object") throw new Error("neo_counter_checkout_contract_invalid");
-  const checkoutId = String((value as any).checkoutId ?? (value as any).id ?? "").trim();
-  if (!checkoutId) throw new Error("neo_counter_checkout_contract_invalid");
-  return { ...(value as Record<string, unknown>), checkoutId } as CheckoutResponse;
+function requireGatewayUrl() {
+  const raw = process.env.NEO_COUNTER_CHECKOUT_URL?.trim();
+  if (!raw) throw new Error("neo_counter_checkout_url_not_configured");
+  const url = new URL(raw);
+  if (process.env.NODE_ENV === "production" && url.protocol !== "https:") {
+    throw new Error("neo_counter_checkout_url_requires_https");
+  }
+  return url;
+}
+
+function returnUrl(template: string | undefined, bookingId: string) {
+  if (!template?.trim()) return undefined;
+  const rendered = template.replaceAll("{bookingId}", encodeURIComponent(bookingId));
+  const url = new URL(rendered);
+  if (process.env.NODE_ENV === "production" && url.protocol !== "https:") {
+    throw new Error("neo_pads_checkout_return_url_requires_https");
+  }
+  return url.toString();
 }
 
 export async function createCheckout(input: CheckoutRequest): Promise<CheckoutResponse> {
-  const base = process.env.NEO_COUNTER_API_URL;
-  if (!base) throw new Error("neo_counter_adapter_not_configured");
+  if (!Number.isFinite(input.amountWorld) || input.amountWorld <= 0) {
+    throw new Error("neo_counter_checkout_amount_invalid");
+  }
+  const settlementAsset = input.settlementAsset;
+  if (!settlementAsset || !["BTC", "XCP", "NOMNI"].includes(settlementAsset)) {
+    throw new Error("neo_counter_checkout_settlement_asset_invalid");
+  }
 
-  const headers: Record<string, string> = { "content-type": "application/json" };
-  if (process.env.NEO_COUNTER_API_KEY) headers.authorization = `Bearer ${process.env.NEO_COUNTER_API_KEY}`;
+  const url = requireGatewayUrl();
+  const amountMinor = Math.round(input.amountWorld * 100);
+  if (!Number.isSafeInteger(amountMinor) || amountMinor <= 0 || amountMinor > 100_000_000) {
+    throw new Error("neo_counter_checkout_amount_out_of_range");
+  }
 
-  const response = await fetch(new URL("/checkout", base), {
-    method: "POST",
-    headers,
-    body: JSON.stringify({
-      bookingId: input.bookingId,
-      commercialPrice: {
-        amount: input.amountWorld,
-        currency: "WORLD_CURRENCY",
-        symbol: "∞"
-      },
-      payoutWallet: input.payoutWallet,
-      settlementAsset: input.settlementAsset
-    })
-  });
+  url.searchParams.set("checkout", "1");
+  url.searchParams.set("service", "NEO Pads");
+  url.searchParams.set("order", input.bookingId);
+  url.searchParams.set("label", `NEO Pads · ${input.bookingId}`);
+  url.searchParams.set("amount", String(amountMinor));
+  url.searchParams.set("currency", "WORLD_CURRENCY");
+  url.searchParams.set("rail", settlementAsset);
 
-  if (!response.ok) throw new Error(`neo_counter_checkout_failed:${response.status}`);
-  return assertCheckoutResponse(await response.json());
+  const successUrl = returnUrl(process.env.NEO_PADS_CHECKOUT_RETURN_URL, input.bookingId);
+  const cancelUrl = returnUrl(process.env.NEO_PADS_CHECKOUT_CANCEL_URL ?? process.env.NEO_PADS_CHECKOUT_RETURN_URL, input.bookingId);
+  if (successUrl) url.searchParams.set("success_url", successUrl);
+  if (cancelUrl) url.searchParams.set("cancel_url", cancelUrl);
+
+  return {
+    checkoutId: input.bookingId,
+    status: "REDIRECT_REQUIRED",
+    checkoutUrl: url.toString(),
+    settlementAsset,
+    commercialPrice: {
+      amount: input.amountWorld,
+      currency: "WORLD_CURRENCY",
+      symbol: "∞"
+    }
+  };
 }
