@@ -1,9 +1,9 @@
+import {divideTargetByDifficulty} from './protocolMath.mjs'
+
 export const DIFF1_TARGET=(0xffffn<<208n)
 
 export function targetFromDifficulty(difficulty){
-  const d=Number(difficulty)
-  if(!Number.isFinite(d)||d<=0)throw new Error('INVALID_DIFFICULTY')
-  return DIFF1_TARGET/BigInt(Math.max(1,Math.floor(d)))
+  return divideTargetByDifficulty(DIFF1_TARGET,difficulty)
 }
 
 export function createDifficultyState({difficulty=1024,minDifficulty=1,maxDifficulty=1_000_000,targetShareSeconds=15,windowShares=12}={}){
