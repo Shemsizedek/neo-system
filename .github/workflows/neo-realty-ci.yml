@@ -1,0 +1,27 @@
+name: NEO Realty CI
+
+on:
+  pull_request:
+    paths:
+      - 'apps/neo-realty/**'
+      - '.github/workflows/neo-realty-ci.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'apps/neo-realty/**'
+      - '.github/workflows/neo-realty-ci.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  registry:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm install --prefix apps/neo-realty
+      - run: npm run typecheck --prefix apps/neo-realty
+      - run: npm run test:registry --prefix apps/neo-realty
