@@ -7,5 +7,4 @@ runtime/
 *.tfstate.*
 *.tfvars
 !*.tfvars.example
-.terraform.lock.hcl
 gha-creds-*.json
