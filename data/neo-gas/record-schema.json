@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://neo-system.example/schemas/neo-gas-record.schema.json",
+  "title": "NEO-GAS Intelligence Record",
+  "type": "object",
+  "required": ["id", "recordType", "title", "status", "domain", "confidence", "createdAt", "updatedAt", "summary", "provenance", "guardrailClass"],
+  "properties": {
+    "id": {"type": "string", "minLength": 3},
+    "recordType": {"enum": ["assessment", "alert", "indicator"]},
+    "title": {"type": "string", "minLength": 3},
+    "status": {"enum": ["DRAFT", "ACTIVE", "MONITORING", "RESOLVED", "ARCHIVED"]},
+    "domain": {"type": "string", "minLength": 2},
+    "severity": {"enum": ["GREEN", "AMBER", "RED"]},
+    "confidence": {"enum": ["LOW", "MODERATE", "HIGH"]},
+    "createdAt": {"type": "string", "format": "date-time"},
+    "updatedAt": {"type": "string", "format": "date-time"},
+    "summary": {"type": "string", "minLength": 10},
+    "provenance": {
+      "type": "object",
+      "required": ["sourceType", "sourceRefs"],
+      "properties": {
+        "sourceType": {"enum": ["repository", "public-source", "analyst", "system"]},
+        "sourceRefs": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "guardrailClass": {"enum": ["DEFENSIVE", "RESILIENCE", "HUMANITARIAN", "GOVERNANCE"]},
+    "assessment": {
+      "type": "object",
+      "properties": {
+        "known": {"type": "array", "items": {"type": "string"}},
+        "unknown": {"type": "array", "items": {"type": "string"}},
+        "alternatives": {"type": "array", "items": {"type": "string"}},
+        "defensiveOptions": {"type": "array", "items": {"type": "string"}}
+      }
+    }
+  }
+}
