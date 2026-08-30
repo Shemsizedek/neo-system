@@ -2,6 +2,7 @@ import http from 'node:http';
 import { readFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import { createNeoPrimeMarketData } from '../neo-prime/market-data.mjs';
+import { createTeraBoxRuntime } from '../storage/terabox/runtime.mjs';
 
 export const PLATFORM_REGISTRY = {
   neopay: { name: 'NEOpay', source: ['apps/neopay', 'src/neopay'], services: ['wallet', 'portfolio', 'transaction-compose', 'dex-quotes'] },
@@ -24,7 +25,7 @@ function json(res, status, body) {
   res.end(payload);
 }
 
-export function createNeoPlatformApi({ now = () => new Date().toISOString(), marketData = createNeoPrimeMarketData({ now }) } = {}) {
+export function createNeoPlatformApi({ now = () => new Date().toISOString(), marketData = createNeoPrimeMarketData({ now }), teraboxRuntime = createTeraBoxRuntime({ now }) } = {}) {
   return http.createServer(async (req, res) => {
     try {
       if (req.method === 'OPTIONS') { res.writeHead(204, {'access-control-allow-origin':'*','access-control-allow-methods':'GET,OPTIONS','access-control-allow-headers':'content-type,authorization'}); return res.end(); }
@@ -33,6 +34,21 @@ export function createNeoPlatformApi({ now = () => new Date().toISOString(), mar
       if (url.pathname === '/health') return json(res,200,{service:'neo-platform-api',status:'ok',generatedAt:now(),platforms:Object.keys(PLATFORM_REGISTRY).length,ociRegisteredServices:OCI_SERVICE_REGISTRY.services.length});
       if (url.pathname === '/api/v1/platforms') return json(res,200,{apiVersion:'v1',generatedAt:now(),platforms:Object.entries(PLATFORM_REGISTRY).map(([id,value])=>({id,name:value.name,services:value.services}))});
       if (url.pathname === '/api/v1/oci/services') return json(res,200,{apiVersion:'v1',generatedAt:now(),...OCI_SERVICE_REGISTRY});
+
+      if (url.pathname === '/api/v1/storage/terabox/status') {
+        return json(res,200,{apiVersion:'v1',generatedAt:now(),...(await teraboxRuntime.status())});
+      }
+      if (url.pathname === '/api/v1/storage/terabox/auth-url') {
+        if (!teraboxRuntime.configured()) return json(res,503,{error:'terabox_not_configured',required:['TERABOX_CLIENT_ID','TERABOX_CLIENT_SECRET','TERABOX_PRIVATE_SECRET']});
+        return json(res,200,{apiVersion:'v1',provider:'terabox',authorizationUrl:teraboxRuntime.authorizationUrl()});
+      }
+      if (url.pathname === '/api/v1/storage/terabox/callback') {
+        if (!teraboxRuntime.configured()) return json(res,503,{error:'terabox_not_configured',required:['TERABOX_CLIENT_ID','TERABOX_CLIENT_SECRET','TERABOX_PRIVATE_SECRET']});
+        const code=url.searchParams.get('code');
+        if (!code) return json(res,400,{error:'missing_authorization_code'});
+        return json(res,200,{apiVersion:'v1',provider:'terabox',...(await teraboxRuntime.complete(code))});
+      }
+
       if (url.pathname === '/api/v1/prime/markets') { const assets=(url.searchParams.get('assets')||'XCP,NOMNI').split(',').map(v=>v.trim()).filter(Boolean).slice(0,20); return json(res,200,await marketData.snapshot({assets})); }
       const primeAssetMatch=url.pathname.match(/^\/api\/v1\/prime\/assets\/([^/]+)$/);
       if (primeAssetMatch) return json(res,200,await marketData.asset(primeAssetMatch[1]));
