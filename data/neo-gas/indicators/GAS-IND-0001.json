@@ -1,0 +1,21 @@
+{
+  "id": "GAS-IND-0001",
+  "recordType": "indicator",
+  "title": "Repository-to-Pages publication health",
+  "status": "MONITORING",
+  "domain": "Platform Resilience",
+  "severity": "GREEN",
+  "confidence": "HIGH",
+  "createdAt": "2026-08-29T20:05:00-05:00",
+  "updatedAt": "2026-08-29T20:05:00-05:00",
+  "summary": "Tracks whether the NEO-GAS repository backend can be validated and converted into a versioned GitHub Pages API snapshot for the public command interface.",
+  "provenance": {
+    "sourceType": "system",
+    "sourceRefs": ["scripts/publish-neo-gas-pages.mjs", ".github/workflows/pages.yml"]
+  },
+  "guardrailClass": "GOVERNANCE",
+  "metric": {
+    "name": "publicationPipeline",
+    "expectedState": "VALIDATED_AND_PUBLISHED"
+  }
+}
