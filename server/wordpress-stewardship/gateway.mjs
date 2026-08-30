@@ -39,7 +39,11 @@ async function readJson(req, maxBytes = 128 * 1024) {
 
 function validateEnvelope(body) {
   if (!body || typeof body !== 'object' || Array.isArray(body)) throw new Error('invalid_envelope')
-  const event = createStewardshipEvent(body.event || {})
+  if (!body.event || typeof body.event !== 'object' || Array.isArray(body.event)) throw new Error('invalid_envelope')
+  for (const field of ['id', 'type', 'site', 'pageSlug', 'stage']) {
+    if (!body.event[field]) throw new Error(`missing_event_field:${field}`)
+  }
+  const event = createStewardshipEvent(body.event)
   if (event.site !== 'https://holytemples.org') throw new Error('site_not_allowed')
   if (event.pageSlug !== 'holy-stewardship') throw new Error('page_not_allowed')
   if (!String(event.type).startsWith('wordpress.stewardship.') && !String(event.type).startsWith('blockchain.stewardship.')) {
@@ -100,7 +104,7 @@ export function createStewardshipGateway({
     } catch (error) {
       const message = error instanceof Error ? error.message : 'unknown_error'
       if (message === 'payload_too_large') return json(res, 413, { error: message })
-      if (message === 'invalid_envelope' || message === 'site_not_allowed' || message === 'page_not_allowed' || message === 'event_type_not_allowed' || message.startsWith('Unsupported stewardship stage')) {
+      if (message === 'invalid_envelope' || message === 'site_not_allowed' || message === 'page_not_allowed' || message === 'event_type_not_allowed' || message.startsWith('missing_event_field:') || message.startsWith('Unsupported stewardship stage')) {
         return json(res, 400, { error: message })
       }
       if (error instanceof SyntaxError) return json(res, 400, { error: 'invalid_json' })
