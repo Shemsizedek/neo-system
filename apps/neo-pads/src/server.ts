@@ -3,6 +3,7 @@ import express from "express";
 import { getHomesharesBalance } from "./adapters/counterparty.js";
 import { createCheckout } from "./adapters/neo-counter.js";
 import { verifyNeopass } from "./adapters/neopass.js";
+import { attachOpsRoutes } from "./ops.js";
 import { createRepository } from "./repository-factory.js";
 import type { BookingRecord, PropertyRecord } from "./repository.js";
 import {
@@ -64,6 +65,7 @@ app.post(
 );
 
 app.use(express.json({ limit: "256kb" }));
+attachOpsRoutes(app, repository);
 
 app.get("/health", (_req, res) => {
   res.json({

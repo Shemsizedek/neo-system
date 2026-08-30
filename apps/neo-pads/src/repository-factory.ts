@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
 import { PostgresRepository } from "./postgres-repository.js";
-import type { BookingRecord, PropertyRecord, Repository } from "./repository.js";
+import type { BookingRecord, PropertyRecord, ReconciliationSummary, Repository } from "./repository.js";
 import { RuntimeStore } from "./store.js";
 
 class LocalRepository implements Repository {
@@ -33,10 +33,23 @@ class LocalRepository implements Repository {
     else if (input.status === "REFUNDED") { booking.state = "REFUNDED"; booking.entitlement = "REVOKED"; }
     else if (input.status === "DISPUTED") { booking.state = "DISPUTED"; booking.entitlement = "REVOKED"; }
     this.store.setBooking(booking.id, booking);
-    // Keep the local idempotency behavior aligned with Postgres mode.
     crypto.createHash("sha256").update(input.rawPayload).digest("hex");
     this.store.markWebhookEvent(input.eventId);
     return { duplicate: false, booking };
+  }
+
+  async ping() { return true; }
+
+  async getReconciliationSummary(): Promise<ReconciliationSummary> {
+    return {
+      supported: false,
+      generatedAt: new Date().toISOString(),
+      pendingPayments: 0,
+      settledPaymentsWithoutPayout: 0,
+      pendingPayouts: 0,
+      failedPayouts: 0,
+      recentPaymentEvents: 0
+    };
   }
 
   async close() {}

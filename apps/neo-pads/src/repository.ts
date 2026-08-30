@@ -22,6 +22,16 @@ export interface BookingRecord {
   checkout?: unknown;
 }
 
+export interface ReconciliationSummary {
+  supported: boolean;
+  generatedAt: string;
+  pendingPayments: number;
+  settledPaymentsWithoutPayout: number;
+  pendingPayouts: number;
+  failedPayouts: number;
+  recentPaymentEvents: number;
+}
+
 export interface Repository {
   mode: "memory" | "file" | "postgres";
   getProperty(id: string): Promise<PropertyRecord | undefined>;
@@ -38,5 +48,7 @@ export interface Repository {
     status: string;
     rawPayload: Buffer;
   }): Promise<{ duplicate: boolean; booking?: BookingRecord }>;
+  ping(): Promise<boolean>;
+  getReconciliationSummary(): Promise<ReconciliationSummary>;
   close(): Promise<void>;
 }
