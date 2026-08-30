@@ -27,6 +27,9 @@ function App() {
   const [activePair, setActivePair] = useState('BTC/XCP');
   const [side, setSide] = useState('BUY');
   const [orderType, setOrderType] = useState('LIMIT');
+  const [price, setPrice] = useState('');
+  const [amount, setAmount] = useState('');
+  const [review, setReview] = useState(null);
   const [assets, setAssets] = useState([]);
   const [markets, setMarkets] = useState([]);
   const [book, setBook] = useState({ bids: [], asks: [], best_bid: null, best_ask: null, mid: null, spread: null });
@@ -63,6 +66,7 @@ function App() {
     if (!base || !quote) return;
     let cancelled = false;
     setBook({ bids: [], asks: [], best_bid: null, best_ask: null, mid: null, spread: null });
+    setReview(null);
     fetch(`${API_BASE}/api/neo-exchange/orderbook?base=${encodeURIComponent(base)}&quote=${encodeURIComponent(quote)}&limit=18`)
       .then(r => { if (!r.ok) throw new Error('orderbook'); return r.json(); })
       .then(d => { if (!cancelled) { setBook(d); setFeedState(d.status || 'LIVE'); } })
@@ -107,6 +111,22 @@ function App() {
     window.location.assign(url.toString());
   };
 
+  const reviewOrder = () => {
+    const numericAmount = Number(amount);
+    const numericPrice = orderType === 'MARKET' ? null : Number(price || (side === 'BUY' ? book.best_ask : book.best_bid));
+    if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
+      setReview({ error: 'Enter a valid order amount before review.' });
+      return;
+    }
+    if (orderType === 'LIMIT' && (!Number.isFinite(numericPrice) || numericPrice <= 0)) {
+      setReview({ error: 'Enter a valid limit price before review.' });
+      return;
+    }
+    setReview({ side, orderType, activePair, amount: numericAmount, price: numericPrice });
+  };
+
+  const navItems = [[CandlestickChart,'Trade'],[BarChart3,'Markets'],[Layers3,'Assets'],[WalletCards,'Wallet'],[BriefcaseBusiness,'Portfolio'],[BookOpen,'Orders'],[Activity,'History'],[Gauge,'Analytics'],[ShieldCheck,'Security']];
+
   return <div className="app-shell">
     <header className="topbar">
       <div className="brand"><div className="brand-mark">N</div><div><strong>NEO EXCHANGE</strong><span>BITCOIN / COUNTERPARTY XCP</span></div></div>
@@ -115,7 +135,7 @@ function App() {
     </header>
 
     <aside className="sidebar">
-      {[[CandlestickChart,'Trade'],[BarChart3,'Markets'],[Layers3,'Assets'],[WalletCards,'Wallet'],[BriefcaseBusiness,'Portfolio'],[BookOpen,'Orders'],[Activity,'History'],[Gauge,'Analytics'],[ShieldCheck,'Security']].map(([Icon,label]) => <button className={label==='Trade'?'active':''} key={label}><Icon size={17}/><span>{label}</span></button>)}
+      {navItems.map(([Icon,label]) => <button className={label==='Trade'?'active':''} key={label} disabled={label!=='Trade'} title={label==='Trade'?'Trading workspace':`${label} workspace is not yet published`}><Icon size={17}/><span>{label}</span></button>)}
     </aside>
 
     <main className="workspace">
@@ -126,7 +146,7 @@ function App() {
       <section className="terminal-grid">
         <div className="panel chart-panel">
           <div className="panel-header"><div><small>MARKET</small><h1>{activePair}</h1></div><div className="quote"><b>{fmt(book.mid)}</b><span>BID {fmt(book.best_bid)} · ASK {fmt(book.best_ask)}</span></div></div>
-          <div className="toolbar"><button>1m</button><button>5m</button><button>15m</button><button>1H</button><button className="active">4H</button><button>1D</button><i/><button>Indicators</button><button>Objects</button></div>
+          <div className="toolbar"><span className="toolbar-note">Historical chart controls unlock with the verified OHLC adapter.</span></div>
           <div className="chart-stage">
             <div className="chart-watermark"><CandlestickChart size={50}/><b>NEO EXCHANGE</b><span>Verified historical OHLC adapter is the next data gate</span></div>
             <div className="price-axis"><span>ASK {fmt(book.best_ask)}</span><span>MID {fmt(book.mid)}</span><span>BID {fmt(book.best_bid)}</span></div>
@@ -146,13 +166,14 @@ function App() {
 
         <div className="panel ticket-panel">
           <div className="panel-header"><div><small>ORDER ENTRY</small><h2>New Order</h2></div><CircleDollarSign size={18}/></div>
-          <div className="buy-sell"><button onClick={()=>setSide('BUY')} className={side==='BUY'?'buy active':'buy'}>BUY</button><button onClick={()=>setSide('SELL')} className={side==='SELL'?'sell active':'sell'}>SELL</button></div>
-          <label>Order Type<select value={orderType} onChange={e=>setOrderType(e.target.value)}><option>LIMIT</option><option>MARKET</option></select></label>
-          <label>Price<input placeholder={orderType==='MARKET'?'Market':fmt(side==='BUY' ? book.best_ask : book.best_bid)}/></label>
-          <label>Amount<input placeholder="0.00000000"/></label>
-          <div className="allocation"><button>25%</button><button>50%</button><button>75%</button><button>100%</button></div>
+          <div className="buy-sell"><button onClick={()=>{setSide('BUY');setReview(null)}} className={side==='BUY'?'buy active':'buy'}>BUY</button><button onClick={()=>{setSide('SELL');setReview(null)}} className={side==='SELL'?'sell active':'sell'}>SELL</button></div>
+          <label>Order Type<select value={orderType} onChange={e=>{setOrderType(e.target.value);setReview(null)}}><option>LIMIT</option><option>MARKET</option></select></label>
+          <label>Price<input value={price} onChange={e=>{setPrice(e.target.value);setReview(null)}} disabled={orderType==='MARKET'} placeholder={orderType==='MARKET'?'Market':fmt(side==='BUY' ? book.best_ask : book.best_bid)}/></label>
+          <label>Amount<input value={amount} onChange={e=>{setAmount(e.target.value);setReview(null)}} placeholder="0.00000000"/></label>
           <div className="review-box"><span>Market</span><b>{activePair}</b><span>Network</span><b>Bitcoin / Counterparty</b><span>Signing</span><b>User-controlled</b></div>
-          <button className={`submit ${side.toLowerCase()}`}>REVIEW {side} ORDER</button>
+          <button className={`submit ${side.toLowerCase()}`} onClick={reviewOrder}>REVIEW {side} ORDER</button>
+          {review?.error && <div className="order-review error">{review.error}</div>}
+          {review && !review.error && <div className="order-review"><b>Local review only — nothing has been signed or broadcast.</b><span>{review.side} {fmt(review.amount)} on {review.activePair}</span><span>{review.orderType}{review.price ? ` · ${fmt(review.price)}` : ' · market price at execution'}</span></div>}
           <p className="safety-note">No private keys are stored by the GitHub Pages client. Composition, signing and broadcast remain separate reviewed security gates.</p>
         </div>
 

@@ -1,0 +1,18 @@
+const audiences={student:{title:'Student dashboard',copy:'Courses, assignments, progress, and learning resources in one place.'},family:{title:'Family dashboard',copy:'Student progress, announcements, attendance, and school resources without administrative clutter.'},educator:{title:'Educator dashboard',copy:'Classes, assignments, assessments, and connected classroom tools in one focused workspace.'},school:{title:'School dashboard',copy:'Programs, staff, enrollment, and district resources with administrative tools kept behind role access.'}};
+const lessons=[
+{number:1,name:'Christism',art:'Trivium',order:'Holy Templist Ministries',keywords:'grammar logic rhetoric'},
+{number:2,name:'Mosesism',art:'Trivium',order:'Holy Seed Baptist Synagogue',keywords:'grammar logic rhetoric'},
+{number:3,name:'Muhammadism',art:'Trivium',order:'Ansaaruallah Holy Shrine of Al Mahdhi',keywords:'grammar logic rhetoric'},
+{number:4,name:'Sufism',art:'Quadrivium',order:'Sons of Al Khidr',keywords:'arithmetic geometry harmonics music astronomy'},
+{number:5,name:'Kabalism',art:'Quintivium',order:"Sanhedrin Magi's",keywords:'dialectics harmonics physics optics noology'},
+{number:6,name:'Magism',art:'Quintivium',order:'Devotees of Shemsizedek',keywords:'dialectics harmonics physics optics noology'},
+{number:7,name:'Summerianism',art:'Quintivium',order:'Shuyukh of Shemesh',keywords:'dialectics harmonics physics optics noology'},
+{number:8,name:'Shamanism',art:'Quintivium',order:'Hierophants of Amun-Ra',keywords:'dialectics harmonics physics optics noology'},
+{number:9,name:'Gnosticism',art:'Quintivium',order:'Seamu of Annu',keywords:'dialectics harmonics physics optics noology'}
+];
+const results=document.getElementById('results');const input=document.getElementById('searchInput');
+function render(title,copy,tag='NEO CIPHER'){results.innerHTML=`<article><span>${tag}</span><h2>${title}</h2><p>${copy}</p></article>`}
+function renderLessons(items,q){if(!items.length){render(`No curriculum match for “${q}”`,'Try a Major Lesson name, Trivium, Quadrivium, Quintivium, Grammar, Logic, Rhetoric, Arithmetic, Geometry, Astronomy, Dialectics, Physics, Optics, Harmonics, or Noology.','CURRICULUM SEARCH');return}results.innerHTML=`<div class="result-head"><span>CURRICULUM SEARCH</span><strong>${items.length} match${items.length===1?'':'es'}</strong></div><div class="course-results">${items.map(x=>`<article class="course-card"><span>MAJOR LESSON ${x.number}</span><h2>${x.name}</h2><p>${x.art} • ${x.order}</p><small>GISD Templist Curriculum • curriculum source</small></article>`).join('')}</div>`}
+document.querySelectorAll('[data-audience]').forEach(button=>button.addEventListener('click',()=>{document.querySelectorAll('[data-audience]').forEach(x=>x.classList.remove('active'));button.classList.add('active');const data=audiences[button.dataset.audience];render(data.title,data.copy,'YOUR PORTAL')}));
+document.querySelectorAll('[data-action]').forEach(button=>button.addEventListener('click',()=>{if(button.dataset.action==='courses'){renderLessons(lessons,'all courses')}else{const data=audiences[button.dataset.action];render(data.title,data.copy,'OPENING VIEW')}results.scrollIntoView({behavior:'smooth',block:'center'})}));
+document.getElementById('searchForm').addEventListener('submit',e=>{e.preventDefault();const q=input.value.trim();if(!q)return;const needle=q.toLowerCase();const matches=lessons.filter(x=>`${x.name} ${x.art} ${x.order} ${x.keywords} major lesson ${x.number}`.toLowerCase().includes(needle));renderLessons(matches,q);results.scrollIntoView({behavior:'smooth',block:'center'})});
