@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createTeraBoxRuntime } from './runtime.mjs';
+import { createTeraBoxRuntime, createMemoryTokenStore } from './runtime.mjs';
 
 const env = {
   TERABOX_CLIENT_ID: 'client-1',
@@ -40,7 +40,48 @@ test('complete stores secrets internally but returns redacted summary', async ()
   assert.equal(status.connected, true);
   assert.equal(status.userId, 'u-1');
   assert.equal(status.connectedAt, '2026-08-29T12:00:00.000Z');
+  assert.equal(status.expiresAt, '2026-08-31T12:00:00.000Z');
   assert.equal(status.durable, false);
+});
+
+test('ensureAccessToken keeps a token that is not near expiry', async () => {
+  const store = createMemoryTokenStore();
+  await store.set({ accessToken: 'ACCESS_1', refreshToken: 'REFRESH_1', expiresIn: 172800, connectedAt: '2026-08-29T12:00:00.000Z' });
+  let refreshCalls = 0;
+  const runtime = createTeraBoxRuntime({
+    env,
+    tokenStore: store,
+    now: () => '2026-08-30T00:00:00.000Z',
+    refreshAccessTokenFn: async () => { refreshCalls += 1; return { data: { access_token: 'ACCESS_2' } }; },
+  });
+  assert.equal(await runtime.ensureAccessToken(), 'ACCESS_1');
+  assert.equal(refreshCalls, 0);
+});
+
+test('ensureAccessToken refreshes and persists a token near expiry', async () => {
+  const store = createMemoryTokenStore();
+  await store.set({ accessToken: 'ACCESS_1', refreshToken: 'REFRESH_1', expiresIn: 3600, connectedAt: '2026-08-30T00:00:00.000Z', userId: 'u-1' });
+  let refreshCalls = 0;
+  const runtime = createTeraBoxRuntime({
+    env,
+    tokenStore: store,
+    now: () => '2026-08-30T00:56:00.000Z',
+    refreshSkewMs: 5 * 60 * 1000,
+    refreshAccessTokenFn: async ({ refreshToken, clientId }) => {
+      refreshCalls += 1;
+      assert.equal(refreshToken, 'REFRESH_1');
+      assert.equal(clientId, 'client-1');
+      return { data: { access_token: 'ACCESS_2', refresh_token: 'REFRESH_2', expires_in: 172800 } };
+    },
+  });
+
+  assert.equal(await runtime.ensureAccessToken(), 'ACCESS_2');
+  assert.equal(refreshCalls, 1);
+  const saved = await store.get();
+  assert.equal(saved.accessToken, 'ACCESS_2');
+  assert.equal(saved.refreshToken, 'REFRESH_2');
+  assert.equal(saved.expiresIn, 172800);
+  assert.equal(saved.refreshedAt, '2026-08-30T00:56:00.000Z');
 });
 
 test('status reports unconfigured runtime safely', async () => {
