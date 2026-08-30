@@ -37,11 +37,13 @@ jobs:
       NEO_COUNTER_WEBHOOK_SECRET: test-webhook-secret
       WALLET_SIGNATURE_VERIFY_URL: https://wallet.example.test/verify
       NEO_PADS_OPS_TOKEN: test-ops-token
+      NEO_PADS_ADMIN_TOKEN: test-admin-token
       NEO_COUNTER_PAYOUT_STATUS_URL: https://counter.example.test/payouts/{payoutId}
       NEO_COUNTER_PAYOUT_API_KEY: test-payout-api-key
       NEO_PADS_REQUIRE_CHAIN_CONFIRMATION: "true"
       NEO_PADS_CHAIN_CONFIRMATION_URL: https://chain.example.test/confirm
       NEO_PADS_PAYOUT_EXECUTION_ENABLED: "false"
+      NEO_PADS_WALLET_VERIFICATION_TTL_SECONDS: "86400"
 
     steps:
       - uses: actions/checkout@v4
@@ -68,3 +70,4 @@ jobs:
           cat /tmp/neo-pads.log
           exit 1
       - run: npm run smoke
+      - run: npm run test:http-security
