@@ -8,7 +8,9 @@
     "start": "tsx src/server.ts",
     "typecheck": "tsc --noEmit",
     "db:migrate": "tsx src/db/migrate.ts",
-    "test:postgres": "tsx src/db/integration-test.ts"
+    "test:postgres": "tsx src/db/integration-test.ts",
+    "test:payouts": "tsx src/db/payout-integration-test.ts",
+    "payout:run": "tsx src/payout-worker.ts"
   },
   "dependencies": {
     "cors": "^2.8.5",
