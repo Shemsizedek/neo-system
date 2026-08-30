@@ -3,154 +3,21 @@ import assert from 'node:assert/strict';
 import { bootstrapProductFounder, getProductFounderBinding, assertProductFounderInvariant } from './products.mjs';
 import { authorizeBankingAction, mapExternalCesAccount } from './banking-authority.mjs';
 import { authorizeProductionAction, enrollMinerDevice } from './production-authority.mjs';
+import { authorizePublicLedgerAction, provenanceEnvelope } from './public-ledger-authority.mjs';
 
-const products=['neopay','neo-prime','noogle','omnitrix','neo-telegram','neogram','neo-wire','neo-counter','neo-teller','neo-device-registry','neo-exchange','neofx','neo-dex','nibiru-reserve','neo-bank','neo-ces','neo-treasury','neo-miner','neo-generator','world-mint'];
-
-for (const productId of products) {
-  test(`${productId} reserves canonical founder as account #1`, () => {
-    const binding = getProductFounderBinding(productId);
-    assert.equal(binding.subjectId, 'neo:founder:000001');
-    assert.equal(binding.account_ordinal, 1);
-    assert.equal(binding.authentication_bypass, false);
-    const result = bootstrapProductFounder(productId, []);
-    assert.equal(result.founder.accountOrdinal, 1);
-    assert.equal(result.founder.subjectId, 'neo:founder:000001');
-    assert.equal(result.founder.authenticationBypass, false);
-    assert.equal(assertProductFounderInvariant(productId, result.records), true);
-  });
-}
-
-test('product bootstrap is idempotent', () => {
-  for (const productId of products) {
-    const first = bootstrapProductFounder(productId, []);
-    const second = bootstrapProductFounder(productId, first.records);
-    assert.equal(second.created, false);
-    assert.equal(second.records.length, 1);
-  }
-});
-
-test('account #1 cannot be occupied by another principal', () => {
-  for (const productId of products) {
-    assert.throws(() => bootstrapProductFounder(productId, [{productId, accountOrdinal:1, subjectId:'neo:user:000002'}]), /occupied/);
-  }
-});
-
-test('communications bindings do not create privilege bypasses', () => {
-  const telegram = getProductFounderBinding('neo-telegram');
-  const neogram = getProductFounderBinding('neogram');
-  const wire = getProductFounderBinding('neo-wire');
-  assert.equal(telegram.message_signing_bypass, false);
-  assert.equal(telegram.channel_permission_bypass, false);
-  assert.equal(neogram.message_signing_bypass, false);
-  assert.equal(neogram.mailbox_access_bypass, false);
-  assert.equal(wire.network_authority_bypass, false);
-  assert.equal(wire.device_enrollment_bypass, false);
-});
-
-test('transaction and device bindings do not create money-movement or hardware bypasses', () => {
-  const counter = getProductFounderBinding('neo-counter');
-  const teller = getProductFounderBinding('neo-teller');
-  const devices = getProductFounderBinding('neo-device-registry');
-  assert.equal(counter.transaction_approval_bypass, false);
-  assert.equal(counter.terminal_authentication_bypass, false);
-  assert.equal(counter.payment_credential_storage, false);
-  assert.equal(teller.cash_dispense_bypass, false);
-  assert.equal(teller.transaction_approval_bypass, false);
-  assert.equal(teller.device_enrollment_bypass, false);
-  assert.equal(teller.payment_credential_storage, false);
-  assert.equal(devices.device_attestation_bypass, false);
-  assert.equal(devices.device_enrollment_bypass, false);
-  assert.equal(devices.private_device_keys_in_registry, false);
-});
-
-test('market bindings do not create trading custody settlement or admin bypasses', () => {
-  const exchange = getProductFounderBinding('neo-exchange');
-  const fx = getProductFounderBinding('neofx');
-  const dex = getProductFounderBinding('neo-dex');
-  for (const binding of [exchange,fx,dex]) {
-    assert.equal(binding.order_signing_bypass, false);
-    assert.equal(binding.custody_bypass, false);
-    assert.equal(binding.market_admin_bypass, false);
-  }
-  assert.equal(exchange.settlement_bypass, false);
-  assert.equal(exchange.wallet_secrets_in_registry, false);
-  assert.equal(fx.pricing_override_bypass, false);
-  assert.equal(dex.settlement_bypass, false);
-  assert.equal(dex.listing_approval_bypass, false);
-});
-
-test('banking and reserve bindings do not create issuance custody treasury or CES bypasses', () => {
-  const reserve=getProductFounderBinding('nibiru-reserve');
-  const bank=getProductFounderBinding('neo-bank');
-  const ces=getProductFounderBinding('neo-ces');
-  const treasury=getProductFounderBinding('neo-treasury');
-  assert.equal(reserve.reserve_custody_bypass,false);
-  assert.equal(reserve.issuance_authority_bypass,false);
-  assert.equal(reserve.treasury_transfer_bypass,false);
-  assert.equal(reserve.signing_secrets_in_registry,false);
-  assert.equal(bank.transaction_approval_bypass,false);
-  assert.equal(bank.vdollar_issuance_bypass,false);
-  assert.equal(bank.ces_admin_bypass,false);
-  assert.equal(bank.bank_account_impersonation,false);
-  assert.equal(bank.credentials_in_registry,false);
-  assert.equal(ces.external_account_override,false);
-  assert.equal(ces.transaction_approval_bypass,false);
-  assert.equal(ces.issuance_bypass,false);
-  assert.equal(ces.credentials_in_registry,false);
-  assert.equal(treasury.custody_bypass,false);
-  assert.equal(treasury.transfer_approval_bypass,false);
-  assert.equal(treasury.signing_bypass,false);
-  assert.equal(treasury.private_keys_in_registry,false);
-});
-
-test('founder ownership alone cannot authorize banking value movement', () => {
-  const denied=authorizeBankingAction('neo-bank','bank.vdollar.issue',{subjectId:'neo:founder:000001',authenticated:true});
-  assert.equal(denied.allowed,false);
-  const allowed=authorizeBankingAction('neo-bank','bank.vdollar.issue',{subjectId:'neo:founder:000001',authenticated:true,vdollarIssuanceAuthorized:true,stepUpVerified:true});
-  assert.equal(allowed.allowed,true);
-});
-
-test('external CES accounts require verified mapping and never override native numbering', () => {
-  assert.throws(()=>mapExternalCesAccount({exchangeId:'NMNI',externalAccount:'NMNI0000'}),/verified/);
-  const mapping=mapExternalCesAccount({exchangeId:'NMNI',externalAccount:'NMNI0000',verified:true});
-  assert.equal(mapping.subjectId,'neo:founder:000001');
-  assert.equal(mapping.nativeOrdinalOverride,false);
-  assert.equal(mapping.credentialsStored,false);
-});
-
-test('production bindings do not create miner generation mint custody or payout bypasses', () => {
-  const miner=getProductFounderBinding('neo-miner');
-  const generator=getProductFounderBinding('neo-generator');
-  const mint=getProductFounderBinding('world-mint');
-  assert.equal(miner.miner_control_bypass,false);
-  assert.equal(miner.pool_configuration_bypass,false);
-  assert.equal(miner.payout_routing_bypass,false);
-  assert.equal(miner.device_enrollment_bypass,false);
-  assert.equal(miner.mining_credentials_in_registry,false);
-  assert.equal(generator.generation_authority_bypass,false);
-  assert.equal(generator.contract_activation_bypass,false);
-  assert.equal(generator.payout_routing_bypass,false);
-  assert.equal(generator.treasury_transfer_bypass,false);
-  assert.equal(generator.wallet_secrets_in_registry,false);
-  assert.equal(mint.minting_authority_bypass,false);
-  assert.equal(mint.asset_issuance_bypass,false);
-  assert.equal(mint.treasury_custody_bypass,false);
-  assert.equal(mint.payout_routing_bypass,false);
-  assert.equal(mint.signing_secrets_in_registry,false);
-});
-
-test('founder ownership alone cannot control miners or mint assets', () => {
-  const minerDenied=authorizeProductionAction('neo-miner','miner.control',{subjectId:'neo:founder:000001',authenticated:true});
-  assert.equal(minerDenied.allowed,false);
-  const minerAllowed=authorizeProductionAction('neo-miner','miner.control',{subjectId:'neo:founder:000001',authenticated:true,minerControlAuthorized:true,stepUpVerified:true});
-  assert.equal(minerAllowed.allowed,true);
-  const mintDenied=authorizeProductionAction('world-mint','mint.asset.issue',{subjectId:'neo:founder:000001',authenticated:true});
-  assert.equal(mintDenied.allowed,false);
-});
-
-test('miner device enrollment requires verified attestation and stores no private credentials', () => {
-  assert.throws(()=>enrollMinerDevice({deviceId:'miner-1',publicFingerprint:'sha256:test',ownerSubject:'neo:founder:000001',verified:true}),/verified and attested/);
-  const enrollment=enrollMinerDevice({deviceId:'miner-1',publicFingerprint:'sha256:test',ownerSubject:'neo:founder:000001',verified:true,attested:true});
-  assert.equal(enrollment.ownerSubject,'neo:founder:000001');
-  assert.equal(enrollment.privateCredentialsStored,false);
-});
+const products=['neopay','neo-prime','noogle','omnitrix','neo-telegram','neogram','neo-wire','neo-counter','neo-teller','neo-device-registry','neo-exchange','neofx','neo-dex','nibiru-reserve','neo-bank','neo-ces','neo-treasury','neo-miner','neo-generator','world-mint','neo-explorer','neoscan','neo-ledger','neo-statements'];
+for(const productId of products){test(`${productId} reserves canonical founder as account #1`,()=>{const binding=getProductFounderBinding(productId);assert.equal(binding.subjectId,'neo:founder:000001');assert.equal(binding.account_ordinal,1);assert.equal(binding.authentication_bypass,false);const result=bootstrapProductFounder(productId,[]);assert.equal(result.founder.accountOrdinal,1);assert.equal(result.founder.subjectId,'neo:founder:000001');assert.equal(result.founder.authenticationBypass,false);assert.equal(assertProductFounderInvariant(productId,result.records),true)})}
+test('product bootstrap is idempotent',()=>{for(const productId of products){const first=bootstrapProductFounder(productId,[]);const second=bootstrapProductFounder(productId,first.records);assert.equal(second.created,false);assert.equal(second.records.length,1)}});
+test('account #1 cannot be occupied by another principal',()=>{for(const productId of products)assert.throws(()=>bootstrapProductFounder(productId,[{productId,accountOrdinal:1,subjectId:'neo:user:000002'}]),/occupied/)});
+test('communications bindings do not create privilege bypasses',()=>{const t=getProductFounderBinding('neo-telegram'),n=getProductFounderBinding('neogram'),w=getProductFounderBinding('neo-wire');assert.equal(t.message_signing_bypass,false);assert.equal(t.channel_permission_bypass,false);assert.equal(n.message_signing_bypass,false);assert.equal(n.mailbox_access_bypass,false);assert.equal(w.network_authority_bypass,false);assert.equal(w.device_enrollment_bypass,false)});
+test('transaction and device bindings do not create money-movement or hardware bypasses',()=>{const c=getProductFounderBinding('neo-counter'),t=getProductFounderBinding('neo-teller'),d=getProductFounderBinding('neo-device-registry');assert.equal(c.transaction_approval_bypass,false);assert.equal(c.terminal_authentication_bypass,false);assert.equal(c.payment_credential_storage,false);assert.equal(t.cash_dispense_bypass,false);assert.equal(t.transaction_approval_bypass,false);assert.equal(t.device_enrollment_bypass,false);assert.equal(t.payment_credential_storage,false);assert.equal(d.device_attestation_bypass,false);assert.equal(d.device_enrollment_bypass,false);assert.equal(d.private_device_keys_in_registry,false)});
+test('market bindings do not create trading custody settlement or admin bypasses',()=>{const e=getProductFounderBinding('neo-exchange'),f=getProductFounderBinding('neofx'),d=getProductFounderBinding('neo-dex');for(const b of[e,f,d]){assert.equal(b.order_signing_bypass,false);assert.equal(b.custody_bypass,false);assert.equal(b.market_admin_bypass,false)}assert.equal(e.settlement_bypass,false);assert.equal(e.wallet_secrets_in_registry,false);assert.equal(f.pricing_override_bypass,false);assert.equal(d.settlement_bypass,false);assert.equal(d.listing_approval_bypass,false)});
+test('banking reserve boundaries remain closed',()=>{const r=getProductFounderBinding('nibiru-reserve'),b=getProductFounderBinding('neo-bank'),c=getProductFounderBinding('neo-ces'),t=getProductFounderBinding('neo-treasury');assert.equal(r.reserve_custody_bypass,false);assert.equal(r.issuance_authority_bypass,false);assert.equal(r.treasury_transfer_bypass,false);assert.equal(r.signing_secrets_in_registry,false);assert.equal(b.vdollar_issuance_bypass,false);assert.equal(b.bank_account_impersonation,false);assert.equal(b.credentials_in_registry,false);assert.equal(c.external_account_override,false);assert.equal(c.credentials_in_registry,false);assert.equal(t.custody_bypass,false);assert.equal(t.signing_bypass,false);assert.equal(t.private_keys_in_registry,false)});
+test('founder ownership alone cannot authorize banking value movement',()=>{assert.equal(authorizeBankingAction('neo-bank','bank.vdollar.issue',{subjectId:'neo:founder:000001',authenticated:true}).allowed,false);assert.equal(authorizeBankingAction('neo-bank','bank.vdollar.issue',{subjectId:'neo:founder:000001',authenticated:true,vdollarIssuanceAuthorized:true,stepUpVerified:true}).allowed,true)});
+test('external CES accounts require verified mapping and never override native numbering',()=>{assert.throws(()=>mapExternalCesAccount({exchangeId:'NMNI',externalAccount:'NMNI0000'}),/verified/);const m=mapExternalCesAccount({exchangeId:'NMNI',externalAccount:'NMNI0000',verified:true});assert.equal(m.nativeOrdinalOverride,false);assert.equal(m.credentialsStored,false)});
+test('production bindings do not create miner generation mint custody or payout bypasses',()=>{const m=getProductFounderBinding('neo-miner'),g=getProductFounderBinding('neo-generator'),w=getProductFounderBinding('world-mint');assert.equal(m.miner_control_bypass,false);assert.equal(m.mining_credentials_in_registry,false);assert.equal(g.generation_authority_bypass,false);assert.equal(g.wallet_secrets_in_registry,false);assert.equal(w.minting_authority_bypass,false);assert.equal(w.asset_issuance_bypass,false);assert.equal(w.signing_secrets_in_registry,false)});
+test('founder ownership alone cannot control miners or mint assets',()=>{assert.equal(authorizeProductionAction('neo-miner','miner.control',{subjectId:'neo:founder:000001',authenticated:true}).allowed,false);assert.equal(authorizeProductionAction('neo-miner','miner.control',{subjectId:'neo:founder:000001',authenticated:true,minerControlAuthorized:true,stepUpVerified:true}).allowed,true);assert.equal(authorizeProductionAction('world-mint','mint.asset.issue',{subjectId:'neo:founder:000001',authenticated:true}).allowed,false)});
+test('miner device enrollment requires verified attestation and stores no private credentials',()=>{assert.throws(()=>enrollMinerDevice({deviceId:'miner-1',publicFingerprint:'sha256:test',ownerSubject:'neo:founder:000001',verified:true}),/verified and attested/);const e=enrollMinerDevice({deviceId:'miner-1',publicFingerprint:'sha256:test',ownerSubject:'neo:founder:000001',verified:true,attested:true});assert.equal(e.privateCredentialsStored,false)});
+test('public ledger bindings preserve source truth and accounting controls',()=>{const e=getProductFounderBinding('neo-explorer'),s=getProductFounderBinding('neoscan'),l=getProductFounderBinding('neo-ledger'),n=getProductFounderBinding('neo-statements');assert.equal(e.blockchain_data_override,false);assert.equal(e.verification_result_override,false);assert.equal(s.index_mutation_bypass,false);assert.equal(s.asset_data_override,false);assert.equal(l.ledger_mutation_bypass,false);assert.equal(l.accounting_override_bypass,false);assert.equal(l.audit_history_bypass,false);assert.equal(n.statement_publication_bypass,false);assert.equal(n.accounting_certification_bypass,false)});
+test('founder ownership alone cannot mutate ledger or publish certified statements',()=>{assert.equal(authorizePublicLedgerAction('neo-ledger','ledger.entry.mutate',{subjectId:'neo:founder:000001',authenticated:true}).allowed,false);assert.equal(authorizePublicLedgerAction('neo-statements','statements.publish',{subjectId:'neo:founder:000001',authenticated:true}).allowed,false);assert.equal(authorizePublicLedgerAction('neo-statements','statements.publish',{subjectId:'neo:founder:000001',authenticated:true,statementPublicationAuthorized:true,stepUpVerified:true}).allowed,true)});
+test('public data provenance cannot be founder-overridden',()=>{const p=provenanceEnvelope({sourceType:'bitcoin',sourceId:'tx:abc',observedAt:'2026-08-30T00:00:00Z',immutableReference:'block:123'});assert.equal(p.founderOverride,false);assert.equal(p.sourceType,'bitcoin')});
