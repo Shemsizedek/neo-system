@@ -18,7 +18,15 @@ const daemon=createWorldMintDaemon({
   host:config.stratumHost,
   port:config.stratumPort,
   templateIntervalMs:config.templateRefreshMs,
-  confirmationIntervalMs:config.confirmationCheckMs
+  confirmationIntervalMs:config.confirmationCheckMs,
+  gatewayLimits:{
+    maxConnections:config.stratumMaxConnections,
+    maxLineBytes:config.stratumMaxLineBytes,
+    idleTimeoutMs:config.stratumIdleTimeoutMs,
+    submitWindowMs:config.stratumSubmitWindowMs,
+    maxSubmissionsPerWindow:config.stratumMaxSubmissionsPerWindow,
+    shutdownGraceMs:config.stratumShutdownGraceMs
+  }
 })
 
 let started=false
@@ -37,7 +45,7 @@ const statusProvider=async()=>{
     ready:Boolean(started&&rpcHealthy&&job),
     bitcoinRpcHealthy:rpcHealthy,
     chain:chain?{chain:chain.chain,blocks:chain.blocks,headers:chain.headers,initialblockdownload:Boolean(chain.initialblockdownload),bestblockhash:chain.bestblockhash}:null,
-    stratum:{host:config.stratumHost,port:config.stratumPort},
+    stratum:{host:config.stratumHost,port:config.stratumPort,sessions:daemon.gatewaySessionCount(),limits:daemon.gatewayLimits()},
     job:job?{jobId:job.runtimeJobId,templateId:job.template.templateId,height:job.template.height,issuedAt:job.createdAt}:null,
     difficulty:String(daemon.currentDifficulty())
   }
@@ -62,6 +70,7 @@ try{
   process.stdout.write(`[world-mint] started ${JSON.stringify(redactedConfig(config))}\n`)
 }catch(error){
   started=false
+  await Promise.allSettled([health.stop(),daemon.stop()])
   credentialStore.close()
   process.stderr.write(`[world-mint] startup failed: ${String(error?.message||error)}\n`)
   process.exitCode=1
