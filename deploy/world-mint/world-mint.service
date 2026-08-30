@@ -1,0 +1,43 @@
+[Unit]
+Description=NEO World Mint Genesis Bitcoin Mining Pool
+After=network-online.target bitcoind.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=neo-world-mint
+Group=neo-world-mint
+WorkingDirectory=/opt/neo-system
+Environment=NODE_ENV=production
+EnvironmentFile=/etc/neo/world-mint.env
+
+# Fail closed: the service will not bind Stratum unless Bitcoin Core passes live readiness.
+ExecStartPre=/usr/bin/npm run nibiru-pool:preflight
+ExecStart=/usr/bin/npm run nibiru-pool:start
+
+Restart=on-failure
+RestartSec=5s
+TimeoutStartSec=90s
+TimeoutStopSec=45s
+KillSignal=SIGTERM
+
+# Service hardening. Keep Bitcoin Core credentials in /etc/neo/world-mint.env only.
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+MemoryDenyWriteExecute=false
+ReadWritePaths=/var/lib/neo-world-mint
+
+# Stratum needs TCP sockets; the health endpoint remains loopback by configuration.
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+
+[Install]
+WantedBy=multi-user.target
