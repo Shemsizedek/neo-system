@@ -63,13 +63,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Enforce main branch for production apply
-        if: ${{ inputs.action == 'apply' }}
+      - name: Enforce trusted main branch
         shell: bash
         run: |
           set -euo pipefail
           if [[ "${GITHUB_REF}" != "refs/heads/main" ]]; then
-            echo "::error::Production apply is permitted only from refs/heads/main. Current ref: ${GITHUB_REF}"
+            echo "::error::Authenticated Google Cloud plan/apply is permitted only from refs/heads/main. Current ref: ${GITHUB_REF}"
             exit 1
           fi
 
@@ -95,6 +94,15 @@ jobs:
           project_id: ${{ vars.GCP_PROJECT_ID }}
           workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
           service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+
+      - name: Google Cloud activation preflight
+        shell: bash
+        env:
+          GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+          GCP_WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER }}
+          GCP_SERVICE_ACCOUNT: ${{ vars.GCP_SERVICE_ACCOUNT }}
+          GCP_TF_STATE_BUCKET: ${{ vars.GCP_TF_STATE_BUCKET }}
+        run: bash preflight.sh
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v4
