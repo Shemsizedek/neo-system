@@ -92,6 +92,13 @@ export function createWorldMintDaemon({
     return candidate
   }
 
+  function recoverPendingCandidates(){
+    const recovered=store.listBlockCandidates({pendingOnly:true})
+    for(const candidate of recovered)candidates.set(candidate.submissionId,candidate)
+    store.store.appendAudit('nibiru_daemon',poolId,'BLOCK_CANDIDATE_RECOVERY',{recovered:recovered.length})
+    return recovered
+  }
+
   async function checkCandidate(candidate){
     if(candidate.state!=='SUBMITTED')return candidate
     try{
@@ -100,7 +107,7 @@ export function createWorldMintDaemon({
       const confirmed={...candidate,state:'CONFIRMED',confirmations:Number(header.confirmations),blockHash:candidate.hash,confirmedAt:now(),bookableBtc:true}
       candidates.set(confirmed.submissionId,confirmed)
       store.saveBlockCandidate(confirmed)
-      store.store.put('nibiru_production',confirmed.blockHash,{
+      store.saveConfirmedProduction({
         productionId:`prod_${confirmed.blockHash}`,
         poolId,
         blockHash:confirmed.blockHash,
@@ -110,9 +117,15 @@ export function createWorldMintDaemon({
         state:'CONFIRMED',
         bookableBtc:true,
         confirmedAt:confirmed.confirmedAt
-      },{action:'NIBIRU_BTC_PRODUCTION_CONFIRMED'})
+      })
       return confirmed
     }catch{return candidate}
+  }
+
+  async function checkPendingCandidatesOnce(){
+    const results=[]
+    for(const candidate of candidates.values())results.push(await checkCandidate(candidate))
+    return results
   }
 
   async function templateLoop(){
@@ -133,7 +146,7 @@ export function createWorldMintDaemon({
 
   async function confirmationLoop(){
     while(running){
-      for(const candidate of candidates.values())await checkCandidate(candidate)
+      await checkPendingCandidatesOnce()
       await sleep(confirmationIntervalMs)
     }
   }
@@ -141,6 +154,7 @@ export function createWorldMintDaemon({
   async function start(){
     if(running)return {poolId,host,port,state:'RUNNING'}
     running=true
+    recoverPendingCandidates()
     await refreshTemplate()
     gateway=createStratumGateway({
       host,port,poolId,
@@ -157,7 +171,7 @@ export function createWorldMintDaemon({
     gateway.broadcastNotify?.(runtime.notifyMessage())
     void templateLoop()
     void confirmationLoop()
-    store.store.appendAudit('nibiru_daemon',poolId,'WORLD_MINT_DAEMON_STARTED',{host,port})
+    store.store.appendAudit('nibiru_daemon',poolId,'WORLD_MINT_DAEMON_STARTED',{host,port,recoveredCandidates:candidates.size})
     return {poolId,host,port,state:'RUNNING'}
   }
 
@@ -169,5 +183,14 @@ export function createWorldMintDaemon({
     store.close()
   }
 
-  return Object.freeze({start,stop,refreshTemplate,currentJob:()=>runtime.currentJob(),currentDifficulty:()=>runtime.currentDifficulty()})
+  return Object.freeze({
+    start,
+    stop,
+    refreshTemplate,
+    recoverPendingCandidates,
+    checkPendingCandidatesOnce,
+    pendingCandidateCount:()=>[...candidates.values()].filter(candidate=>candidate.state==='SUBMITTED'&&candidate.bookableBtc!==true).length,
+    currentJob:()=>runtime.currentJob(),
+    currentDifficulty:()=>runtime.currentDifficulty()
+  })
 }
