@@ -17,6 +17,22 @@ test('approval HTTP surface rejects missing bearer token',async()=>{
   assert.equal(response.status,401);
 });
 
+test('announcement evidence endpoint is operator-only and read-only',async()=>{
+  const runtime=runtimeWithPending();
+  let executions=0;
+  runtime.attach('neo-bank-bot',async()=>{executions+=1;return {ok:true};});
+  const handler=createNeoBotsAdminHttpHandler({runtimeFactory:()=>runtime,tokenProvider:()=> 'control-secret',operatorPolicy:(actor)=>actor.id==='operator-1'});
+  const denied=await handler(new Request('https://control.example/announcement-evidence',{method:'POST',headers:{authorization:'Bearer control-secret','content-type':'application/json','x-neo-actor':'other'},body:JSON.stringify({text:'Book Entry: Credit Voucher: CV-1 CES Transaction ID: TX-1'})}));
+  assert.equal(denied.status,403);
+  const accepted=await handler(new Request('https://control.example/announcement-evidence',{method:'POST',headers:{authorization:'Bearer control-secret','content-type':'application/json','x-neo-actor':'operator-1'},body:JSON.stringify({text:'Book Entry: Credit Voucher: CV-1 CES Transaction ID: TX-1 SELLER: WORLD CREDIT UNION – NMNI0260'})}));
+  assert.equal(accepted.status,200);
+  const body=await accepted.json();
+  assert.equal(body.evidence.state,'TV-1');
+  assert.equal(body.evidence.cesTransactionId,'TX-1');
+  assert.equal(body.cesWriteExecuted,false);
+  assert.equal(executions,0);
+});
+
 test('approval HTTP surface lists and resolves without executing target action',async()=>{
   const runtime=runtimeWithPending();
   let executions=0;
