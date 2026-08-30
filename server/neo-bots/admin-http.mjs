@@ -1,4 +1,5 @@
 import { createNeoBotsAdminControlPlane } from './admin-control-plane.mjs';
+import { parseCesAnnouncement } from './ces-announcement-evidence.mjs';
 
 const json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:{'content-type':'application/json','cache-control':'no-store'}});
 
@@ -13,6 +14,13 @@ export function createNeoBotsAdminHttpHandler({runtimeFactory,tokenProvider,oper
     const control=createNeoBotsAdminControlPlane({runtime,operatorPolicy:operatorPolicy||(()=>true)});
     const url=new URL(request.url);
     const actor={surface:'control-api',id:String(request.headers.get('x-neo-actor')||'discord-gateway')};
+    if(request.method==='POST'&&url.pathname==='/announcement-evidence'){
+      if(typeof operatorPolicy!=='function'||!operatorPolicy(actor))return json({error:'operator authorization required'},403);
+      const body=await request.json().catch(()=>null);
+      if(!body||typeof body.text!=='string'||!body.text.trim())return json({error:'announcement text is required'},400);
+      const evidence=parseCesAnnouncement({id:body.id??null,date:body.date??null,title:body.title??'',text:body.text});
+      return json({evidence,execution:'read-only',cesWriteExecuted:false});
+    }
     if(request.method==='GET'&&url.pathname==='/approvals'){
       try{return json({approvals:control.listPending(actor)});}
       catch(err){return json({error:String(err?.message||err)},400);}
