@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NEO Pads</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">NEO Pads</div>
+    <nav>
+      <button data-view="marketplace">Find a Pad</button>
+      <button data-view="host">Host</button>
+      <button class="primary">NEOpass</button>
+    </nav>
+  </header>
+
+  <main>
+    <section id="marketplace" class="view active">
+      <section class="hero">
+        <p class="eyebrow">Bitcoin-native lodging marketplace</p>
+        <h1>Find a place. Verify. Pay ∞. Stay.</h1>
+        <form id="searchForm" class="searchbar">
+          <input id="location" placeholder="Where are you going?" />
+          <input id="checkin" type="date" />
+          <input id="checkout" type="date" />
+          <input id="guests" type="number" min="1" value="1" aria-label="Guests" />
+          <button class="primary" type="submit">Search</button>
+        </form>
+      </section>
+
+      <section class="section-head">
+        <div>
+          <p class="eyebrow">Marketplace</p>
+          <h2>Available Pads</h2>
+        </div>
+        <span class="pill">HOMESHARES powered</span>
+      </section>
+      <section id="results" class="grid"></section>
+    </section>
+
+    <section id="host" class="view">
+      <section class="section-head">
+        <div>
+          <p class="eyebrow">NEOworks Host Console</p>
+          <h2>Activate a property</h2>
+        </div>
+        <span class="pill">Orange Chip™ → HOMESHARES</span>
+      </section>
+
+      <div class="panel">
+        <label>Counterparty wallet <input id="hostWallet" placeholder="Host wallet address" /></label>
+        <button id="verifyHomeshares" class="primary">Verify HOMESHARES</button>
+        <pre id="hostStatus">Waiting for wallet verification.</pre>
+      </div>
+
+      <form id="propertyForm" class="panel form-grid">
+        <label>Property title <input id="propertyTitle" required /></label>
+        <label>Location <input id="propertyLocation" required /></label>
+        <label>Rate in World Currency <input id="propertyRate" type="number" min="0" required /></label>
+        <label class="check"><input id="authorityVerified" type="checkbox" /> Property authority verified</label>
+        <button class="primary" type="submit">Create property</button>
+      </form>
+    </section>
+  </main>
+
+  <footer>
+    <span>NEO Pads</span>
+    <span>NEOpass · NEOworks · NEO Counter · Bitcoin / Counterparty</span>
+  </footer>
+  <script src="./app.js" type="module"></script>
+</body>
+</html>
