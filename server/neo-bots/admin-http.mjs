@@ -13,7 +13,10 @@ export function createNeoBotsAdminHttpHandler({runtimeFactory,tokenProvider,oper
     const control=createNeoBotsAdminControlPlane({runtime,operatorPolicy:operatorPolicy||(()=>true)});
     const url=new URL(request.url);
     const actor={surface:'control-api',id:String(request.headers.get('x-neo-actor')||'discord-gateway')};
-    if(request.method==='GET'&&url.pathname==='/approvals')return json({approvals:control.listPending(actor)});
+    if(request.method==='GET'&&url.pathname==='/approvals'){
+      try{return json({approvals:control.listPending(actor)});}
+      catch(err){return json({error:String(err?.message||err)},400);}
+    }
     const match=url.pathname.match(/^\/approvals\/([^/]+)$/);
     if(request.method==='POST'&&match){
       const body=await request.json().catch(()=>null);
