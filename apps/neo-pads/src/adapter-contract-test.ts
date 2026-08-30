@@ -35,6 +35,7 @@ try {
   process.env.NODE_ENV = "test";
   process.env.NEO_COUNTER_CHECKOUT_URL = `${base}/neo-counter/`;
   process.env.NEO_PADS_CHECKOUT_RETURN_URL = `${base}/pads/booking/{bookingId}`;
+  process.env.NEO_PADS_CHECKOUT_CANCEL_URL = `${base}/pads/booking/{bookingId}`;
   const checkout = await createCheckout({
     bookingId: "NPB-TEST",
     amountWorld: 500,
