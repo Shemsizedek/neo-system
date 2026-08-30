@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
 import { Pool, PoolClient } from "pg";
-import type { BookingRecord, PropertyRecord, Repository } from "./repository.js";
+import type { BookingRecord, PropertyRecord, ReconciliationSummary, Repository } from "./repository.js";
 
 function propertyFromRow(row: any): PropertyRecord {
   return {
@@ -147,6 +147,36 @@ export class PostgresRepository implements Repository {
       );
       return { duplicate: false, booking };
     });
+  }
+
+  async ping() {
+    try {
+      await this.pool.query("SELECT 1");
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async getReconciliationSummary(): Promise<ReconciliationSummary> {
+    const { rows } = await this.pool.query(`
+      SELECT
+        (SELECT count(*)::int FROM neo_pads_payments WHERE status NOT IN ('SETTLED','REFUNDED','FAILED')) AS pending_payments,
+        (SELECT count(*)::int FROM neo_pads_payments p LEFT JOIN neo_pads_host_payouts hp ON hp.booking_id=p.booking_id WHERE p.status='SETTLED' AND hp.id IS NULL) AS settled_without_payout,
+        (SELECT count(*)::int FROM neo_pads_host_payouts WHERE status IN ('PENDING','AUTHORIZED','SUBMITTED')) AS pending_payouts,
+        (SELECT count(*)::int FROM neo_pads_host_payouts WHERE status='FAILED') AS failed_payouts,
+        (SELECT count(*)::int FROM neo_pads_payment_events WHERE received_at >= now() - interval '24 hours') AS recent_events
+    `);
+    const row = rows[0] ?? {};
+    return {
+      supported: true,
+      generatedAt: new Date().toISOString(),
+      pendingPayments: Number(row.pending_payments ?? 0),
+      settledPaymentsWithoutPayout: Number(row.settled_without_payout ?? 0),
+      pendingPayouts: Number(row.pending_payouts ?? 0),
+      failedPayouts: Number(row.failed_payouts ?? 0),
+      recentPaymentEvents: Number(row.recent_events ?? 0)
+    };
   }
 
   async close() {
