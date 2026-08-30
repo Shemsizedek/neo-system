@@ -11,10 +11,11 @@ export function createWorldMintDaemon({
   credentialResolver,
   dbPath=process.env.NEO_MINER_DB_PATH||'./data/neo-miner.sqlite',
   poolId='world-mint-genesis',
-  host=process.env.NIBIRU_STRATUM_HOST||'0.0.0.0',
+  host=process.env.NIBIRU_STRATUM_HOST||'127.0.0.1',
   port=Number(process.env.NIBIRU_STRATUM_PORT||3333),
   templateIntervalMs=Number(process.env.NIBIRU_TEMPLATE_REFRESH_MS||15000),
-  confirmationIntervalMs=Number(process.env.NIBIRU_CONFIRMATION_CHECK_MS||30000)
+  confirmationIntervalMs=Number(process.env.NIBIRU_CONFIRMATION_CHECK_MS||30000),
+  gatewayLimits={}
 }={}){
   if(typeof rpc!=='function')throw new Error('BITCOIN_RPC_CLIENT_REQUIRED')
   if(!payoutScriptHex)throw new Error('PAYOUT_SCRIPT_REQUIRED')
@@ -154,25 +155,32 @@ export function createWorldMintDaemon({
   async function start(){
     if(running)return {poolId,host,port,state:'RUNNING'}
     running=true
-    recoverPendingCandidates()
-    await refreshTemplate()
-    gateway=createStratumGateway({
-      host,port,poolId,
-      credentialResolver,
-      jobResolver:async jobId=>{const job=jobs.get(jobId);return job&&!job.stale?job:null},
-      shareRecorder:async share=>store.saveShare(share),
-      blockCandidateHandler,
-      notifyResolver:()=>runtime.notifyMessage(),
-      difficultyResolver:()=>runtime.difficultyUpdate(),
-      shareVerifier
-    })
-    await gateway.start()
-    gateway.broadcastDifficulty?.(runtime.difficultyUpdate())
-    gateway.broadcastNotify?.(runtime.notifyMessage())
-    void templateLoop()
-    void confirmationLoop()
-    store.store.appendAudit('nibiru_daemon',poolId,'WORLD_MINT_DAEMON_STARTED',{host,port,recoveredCandidates:candidates.size})
-    return {poolId,host,port,state:'RUNNING'}
+    try{
+      recoverPendingCandidates()
+      await refreshTemplate()
+      gateway=createStratumGateway({
+        host,port,poolId,
+        ...gatewayLimits,
+        credentialResolver,
+        jobResolver:async jobId=>{const job=jobs.get(jobId);return job&&!job.stale?job:null},
+        shareRecorder:async share=>store.saveShare(share),
+        blockCandidateHandler,
+        notifyResolver:()=>runtime.notifyMessage(),
+        difficultyResolver:()=>runtime.difficultyUpdate(),
+        shareVerifier
+      })
+      await gateway.start()
+      gateway.broadcastDifficulty?.(runtime.difficultyUpdate())
+      gateway.broadcastNotify?.(runtime.notifyMessage())
+      void templateLoop()
+      void confirmationLoop()
+      store.store.appendAudit('nibiru_daemon',poolId,'WORLD_MINT_DAEMON_STARTED',{host,port,recoveredCandidates:candidates.size,gatewayLimits:gateway.limits?.()||null})
+      return {poolId,host,port,state:'RUNNING'}
+    }catch(error){
+      running=false
+      if(gateway)await gateway.stop().catch(()=>{})
+      throw error
+    }
   }
 
   async function stop(){
@@ -191,6 +199,8 @@ export function createWorldMintDaemon({
     checkPendingCandidatesOnce,
     pendingCandidateCount:()=>[...candidates.values()].filter(candidate=>candidate.state==='SUBMITTED'&&candidate.bookableBtc!==true).length,
     currentJob:()=>runtime.currentJob(),
-    currentDifficulty:()=>runtime.currentDifficulty()
+    currentDifficulty:()=>runtime.currentDifficulty(),
+    gatewaySessionCount:()=>gateway?.sessionCount?.()||0,
+    gatewayLimits:()=>gateway?.limits?.()||null
   })
 }
