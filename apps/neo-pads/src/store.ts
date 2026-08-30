@@ -5,7 +5,7 @@ export interface RuntimeStoreShape {
   properties: Record<string, unknown>;
   bookings: Record<string, unknown>;
   processedWebhookEvents: Record<string, number>;
-  verifiedWallets: Record<string, { verifiedAt: number; challengeId: string }>;
+  verifiedWallets: Record<string, { verifiedAt: number; expiresAt: number; challengeId: string }>;
 }
 
 const emptyStore = (): RuntimeStoreShape => ({
@@ -14,6 +14,12 @@ const emptyStore = (): RuntimeStoreShape => ({
   processedWebhookEvents: {},
   verifiedWallets: {}
 });
+
+function walletVerificationTtlMs() {
+  const seconds = Number(process.env.NEO_PADS_WALLET_VERIFICATION_TTL_SECONDS ?? 86400);
+  const safeSeconds = Number.isFinite(seconds) ? Math.max(60, Math.floor(seconds)) : 86400;
+  return safeSeconds * 1000;
+}
 
 export class RuntimeStore {
   private data: RuntimeStoreShape;
@@ -56,12 +62,24 @@ export class RuntimeStore {
   }
 
   markWalletVerified(wallet: string, challengeId: string) {
-    this.data.verifiedWallets[wallet] = { verifiedAt: Date.now(), challengeId };
+    const verifiedAt = Date.now();
+    this.data.verifiedWallets[wallet] = {
+      verifiedAt,
+      expiresAt: verifiedAt + walletVerificationTtlMs(),
+      challengeId
+    };
     this.flush();
   }
 
   isWalletVerified(wallet: string) {
-    return Boolean(this.data.verifiedWallets[wallet]);
+    const record = this.data.verifiedWallets[wallet];
+    if (!record) return false;
+    if (!Number.isFinite(record.expiresAt) || record.expiresAt <= Date.now()) {
+      delete this.data.verifiedWallets[wallet];
+      this.flush();
+      return false;
+    }
+    return true;
   }
 
   hasWebhookEvent(eventId: string) {
