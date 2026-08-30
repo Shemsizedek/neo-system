@@ -1,0 +1,158 @@
+name: OCI Provision NEO Runtime
+
+on:
+  workflow_dispatch:
+    inputs:
+      availability_domain:
+        description: OCI Availability Domain name
+        required: true
+        type: string
+      image_ocid:
+        description: Ubuntu 24.04 or Oracle Linux ARM image OCID
+        required: true
+        type: string
+      shape_ocpus:
+        description: Ampere A1 OCPUs (keep within Always Free allocation)
+        required: true
+        default: '2'
+        type: string
+      shape_memory_gb:
+        description: Ampere A1 memory in GB (keep within Always Free allocation)
+        required: true
+        default: '12'
+        type: string
+      display_name:
+        description: OCI instance display name
+        required: true
+        default: neo-system-runtime-01
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: oci-provision-neo-runtime
+  cancel-in-progress: false
+
+jobs:
+  provision:
+    runs-on: ubuntu-latest
+    environment: oci-production
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate required secrets
+        shell: bash
+        env:
+          OCI_TENANCY_OCID: ${{ secrets.OCI_TENANCY_OCID }}
+          OCI_USER_OCID: ${{ secrets.OCI_USER_OCID }}
+          OCI_FINGERPRINT: ${{ secrets.OCI_FINGERPRINT }}
+          OCI_REGION: ${{ secrets.OCI_REGION }}
+          OCI_COMPARTMENT_OCID: ${{ secrets.OCI_COMPARTMENT_OCID }}
+          OCI_SUBNET_OCID: ${{ secrets.OCI_SUBNET_OCID }}
+          OCI_SSH_PUBLIC_KEY: ${{ secrets.OCI_SSH_PUBLIC_KEY }}
+          OCI_API_PRIVATE_KEY: ${{ secrets.OCI_API_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          for name in OCI_TENANCY_OCID OCI_USER_OCID OCI_FINGERPRINT OCI_REGION OCI_COMPARTMENT_OCID OCI_SUBNET_OCID OCI_SSH_PUBLIC_KEY OCI_API_PRIVATE_KEY; do
+            if [ -z "${!name:-}" ]; then
+              echo "Missing required GitHub environment secret: $name" >&2
+              exit 1
+            fi
+          done
+
+      - name: Install OCI CLI
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install oci-cli
+          oci --version
+
+      - name: Configure OCI CLI
+        shell: bash
+        env:
+          OCI_TENANCY_OCID: ${{ secrets.OCI_TENANCY_OCID }}
+          OCI_USER_OCID: ${{ secrets.OCI_USER_OCID }}
+          OCI_FINGERPRINT: ${{ secrets.OCI_FINGERPRINT }}
+          OCI_REGION: ${{ secrets.OCI_REGION }}
+          OCI_API_PRIVATE_KEY: ${{ secrets.OCI_API_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$HOME/.oci"
+          umask 077
+          printf '%s\n' "$OCI_API_PRIVATE_KEY" > "$HOME/.oci/oci_api_key.pem"
+          cat > "$HOME/.oci/config" <<EOF
+          [DEFAULT]
+          user=$OCI_USER_OCID
+          fingerprint=$OCI_FINGERPRINT
+          tenancy=$OCI_TENANCY_OCID
+          region=$OCI_REGION
+          key_file=$HOME/.oci/oci_api_key.pem
+          EOF
+          chmod 600 "$HOME/.oci/config" "$HOME/.oci/oci_api_key.pem"
+
+      - name: Launch Always Free ARM VM
+        id: launch
+        shell: bash
+        env:
+          OCI_COMPARTMENT_OCID: ${{ secrets.OCI_COMPARTMENT_OCID }}
+          OCI_SUBNET_OCID: ${{ secrets.OCI_SUBNET_OCID }}
+          OCI_SSH_PUBLIC_KEY: ${{ secrets.OCI_SSH_PUBLIC_KEY }}
+          AD: ${{ inputs.availability_domain }}
+          IMAGE_OCID: ${{ inputs.image_ocid }}
+          OCPUS: ${{ inputs.shape_ocpus }}
+          MEMORY_GB: ${{ inputs.shape_memory_gb }}
+          DISPLAY_NAME: ${{ inputs.display_name }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os, sys
+          ocpus=float(os.environ['OCPUS']); memory=float(os.environ['MEMORY_GB'])
+          if ocpus <= 0 or memory <= 0:
+              raise SystemExit('OCPUs and memory must be positive.')
+          if ocpus > 4 or memory > 24:
+              raise SystemExit('Requested shape exceeds the common OCI Always Free Ampere A1 allocation. Refusing to provision.')
+          PY
+          LAUNCH_JSON=$(oci compute instance launch \
+            --compartment-id "$OCI_COMPARTMENT_OCID" \
+            --availability-domain "$AD" \
+            --shape VM.Standard.A1.Flex \
+            --shape-config "{\"ocpus\":$OCPUS,\"memoryInGBs\":$MEMORY_GB}" \
+            --image-id "$IMAGE_OCID" \
+            --subnet-id "$OCI_SUBNET_OCID" \
+            --assign-public-ip true \
+            --display-name "$DISPLAY_NAME" \
+            --metadata "{\"ssh_authorized_keys\":\"$OCI_SSH_PUBLIC_KEY\"}" \
+            --wait-for-state RUNNING \
+            --output json)
+          INSTANCE_ID=$(printf '%s' "$LAUNCH_JSON" | jq -r '.data.id')
+          if [ -z "$INSTANCE_ID" ] || [ "$INSTANCE_ID" = null ]; then
+            echo "OCI launch did not return an instance id." >&2
+            exit 1
+          fi
+          echo "instance_id=$INSTANCE_ID" >> "$GITHUB_OUTPUT"
+
+      - name: Resolve public IP
+        id: network
+        shell: bash
+        env:
+          INSTANCE_ID: ${{ steps.launch.outputs.instance_id }}
+        run: |
+          set -euo pipefail
+          VNIC_ID=$(oci compute instance list-vnics --instance-id "$INSTANCE_ID" --query 'data[0].id' --raw-output)
+          PUBLIC_IP=$(oci network vnic get --vnic-id "$VNIC_ID" --query 'data."public-ip"' --raw-output)
+          echo "public_ip=$PUBLIC_IP" >> "$GITHUB_OUTPUT"
+          echo "NEO runtime public IP: $PUBLIC_IP" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Deployment handoff
+        run: |
+          cat >> "$GITHUB_STEP_SUMMARY" <<'EOF'
+          ## Next deployment gate
+          1. Point the chosen NEO API DNS hostname at the new public IP.
+          2. SSH to the VM using the private key corresponding to `OCI_SSH_PUBLIC_KEY`.
+          3. Clone `Shemsizedek/neo-system`.
+          4. Run `infra/oci/bootstrap-host.sh`.
+          5. Create `infra/oci/.env` from `.env.example` with the public API hostname.
+          6. Run `docker compose -f infra/oci/docker-compose.yml up -d --build`.
+          7. Verify `/health` and `/api/v1/oci/services` over HTTPS.
+          EOF
