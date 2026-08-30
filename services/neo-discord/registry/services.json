@@ -1,5 +1,5 @@
 {
-  "version": "1.3.1",
+  "version": "1.3.3",
   "planes": {"backend":"github","frontend":"github-pages","serverApi":"discord"},
   "defaultCommand": "services",
   "readActions": {
@@ -36,11 +36,13 @@
   "services": [
     {"id":"gisd","name":"GISD / NEO Cipher","githubPath":"apps/gisd","pagesPath":null,"specializedCommand":null,"visibility":"internal"},
     {"id":"neo-counter","name":"NEO Counter","githubPath":"apps/neo-counter","pagesPath":"/neo-counter/","specializedCommand":null,"visibility":"public"},
+    {"id":"neo-dash","name":"NEO Dash","githubPath":"apps/neo-dash","pagesPath":null,"specializedCommand":null,"visibility":"public"},
     {"id":"neo-exchange","name":"NEO Exchange","githubPath":"apps/neo-exchange","pagesPath":"/neo-exchange/","specializedCommand":null,"visibility":"public"},
     {"id":"neo-guardian","name":"NEO Guardian","githubPath":"apps/neo-guardian","pagesPath":"/guardian/","specializedCommand":null,"visibility":"public"},
     {"id":"neo-pads","name":"NEO Pads","githubPath":"apps/neo-pads","pagesPath":null,"specializedCommand":null,"visibility":"public"},
     {"id":"neo-prime","name":"NEO Prime","githubPath":"apps/neo-prime","pagesPath":"/neo-prime/","specializedCommand":"neo","visibility":"public"},
     {"id":"neo-relations","name":"NEO Relations","githubPath":"apps/neo-relations","pagesPath":"/neo-relations/","specializedCommand":"relations","visibility":"public"},
+    {"id":"neo-realty","name":"NEO Realty","githubPath":"apps/neo-realty","pagesPath":null,"specializedCommand":null,"visibility":"public"},
     {"id":"neo-telegram","name":"Neogram / NEO Telegram","githubPath":"apps/neo-telegram","pagesPath":"/neogram/","specializedCommand":null,"visibility":"public"},
     {"id":"neo-tv","name":"NEO TV","githubPath":"apps/neo-tv","pagesPath":"/neo-tv/","specializedCommand":null,"visibility":"public"},
     {"id":"neopay","name":"NEOpay","githubPath":"apps/neopay","pagesPath":"/neopay/","specializedCommand":null,"visibility":"public"},

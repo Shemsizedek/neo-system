@@ -4,11 +4,13 @@ on:
   pull_request:
     paths:
       - 'services/neo-discord/**'
+      - 'server/neo-bots/**'
       - '.github/workflows/neo-discord-node-standby-readiness.yml'
   push:
     branches: [main]
     paths:
       - 'services/neo-discord/**'
+      - 'server/neo-bots/**'
       - '.github/workflows/neo-discord-node-standby-readiness.yml'
   workflow_dispatch:
 
@@ -30,10 +32,26 @@ jobs:
         run: |
           set -euo pipefail
           docker history --no-trunc neo-discord-node-standby > /tmp/history.txt
-          if grep -E 'DISCORD_BOT_TOKEN=|DISCORD_PUBLIC_KEY=|GITHUB_API_TOKEN=|OPENAI_API_KEY=' /tmp/history.txt; then
+          if grep -E 'DISCORD_BOT_TOKEN=|DISCORD_PUBLIC_KEY=|GITHUB_API_TOKEN=|OPENAI_API_KEY=|NEO_BOTS_CONTROL_TOKEN=|NEO_CES_.*_PASSWORD=' /tmp/history.txt; then
             echo 'Runtime secret material must not be baked into the standby image.' >&2
             exit 1
           fi
+      - name: Boot image and verify NEO Bots health route
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker run -d --rm --name neo-discord-node-standby-smoke -p 8788:8788 neo-discord-node-standby
+          trap 'docker rm -f neo-discord-node-standby-smoke >/dev/null 2>&1 || true' EXIT
+          for i in {1..20}; do
+            if body="$(curl --fail --silent --show-error http://127.0.0.1:8788/neo-bots/health 2>/dev/null)"; then
+              echo "$body"
+              node -e 'const x=JSON.parse(process.argv[1]); if(x.ok!==true || x.service!=="neo-bots-control" || x.liveCesExecutionEnabled!==false) process.exit(1)' "$body"
+              exit 0
+            fi
+            sleep 1
+          done
+          docker logs neo-discord-node-standby-smoke || true
+          exit 1
       - name: Install adapter test dependencies
         run: |
           npm install --prefix services/neo-discord/adapters/cloudflare

@@ -3,11 +3,13 @@ import {discordActor,isDiscordOperator} from './authorization.js'
 const SERVICES=[
   ['gisd','GISD / NEO Cipher','apps/gisd',null,null,'internal'],
   ['neo-counter','NEO Counter','apps/neo-counter','/neo-counter/',null,'public'],
+  ['neo-dash','NEO Dash','apps/neo-dash',null,null,'public'],
   ['neo-exchange','NEO Exchange','apps/neo-exchange','/neo-exchange/',null,'public'],
   ['neo-guardian','NEO Guardian','apps/neo-guardian','/guardian/',null,'public'],
   ['neo-pads','NEO Pads','apps/neo-pads',null,null,'public'],
   ['neo-prime','NEO Prime','apps/neo-prime','/neo-prime/','neo','public'],
   ['neo-relations','NEO Relations','apps/neo-relations','/neo-relations/','relations','public'],
+  ['neo-realty','NEO Realty','apps/neo-realty',null,null,'public'],
   ['neo-telegram','Neogram / NEO Telegram','apps/neo-telegram','/neogram/',null,'public'],
   ['neo-tv','NEO TV','apps/neo-tv','/neo-tv/',null,'public'],
   ['neopay','NEOpay','apps/neopay','/neopay/',null,'public'],
