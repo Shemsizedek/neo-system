@@ -2,8 +2,21 @@ import crypto from 'node:crypto';
 import commandPolicy from './commands.json' with { type: 'json' };
 
 const SECRET_FIELD_PATTERN = /(private.?key|seed|mnemonic|password|token|credential|cookie|recovery)/i;
+const WIREGUARD_PUBLIC_KEY_PATTERN = /^[A-Za-z0-9+/]{43}=$/;
+const OVERLAY_ADDRESS_PATTERN = /^10\.144\.(10|30|40)\.(?:[1-9]|[1-9]\d|1\d\d|2[0-4]\d|25[0-4])\/32$/;
+
+function requireIdentity(request) {
+  for (const field of ['discordUserId', 'guildId', 'channelId']) {
+    if (typeof request?.[field] !== 'string' || !request[field].trim()) {
+      throw new Error(`identity-required:${field}`);
+    }
+  }
+}
 
 export function validateRequest(request) {
+  if (!request || typeof request !== 'object') throw new Error('invalid-request');
+  requireIdentity(request);
+
   const command = commandPolicy.commands[request.command];
   if (!command) throw new Error('unsupported-command');
 
@@ -13,8 +26,13 @@ export function validateRequest(request) {
   }
 
   if (request.command === 'peer-request') {
-    if (!request.options?.publicKey) throw new Error('public-key-required');
-    if (!request.options?.overlayAddress) throw new Error('overlay-address-required');
+    const publicKey = String(request.options?.publicKey ?? '').trim();
+    const overlayAddress = String(request.options?.overlayAddress ?? '').trim();
+    const deviceLabel = String(request.options?.deviceLabel ?? '').trim();
+
+    if (!WIREGUARD_PUBLIC_KEY_PATTERN.test(publicKey)) throw new Error('invalid-public-key');
+    if (!OVERLAY_ADDRESS_PATTERN.test(overlayAddress)) throw new Error('invalid-overlay-address');
+    if (!deviceLabel || deviceLabel.length > 128) throw new Error('invalid-device-label');
   }
 
   return command;
@@ -43,8 +61,11 @@ export function createControlRecord(request, infrastructureLive = false) {
 
 export function authorize(record, approval) {
   if (record.policy.approval === 'none') return { ...record, decision: 'approved' };
-  if (!approval?.approved || !approval?.approverId) {
+  if (!approval?.approved || typeof approval.approverId !== 'string' || !approval.approverId.trim()) {
     return { ...record, decision: 'denied' };
+  }
+  if (approval.approverId === record.actor.discordUserId) {
+    return { ...record, decision: 'denied', reason: 'self-approval-prohibited' };
   }
   return {
     ...record,
