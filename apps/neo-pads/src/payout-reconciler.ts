@@ -4,9 +4,7 @@ type ProviderPayoutStatus = "PENDING" | "PROCESSING" | "SUBMITTED" | "SETTLED" |
 
 function normalizeStatus(value: unknown): ProviderPayoutStatus {
   const status = String(value ?? "").toUpperCase();
-  if (["PENDING", "PROCESSING", "SUBMITTED", "SETTLED", "FAILED", "REVERSED"].includes(status)) {
-    return status as ProviderPayoutStatus;
-  }
+  if (["PENDING", "PROCESSING", "SUBMITTED", "SETTLED", "FAILED", "REVERSED"].includes(status)) return status as ProviderPayoutStatus;
   if (status === "CONFIRMED" || status === "COMPLETED") return "SETTLED";
   if (status === "REJECTED") return "FAILED";
   if (status === "REFUNDED") return "REVERSED";
@@ -14,22 +12,31 @@ function normalizeStatus(value: unknown): ProviderPayoutStatus {
 }
 
 async function chainConfirmed(txid: string, asset: string): Promise<boolean> {
-  const requireChainConfirmation = process.env.NEO_PADS_REQUIRE_CHAIN_CONFIRMATION !== "false";
-  if (!requireChainConfirmation) return true;
-
+  if (process.env.NEO_PADS_REQUIRE_CHAIN_CONFIRMATION === "false") return true;
   const verifier = process.env.NEO_PADS_CHAIN_CONFIRMATION_URL;
   if (!verifier) return false;
   const url = new URL(verifier);
   url.searchParams.set("txid", txid);
   url.searchParams.set("asset", asset);
   const response = await fetch(url, {
-    headers: process.env.NEO_PADS_CHAIN_CONFIRMATION_API_KEY
-      ? { authorization: `Bearer ${process.env.NEO_PADS_CHAIN_CONFIRMATION_API_KEY}` }
-      : undefined
+    headers: process.env.NEO_PADS_CHAIN_CONFIRMATION_API_KEY ? { authorization: `Bearer ${process.env.NEO_PADS_CHAIN_CONFIRMATION_API_KEY}` } : undefined
   });
   if (!response.ok) return false;
   const body = await response.json() as any;
   return body?.confirmed === true || body?.settled === true;
+}
+
+async function auditTransition(pool: Pool, payout: any, previousStatus: string, nextStatus: string, providerStatus: string, txid: string | null) {
+  if (previousStatus === nextStatus) return;
+  await pool.query(
+    `INSERT INTO neo_pads_audit_log(aggregate_type,aggregate_id,event_type,actor_type,actor_id,previous_state,next_state)
+     VALUES('HOST_PAYOUT',$1,'PAYOUT_STATE_TRANSITION','PAYOUT_RECONCILER','neo-pads', $2::jsonb, $3::jsonb)`,
+    [
+      payout.id,
+      JSON.stringify({ status: previousStatus }),
+      JSON.stringify({ status: nextStatus, providerStatus, txid })
+    ]
+  );
 }
 
 export async function reconcileSubmittedPayouts(pool: Pool): Promise<{ checked: number; settled: number; failed: number; reversed: number }> {
@@ -46,10 +53,7 @@ export async function reconcileSubmittedPayouts(pool: Pool): Promise<{ checked: 
      FOR UPDATE SKIP LOCKED
   `);
 
-  let settled = 0;
-  let failed = 0;
-  let reversed = 0;
-
+  let settled = 0, failed = 0, reversed = 0;
   for (const payout of rows) {
     const providerId = payout.provider_payout_id || payout.id;
     const url = new URL(statusUrlTemplate.replace("{payoutId}", encodeURIComponent(providerId)));
@@ -62,55 +66,27 @@ export async function reconcileSubmittedPayouts(pool: Pool): Promise<{ checked: 
 
       if (providerStatus === "SETTLED") {
         if (!txid || !(await chainConfirmed(String(txid), String(payout.settlement_asset)))) {
-          await pool.query(
-            `UPDATE neo_pads_host_payouts
-                SET provider_status=$2, txid=COALESCE($3,txid), last_reconciled_at=now(), last_error='chain_confirmation_pending'
-              WHERE id=$1`,
-            [payout.id, providerStatus, txid]
-          );
+          await pool.query(`UPDATE neo_pads_host_payouts SET provider_status=$2,txid=COALESCE($3,txid),last_reconciled_at=now(),last_error='chain_confirmation_pending' WHERE id=$1`, [payout.id, providerStatus, txid]);
           continue;
         }
-        await pool.query(
-          `UPDATE neo_pads_host_payouts
-              SET status='SETTLED', provider_status=$2, txid=$3, settled_at=now(), confirmed_at=now(), last_reconciled_at=now(), last_error=NULL
-            WHERE id=$1`,
-          [payout.id, providerStatus, txid]
-        );
+        await pool.query(`UPDATE neo_pads_host_payouts SET status='SETTLED',provider_status=$2,txid=$3,settled_at=now(),confirmed_at=now(),last_reconciled_at=now(),last_error=NULL WHERE id=$1`, [payout.id, providerStatus, txid]);
+        await auditTransition(pool, payout, payout.status, "SETTLED", providerStatus, txid);
         settled++;
       } else if (providerStatus === "FAILED") {
-        await pool.query(
-          `UPDATE neo_pads_host_payouts
-              SET status='FAILED', provider_status=$2, last_reconciled_at=now(), last_error=COALESCE($3,'provider_failed')
-            WHERE id=$1`,
-          [payout.id, providerStatus, body?.error ?? null]
-        );
+        await pool.query(`UPDATE neo_pads_host_payouts SET status='FAILED',provider_status=$2,last_reconciled_at=now(),last_error=COALESCE($3,'provider_failed') WHERE id=$1`, [payout.id, providerStatus, body?.error ?? null]);
+        await auditTransition(pool, payout, payout.status, "FAILED", providerStatus, txid);
         failed++;
       } else if (providerStatus === "REVERSED") {
-        await pool.query(
-          `UPDATE neo_pads_host_payouts
-              SET status='REVERSED', provider_status=$2, txid=COALESCE($3,txid), last_reconciled_at=now(), last_error=NULL
-            WHERE id=$1`,
-          [payout.id, providerStatus, txid]
-        );
+        await pool.query(`UPDATE neo_pads_host_payouts SET status='REVERSED',provider_status=$2,txid=COALESCE($3,txid),last_reconciled_at=now(),last_error=NULL WHERE id=$1`, [payout.id, providerStatus, txid]);
+        await auditTransition(pool, payout, payout.status, "REVERSED", providerStatus, txid);
         reversed++;
       } else {
-        await pool.query(
-          `UPDATE neo_pads_host_payouts
-              SET provider_status=$2, txid=COALESCE($3,txid), last_reconciled_at=now(), last_error=NULL
-            WHERE id=$1`,
-          [payout.id, providerStatus, txid]
-        );
+        await pool.query(`UPDATE neo_pads_host_payouts SET provider_status=$2,txid=COALESCE($3,txid),last_reconciled_at=now(),last_error=NULL WHERE id=$1`, [payout.id, providerStatus, txid]);
       }
     } catch (error) {
-      await pool.query(
-        `UPDATE neo_pads_host_payouts
-            SET last_reconciled_at=now(), last_error=$2
-          WHERE id=$1`,
-        [payout.id, error instanceof Error ? error.message.slice(0,500) : "payout_reconciliation_failed"]
-      );
+      await pool.query(`UPDATE neo_pads_host_payouts SET last_reconciled_at=now(),last_error=$2 WHERE id=$1`, [payout.id, error instanceof Error ? error.message.slice(0,500) : "payout_reconciliation_failed"]);
     }
   }
-
   return { checked: rows.length, settled, failed, reversed };
 }
 
@@ -118,18 +94,10 @@ export async function runPayoutReconciler() {
   const databaseUrl = process.env.DATABASE_URL;
   if (!databaseUrl) throw new Error("DATABASE_URL_required");
   const pool = new Pool({ connectionString: databaseUrl });
-  try {
-    return await reconcileSubmittedPayouts(pool);
-  } finally {
-    await pool.end();
-  }
+  try { return await reconcileSubmittedPayouts(pool); }
+  finally { await pool.end(); }
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-  runPayoutReconciler()
-    .then((result) => console.log(JSON.stringify(result)))
-    .catch((error) => {
-      console.error(error);
-      process.exit(1);
-    });
+  runPayoutReconciler().then((result) => console.log(JSON.stringify(result))).catch((error) => { console.error(error); process.exit(1); });
 }
