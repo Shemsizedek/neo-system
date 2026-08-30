@@ -25,8 +25,38 @@ jobs:
       - name: Test stewardship adapter
         run: node --test server/wordpress-stewardship/*.test.mjs
 
-      - name: Observe Holy Stewardship page and emit event
+      - name: Observe Holy Stewardship page
         env:
           WORDPRESS_SITE_URL: https://holytemples.org
-          NEO_GATEWAY_EVENT_URL: ${{ secrets.NEO_DISCORD_PUBLIC_BASE_URL }}/api/v1/wordpress/stewardship/events
+          NEO_GATEWAY_EVENT_URL: ${{ secrets.NEO_DISCORD_PUBLIC_BASE_URL != '' && format('{0}/api/v1/wordpress/stewardship/events', secrets.NEO_DISCORD_PUBLIC_BASE_URL) || '' }}
+          NEO_STEWARDSHIP_ALLOW_LOCAL_FALLBACK: 'true'
+          NEO_STEWARDSHIP_EVENT_FILE: stewardship-audit/holy-stewardship-event.ndjson
         run: node server/wordpress-stewardship/worker.mjs
+
+      - name: Upload stewardship audit artifact
+        if: ${{ always() && hashFiles('stewardship-audit/holy-stewardship-event.ndjson') != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: holy-stewardship-observation-${{ github.run_id }}
+          path: stewardship-audit/holy-stewardship-event.ndjson
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Publish run summary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo '## Holy Stewardship Background Observer'
+            echo
+            echo '- Site: https://holytemples.org'
+            echo '- Scheduled cadence: hourly at minute 17 UTC'
+            if [ -f stewardship-audit/holy-stewardship-event.ndjson ]; then
+              echo '- Delivery: local GitHub audit fallback preserved as workflow artifact'
+            else
+              echo '- Delivery: gateway path used or observation failed before audit creation'
+            fi
+            echo '- Autonomous publishing: disabled'
+            echo '- Autonomous token sale/settlement: disabled'
+            echo '- Private-key custody: disabled'
+          } >> "$GITHUB_STEP_SUMMARY"
