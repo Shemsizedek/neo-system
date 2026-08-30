@@ -1,0 +1,22 @@
+[Unit]
+Description=NEO VPN Discord Gateway Control Plane
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/neo-system/services/neo-vpn/discord
+EnvironmentFile=/etc/neo-vpn/discord.env
+ExecStartPre=/usr/bin/node runtime-preflight.mjs
+ExecStart=/usr/bin/node gateway-bot.mjs
+Restart=always
+RestartSec=5
+TimeoutStopSec=20
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/log/neo-vpn-discord
+
+[Install]
+WantedBy=multi-user.target
