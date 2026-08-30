@@ -1,7 +1,13 @@
-name: Deploy NEO Discord + NEO Bots to OCI
+name: Deploy NEO Discord + NEO Bots + Stewardship to OCI
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'services/neo-discord/**'
+      - 'server/wordpress-stewardship/**'
+      - '.github/workflows/deploy-neo-discord-oci.yml'
 
 permissions:
   contents: read
@@ -45,6 +51,10 @@ jobs:
             echo "Missing host-side secret file: $envfile" >&2
             exit 1
           fi
+          if ! grep -q '^NEO_GATEWAY_EVENT_TOKEN=' "$envfile"; then
+            echo "Missing NEO_GATEWAY_EVENT_TOKEN in $envfile" >&2
+            exit 1
+          fi
           if [ ! -d "$repo/.git" ]; then
             sudo mkdir -p "$repo"
             sudo chown "$(id -u):$(id -g)" "$repo"
@@ -54,21 +64,35 @@ jobs:
           git fetch --prune origin main
           git checkout main
           git reset --hard origin/main
+
+          docker build -f server/wordpress-stewardship/Dockerfile -t neo-wordpress-stewardship:latest .
+          docker rm -f neo-wordpress-stewardship >/dev/null 2>&1 || true
+          docker run -d --name neo-wordpress-stewardship --restart unless-stopped \
+            --env-file "$envfile" \
+            -v /opt/neo-system-data/wordpress-stewardship:/app/data/wordpress-stewardship \
+            -p 127.0.0.1:8791:8791 \
+            neo-wordpress-stewardship:latest
+
           docker build -f services/neo-discord/adapters/node-http/Dockerfile -t neo-discord-node:latest .
           docker rm -f neo-discord-node >/dev/null 2>&1 || true
           docker run -d --name neo-discord-node --restart unless-stopped \
             --env-file "$envfile" \
+            --add-host=host.docker.internal:host-gateway \
+            -e NEO_STEWARDSHIP_INTERNAL_URL=http://host.docker.internal:8791 \
             -p 127.0.0.1:8788:8788 \
             neo-discord-node:latest
           REMOTE
-      - name: Verify public Discord and NEO Bots health
+      - name: Verify public Discord, NEO Bots and Stewardship health
         shell: bash
         run: |
           set -euo pipefail
           base="${NEO_DISCORD_PUBLIC_BASE_URL%/}"
           discord="$(curl --fail --silent --show-error --retry 10 --retry-delay 3 "$base/health")"
           bots="$(curl --fail --silent --show-error --retry 10 --retry-delay 3 "$base/neo-bots/health")"
+          stewardship="$(curl --fail --silent --show-error --retry 10 --retry-delay 3 "$base/wordpress-stewardship/health")"
           echo "$discord"
           echo "$bots"
+          echo "$stewardship"
           node -e 'const x=JSON.parse(process.argv[1]); if(x.ok!==true || x.service!=="neo-discord") process.exit(1)' "$discord"
           node -e 'const x=JSON.parse(process.argv[1]); if(x.ok!==true || x.service!=="neo-bots-control" || x.liveCesExecutionEnabled!==false) process.exit(1)' "$bots"
+          node -e 'const x=JSON.parse(process.argv[1]); if(x.service!=="neo-wordpress-stewardship-gateway" || x.status!=="ok" || x.authenticatedEvents!==true) process.exit(1)' "$stewardship"
