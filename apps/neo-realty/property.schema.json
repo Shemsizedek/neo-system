@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://neo-system.local/schemas/neo-realty-property.json",
+  "title": "NEO Realty Property",
+  "type": "object",
+  "required": ["id", "listingType", "propertyType", "address", "status", "pricing", "authority"],
+  "properties": {
+    "id": { "type": "string", "minLength": 1 },
+    "listingType": { "enum": ["sale", "rent", "both"] },
+    "propertyType": { "enum": ["house", "condo", "townhome", "multifamily", "apartment", "land", "commercial", "other"] },
+    "status": { "enum": ["draft", "pending_verification", "active", "under_contract", "leased", "sold", "off_market"] },
+    "address": {
+      "type": "object",
+      "required": ["line1", "city", "region", "postalCode", "country"],
+      "properties": {
+        "line1": { "type": "string" },
+        "line2": { "type": "string" },
+        "city": { "type": "string" },
+        "region": { "type": "string" },
+        "postalCode": { "type": "string" },
+        "country": { "type": "string" },
+        "latitude": { "type": "number", "minimum": -90, "maximum": 90 },
+        "longitude": { "type": "number", "minimum": -180, "maximum": 180 }
+      },
+      "additionalProperties": false
+    },
+    "facts": {
+      "type": "object",
+      "properties": {
+        "beds": { "type": "number", "minimum": 0 },
+        "baths": { "type": "number", "minimum": 0 },
+        "areaSqFt": { "type": "number", "minimum": 0 },
+        "lotSqFt": { "type": "number", "minimum": 0 },
+        "units": { "type": "integer", "minimum": 0 },
+        "yearBuilt": { "type": "integer", "minimum": 0 },
+        "occupancyPct": { "type": "number", "minimum": 0, "maximum": 100 },
+        "annualNoi": { "type": "number" },
+        "capRatePct": { "type": "number" }
+      },
+      "additionalProperties": false
+    },
+    "pricing": {
+      "type": "object",
+      "properties": {
+        "askingFiat": { "type": "number", "minimum": 0 },
+        "fiatCurrency": { "type": "string", "pattern": "^[A-Z]{3}$" },
+        "monthlyRentFiat": { "type": "number", "minimum": 0 },
+        "displayWorldCurrency": { "type": "string" },
+        "btcQuote": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "authority": {
+      "type": "object",
+      "required": ["claimStatus"],
+      "properties": {
+        "claimStatus": { "enum": ["unverified", "pending", "verified", "rejected"] },
+        "verifiedAt": { "type": ["string", "null"], "format": "date-time" },
+        "verificationMethod": { "type": ["string", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "neo": {
+      "type": "object",
+      "properties": {
+        "neoPadsEligible": { "type": "boolean", "default": false },
+        "neoPassRequired": { "type": "boolean", "default": false },
+        "counterpartyAsset": { "type": ["string", "null"] },
+        "homeSharesEnabled": { "type": "boolean", "default": false },
+        "settlementAssets": {
+          "type": "array",
+          "items": { "type": "string" },
+          "uniqueItems": true
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
