@@ -17,6 +17,10 @@ provider "google" {
   zone    = var.zone
 }
 
+locals {
+  neo_vpn_node_001_service_account = "neo-vpn-node-001@${var.project_id}.iam.gserviceaccount.com"
+}
+
 resource "google_compute_network" "neo_vpn" {
   name                    = "neo-vpn-network"
   auto_create_subnetworks = false
@@ -30,12 +34,6 @@ resource "google_compute_subnetwork" "neo_vpn_gateway" {
   ip_cidr_range = var.gateway_subnet_cidr
 
   private_ip_google_access = false
-}
-
-resource "google_service_account" "neo_vpn_node_001" {
-  account_id   = "neo-vpn-node-001"
-  display_name = "NEO VPN Node 001"
-  description  = "Dedicated runtime identity for NEO VPN Node 001. No project roles are granted by this module."
 }
 
 resource "google_compute_address" "neo_vpn_node_001" {
@@ -56,7 +54,7 @@ resource "google_compute_firewall" "wireguard" {
   }
 
   source_ranges           = var.wireguard_source_ranges
-  target_service_accounts = [google_service_account.neo_vpn_node_001.email]
+  target_service_accounts = [local.neo_vpn_node_001_service_account]
 }
 
 resource "google_compute_firewall" "iap_ssh" {
@@ -72,7 +70,7 @@ resource "google_compute_firewall" "iap_ssh" {
   }
 
   source_ranges           = ["35.235.240.0/20"]
-  target_service_accounts = [google_service_account.neo_vpn_node_001.email]
+  target_service_accounts = [local.neo_vpn_node_001_service_account]
 }
 
 resource "google_compute_instance" "neo_vpn_node_001" {
@@ -105,7 +103,7 @@ resource "google_compute_instance" "neo_vpn_node_001" {
   metadata_startup_script = file("${path.module}/startup.sh")
 
   service_account {
-    email  = google_service_account.neo_vpn_node_001.email
+    email  = local.neo_vpn_node_001_service_account
     scopes = ["cloud-platform"]
   }
 
@@ -131,6 +129,6 @@ output "neo_vpn_network_name" {
 }
 
 output "neo_vpn_node_001_service_account" {
-  value       = google_service_account.neo_vpn_node_001.email
+  value       = local.neo_vpn_node_001_service_account
   description = "Dedicated runtime service account attached to NEO VPN Node 001."
 }
