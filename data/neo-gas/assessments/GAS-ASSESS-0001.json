@@ -1,0 +1,40 @@
+{
+  "id": "GAS-ASSESS-0001",
+  "recordType": "assessment",
+  "title": "NEO-GAS v2 defensive readiness baseline",
+  "status": "ACTIVE",
+  "domain": "Strategic Readiness",
+  "confidence": "HIGH",
+  "createdAt": "2026-08-29T20:05:00-05:00",
+  "updatedAt": "2026-08-29T20:05:00-05:00",
+  "summary": "Baseline assessment of NEO-GAS as a defensive intelligence, resilience, cyber-defense governance, humanitarian-response, and crisis-planning platform using the GitHub repository as the versioned backend and GitHub Pages as the public frontend.",
+  "provenance": {
+    "sourceType": "repository",
+    "sourceRefs": [
+      "data/neo-gas/status.json",
+      "data/neo-gas/schema.json",
+      "scripts/publish-neo-gas-pages.mjs"
+    ]
+  },
+  "guardrailClass": "DEFENSIVE",
+  "assessment": {
+    "known": [
+      "The repository contains a versioned NEO-GAS status model.",
+      "The Pages pipeline publishes a read-only NEO-GAS API snapshot.",
+      "The frontend is designed to prefer the Pages API and fall back to repository data."
+    ],
+    "unknown": [
+      "Long-term operational availability of external public intelligence sources.",
+      "Future integration requirements for authenticated non-public data."
+    ],
+    "alternatives": [
+      "Keep the public API entirely static and repository-backed.",
+      "Add a separately authenticated service later for non-public administrative data while preserving the public read layer."
+    ],
+    "defensiveOptions": [
+      "Maintain source provenance on every assessment and indicator.",
+      "Require explicit confidence levels and timestamps.",
+      "Archive superseded records instead of rewriting historical assessments."
+    ]
+  }
+}
