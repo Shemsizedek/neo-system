@@ -1,0 +1,43 @@
+name: NEO Pads Production Adapter Canary
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  canary:
+    runs-on: ubuntu-latest
+    environment: production
+    defaults:
+      run:
+        working-directory: apps/neo-pads
+    env:
+      COUNTERPARTY_CORE_URL: ${{ secrets.NEO_PADS_COUNTERPARTY_CORE_URL }}
+      COUNTERPARTY_BALANCE_URL: ${{ secrets.NEO_PADS_COUNTERPARTY_BALANCE_URL }}
+      COUNTERPARTY_API_KEY: ${{ secrets.NEO_PADS_COUNTERPARTY_API_KEY }}
+      NEO_PADS_COUNTERPARTY_CANARY_WALLET: ${{ vars.NEO_PADS_COUNTERPARTY_CANARY_WALLET }}
+      NEO_COUNTER_HEALTH_URL: ${{ vars.NEO_COUNTER_HEALTH_URL }}
+      NEO_COUNTER_API_KEY: ${{ secrets.NEO_COUNTER_API_KEY }}
+      NEO_PADS_PAYOUT_EXECUTION_ENABLED: "false"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/neo-pads/package.json
+      - run: npm install
+      - run: npm run typecheck
+      - name: Verify canary configuration
+        shell: bash
+        run: |
+          test -n "$NEO_PADS_COUNTERPARTY_CANARY_WALLET" || { echo "Missing NEO_PADS_COUNTERPARTY_CANARY_WALLET variable"; exit 1; }
+          test -n "$NEO_COUNTER_HEALTH_URL" || { echo "Missing NEO_COUNTER_HEALTH_URL variable"; exit 1; }
+          if [ -z "$COUNTERPARTY_CORE_URL" ] && [ -z "$COUNTERPARTY_BALANCE_URL" ]; then
+            echo "Missing Counterparty Core or balance adapter URL"
+            exit 1
+          fi
+      - name: Run read-only adapter canary
+        run: npm run production:adapter-canary
