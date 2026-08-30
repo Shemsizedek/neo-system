@@ -17,6 +17,22 @@ permissions:
 jobs:
   registry:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: neo
+          POSTGRES_PASSWORD: neo
+          POSTGRES_DB: neo_realty_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U neo -d neo_realty_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://neo:neo@127.0.0.1:5432/neo_realty_test
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -24,4 +40,9 @@ jobs:
           node-version: 24
       - run: npm install --prefix apps/neo-realty
       - run: npm run typecheck --prefix apps/neo-realty
-      - run: npm run test:registry --prefix apps/neo-realty
+      - name: Run memory trust-boundary test
+        run: env -u DATABASE_URL npm run test:registry --prefix apps/neo-realty
+      - name: Apply NEO Realty migrations
+        run: npm run db:migrate --prefix apps/neo-realty
+      - name: Run Postgres registry integration flow
+        run: npm run test:postgres --prefix apps/neo-realty
