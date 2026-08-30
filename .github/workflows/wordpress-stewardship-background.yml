@@ -1,0 +1,32 @@
+name: WordPress Stewardship Background Observer
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 * * * *'
+
+permissions:
+  contents: read
+
+jobs:
+  observe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Test stewardship adapter
+        run: node --test server/wordpress-stewardship/*.test.mjs
+
+      - name: Observe Holy Stewardship page and emit event
+        env:
+          WORDPRESS_SITE_URL: https://holytemples.org
+          NEO_GATEWAY_EVENT_URL: ${{ secrets.NEO_GATEWAY_EVENT_URL }}
+          NEO_GATEWAY_EVENT_TOKEN: ${{ secrets.NEO_GATEWAY_EVENT_TOKEN }}
+        run: node server/wordpress-stewardship/worker.mjs
