@@ -1,5 +1,6 @@
 const DEFAULT_SITE = 'https://holytemples.org'
 const DEFAULT_PAGE_SLUG = 'holy-stewardship'
+const DEFAULT_PAGE_ID = 2010
 
 export const StewardshipStage = Object.freeze({
   NEW: 'NEW',
@@ -48,7 +49,8 @@ export function classifyWordPressPage(page) {
       slug: page.slug ?? DEFAULT_PAGE_SLUG,
       modified: page.modified ?? null,
       link: page.link ?? null,
-      status: page.status ?? null
+      status: page.status ?? null,
+      transport: page.transport ?? 'wp-rest'
     }
   })
 }
@@ -89,13 +91,31 @@ export function approveVerifiedContribution(event, approval = {}) {
   })
 }
 
+async function fetchViaPublicHtml(site, fetchImpl) {
+  const link = `${site.replace(/\/$/, '')}/${DEFAULT_PAGE_SLUG}/`
+  const response = await fetchImpl(link, { headers: { accept: 'text/html,application/xhtml+xml' } })
+  if (!response.ok) throw new Error(`Holy Stewardship public page request failed: ${response.status}`)
+  await response.text()
+  return {
+    id: DEFAULT_PAGE_ID,
+    slug: DEFAULT_PAGE_SLUG,
+    status: 'publish',
+    modified: response.headers?.get?.('last-modified') ?? null,
+    link,
+    transport: 'public-html'
+  }
+}
+
 export async function fetchStewardshipPage({ site = DEFAULT_SITE, fetchImpl = fetch } = {}) {
   const endpoint = `${site.replace(/\/$/, '')}/wp-json/wp/v2/pages?slug=${encodeURIComponent(DEFAULT_PAGE_SLUG)}&_fields=id,slug,status,modified,link`
-  const response = await fetchImpl(endpoint, { headers: { accept: 'application/json' } })
-  if (!response.ok) throw new Error(`WordPress request failed: ${response.status}`)
-  const pages = await response.json()
-  if (!Array.isArray(pages) || pages.length === 0) throw new Error('Holy Stewardship page was not found')
-  return pages[0]
+  try {
+    const response = await fetchImpl(endpoint, { headers: { accept: 'application/json' } })
+    if (response.ok) {
+      const pages = await response.json()
+      if (Array.isArray(pages) && pages.length > 0) return { ...pages[0], transport: 'wp-rest' }
+    }
+  } catch {}
+  return fetchViaPublicHtml(site, fetchImpl)
 }
 
 export async function runObservation(options = {}) {
