@@ -7,7 +7,7 @@
   "scripts": {
     "dev":"vite",
     "build":"tsc -b && vite build && node scripts/publish-neo-gas-pages.mjs",
-    "test":"node --test server/neo-identity/*.test.mjs server/neo-router/*.test.mjs server/neo-prime/*.test.mjs server/neo-platform-api/*.test.mjs server/neo-tokenworks/*.test.mjs server/nibiru-reserve/*.test.mjs server/markets/*.test.mjs core/neo-algo/*.test.mjs server/tribunal-backend/*.test.mjs server/miner-agent/*.test.mjs server/miner-agent/adapters/*.test.mjs server/miner-controller/*.test.mjs server/miner-commerce/*.test.mjs server/miner-generator/*.test.mjs server/miner-production/*.test.mjs server/neo-counter-backend/*.test.mjs server/neo-evidence-vault/*.test.mjs server/neo-enterprise/*.test.mjs apps/neoscan/adapters/ces/*.test.mjs apps/neoscan/server/*.test.mjs",
+    "test":"node --test server/neo-identity/*.test.mjs server/neo-router/*.test.mjs server/neo-prime/*.test.mjs server/neo-platform-api/*.test.mjs server/neo-tokenworks/*.test.mjs server/nibiru-reserve/*.test.mjs server/markets/*.test.mjs core/neo-algo/*.test.mjs server/tribunal-backend/*.test.mjs server/miner-agent/*.test.mjs server/miner-agent/adapters/*.test.mjs server/miner-controller/*.test.mjs server/miner-commerce/*.test.mjs server/miner-generator/*.test.mjs server/miner-production/*.test.mjs server/neo-counter-backend/*.test.mjs server/neo-evidence-vault/*.test.mjs server/neo-enterprise/*.test.mjs server/neo-bots/*.test.mjs apps/neoscan/adapters/ces/*.test.mjs apps/neoscan/server/*.test.mjs",
     "preview":"vite preview",
     "crawl:neo":"node scripts/neo-sync-crawl.mjs",
     "crawl:noogle":"node scripts/build-noogle-index.mjs",
@@ -43,6 +43,7 @@
     "nibiru-reserve:recover":"node server/nibiru-reserve/backup-cli.mjs recover",
     "neo-enterprise:server":"node server/neo-enterprise/server.mjs",
     "neo-enterprise:test":"node --test server/neo-enterprise/*.test.mjs",
+    "neo-bots:test":"node --test server/neo-bots/*.test.mjs",
     "neoscan:statements":"node apps/neoscan/server/server.mjs",
     "neoscan:statements:test":"node --test apps/neoscan/server/*.test.mjs",
     "pages:platform-api":"node scripts/build-pages-platform-api.mjs",
