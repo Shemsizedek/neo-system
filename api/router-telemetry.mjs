@@ -1,9 +1,13 @@
 import { createPersistentMissionRuntime } from '../server/neo-router/mission-runtime.mjs'
 import { runtimeBindingHealth } from '../server/neo-router/runtime-bindings.mjs'
 import { createRedisEventStore } from '../server/neo-router/event-engine.mjs'
+import { buildOperationsCommandCenter } from '../server/neo-router/operations-command-center.mjs'
+import { createNeoRouter } from '../server/neo-router/router.mjs'
+import { providersFromEnv } from '../server/neo-router/providers.mjs'
 
 const runtime=createPersistentMissionRuntime()
 const eventStore=createRedisEventStore()
+const router=createNeoRouter({providers:providersFromEnv(process.env)})
 
 async function initialize(){
   await runtime.withEngine(engine=>{
@@ -25,5 +29,7 @@ export default async function handler(req,res){
   res.setHeader('Cache-Control','no-store')
   const telemetry=await runtime.telemetry({eventLimit:50})
   const inboundEvents=await eventStore.list(50)
-  return res.status(200).json({...telemetry,inboundEvents,eventStore:{mode:eventStore.mode,durable:eventStore.durable}})
+  const routerHealth=router.health()
+  const command=buildOperationsCommandCenter({telemetry,inboundEvents,routerHealth})
+  return res.status(200).json({...telemetry,inboundEvents,eventStore:{mode:eventStore.mode,durable:eventStore.durable},routerHealth,command})
 }
