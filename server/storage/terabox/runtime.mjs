@@ -1,6 +1,7 @@
 import { buildAuthorizationUrl, completeAuthorization, publicConnectionSummary } from './authorization.mjs';
 import { refreshAccessToken } from './oauth.mjs';
 import { createTokenStoreFromEnv } from './token-store.mjs';
+import { createTeraBoxAdapter } from './adapter.mjs';
 
 function required(value, name) {
   if (!value) throw new Error(`${name} is required`);
@@ -31,6 +32,7 @@ export function createTeraBoxRuntime({
   tokenStore,
   completeAuthorizationFn = completeAuthorization,
   refreshAccessTokenFn = refreshAccessToken,
+  adapterFactory = createTeraBoxAdapter,
   now = () => new Date().toISOString(),
   refreshSkewMs = 5 * 60 * 1000,
 } = {}) {
@@ -51,19 +53,20 @@ export function createTeraBoxRuntime({
 
     const data = response?.data ?? response ?? {};
     const accessToken = required(data.access_token, 'TeraBox refreshed access token');
+    const refreshedAt = now();
     const next = {
       ...record,
       accessToken,
       refreshToken: data.refresh_token || record.refreshToken,
       expiresIn: data.expires_in ?? record.expiresIn ?? null,
-      connectedAt: now(),
-      refreshedAt: now(),
+      connectedAt: refreshedAt,
+      refreshedAt,
     };
     await store.set(next);
     return next;
   }
 
-  async function ensureAccessToken({ forceRefresh = false } = {}) {
+  async function ensureRecord({ forceRefresh = false } = {}) {
     let record = await store.get();
     required(record?.accessToken, 'TeraBox access token');
 
@@ -72,7 +75,21 @@ export function createTeraBoxRuntime({
     const shouldRefresh = forceRefresh || (expiresAt !== null && Number.isFinite(currentTime) && currentTime >= expiresAt - refreshSkewMs);
 
     if (shouldRefresh) record = await refresh(record);
-    return record.accessToken;
+    return record;
+  }
+
+  async function ensureAccessToken(options = {}) {
+    return (await ensureRecord(options)).accessToken;
+  }
+
+  async function client(options = {}) {
+    const record = await ensureRecord(options);
+    return adapterFactory({
+      accessToken: record.accessToken,
+      apiDomain: required(record.apiDomain, 'TeraBox api domain'),
+      uploadDomain: record.uploadDomain ?? undefined,
+      fetchImpl,
+    });
   }
 
   return {
@@ -110,6 +127,7 @@ export function createTeraBoxRuntime({
     },
 
     ensureAccessToken,
+    client,
 
     async refresh() {
       const record = await store.get();
