@@ -1,14 +1,14 @@
 {
-  "generatedAt": "2026-08-29T20:57:23.588Z",
+  "generatedAt": "2026-08-30T05:27:27.721Z",
   "items": [
     {
-      "fromId": "PAGE:9baacb413039a71bcc58c3c370bc7ed5f6c4e6069e66da3e74d978f3c5e5702a",
+      "fromId": "PAGE:3e51f5c591aa287ebe0f353d2e3efd15567f80343931d65adc6fbefa8f8721c6",
       "toId": "SRC-WORLD-TEMPLE-WEB",
       "kind": "DERIVES_FROM",
       "confidence": 0.99,
       "evidenceRefs": [
-        "https://holytemples.school.blog/world-interfaith-court/",
-        "9baacb413039a71bcc58c3c370bc7ed5f6c4e6069e66da3e74d978f3c5e5702a"
+        "https://holytemples.org/",
+        "3e51f5c591aa287ebe0f353d2e3efd15567f80343931d65adc6fbefa8f8721c6"
       ],
       "decision": "ACCEPTED"
     }

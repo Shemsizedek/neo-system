@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-29T20:57:23.588Z",
+  "generatedAt": "2026-08-30T05:27:27.721Z",
   "architecture": "crawler -> hash -> revision diff -> candidate graph relations -> 9-Ethereal quality gate -> Neopedia draft/review queue",
   "sources": [
     {
@@ -13,11 +13,11 @@
       "sourceId": "SRC-WORLD-TEMPLE-WEB",
       "title": "World Temple — Omniversal Church",
       "rootUrl": "https://holytemples.school.blog/",
-      "pages": 40,
+      "pages": 1,
       "errors": []
     }
   ],
-  "changes": 1,
+  "changes": 40,
   "candidateRelations": 1,
   "neopediaDrafts": 1,
   "reviewQueuePath": "data/neo-sync/review-queue.json",
