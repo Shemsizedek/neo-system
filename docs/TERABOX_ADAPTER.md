@@ -6,11 +6,11 @@ This adapter connects the NEO System to TeraBox through TeraBox's official Open 
 
 ## Security boundary
 
-- Do not commit TeraBox passwords, session cookies, NDUS values, access tokens, refresh tokens, client secrets, or private secrets.
+- Do not commit TeraBox passwords, session cookies, NDUS values, access tokens, refresh tokens, client secrets, private secrets, or token-store encryption keys.
 - Prefer official OAuth/Open Platform authorization over browser-session scraping.
 - Keep credentials server-side only.
-- Store access tokens in secret/environment storage (`TERABOX_ACCESS_TOKEN`).
 - Treat download links as temporary/sensitive and avoid logging them.
+- The OAuth callback stores access/refresh tokens only through the server-side token-store interface and returns a redacted public summary.
 
 ## Current adapter capabilities
 
@@ -26,38 +26,65 @@ This adapter connects the NEO System to TeraBox through TeraBox's official Open 
 
 The official API documentation states that API and upload domains are returned by TeraBox authorization/token-information services. File operations are scoped to the application-assigned TeraBox directory. The adapter therefore does not assume unrestricted access to the account root.
 
-## Environment
+## Application credentials
+
+Configure these only in the server/deployment secret manager:
 
 ```bash
-TERABOX_ACCESS_TOKEN=replace-with-oauth-access-token
+TERABOX_CLIENT_ID=issued-app-key
+TERABOX_CLIENT_SECRET=issued-secret-key
+TERABOX_PRIVATE_SECRET=issued-private-secret
 ```
 
-Do not place a real token in `.env.example`, documentation, source files, GitHub issues, or commits.
+Do not place real values in `.env.example`, documentation, source files, GitHub issues, pull-request comments, or commits.
 
-## Example
+## Token persistence
+
+The runtime defaults to an in-memory token store for development. A durable encrypted file store can be enabled on a persistent Node host with:
+
+```bash
+TERABOX_TOKEN_STORE_PATH=/var/lib/neo/terabox/tokens.enc
+TERABOX_TOKEN_STORE_KEY=strong-runtime-secret
+```
+
+The file store encrypts the complete token record with AES-256-GCM, uses an atomic temporary-file rename, and writes with owner-only permissions (`0600`). `TERABOX_TOKEN_STORE_KEY` must come from the deployment secret manager and must never be committed.
+
+Do **not** use the encrypted-file mode on an ephemeral/serverless filesystem such as a normal Vercel Function deployment. For serverless production, inject a durable secret/KV adapter into `createTeraBoxRuntime({ tokenStore })` so token refreshes survive cold starts and redeployments.
+
+## Gateway routes
+
+The NEO Platform API exposes:
+
+```text
+GET /api/v1/storage/terabox/status
+GET /api/v1/storage/terabox/auth-url
+GET /api/v1/storage/terabox/callback?code=...
+```
+
+The callback exchanges the one-time authorization code server-side, performs the read-only TeraBox health check, stores the resulting token record, and returns only a redacted connection summary.
+
+## Example direct adapter use
 
 ```js
 import { createTeraBoxAdapter } from './server/storage/terabox/adapter.mjs';
 
-const terabox = createTeraBoxAdapter();
-
-const files = await terabox.list({
-  dir: '/From: Other Applications/NEO System-APP_ID/',
-});
-
+const terabox = createTeraBoxAdapter({ accessToken: process.env.TERABOX_ACCESS_TOKEN });
+const files = await terabox.list({ dir: '/From: Other Applications/NEO System-APP_ID/' });
 console.log(files);
 ```
 
 ## Production authorization gate
 
-A live connection still requires TeraBox application credentials / authorization issued for the NEO integration. Once authorized, the resulting access token and TeraBox-provided API/upload domains should be injected through the deployment secret manager rather than source control.
+A live connection still requires TeraBox application credentials / authorization issued for the NEO integration. Once authorized, the access/refresh tokens must remain in the configured server-side token store rather than source control or browser storage.
 
-## Proposed NEO routing
+## NEO routing
 
 ```text
 NEO Services
     |
 NEO Gateway / authorized backend
+    |
+TeraBox OAuth Runtime + Token Store
     |
 NEO TeraBox Adapter
     |
