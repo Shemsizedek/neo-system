@@ -1,4 +1,5 @@
 import http from 'node:http';
+import { readFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import { createNeoPrimeMarketData } from '../neo-prime/market-data.mjs';
 
@@ -15,6 +16,8 @@ export const PLATFORM_REGISTRY = {
   'nibiru-reserve': { name: 'Nibiru Reserve System', source: ['server/nibiru-reserve', 'server/neo-tokenworks'], services: ['ces-position-observation', 'blockchain-settlement-linkage', 'reserve-snapshot', 'iso-20022-canonical-mapping', 'reconciliation-gates'] }
 };
 
+const OCI_SERVICE_REGISTRY = JSON.parse(readFileSync(new URL('../../infra/oci/neo-system-services.json', import.meta.url), 'utf8'));
+
 function json(res, status, body) {
   const payload = JSON.stringify(body);
   res.writeHead(status, {'content-type':'application/json; charset=utf-8','content-length':Buffer.byteLength(payload),'access-control-allow-origin':'*','cache-control':'no-store'});
@@ -27,8 +30,9 @@ export function createNeoPlatformApi({ now = () => new Date().toISOString(), mar
       if (req.method === 'OPTIONS') { res.writeHead(204, {'access-control-allow-origin':'*','access-control-allow-methods':'GET,OPTIONS','access-control-allow-headers':'content-type,authorization'}); return res.end(); }
       if (req.method !== 'GET') return json(res,405,{error:'method_not_allowed',readOnly:true});
       const url = new URL(req.url || '/', 'http://neo.local');
-      if (url.pathname === '/health') return json(res,200,{service:'neo-platform-api',status:'ok',generatedAt:now(),platforms:Object.keys(PLATFORM_REGISTRY).length});
+      if (url.pathname === '/health') return json(res,200,{service:'neo-platform-api',status:'ok',generatedAt:now(),platforms:Object.keys(PLATFORM_REGISTRY).length,ociRegisteredServices:OCI_SERVICE_REGISTRY.services.length});
       if (url.pathname === '/api/v1/platforms') return json(res,200,{apiVersion:'v1',generatedAt:now(),platforms:Object.entries(PLATFORM_REGISTRY).map(([id,value])=>({id,name:value.name,services:value.services}))});
+      if (url.pathname === '/api/v1/oci/services') return json(res,200,{apiVersion:'v1',generatedAt:now(),...OCI_SERVICE_REGISTRY});
       if (url.pathname === '/api/v1/prime/markets') { const assets=(url.searchParams.get('assets')||'XCP,NOMNI').split(',').map(v=>v.trim()).filter(Boolean).slice(0,20); return json(res,200,await marketData.snapshot({assets})); }
       const primeAssetMatch=url.pathname.match(/^\/api\/v1\/prime\/assets\/([^/]+)$/);
       if (primeAssetMatch) return json(res,200,await marketData.asset(primeAssetMatch[1]));
