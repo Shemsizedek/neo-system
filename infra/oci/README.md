@@ -8,16 +8,27 @@ OCI Always Free provides persistent compute instead of sleep-on-idle web service
 
 ## Architecture
 
-GitHub Pages -> HTTPS reverse proxy -> OCI VM -> Docker Compose -> NEO backend services
+GitHub Pages -> HTTPS reverse proxy -> OCI VM -> Docker Compose -> NEO Platform API -> registered NEO services
 
-Recommended initial services:
-- NEO Router
-- NEO Prime runtime
-- NEO Relations backend
-- NEO Exchange read-only API
-- Discord API bridge
+The first VM acts as the shared backend gateway for the entire NEO System rather than attempting to run every service as an independent public container. `neo-system-services.json` is the canonical OCI service map. The read-only gateway exposes it at `/api/v1/oci/services`.
 
-Keep privileged signing, wallet secrets, seed phrases, private keys, and production financial execution outside public GitHub Pages and outside repository files.
+Registered domains include NEO Prime, NEO Router, NEOpay, NEO Counter, NEO Teller, NEO Exchange, NEOscan, Noogle, Noogle Finance, NEO Relations, GISD / NEO Cipher, NEO Tokenworks, Nibiru Reserve, NEO Miner, NEO Generator, NEO Enterprise, NEO Evidence, NEO Bots, Discord bridge, NEO Telegram, NEO TV, NEO Guardian, NEO VPN, NEO Pads, NEO GAS, NEO Hub, NEO Lingo, NEO Algo, and NEO Corpus.
+
+Registration does not imply that privileged runtime execution is enabled. Each service carries an exposure mode such as public-read-only, authenticated-only, operator-only, or infrastructure-only.
+
+## Runtime endpoints
+
+- `/health` — gateway health plus registered OCI service count
+- `/api/v1/platforms` — existing public platform capability registry
+- `/api/v1/oci/services` — full OCI NEO System service registry
+- `/api/v1/prime/markets` — read-only market snapshot
+- `/api/v1/prime/assets/:asset` — read-only asset view
+
+## Security boundary
+
+Keep privileged signing, wallet secrets, seed phrases, private keys, API credentials, and production financial execution outside public GitHub Pages and outside repository files.
+
+The OCI gateway defaults to read-only/public information. Authenticated services can be attached behind the gateway later without making them anonymous public endpoints. Payment, trading, treasury, wallet, mining-control, bot-control, and signing actions remain disabled until their individual authentication, authorization, approval, audit, and signing boundaries are satisfied.
 
 ## Required OCI values
 
@@ -51,7 +62,8 @@ Do not silently resize above the Always Free allocation.
 5. Copy `.env.example` to `.env` on the host and provide runtime-only values there.
 6. Run `docker compose -f infra/oci/docker-compose.yml up -d --build` from the repository checkout.
 7. Point the NEO runtime hostname at the OCI public IP and enable HTTPS before exposing API traffic.
+8. Verify `/health` and `/api/v1/oci/services` before connecting consumer applications.
 
 ## Production boundary
 
-This foundation is safe for public/read-only APIs and authenticated application runtimes. Consequential payment, trading, wallet, treasury, or signing actions require separate approval, authentication, audit logging, and non-custodial signing gates before production enablement.
+This foundation is safe for public/read-only APIs and authenticated application runtimes. Consequential payment, trading, wallet, treasury, mining-control, bot-control, or signing actions require separate approval, authentication, audit logging, and non-custodial signing gates before production enablement.
