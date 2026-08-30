@@ -7,7 +7,7 @@
   "scripts": {
     "dev":"vite",
     "build":"tsc -b && vite build && node scripts/publish-neo-gas-pages.mjs",
-    "test":"node --test server/neo-identity/*.test.mjs server/neo-router/*.test.mjs server/neo-prime/*.test.mjs server/neo-platform-api/*.test.mjs server/neo-tokenworks/*.test.mjs server/nibiru-reserve/*.test.mjs server/markets/*.test.mjs core/neo-algo/*.test.mjs server/tribunal-backend/*.test.mjs server/miner-agent/*.test.mjs server/miner-agent/adapters/*.test.mjs server/miner-controller/*.test.mjs server/miner-commerce/*.test.mjs server/miner-generator/*.test.mjs server/miner-production/*.test.mjs server/neo-counter-backend/*.test.mjs server/neo-evidence-vault/*.test.mjs server/neo-enterprise/*.test.mjs server/neo-bots/*.test.mjs apps/neoscan/adapters/ces/*.test.mjs apps/neoscan/server/*.test.mjs apps/neo-dash/server/*.test.mjs",
+    "test":"node --test server/neo-identity/*.test.mjs server/neo-router/*.test.mjs server/neo-prime/*.test.mjs server/neo-platform-api/*.test.mjs server/neo-tokenworks/*.test.mjs server/nibiru-reserve/*.test.mjs server/markets/*.test.mjs core/neo-algo/*.test.mjs server/tribunal-backend/*.test.mjs server/miner-agent/*.test.mjs server/miner-agent/adapters/*.test.mjs server/miner-controller/*.test.mjs server/miner-commerce/*.test.mjs server/miner-generator/*.test.mjs server/miner-production/*.test.mjs server/nibiru-pool-core/*.test.mjs server/neo-counter-backend/*.test.mjs server/neo-evidence-vault/*.test.mjs server/neo-enterprise/*.test.mjs server/neo-bots/*.test.mjs apps/neoscan/adapters/ces/*.test.mjs apps/neoscan/server/*.test.mjs apps/neo-dash/server/*.test.mjs",
     "preview":"vite preview",
     "crawl:neo":"node scripts/neo-sync-crawl.mjs",
     "crawl:noogle":"node scripts/build-noogle-index.mjs",
@@ -28,6 +28,9 @@
     "miner:operator:bootstrap":"node server/miner-production/bootstrapOperator.mjs",
     "miner:domain:activate":"node server/miner-production/domainActivation.mjs",
     "miner:production:test":"node --test server/miner-production/*.test.mjs",
+    "nibiru-pool:start":"node server/nibiru-pool-core/start.mjs",
+    "nibiru-pool:worker":"node server/nibiru-pool-core/worker-cli.mjs",
+    "nibiru-pool:test":"node --test server/nibiru-pool-core/*.test.mjs",
     "neo-counter:server":"node server/neo-counter-backend/server.mjs",
     "neo-counter:server:test":"node --test server/neo-counter-backend/*.test.mjs",
     "neo-evidence:server":"node server/neo-evidence-vault/server.mjs",
