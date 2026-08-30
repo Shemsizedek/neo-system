@@ -34,7 +34,9 @@ test('replayed share persists idempotently under one deterministic identity',()=
   try{
     const first=store.saveShare(share)
     const replay=store.saveShare({...share,submissionId:'random-b'})
-    assert.deepEqual(replay,first)
+    assert.equal(first.replayed,false)
+    assert.equal(replay.replayed,true)
+    assert.deepEqual(replay.value,first.value)
     const fingerprint=shareFingerprint(share)
     const rows=store.store.list('nibiru_share')
     assert.equal(rows.length,1)
