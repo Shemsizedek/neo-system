@@ -25,6 +25,14 @@ jobs:
           DISCORD_OPERATOR_ROLE_IDS: ${{ secrets.DISCORD_OPERATOR_ROLE_IDS }}
         run: node services/neo-discord/deployment/operator-read-preflight.mjs
 
+      - name: Smoke protected machine-read endpoints before activation
+        env:
+          NEO_MINER_OPERATOR_URL: ${{ secrets.NEO_MINER_OPERATOR_URL }}
+          NEO_MINER_OPERATOR_TOKEN: ${{ secrets.NEO_MINER_OPERATOR_TOKEN }}
+          NEO_RELATIONS_OPERATOR_URL: ${{ secrets.NEO_RELATIONS_OPERATOR_URL }}
+          NEO_RELATIONS_OPERATOR_TOKEN: ${{ secrets.NEO_RELATIONS_OPERATOR_TOKEN }}
+        run: node services/neo-discord/deployment/operator-read-live-smoke.mjs
+
       - name: Install Discord transport dependencies
         working-directory: services/neo-discord/adapters/cloudflare
         run: npm install
@@ -75,4 +83,19 @@ jobs:
           url="https://neo-discord-api.neosystem.workers.dev/health"
           body="$(curl --fail --silent --show-error --retry 6 --retry-delay 5 "$url")"
           node -e 'const x=JSON.parse(process.argv[1]); if(x.ok!==true || x.service!=="neo-discord" || x.grounded_status!==true) process.exit(1)' "$body"
-          echo "NEO Discord operator-read runtime activation completed."
+
+      - name: Re-smoke protected sources after Discord deployment
+        env:
+          NEO_MINER_OPERATOR_URL: ${{ secrets.NEO_MINER_OPERATOR_URL }}
+          NEO_MINER_OPERATOR_TOKEN: ${{ secrets.NEO_MINER_OPERATOR_TOKEN }}
+          NEO_RELATIONS_OPERATOR_URL: ${{ secrets.NEO_RELATIONS_OPERATOR_URL }}
+          NEO_RELATIONS_OPERATOR_TOKEN: ${{ secrets.NEO_RELATIONS_OPERATOR_TOKEN }}
+        run: node services/neo-discord/deployment/operator-read-live-smoke.mjs
+
+      - name: Activation summary
+        run: |
+          echo "## NEO Discord protected-read activation" >> "$GITHUB_STEP_SUMMARY"
+          echo "Miner machine read: verified" >> "$GITHUB_STEP_SUMMARY"
+          echo "Relations aggregate read: verified; record payloads rejected" >> "$GITHUB_STEP_SUMMARY"
+          echo "Discord HTTPS transport: deployed and healthy" >> "$GITHUB_STEP_SUMMARY"
+          echo "Protected values were supplied only through runtime secrets." >> "$GITHUB_STEP_SUMMARY"
