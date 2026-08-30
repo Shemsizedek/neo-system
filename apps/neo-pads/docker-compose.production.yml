@@ -1,0 +1,39 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: neo_pads
+      POSTGRES_USER: neo_pads
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+    volumes:
+      - neo_pads_pgdata:/var/lib/postgresql/data
+      - ./db/migrations/001_production_ledger.sql:/docker-entrypoint-initdb.d/001_production_ledger.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U neo_pads -d neo_pads"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PORT: 8788
+      DATABASE_URL: postgresql://neo_pads:${POSTGRES_PASSWORD}@postgres:5432/neo_pads
+      NEO_PADS_WEB_ORIGIN: ${NEO_PADS_WEB_ORIGIN:-}
+      COUNTERPARTY_CORE_URL: ${COUNTERPARTY_CORE_URL:-}
+      COUNTERPARTY_BALANCE_URL: ${COUNTERPARTY_BALANCE_URL:-}
+      COUNTERPARTY_API_KEY: ${COUNTERPARTY_API_KEY:-}
+      NEOPASS_API_URL: ${NEOPASS_API_URL:-}
+      NEO_COUNTER_API_URL: ${NEO_COUNTER_API_URL:-}
+      NEO_COUNTER_WEBHOOK_SECRET: ${NEO_COUNTER_WEBHOOK_SECRET:?set NEO_COUNTER_WEBHOOK_SECRET}
+      WALLET_SIGNATURE_VERIFY_URL: ${WALLET_SIGNATURE_VERIFY_URL:-}
+    ports:
+      - "8788:8788"
+
+volumes:
+  neo_pads_pgdata:
