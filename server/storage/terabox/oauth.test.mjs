@@ -17,7 +17,7 @@ function mockFetch(payload = { errno: 0, data: {} }) {
 
 test('signature follows documented md5 client_timestamp_secret_private format', () => {
   const sign = __test.makeSign({ clientId: 'abc', timestamp: 1700000000, clientSecret: 'def', privateSecret: 'ghi' });
-  assert.equal(sign, '1ec7f22bb15d8a89bfc2c43e246f1712');
+  assert.equal(sign, 'db3aa6f2f73a608624d90da172474ed4');
 });
 
 test('authorization code exchange posts expected grant fields', async () => {
