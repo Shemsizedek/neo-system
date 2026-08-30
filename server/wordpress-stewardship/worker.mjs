@@ -1,6 +1,7 @@
 import { mkdir, writeFile } from 'node:fs/promises'
 import { dirname } from 'node:path'
 import { runObservation, stewardshipBoundaries } from './index.mjs'
+import { observeConversionIntelligence } from './intelligence.mjs'
 import { getGitHubActionsOidcToken } from './oidc.mjs'
 
 const gatewayUrl = process.env.NEO_GATEWAY_EVENT_URL
@@ -53,19 +54,28 @@ async function emit(envelope) {
 }
 
 try {
-  const event = await runObservation({ site: process.env.WORDPRESS_SITE_URL ?? 'https://holytemples.org' })
+  const site = process.env.WORDPRESS_SITE_URL ?? 'https://holytemples.org'
+  const [event, conversionIntelligence] = await Promise.all([
+    runObservation({ site }),
+    observeConversionIntelligence({ pageUrl: `${site.replace(/\/$/, '')}/holy-stewardship/` })
+  ])
+
   const envelope = {
     observedAt: new Date().toISOString(),
     event,
+    conversionIntelligence,
     boundaries: stewardshipBoundaries,
     execution: {
       publish: false,
       settlement: false,
       tokenSale: false,
-      privateKeyCustody: false
+      privateKeyCustody: false,
+      walletCreation: false,
+      paymentInitiation: false
     }
   }
   const result = await emit(envelope)
+  process.stdout.write(`[wordpress-stewardship] conversion stage ${conversionIntelligence.summary.stage} across ${conversionIntelligence.summary.surfaceCount} public surfaces\n`)
   process.stdout.write(`[wordpress-stewardship] completed via ${result.mode}\n`)
 } catch (error) {
   console.error('[wordpress-stewardship]', error instanceof Error ? error.message : error)
