@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { bootstrapProductFounder, getProductFounderBinding, assertProductFounderInvariant } from './products.mjs';
 
-const products=['neopay','neo-prime','noogle','omnitrix','neo-telegram','neogram','neo-wire','neo-counter','neo-teller','neo-device-registry'];
+const products=['neopay','neo-prime','noogle','omnitrix','neo-telegram','neogram','neo-wire','neo-counter','neo-teller','neo-device-registry','neo-exchange','neofx','neo-dex'];
 
 for (const productId of products) {
   test(`${productId} reserves canonical founder as account #1`, () => {
@@ -59,4 +59,20 @@ test('transaction and device bindings do not create money-movement or hardware b
   assert.equal(devices.device_attestation_bypass, false);
   assert.equal(devices.device_enrollment_bypass, false);
   assert.equal(devices.private_device_keys_in_registry, false);
+});
+
+test('market bindings do not create trading custody settlement or admin bypasses', () => {
+  const exchange = getProductFounderBinding('neo-exchange');
+  const fx = getProductFounderBinding('neofx');
+  const dex = getProductFounderBinding('neo-dex');
+  for (const binding of [exchange,fx,dex]) {
+    assert.equal(binding.order_signing_bypass, false);
+    assert.equal(binding.custody_bypass, false);
+    assert.equal(binding.market_admin_bypass, false);
+  }
+  assert.equal(exchange.settlement_bypass, false);
+  assert.equal(exchange.wallet_secrets_in_registry, false);
+  assert.equal(fx.pricing_override_bypass, false);
+  assert.equal(dex.settlement_bypass, false);
+  assert.equal(dex.listing_approval_bypass, false);
 });
