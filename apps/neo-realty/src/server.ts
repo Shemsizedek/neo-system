@@ -61,6 +61,10 @@ const adminToken = process.env.NEO_REALTY_ADMIN_TOKEN ?? '';
 const port = Number(process.env.NEO_REALTY_PORT ?? 4310);
 const allowedOrigin = process.env.NEO_REALTY_FRONTEND_ORIGIN ?? '';
 
+function routeParam(value: string | string[] | undefined): string {
+  return Array.isArray(value) ? (value[0] ?? '') : (value ?? '');
+}
+
 function requireAdmin(req: express.Request, res: express.Response, next: express.NextFunction) {
   if (!adminToken) return res.status(503).json({ error: 'admin_not_configured' });
   const bearer = req.headers.authorization?.replace(/^Bearer\s+/i, '') ?? '';
@@ -139,7 +143,7 @@ export function createApp() {
   });
 
   app.get('/properties/:id', (req, res) => {
-    const property = properties.get(req.params.id);
+    const property = properties.get(routeParam(req.params.id));
     if (!property) return res.status(404).json({ error: 'not_found' });
     if (property.status !== 'active' && property.authority.claimStatus !== 'verified') {
       return res.status(404).json({ error: 'not_found' });
@@ -158,7 +162,7 @@ export function createApp() {
   });
 
   app.post('/admin/properties/:id/authority', requireAdmin, (req, res) => {
-    const property = properties.get(req.params.id);
+    const property = properties.get(routeParam(req.params.id));
     if (!property) return res.status(404).json({ error: 'not_found' });
     const decision = String(req.body?.decision ?? '');
     if (!['verified','rejected'].includes(decision)) return res.status(400).json({ error: 'invalid_decision' });
