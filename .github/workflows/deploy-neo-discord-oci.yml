@@ -1,0 +1,74 @@
+name: Deploy NEO Discord + NEO Bots to OCI
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy-oci:
+    runs-on: ubuntu-latest
+    env:
+      OCI_NEO_HOST: ${{ secrets.OCI_NEO_HOST }}
+      OCI_NEO_USER: ${{ secrets.OCI_NEO_USER }}
+      NEO_DISCORD_PUBLIC_BASE_URL: ${{ secrets.NEO_DISCORD_PUBLIC_BASE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate required deployment secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          missing=0
+          for name in OCI_NEO_HOST OCI_NEO_USER NEO_DISCORD_PUBLIC_BASE_URL; do
+            if [ -z "${!name:-}" ]; then echo "Missing required secret: $name" >&2; missing=1; fi
+          done
+          if [ -z "${{ secrets.OCI_NEO_SSH_PRIVATE_KEY }}" ]; then echo 'Missing required secret: OCI_NEO_SSH_PRIVATE_KEY' >&2; missing=1; fi
+          test "$missing" -eq 0
+      - name: Configure SSH
+        shell: bash
+        run: |
+          set -euo pipefail
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "${{ secrets.OCI_NEO_SSH_PRIVATE_KEY }}" > ~/.ssh/neo_oci
+          chmod 600 ~/.ssh/neo_oci
+          ssh-keyscan -H "$OCI_NEO_HOST" >> ~/.ssh/known_hosts
+      - name: Deploy reviewed main commit on OCI host
+        shell: bash
+        run: |
+          set -euo pipefail
+          ssh -i ~/.ssh/neo_oci "$OCI_NEO_USER@$OCI_NEO_HOST" 'bash -se' <<'REMOTE'
+          set -euo pipefail
+          repo=/opt/neo-system
+          envfile=/opt/neo-system-secrets/neo-discord.env
+          if [ ! -f "$envfile" ]; then
+            echo "Missing host-side secret file: $envfile" >&2
+            exit 1
+          fi
+          if [ ! -d "$repo/.git" ]; then
+            sudo mkdir -p "$repo"
+            sudo chown "$(id -u):$(id -g)" "$repo"
+            git clone https://github.com/Shemsizedek/neo-system.git "$repo"
+          fi
+          cd "$repo"
+          git fetch --prune origin main
+          git checkout main
+          git reset --hard origin/main
+          docker build -f services/neo-discord/adapters/node-http/Dockerfile -t neo-discord-node:latest .
+          docker rm -f neo-discord-node >/dev/null 2>&1 || true
+          docker run -d --name neo-discord-node --restart unless-stopped \
+            --env-file "$envfile" \
+            -p 127.0.0.1:8788:8788 \
+            neo-discord-node:latest
+          REMOTE
+      - name: Verify public Discord and NEO Bots health
+        shell: bash
+        run: |
+          set -euo pipefail
+          base="${NEO_DISCORD_PUBLIC_BASE_URL%/}"
+          discord="$(curl --fail --silent --show-error --retry 10 --retry-delay 3 "$base/health")"
+          bots="$(curl --fail --silent --show-error --retry 10 --retry-delay 3 "$base/neo-bots/health")"
+          echo "$discord"
+          echo "$bots"
+          node -e 'const x=JSON.parse(process.argv[1]); if(x.ok!==true || x.service!=="neo-discord") process.exit(1)' "$discord"
+          node -e 'const x=JSON.parse(process.argv[1]); if(x.ok!==true || x.service!=="neo-bots" || x.liveCesExecutionEnabled!==false) process.exit(1)' "$bots"
