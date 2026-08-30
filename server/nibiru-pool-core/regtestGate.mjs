@@ -1,5 +1,5 @@
 import {bitcoinRpcClient} from '../miner-production/bitcoinWallet.mjs'
-import {runLiveReadiness} from './liveReadiness.mjs'
+import {assessBitcoinCoreReadiness} from './liveReadiness.mjs'
 
 function requireRegtest(chain){
   if(chain!=='regtest')throw new Error(`REGTEST_REQUIRED:${chain||'unknown'}`)
@@ -7,24 +7,29 @@ function requireRegtest(chain){
 
 export async function runRegtestGate({rpc,generateBlocks=1}={}){
   if(typeof rpc!=='function')throw new Error('BITCOIN_RPC_CLIENT_REQUIRED')
-  const before=await rpc('getblockchaininfo')
+  const before=await rpc('getblockchaininfo',[])
   requireRegtest(before?.chain)
-  const network=await rpc('getnetworkinfo')
+  const network=await rpc('getnetworkinfo',[])
   const template=await rpc('getblocktemplate',[{rules:['segwit']}])
-  const readiness=await runLiveReadiness({rpc})
-  if(!readiness.ready)throw new Error(`REGTEST_NOT_READY:${readiness.reasons.join(',')}`)
+  const readiness=assessBitcoinCoreReadiness({network,chain:before,template})
+  if(!readiness.ready){
+    const failed=readiness.checks.filter(check=>!check.ok).map(check=>check.id)
+    throw new Error(`REGTEST_NOT_READY:${failed.join(',')}`)
+  }
   const result={
     ok:true,
     chain:'regtest',
     blocksBefore:Number(before.blocks),
     templateHeight:Number(template.height),
-    networkActive:network.networkactive!==false,
+    networkActive:network.networkactive===true,
     generated:[]
   }
   if(Number(generateBlocks)>0){
+    const count=Number(generateBlocks)
+    if(!Number.isSafeInteger(count)||count<0)throw new Error('INVALID_GENERATE_BLOCKS')
     const address=await rpc('getnewaddress',['neo-world-mint-regtest','bech32'])
-    result.generated=await rpc('generatetoaddress',[Number(generateBlocks),address])
-    const after=await rpc('getblockchaininfo')
+    result.generated=await rpc('generatetoaddress',[count,address])
+    const after=await rpc('getblockchaininfo',[])
     result.blocksAfter=Number(after.blocks)
     result.bestBlockHash=after.bestblockhash
   }
