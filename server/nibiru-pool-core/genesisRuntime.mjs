@@ -1,6 +1,6 @@
 import crypto from 'node:crypto'
 import {templateAdapter} from './bitcoinTemplate.mjs'
-import {buildCoinbase,merkleRootFromTxids,serializeHeader,serializeBlock,dsha256} from './blockPrimitives.mjs'
+import {buildCoinbase,merkleBranchForCoinbase,applyMerkleBranch,serializeHeader,serializeBlock,dsha256} from './blockPrimitives.mjs'
 import {createDifficultyState,difficultyMessage,targetFromDifficulty,recordAcceptedShare} from './difficultyController.mjs'
 import {submitBlockCandidate} from './blockSubmit.mjs'
 
@@ -33,6 +33,7 @@ export function createGenesisPoolRuntime({rpc,payoutScriptHex,poolId='world-mint
       payoutScriptHex,
       extranonce1Hex:job.extranonce1,
       extranonce2Hex:extranonce2,
+      extranonce2Size:job.extranonce2Size,
       tag,
       witnessCommitmentHex:job.template.defaultWitnessCommitment
     })
@@ -41,11 +42,11 @@ export function createGenesisPoolRuntime({rpc,payoutScriptHex,poolId='world-mint
   function notifyMessage(){
     const job=requireJob()
     const coinbase=buildWorkerCoinbase({extranonce2:'00'.repeat(job.extranonce2Size)})
-    const branch=job.template.transactions.map(tx=>tx.txid)
+    const branch=merkleBranchForCoinbase(job.template.transactions.map(tx=>tx.txid))
     return Object.freeze({
       id:null,
       method:'mining.notify',
-      params:[job.runtimeJobId,job.template.previousBlockHash,coinbase.strippedHex,'',branch,job.template.version.toString(16).padStart(8,'0'),job.template.bits,job.template.curtime.toString(16).padStart(8,'0'),true],
+      params:[job.runtimeJobId,job.template.previousBlockHash,coinbase.coinbase1Hex,coinbase.coinbase2Hex,branch,job.template.version.toString(16).padStart(8,'0'),job.template.bits,job.template.curtime.toString(16).padStart(8,'0'),true],
       metadata:{templateId:job.template.templateId,height:job.template.height,extranonce1:job.extranonce1,extranonce2Size:job.extranonce2Size,generatedAt:now()}
     })
   }
@@ -55,8 +56,8 @@ export function createGenesisPoolRuntime({rpc,payoutScriptHex,poolId='world-mint
   function verifyWorkerSolution({extranonce2,ntime,nonce}={}){
     const job=requireJob()
     const coinbase=buildWorkerCoinbase({extranonce2})
-    const txids=[coinbase.txid,...job.template.transactions.map(tx=>tx.txid)]
-    const merkleRoot=merkleRootFromTxids(txids)
+    const branch=merkleBranchForCoinbase(job.template.transactions.map(tx=>tx.txid))
+    const merkleRoot=applyMerkleBranch(coinbase.txid,branch)
     const time=Number.parseInt(String(ntime),16)
     const nonceNum=Number.parseInt(String(nonce),16)
     if(!Number.isInteger(time)||!Number.isInteger(nonceNum))throw new Error('INVALID_HEADER_FIELDS')
@@ -80,7 +81,7 @@ export function createGenesisPoolRuntime({rpc,payoutScriptHex,poolId='world-mint
       extranonce2,ntime,nonce,verifiedAt:now()
     })
     if(accepted)difficultyState=recordAcceptedShare(difficultyState)
-    return Object.freeze({submission,header,coinbase,merkleRoot,shareTarget:shareTarget.toString(16),networkTarget:networkTarget?.toString(16)||null})
+    return Object.freeze({submission,header,coinbase,merkleRoot,branch,shareTarget:shareTarget.toString(16),networkTarget:networkTarget?.toString(16)||null})
   }
 
   async function submitIfBlockCandidate(solution){
