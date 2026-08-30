@@ -1,7 +1,12 @@
 import { runObservation, stewardshipBoundaries } from './index.mjs'
+import { getGitHubActionsOidcToken } from './oidc.mjs'
 
 const gatewayUrl = process.env.NEO_GATEWAY_EVENT_URL
-const gatewayToken = process.env.NEO_GATEWAY_EVENT_TOKEN
+
+async function resolveGatewayToken() {
+  if (process.env.NEO_GATEWAY_EVENT_TOKEN) return process.env.NEO_GATEWAY_EVENT_TOKEN
+  return getGitHubActionsOidcToken()
+}
 
 async function emit(event) {
   if (!gatewayUrl) {
@@ -9,11 +14,14 @@ async function emit(event) {
     return
   }
 
+  const gatewayToken = await resolveGatewayToken()
+  if (!gatewayToken) throw new Error('No gateway authentication method is available')
+
   const response = await fetch(gatewayUrl, {
     method: 'POST',
     headers: {
       'content-type': 'application/json',
-      ...(gatewayToken ? { authorization: `Bearer ${gatewayToken}` } : {})
+      authorization: `Bearer ${gatewayToken}`
     },
     body: JSON.stringify({ event, boundaries: stewardshipBoundaries })
   })

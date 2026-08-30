@@ -4,6 +4,7 @@ import { appendFile, mkdir } from 'node:fs/promises'
 import { dirname } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { createStewardshipEvent, stewardshipBoundaries } from './index.mjs'
+import { createGitHubOidcVerifier, githubOidcPolicy } from './oidc.mjs'
 
 const DEFAULT_AUDIT_FILE = process.env.NEO_STEWARDSHIP_AUDIT_FILE || 'data/wordpress-stewardship/events.ndjson'
 
@@ -17,13 +18,16 @@ function json(res, status, body) {
   res.end(payload)
 }
 
-function authorized(req, expectedToken) {
-  if (!expectedToken) return false
+function bearer(req) {
   const header = req.headers.authorization || ''
-  const supplied = header.startsWith('Bearer ') ? header.slice(7) : ''
+  return header.startsWith('Bearer ') ? header.slice(7) : ''
+}
+
+function matchesSharedToken(supplied, expectedToken) {
+  if (!supplied || !expectedToken) return false
   const a = Buffer.from(supplied)
   const b = Buffer.from(expectedToken)
-  return a.length === b.length && a.length > 0 && timingSafeEqual(a, b)
+  return a.length === b.length && timingSafeEqual(a, b)
 }
 
 async function readJson(req, maxBytes = 128 * 1024) {
@@ -54,6 +58,7 @@ function validateEnvelope(body) {
 
 export function createStewardshipGateway({
   token = process.env.NEO_GATEWAY_EVENT_TOKEN,
+  verifyOidc = createGitHubOidcVerifier(),
   auditFile = DEFAULT_AUDIT_FILE,
   now = () => new Date().toISOString(),
   appendAudit = async (entry) => {
@@ -68,7 +73,9 @@ export function createStewardshipGateway({
         return json(res, 200, {
           service: 'neo-wordpress-stewardship-gateway',
           status: 'ok',
-          authenticatedEvents: Boolean(token),
+          authenticatedEvents: true,
+          authModes: ['github-actions-oidc', ...(token ? ['shared-token-fallback'] : [])],
+          githubOidcPolicy,
           generatedAt: now(),
           boundaries: stewardshipBoundaries
         })
@@ -76,13 +83,19 @@ export function createStewardshipGateway({
 
       if (url.pathname !== '/api/v1/wordpress/stewardship/events') return json(res, 404, { error: 'not_found' })
       if (req.method !== 'POST') return json(res, 405, { error: 'method_not_allowed' })
-      if (!authorized(req, token)) return json(res, 401, { error: 'unauthorized' })
+
+      const supplied = bearer(req)
+      let authMode = null
+      if (matchesSharedToken(supplied, token)) authMode = 'shared-token'
+      else if (supplied && await verifyOidc(supplied)) authMode = 'github-actions-oidc'
+      if (!authMode) return json(res, 401, { error: 'unauthorized' })
 
       const body = await readJson(req)
       const envelope = validateEnvelope(body)
       const acceptedAt = now()
       const record = {
         acceptedAt,
+        authentication: { mode: authMode },
         event: envelope.event,
         boundaries: envelope.boundaries,
         execution: {
@@ -98,6 +111,7 @@ export function createStewardshipGateway({
         accepted: true,
         eventId: envelope.event.id,
         status: record.execution.status,
+        authentication: authMode,
         acceptedAt,
         auditRecorded: true
       })
