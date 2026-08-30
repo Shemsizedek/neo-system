@@ -16,7 +16,7 @@ export function parseCesAnnouncement({id=null,date=null,title='',text='' }={}){
   const transactionNumber=match(raw,/transaction\s*(?:number|no\.?|#)\s*[:#-]?\s*([A-Za-z0-9._/-]+)/i);
   const hours=match(raw,/hours?\s*[:#-]?\s*([0-9]+(?:\.[0-9]+)?)/i);
   const hash=match(raw,/(?:hash|txid|transaction hash)\s*[:#-]?\s*([A-Fa-f0-9]{16,}|[A-Za-z0-9._/-]{16,})/i);
-  const checkNumber=match(raw,/(?:e-?check|check)\s*(?:number|no\.?|#)?\s*[:#-]?\s*([A-Za-z0-9._/-]+)/i);
+  const checkNumber=match(raw,/check\s*(?:number|no\.?|#)\s*[:#-]?\s*([A-Za-z0-9._/-]+)/i)||match(raw,/e-?check\s*[:#-]\s*([A-Za-z0-9._/-]+)/i);
   const tradeSlip=match(raw,/trade\s*slip\s*[:#-]?\s*([A-Za-z0-9._/-]+)/i);
   const creditVoucher=match(raw,/credit\s*voucher\s*[:#-]?\s*([A-Za-z0-9._/-]+)/i);
   const cesTransactionId=match(raw,/CES\s*transaction\s*(?:ID|number|no\.?|#)?\s*[:#-]?\s*([A-Za-z0-9._/-]+)/i);
