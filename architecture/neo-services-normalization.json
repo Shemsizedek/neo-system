@@ -10,6 +10,7 @@
   "apps": [
     {"id":"gisd"},
     {"id":"neo-counter"},
+    {"id":"neo-dash"},
     {"id":"neo-exchange"},
     {"id":"neo-guardian"},
     {"id":"neo-pads"},
