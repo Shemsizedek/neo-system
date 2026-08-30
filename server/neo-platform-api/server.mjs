@@ -25,6 +25,14 @@ function json(res, status, body) {
   res.end(payload);
 }
 
+function intParam(url, name, fallback, { min = 1, max = 100 } = {}) {
+  const raw = url.searchParams.get(name);
+  if (raw === null) return fallback;
+  const value = Number(raw);
+  if (!Number.isInteger(value) || value < min || value > max) throw new Error(`invalid ${name}`);
+  return value;
+}
+
 export function createNeoPlatformApi({ now = () => new Date().toISOString(), marketData = createNeoPrimeMarketData({ now }), teraboxRuntime = createTeraBoxRuntime({ now }) } = {}) {
   return http.createServer(async (req, res) => {
     try {
@@ -47,6 +55,34 @@ export function createNeoPlatformApi({ now = () => new Date().toISOString(), mar
         const code=url.searchParams.get('code');
         if (!code) return json(res,400,{error:'missing_authorization_code'});
         return json(res,200,{apiVersion:'v1',provider:'terabox',...(await teraboxRuntime.complete(code))});
+      }
+      if (url.pathname === '/api/v1/storage/terabox/quota') {
+        const client = await teraboxRuntime.client();
+        return json(res,200,{apiVersion:'v1',provider:'terabox',readOnly:true,data:await client.quota()});
+      }
+      if (url.pathname === '/api/v1/storage/terabox/files') {
+        const dir = url.searchParams.get('dir');
+        if (!dir) return json(res,400,{error:'missing_dir'});
+        const page = intParam(url,'page',1,{min:1,max:100000});
+        const num = intParam(url,'num',100,{min:1,max:100});
+        const client = await teraboxRuntime.client();
+        return json(res,200,{apiVersion:'v1',provider:'terabox',readOnly:true,data:await client.list({dir,page,num})});
+      }
+      if (url.pathname === '/api/v1/storage/terabox/search') {
+        const key = url.searchParams.get('key');
+        if (!key) return json(res,400,{error:'missing_key'});
+        const page = intParam(url,'page',1,{min:1,max:100000});
+        const num = intParam(url,'num',100,{min:1,max:100});
+        const client = await teraboxRuntime.client();
+        return json(res,200,{apiVersion:'v1',provider:'terabox',readOnly:true,data:await client.search({key,page,num})});
+      }
+      if (url.pathname === '/api/v1/storage/terabox/download-links') {
+        const raw = url.searchParams.get('fids');
+        if (!raw) return json(res,400,{error:'missing_fids'});
+        const fids = raw.split(',').map(v=>v.trim()).filter(Boolean).slice(0,100);
+        if (!fids.length) return json(res,400,{error:'missing_fids'});
+        const client = await teraboxRuntime.client();
+        return json(res,200,{apiVersion:'v1',provider:'terabox',readOnly:true,sensitive:true,data:await client.downloadLinks(fids)});
       }
 
       if (url.pathname === '/api/v1/prime/markets') { const assets=(url.searchParams.get('assets')||'XCP,NOMNI').split(',').map(v=>v.trim()).filter(Boolean).slice(0,20); return json(res,200,await marketData.snapshot({assets})); }
