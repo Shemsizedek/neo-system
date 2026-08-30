@@ -166,6 +166,7 @@ export function createStratumGateway({
         if(settled)return
         settled=true
         clearTimeout(forceTimer)
+        sessions.clear()
         error?reject(error):resolve()
       }
       const forceTimer=setTimeout(()=>{
