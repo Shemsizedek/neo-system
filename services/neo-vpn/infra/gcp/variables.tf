@@ -4,7 +4,7 @@ variable "project_id" {
 }
 
 variable "region" {
-  description = "Google Cloud region for the reserved public IP."
+  description = "Google Cloud region for the reserved public IP and gateway subnet."
   type        = string
   default     = "us-central1"
 }
@@ -21,10 +21,10 @@ variable "machine_type" {
   default     = "e2-small"
 }
 
-variable "network_name" {
-  description = "Existing Google Cloud VPC network name."
+variable "gateway_subnet_cidr" {
+  description = "CIDR for the dedicated Google Cloud subnet. Keep this separate from the WireGuard overlay 10.144.0.0/16."
   type        = string
-  default     = "default"
+  default     = "10.145.1.0/24"
 }
 
 variable "wireguard_source_ranges" {
