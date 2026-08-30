@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import crypto from 'node:crypto';
+import { createPropertyRepository } from './repository.js';
 
 export type ListingType = 'sale' | 'rent' | 'both';
 export type PropertyType = 'house' | 'condo' | 'townhome' | 'multifamily' | 'apartment' | 'land' | 'commercial' | 'other';
@@ -56,7 +57,6 @@ export interface PropertyRecord {
   updatedAt: string;
 }
 
-const properties = new Map<string, PropertyRecord>();
 const adminToken = process.env.NEO_REALTY_ADMIN_TOKEN ?? '';
 const port = Number(process.env.NEO_REALTY_PORT ?? 4310);
 const allowedOrigin = process.env.NEO_REALTY_FRONTEND_ORIGIN ?? '';
@@ -118,69 +118,78 @@ function normalizePropertyInput(body: any): PropertyRecord {
 
 export function createApp() {
   const app = express();
+  const repository = createPropertyRepository();
   app.use(express.json({ limit: '256kb' }));
   app.use(cors({ origin: allowedOrigin || false }));
 
   app.get('/health', (_req, res) => res.json({ ok: true, service: 'neo-realty' }));
-
-  app.get('/properties', (req, res) => {
-    const q = String(req.query.q ?? '').trim().toLowerCase();
-    const listingType = String(req.query.listingType ?? '').trim();
-    const propertyType = String(req.query.propertyType ?? '').trim();
-    const activeOnly = String(req.query.activeOnly ?? 'true') !== 'false';
-
-    const rows = [...properties.values()].filter((p) => {
-      if (activeOnly && p.status !== 'active') return false;
-      if (listingType && p.listingType !== listingType && p.listingType !== 'both') return false;
-      if (propertyType && p.propertyType !== propertyType) return false;
-      if (q) {
-        const haystack = `${p.address.line1} ${p.address.city} ${p.address.region} ${p.address.postalCode}`.toLowerCase();
-        if (!haystack.includes(q)) return false;
-      }
-      return true;
-    });
-    res.json({ data: rows, count: rows.length });
+  app.get('/ready', async (_req, res) => {
+    const ready = await repository.ready();
+    res.status(ready ? 200 : 503).json({ ok: ready, service: 'neo-realty', persistence: process.env.DATABASE_URL ? 'postgres' : 'memory' });
   });
 
-  app.get('/properties/:id', (req, res) => {
-    const property = properties.get(routeParam(req.params.id));
-    if (!property) return res.status(404).json({ error: 'not_found' });
-    if (property.status !== 'active' && property.authority.claimStatus !== 'verified') {
-      return res.status(404).json({ error: 'not_found' });
+  app.get('/properties', async (req, res) => {
+    try {
+      const rows = await repository.search({
+        q: String(req.query.q ?? '').trim(),
+        listingType: String(req.query.listingType ?? '').trim() || undefined,
+        propertyType: String(req.query.propertyType ?? '').trim() || undefined,
+        activeOnly: String(req.query.activeOnly ?? 'true') !== 'false'
+      });
+      res.json({ data: rows, count: rows.length });
+    } catch (error) {
+      res.status(500).json({ error: error instanceof Error ? error.message : 'repository_error' });
     }
-    res.json({ data: property });
   });
 
-  app.post('/properties', (req, res) => {
+  app.get('/properties/:id', async (req, res) => {
+    try {
+      const property = await repository.get(routeParam(req.params.id));
+      if (!property) return res.status(404).json({ error: 'not_found' });
+      if (property.status !== 'active' && property.authority.claimStatus !== 'verified') {
+        return res.status(404).json({ error: 'not_found' });
+      }
+      res.json({ data: property });
+    } catch (error) {
+      res.status(500).json({ error: error instanceof Error ? error.message : 'repository_error' });
+    }
+  });
+
+  app.post('/properties', async (req, res) => {
     try {
       const property = normalizePropertyInput(req.body);
-      properties.set(property.id, property);
-      res.status(201).json({ data: property });
+      const created = await repository.create(property);
+      res.status(201).json({ data: created });
     } catch (error) {
-      res.status(400).json({ error: error instanceof Error ? error.message : 'invalid_request' });
+      const message = error instanceof Error ? error.message : 'invalid_request';
+      const invalid = ['address_required','invalid_listing_type','invalid_property_type'].includes(message);
+      res.status(invalid ? 400 : 500).json({ error: message });
     }
   });
 
-  app.post('/admin/properties/:id/authority', requireAdmin, (req, res) => {
-    const property = properties.get(routeParam(req.params.id));
-    if (!property) return res.status(404).json({ error: 'not_found' });
-    const decision = String(req.body?.decision ?? '');
-    if (!['verified','rejected'].includes(decision)) return res.status(400).json({ error: 'invalid_decision' });
-
-    property.authority = {
-      claimStatus: decision as AuthorityStatus,
-      verifiedAt: decision === 'verified' ? new Date().toISOString() : null,
-      verificationMethod: String(req.body?.verificationMethod ?? 'operator_review')
-    };
-    property.status = decision === 'verified' ? 'active' : 'off_market';
-    property.updatedAt = new Date().toISOString();
-    properties.set(property.id, property);
-    res.json({ data: property });
+  app.post('/admin/properties/:id/authority', requireAdmin, async (req, res) => {
+    try {
+      const decision = String(req.body?.decision ?? '');
+      if (!['verified','rejected'].includes(decision)) return res.status(400).json({ error: 'invalid_decision' });
+      const property = await repository.setAuthority(
+        routeParam(req.params.id),
+        decision as 'verified' | 'rejected',
+        String(req.body?.verificationMethod ?? 'operator_review')
+      );
+      if (!property) return res.status(404).json({ error: 'not_found' });
+      res.json({ data: property });
+    } catch (error) {
+      res.status(500).json({ error: error instanceof Error ? error.message : 'repository_error' });
+    }
   });
 
-  app.post('/admin/reset', requireAdmin, (_req, res) => {
-    properties.clear();
-    res.status(204).end();
+  app.post('/admin/reset', requireAdmin, async (_req, res) => {
+    try {
+      await repository.clear();
+      res.status(204).end();
+    } catch (error) {
+      res.status(500).json({ error: error instanceof Error ? error.message : 'repository_error' });
+    }
   });
 
   return app;
