@@ -1,24 +1,38 @@
 import assert from "node:assert/strict";
+import pg from "pg";
 import { PostgresRepository } from "../postgres-repository.js";
 
+const { Pool } = pg;
 const url = process.env.DATABASE_URL;
 if (!url) throw new Error("DATABASE_URL is required for the Postgres integration test");
 
 const repository = new PostgresRepository(url);
+const inspectionPool = new Pool({ connectionString: url });
 const suffix = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 const propertyId = `TEST-PROP-${suffix}`;
 const bookingA = `TEST-BOOK-A-${suffix}`;
 const bookingB = `TEST-BOOK-B-${suffix}`;
+const testWallet = `1TestWallet-${suffix}`;
 
 try {
   assert.equal(await repository.ping(), true);
 
-  await repository.markWalletVerified("1TestWallet", `challenge-${suffix}`);
-  assert.equal(await repository.isWalletVerified("1TestWallet"), true);
+  await repository.markWalletVerified(testWallet, `challenge-${suffix}`);
+  assert.equal(await repository.isWalletVerified(testWallet), true);
+  const verification = await inspectionPool.query(
+    "SELECT verified_at, expires_at FROM neo_pads_wallet_verifications WHERE wallet=$1",
+    [testWallet]
+  );
+  assert.equal(verification.rowCount, 1);
+  assert.ok(verification.rows[0].expires_at, "wallet verification must have an expiry");
+  assert.ok(
+    new Date(verification.rows[0].expires_at).getTime() > new Date(verification.rows[0].verified_at).getTime(),
+    "wallet verification expiry must be after verification time"
+  );
 
   await repository.saveProperty({
     id: propertyId,
-    hostWallet: "1TestWallet",
+    hostWallet: testWallet,
     title: "Integration Test Pad",
     location: "Houston",
     priceWorld: 500,
@@ -77,5 +91,6 @@ try {
   assert.equal(reconciliation.supported, true);
   console.log("NEO Pads Postgres integration test passed", { propertyId, bookingA });
 } finally {
+  await inspectionPool.end();
   await repository.close();
 }
