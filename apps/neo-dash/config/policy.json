@@ -1,0 +1,51 @@
+{
+  "service": "NEO_DASH",
+  "version": "0.1.0",
+  "pricing": {
+    "displayCurrency": "WORLD_CURRENCY",
+    "symbol": "∞",
+    "settlementAssets": ["BTC", "XCP", "NOMNI"],
+    "serverDerivedTotalsRequired": true,
+    "itemizedChargesRequired": true
+  },
+  "services": [
+    "RIDE",
+    "FOOD",
+    "PACKAGE",
+    "GROCERY",
+    "COURIER",
+    "ERRAND"
+  ],
+  "identity": {
+    "provider": "NEOPASS",
+    "walletOwnershipRequiresSignature": true
+  },
+  "authorization": {
+    "provider": "NEOWORKS",
+    "roleScoped": true,
+    "customerVerificationDoesNotGrantProviderAuthority": true,
+    "providerRoles": ["DRIVER", "COURIER", "MERCHANT", "FLEET_OPERATOR"]
+  },
+  "operationalAuthority": {
+    "driverLicenseSeparateGate": true,
+    "vehicleAuthoritySeparateGate": true,
+    "insuranceSeparateGate": true,
+    "merchantAuthoritySeparateGate": true,
+    "jurisdictionalRequirementsSeparateGate": true
+  },
+  "dispatch": {
+    "locationPurposeLimited": true,
+    "activeJobRequiredForPreciseTracking": true,
+    "providerMayAcceptOnlyOneExclusiveJobAtATime": true
+  },
+  "payments": {
+    "checkoutAdapter": "NEO_COUNTER",
+    "providerPayoutAfterCompletionAndSettlement": true,
+    "payoutExecutionEnabledByDefault": false,
+    "payoutIdempotencyRequired": true
+  },
+  "accounting": {
+    "statements": "NEO_STATEMENTS",
+    "commercialAndNetworkAmountsSeparated": true
+  }
+}
