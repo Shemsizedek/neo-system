@@ -14,20 +14,6 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  if (req.url === "/checkout" && req.method === "POST") {
-    let body = "";
-    req.on("data", (chunk) => { body += chunk; });
-    req.on("end", () => {
-      const parsed = JSON.parse(body);
-      assert.equal(parsed.commercialPrice.currency, "WORLD_CURRENCY");
-      assert.equal(parsed.commercialPrice.symbol, "∞");
-      assert.equal(parsed.settlementAsset, "BTC");
-      res.setHeader("content-type", "application/json");
-      res.end(JSON.stringify({ checkoutId: "CHK-TEST-1", status: "CREATED" }));
-    });
-    return;
-  }
-
   res.statusCode = 404;
   res.end();
 });
@@ -46,14 +32,32 @@ try {
   assert.equal(balance.ledgerState, "Following");
   assert.equal(balance.counterpartyHeight, 999);
 
-  process.env.NEO_COUNTER_API_URL = base;
+  process.env.NODE_ENV = "test";
+  process.env.NEO_COUNTER_CHECKOUT_URL = `${base}/neo-counter/`;
+  process.env.NEO_PADS_CHECKOUT_RETURN_URL = `${base}/pads/booking/{bookingId}`;
   const checkout = await createCheckout({
     bookingId: "NPB-TEST",
     amountWorld: 500,
     payoutWallet: "1HostWallet",
     settlementAsset: "BTC"
   });
-  assert.equal(checkout.checkoutId, "CHK-TEST-1");
+
+  assert.equal(checkout.checkoutId, "NPB-TEST");
+  assert.equal(checkout.status, "REDIRECT_REQUIRED");
+  assert.equal(checkout.commercialPrice.amount, 500);
+  assert.equal(checkout.commercialPrice.currency, "WORLD_CURRENCY");
+  assert.equal(checkout.commercialPrice.symbol, "∞");
+
+  const url = new URL(checkout.checkoutUrl);
+  assert.equal(url.pathname, "/neo-counter/");
+  assert.equal(url.searchParams.get("checkout"), "1");
+  assert.equal(url.searchParams.get("service"), "NEO Pads");
+  assert.equal(url.searchParams.get("order"), "NPB-TEST");
+  assert.equal(url.searchParams.get("amount"), "50000");
+  assert.equal(url.searchParams.get("currency"), "WORLD_CURRENCY");
+  assert.equal(url.searchParams.get("rail"), "BTC");
+  assert.equal(url.searchParams.get("success_url"), `${base}/pads/booking/NPB-TEST`);
+  assert.equal(url.searchParams.get("cancel_url"), `${base}/pads/booking/NPB-TEST`);
 
   console.log("NEO Pads adapter contract test passed");
 } finally {
