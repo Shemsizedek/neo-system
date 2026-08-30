@@ -28,6 +28,11 @@ function bookingFromRow(row: any): BookingRecord {
   };
 }
 
+function walletVerificationTtlSeconds() {
+  const seconds = Number(process.env.NEO_PADS_WALLET_VERIFICATION_TTL_SECONDS ?? 86400);
+  return Number.isFinite(seconds) ? Math.max(60, Math.floor(seconds)) : 86400;
+}
+
 export class PostgresRepository implements Repository {
   readonly mode = "postgres" as const;
   private readonly pool: Pool;
@@ -76,16 +81,18 @@ export class PostgresRepository implements Repository {
   }
 
   async markWalletVerified(wallet: string, challengeId: string) {
+    const ttlSeconds = walletVerificationTtlSeconds();
     await this.pool.query(
-      `INSERT INTO neo_pads_wallet_verifications(wallet,challenge_id,verified_at)
-       VALUES($1,$2,now()) ON CONFLICT(wallet) DO UPDATE SET challenge_id=EXCLUDED.challenge_id,verified_at=now()`,
-      [wallet, challengeId]
+      `INSERT INTO neo_pads_wallet_verifications(wallet,challenge_id,verified_at,expires_at)
+       VALUES($1,$2,now(),now() + ($3::text || ' seconds')::interval)
+       ON CONFLICT(wallet) DO UPDATE SET challenge_id=EXCLUDED.challenge_id,verified_at=now(),expires_at=EXCLUDED.expires_at`,
+      [wallet, challengeId, ttlSeconds]
     );
   }
 
   async isWalletVerified(wallet: string) {
     const { rowCount } = await this.pool.query(
-      "SELECT 1 FROM neo_pads_wallet_verifications WHERE wallet=$1 AND (expires_at IS NULL OR expires_at > now())",
+      "SELECT 1 FROM neo_pads_wallet_verifications WHERE wallet=$1 AND expires_at > now()",
       [wallet]
     );
     return (rowCount ?? 0) > 0;
