@@ -91,11 +91,14 @@ export async function submitPendingPayouts(pool: Pool): Promise<{ submitted: num
       });
       if (!response.ok) throw new Error(`neo_counter_payout_failed:${response.status}`);
       const body = await response.json() as any;
+      const providerPayoutId = body?.payoutId ?? body?.id ?? payout.id;
+      const providerStatus = String(body?.status ?? body?.state ?? "SUBMITTED").toUpperCase();
       await pool.query(
         `UPDATE neo_pads_host_payouts
-            SET status='SUBMITTED', txid=COALESCE($2,txid), last_error=NULL
+            SET status='SUBMITTED', provider_payout_id=$2, provider_status=$3,
+                txid=COALESCE($4,txid), submitted_at=COALESCE(submitted_at,now()), last_error=NULL
           WHERE id=$1`,
-        [payout.id, body?.txid ?? null]
+        [payout.id, providerPayoutId, providerStatus, body?.txid ?? null]
       );
       submitted++;
     } catch (error) {

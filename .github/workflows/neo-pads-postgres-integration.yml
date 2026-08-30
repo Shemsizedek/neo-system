@@ -45,6 +45,7 @@ jobs:
       - run: npm run db:migrate
       - run: npm run test:postgres
       - run: npm run test:payouts
+      - run: npm run test:payout-reconciliation
       - name: Start NEO Pads API
         run: npm start > /tmp/neo-pads.log 2>&1 & echo $! > /tmp/neo-pads.pid
       - name: Wait for readiness

@@ -10,7 +10,9 @@
     "db:migrate": "tsx src/db/migrate.ts",
     "test:postgres": "tsx src/db/integration-test.ts",
     "test:payouts": "tsx src/db/payout-integration-test.ts",
+    "test:payout-reconciliation": "tsx src/db/payout-reconciliation-test.ts",
     "payout:run": "tsx src/payout-worker.ts",
+    "payout:reconcile": "tsx src/payout-reconciler.ts",
     "smoke": "tsx src/smoke-test.ts"
   },
   "dependencies": {
