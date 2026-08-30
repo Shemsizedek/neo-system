@@ -11,6 +11,9 @@
     "neo-wire": {"account_ordinal":1,"role":"founder_owner","reserved":true,"verified_enrollment_required":true,"authentication_bypass":false,"network_authority_bypass":false,"device_enrollment_bypass":false},
     "neo-counter": {"account_ordinal":1,"role":"founder_owner","reserved":true,"verified_enrollment_required":true,"authentication_bypass":false,"transaction_approval_bypass":false,"terminal_authentication_bypass":false,"payment_credential_storage":false},
     "neo-teller": {"account_ordinal":1,"role":"founder_owner","reserved":true,"verified_enrollment_required":true,"authentication_bypass":false,"cash_dispense_bypass":false,"transaction_approval_bypass":false,"device_enrollment_bypass":false,"payment_credential_storage":false},
-    "neo-device-registry": {"account_ordinal":1,"role":"founder_owner","reserved":true,"verified_enrollment_required":true,"authentication_bypass":false,"device_attestation_bypass":false,"device_enrollment_bypass":false,"private_device_keys_in_registry":false}
+    "neo-device-registry": {"account_ordinal":1,"role":"founder_owner","reserved":true,"verified_enrollment_required":true,"authentication_bypass":false,"device_attestation_bypass":false,"device_enrollment_bypass":false,"private_device_keys_in_registry":false},
+    "neo-exchange": {"account_ordinal":1,"role":"founder_owner","reserved":true,"verified_enrollment_required":true,"authentication_bypass":false,"order_signing_bypass":false,"custody_bypass":false,"settlement_bypass":false,"market_admin_bypass":false,"wallet_secrets_in_registry":false},
+    "neofx": {"account_ordinal":1,"role":"founder_owner","reserved":true,"verified_enrollment_required":true,"authentication_bypass":false,"order_signing_bypass":false,"custody_bypass":false,"pricing_override_bypass":false,"market_admin_bypass":false},
+    "neo-dex": {"account_ordinal":1,"role":"founder_owner","reserved":true,"verified_enrollment_required":true,"authentication_bypass":false,"order_signing_bypass":false,"custody_bypass":false,"settlement_bypass":false,"listing_approval_bypass":false,"market_admin_bypass":false}
   }
 }
