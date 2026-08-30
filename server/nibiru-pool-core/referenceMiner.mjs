@@ -4,6 +4,7 @@ import {blockHashFromStratumPrevhash,reconstructStratumCoinbase} from './stratum
 import {targetFromDifficulty} from './difficultyController.mjs'
 
 const txidFromRaw=rawHex=>Buffer.from(dsha256(Buffer.from(rawHex,'hex'))).reverse().toString('hex')
+const arg=name=>process.argv.find(value=>value.startsWith(`--${name}=`))?.slice(name.length+3)||null
 
 export function assembleStratumHeader({notify,extranonce1,extranonce2,nonce}={}){
   if(!notify||notify.method!=='mining.notify')throw new Error('MINING_NOTIFY_REQUIRED')
@@ -98,4 +99,19 @@ export function createReferenceMinerClient({host='127.0.0.1',port=3333,workerId,
     socket.on('error',error=>finish(error))
     socket.on('close',()=>{if(!settled)finish(new Error('REFERENCE_MINER_CONNECTION_CLOSED'))})
   })
+}
+
+if(import.meta.url===`file://${process.argv[1]}`){
+  const workerId=arg('worker')||process.env.NIBIRU_REFERENCE_WORKER
+  const secret=arg('secret')||process.env.NIBIRU_REFERENCE_SECRET
+  const host=arg('host')||process.env.NIBIRU_STRATUM_HOST||'127.0.0.1'
+  const port=Number(arg('port')||process.env.NIBIRU_STRATUM_PORT||3333)
+  const maxNonce=Number(arg('max-nonce')||1_000_000)
+  try{
+    const result=await createReferenceMinerClient({host,port,workerId,secret,maxNonce})
+    process.stdout.write(`${JSON.stringify({...result,share:{jobId:result.share.jobId,nonce:result.share.nonce,hash:result.share.hash,difficulty:result.share.difficulty}},null,2)}\n`)
+  }catch(error){
+    process.stderr.write(`[reference-miner] ${String(error?.message||error)}\n`)
+    process.exitCode=1
+  }
 }
