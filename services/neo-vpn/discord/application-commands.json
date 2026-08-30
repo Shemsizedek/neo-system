@@ -1,0 +1,49 @@
+[
+  {
+    "name": "vpn-status",
+    "description": "Show NEO VPN control-plane and gateway status",
+    "type": 1,
+    "dm_permission": false
+  },
+  {
+    "name": "vpn-audit",
+    "description": "Run a read-only NEO VPN peer and policy audit",
+    "type": 1,
+    "dm_permission": false
+  },
+  {
+    "name": "deployment-status",
+    "description": "Show NEO VPN deployment and infrastructure state",
+    "type": 1,
+    "dm_permission": false
+  },
+  {
+    "name": "peer-request",
+    "description": "Request enrollment of a WireGuard peer public key",
+    "type": 1,
+    "dm_permission": false,
+    "options": [
+      {"name":"public-key","description":"WireGuard public key only","type":3,"required":true},
+      {"name":"overlay-address","description":"Requested NEO VPN /32 overlay address","type":3,"required":true},
+      {"name":"device-label","description":"Human-readable device label","type":3,"required":true}
+    ]
+  },
+  {
+    "name": "peer-revoke",
+    "description": "Request revocation of an existing NEO VPN peer",
+    "type": 1,
+    "dm_permission": false,
+    "options": [
+      {"name":"peer-id","description":"Public peer identifier or registered device label","type":3,"required":true}
+    ]
+  },
+  {
+    "name": "incident-lockdown",
+    "description": "Request emergency fail-closed NEO VPN shutdown",
+    "type": 1,
+    "dm_permission": false,
+    "options": [
+      {"name":"reason","description":"Incident reason; never include credentials or secrets","type":3,"required":true}
+    ]
+  }
+]
