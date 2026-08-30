@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "commands": {
+    "vpn-status": {"mode": "read", "approval": "none"},
+    "vpn-audit": {"mode": "read", "approval": "none"},
+    "deployment-status": {"mode": "read", "approval": "none"},
+    "peer-request": {"mode": "request", "approval": "operator"},
+    "peer-revoke": {"mode": "mutate", "approval": "admin"},
+    "incident-lockdown": {"mode": "emergency", "approval": "admin"}
+  },
+  "prohibited_inputs": [
+    "wireguard_private_key",
+    "wallet_private_key",
+    "seed_phrase",
+    "api_token",
+    "cloud_credential",
+    "ces_password",
+    "session_cookie",
+    "recovery_code"
+  ]
+}
