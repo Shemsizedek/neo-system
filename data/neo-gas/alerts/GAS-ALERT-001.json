@@ -1,0 +1,14 @@
+{
+  "id": "GAS-ALERT-001",
+  "recordType": "alert",
+  "title": "Maritime readiness development",
+  "status": "MONITORING",
+  "domain": "Maritime",
+  "severity": "AMBER",
+  "confidence": "HIGH",
+  "createdAt": "2026-08-28T12:39:00-05:00",
+  "updatedAt": "2026-08-29T20:05:00-05:00",
+  "summary": "Port resilience, shipping-risk analysis, search-and-rescue planning, and humanitarian routing remain priority capability-development areas.",
+  "provenance": {"sourceType": "repository", "sourceRefs": ["data/neo-gas/status.json"]},
+  "guardrailClass": "RESILIENCE"
+}
