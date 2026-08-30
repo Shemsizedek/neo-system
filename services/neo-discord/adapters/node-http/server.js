@@ -1,5 +1,6 @@
 import http from 'node:http'
 import { createNodeHttpHandler } from './handler.js'
+import { createNeoBotsDeploymentControlHandler, neoBotsDeploymentHealth } from '../../../../server/neo-bots/deployment-runtime.mjs'
 
 function toWebRequest(req,body){
   const proto=req.headers['x-forwarded-proto']||'http'
@@ -7,6 +8,13 @@ function toWebRequest(req,body){
   const headers=new Headers()
   for(const [k,v] of Object.entries(req.headers))if(v!==undefined)headers.set(k,Array.isArray(v)?v.join(','):String(v))
   return new Request(`${proto}://${host}${req.url||'/'}`,{method:req.method,headers,body:['GET','HEAD'].includes(req.method||'GET')?undefined:body})
+}
+
+function rewriteControlRequest(request){
+  const url=new URL(request.url)
+  const prefix='/neo-bots/control'
+  url.pathname=url.pathname.slice(prefix.length)||'/'
+  return new Request(url,{method:request.method,headers:request.headers,body:['GET','HEAD'].includes(request.method)?undefined:request.body,duplex:['GET','HEAD'].includes(request.method)?undefined:'half'})
 }
 
 async function sendWebResponse(res,response){
@@ -17,11 +25,21 @@ async function sendWebResponse(res,response){
 
 export function createNodeDiscordServer({env=process.env,askRuntimeAI=null,label='Node HTTP'}={}){
   const handle=createNodeHttpHandler({askRuntimeAI,label})
+  const handleNeoBots=createNeoBotsDeploymentControlHandler(env)
   return http.createServer(async(req,res)=>{
     try{
       const chunks=[]
       for await(const chunk of req)chunks.push(chunk)
       const request=toWebRequest(req,Buffer.concat(chunks))
+      const url=new URL(request.url)
+      if(request.method==='GET'&&url.pathname==='/neo-bots/health'){
+        await sendWebResponse(res,new Response(JSON.stringify({ok:true,service:'neo-bots-control',...neoBotsDeploymentHealth(env)}),{headers:{'content-type':'application/json; charset=utf-8','cache-control':'no-store'}}))
+        return
+      }
+      if(url.pathname==='/neo-bots/control'||url.pathname.startsWith('/neo-bots/control/')){
+        await sendWebResponse(res,await handleNeoBots(rewriteControlRequest(request)))
+        return
+      }
       const pending=[]
       const response=await handle(request,env,{waitUntil:(p)=>pending.push(Promise.resolve(p))})
       await sendWebResponse(res,response)
