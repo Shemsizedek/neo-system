@@ -1,0 +1,47 @@
+{
+  "id": "noology-gisd-canonical",
+  "version": "1.0.0",
+  "status": "ACTIVE",
+  "classification": "SOURCE_SUPPLIED_DOCTRINE",
+  "systems": ["NEO System", "GISD LMS", "GISS", "NEO Algo"],
+  "degreeModel": {
+    "totalDegrees": 144,
+    "universalEntry": "All initiates begin at Degree 1 regardless of age or prior education.",
+    "adaptiveComplexity": true,
+    "schoolBands": [
+      {"range": "1-5", "name": "True Light Elementary"},
+      {"range": "6-8", "name": "Nun Middle"},
+      {"range": "9-12", "name": "Noone High"},
+      {"range": "13-21", "name": "Nu University"},
+      {"eligibility": "9+", "name": "Nu Omni Academy / Amen Institute"},
+      {"range": "22-144", "name": "Advanced GISS / Temple Degree Portfolio"}
+    ]
+  },
+  "portfolio": {
+    "enabled": true,
+    "multiAssignmentDegrees": true,
+    "assignmentModes": ["essay", "report", "excerpt", "research paper", "journal", "blog", "vlog", "podcast", "oral presentation", "practical demonstration", "service", "field assignment", "object / artifact", "professional application"],
+    "initiationStoneRequired": true,
+    "age13AndUnder": "Home/local/supervised learning allowed with age-appropriate complexity.",
+    "age14Plus": "Mobile/location-based assignments may include travel, interviews, research, service, documentation, and content curation.",
+    "fundingModel": "Temple Pledge System and approved Nous Project / GISS endeavors."
+  },
+  "academicArts": {
+    "trivium": ["Grammar", "Logic", "Rhetoric"],
+    "quadrivium": ["Arithmetic", "Geometry", "Harmonics / Music", "Astronomy"],
+    "quintivium": ["Dialectics", "Harmonics", "Physics", "Optics", "Noology"]
+  },
+  "rekai": {
+    "threshold": "36° of Major Lesson 1",
+    "level1": {"title": "Initiate", "symbols": ["Sekhem Fork"], "practices": ["Wazufa", "Smai", "Huwa"]},
+    "level2": {"title": "Adept", "symbols": ["Shen Force", "Behdet Wing / Djeneh Wave"]},
+    "level3": {"title": "Mystic Master", "symbols": ["Sa Shield"]},
+    "advanced": {"title": "Heka / Hah-Ka Power Glyphs", "symbols": ["Ankh", "Waas", "Khu"]}
+  },
+  "sourceIntegrity": {
+    "preserveSourceTerminology": true,
+    "externalClaimsRequireVerification": true,
+    "doNotFabricateMissingSourceMaterial": true,
+    "spiritualTherapyNotMedicalCredential": true
+  }
+}
