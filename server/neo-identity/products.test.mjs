@@ -2,8 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { bootstrapProductFounder, getProductFounderBinding, assertProductFounderInvariant } from './products.mjs';
 import { authorizeBankingAction, mapExternalCesAccount } from './banking-authority.mjs';
+import { authorizeProductionAction, enrollMinerDevice } from './production-authority.mjs';
 
-const products=['neopay','neo-prime','noogle','omnitrix','neo-telegram','neogram','neo-wire','neo-counter','neo-teller','neo-device-registry','neo-exchange','neofx','neo-dex','nibiru-reserve','neo-bank','neo-ces','neo-treasury'];
+const products=['neopay','neo-prime','noogle','omnitrix','neo-telegram','neogram','neo-wire','neo-counter','neo-teller','neo-device-registry','neo-exchange','neofx','neo-dex','nibiru-reserve','neo-bank','neo-ces','neo-treasury','neo-miner','neo-generator','world-mint'];
 
 for (const productId of products) {
   test(`${productId} reserves canonical founder as account #1`, () => {
@@ -115,4 +116,41 @@ test('external CES accounts require verified mapping and never override native n
   assert.equal(mapping.subjectId,'neo:founder:000001');
   assert.equal(mapping.nativeOrdinalOverride,false);
   assert.equal(mapping.credentialsStored,false);
+});
+
+test('production bindings do not create miner generation mint custody or payout bypasses', () => {
+  const miner=getProductFounderBinding('neo-miner');
+  const generator=getProductFounderBinding('neo-generator');
+  const mint=getProductFounderBinding('world-mint');
+  assert.equal(miner.miner_control_bypass,false);
+  assert.equal(miner.pool_configuration_bypass,false);
+  assert.equal(miner.payout_routing_bypass,false);
+  assert.equal(miner.device_enrollment_bypass,false);
+  assert.equal(miner.mining_credentials_in_registry,false);
+  assert.equal(generator.generation_authority_bypass,false);
+  assert.equal(generator.contract_activation_bypass,false);
+  assert.equal(generator.payout_routing_bypass,false);
+  assert.equal(generator.treasury_transfer_bypass,false);
+  assert.equal(generator.wallet_secrets_in_registry,false);
+  assert.equal(mint.minting_authority_bypass,false);
+  assert.equal(mint.asset_issuance_bypass,false);
+  assert.equal(mint.treasury_custody_bypass,false);
+  assert.equal(mint.payout_routing_bypass,false);
+  assert.equal(mint.signing_secrets_in_registry,false);
+});
+
+test('founder ownership alone cannot control miners or mint assets', () => {
+  const minerDenied=authorizeProductionAction('neo-miner','miner.control',{subjectId:'neo:founder:000001',authenticated:true});
+  assert.equal(minerDenied.allowed,false);
+  const minerAllowed=authorizeProductionAction('neo-miner','miner.control',{subjectId:'neo:founder:000001',authenticated:true,minerControlAuthorized:true,stepUpVerified:true});
+  assert.equal(minerAllowed.allowed,true);
+  const mintDenied=authorizeProductionAction('world-mint','mint.asset.issue',{subjectId:'neo:founder:000001',authenticated:true});
+  assert.equal(mintDenied.allowed,false);
+});
+
+test('miner device enrollment requires verified attestation and stores no private credentials', () => {
+  assert.throws(()=>enrollMinerDevice({deviceId:'miner-1',publicFingerprint:'sha256:test',ownerSubject:'neo:founder:000001',verified:true}),/verified and attested/);
+  const enrollment=enrollMinerDevice({deviceId:'miner-1',publicFingerprint:'sha256:test',ownerSubject:'neo:founder:000001',verified:true,attested:true});
+  assert.equal(enrollment.ownerSubject,'neo:founder:000001');
+  assert.equal(enrollment.privateCredentialsStored,false);
 });
