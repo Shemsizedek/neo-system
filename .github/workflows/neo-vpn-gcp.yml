@@ -18,16 +18,43 @@ on:
 
 permissions:
   contents: read
-  id-token: write
-
-concurrency:
-  group: neo-vpn-gcp-production
-  cancel-in-progress: false
 
 jobs:
-  terraform:
+  validate:
+    if: ${{ github.event_name == 'pull_request' }}
     runs-on: ubuntu-latest
-    environment: ${{ github.event_name == 'workflow_dispatch' && inputs.action == 'apply' && 'neo-vpn-production' || 'neo-vpn-plan' }}
+    defaults:
+      run:
+        working-directory: services/neo-vpn/infra/gcp
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: '1.16.0'
+
+      - name: Terraform fmt
+        run: terraform fmt -check -recursive
+
+      - name: Terraform init without backend
+        run: terraform init -backend=false -input=false
+
+      - name: Terraform validate
+        run: terraform validate
+
+  deploy:
+    if: ${{ github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.action == 'apply' && 'neo-vpn-production' || 'neo-vpn-plan' }}
+    concurrency:
+      group: neo-vpn-gcp-production
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      id-token: write
     defaults:
       run:
         working-directory: services/neo-vpn/infra/gcp
@@ -81,7 +108,7 @@ jobs:
         run: terraform plan -input=false -out=tfplan
 
       - name: Terraform apply
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.action == 'apply' }}
+        if: ${{ inputs.action == 'apply' }}
         env:
           TF_VAR_project_id: ${{ vars.GCP_PROJECT_ID }}
           TF_VAR_region: ${{ vars.GCP_REGION || 'us-central1' }}
@@ -90,5 +117,5 @@ jobs:
         run: terraform apply -input=false -auto-approve tfplan
 
       - name: Print Node 001 public endpoint
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.action == 'apply' }}
+        if: ${{ inputs.action == 'apply' }}
         run: terraform output -raw neo_vpn_node_001_public_ip
