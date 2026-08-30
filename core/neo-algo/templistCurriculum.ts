@@ -41,6 +41,42 @@ export const MASTER_TEMPLATE_FIELDS = [
   "Academia", "Assignment", "Symbolism", "Labor/Career Knowledge", "Obligation of Profession", "Conclusion",
 ] as const;
 
+export const REKAI_LEVELS = {
+  level1: {
+    title: "Initiate",
+    symbols: ["Sekhem Fork"],
+    practices: ["Wazufa", "Smai", "Huwa"],
+    mapping: "Cho Ku Rei → Sekhem Fork / Sekhem Power",
+  },
+  level2: {
+    title: "Adept",
+    symbols: ["Shen Force", "Behdet Wing / Djeneh Wave"],
+    mapping: ["Sei He Ki → Shen Force", "Hon Sha Ze Sho Nen → Behdet Wing / Djeneh Wave"],
+  },
+  level3: {
+    title: "Mystic Master",
+    symbols: ["Sa Shield"],
+    mapping: "Dai Ko Myo → Sa Shield",
+  },
+  advanced: {
+    title: "Heka / Hah-Ka Power Glyphs",
+    symbols: ["Ankh", "Waas", "Khu"],
+    method: "Neoteric Method extensions for True Light Therapy and advanced Noological practice",
+  },
+} as const;
+
+export const GISD_PORTFOLIO_RULES = {
+  universalEntry: "Every initiate begins at Temple Degree 1 regardless of age or prior schooling.",
+  adaptiveComplexity: "Assignment sophistication adapts to age/readiness while preserving the same degree sequence.",
+  under14: "May complete work at home, temple school, school building, shared learning quarters, or supervised local environments.",
+  age14plus: "May complete mobile/location-based field research, travel, documentation, service, interviews, and content curation.",
+  assignmentModes: ["essay", "report", "excerpt", "research paper", "journal", "blog", "vlog", "podcast", "presentation", "service", "field work", "artifact", "professional application"],
+  multiAssignmentDegrees: true,
+  initiationStoneRequired: true,
+  portfolioPurpose: "Build a lifelong Global Village portfolio of scholastic, creative, professional, service, and doctrinal work.",
+  fundingModel: "Temple Pledge System and approved Nous Project / GISS global endeavors.",
+} as const;
+
 export function curriculumThemeForDegree(degree: number): CurriculumTheme {
   if (!Number.isInteger(degree) || degree < 1 || degree > 144) throw new RangeError("degree must be an integer from 1 to 144");
   if (degree <= 36) return "Masonic";
@@ -68,7 +104,11 @@ export const CURRICULUM_GUARDRAILS = {
   reserveNoonebuForEliteElect: true,
   exactTestsAreImmutable: true,
   historicalAndTempleMaterialMustBeDistinguished: true,
+  externalClaimsRequireVerification: true,
   etherElementsAreDoctrineNotEstablishedChemistry: true,
+  spiritualTherapyIsNotMedicalCredential: true,
+  ageAppropriateAssignmentComplexity: true,
+  preserveSourceSuppliedTerminology: true,
   neology: "Create new words only through the law, grammar, etymology, and dialectics of the particular language.",
   quintiviumAttribution: "Dr. Lawiy Zodok Shamu-El",
 } as const;
