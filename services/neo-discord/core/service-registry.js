@@ -5,6 +5,7 @@ const SERVICES=[
   ['neo-counter','NEO Counter','apps/neo-counter','/neo-counter/',null,'public'],
   ['neo-exchange','NEO Exchange','apps/neo-exchange','/neo-exchange/',null,'public'],
   ['neo-guardian','NEO Guardian','apps/neo-guardian','/guardian/',null,'public'],
+  ['neo-pads','NEO Pads','apps/neo-pads',null,null,'public'],
   ['neo-prime','NEO Prime','apps/neo-prime','/neo-prime/','neo','public'],
   ['neo-relations','NEO Relations','apps/neo-relations','/neo-relations/','relations','public'],
   ['neo-telegram','Neogram / NEO Telegram','apps/neo-telegram','/neogram/',null,'public'],
