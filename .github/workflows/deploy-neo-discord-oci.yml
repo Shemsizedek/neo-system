@@ -12,6 +12,7 @@ jobs:
     env:
       OCI_NEO_HOST: ${{ secrets.OCI_NEO_HOST }}
       OCI_NEO_USER: ${{ secrets.OCI_NEO_USER }}
+      OCI_NEO_SSH_PRIVATE_KEY: ${{ secrets.OCI_NEO_SSH_PRIVATE_KEY }}
       NEO_DISCORD_PUBLIC_BASE_URL: ${{ secrets.NEO_DISCORD_PUBLIC_BASE_URL }}
     steps:
       - uses: actions/checkout@v4
@@ -20,17 +21,16 @@ jobs:
         run: |
           set -euo pipefail
           missing=0
-          for name in OCI_NEO_HOST OCI_NEO_USER NEO_DISCORD_PUBLIC_BASE_URL; do
+          for name in OCI_NEO_HOST OCI_NEO_USER OCI_NEO_SSH_PRIVATE_KEY NEO_DISCORD_PUBLIC_BASE_URL; do
             if [ -z "${!name:-}" ]; then echo "Missing required secret: $name" >&2; missing=1; fi
           done
-          if [ -z "${{ secrets.OCI_NEO_SSH_PRIVATE_KEY }}" ]; then echo 'Missing required secret: OCI_NEO_SSH_PRIVATE_KEY' >&2; missing=1; fi
           test "$missing" -eq 0
       - name: Configure SSH
         shell: bash
         run: |
           set -euo pipefail
           install -d -m 700 ~/.ssh
-          printf '%s\n' "${{ secrets.OCI_NEO_SSH_PRIVATE_KEY }}" > ~/.ssh/neo_oci
+          printf '%s\n' "$OCI_NEO_SSH_PRIVATE_KEY" > ~/.ssh/neo_oci
           chmod 600 ~/.ssh/neo_oci
           ssh-keyscan -H "$OCI_NEO_HOST" >> ~/.ssh/known_hosts
       - name: Deploy reviewed main commit on OCI host
