@@ -23,6 +23,16 @@ async function sendWebResponse(res,response){
   res.end(Buffer.from(await response.arrayBuffer()))
 }
 
+async function proxyStewardship(request,env){
+  const source=new URL(request.url)
+  let path=source.pathname
+  if(path==='/wordpress-stewardship/health') path='/health'
+  const target=new URL(`${path}${source.search}`,env.NEO_STEWARDSHIP_INTERNAL_URL||'http://127.0.0.1:8791')
+  const headers=new Headers(request.headers)
+  headers.set('host',target.host)
+  return fetch(target,{method:request.method,headers,body:['GET','HEAD'].includes(request.method)?undefined:request.body,duplex:['GET','HEAD'].includes(request.method)?undefined:'half'})
+}
+
 export function createNodeDiscordServer({env=process.env,askRuntimeAI=null,label='Node HTTP'}={}){
   const handle=createNodeHttpHandler({askRuntimeAI,label})
   const handleNeoBots=createNeoBotsDeploymentControlHandler(env)
@@ -38,6 +48,10 @@ export function createNodeDiscordServer({env=process.env,askRuntimeAI=null,label
       }
       if(url.pathname==='/neo-bots/control'||url.pathname.startsWith('/neo-bots/control/')){
         await sendWebResponse(res,await handleNeoBots(rewriteControlRequest(request)))
+        return
+      }
+      if(url.pathname==='/wordpress-stewardship/health'||url.pathname==='/api/v1/wordpress/stewardship/events'){
+        await sendWebResponse(res,await proxyStewardship(request,env))
         return
       }
       const pending=[]
