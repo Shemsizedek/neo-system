@@ -23,6 +23,10 @@
     "neo-explorer":{"account_ordinal":1,"role":"founder_owner","reserved":true,"verified_enrollment_required":true,"authentication_bypass":false,"blockchain_data_override":false,"verification_result_override":false,"source_provenance_bypass":false},
     "neoscan":{"account_ordinal":1,"role":"founder_owner","reserved":true,"verified_enrollment_required":true,"authentication_bypass":false,"index_mutation_bypass":false,"asset_data_override":false,"source_provenance_bypass":false},
     "neo-ledger":{"account_ordinal":1,"role":"founder_owner","reserved":true,"verified_enrollment_required":true,"authentication_bypass":false,"ledger_mutation_bypass":false,"accounting_override_bypass":false,"audit_history_bypass":false},
-    "neo-statements":{"account_ordinal":1,"role":"founder_owner","reserved":true,"verified_enrollment_required":true,"authentication_bypass":false,"statement_publication_bypass":false,"accounting_certification_bypass":false,"source_provenance_bypass":false}
+    "neo-statements":{"account_ordinal":1,"role":"founder_owner","reserved":true,"verified_enrollment_required":true,"authentication_bypass":false,"statement_publication_bypass":false,"accounting_certification_bypass":false,"source_provenance_bypass":false},
+    "neo-router":{"account_ordinal":1,"role":"founder_owner","reserved":true,"verified_enrollment_required":true,"authentication_bypass":false,"autonomous_execution_bypass":false,"connector_authority_bypass":false,"external_tool_impersonation":false,"secrets_in_registry":false},
+    "neo-algo":{"account_ordinal":1,"role":"founder_owner","reserved":true,"verified_enrollment_required":true,"authentication_bypass":false,"autonomous_execution_bypass":false,"trade_execution_bypass":false,"financial_authority_bypass":false,"secrets_in_registry":false},
+    "neosync":{"account_ordinal":1,"role":"founder_owner","reserved":true,"verified_enrollment_required":true,"authentication_bypass":false,"autonomous_execution_bypass":false,"founder_impersonation":false,"external_tool_authority_bypass":false,"secrets_in_registry":false},
+    "neo-agent-runtime":{"account_ordinal":1,"role":"founder_owner","reserved":true,"verified_enrollment_required":true,"authentication_bypass":false,"agent_impersonation_bypass":false,"delegation_scope_bypass":false,"credential_access_bypass":false,"secret_access_bypass":false}
   }
 }
