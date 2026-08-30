@@ -51,10 +51,6 @@ jobs:
             echo "Missing host-side secret file: $envfile" >&2
             exit 1
           fi
-          if ! grep -q '^NEO_GATEWAY_EVENT_TOKEN=' "$envfile"; then
-            echo "Missing NEO_GATEWAY_EVENT_TOKEN in $envfile" >&2
-            exit 1
-          fi
           if [ ! -d "$repo/.git" ]; then
             sudo mkdir -p "$repo"
             sudo chown "$(id -u):$(id -g)" "$repo"
@@ -95,4 +91,4 @@ jobs:
           echo "$stewardship"
           node -e 'const x=JSON.parse(process.argv[1]); if(x.ok!==true || x.service!=="neo-discord") process.exit(1)' "$discord"
           node -e 'const x=JSON.parse(process.argv[1]); if(x.ok!==true || x.service!=="neo-bots-control" || x.liveCesExecutionEnabled!==false) process.exit(1)' "$bots"
-          node -e 'const x=JSON.parse(process.argv[1]); if(x.service!=="neo-wordpress-stewardship-gateway" || x.status!=="ok" || x.authenticatedEvents!==true) process.exit(1)' "$stewardship"
+          node -e 'const x=JSON.parse(process.argv[1]); if(x.service!=="neo-wordpress-stewardship-gateway" || x.status!=="ok" || x.authenticatedEvents!==true || !x.authModes.includes("github-actions-oidc")) process.exit(1)' "$stewardship"
