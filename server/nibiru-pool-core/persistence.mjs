@@ -35,6 +35,15 @@ export class NibiruPoolStore{
     if(!candidate?.submissionId) throw new Error('BLOCK_CANDIDATE_REQUIRED')
     return this.store.put('nibiru_block_candidate',candidate.submissionId,candidate,{action:'NIBIRU_BLOCK_CANDIDATE'})
   }
+  listBlockCandidates({pendingOnly=false}={}){
+    const rows=this.store.list('nibiru_block_candidate')
+    if(!pendingOnly)return rows
+    return rows.filter(candidate=>candidate?.state==='SUBMITTED'&&candidate?.bookableBtc!==true&&Boolean(candidate?.hash))
+  }
+  saveConfirmedProduction(production){
+    if(!production?.blockHash)throw new Error('PRODUCTION_BLOCK_HASH_REQUIRED')
+    return this.store.idempotentPut({scope:'nibiru-production',key:production.blockHash,kind:'nibiru_production',id:production.blockHash,value:production,action:'NIBIRU_BTC_PRODUCTION_CONFIRMED'})
+  }
   audit(limit){return this.store.audit(limit)}
   close(){this.store.close()}
 }
