@@ -25,20 +25,20 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-      - name: Validate required secrets
-        shell: bash
+
+      - name: Discord activation preflight
         env:
+          DISCORD_REGISTRATION_SCOPE: ${{ inputs.scope }}
           DISCORD_APPLICATION_ID: ${{ secrets.DISCORD_APPLICATION_ID }}
           DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
           DISCORD_GUILD_ID: ${{ secrets.DISCORD_GUILD_ID }}
-          SCOPE: ${{ inputs.scope }}
-        run: |
-          set -euo pipefail
-          test -n "$DISCORD_APPLICATION_ID" || { echo 'DISCORD_APPLICATION_ID missing'; exit 1; }
-          test -n "$DISCORD_BOT_TOKEN" || { echo 'DISCORD_BOT_TOKEN missing'; exit 1; }
-          if [[ "$SCOPE" == "guild" ]]; then
-            test -n "$DISCORD_GUILD_ID" || { echo 'DISCORD_GUILD_ID missing for guild registration'; exit 1; }
-          fi
+          DISCORD_PUBLIC_KEY: ${{ vars.DISCORD_PUBLIC_KEY }}
+          DISCORD_INTERACTIONS_ENDPOINT_URL: ${{ vars.DISCORD_INTERACTIONS_ENDPOINT_URL }}
+          NEO_VPN_DISCORD_VIEWER_ROLE_IDS: ${{ vars.NEO_VPN_DISCORD_VIEWER_ROLE_IDS }}
+          NEO_VPN_DISCORD_OPERATOR_ROLE_IDS: ${{ vars.NEO_VPN_DISCORD_OPERATOR_ROLE_IDS }}
+          NEO_VPN_DISCORD_ADMIN_ROLE_IDS: ${{ vars.NEO_VPN_DISCORD_ADMIN_ROLE_IDS }}
+        run: node services/neo-vpn/discord/activation-preflight.mjs
+
       - name: Register commands
         env:
           DISCORD_APPLICATION_ID: ${{ secrets.DISCORD_APPLICATION_ID }}
