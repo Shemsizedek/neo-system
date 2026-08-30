@@ -41,7 +41,7 @@ export function createWorldMintDaemon({
       bits:current.template.bits,
       version:current.template.version,
       difficulty:runtime.currentDifficulty(),
-      extranonce1:current.extranonce1,
+      extranonce1Size:current.extranonce1Size,
       extranonce2Size:current.extranonce2Size,
       issuedAt:current.createdAt,
       stale:false
@@ -65,12 +65,13 @@ export function createWorldMintDaemon({
     return persistCurrentJob()
   }
 
-  async function shareVerifier({job,extranonce2,ntime,nonce,raw}){
+  async function shareVerifier({job,extranonce1,extranonce2,ntime,nonce,raw}){
     const current=runtime.currentJob()
     if(!current||job.jobId!==current.runtimeJobId)throw new Error('STALE_JOB')
-    const solution=runtime.verifyWorkerSolution({extranonce2,ntime,nonce})
+    const solution=runtime.verifyWorkerSolution({extranonce1,extranonce2,ntime,nonce})
     return {
       ...raw,
+      extranonce1,
       verified:true,
       accepted:solution.submission.accepted,
       blockCandidate:solution.submission.blockCandidate,
@@ -84,7 +85,7 @@ export function createWorldMintDaemon({
   async function blockCandidateHandler({submission}){
     const current=runtime.currentJob()
     if(!current||submission.jobId!==current.runtimeJobId)throw new Error('STALE_JOB')
-    const solution=runtime.verifyWorkerSolution({extranonce2:submission.extranonce2,ntime:submission.ntime,nonce:submission.nonce})
+    const solution=runtime.verifyWorkerSolution({extranonce1:submission.extranonce1,extranonce2:submission.extranonce2,ntime:submission.ntime,nonce:submission.nonce})
     if(!solution.submission.blockCandidate)throw new Error('NETWORK_TARGET_NOT_MET')
     const result=await runtime.submitIfBlockCandidate(solution)
     const candidate={...result,submissionId:submission.submissionId,jobId:submission.jobId,hash:solution.submission.hash,height:current.template.height,coinbaseValueSats:current.template.coinbaseValueSats,state:result.accepted?'SUBMITTED':'REJECTED',updatedAt:now(),bookableBtc:false}
@@ -138,7 +139,7 @@ export function createWorldMintDaemon({
           await refreshTemplate()
           currentTip=tip
           gateway?.broadcastDifficulty?.(runtime.difficultyUpdate())
-          gateway?.broadcastNotify?.(runtime.notifyMessage())
+          gateway?.broadcastNotify?.(session=>runtime.notifyMessage({extranonce1:session.extranonce1}))
         }
       }catch(error){store.store.appendAudit('nibiru_daemon',poolId,'TEMPLATE_LOOP_ERROR',{error:String(error?.message||error)})}
       await sleep(templateIntervalMs)
@@ -165,16 +166,16 @@ export function createWorldMintDaemon({
         jobResolver:async jobId=>{const job=jobs.get(jobId);return job&&!job.stale?job:null},
         shareRecorder:async share=>store.saveShare(share),
         blockCandidateHandler,
-        notifyResolver:()=>runtime.notifyMessage(),
+        notifyResolver:({extranonce1})=>runtime.notifyMessage({extranonce1}),
         difficultyResolver:()=>runtime.difficultyUpdate(),
         shareVerifier
       })
       await gateway.start()
       gateway.broadcastDifficulty?.(runtime.difficultyUpdate())
-      gateway.broadcastNotify?.(runtime.notifyMessage())
+      gateway.broadcastNotify?.(session=>runtime.notifyMessage({extranonce1:session.extranonce1}))
       void templateLoop()
       void confirmationLoop()
-      store.store.appendAudit('nibiru_daemon',poolId,'WORLD_MINT_DAEMON_STARTED',{host,port,recoveredCandidates:candidates.size,gatewayLimits:gateway.limits?.()||null})
+      store.store.appendAudit('nibiru_daemon',poolId,'WORLD_MINT_DAEMON_STARTED',{host,port,recoveredCandidates:candidates.size,gatewayLimits:gateway.limits?.()||null,wire:gateway.wire?.()||null})
       return {poolId,host,port,state:'RUNNING'}
     }catch(error){
       running=false
@@ -201,6 +202,7 @@ export function createWorldMintDaemon({
     currentJob:()=>runtime.currentJob(),
     currentDifficulty:()=>runtime.currentDifficulty(),
     gatewaySessionCount:()=>gateway?.sessionCount?.()||0,
-    gatewayLimits:()=>gateway?.limits?.()||null
+    gatewayLimits:()=>gateway?.limits?.()||null,
+    gatewayWire:()=>gateway?.wire?.()||null
   })
 }
