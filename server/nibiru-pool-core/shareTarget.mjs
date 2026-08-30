@@ -1,18 +1,14 @@
 import crypto from 'node:crypto'
+import {divideTargetByDifficulty,targetFromCompactBits} from './protocolMath.mjs'
 
-const DIFF1_TARGET=BigInt('0x00000000ffff0000000000000000000000000000000000000000000000000000')
+export const DIFF1_TARGET=BigInt('0x00000000ffff0000000000000000000000000000000000000000000000000000')
 
 export function targetFromDifficulty(difficulty){
-  const d=Number(difficulty)
-  if(!Number.isFinite(d)||d<=0) throw new Error('INVALID_DIFFICULTY')
-  return DIFF1_TARGET/BigInt(Math.max(1,Math.floor(d)))
+  return divideTargetByDifficulty(DIFF1_TARGET,difficulty)
 }
 
 export function targetFromBits(bits){
-  if(typeof bits!=='string'||!/^[0-9a-f]{8}$/i.test(bits)) throw new Error('INVALID_BITS')
-  const exponent=parseInt(bits.slice(0,2),16)
-  const coefficient=BigInt(`0x${bits.slice(2)}`)
-  return exponent<=3?coefficient>>BigInt(8*(3-exponent)):coefficient<<BigInt(8*(exponent-3))
+  return targetFromCompactBits(bits)
 }
 
 export function hashMeetsTarget(hashHex,target){
