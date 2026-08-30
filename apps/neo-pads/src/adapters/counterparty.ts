@@ -5,12 +5,23 @@ export interface CounterpartyBalance {
   asset: string;
   quantity: number;
   source: "counterparty-core" | "neo-router";
+  counterpartyHeight?: number;
+  bitcoinHeight?: number;
+  ready?: boolean;
+  ledgerState?: string;
 }
 
-function asQuantity(value: unknown): number {
-  if (typeof value === "number") return value;
-  if (typeof value === "string") return Number(value);
-  return 0;
+function asFiniteNumber(value: unknown): number | undefined {
+  const parsed = typeof value === "number" ? value : typeof value === "string" ? Number(value) : NaN;
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+function parseNormalizedQuantity(row: any): number {
+  const normalized = asFiniteNumber(row?.quantity_normalized);
+  if (normalized !== undefined) return normalized;
+  const fallback = asFiniteNumber(row?.quantity);
+  if (fallback !== undefined) return fallback;
+  throw new Error("counterparty_balance_quantity_missing");
 }
 
 export async function getHomesharesBalance(address: string): Promise<CounterpartyBalance> {
@@ -36,14 +47,33 @@ export async function getHomesharesBalance(address: string): Promise<Counterpart
   const body = await response.json() as any;
   const rows = Array.isArray(body?.result) ? body.result : Array.isArray(body) ? body : [];
   const row = rows.find((item: any) => item?.asset === HOMESHARES);
-  const quantity = router
-    ? asQuantity(body?.balance ?? body?.quantity ?? row?.quantity)
-    : asQuantity(row?.quantity ?? row?.quantity_normalized ?? row?.balance);
+
+  let quantity: number;
+  if (router) {
+    const parsed = asFiniteNumber(body?.balance ?? body?.quantity ?? row?.quantity_normalized ?? row?.quantity);
+    if (parsed === undefined) throw new Error("counterparty_balance_quantity_missing");
+    quantity = parsed;
+  } else {
+    if (!Array.isArray(body?.result)) throw new Error("counterparty_core_contract_invalid");
+    quantity = row ? parseNormalizedQuantity(row) : 0;
+  }
+
+  const counterpartyHeight = asFiniteNumber(response.headers.get("x-counterparty-height"));
+  const bitcoinHeight = asFiniteNumber(response.headers.get("x-bitcoin-height"));
+  const readyHeader = response.headers.get("x-counterparty-ready");
+  const ready = readyHeader == null ? undefined : readyHeader.toLowerCase() === "true";
+  const ledgerState = response.headers.get("x-ledger-state") ?? undefined;
+
+  if (!router && ready === false) throw new Error("counterparty_core_not_ready");
 
   return {
     address,
     asset: HOMESHARES,
     quantity,
-    source: router ? "neo-router" : "counterparty-core"
+    source: router ? "neo-router" : "counterparty-core",
+    counterpartyHeight,
+    bitcoinHeight,
+    ready,
+    ledgerState
   };
 }
