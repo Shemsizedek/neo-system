@@ -1,0 +1,12 @@
+{
+  "name": "neo-vpn-discord-gateway",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node gateway-bot.mjs",
+    "check": "node --check gateway-bot.mjs"
+  },
+  "dependencies": {
+    "discord.js": "14.27.0"
+  }
+}
