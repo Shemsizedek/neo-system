@@ -1,5 +1,5 @@
 import { isDiscordOperator, discordActor } from './authorization.js';
-import { editDiscordInteraction } from './interaction.js';
+import { editDiscordInteraction } from './neo-command.js';
 
 function option(interaction,name){
   return interaction?.data?.options?.find((item)=>item.name===name)?.value;
