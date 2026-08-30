@@ -1,6 +1,10 @@
 import { randomUUID } from 'node:crypto';
+import { createSqliteStore } from './persistent-store.mjs';
 
 export function createMemoryStore(){
+  const configuredPath=String(process.env.NEO_DASH_DB_PATH||'').trim();
+  if(configuredPath) return createSqliteStore(configuredPath);
+
   const providers=new Map();
   const quotes=new Map();
   const jobs=new Map();
