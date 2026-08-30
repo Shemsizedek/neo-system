@@ -2,6 +2,7 @@ import crypto from 'node:crypto'
 import {templateAdapter} from './bitcoinTemplate.mjs'
 import {buildCoinbase,merkleBranchForCoinbase,applyMerkleBranch,serializeHeader,serializeBlock,dsha256} from './blockPrimitives.mjs'
 import {createDifficultyState,difficultyMessage,targetFromDifficulty,recordAcceptedShare} from './difficultyController.mjs'
+import {targetFromCompactBits} from './protocolMath.mjs'
 import {submitBlockCandidate} from './blockSubmit.mjs'
 
 const now=()=>new Date().toISOString()
@@ -66,9 +67,9 @@ export function createGenesisPoolRuntime({rpc,payoutScriptHex,poolId='world-mint
     const hash=dsha256(header)
     const hashValue=BigInt(`0x${Buffer.from(hash).reverse().toString('hex')}`)
     const shareTarget=targetFromDifficulty(difficultyState.difficulty)
-    const networkTarget=job.template.target?BigInt(`0x${job.template.target}`):null
+    const networkTarget=job.template.target?BigInt(`0x${job.template.target}`):targetFromCompactBits(job.template.bits)
     const accepted=hashValue<=shareTarget
-    const blockCandidate=networkTarget?hashValue<=networkTarget:false
+    const blockCandidate=hashValue<=networkTarget
     const submission=Object.freeze({
       submissionId:`sub_${crypto.randomUUID()}`,
       jobId:job.runtimeJobId,
@@ -81,7 +82,7 @@ export function createGenesisPoolRuntime({rpc,payoutScriptHex,poolId='world-mint
       extranonce2,ntime,nonce,verifiedAt:now()
     })
     if(accepted)difficultyState=recordAcceptedShare(difficultyState)
-    return Object.freeze({submission,header,coinbase,merkleRoot,branch,shareTarget:shareTarget.toString(16),networkTarget:networkTarget?.toString(16)||null})
+    return Object.freeze({submission,header,coinbase,merkleRoot,branch,shareTarget:shareTarget.toString(16),networkTarget:networkTarget.toString(16)})
   }
 
   async function submitIfBlockCandidate(solution){
