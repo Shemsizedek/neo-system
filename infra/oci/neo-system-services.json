@@ -1,0 +1,43 @@
+{
+  "version": "1.0.0",
+  "deploymentTarget": "oci-always-free",
+  "gateway": "neo-platform-api",
+  "policy": {
+    "publicDefault": "read-only",
+    "transactionalExecution": "disabled-until-authenticated-runtime-binding",
+    "secretsInRepository": false,
+    "signingInPublicRuntime": false
+  },
+  "services": [
+    {"id":"neo-prime","surface":"runtime","mode":"read-only","source":"server/neo-prime"},
+    {"id":"neo-router","surface":"orchestration","mode":"authenticated-only","source":"server/neo-router"},
+    {"id":"neo-platform-api","surface":"gateway","mode":"public-read-only","source":"server/neo-platform-api"},
+    {"id":"neopay","surface":"payments-wallet","mode":"read-only-plus-user-signing-boundary","source":"src/neopay"},
+    {"id":"neo-counter","surface":"checkout","mode":"read-only-settlement-observer","source":"server/neo-counter-backend"},
+    {"id":"neo-teller","surface":"atm-pos","mode":"authenticated-only","source":"server/neo-teller-backend"},
+    {"id":"neo-exchange","surface":"markets","mode":"read-only","source":"apps/neo-exchange"},
+    {"id":"neoscan","surface":"explorer","mode":"public-read-only","source":"apps/neoscan"},
+    {"id":"noogle","surface":"search","mode":"public-read-only","source":"apps/noogle"},
+    {"id":"noogle-finance","surface":"market-search","mode":"public-read-only","source":"apps/noogle/web/finance.html"},
+    {"id":"neo-relations","surface":"crm","mode":"authenticated-only","source":"apps/neo-relations"},
+    {"id":"gisd-neo-cipher","surface":"learning","mode":"public-and-role-gated","source":"apps/gisd"},
+    {"id":"neo-tokenworks","surface":"token-services","mode":"authenticated-only","source":"server/neo-tokenworks"},
+    {"id":"nibiru-reserve","surface":"reserve-and-reconciliation","mode":"authenticated-only","source":"server/nibiru-reserve"},
+    {"id":"neo-miner","surface":"mining-telemetry","mode":"authenticated-only","source":"server/miner-production"},
+    {"id":"neo-generator","surface":"miner-products","mode":"read-only","source":"server/miner-generator"},
+    {"id":"neo-enterprise","surface":"enterprise","mode":"authenticated-only","source":"server/neo-enterprise"},
+    {"id":"neo-evidence","surface":"evidence-vault","mode":"authenticated-only","source":"server/neo-evidence-vault"},
+    {"id":"neo-bots","surface":"automation","mode":"authenticated-operator-only","source":"server/neo-bots"},
+    {"id":"neo-discord","surface":"control-plane-bridge","mode":"authenticated-operator-only","source":"server/neo-discord"},
+    {"id":"neo-telegram","surface":"messaging","mode":"authenticated-only","source":"apps/neo-telegram"},
+    {"id":"neo-tv","surface":"media","mode":"public-read-only","source":"apps/neo-tv"},
+    {"id":"neo-guardian","surface":"security","mode":"authenticated-operator-only","source":"apps/neo-guardian"},
+    {"id":"neo-vpn","surface":"network-security","mode":"infrastructure-only","source":"infra"},
+    {"id":"neo-pads","surface":"marketplace","mode":"public-read-only-plus-gated-actions","source":"apps"},
+    {"id":"neo-gas","surface":"intelligence-feed","mode":"public-read-only","source":"public"},
+    {"id":"neo-hub","surface":"portal","mode":"public-read-only","source":"public/neo-hub"},
+    {"id":"neo-lingo","surface":"language","mode":"public-read-only","source":"public/neo-lingo"},
+    {"id":"neo-algo","surface":"reasoning","mode":"authenticated-only","source":"core/neo-algo"},
+    {"id":"neo-corpus","surface":"records","mode":"authenticated-only","source":"public/neo-corpus"}
+  ]
+}
