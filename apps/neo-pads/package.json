@@ -10,7 +10,8 @@
     "db:migrate": "tsx src/db/migrate.ts",
     "test:postgres": "tsx src/db/integration-test.ts",
     "test:payouts": "tsx src/db/payout-integration-test.ts",
-    "payout:run": "tsx src/payout-worker.ts"
+    "payout:run": "tsx src/payout-worker.ts",
+    "smoke": "tsx src/smoke-test.ts"
   },
   "dependencies": {
     "cors": "^2.8.5",
