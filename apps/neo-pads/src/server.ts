@@ -1,6 +1,8 @@
+import cors from "cors";
 import express from "express";
 
 const app = express();
+app.use(cors({ origin: process.env.NEO_PADS_WEB_ORIGIN?.split(",").map((v) => v.trim()) || true }));
 app.use(express.json());
 
 const PORT = Number(process.env.PORT ?? 8788);
@@ -111,7 +113,7 @@ app.post("/neoworks/host/authorize", async (req, res) => {
       balance,
       policy: "MVP_PROVISIONAL_MINIMUM_1"
     });
-  } catch (error) {
+  } catch {
     return res.status(502).json({ authorized: false, reason: "balance_lookup_failed" });
   }
 });
