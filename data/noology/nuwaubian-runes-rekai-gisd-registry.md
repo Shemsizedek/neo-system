@@ -33,6 +33,9 @@ Current canonical sequence/meanings captured from the working doctrine:
 - Hayuh — life force and wholeness; no reverse; circle rune with line through middle symbolic of life
 - Blank Card — unknown, destiny, beginning and end; no reverse
 
+### Rune Product Layer
+The working product system includes individual Nuwaubian Rune tarot/divination cards, a Nuwaubian Rune talk board with a wide central circle for placement of physical runes, Egyptian-themed perimeter symbols, and a dedicated card box. The visual identity is black and metallic gold with an Egyptian/Noological presentation.
+
 ## 2. Noological Rekai System
 ### Level I — Foundations / Initiate
 One Noological symbol: Sekhem Fork, corresponding functionally to the Reiki power-symbol role. Training includes Wazufa (spiritual cleansing), Smai (sacred breath), and Huwa (divine utterance). Focus: hands-on practice, meditative presence, and introductory Nous Field Therapy.
@@ -51,7 +54,12 @@ One Noological symbol: Sekhem Fork, corresponding functionally to the Reiki powe
 
 These are Noological spiritual/complementary practices and are not substitutes for medical or mental-health care.
 
-## 3. GISD / Global Independent School System Curriculum Mapping
+## 3. True Light Therapies
+True Light Therapies is the service/practice layer associated with the Noological framework. The current marketing price point is $144 per session or per hour, depending on the service format. Service descriptions must distinguish spiritual, educational, meditative and complementary-wellness practices from licensed medical or mental-health treatment and must not represent unverified therapeutic claims as established clinical fact.
+
+The True Light product/marketing layer may incorporate Noological Rekai, Nous Field Therapy concepts, meditative presence, symbolic rune work, crystal-grid practices and other doctrine-authorized complementary practices according to practitioner scope and local requirements.
+
+## 4. GISD / Global Independent School System Curriculum Mapping
 GISD uses a DIY/adopt-and-adapt curriculum architecture tied to the 144 Temple Degrees. Every learner begins at Degree 1 regardless of age; rigor and assignment complexity scale by developmental level.
 
 Education bands:
@@ -67,10 +75,24 @@ Portfolio evidence may include essays, reports, excerpts, research papers, blogs
 
 The GISD model is designed for adoption and local adaptation by participating temple districts, schools and jurisdictions while maintaining a common Noological core.
 
-## 4. NEO Algo Knowledge Tags
-Tags: noology, nous-field, nuwaubian-runes, rekai, true-light-therapy, gisd, giss, temple-degrees, 144-degrees, neoteric-method, doctrine, curriculum, portfolio-learning, divination, heka
+### Applied Learning Track
+GISD may teach the Nuwaubian Runes, Noological Rekai and True Light framework as doctrine/history, symbolic literacy, comparative spiritual practice, creative arts, portfolio work and practitioner-development material. Assessments can include rune research, symbolism journals, card/board design, oral presentations, demonstrations, reflective writing and supervised service-design projects. Health-related instruction must preserve the complementary-practice distinction stated above.
 
-NEO Algo should treat this registry as doctrine/project data, distinguish spiritual/doctrinal assertions from independently verified scientific claims, and preserve the user's canonical terminology when generating curriculum or doctrine materials.
+## 5. NEO Algo Knowledge Tags
+Tags: noology, nous-field, nuwaubian-runes, rekai, true-light-therapy, gisd, giss, temple-degrees, 144-degrees, neoteric-method, doctrine, curriculum, portfolio-learning, divination, heka, rune-talk-board, spiritual-wellness, complementary-practice
 
-## 5. Related economic source documents
-The uploaded *World Currency* white paper describes NOMNI as a Bitcoin/Counterparty-based world-currency concept and identifies a World Treasury architecture. The uploaded *What Is NOMNI?* document expands the proposed mutual-credit/digital-fiat model, educational explanations, transfer model, and stated benefits. These sources should be catalogued as primary NEO/NOMNI doctrine/economic-source materials rather than treated as independent verification of legal or regulatory status.
+NEO Algo should treat this registry as doctrine/project data, distinguish spiritual/doctrinal assertions from independently verified scientific claims, and preserve canonical terminology when generating curriculum or doctrine materials.
+
+## 6. Related Economic Source Documents
+The uploaded *World Currency* white paper describes NOMNI as a proposed Bitcoin/Counterparty-based world-currency architecture and identifies a World Treasury model. It describes Counterparty as the financial platform used on Bitcoin and presents a World Treasury concept. fileciteturn0file0
+
+The uploaded *What Is NOMNI?* document expands the proposed mutual-credit/digital-fiat model, including claimed benefits, transfer architecture, the Global Community Exchange System and Bitcoin/Counterparty implementation concepts. fileciteturn0file1
+
+These documents are catalogued as primary NEO/NOMNI doctrine and economic-source materials. Their governmental, legal, regulatory, monetary and institutional assertions are source claims and are not automatically treated by NEO Algo as independently verified external facts.
+
+## 7. System Routing
+- NEO System: canonical doctrine/product registry and cross-service source layer.
+- GISD LMS: educational mapping, assignments, portfolio evidence and practitioner-development curriculum.
+- NEO Algo: semantic retrieval, terminology preservation, doctrine-aware generation and source/provenance distinction.
+
+Next maturity target: convert this registry into structured machine-readable records for LMS/API ingestion while retaining this Markdown document as the human-readable canonical index.
