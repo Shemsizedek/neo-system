@@ -125,12 +125,38 @@ export class PostgresRepository implements Repository {
       if (!current.rows[0]) throw new Error("booking_not_found");
       const booking = bookingFromRow(current.rows[0]);
 
+      let payload: any = {};
+      try { payload = JSON.parse(input.rawPayload.toString("utf8")); } catch {}
+
       if (input.status === "SETTLED") {
         booking.state = "CONFIRMED";
         booking.entitlement = "ACTIVE";
+
+        const settlementAsset = String(payload?.settlementAsset ?? payload?.asset ?? "");
+        const networkAmount = Number(payload?.networkAmount ?? payload?.amount ?? 0);
+        const networkFee = Number(payload?.networkFee ?? 0);
+        if (["BTC", "XCP", "NOMNI"].includes(settlementAsset) && Number.isFinite(networkAmount) && networkAmount > 0) {
+          await client.query(
+            `INSERT INTO neo_pads_payments(id,booking_id,checkout_id,commercial_amount_world,settlement_asset,network_amount,network_fee,status,txid,settled_at)
+             VALUES($1,$2,$3,$4,$5,$6,$7,'SETTLED',$8,now())
+             ON CONFLICT(id) DO UPDATE SET status='SETTLED', settlement_asset=EXCLUDED.settlement_asset,
+               network_amount=EXCLUDED.network_amount, network_fee=EXCLUDED.network_fee, txid=EXCLUDED.txid, settled_at=now()`,
+            [
+              String(payload?.paymentId ?? payload?.checkoutId ?? `PAY-${input.bookingId}`),
+              input.bookingId,
+              payload?.checkoutId ?? null,
+              booking.amountWorld,
+              settlementAsset,
+              networkAmount,
+              Number.isFinite(networkFee) ? networkFee : 0,
+              payload?.txid ?? null
+            ]
+          );
+        }
       } else if (input.status === "REFUNDED") {
         booking.state = "REFUNDED";
         booking.entitlement = "REVOKED";
+        await client.query("UPDATE neo_pads_payments SET status='REFUNDED' WHERE booking_id=$1", [input.bookingId]);
       } else if (input.status === "DISPUTED") {
         booking.state = "DISPUTED";
         booking.entitlement = "REVOKED";

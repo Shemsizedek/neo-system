@@ -31,6 +31,7 @@ jobs:
 
     env:
       DATABASE_URL: postgres://neo_pads:neo_pads@127.0.0.1:5432/neo_pads
+      NEO_PADS_PAYOUT_EXECUTION_ENABLED: "false"
 
     steps:
       - uses: actions/checkout@v4
@@ -43,3 +44,15 @@ jobs:
       - run: npm run typecheck
       - run: npm run db:migrate
       - run: npm run test:postgres
+      - run: npm run test:payouts
+      - name: Start NEO Pads API
+        run: npm start > /tmp/neo-pads.log 2>&1 & echo $! > /tmp/neo-pads.pid
+      - name: Wait for readiness
+        run: |
+          for i in {1..20}; do
+            if curl -fsS http://127.0.0.1:8788/ready >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/neo-pads.log
+          exit 1
+      - run: npm run smoke
