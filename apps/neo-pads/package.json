@@ -14,6 +14,7 @@
     "payout:run": "tsx src/payout-worker.ts",
     "payout:reconcile": "tsx src/payout-reconciler.ts",
     "payout:ops": "tsx src/payout-ops.ts",
+    "production:readiness": "tsx src/production-readiness.ts",
     "smoke": "tsx src/smoke-test.ts"
   },
   "dependencies": {

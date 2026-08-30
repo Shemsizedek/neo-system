@@ -31,6 +31,16 @@ jobs:
 
     env:
       DATABASE_URL: postgres://neo_pads:neo_pads@127.0.0.1:5432/neo_pads
+      NEO_PADS_WEB_ORIGIN: https://example.github.io
+      NEOPASS_API_URL: https://neopass.example.test
+      NEO_COUNTER_API_URL: https://counter.example.test
+      NEO_COUNTER_WEBHOOK_SECRET: test-webhook-secret
+      WALLET_SIGNATURE_VERIFY_URL: https://wallet.example.test/verify
+      NEO_PADS_OPS_TOKEN: test-ops-token
+      NEO_COUNTER_PAYOUT_STATUS_URL: https://counter.example.test/payouts/{payoutId}
+      NEO_COUNTER_PAYOUT_API_KEY: test-payout-api-key
+      NEO_PADS_REQUIRE_CHAIN_CONFIRMATION: "true"
+      NEO_PADS_CHAIN_CONFIRMATION_URL: https://chain.example.test/confirm
       NEO_PADS_PAYOUT_EXECUTION_ENABLED: "false"
 
     steps:
@@ -46,6 +56,7 @@ jobs:
       - run: npm run test:postgres
       - run: npm run test:payouts
       - run: npm run test:payout-reconciliation
+      - run: npm run production:readiness
       - name: Start NEO Pads API
         run: npm start > /tmp/neo-pads.log 2>&1 & echo $! > /tmp/neo-pads.pid
       - name: Wait for readiness
