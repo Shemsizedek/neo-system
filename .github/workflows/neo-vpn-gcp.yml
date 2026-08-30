@@ -1,0 +1,94 @@
+name: NEO VPN GCP
+
+on:
+  pull_request:
+    paths:
+      - 'services/neo-vpn/infra/gcp/**'
+      - '.github/workflows/neo-vpn-gcp.yml'
+  workflow_dispatch:
+    inputs:
+      action:
+        description: Terraform action
+        required: true
+        type: choice
+        options:
+          - plan
+          - apply
+        default: plan
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: neo-vpn-gcp-production
+  cancel-in-progress: false
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+    environment: ${{ github.event_name == 'workflow_dispatch' && inputs.action == 'apply' && 'neo-vpn-production' || 'neo-vpn-plan' }}
+    defaults:
+      run:
+        working-directory: services/neo-vpn/infra/gcp
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Validate required GitHub variables
+        shell: bash
+        env:
+          GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+          GCP_WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER }}
+          GCP_SERVICE_ACCOUNT: ${{ vars.GCP_SERVICE_ACCOUNT }}
+        run: |
+          set -euo pipefail
+          for name in GCP_PROJECT_ID GCP_WIF_PROVIDER GCP_SERVICE_ACCOUNT; do
+            if [[ -z "${!name:-}" ]]; then
+              echo "::error::$name repository/environment variable is not configured"
+              exit 1
+            fi
+          done
+
+      - name: Authenticate to Google Cloud with OIDC
+        uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ vars.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: '1.16.0'
+
+      - name: Terraform fmt
+        run: terraform fmt -check -recursive
+
+      - name: Terraform init
+        run: terraform init -input=false
+
+      - name: Terraform validate
+        run: terraform validate
+
+      - name: Terraform plan
+        env:
+          TF_VAR_project_id: ${{ vars.GCP_PROJECT_ID }}
+          TF_VAR_region: ${{ vars.GCP_REGION || 'us-central1' }}
+          TF_VAR_zone: ${{ vars.GCP_ZONE || 'us-central1-a' }}
+          TF_VAR_network_name: ${{ vars.GCP_NETWORK_NAME || 'default' }}
+        run: terraform plan -input=false -out=tfplan
+
+      - name: Terraform apply
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.action == 'apply' }}
+        env:
+          TF_VAR_project_id: ${{ vars.GCP_PROJECT_ID }}
+          TF_VAR_region: ${{ vars.GCP_REGION || 'us-central1' }}
+          TF_VAR_zone: ${{ vars.GCP_ZONE || 'us-central1-a' }}
+          TF_VAR_network_name: ${{ vars.GCP_NETWORK_NAME || 'default' }}
+        run: terraform apply -input=false -auto-approve tfplan
+
+      - name: Print Node 001 public endpoint
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.action == 'apply' }}
+        run: terraform output -raw neo_vpn_node_001_public_ip
