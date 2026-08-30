@@ -5,13 +5,30 @@ export interface CheckoutRequest {
   settlementAsset?: "BTC" | "XCP" | "NOMNI";
 }
 
-export async function createCheckout(input: CheckoutRequest) {
+export interface CheckoutResponse {
+  checkoutId: string;
+  status?: string;
+  settlementAsset?: string;
+  [key: string]: unknown;
+}
+
+function assertCheckoutResponse(value: unknown): CheckoutResponse {
+  if (!value || typeof value !== "object") throw new Error("neo_counter_checkout_contract_invalid");
+  const checkoutId = String((value as any).checkoutId ?? (value as any).id ?? "").trim();
+  if (!checkoutId) throw new Error("neo_counter_checkout_contract_invalid");
+  return { ...(value as Record<string, unknown>), checkoutId } as CheckoutResponse;
+}
+
+export async function createCheckout(input: CheckoutRequest): Promise<CheckoutResponse> {
   const base = process.env.NEO_COUNTER_API_URL;
   if (!base) throw new Error("neo_counter_adapter_not_configured");
 
+  const headers: Record<string, string> = { "content-type": "application/json" };
+  if (process.env.NEO_COUNTER_API_KEY) headers.authorization = `Bearer ${process.env.NEO_COUNTER_API_KEY}`;
+
   const response = await fetch(new URL("/checkout", base), {
     method: "POST",
-    headers: { "content-type": "application/json" },
+    headers,
     body: JSON.stringify({
       bookingId: input.bookingId,
       commercialPrice: {
@@ -25,5 +42,5 @@ export async function createCheckout(input: CheckoutRequest) {
   });
 
   if (!response.ok) throw new Error(`neo_counter_checkout_failed:${response.status}`);
-  return response.json();
+  return assertCheckoutResponse(await response.json());
 }
