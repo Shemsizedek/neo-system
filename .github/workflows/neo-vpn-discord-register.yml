@@ -1,0 +1,47 @@
+name: NEO VPN Discord Command Registration
+
+on:
+  workflow_dispatch:
+    inputs:
+      scope:
+        description: Register commands to a test guild or globally
+        required: true
+        type: choice
+        default: guild
+        options:
+          - guild
+          - global
+
+permissions:
+  contents: read
+
+jobs:
+  register:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: neo-vpn-discord
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Validate required secrets
+        shell: bash
+        env:
+          DISCORD_APPLICATION_ID: ${{ secrets.DISCORD_APPLICATION_ID }}
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          DISCORD_GUILD_ID: ${{ secrets.DISCORD_GUILD_ID }}
+          SCOPE: ${{ inputs.scope }}
+        run: |
+          set -euo pipefail
+          test -n "$DISCORD_APPLICATION_ID" || { echo 'DISCORD_APPLICATION_ID missing'; exit 1; }
+          test -n "$DISCORD_BOT_TOKEN" || { echo 'DISCORD_BOT_TOKEN missing'; exit 1; }
+          if [[ "$SCOPE" == "guild" ]]; then
+            test -n "$DISCORD_GUILD_ID" || { echo 'DISCORD_GUILD_ID missing for guild registration'; exit 1; }
+          fi
+      - name: Register commands
+        env:
+          DISCORD_APPLICATION_ID: ${{ secrets.DISCORD_APPLICATION_ID }}
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          DISCORD_GUILD_ID: ${{ inputs.scope == 'guild' && secrets.DISCORD_GUILD_ID || '' }}
+        run: node services/neo-vpn/discord/register-commands.mjs
