@@ -1,0 +1,38 @@
+{
+  "version": "1.0.0",
+  "event": "neo.discord.operator_read",
+  "receipt": {
+    "algorithm": "SHA-256",
+    "prefix": "neo-audit-",
+    "correlationSource": "discord-interaction-id",
+    "visibleToOperator": true,
+    "fullDigestLogged": true
+  },
+  "allowedFields": [
+    "version",
+    "event",
+    "actorId",
+    "guildId",
+    "service",
+    "action",
+    "outcome",
+    "correlationId",
+    "at",
+    "digest",
+    "receiptId",
+    "sensitiveDataIncluded",
+    "protectedPayloadIncluded"
+  ],
+  "forbidden": [
+    "bearer-tokens",
+    "api-keys",
+    "wallet-secrets",
+    "signing-material",
+    "protected-runtime-payloads",
+    "relationship-records",
+    "contact-pii"
+  ],
+  "mutation": false,
+  "approval": false,
+  "signing": false
+}

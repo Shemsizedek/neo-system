@@ -1,8 +1,9 @@
-import { isDiscordActorAllowed } from './authorization.js'
+import { isDiscordActorAllowed, discordActor } from './authorization.js'
 import { processNeoCommand, healthSnapshot } from './neo-command.js'
 import { handleRelationsCommand } from './relations.js'
 import { handleServicesCommand } from './service-registry.js'
 import { processBotsCommand } from './bots.js'
+import { createOperatorAuditReceipt, emitOperatorAuditReceipt } from './operator-audit.js'
 
 export const discordJson=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:{'content-type':'application/json; charset=utf-8','cache-control':'no-store'}})
 
@@ -12,14 +13,40 @@ export async function editDiscordInteraction(interaction,content,fetchImpl=fetch
   if(!r.ok)throw new Error(`Discord follow-up failed ${r.status}`)
 }
 
+function commandOption(interaction,name){return interaction?.data?.options?.find(x=>x.name===name)?.value}
+function operatorOutcome(content){
+  const text=String(content||'')
+  if(text.includes('NOT AUTHORIZED'))return 'denied'
+  if(text.includes('NOT CONFIGURED'))return 'not-configured'
+  if(text.includes('UNREACHABLE'))return 'unreachable'
+  const http=text.match(/Protected source: HTTP\s+(\d{3})/i)
+  if(http)return `http-${http[1]}`
+  return 'success'
+}
+
 export async function processRelationsCommand(interaction,env,{fetchImpl=fetch}={}){
   try{await editDiscordInteraction(interaction,await handleRelationsCommand(interaction,env,{fetchImpl}),fetchImpl)}
   catch(err){await editDiscordInteraction(interaction,`NEO Relations error: ${String(err?.message||err).slice(0,1500)}`,fetchImpl).catch(()=>{})}
 }
 
-export async function processServicesCommand(interaction,env,{fetchImpl=fetch}={}){
-  try{await editDiscordInteraction(interaction,await handleServicesCommand(interaction,env,{fetchImpl}),fetchImpl)}
-  catch(err){await editDiscordInteraction(interaction,`NEO Services error: ${String(err?.message||err).slice(0,1500)}`,fetchImpl).catch(()=>{})}
+export async function processServicesCommand(interaction,env,{fetchImpl=fetch,cryptoImpl=globalThis.crypto,logger=console}={}){
+  try{
+    let content=await handleServicesCommand(interaction,env,{fetchImpl})
+    if(String(commandOption(interaction,'action')||'').toLowerCase()==='operator'){
+      const actor=discordActor(interaction)
+      const receipt=await createOperatorAuditReceipt({
+        actorId:actor.id,
+        guildId:actor.guildId,
+        service:String(commandOption(interaction,'service')||'unknown'),
+        outcome:operatorOutcome(content),
+        correlationId:String(interaction?.id||'none'),
+        at:new Date().toISOString()
+      },{cryptoImpl})
+      emitOperatorAuditReceipt(receipt,{logger})
+      content=`${content}\nAudit receipt: ${receipt.receiptId}`.slice(0,1900)
+    }
+    await editDiscordInteraction(interaction,content,fetchImpl)
+  }catch(err){await editDiscordInteraction(interaction,`NEO Services error: ${String(err?.message||err).slice(0,1500)}`,fetchImpl).catch(()=>{})}
 }
 
 export function healthResponse(env,runtime,transportAdapter){
