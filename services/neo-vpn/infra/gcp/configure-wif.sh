@@ -7,10 +7,12 @@ set -euo pipefail
 POOL_ID="${POOL_ID:-github}"
 PROVIDER_ID="${PROVIDER_ID:-neo-system}"
 SERVICE_ACCOUNT_ID="${SERVICE_ACCOUNT_ID:-neo-vpn-deployer}"
+RUNTIME_SERVICE_ACCOUNT_ID="${RUNTIME_SERVICE_ACCOUNT_ID:-neo-vpn-node-001}"
 TRUSTED_REF="${TRUSTED_REF:-refs/heads/main}"
 
 PROJECT_NUMBER="$(gcloud projects describe "$GCP_PROJECT_ID" --format='value(projectNumber)')"
 SERVICE_ACCOUNT="${SERVICE_ACCOUNT_ID}@${GCP_PROJECT_ID}.iam.gserviceaccount.com"
+RUNTIME_SERVICE_ACCOUNT="${RUNTIME_SERVICE_ACCOUNT_ID}@${GCP_PROJECT_ID}.iam.gserviceaccount.com"
 ATTRIBUTE_CONDITION="assertion.repository=='${GITHUB_REPOSITORY}' && assertion.ref=='${TRUSTED_REF}'"
 
 # Required APIs for Terraform, Workload Identity Federation, IAM, and remote state.
@@ -28,14 +30,30 @@ if ! gcloud iam service-accounts describe "$SERVICE_ACCOUNT" --project "$GCP_PRO
     --display-name="NEO VPN GitHub Deployer"
 fi
 
-# Minimum practical project roles for this Terraform module. Replace compute.admin
-# with a custom deployment role when the final production permission set is known.
-for role in roles/compute.admin roles/iam.serviceAccountUser; do
-  gcloud projects add-iam-policy-binding "$GCP_PROJECT_ID" \
-    --member="serviceAccount:${SERVICE_ACCOUNT}" \
-    --role="$role" \
-    --condition=None >/dev/null
-done
+if ! gcloud iam service-accounts describe "$RUNTIME_SERVICE_ACCOUNT" --project "$GCP_PROJECT_ID" >/dev/null 2>&1; then
+  gcloud iam service-accounts create "$RUNTIME_SERVICE_ACCOUNT_ID" \
+    --project "$GCP_PROJECT_ID" \
+    --display-name="NEO VPN Node 001" \
+    --description="Dedicated runtime identity for NEO VPN Node 001"
+fi
+
+# Terraform needs Compute administration in the project. The service-account
+# impersonation grant is intentionally scoped to the Node 001 runtime identity only.
+gcloud projects add-iam-policy-binding "$GCP_PROJECT_ID" \
+  --member="serviceAccount:${SERVICE_ACCOUNT}" \
+  --role="roles/compute.admin" \
+  --condition=None >/dev/null
+
+gcloud iam service-accounts add-iam-policy-binding "$RUNTIME_SERVICE_ACCOUNT" \
+  --project "$GCP_PROJECT_ID" \
+  --member="serviceAccount:${SERVICE_ACCOUNT}" \
+  --role="roles/iam.serviceAccountUser" >/dev/null
+
+# Remove the older broad project-level actAs grant if it exists. Ignore absence.
+gcloud projects remove-iam-policy-binding "$GCP_PROJECT_ID" \
+  --member="serviceAccount:${SERVICE_ACCOUNT}" \
+  --role="roles/iam.serviceAccountUser" \
+  --condition=None >/dev/null 2>&1 || true
 
 if ! gcloud iam workload-identity-pools describe "$POOL_ID" \
   --project "$GCP_PROJECT_ID" --location global >/dev/null 2>&1; then
@@ -77,6 +95,8 @@ Google Cloud Workload Identity is configured.
 
 Trusted repository: ${GITHUB_REPOSITORY}
 Trusted ref: ${TRUSTED_REF}
+Deployment identity: ${SERVICE_ACCOUNT}
+Node 001 runtime identity: ${RUNTIME_SERVICE_ACCOUNT}
 
 Set these GitHub repository/environment variables:
 GCP_PROJECT_ID=${GCP_PROJECT_ID}
