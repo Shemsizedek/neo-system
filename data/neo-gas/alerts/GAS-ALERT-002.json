@@ -1,0 +1,14 @@
+{
+  "id": "GAS-ALERT-002",
+  "recordType": "alert",
+  "title": "Aerospace awareness development",
+  "status": "MONITORING",
+  "domain": "Aerospace",
+  "severity": "AMBER",
+  "confidence": "HIGH",
+  "createdAt": "2026-08-28T12:39:00-05:00",
+  "updatedAt": "2026-08-29T20:05:00-05:00",
+  "summary": "Airspace awareness, communications resilience, emergency aviation planning, and civilian aerospace continuity remain in foundation build-out.",
+  "provenance": {"sourceType": "repository", "sourceRefs": ["data/neo-gas/status.json"]},
+  "guardrailClass": "RESILIENCE"
+}
