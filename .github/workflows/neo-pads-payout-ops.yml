@@ -1,0 +1,62 @@
+name: NEO Pads Payout Operations
+
+on:
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "Read-only payout operation"
+        required: true
+        default: "reconcile"
+        type: choice
+        options:
+          - reconcile
+          - status
+          - escalate
+
+permissions:
+  contents: read
+
+jobs:
+  payout-ops:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/neo-pads
+    env:
+      DATABASE_URL: ${{ secrets.NEO_PADS_DATABASE_URL }}
+      NEO_COUNTER_PAYOUT_STATUS_URL: ${{ secrets.NEO_COUNTER_PAYOUT_STATUS_URL }}
+      NEO_COUNTER_PAYOUT_API_KEY: ${{ secrets.NEO_COUNTER_PAYOUT_API_KEY }}
+      NEO_PADS_CHAIN_CONFIRMATION_URL: ${{ secrets.NEO_PADS_CHAIN_CONFIRMATION_URL }}
+      NEO_PADS_CHAIN_CONFIRMATION_API_KEY: ${{ secrets.NEO_PADS_CHAIN_CONFIRMATION_API_KEY }}
+      NEO_PADS_REQUIRE_CHAIN_CONFIRMATION: "true"
+      NEO_PADS_PAYOUT_EXECUTION_ENABLED: "false"
+      NEO_PADS_PAYOUT_STALE_MINUTES: "120"
+      OPS_ACTION: ${{ github.event.inputs.action || 'reconcile' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/neo-pads/package.json
+      - name: Check operations configuration
+        id: config
+        shell: bash
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "NEO Pads payout operations skipped: NEO_PADS_DATABASE_URL is not configured."
+          else
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Install runtime dependencies
+        if: steps.config.outputs.configured == 'true'
+        run: npm install
+      - name: Apply database migrations
+        if: steps.config.outputs.configured == 'true'
+        run: npm run db:migrate
+      - name: Run payout operations
+        if: steps.config.outputs.configured == 'true'
+        run: npm run payout:ops -- "$OPS_ACTION"
