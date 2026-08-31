@@ -9,6 +9,7 @@
     "typecheck": "tsc --noEmit",
     "test:registry": "tsx src/registry-test.ts",
     "test:postgres": "tsx src/postgres-integration-test.ts",
+    "test:seller": "tsx src/seller-auth-test.ts",
     "db:migrate": "tsx src/db/migrate.ts"
   },
   "dependencies": {
