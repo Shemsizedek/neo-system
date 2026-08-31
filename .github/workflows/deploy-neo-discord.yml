@@ -6,6 +6,7 @@ on:
     branches: [main]
     paths:
       - 'services/neo-discord/**'
+      - 'scripts/register-discord-command.mjs'
       - '.github/workflows/deploy-neo-discord.yml'
 
 permissions:
@@ -26,28 +27,46 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          adapter="$(node -p "require('./services/neo-discord/deployment/runtime-policy.json').primaryAdapter")"
+          adapter="$(node -p "require('./services/neo-discord/deployment/runtime-policy.json').transportBridges.active")"
           echo "adapter=$adapter" >> "$GITHUB_OUTPUT"
-          echo "Active Discord transport adapter: $adapter"
+          echo "Active Discord transport bridge: $adapter"
       - name: Reject undeployable active adapter
         if: ${{ steps.runtime.outputs.adapter != 'cloudflare-worker' }}
         run: |
-          echo "The active adapter is '${{ steps.runtime.outputs.adapter }}', but this workflow currently has a deployment implementation only for cloudflare-worker."
-          echo "Configure a deployment target for the selected adapter before changing runtime-policy.json."
+          echo "The active transport bridge is '${{ steps.runtime.outputs.adapter }}', but this workflow currently deploys cloudflare-worker only."
           exit 1
       - name: Install active adapter dependencies
-        if: ${{ steps.runtime.outputs.adapter == 'cloudflare-worker' }}
         working-directory: services/neo-discord/adapters/cloudflare
         run: npm install
-      - name: Deploy active Discord HTTPS transport adapter
-        if: ${{ steps.runtime.outputs.adapter == 'cloudflare-worker' }}
+      - name: Sync NEO Bots control bindings when configured
+        working-directory: services/neo-discord/adapters/cloudflare
+        shell: bash
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          NEO_BOTS_CONTROL_URL: ${{ secrets.NEO_BOTS_CONTROL_URL }}
+          NEO_BOTS_CONTROL_TOKEN: ${{ secrets.NEO_BOTS_CONTROL_TOKEN }}
+          DISCORD_OPERATOR_USER_IDS: ${{ secrets.DISCORD_OPERATOR_USER_IDS }}
+          DISCORD_OPERATOR_ROLE_IDS: ${{ secrets.DISCORD_OPERATOR_ROLE_IDS }}
+        run: |
+          set -euo pipefail
+          put_secret() {
+            local name="$1"
+            local value="${!name:-}"
+            [ -n "$value" ] || return 0
+            printf '%s' "$value" | npx wrangler secret put "$name" --config wrangler.jsonc >/dev/null
+            echo "Synced runtime binding: $name"
+          }
+          for name in NEO_BOTS_CONTROL_URL NEO_BOTS_CONTROL_TOKEN DISCORD_OPERATOR_USER_IDS DISCORD_OPERATOR_ROLE_IDS; do
+            put_secret "$name"
+          done
+      - name: Deploy active Discord HTTPS transport bridge
         working-directory: services/neo-discord/adapters/cloudflare
         run: npm run deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       - name: Verify active Discord API health endpoint
-        if: ${{ steps.runtime.outputs.adapter == 'cloudflare-worker' }}
         shell: bash
         run: |
           set -euo pipefail
@@ -55,3 +74,16 @@ jobs:
           body="$(curl --fail --silent --show-error --retry 6 --retry-delay 5 "$url")"
           echo "$body"
           node -e 'const x=JSON.parse(process.argv[1]); if(x.ok!==true || x.service!=="neo-discord" || x.grounded_status!==true) process.exit(1)' "$body"
+      - name: Register updated Discord commands when bot credentials are configured
+        shell: bash
+        env:
+          DISCORD_APPLICATION_ID: ${{ secrets.DISCORD_APPLICATION_ID }}
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          DISCORD_GUILD_ID: ${{ secrets.DISCORD_GUILD_ID }}
+        run: |
+          set -euo pipefail
+          if [ -z "${DISCORD_APPLICATION_ID:-}" ] || [ -z "${DISCORD_BOT_TOKEN:-}" ]; then
+            echo "Discord command registration skipped: DISCORD_APPLICATION_ID or DISCORD_BOT_TOKEN is not configured."
+            exit 0
+          fi
+          node scripts/register-discord-command.mjs
