@@ -9,7 +9,9 @@ async function controlRequest(env,path,{method='GET',body,actorId,fetchImpl=fetc
   if(!env.NEO_BOTS_CONTROL_URL)throw new Error('NEO_BOTS_CONTROL_URL is not configured');
   if(!env.NEO_BOTS_CONTROL_TOKEN)throw new Error('NEO_BOTS_CONTROL_TOKEN is not configured');
   const base=new URL(env.NEO_BOTS_CONTROL_URL);
-  const target=new URL(path,base);
+  if(!base.pathname.endsWith('/'))base.pathname+='/';
+  const relative=String(path||'').replace(/^\/+/, '');
+  const target=new URL(relative,base);
   if(target.origin!==base.origin)throw new Error('NEO Bots control request must remain same-origin');
   const headers={authorization:`Bearer ${env.NEO_BOTS_CONTROL_TOKEN}`,'content-type':'application/json'};
   if(actorId)headers['x-neo-actor']=String(actorId);
@@ -49,11 +51,11 @@ export async function handleBotsCommand(interaction,env,{fetchImpl=fetch}={}){
   if(action==='evidence'){
     const announcement=String(option(interaction,'announcement')||'').trim();
     if(!announcement)return 'announcement is required for the evidence action.';
-    const data=await controlRequest(env,'/announcement-evidence',{method:'POST',actorId:actor.id,body:{text:announcement},fetchImpl});
+    const data=await controlRequest(env,'announcement-evidence',{method:'POST',actorId:actor.id,body:{text:announcement},fetchImpl});
     return formatEvidence(data?.evidence||{});
   }
   if(action==='pending'){
-    const data=await controlRequest(env,'/approvals',{actorId:actor.id,fetchImpl});
+    const data=await controlRequest(env,'approvals',{actorId:actor.id,fetchImpl});
     const approvals=Array.isArray(data?.approvals)?data.approvals:[];
     if(!approvals.length)return 'NEO Bots: no pending approvals.';
     return ['**NEO Bots Pending Approvals**',...approvals.slice(0,10).map((item)=>`${item.id} | ${item.botId} | ${item.action} | ${item.reason||'governed action'}`)].join('\n');
@@ -62,7 +64,7 @@ export async function handleBotsCommand(interaction,env,{fetchImpl=fetch}={}){
   const approvalId=String(option(interaction,'approval_id')||'').trim();
   if(!approvalId)return 'approval_id is required for approve/reject.';
   const decision=action==='approve'?'approved':'rejected';
-  const data=await controlRequest(env,`/approvals/${encodeURIComponent(approvalId)}`,{method:'POST',actorId:actor.id,body:{decision,actor:{surface:'discord',id:actor.id,guildId:actor.guildId}},fetchImpl});
+  const data=await controlRequest(env,`approvals/${encodeURIComponent(approvalId)}`,{method:'POST',actorId:actor.id,body:{decision},fetchImpl});
   return `NEO Bots approval ${data?.approval?.status||decision}: ${approvalId}. No CES action was executed by this approval command.`;
 }
 
