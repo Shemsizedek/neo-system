@@ -1,6 +1,7 @@
 import { verifyKey } from 'discord-interactions'
 import { SYSTEM_PROMPT } from '../../core/neo-command.js'
 import { createDiscordHttpHandler } from '../../core/interaction.js'
+import { handleBotsReadControl } from '../../core/bots-read-control.js'
 
 function extractWorkersAIText(body){
   if(typeof body==='string'&&body.trim())return body.trim()
@@ -40,6 +41,12 @@ const handle=createDiscordHttpHandler({
 
 export default {
   fetch(request,env,ctx){
-    return handle(request,env,{waitUntil:(p)=>ctx.waitUntil(p),fetchImpl:ctx.fetchImpl})
+    const url=new URL(request.url)
+    if(url.pathname==='/neo-bots/control'||url.pathname.startsWith('/neo-bots/control/')){
+      return handleBotsReadControl(request,env)
+    }
+    const runtimeEnv=Object.create(env)
+    runtimeEnv.NEO_BOTS_CONTROL_URL=env.NEO_BOTS_CONTROL_URL||`${url.origin}/neo-bots/control/`
+    return handle(request,runtimeEnv,{waitUntil:(p)=>ctx.waitUntil(p),fetchImpl:ctx.fetchImpl})
   }
 }
