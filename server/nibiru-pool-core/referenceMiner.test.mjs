@@ -6,6 +6,7 @@ import {createWorkerCredential} from './workerAuth.mjs'
 import {assembleStratumHeader,findReferenceShare,createReferenceMinerClient} from './referenceMiner.mjs'
 
 const payoutScript='76a914000000000000000000000000000000000000000088ac'
+const deterministicShareDifficulty='0.0000000001'
 
 function fakeRpc(){
   return async method=>{
@@ -25,7 +26,7 @@ function fakeRpc(){
 }
 
 test('reference miner reconstructs deterministic header from Stratum notify',async()=>{
-  const runtime=createGenesisPoolRuntime({rpc:fakeRpc(),payoutScriptHex:payoutScript,initialDifficulty:'0.000000001'})
+  const runtime=createGenesisPoolRuntime({rpc:fakeRpc(),payoutScriptHex:payoutScript,initialDifficulty:deterministicShareDifficulty})
   await runtime.refreshTemplate()
   const extranonce1='01020304'
   const notify=runtime.notifyMessage({extranonce1})
@@ -37,12 +38,12 @@ test('reference miner reconstructs deterministic header from Stratum notify',asy
   assert.match(first.coinbaseTxid,/^[0-9a-f]{64}$/)
 })
 
-test('reference miner finds a controlled low-difficulty share',async()=>{
-  const runtime=createGenesisPoolRuntime({rpc:fakeRpc(),payoutScriptHex:payoutScript,initialDifficulty:'0.000000001'})
+test('reference miner finds a deterministic controlled low-difficulty share',async()=>{
+  const runtime=createGenesisPoolRuntime({rpc:fakeRpc(),payoutScriptHex:payoutScript,initialDifficulty:deterministicShareDifficulty})
   await runtime.refreshTemplate()
   const notify=runtime.notifyMessage({extranonce1:'a1b2c3d4'})
-  const share=findReferenceShare({notify,extranonce1:'a1b2c3d4',extranonce2:'00000000',difficulty:'0.000000001',maxNonce:10})
-  assert.match(share.nonce,/^[0-9a-f]{8}$/)
+  const share=findReferenceShare({notify,extranonce1:'a1b2c3d4',extranonce2:'00000000',difficulty:deterministicShareDifficulty,maxNonce:0})
+  assert.equal(share.nonce,'00000000')
   assert.match(share.headerHex,/^[0-9a-f]{160}$/)
 })
 
@@ -51,7 +52,7 @@ test('reference miner completes subscribe authorize reconstruct and submit again
   const workerId='worker.reference'
   const secret='0123456789abcdef0123456789abcdef'
   const credential=createWorkerCredential({poolId,workerId,memberId:'member-reference',secret})
-  const runtime=createGenesisPoolRuntime({rpc:fakeRpc(),payoutScriptHex:payoutScript,poolId,initialDifficulty:'0.000000001'})
+  const runtime=createGenesisPoolRuntime({rpc:fakeRpc(),payoutScriptHex:payoutScript,poolId,initialDifficulty:deterministicShareDifficulty})
   await runtime.refreshTemplate()
   const current=runtime.currentJob()
   const job={jobId:current.runtimeJobId,templateId:current.template.templateId,difficulty:runtime.currentDifficulty(),bits:current.template.bits,stale:false}
@@ -72,7 +73,7 @@ test('reference miner completes subscribe authorize reconstruct and submit again
   await gateway.start()
   const port=gateway.server.address().port
   try{
-    const result=await createReferenceMinerClient({host:'127.0.0.1',port,workerId,secret,maxNonce:10})
+    const result=await createReferenceMinerClient({host:'127.0.0.1',port,workerId,secret,maxNonce:0})
     assert.equal(result.ok,true)
     assert.equal(recorded.length,1)
     assert.equal(recorded[0].accepted,true)
