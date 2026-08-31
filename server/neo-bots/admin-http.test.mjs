@@ -48,7 +48,7 @@ test('approval HTTP surface ignores spoofed body actor and uses authenticated he
   const handler=createNeoBotsAdminHttpHandler({runtimeFactory:()=>runtime,tokenProvider:()=> 'control-secret',operatorPolicy:(actor)=>actor.id==='operator-1'});
   const response=await handler(new Request(`https://control.example/approvals/${encodeURIComponent(pending.approval.id)}`,{method:'POST',headers:{authorization:'Bearer control-secret','content-type':'application/json','x-neo-actor':'intruder'},body:JSON.stringify({decision:'approved',actor:{surface:'discord',id:'operator-1'}})}));
   assert.equal(response.status,403);
-  assert.equal(runtime.approvals.get(pending.approval.id).status,'pending');
+  assert.equal(runtime.approvals.requests.get(pending.approval.id).status,'pending');
 });
 
 test('approval HTTP surface lists and resolves without executing target action',async()=>{
