@@ -1,8 +1,14 @@
 function ids(value){
   const raw=String(value||'').trim()
   if(!raw)return []
-  const matches=raw.match(/\d{15,22}/g)||[]
-  return [...new Set(matches)]
+  const out=[]
+  for(const part of raw.split(/[,;\s]+/)){
+    let token=part.trim().replace(/^[\[\]"'`]+|[\[\]"'`]+$/g,'')
+    if(token.includes('='))token=token.slice(token.lastIndexOf('=')+1).trim()
+    token=token.replace(/^[\[\]"'`]+|[\[\]"'`]+$/g,'')
+    if(token)out.push(token)
+  }
+  return [...new Set(out)]
 }
 
 export function discordActor(interaction){
