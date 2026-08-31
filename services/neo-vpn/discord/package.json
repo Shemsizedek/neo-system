@@ -4,8 +4,9 @@
   "type": "module",
   "scripts": {
     "start": "node gateway-bot.mjs",
-    "check": "node --check gateway-bot.mjs && node --check runtime-preflight.mjs",
-    "preflight": "node runtime-preflight.mjs"
+    "check": "node --check gateway-bot.mjs && node --check runtime-preflight.mjs && node --check generate-install-url.mjs",
+    "preflight": "node runtime-preflight.mjs",
+    "install-url": "node generate-install-url.mjs"
   },
   "dependencies": {
     "discord.js": "14.27.0"
