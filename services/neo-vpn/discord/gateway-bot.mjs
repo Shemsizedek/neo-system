@@ -8,6 +8,7 @@ import {
 import fs from 'node:fs/promises';
 import rolePolicy from './role-policy.json' with { type: 'json' };
 import { createControlRecord } from './control-plane.mjs';
+import { readRuntimeState, writeRuntimeState } from './runtime-state.mjs';
 
 const required = ['DISCORD_BOT_TOKEN', 'DISCORD_APPLICATION_ID', 'DISCORD_GUILD_ID'];
 for (const name of required) {
@@ -17,6 +18,7 @@ for (const name of required) {
 const token = process.env.DISCORD_BOT_TOKEN.trim();
 const applicationId = process.env.DISCORD_APPLICATION_ID.trim();
 const guildId = process.env.DISCORD_GUILD_ID.trim();
+const infrastructureLive = process.env.NEO_VPN_INFRASTRUCTURE_LIVE === 'true';
 
 const roleSets = {
   viewer: new Set((process.env.NEO_VPN_DISCORD_VIEWER_ROLE_IDS ?? '').split(',').map(v => v.trim()).filter(Boolean)),
@@ -50,14 +52,54 @@ async function registerGuildCommands() {
   );
   const rest = new REST({ version: '10' }).setToken(token);
   await rest.put(Routes.applicationGuildCommands(applicationId, guildId), { body: commands });
+  await writeRuntimeState({
+    status: 'online',
+    gatewayConnected: true,
+    commandsRegistered: true,
+    commandCount: commands.length,
+    guildId,
+    infrastructureLive
+  });
   console.log(JSON.stringify({ event: 'discord-commands-registered', guildId, count: commands.length }));
+}
+
+async function statusMessage() {
+  const state = await readRuntimeState();
+  return [
+    '**NEO VPN Discord Control Plane**',
+    `Gateway: ${state.gatewayConnected ? 'online' : 'starting/offline'}`,
+    `Guild commands: ${state.commandsRegistered ? `registered (${state.commandCount ?? 0})` : 'pending'}`,
+    `Guild lock: ${state.guildId === guildId ? 'verified' : 'pending'}`,
+    `VPN data plane: ${infrastructureLive ? 'enabled' : 'not enabled'}`,
+    `Updated: ${state.updatedAt ?? 'not yet recorded'}`
+  ].join('\n');
 }
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
+await writeRuntimeState({
+  status: 'starting',
+  gatewayConnected: false,
+  commandsRegistered: false,
+  guildId,
+  infrastructureLive
+});
+
 client.once(Events.ClientReady, async readyClient => {
+  await writeRuntimeState({
+    status: 'online',
+    gatewayConnected: true,
+    botUserId: readyClient.user.id,
+    guildId,
+    infrastructureLive
+  });
   console.log(JSON.stringify({ event: 'discord-gateway-ready', userId: readyClient.user.id, guildId }));
-  await registerGuildCommands();
+  try {
+    await registerGuildCommands();
+  } catch (error) {
+    await writeRuntimeState({ status: 'degraded', commandsRegistered: false, lastError: 'command-registration-failed' });
+    console.error(JSON.stringify({ event: 'discord-command-registration-error', message: error.message }));
+  }
 });
 
 client.on(Events.InteractionCreate, async interaction => {
@@ -79,13 +121,18 @@ client.on(Events.InteractionCreate, async interaction => {
   }
 
   try {
+    if (command === 'vpn-status' || command === 'deployment-status') {
+      await interaction.reply({ content: await statusMessage(), ephemeral: true });
+      return;
+    }
+
     const record = createControlRecord({
       command,
       discordUserId: interaction.user.id,
       guildId: interaction.guildId,
       channelId: interaction.channelId,
       options: optionsFromInteraction(interaction)
-    }, false);
+    }, infrastructureLive);
 
     console.log(JSON.stringify({
       event: 'neo-vpn-control-request',
@@ -113,18 +160,18 @@ client.on(Events.InteractionCreate, async interaction => {
   }
 });
 
-client.on(Events.Error, error => {
+client.on(Events.Error, async error => {
+  await writeRuntimeState({ status: 'degraded', lastError: 'discord-client-error' }).catch(() => {});
   console.error(JSON.stringify({ event: 'discord-client-error', message: error.message }));
 });
 
-process.on('SIGINT', async () => {
+async function shutdown(signal) {
+  await writeRuntimeState({ status: 'offline', gatewayConnected: false, shutdownSignal: signal }).catch(() => {});
   client.destroy();
   process.exit(0);
-});
+}
 
-process.on('SIGTERM', async () => {
-  client.destroy();
-  process.exit(0);
-});
+process.on('SIGINT', () => shutdown('SIGINT'));
+process.on('SIGTERM', () => shutdown('SIGTERM'));
 
 await client.login(token);
