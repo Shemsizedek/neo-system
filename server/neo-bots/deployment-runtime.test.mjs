@@ -15,7 +15,7 @@ test('deployment control handler fails closed without operator allowlist',async(
   resetNeoBotsDeploymentRuntimeForTests();
   const handler=createNeoBotsDeploymentControlHandler({NEO_BOTS_CONTROL_TOKEN:'secret'});
   const response=await handler(new Request('https://control.example/approvals',{headers:{authorization:'Bearer secret','x-neo-actor':'operator-1'}}));
-  assert.equal(response.status,400);
+  assert.equal(response.status,403);
   const body=await response.json();
   assert.match(body.error,/operator authorization required/);
 });
