@@ -42,6 +42,8 @@ jobs:
       - run: npm run typecheck --prefix apps/neo-realty
       - name: Run memory trust-boundary test
         run: env -u DATABASE_URL npm run test:registry --prefix apps/neo-realty
+      - name: Run seller session test
+        run: env -u DATABASE_URL npm run test:seller --prefix apps/neo-realty
       - name: Apply NEO Realty migrations
         run: npm run db:migrate --prefix apps/neo-realty
       - name: Run Postgres registry integration flow
