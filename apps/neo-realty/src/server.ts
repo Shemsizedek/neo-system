@@ -3,6 +3,7 @@ import cors from 'cors';
 import crypto from 'node:crypto';
 import { createPropertyRepository } from './repository.js';
 import { fetchNeoEligibility } from './adapters.js';
+import { registerSellerRoutes } from './seller-routes.js';
 
 export type ListingType = 'sale' | 'rent' | 'both';
 export type PropertyType = 'house' | 'condo' | 'townhome' | 'multifamily' | 'apartment' | 'land' | 'commercial' | 'other';
@@ -26,5 +27,6 @@ app.post('/admin/properties/:id/evidence',requireAdmin,async(req,res)=>{try{cons
 app.get('/admin/properties/:id/evidence',requireAdmin,async(req,res)=>{try{const rows=await repository.listEvidence(routeParam(req.params.id));res.json({data:rows,count:rows.length});}catch(e){res.status(500).json({error:e instanceof Error?e.message:'repository_error'});}});
 app.post('/admin/evidence/:id/review',requireAdmin,async(req,res)=>{try{const decision=String(req.body?.decision??'');if(!['accepted','rejected'].includes(decision))return res.status(400).json({error:'invalid_decision'});const row=await repository.reviewEvidence(routeParam(req.params.id),decision as 'accepted'|'rejected',String(req.body?.note??''));if(!row)return res.status(404).json({error:'not_found'});res.json({data:row});}catch(e){res.status(500).json({error:e instanceof Error?e.message:'repository_error'});}});
 app.post('/admin/properties/:id/authority',requireAdmin,async(req,res)=>{try{const decision=String(req.body?.decision??'');if(!['verified','rejected'].includes(decision))return res.status(400).json({error:'invalid_decision'});const property=await repository.setAuthority(routeParam(req.params.id),decision as 'verified'|'rejected',String(req.body?.verificationMethod??'operator_review'));if(!property)return res.status(404).json({error:'not_found'});res.json({data:property});}catch(e){res.status(500).json({error:e instanceof Error?e.message:'repository_error'});}});
-app.post('/admin/reset',requireAdmin,async(_q,res)=>{try{await repository.clear();res.status(204).end();}catch(e){res.status(500).json({error:e instanceof Error?e.message:'repository_error'});}});return app;}
+app.post('/admin/reset',requireAdmin,async(_q,res)=>{try{await repository.clear();res.status(204).end();}catch(e){res.status(500).json({error:e instanceof Error?e.message:'repository_error'});}});
+registerSellerRoutes(app,repository);return app;}
 if(process.env.NODE_ENV!=='test'){createApp().listen(port,()=>console.log(`NEO Realty API listening on :${port}`));}
