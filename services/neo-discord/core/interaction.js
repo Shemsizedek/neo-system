@@ -53,15 +53,20 @@ export function healthResponse(env,runtime,transportAdapter){
   return discordJson({...healthSnapshot(env,runtime),transport_adapter:transportAdapter})
 }
 
+function scheduleDeferred(waitUntil,task){
+  const pending=Promise.resolve().then(task)
+  waitUntil(pending)
+}
+
 export async function dispatchVerifiedInteraction(interaction,env,runtime,{waitUntil=(p)=>p,fetchImpl=fetch}={}){
   if(interaction.type===1)return discordJson({type:1})
   if(interaction.type!==2)return discordJson({type:4,data:{content:'Unsupported interaction type.',flags:64,allowed_mentions:{parse:[]}}})
   if(!isDiscordActorAllowed(interaction,env))return discordJson({type:4,data:{content:'This NEO command surface is not authorized for your account or server.',flags:64,allowed_mentions:{parse:[]}}})
   const command=String(interaction?.data?.name||'')
-  if(command==='neo')waitUntil(processNeoCommand(interaction,env,runtime,fetchImpl))
-  else if(command==='relations')waitUntil(processRelationsCommand(interaction,env,{fetchImpl}))
-  else if(command==='services')waitUntil(processServicesCommand(interaction,env,{fetchImpl}))
-  else if(command==='bots')waitUntil(processBotsCommand(interaction,env,{fetchImpl}))
+  if(command==='neo')scheduleDeferred(waitUntil,()=>processNeoCommand(interaction,env,runtime,fetchImpl))
+  else if(command==='relations')scheduleDeferred(waitUntil,()=>processRelationsCommand(interaction,env,{fetchImpl}))
+  else if(command==='services')scheduleDeferred(waitUntil,()=>processServicesCommand(interaction,env,{fetchImpl}))
+  else if(command==='bots')scheduleDeferred(waitUntil,()=>processBotsCommand(interaction,env,{fetchImpl}))
   else return discordJson({type:4,data:{content:'Unknown command.',flags:64,allowed_mentions:{parse:[]}}})
   return discordJson({type:5,data:{flags:64}})
 }
