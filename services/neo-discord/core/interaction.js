@@ -50,7 +50,13 @@ export async function processServicesCommand(interaction,env,{fetchImpl=fetch,cr
 }
 
 export function healthResponse(env,runtime,transportAdapter){
-  return discordJson({...healthSnapshot(env,runtime),transport_adapter:transportAdapter})
+  return discordJson({
+    ...healthSnapshot(env,runtime),
+    transport_adapter:transportAdapter,
+    discord_signature_ready:Boolean(String(env.DISCORD_PUBLIC_KEY||'').trim()),
+    discord_operator_allowlist_ready:Boolean(String(env.DISCORD_OPERATOR_USER_IDS||'').trim()||String(env.DISCORD_OPERATOR_ROLE_IDS||'').trim()),
+    neo_bots_control_ready:Boolean(String(env.NEO_BOTS_CONTROL_URL||'').trim()&&String(env.NEO_BOTS_CONTROL_TOKEN||'').trim())
+  })
 }
 
 function scheduleDeferred(waitUntil,task){
