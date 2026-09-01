@@ -2,6 +2,7 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
         android:allowBackup="false"
@@ -15,7 +16,9 @@
         <activity android:name=".XcpKeyActivity" android:exported="true"><intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter></activity>
         <activity android:name=".NoogleBrowserActivity" android:exported="false" android:launchMode="singleTop" />
         <activity android:name=".FormResponsesActivity" android:exported="false" />
+        <activity android:name=".FormManageActivity" android:exported="false" />
         <activity android:name=".ChatThreadActivity" android:exported="false" />
+        <activity android:name=".ChatMembersActivity" android:exported="false" />
         <activity android:name=".ConflictReviewActivity" android:exported="false" />
         <activity android:name=".FileLibraryActivity" android:exported="false" />
         <activity android:name=".TrustedDevicesActivity" android:exported="false" />
