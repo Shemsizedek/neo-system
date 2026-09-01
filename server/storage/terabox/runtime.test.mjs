@@ -13,6 +13,7 @@ test('authorizationUrl uses configured client id', () => {
   const url = new URL(runtime.authorizationUrl());
   assert.equal(url.hostname, 'www.terabox.com');
   assert.equal(url.searchParams.get('clientId'), 'client-1');
+  assert.ok(url.searchParams.get('state'));
 });
 
 test('complete stores secrets internally but returns redacted summary', async () => {
@@ -31,7 +32,8 @@ test('complete stores secrets internally but returns redacted summary', async ()
     }),
   });
 
-  const summary = await runtime.complete('one-time-code');
+  const state = new URL(runtime.authorizationUrl()).searchParams.get('state');
+  const summary = await runtime.complete('one-time-code', state);
   assert.equal(summary.connected, true);
   assert.equal(JSON.stringify(summary).includes('ACCESS_SECRET'), false);
   assert.equal(JSON.stringify(summary).includes('REFRESH_SECRET'), false);
@@ -42,6 +44,18 @@ test('complete stores secrets internally but returns redacted summary', async ()
   assert.equal(status.connectedAt, '2026-08-29T12:00:00.000Z');
   assert.equal(status.expiresAt, '2026-08-31T12:00:00.000Z');
   assert.equal(status.durable, false);
+});
+
+test('authorization state is required, single-use, and expires', async () => {
+  let current = '2026-08-29T12:00:00.000Z';
+  const runtime = createTeraBoxRuntime({ env, now: () => current, authorizationStateTtlMs: 1000, completeAuthorizationFn: async () => ({connected:true,secrets:{accessToken:'a',refreshToken:'r'},health:{ok:true}}) });
+  const state = new URL(runtime.authorizationUrl()).searchParams.get('state');
+  await assert.rejects(runtime.complete('code', 'wrong'), /Invalid or expired/);
+  current = '2026-08-29T12:00:02.000Z';
+  await assert.rejects(runtime.complete('code', state), /Invalid or expired/);
+  const fresh = new URL(runtime.authorizationUrl()).searchParams.get('state');
+  await runtime.complete('code', fresh);
+  await assert.rejects(runtime.complete('code', fresh), /Invalid or expired/);
 });
 
 test('ensureAccessToken keeps a token that is not near expiry', async () => {

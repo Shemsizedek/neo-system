@@ -3,10 +3,11 @@ import assert from 'node:assert/strict';
 import { buildAuthorizationUrl, publicConnectionSummary } from './authorization.mjs';
 
 test('buildAuthorizationUrl uses the documented TeraBox web authorization page', () => {
-  const url = new URL(buildAuthorizationUrl({ clientId: 'client-123' }));
+  const url = new URL(buildAuthorizationUrl({ clientId: 'client-123', state: 'state-123' }));
   assert.equal(url.origin, 'https://www.terabox.com');
   assert.equal(url.pathname, '/wap/outside/login');
   assert.equal(url.searchParams.get('clientId'), 'client-123');
+  assert.equal(url.searchParams.get('state'), 'state-123');
 });
 
 test('publicConnectionSummary excludes access and refresh token values', () => {

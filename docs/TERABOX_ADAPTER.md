@@ -34,6 +34,8 @@ Configure these only in the server/deployment secret manager:
 TERABOX_CLIENT_ID=issued-app-key
 TERABOX_CLIENT_SECRET=issued-secret-key
 TERABOX_PRIVATE_SECRET=issued-private-secret
+NEO_OPERATOR_API_TOKEN=high-entropy-operator-bearer-token
+TERABOX_LIVE_MODE=read-only
 ```
 
 Do not place real values in `.env.example`, documentation, source files, GitHub issues, pull-request comments, or commits.
@@ -59,9 +61,13 @@ The NEO Platform API exposes:
 GET /api/v1/storage/terabox/status
 GET /api/v1/storage/terabox/auth-url
 GET /api/v1/storage/terabox/callback?code=...
+GET /api/v1/storage/terabox/user
+GET /api/v1/storage/terabox/quota
 ```
 
-The callback exchanges the one-time authorization code server-side, performs the read-only TeraBox health check, stores the resulting token record, and returns only a redacted connection summary.
+Every TeraBox gateway route requires `Authorization: Bearer $NEO_OPERATOR_API_TOKEN`. The authorization URL creates a cryptographically random, ten-minute, single-use OAuth `state`; the callback must return both `code` and `state`. The callback exchanges the code server-side, performs the read-only health check, stores the token record, and returns only a redacted connection summary.
+
+Live access fails closed unless `TERABOX_LIVE_MODE=read-only`. In this mode only status, authorization, user information, and quota are exposed. Directory listing, recursive search, download links, and every file mutation remain disabled at the gateway.
 
 ## Example direct adapter use
 

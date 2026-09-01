@@ -8,10 +8,11 @@ function required(value, name) {
   return value;
 }
 
-export function buildAuthorizationUrl({ clientId } = {}) {
+export function buildAuthorizationUrl({ clientId, state } = {}) {
   required(clientId, 'TeraBox client id');
   const url = new URL(AUTH_PAGE);
   url.searchParams.set('clientId', clientId);
+  if (state) url.searchParams.set('state', state);
   return url.toString();
 }
 

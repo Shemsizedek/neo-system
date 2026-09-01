@@ -2,6 +2,7 @@ import { buildAuthorizationUrl, completeAuthorization, publicConnectionSummary }
 import { refreshAccessToken } from './oauth.mjs';
 import { createTokenStoreFromEnv } from './token-store.mjs';
 import { createTeraBoxAdapter } from './adapter.mjs';
+import crypto from 'node:crypto';
 
 function required(value, name) {
   if (!value) throw new Error(`${name} is required`);
@@ -35,9 +36,16 @@ export function createTeraBoxRuntime({
   adapterFactory = createTeraBoxAdapter,
   now = () => new Date().toISOString(),
   refreshSkewMs = 5 * 60 * 1000,
+  authorizationStateTtlMs = 10 * 60 * 1000,
 } = {}) {
   const store = tokenStore || createTokenStoreFromEnv({ env, memoryFactory: createMemoryTokenStore });
   const configured = () => Boolean(env.TERABOX_CLIENT_ID && env.TERABOX_CLIENT_SECRET && env.TERABOX_PRIVATE_SECRET);
+  const liveMode = () => env.TERABOX_LIVE_MODE || 'read-only';
+  const pendingStates = new Map();
+
+  function pruneStates(currentTime = Date.parse(now())) {
+    for (const [state, expiresAt] of pendingStates) if (expiresAt <= currentTime) pendingStates.delete(state);
+  }
 
   async function refresh(record) {
     if (!configured()) throw new Error('TeraBox application credentials are not configured');
@@ -97,12 +105,22 @@ export function createTeraBoxRuntime({
 
     authorizationUrl() {
       required(env.TERABOX_CLIENT_ID, 'TERABOX_CLIENT_ID');
-      return buildAuthorizationUrl({ clientId: env.TERABOX_CLIENT_ID });
+      const currentTime = Date.parse(now());
+      pruneStates(currentTime);
+      const state = crypto.randomBytes(32).toString('base64url');
+      pendingStates.set(state, currentTime + authorizationStateTtlMs);
+      return buildAuthorizationUrl({ clientId: env.TERABOX_CLIENT_ID, state });
     },
 
-    async complete(code) {
+    async complete(code, state) {
       required(code, 'TeraBox authorization code');
+      required(state, 'TeraBox OAuth state');
       if (!configured()) throw new Error('TeraBox application credentials are not configured');
+      const currentTime = Date.parse(now());
+      pruneStates(currentTime);
+      const expiresAt = pendingStates.get(state);
+      pendingStates.delete(state);
+      if (!expiresAt || expiresAt <= currentTime) throw new Error('Invalid or expired TeraBox OAuth state');
 
       const result = await completeAuthorizationFn({
         code,
@@ -135,6 +153,7 @@ export function createTeraBoxRuntime({
       const next = await refresh(record);
       return {
         service: 'terabox',
+        liveMode: liveMode(),
         connected: true,
         userId: next.userId ?? null,
         expiresIn: next.expiresIn ?? null,
