@@ -6,9 +6,9 @@
 
     <application
         android:allowBackup="false"
-        android:label="Omnitrix Suit"
-        android:icon="@mipmap/ic_launcher"
-        android:roundIcon="@mipmap/ic_launcher_round"
+        android:label="Omnitrix"
+        android:icon="@drawable/omnitrix_logo"
+        android:roundIcon="@drawable/omnitrix_logo"
         android:logo="@drawable/omnitrix_logo"
         android:usesCleartextTraffic="false"
         android:theme="@style/Theme.Omnitrix">
