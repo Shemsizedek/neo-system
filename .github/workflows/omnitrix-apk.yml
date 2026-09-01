@@ -1,5 +1,5 @@
 name: Omnitrix APK
-# v4.4.0 unified Noogle browser + direct cloud editor launch + structured Forms/Chat
+# v4.5.0 structured Forms responses + Chat identities
 
 on:
   push:
@@ -30,10 +30,10 @@ jobs:
       - name: Prepare consumer APK
         run: |
           mkdir -p release
-          cp apps/omnitrix-android/app/build/outputs/apk/debug/app-debug.apk release/Omnitrix-Suit-v4.4.0.apk
-          sha256sum release/Omnitrix-Suit-v4.4.0.apk > release/Omnitrix-Suit-v4.4.0.apk.sha256
+          cp apps/omnitrix-android/app/build/outputs/apk/debug/app-debug.apk release/Omnitrix-Suit-v4.5.0.apk
+          sha256sum release/Omnitrix-Suit-v4.5.0.apk > release/Omnitrix-Suit-v4.5.0.apk.sha256
       - uses: actions/upload-artifact@v4
         with:
-          name: Omnitrix-Suit-APK-v4.4.0
+          name: Omnitrix-Suit-APK-v4.5.0
           path: release/*
           if-no-files-found: error
