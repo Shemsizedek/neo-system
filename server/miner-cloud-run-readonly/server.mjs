@@ -23,9 +23,15 @@ function respond(res,status,body,extra={}){
   res.end(JSON.stringify(body))
 }
 
+function requestPath(req){
+  try{return new URL(req.url||'/', 'http://localhost').pathname}
+  catch{return null}
+}
+
 export function createServer(){
   return http.createServer((req,res)=>{
-    const path=new URL(req.url||'/', 'http://localhost').pathname
+    const path=requestPath(req)
+    if(path===null)return respond(res,400,{error:'INVALID_REQUEST_TARGET'})
     if(req.method==='GET'&&path==='/health'){
       return respond(res,200,{service:'neo-miner-readonly',status:'UP',mode:MODE})
     }
@@ -35,7 +41,7 @@ export function createServer(){
       if(!tokenMatches(req.headers.authorization))return respond(res,401,{error:'UNAUTHORIZED'})
       return respond(res,200,{
         service:'neo-miner',
-        status:'UP',
+        status:'BOOTSTRAP_NOT_LIVE',
         mode:MODE,
         mutates:false,
         liveMining:false,
