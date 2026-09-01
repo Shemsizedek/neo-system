@@ -15,6 +15,7 @@
         <service android:name=".BackgroundFileSync" android:permission="android.permission.BIND_JOB_SERVICE" android:exported="true" />
         <activity android:name=".XcpKeyActivity" android:exported="true"><intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter></activity>
         <activity android:name=".NoogleBrowserActivity" android:exported="false" android:launchMode="singleTop" />
+        <activity android:name=".SyncHealthActivity" android:exported="false" />
         <activity android:name=".FormResponsesActivity" android:exported="false" />
         <activity android:name=".FormManageActivity" android:exported="false" />
         <activity android:name=".ChatThreadActivity" android:exported="false" />
