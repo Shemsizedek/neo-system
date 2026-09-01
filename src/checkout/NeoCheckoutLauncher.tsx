@@ -1,4 +1,5 @@
 import {useEffect,useMemo,useState} from 'react'
+import './checkout.css'
 
 type CurrencyEntry={id:string;symbol:string;name:string;counterpartyAsset:string|null;mappingStatus:string}
 type CurrencyPayload={currencies?:CurrencyEntry[]}
