@@ -5,6 +5,7 @@ import {NEOpaySecurityOverlay} from './NEOpaySecurityOverlay'
 import {NEOpayContactCenter} from './NEOpayContactCenter'
 import {NativeBitcoinSendOverlay} from './NativeBitcoinSendOverlay'
 import {NEOpayReceiptCenter} from './NEOpayReceiptCenter'
+import './cleanup.css'
 
 type Tool='wallets'|'security'|'contacts'|'native-send'|'receipts'|null
 
