@@ -8,8 +8,8 @@ android {
         applicationId = "io.neo.omnitrix"
         minSdk = 26
         targetSdk = 35
-        versionCode = 35
-        versionName = "4.7.0"
+        versionCode = 36
+        versionName = "4.8.0"
     }
 
     buildTypes {
