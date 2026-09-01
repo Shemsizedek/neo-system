@@ -1,6 +1,6 @@
 package io.neo.omnitrix;
 
-import android.app.*;import android.content.*;import android.content.pm.PackageManager;import android.os.Build;import androidx.core.app.NotificationCompat;import org.json.*;
+import android.app.*;import android.content.*;import android.content.pm.PackageManager;import android.os.Build;import org.json.*;
 
 /** Local notification routing for unread/mention state. No message content leaves the device. */
 public final class ChatNotificationRouter {
