@@ -18,11 +18,7 @@ import { StorefrontApp } from './miner/StorefrontApp'
 import { NeoWireApp } from './wire/NeoWireApp'
 import { NeoExplorer } from './explorer/NeoExplorer'
 import { NeoFxApp } from './neofx/NeoFxApp'
-import { NEOpayWallet } from './neopay/NEOpayWallet'
-import { NEOpaySecurityOverlay } from './neopay/NEOpaySecurityOverlay'
-import { NEOpayContactCenter } from './neopay/NEOpayContactCenter'
-import { NativeBitcoinSendOverlay } from './neopay/NativeBitcoinSendOverlay'
-import { WalletConnectionCenter } from './neopay/WalletConnectionCenter'
+import { NEOpaySurface } from './neopay/NEOpaySurface'
 import { TellerDashboard } from './teller/TellerDashboard'
 import { NeoCheckoutLauncher } from './checkout/NeoCheckoutLauncher'
 import { SettlementResultBanner } from './checkout/SettlementResultBanner'
@@ -43,7 +39,7 @@ function resolveRoute(){
 }
 
 function CheckoutShell({serviceId,serviceName,children}:{serviceId:string;serviceName:string;children:React.ReactNode}){
- return <><SettlementResultBanner serviceId={serviceId}/><div style={{padding:'0 18px'}}><NeoCheckoutLauncher serviceId={serviceId} serviceName={serviceName}/></div>{children}</>
+ return <><SettlementResultBanner serviceId={serviceId}/><div className="neo-checkout-shell"><NeoCheckoutLauncher serviceId={serviceId} serviceName={serviceName}/></div>{children}</>
 }
 
 function RootRouter(){
@@ -83,7 +79,7 @@ function RootRouter(){
   if(isPrime) return <CheckoutShell serviceId="neo-prime" serviceName="NEO Prime"><HomeBase onOpen={open}/></CheckoutShell>
   if(isHome) return <HomeBase onOpen={open}/>
   if(isTeller) return <TellerDashboard/>
-  if(isNEOpay) return <CheckoutShell serviceId="neopay" serviceName="NEOpay"><div className="neopay-route"><NEOpayWallet/><WalletConnectionCenter/><NEOpaySecurityOverlay/><NEOpayContactCenter/><NativeBitcoinSendOverlay/><a className="neopay-trader-launch" href={bankHref}>∞ NEO Bank</a></div></CheckoutShell>
+  if(isNEOpay) return <CheckoutShell serviceId="neopay" serviceName="NEOpay"><NEOpaySurface bankHref={bankHref}/></CheckoutShell>
   if(isNeoFx) return <NeoFxApp/>
   if(isExplorer) return <NeoExplorer/>
   if(isWire) return <NeoWireApp/>
