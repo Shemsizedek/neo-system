@@ -1,5 +1,5 @@
 name: Omnitrix APK
-# v4.13.0 installer branding + frontend cleanup
+# v4.15.0 unified consumer suite + browser routing
 
 on:
   push:
