@@ -20,18 +20,19 @@ jobs:
     runs-on: ubuntu-latest
     environment: neo-miner-production
     timeout-minutes: 20
+    env:
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID || secrets.GCP_PROJECT_ID }}
+      GCP_REGION: ${{ vars.GCP_REGION || secrets.GCP_REGION }}
+      GCP_WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER || secrets.GCP_WIF_PROVIDER }}
+      GCP_CLOUD_RUN_SERVICE_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_SERVICE_ACCOUNT || secrets.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+      GCP_CLOUD_RUN_RUNTIME_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_RUNTIME_ACCOUNT || secrets.GCP_CLOUD_RUN_RUNTIME_ACCOUNT }}
+      GCP_ARTIFACT_REGISTRY: ${{ vars.GCP_ARTIFACT_REGISTRY || secrets.GCP_ARTIFACT_REGISTRY }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7.0.1
 
       - name: Validate configuration
         env:
-          GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
-          GCP_REGION: ${{ vars.GCP_REGION }}
-          GCP_WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER }}
-          GCP_CLOUD_RUN_SERVICE_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
-          GCP_CLOUD_RUN_RUNTIME_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_RUNTIME_ACCOUNT }}
-          GCP_ARTIFACT_REGISTRY: ${{ vars.GCP_ARTIFACT_REGISTRY }}
           NEO_MINER_OPERATOR_TOKEN: ${{ secrets.NEO_MINER_OPERATOR_TOKEN }}
         run: |
           set -euo pipefail
@@ -45,19 +46,19 @@ jobs:
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v3
         with:
-          project_id: ${{ vars.GCP_PROJECT_ID }}
-          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
-          service_account: ${{ vars.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+          project_id: ${{ env.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
 
       - name: Set up Google Cloud CLI
         uses: google-github-actions/setup-gcloud@v3
 
       - name: Configure Artifact Registry authentication
-        run: gcloud auth configure-docker "${{ vars.GCP_REGION }}-docker.pkg.dev" --quiet
+        run: gcloud auth configure-docker "${GCP_REGION}-docker.pkg.dev" --quiet
 
       - name: Build and push immutable image
         env:
-          IMAGE: ${{ vars.GCP_ARTIFACT_REGISTRY }}/neo-miner-readonly:${{ github.sha }}
+          IMAGE: ${{ env.GCP_ARTIFACT_REGISTRY }}/neo-miner-readonly:${{ github.sha }}
         run: |
           docker build -f server/miner-cloud-run-readonly/Dockerfile -t "$IMAGE" .
           docker push "$IMAGE"
@@ -69,16 +70,24 @@ jobs:
 
       - name: Deploy read-only service
         env:
-          IMAGE: ${{ vars.GCP_ARTIFACT_REGISTRY }}/neo-miner-readonly:${{ github.sha }}
+          IMAGE: ${{ env.GCP_ARTIFACT_REGISTRY }}/neo-miner-readonly:${{ github.sha }}
         run: |
-          gcloud run deploy "$SERVICE_NAME"             --project="${{ vars.GCP_PROJECT_ID }}"             --region="${{ vars.GCP_REGION }}"             --image="$IMAGE"             --service-account="${{ vars.GCP_CLOUD_RUN_RUNTIME_ACCOUNT }}"             --set-secrets="NEO_MINER_OPERATOR_TOKEN=$SECRET_NAME:latest"             --set-env-vars="NEO_DEPLOYMENT_MODE=READ_ONLY_BOOTSTRAP"             --allow-unauthenticated             --quiet
+          gcloud run deploy "$SERVICE_NAME" \
+            --project="$GCP_PROJECT_ID" \
+            --region="$GCP_REGION" \
+            --image="$IMAGE" \
+            --service-account="$GCP_CLOUD_RUN_RUNTIME_ACCOUNT" \
+            --set-secrets="NEO_MINER_OPERATOR_TOKEN=$SECRET_NAME:latest" \
+            --set-env-vars="NEO_DEPLOYMENT_MODE=READ_ONLY_BOOTSTRAP" \
+            --allow-unauthenticated \
+            --quiet
 
       - name: Verify protected endpoint
         env:
           NEO_MINER_OPERATOR_TOKEN: ${{ secrets.NEO_MINER_OPERATOR_TOKEN }}
         run: |
           set -euo pipefail
-          URL="$(gcloud run services describe "$SERVICE_NAME" --project="${{ vars.GCP_PROJECT_ID }}" --region="${{ vars.GCP_REGION }}" --format='value(status.url)')"
+          URL="$(gcloud run services describe "$SERVICE_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format='value(status.url)')"
           test -n "$URL"
           test "$(curl -sS -o /dev/null -w '%{http_code}' "$URL/health")" = "200"
           test "$(curl -sS -o /dev/null -w '%{http_code}' "$URL/discord/snapshot")" = "401"
