@@ -6,6 +6,9 @@ on:
 permissions:
   contents: read
 
+env:
+  NEO_MINER_OPERATOR_URL: https://neo-miner-readonly-61704167834.us-central1.run.app/discord/snapshot
+
 jobs:
   activate:
     runs-on: ubuntu-latest
@@ -16,7 +19,6 @@ jobs:
 
       - name: Validate Miner-only runtime contract
         env:
-          NEO_MINER_OPERATOR_URL: ${{ secrets.NEO_MINER_OPERATOR_URL }}
           NEO_MINER_OPERATOR_TOKEN: ${{ secrets.NEO_MINER_OPERATOR_TOKEN }}
           DISCORD_OPERATOR_USER_IDS: ${{ secrets.DISCORD_OPERATOR_USER_IDS }}
           DISCORD_OPERATOR_ROLE_IDS: ${{ secrets.DISCORD_OPERATOR_ROLE_IDS }}
@@ -27,7 +29,6 @@ jobs:
 
       - name: Smoke protected Miner endpoint before activation
         env:
-          NEO_MINER_OPERATOR_URL: ${{ secrets.NEO_MINER_OPERATOR_URL }}
           NEO_MINER_OPERATOR_TOKEN: ${{ secrets.NEO_MINER_OPERATOR_TOKEN }}
         run: node services/neo-discord/deployment/miner-read-live-smoke.mjs
 
@@ -41,7 +42,6 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          NEO_MINER_OPERATOR_URL: ${{ secrets.NEO_MINER_OPERATOR_URL }}
           NEO_MINER_OPERATOR_TOKEN: ${{ secrets.NEO_MINER_OPERATOR_TOKEN }}
           DISCORD_OPERATOR_USER_IDS: ${{ secrets.DISCORD_OPERATOR_USER_IDS }}
           DISCORD_OPERATOR_ROLE_IDS: ${{ secrets.DISCORD_OPERATOR_ROLE_IDS }}
@@ -77,7 +77,6 @@ jobs:
 
       - name: Re-smoke protected Miner source
         env:
-          NEO_MINER_OPERATOR_URL: ${{ secrets.NEO_MINER_OPERATOR_URL }}
           NEO_MINER_OPERATOR_TOKEN: ${{ secrets.NEO_MINER_OPERATOR_TOKEN }}
         run: node services/neo-discord/deployment/miner-read-live-smoke.mjs
 
