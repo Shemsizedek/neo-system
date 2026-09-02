@@ -75,6 +75,13 @@ jobs:
           body="$(curl --fail --silent --show-error --retry 6 --retry-delay 5 https://neo-discord-api.neosystem.workers.dev/health)"
           node -e 'const x=JSON.parse(process.argv[1]); if(x.ok!==true || x.service!=="neo-discord" || x.grounded_status!==true) process.exit(1)' "$body"
 
+      - name: Register protected Miner command
+        env:
+          DISCORD_APPLICATION_ID: ${{ secrets.DISCORD_APPLICATION_ID }}
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          DISCORD_GUILD_ID: ${{ secrets.DISCORD_GUILD_ID }}
+        run: node scripts/register-discord-command.mjs
+
       - name: Re-smoke protected Miner source
         env:
           NEO_MINER_OPERATOR_TOKEN: ${{ secrets.NEO_MINER_OPERATOR_TOKEN }}
@@ -84,6 +91,7 @@ jobs:
         run: |
           echo "## NEO Discord Miner protected-read activation" >> "$GITHUB_STEP_SUMMARY"
           echo "Miner machine read: verified" >> "$GITHUB_STEP_SUMMARY"
+          echo "Discord command: /services service:NEO Miner action:Protected operator read" >> "$GITHUB_STEP_SUMMARY"
           echo "Mode: read-only bootstrap; live mining remains disabled" >> "$GITHUB_STEP_SUMMARY"
           echo "Discord HTTPS transport: deployed and healthy" >> "$GITHUB_STEP_SUMMARY"
           echo "Relations: not configured by this workflow" >> "$GITHUB_STEP_SUMMARY"
