@@ -1,0 +1,22 @@
+[Unit]
+Description=NEO Miner read-only telemetry sidecar
+After=network-online.target neo-miner-production.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=neo-miner
+Group=neo-miner
+WorkingDirectory=/opt/neo-system
+EnvironmentFile=/etc/neo-miner/telemetry-sidecar.env
+ExecStart=/usr/bin/node /opt/neo-system/server/miner-telemetry-sidecar/server.mjs
+Restart=always
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/neo-miner
+
+[Install]
+WantedBy=multi-user.target
