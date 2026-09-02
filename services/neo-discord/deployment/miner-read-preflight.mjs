@@ -4,9 +4,13 @@ const snowflake=/^\d{15,22}$/
 const tokenPattern=/^[a-f0-9]{64}$/i
 
 function csv(value){return String(value||'').split(',').map(x=>x.trim()).filter(Boolean)}
+export function normalizeMinerOperatorToken(value){return String(value||'').replace(/\s/g,'')}
 
 export function evaluateMinerReadEnv(env=process.env){
-  const values=Object.fromEntries(required.map(name=>[name,String(env[name]||'').trim()]))
+  const values={
+    NEO_MINER_OPERATOR_URL:String(env.NEO_MINER_OPERATOR_URL||'').trim(),
+    NEO_MINER_OPERATOR_TOKEN:normalizeMinerOperatorToken(env.NEO_MINER_OPERATOR_TOKEN)
+  }
   const missing=required.filter(name=>!values[name])
   if(missing.length)return {ok:false,code:'MISSING_REQUIRED_RUNTIME_VALUES',missing}
 

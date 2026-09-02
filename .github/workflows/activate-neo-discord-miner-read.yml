@@ -50,6 +50,9 @@ jobs:
             local name="$1"
             local value="${!name:-}"
             [ -n "$value" ] || return 0
+            if [ "$name" = "NEO_MINER_OPERATOR_TOKEN" ]; then
+              value="$(printf '%s' "$value" | tr -d '[:space:]')"
+            fi
             printf '%s' "$value" | npx wrangler secret put "$name" --config wrangler.jsonc >/dev/null
             echo "Synced runtime binding: $name"
           }

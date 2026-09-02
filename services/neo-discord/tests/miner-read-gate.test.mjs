@@ -16,6 +16,11 @@ test('miner-only preflight accepts protected Cloud Run endpoint',()=>{
   assert.deepEqual(out.disabledServices,['neo-relations'])
 })
 
+test('miner-only preflight normalizes pasted token whitespace',()=>{
+  const spaced=`${'a'.repeat(32)}\n${'a'.repeat(32)} `
+  assert.equal(evaluateMinerReadEnv({...base,NEO_MINER_OPERATOR_TOKEN:spaced}).ok,true)
+})
+
 test('miner-only preflight rejects malformed operator token',()=>{
   const out=evaluateMinerReadEnv({...base,NEO_MINER_OPERATOR_TOKEN:'not-a-token'})
   assert.equal(out.ok,false)
@@ -28,16 +33,13 @@ test('miner-only preflight still requires an authorized Discord selector',()=>{
   assert.equal(out.code,'OPERATOR_SELECTOR_REQUIRED')
 })
 
-test('miner live smoke proves bootstrap is protected and non-mutating',async()=>{
-  const fetchImpl=async()=>new Response(JSON.stringify({
-    mode:'READ_ONLY_BOOTSTRAP',
-    status:'BOOTSTRAP_NOT_LIVE',
-    mutates:false,
-    liveMining:false
-  }),{status:200,headers:{'content-type':'application/json'}})
-  const out=await runMinerReadLiveSmoke(base,{fetchImpl})
-  assert.equal(out.ok,true)
-  assert.equal(out.liveMining,false)
+test('miner live smoke sends normalized token',async()=>{
+  const spaced=`${'a'.repeat(32)}\n${'a'.repeat(32)} `
+  const fetchImpl=async(_url,options)=>{
+    assert.equal(options.headers.authorization,`Bearer ${'a'.repeat(64)}`)
+    return new Response(JSON.stringify({mode:'READ_ONLY_BOOTSTRAP',status:'BOOTSTRAP_NOT_LIVE',mutates:false,liveMining:false}),{status:200})
+  }
+  assert.equal((await runMinerReadLiveSmoke({...base,NEO_MINER_OPERATOR_TOKEN:spaced},{fetchImpl})).ok,true)
 })
 
 test('miner live smoke rejects any live-mining claim',async()=>{
