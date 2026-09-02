@@ -1,0 +1,86 @@
+name: Activate NEO Discord Miner Read
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  activate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7.0.1
+
+      - name: Validate Miner-only runtime contract
+        env:
+          NEO_MINER_OPERATOR_URL: ${{ secrets.NEO_MINER_OPERATOR_URL }}
+          NEO_MINER_OPERATOR_TOKEN: ${{ secrets.NEO_MINER_OPERATOR_TOKEN }}
+          DISCORD_OPERATOR_USER_IDS: ${{ secrets.DISCORD_OPERATOR_USER_IDS }}
+          DISCORD_OPERATOR_ROLE_IDS: ${{ secrets.DISCORD_OPERATOR_ROLE_IDS }}
+        run: node services/neo-discord/deployment/miner-read-preflight.mjs
+
+      - name: Test Miner gate
+        run: node --test services/neo-discord/tests/miner-read-gate.test.mjs
+
+      - name: Smoke protected Miner endpoint before activation
+        env:
+          NEO_MINER_OPERATOR_URL: ${{ secrets.NEO_MINER_OPERATOR_URL }}
+          NEO_MINER_OPERATOR_TOKEN: ${{ secrets.NEO_MINER_OPERATOR_TOKEN }}
+        run: node services/neo-discord/deployment/miner-read-live-smoke.mjs
+
+      - name: Install Discord transport dependencies
+        working-directory: services/neo-discord/adapters/cloudflare
+        run: npm install
+
+      - name: Sync protected Miner runtime values
+        working-directory: services/neo-discord/adapters/cloudflare
+        shell: bash
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          NEO_MINER_OPERATOR_URL: ${{ secrets.NEO_MINER_OPERATOR_URL }}
+          NEO_MINER_OPERATOR_TOKEN: ${{ secrets.NEO_MINER_OPERATOR_TOKEN }}
+          DISCORD_OPERATOR_USER_IDS: ${{ secrets.DISCORD_OPERATOR_USER_IDS }}
+          DISCORD_OPERATOR_ROLE_IDS: ${{ secrets.DISCORD_OPERATOR_ROLE_IDS }}
+        run: |
+          set -euo pipefail
+          put_secret() {
+            local name="$1"
+            local value="${!name:-}"
+            [ -n "$value" ] || return 0
+            printf '%s' "$value" | npx wrangler secret put "$name" --config wrangler.jsonc >/dev/null
+            echo "Synced runtime binding: $name"
+          }
+          for name in NEO_MINER_OPERATOR_URL NEO_MINER_OPERATOR_TOKEN DISCORD_OPERATOR_USER_IDS DISCORD_OPERATOR_ROLE_IDS
+          do
+            put_secret "$name"
+          done
+
+      - name: Deploy Discord HTTPS transport with Miner binding
+        working-directory: services/neo-discord/adapters/cloudflare
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npm run deploy
+
+      - name: Verify Discord transport health
+        run: |
+          set -euo pipefail
+          body="$(curl --fail --silent --show-error --retry 6 --retry-delay 5 https://neo-discord-api.neosystem.workers.dev/health)"
+          node -e 'const x=JSON.parse(process.argv[1]); if(x.ok!==true || x.service!=="neo-discord" || x.grounded_status!==true) process.exit(1)' "$body"
+
+      - name: Re-smoke protected Miner source
+        env:
+          NEO_MINER_OPERATOR_URL: ${{ secrets.NEO_MINER_OPERATOR_URL }}
+          NEO_MINER_OPERATOR_TOKEN: ${{ secrets.NEO_MINER_OPERATOR_TOKEN }}
+        run: node services/neo-discord/deployment/miner-read-live-smoke.mjs
+
+      - name: Activation summary
+        run: |
+          echo "## NEO Discord Miner protected-read activation" >> "$GITHUB_STEP_SUMMARY"
+          echo "Miner machine read: verified" >> "$GITHUB_STEP_SUMMARY"
+          echo "Mode: read-only bootstrap; live mining remains disabled" >> "$GITHUB_STEP_SUMMARY"
+          echo "Discord HTTPS transport: deployed and healthy" >> "$GITHUB_STEP_SUMMARY"
+          echo "Relations: not configured by this workflow" >> "$GITHUB_STEP_SUMMARY"
