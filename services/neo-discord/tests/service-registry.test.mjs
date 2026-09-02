@@ -76,6 +76,7 @@ test('unauthorized operator read never calls protected source',async()=>{
   const interaction={guild_id:'g1',member:{user:{id:'u1'},roles:[]}}
   const out=await operatorRead(findService('neo-miner'),interaction,{NEO_MINER_OPERATOR_URL:'https://miner.example/snapshot',NEO_MINER_OPERATOR_TOKEN:'secret'},{fetchImpl:async()=>{calls++;return new Response('{}',{status:200})}})
   assert.match(out,/NOT AUTHORIZED/)
+  assert.match(out,/Configure this Discord user ID as an operator: u1/)
   assert.match(out,/No protected source was queried/)
   assert.equal(calls,0)
 })
