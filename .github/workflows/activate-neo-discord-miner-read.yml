@@ -9,6 +9,7 @@ permissions:
 jobs:
   activate:
     runs-on: ubuntu-latest
+    environment: neo-miner-production
     steps:
       - name: Checkout
         uses: actions/checkout@v7.0.1
