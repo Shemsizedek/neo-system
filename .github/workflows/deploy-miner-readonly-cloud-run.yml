@@ -39,6 +39,11 @@ jobs:
           for name in GCP_PROJECT_ID GCP_REGION GCP_WIF_PROVIDER GCP_CLOUD_RUN_SERVICE_ACCOUNT GCP_CLOUD_RUN_RUNTIME_ACCOUNT GCP_ARTIFACT_REGISTRY NEO_MINER_OPERATOR_TOKEN; do
             test -n "${!name:-}" || { echo "::error::Missing $name"; exit 1; }
           done
+          NORMALIZED_TOKEN="$(printf '%s' "$NEO_MINER_OPERATOR_TOKEN" | tr -d '[:space:]')"
+          [[ "$NORMALIZED_TOKEN" =~ ^[0-9a-fA-F]{64}$ ]] || {
+            echo "::error::NEO_MINER_OPERATOR_TOKEN must contain exactly 64 hexadecimal characters"
+            exit 1
+          }
 
       - name: Test read-only adapter
         run: node --test server/miner-cloud-run-readonly/server.test.mjs
@@ -63,10 +68,12 @@ jobs:
           docker build -f server/miner-cloud-run-readonly/Dockerfile -t "$IMAGE" .
           docker push "$IMAGE"
 
-      - name: Sync operator token to Secret Manager
+      - name: Sync normalized operator token to Secret Manager
         env:
           NEO_MINER_OPERATOR_TOKEN: ${{ secrets.NEO_MINER_OPERATOR_TOKEN }}
-        run: printf '%s' "$NEO_MINER_OPERATOR_TOKEN" | gcloud secrets versions add "$SECRET_NAME" --data-file=-
+        run: |
+          NORMALIZED_TOKEN="$(printf '%s' "$NEO_MINER_OPERATOR_TOKEN" | tr -d '[:space:]')"
+          printf '%s' "$NORMALIZED_TOKEN" | gcloud secrets versions add "$SECRET_NAME" --data-file=-
 
       - name: Deploy read-only service
         env:
@@ -89,9 +96,22 @@ jobs:
           set -euo pipefail
           URL="$(gcloud run services describe "$SERVICE_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format='value(status.url)')"
           test -n "$URL"
-          test "$(curl -sS -o /dev/null -w '%{http_code}' "$URL/health")" = "200"
-          test "$(curl -sS -o /dev/null -w '%{http_code}' "$URL/discord/snapshot")" = "401"
-          test "$(curl -sS -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $NEO_MINER_OPERATOR_TOKEN" "$URL/discord/snapshot")" = "200"
+          NORMALIZED_TOKEN="$(printf '%s' "$NEO_MINER_OPERATOR_TOKEN" | tr -d '[:space:]')"
+          SERVICE_URL="$URL" OPERATOR_TOKEN="$NORMALIZED_TOKEN" node <<'NODE'
+          const base=process.env.SERVICE_URL
+          const token=process.env.OPERATOR_TOKEN
+          const checks=[
+            {name:'health',url:`${base}/health`,expected:200},
+            {name:'anonymous snapshot',url:`${base}/discord/snapshot`,expected:401},
+            {name:'authenticated snapshot',url:`${base}/discord/snapshot`,expected:200,headers:{authorization:`Bearer ${token}`}}
+          ]
+          for(const check of checks){
+            const response=await fetch(check.url,{headers:check.headers})
+            if(response.status!==check.expected){
+              throw new Error(`${check.name}: expected ${check.expected}, received ${response.status}`)
+            }
+          }
+          NODE
           {
             echo "## NEO Miner read-only Cloud Run deployment"
             echo "Service URL: $URL"
