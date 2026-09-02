@@ -36,7 +36,7 @@ test('telemetry bridge performs one authenticated GET and allowlists output',()=
   assert.equal(body.liveMining,false)
   assert.equal('wallet' in body,false)
   assert.equal('secret' in body,false)
-}),{
+},{
   env:{...baseEnv,NEO_MINER_TELEMETRY_URL:'https://miner.example/snapshot',NEO_MINER_TELEMETRY_TOKEN:'upstream-token'},
   fetchImpl:async(url,init)=>{
     assert.equal(url,'https://miner.example/snapshot')
@@ -50,7 +50,7 @@ test('invalid or unreachable upstream fails closed without leaking configuration
   assert.equal(body.status,'UPSTREAM_CONFIGURATION_INVALID')
   assert.equal(body.mode,'READ_ONLY_BOOTSTRAP')
   assert.equal(JSON.stringify(body).includes('bad-token'),false)
-}),{env:{...baseEnv,NEO_MINER_TELEMETRY_URL:'http://127.0.0.1:8890/snapshot',NEO_MINER_TELEMETRY_TOKEN:'bad-token'}}))
+},{env:{...baseEnv,NEO_MINER_TELEMETRY_URL:'http://127.0.0.1:8890/snapshot',NEO_MINER_TELEMETRY_TOKEN:'bad-token'}}))
 test('malformed request target returns 400 without terminating the server',()=>withServer(async(base,port)=>{
   const response=await new Promise((resolve,reject)=>{const socket=net.createConnection({host:'127.0.0.1',port},()=>socket.write('GET http://[ HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n'));let raw='';socket.on('data',chunk=>raw+=chunk);socket.on('end',()=>resolve(raw));socket.on('error',reject)})
   assert.match(response,/^HTTP\/1\.1 400 /)
