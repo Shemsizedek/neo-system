@@ -1,0 +1,114 @@
+name: NEO Pads Cloud SQL Bootstrap
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/neo-pads-cloudsql-bootstrap.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: neo-pads-cloudsql-bootstrap
+  cancel-in-progress: false
+
+jobs:
+  bootstrap:
+    runs-on: ubuntu-latest
+    env:
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+      GCP_WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER }}
+      GCP_SERVICE_ACCOUNT: ${{ vars.GCP_SERVICE_ACCOUNT }}
+      GCP_REGION: ${{ vars.GCP_REGION || 'us-central1' }}
+      DATABASE_URL_SOURCE: ${{ secrets.NEO_PADS_DATABASE_URL }}
+      INSTANCE: neo-pads-db
+    steps:
+      - name: Validate configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in GCP_PROJECT_ID GCP_WIF_PROVIDER GCP_SERVICE_ACCOUNT DATABASE_URL_SOURCE; do
+            if [[ -z "${!name:-}" ]]; then
+              echo "::error::$name is not configured"
+              exit 1
+            fi
+          done
+
+      - name: Parse existing NEO Pads database credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE' >> "$GITHUB_ENV"
+          const raw = process.env.DATABASE_URL_SOURCE;
+          const u = new URL(raw);
+          if (!['postgres:', 'postgresql:'].includes(u.protocol)) throw new Error('NEO_PADS_DATABASE_URL must be PostgreSQL');
+          const user = decodeURIComponent(u.username || 'neo_pads');
+          const pass = decodeURIComponent(u.password || '');
+          const db = decodeURIComponent(u.pathname.replace(/^\//, '') || 'neo_pads');
+          if (!pass) throw new Error('NEO_PADS_DATABASE_URL password is empty');
+          console.log(`DB_USER=${user}`);
+          console.log(`DB_NAME=${db}`);
+          console.log(`DB_PASSWORD=${pass}`);
+          NODE
+          echo "::add-mask::$DB_PASSWORD"
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@v3
+
+      - name: Enable Cloud SQL Admin API
+        shell: bash
+        run: gcloud services enable sqladmin.googleapis.com --project "$GCP_PROJECT_ID"
+
+      - name: Create or reuse PostgreSQL instance
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! gcloud sql instances describe "$INSTANCE" --project "$GCP_PROJECT_ID" >/dev/null 2>&1; then
+            gcloud sql instances create "$INSTANCE" \
+              --project "$GCP_PROJECT_ID" \
+              --database-version POSTGRES_16 \
+              --region "$GCP_REGION" \
+              --edition ENTERPRISE \
+              --tier db-f1-micro \
+              --storage-type SSD \
+              --storage-size 10 \
+              --storage-auto-increase \
+              --availability-type zonal
+          fi
+          gcloud sql instances describe "$INSTANCE" --project "$GCP_PROJECT_ID" --format='value(connectionName)'
+
+      - name: Create or reuse database
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! gcloud sql databases describe "$DB_NAME" --instance "$INSTANCE" --project "$GCP_PROJECT_ID" >/dev/null 2>&1; then
+            gcloud sql databases create "$DB_NAME" --instance "$INSTANCE" --project "$GCP_PROJECT_ID"
+          fi
+
+      - name: Create or synchronize database user
+        shell: bash
+        run: |
+          set -euo pipefail
+          if gcloud sql users list --instance "$INSTANCE" --project "$GCP_PROJECT_ID" --format='value(name)' | grep -Fxq "$DB_USER"; then
+            gcloud sql users set-password "$DB_USER" --instance "$INSTANCE" --project "$GCP_PROJECT_ID" --password "$DB_PASSWORD"
+          else
+            gcloud sql users create "$DB_USER" --instance "$INSTANCE" --project "$GCP_PROJECT_ID" --password "$DB_PASSWORD"
+          fi
+
+      - name: Verify Cloud SQL target
+        shell: bash
+        run: |
+          set -euo pipefail
+          CONNECTION_NAME="$(gcloud sql instances describe "$INSTANCE" --project "$GCP_PROJECT_ID" --format='value(connectionName)')"
+          test -n "$CONNECTION_NAME"
+          echo "NEO Pads Cloud SQL ready: $CONNECTION_NAME"
