@@ -1,5 +1,5 @@
 name: Omnitrix APK
-# v4.15.0 unified consumer suite + browser routing
+# Production APK build + stable public download publishing
 
 on:
   push:
@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build-apk:
@@ -37,3 +37,20 @@ jobs:
           name: Omnitrix
           path: release/*
           if-no-files-found: error
+      - name: Publish stable public APK
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          rm -rf publish
+          mkdir publish
+          cp release/Omnitrix.apk publish/Omnitrix.apk
+          cp release/Omnitrix.apk.sha256 publish/Omnitrix.apk.sha256
+          cd publish
+          git init
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Omnitrix.apk Omnitrix.apk.sha256
+          git commit -m "publish Omnitrix APK from ${GITHUB_SHA}"
+          git branch -M omnitrix-downloads
+          git remote add origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git push --force origin omnitrix-downloads
