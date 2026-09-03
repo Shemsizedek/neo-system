@@ -32,6 +32,7 @@ on:
 
 permissions:
   contents: read
+  id-token: write
 
 jobs:
   payout-ops:
@@ -40,7 +41,10 @@ jobs:
       run:
         working-directory: apps/neo-pads
     env:
-      DATABASE_URL: ${{ secrets.NEO_PADS_DATABASE_URL }}
+      DATABASE_URL_SOURCE: ${{ secrets.NEO_PADS_DATABASE_URL }}
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+      GCP_WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER }}
+      GCP_SERVICE_ACCOUNT: ${{ vars.GCP_SERVICE_ACCOUNT }}
       NEO_COUNTER_PAYOUT_STATUS_URL: ${{ secrets.NEO_COUNTER_PAYOUT_STATUS_URL }}
       NEO_COUNTER_PAYOUT_API_KEY: ${{ secrets.NEO_COUNTER_PAYOUT_API_KEY }}
       NEO_PADS_CHAIN_CONFIRMATION_URL: ${{ secrets.NEO_PADS_CHAIN_CONFIRMATION_URL }}
@@ -54,21 +58,86 @@ jobs:
       NEO_PADS_OPS_NOTE: ${{ github.event.inputs.note || '' }}
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
           cache-dependency-path: apps/neo-pads/package.json
+
       - name: Check operations configuration
         id: config
         shell: bash
         run: |
-          if [ -z "$DATABASE_URL" ]; then
+          set -euo pipefail
+          if [[ -z "$DATABASE_URL_SOURCE" || -z "$GCP_PROJECT_ID" || -z "$GCP_WIF_PROVIDER" || -z "$GCP_SERVICE_ACCOUNT" ]]; then
             echo "configured=false" >> "$GITHUB_OUTPUT"
-            echo "NEO Pads payout operations skipped: NEO_PADS_DATABASE_URL is not configured."
+            echo "NEO Pads payout operations skipped: PostgreSQL or Google OIDC configuration is incomplete."
           else
             echo "configured=true" >> "$GITHUB_OUTPUT"
           fi
+
+      - name: Parse database credentials and force localhost target
+        if: steps.config.outputs.configured == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE' >> "$GITHUB_ENV"
+          const u = new URL(process.env.DATABASE_URL_SOURCE);
+          if (!['postgres:', 'postgresql:'].includes(u.protocol)) throw new Error('NEO_PADS_DATABASE_URL must be PostgreSQL');
+          const user = decodeURIComponent(u.username || 'neo_pads');
+          const pass = decodeURIComponent(u.password || '');
+          const db = decodeURIComponent(u.pathname.replace(/^\//, '') || 'neo_pads');
+          if (!pass) throw new Error('NEO_PADS_DATABASE_URL password is empty');
+          const encodedUser = encodeURIComponent(user);
+          const encodedPass = encodeURIComponent(pass);
+          const encodedDb = encodeURIComponent(db);
+          console.log(`DB_PASSWORD=${pass}`);
+          console.log(`DATABASE_URL=postgresql://${encodedUser}:${encodedPass}@127.0.0.1:5432/${encodedDb}`);
+          NODE
+          echo "::add-mask::$DB_PASSWORD"
+          echo "::add-mask::$DATABASE_URL"
+
+      - name: Authenticate to Google Cloud
+        if: steps.config.outputs.configured == 'true'
+        uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+
+      - name: Set up gcloud
+        if: steps.config.outputs.configured == 'true'
+        uses: google-github-actions/setup-gcloud@v3
+
+      - name: Resolve Cloud SQL connection name
+        if: steps.config.outputs.configured == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          CONNECTION_NAME="$(gcloud sql instances describe neo-pads-db --project "$GCP_PROJECT_ID" --format='value(connectionName)')"
+          test -n "$CONNECTION_NAME"
+          echo "CLOUD_SQL_CONNECTION_NAME=$CONNECTION_NAME" >> "$GITHUB_ENV"
+
+      - name: Start Cloud SQL Auth Proxy
+        if: steps.config.outputs.configured == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsSL -o "$RUNNER_TEMP/cloud-sql-proxy" https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.18.2/cloud-sql-proxy.linux.amd64
+          chmod +x "$RUNNER_TEMP/cloud-sql-proxy"
+          "$RUNNER_TEMP/cloud-sql-proxy" --address 127.0.0.1 --port 5432 "$CLOUD_SQL_CONNECTION_NAME" >"$RUNNER_TEMP/cloud-sql-proxy.log" 2>&1 &
+          echo $! > "$RUNNER_TEMP/cloud-sql-proxy.pid"
+          for i in {1..30}; do
+            if (echo > /dev/tcp/127.0.0.1/5432) >/dev/null 2>&1; then
+              echo "Cloud SQL Auth Proxy is ready"
+              exit 0
+            fi
+            sleep 1
+          done
+          cat "$RUNNER_TEMP/cloud-sql-proxy.log"
+          exit 1
+
       - name: Validate manual operator input
         if: steps.config.outputs.configured == 'true' && (env.OPS_ACTION == 'acknowledge' || env.OPS_ACTION == 'resolve')
         shell: bash
@@ -77,12 +146,23 @@ jobs:
           if [ "$OPS_ACTION" = "resolve" ]; then
             test -n "$NEO_PADS_OPS_NOTE" || { echo "note is required to resolve an escalation"; exit 1; }
           fi
+
       - name: Install runtime dependencies
         if: steps.config.outputs.configured == 'true'
         run: npm install
+
       - name: Apply database migrations
         if: steps.config.outputs.configured == 'true'
         run: npm run db:migrate
+
       - name: Run payout operations
         if: steps.config.outputs.configured == 'true'
         run: npm run payout:ops -- "$OPS_ACTION"
+
+      - name: Stop Cloud SQL Auth Proxy
+        if: always() && steps.config.outputs.configured == 'true'
+        shell: bash
+        run: |
+          if [[ -f "$RUNNER_TEMP/cloud-sql-proxy.pid" ]]; then
+            kill "$(cat "$RUNNER_TEMP/cloud-sql-proxy.pid")" 2>/dev/null || true
+          fi
