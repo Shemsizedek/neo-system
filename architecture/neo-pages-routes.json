@@ -10,6 +10,7 @@
     {"service":"neo-exchange","path":"/neo-exchange/"},
     {"service":"neoscan","path":"/neoscan/"},
     {"service":"neo-relations","path":"/neo-relations/"},
+    {"service":"gisd-neo-cipher","path":"/gisd/"},
     {"service":"neo-pacer","path":"/neo-pacer/"},
     {"service":"neo-tv","path":"/neo-tv/"},
     {"service":"neo-telegram","path":"/neo-telegram/"},
