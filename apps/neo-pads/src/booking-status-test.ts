@@ -31,7 +31,10 @@ assert.deepEqual(bookingStatusPayload(booking, true), {
   entitlementState: "ACTIVE"
 });
 
+const configuredDatabaseUrl = process.env.DATABASE_URL;
+delete process.env.DATABASE_URL;
 const localRepository = createRepository();
+if (configuredDatabaseUrl) process.env.DATABASE_URL = configuredDatabaseUrl;
 await localRepository.saveBooking({ ...booking, state: "PAYMENT_PENDING", entitlement: "PENDING" });
 const localPayload = Buffer.from(JSON.stringify({
   status: "SETTLED",
