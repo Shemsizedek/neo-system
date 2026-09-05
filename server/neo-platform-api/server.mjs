@@ -46,16 +46,52 @@ function operatorAuthorized(req, env) {
   return Boolean(expected) && header.startsWith('Bearer ') && safeEqual(header.slice(7), expected);
 }
 
+function writeAuthorized(req, env) {
+  return Boolean(env.NEO_STORAGE_WRITE_TOKEN) && safeEqual(req.headers['x-neo-storage-write-token'], env.NEO_STORAGE_WRITE_TOKEN);
+}
+
+async function readJsonBody(req, { maxBytes = 64 * 1024 } = {}) {
+  let size = 0;
+  const chunks = [];
+  for await (const chunk of req) {
+    size += chunk.length;
+    if (size > maxBytes) throw new Error('request body too large');
+    chunks.push(chunk);
+  }
+  const text = Buffer.concat(chunks).toString('utf8');
+  if (!text) return {};
+  try { return JSON.parse(text); } catch { throw new Error('invalid JSON body'); }
+}
+
 export function createNeoPlatformApi({ now = () => new Date().toISOString(), marketData = createNeoPrimeMarketData({ now }), teraboxRuntime = createTeraBoxRuntime({ now }), env = process.env } = {}) {
   return http.createServer(async (req, res) => {
     try {
-      if (req.method === 'OPTIONS') { res.writeHead(204, {'access-control-allow-origin':'*','access-control-allow-methods':'GET,OPTIONS','access-control-allow-headers':'content-type,authorization'}); return res.end(); }
-      if (req.method !== 'GET') return json(res,405,{error:'method_not_allowed',readOnly:true});
+      if (req.method === 'OPTIONS') {
+        res.writeHead(204, {
+          'access-control-allow-origin':'*',
+          'access-control-allow-methods':'GET,POST,OPTIONS',
+          'access-control-allow-headers':'content-type,authorization,x-neo-storage-write-token',
+        });
+        return res.end();
+      }
+
       const url = new URL(req.url || '/', 'http://neo.local');
       const isTeraBoxRoute = url.pathname.startsWith('/api/v1/storage/terabox/');
       if (isTeraBoxRoute && !operatorAuthorized(req, env)) return json(res,401,{error:'operator_auth_required'});
-      const teraBoxLiveMode = env.TERABOX_LIVE_MODE || 'read-only';
-      if (isTeraBoxRoute && teraBoxLiveMode !== 'read-only') return json(res,503,{error:'terabox_safe_mode_required',requiredMode:'read-only'});
+
+      if (req.method === 'POST' && url.pathname === '/api/v1/storage/terabox/file-operations') {
+        if ((env.TERABOX_LIVE_MODE || 'read-only') !== 'controlled-write') return json(res,403,{error:'terabox_controlled_write_disabled',requiredMode:'controlled-write'});
+        if (!writeAuthorized(req, env)) return json(res,401,{error:'storage_write_auth_required'});
+        const body = await readJsonBody(req);
+        if (body.confirm !== true) return json(res,409,{error:'explicit_confirmation_required',required:{confirm:true}});
+        if (!['copy','move','rename','delete'].includes(body.operation)) return json(res,400,{error:'unsupported_file_operation'});
+        if (!Array.isArray(body.filelist) || body.filelist.length < 1 || body.filelist.length > 100) return json(res,400,{error:'invalid_filelist',required:'1-100 entries'});
+        const data = await teraboxRuntime.fileOperation({ operation: body.operation, filelist: body.filelist, asyncMode: body.asyncMode ?? 1 });
+        return json(res,200,{apiVersion:'v1',provider:'terabox',controlledWrite:true,operation:body.operation,data});
+      }
+
+      if (req.method !== 'GET') return json(res,405,{error:'method_not_allowed'});
+
       if (url.pathname === '/health') return json(res,200,{service:'neo-platform-api',status:'ok',generatedAt:now(),platforms:Object.keys(PLATFORM_REGISTRY).length,ociRegisteredServices:OCI_SERVICE_REGISTRY.services.length});
       if (url.pathname === '/api/v1/platforms') return json(res,200,{apiVersion:'v1',generatedAt:now(),platforms:Object.entries(PLATFORM_REGISTRY).map(([id,value])=>({id,name:value.name,services:value.services}))});
       if (url.pathname === '/api/v1/oci/services') return json(res,200,{apiVersion:'v1',generatedAt:now(),...OCI_SERVICE_REGISTRY});
@@ -84,7 +120,6 @@ export function createNeoPlatformApi({ now = () => new Date().toISOString(), mar
         return json(res,200,{apiVersion:'v1',provider:'terabox',readOnly:true,data:await client.quota()});
       }
       if (url.pathname === '/api/v1/storage/terabox/files') {
-        return json(res,403,{error:'terabox_operation_disabled',liveMode:'read-only'});
         const dir = url.searchParams.get('dir');
         if (!dir) return json(res,400,{error:'missing_dir'});
         const page = intParam(url,'page',1,{min:1,max:100000});
@@ -93,7 +128,6 @@ export function createNeoPlatformApi({ now = () => new Date().toISOString(), mar
         return json(res,200,{apiVersion:'v1',provider:'terabox',readOnly:true,data:await client.list({dir,page,num})});
       }
       if (url.pathname === '/api/v1/storage/terabox/search') {
-        return json(res,403,{error:'terabox_operation_disabled',liveMode:'read-only'});
         const key = url.searchParams.get('key');
         if (!key) return json(res,400,{error:'missing_key'});
         const page = intParam(url,'page',1,{min:1,max:100000});
@@ -102,7 +136,6 @@ export function createNeoPlatformApi({ now = () => new Date().toISOString(), mar
         return json(res,200,{apiVersion:'v1',provider:'terabox',readOnly:true,data:await client.search({key,page,num})});
       }
       if (url.pathname === '/api/v1/storage/terabox/download-links') {
-        return json(res,403,{error:'terabox_operation_disabled',liveMode:'read-only'});
         const raw = url.searchParams.get('fids');
         if (!raw) return json(res,400,{error:'missing_fids'});
         const fids = raw.split(',').map(v=>v.trim()).filter(Boolean).slice(0,100);
