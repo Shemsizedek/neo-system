@@ -13,6 +13,7 @@
     "test:payout-reconciliation": "tsx src/db/payout-reconciliation-test.ts",
     "test:http-security": "tsx src/http-security-test.ts",
     "test:adapter-contracts": "tsx src/adapter-contract-test.ts",
+    "test:booking-status": "tsx src/booking-status-test.ts",
     "payout:run": "tsx src/payout-worker.ts",
     "payout:reconcile": "tsx src/payout-reconciler.ts",
     "payout:ops": "tsx src/payout-ops.ts",

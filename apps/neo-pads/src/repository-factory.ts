@@ -20,6 +20,7 @@ class LocalRepository implements Repository {
   }
   async saveProperty(value: PropertyRecord) { this.store.setProperty(value.id, value); }
   async getBooking(id: string) { return this.store.bookings[id] as BookingRecord | undefined; }
+  async hasSettledPayment(_bookingId: string) { return false; }
   async saveBooking(value: BookingRecord) { this.store.setBooking(value.id, value); }
   async markWalletVerified(wallet: string, challengeId: string) { this.store.markWalletVerified(wallet, challengeId); }
   async isWalletVerified(wallet: string) { return this.store.isWalletVerified(wallet); }

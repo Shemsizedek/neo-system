@@ -4,6 +4,7 @@ import express from "express";
 import { getHomesharesBalance } from "./adapters/counterparty.js";
 import { createCheckout } from "./adapters/neo-counter.js";
 import { verifyNeopass } from "./adapters/neopass.js";
+import { bookingStatusPayload, canReadBookingStatus } from "./booking-status.js";
 import { attachOpsRoutes } from "./ops.js";
 import { createRepository } from "./repository-factory.js";
 import type { BookingRecord, PropertyRecord } from "./repository.js";
@@ -113,6 +114,9 @@ app.post(
       }
       if (error instanceof Error && error.message === "unsupported_payment_status") {
         return res.status(400).json({ error: "unsupported_payment_status" });
+      }
+      if (error instanceof Error && error.message === "invalid_settlement_evidence") {
+        return res.status(400).json({ error: "invalid_settlement_evidence" });
       }
       return res.status(500).json({ error: "payment_event_persistence_failed" });
     }
@@ -345,6 +349,27 @@ app.post("/pads/reservations/:bookingId/checkout", async (req, res) => {
   } catch (error) {
     return res.status(502).json({ error: error instanceof Error ? error.message : "checkout_failed" });
   }
+});
+
+app.get("/pads/reservations/:bookingId/status", async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  const token = bearer(req);
+  if (!token) return res.status(401).json({ error: "neopass_authentication_required" });
+
+  const booking = await repository.getBooking(req.params.bookingId);
+  if (!booking) return res.status(404).json({ error: "booking_not_found" });
+
+  try {
+    const member = await verifyNeopass(booking.memberNeopassId, token);
+    if (!canReadBookingStatus(booking, member)) {
+      return res.status(403).json({ error: "booking_access_denied" });
+    }
+  } catch {
+    return res.status(502).json({ error: "neopass_unavailable" });
+  }
+
+  const settlementRecorded = await repository.hasSettledPayment(booking.id);
+  return res.json(bookingStatusPayload(booking, settlementRecorded));
 });
 
 app.get("/neoworks/entitlements/:bookingId", async (req, res) => {

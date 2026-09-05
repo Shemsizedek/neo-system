@@ -68,7 +68,31 @@ try {
   }
   assert.equal(conflict, true, "overlapping booking must be rejected by Postgres");
 
-  const payload = Buffer.from(JSON.stringify({ eventId: `evt-${suffix}`, bookingId: bookingA, status: "SETTLED" }));
+  await assert.rejects(
+    repository.applyPaymentEvent({
+      eventId: `evt-invalid-${suffix}`,
+      bookingId: bookingA,
+      status: "SETTLED",
+      rawPayload: Buffer.from(JSON.stringify({
+        eventId: `evt-invalid-${suffix}`,
+        bookingId: bookingA,
+        status: "SETTLED"
+      }))
+    }),
+    /invalid_settlement_evidence/
+  );
+  assert.equal((await repository.getBooking(bookingA))?.state, "PAYMENT_PENDING");
+  assert.equal(await repository.hasSettledPayment(bookingA), false);
+
+  const payload = Buffer.from(JSON.stringify({
+    eventId: `evt-${suffix}`,
+    bookingId: bookingA,
+    status: "SETTLED",
+    paymentId: `pay-${suffix}`,
+    settlementAsset: "BTC",
+    networkAmount: 0.001,
+    txid: `tx-${suffix}`
+  }));
   const first = await repository.applyPaymentEvent({
     eventId: `evt-${suffix}`,
     bookingId: bookingA,
@@ -78,6 +102,7 @@ try {
   assert.equal(first.duplicate, false);
   assert.equal(first.booking?.state, "CONFIRMED");
   assert.equal(first.booking?.entitlement, "ACTIVE");
+  assert.equal(await repository.hasSettledPayment(bookingA), true);
 
   const duplicate = await repository.applyPaymentEvent({
     eventId: `evt-${suffix}`,
