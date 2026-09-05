@@ -11,7 +11,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
-      GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
       GEMINI_MODEL: gemini-3.7-flash
       NEO_ROUTER_PROVIDER_TIMEOUT_MS: '30000'
     steps:
@@ -29,6 +28,8 @@ jobs:
 
       - name: Verify Gemini secret is configured
         shell: bash
+        env:
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
         run: |
           if [ -z "$GOOGLE_API_KEY" ]; then
             echo "GOOGLE_API_KEY GitHub Actions secret is not configured."
@@ -36,4 +37,6 @@ jobs:
           fi
 
       - name: Run credential-safe Gemini readiness probe
+        env:
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
         run: npm run router:gemini:check
