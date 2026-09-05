@@ -70,7 +70,10 @@
         <label>Property title <input id="propertyTitle" required /></label>
         <label>Location <input id="propertyLocation" required /></label>
         <label>Rate in World Currency <input id="propertyRate" type="number" min="0" required /></label>
-        <label class="check"><input id="authorityVerified" type="checkbox" /> Property authority verified</label>
+        <div class="panel" aria-live="polite">
+          <strong>Property authority</strong>
+          <p id="propertyAuthorityStatus" class="muted">Pending verification. Property authority is reviewed by the trusted NEO Pads authority process after submission and cannot be self-approved by the host.</p>
+        </div>
         <button class="primary" type="submit">Create property</button>
       </form>
     </section>
