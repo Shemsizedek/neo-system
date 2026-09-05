@@ -70,6 +70,14 @@ export class PostgresRepository implements Repository {
     return rows[0] ? bookingFromRow(rows[0]) : undefined;
   }
 
+  async hasSettledPayment(bookingId: string) {
+    const { rowCount } = await this.pool.query(
+      "SELECT 1 FROM neo_pads_payments WHERE booking_id=$1 AND status='SETTLED' LIMIT 1",
+      [bookingId]
+    );
+    return (rowCount ?? 0) > 0;
+  }
+
   async saveBooking(value: BookingRecord) {
     const checkoutId = (value.checkout as any)?.checkoutId ?? (value.checkout as any)?.id ?? null;
     await this.pool.query(
@@ -136,30 +144,31 @@ export class PostgresRepository implements Repository {
       try { payload = JSON.parse(input.rawPayload.toString("utf8")); } catch {}
 
       if (input.status === "SETTLED") {
-        booking.state = "CONFIRMED";
-        booking.entitlement = "ACTIVE";
-
         const settlementAsset = String(payload?.settlementAsset ?? payload?.asset ?? "");
         const networkAmount = Number(payload?.networkAmount ?? payload?.amount ?? 0);
         const networkFee = Number(payload?.networkFee ?? 0);
-        if (["BTC", "XCP", "NOMNI"].includes(settlementAsset) && Number.isFinite(networkAmount) && networkAmount > 0) {
-          await client.query(
-            `INSERT INTO neo_pads_payments(id,booking_id,checkout_id,commercial_amount_world,settlement_asset,network_amount,network_fee,status,txid,settled_at)
+        const transactionReference = String(payload?.txid ?? payload?.reference ?? "").trim();
+        if (!["BTC", "XCP", "NOMNI"].includes(settlementAsset) || !Number.isFinite(networkAmount) || networkAmount <= 0 || !transactionReference) {
+          throw new Error("invalid_settlement_evidence");
+        }
+        booking.state = "CONFIRMED";
+        booking.entitlement = "ACTIVE";
+        await client.query(
+          `INSERT INTO neo_pads_payments(id,booking_id,checkout_id,commercial_amount_world,settlement_asset,network_amount,network_fee,status,txid,settled_at)
              VALUES($1,$2,$3,$4,$5,$6,$7,'SETTLED',$8,now())
              ON CONFLICT(id) DO UPDATE SET status='SETTLED', settlement_asset=EXCLUDED.settlement_asset,
                network_amount=EXCLUDED.network_amount, network_fee=EXCLUDED.network_fee, txid=EXCLUDED.txid, settled_at=now()`,
-            [
-              String(payload?.paymentId ?? payload?.checkoutId ?? `PAY-${input.bookingId}`),
-              input.bookingId,
-              payload?.checkoutId ?? null,
-              booking.amountWorld,
-              settlementAsset,
-              networkAmount,
-              Number.isFinite(networkFee) ? networkFee : 0,
-              payload?.txid ?? null
-            ]
-          );
-        }
+          [
+            String(payload?.paymentId ?? payload?.checkoutId ?? `PAY-${input.bookingId}`),
+            input.bookingId,
+            payload?.checkoutId ?? null,
+            booking.amountWorld,
+            settlementAsset,
+            networkAmount,
+            Number.isFinite(networkFee) ? networkFee : 0,
+            transactionReference
+          ]
+        );
       } else if (input.status === "REFUNDED") {
         booking.state = "REFUNDED";
         booking.entitlement = "REVOKED";

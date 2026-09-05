@@ -2,6 +2,60 @@ const API = window.NEO_PADS_API || 'http://localhost:8788';
 
 const qs = (s) => document.querySelector(s);
 
+function checkoutReturnBookingId() {
+  const params = new URLSearchParams(window.location.search);
+  return params.get('booking');
+}
+
+async function refreshBookingStatus() {
+  const bookingId = checkoutReturnBookingId();
+  if (!bookingId) return;
+  const title = qs('#checkoutReturnTitle');
+  const message = qs('#checkoutReturnMessage');
+  const enteredToken = qs('#neopassToken').value.trim();
+  if (enteredToken) sessionStorage.setItem('neo-neopass-token', enteredToken);
+  const token = enteredToken || sessionStorage.getItem('neo-neopass-token');
+  title.textContent = 'Payment verification pending';
+  if (!token) {
+    message.textContent = 'A NEOpass sign-in is required to read this booking. Browser return data is not payment proof.';
+    return;
+  }
+
+  try {
+    const response = await fetch(`${API}/pads/reservations/${encodeURIComponent(bookingId)}/status`, {
+      headers: { authorization: `Bearer ${token}` },
+      cache: 'no-store'
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      title.textContent = response.status === 401 || response.status === 403 ? 'Booking access denied' : 'Status temporarily unavailable';
+      message.textContent = data.error || 'Unable to verify the booking status.';
+      return;
+    }
+    const confirmed = data.bookingState === 'CONFIRMED' && data.settlementState === 'SETTLED';
+    const terminalMessages = {
+      REFUNDED: ['Booking refunded', 'The settlement was refunded and occupancy access is revoked.'],
+      DISPUTED: ['Booking disputed', 'This booking is disputed and occupancy access is revoked.'],
+      CANCELLED: ['Booking cancelled', 'This booking is cancelled and will not become confirmed.']
+    };
+    const terminal = terminalMessages[data.bookingState];
+    title.textContent = confirmed ? 'Booking confirmed' : terminal?.[0] || 'Payment verification pending';
+    message.textContent = confirmed
+      ? 'Authenticated settlement is recorded and the booking is confirmed.'
+      : terminal?.[1] || 'No authenticated settlement record is available yet. Refresh after network confirmation.';
+  } catch {
+    title.textContent = 'Status temporarily unavailable';
+    message.textContent = 'The NEO Pads API could not be reached. The booking remains unconfirmed.';
+  }
+}
+
+const returnBookingId = checkoutReturnBookingId();
+if (returnBookingId) {
+  qs('#checkoutReturn').hidden = false;
+  qs('#refreshBookingStatus').addEventListener('click', refreshBookingStatus);
+  void refreshBookingStatus();
+}
+
 for (const button of document.querySelectorAll('[data-view]')) {
   button.addEventListener('click', () => {
     document.querySelectorAll('.view').forEach((view) => view.classList.remove('active'));

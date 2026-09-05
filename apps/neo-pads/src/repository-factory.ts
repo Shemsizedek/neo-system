@@ -19,7 +19,10 @@ class LocalRepository implements Repository {
       .filter((p) => p.status === "ACTIVE" && (!needle || p.location.toLowerCase().includes(needle)));
   }
   async saveProperty(value: PropertyRecord) { this.store.setProperty(value.id, value); }
-  async getBooking(id: string) { return this.store.bookings[id] as BookingRecord | undefined; }
+  async getBooking(id: string) {
+    return Object.hasOwn(this.store.bookings, id) ? this.store.bookings[id] as BookingRecord : undefined;
+  }
+  async hasSettledPayment(bookingId: string) { return this.store.hasSettledPayment(bookingId); }
   async saveBooking(value: BookingRecord) { this.store.setBooking(value.id, value); }
   async markWalletVerified(wallet: string, challengeId: string) { this.store.markWalletVerified(wallet, challengeId); }
   async isWalletVerified(wallet: string) { return this.store.isWalletVerified(wallet); }
@@ -27,15 +30,27 @@ class LocalRepository implements Repository {
 
   async applyPaymentEvent(input: { eventId: string; bookingId: string; status: string; rawPayload: Buffer }) {
     if (this.store.hasWebhookEvent(input.eventId)) return { duplicate: true };
-    const booking = this.store.bookings[input.bookingId] as BookingRecord | undefined;
+    const booking = await this.getBooking(input.bookingId);
     if (!booking) throw new Error("booking_not_found");
-    if (input.status === "SETTLED") { booking.state = "CONFIRMED"; booking.entitlement = "ACTIVE"; }
-    else if (input.status === "REFUNDED") { booking.state = "REFUNDED"; booking.entitlement = "REVOKED"; }
-    else if (input.status === "DISPUTED") { booking.state = "DISPUTED"; booking.entitlement = "REVOKED"; }
-    this.store.setBooking(booking.id, booking);
+    let nextBooking = booking;
+    if (input.status === "SETTLED") {
+      let payload: any = {};
+      try { payload = JSON.parse(input.rawPayload.toString("utf8")); } catch {}
+      const asset = String(payload?.settlementAsset ?? payload?.asset ?? "");
+      const amount = Number(payload?.networkAmount ?? payload?.amount ?? 0);
+      const reference = String(payload?.txid ?? payload?.reference ?? "").trim();
+      if (!["BTC", "XCP", "NOMNI"].includes(asset) || !Number.isFinite(amount) || amount <= 0 || !reference) {
+        throw new Error("invalid_settlement_evidence");
+      }
+      nextBooking = { ...booking, state: "CONFIRMED", entitlement: "ACTIVE" };
+      this.store.markSettledPayment(booking.id);
+    }
+    else if (input.status === "REFUNDED") nextBooking = { ...booking, state: "REFUNDED", entitlement: "REVOKED" };
+    else if (input.status === "DISPUTED") nextBooking = { ...booking, state: "DISPUTED", entitlement: "REVOKED" };
+    this.store.setBooking(nextBooking.id, nextBooking);
     crypto.createHash("sha256").update(input.rawPayload).digest("hex");
     this.store.markWebhookEvent(input.eventId);
-    return { duplicate: false, booking };
+    return { duplicate: false, booking: nextBooking };
   }
 
   async ping() { return true; }

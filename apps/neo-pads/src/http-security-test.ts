@@ -95,6 +95,35 @@ try {
   assert.equal(invalidAsset.response.status, 400);
   assert.equal(invalidAsset.body.error, "unsupported_settlement_asset");
 
+  const unauthenticatedStatus = await json(await fetch(
+    `${base}/pads/reservations/${encodeURIComponent(bookingId)}/status`
+  ));
+  assert.equal(unauthenticatedStatus.response.status, 401);
+  assert.equal(unauthenticatedStatus.body.error, "neopass_authentication_required");
+
+  const incompleteSettlementPayload = Buffer.from(JSON.stringify({
+    eventId: `evt-incomplete-${suffix}`,
+    bookingId,
+    status: "SETTLED"
+  }));
+  const incompleteSettlementSignature = crypto
+    .createHmac("sha256", webhookSecret)
+    .update(incompleteSettlementPayload)
+    .digest("hex");
+  const incompleteSettlement = await json(await fetch(`${base}/counter/payment-webhook`, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "x-neo-signature": incompleteSettlementSignature
+    },
+    body: incompleteSettlementPayload
+  }));
+  assert.equal(incompleteSettlement.response.status, 400);
+  assert.equal(incompleteSettlement.body.error, "invalid_settlement_evidence");
+  const pendingBooking = await pool.query("SELECT state,entitlement_status FROM neo_pads_bookings WHERE id=$1", [bookingId]);
+  assert.equal(pendingBooking.rows[0].state, "PAYMENT_PENDING");
+  assert.equal(pendingBooking.rows[0].entitlement_status, "PENDING");
+
   const webhookPayload = Buffer.from(JSON.stringify({
     eventId: `evt-invalid-${suffix}`,
     bookingId,
