@@ -110,6 +110,37 @@ qs('#verifyHomeshares').addEventListener('click', async () => {
   }
 });
 
+async function refreshHostPropertyStatus() {
+  const wallet = qs('#hostWallet').value.trim();
+  const propertyId = qs('#hostPropertyId').value.trim();
+  const status = qs('#hostPropertyStatus');
+  if (!wallet || !propertyId) {
+    status.textContent = 'A verified host wallet and property ID are required.';
+    return;
+  }
+  status.textContent = 'Reading server-controlled property status…';
+  try {
+    const url = new URL(`${API}/pads/properties/${encodeURIComponent(propertyId)}/status`);
+    url.searchParams.set('wallet', wallet);
+    const response = await fetch(url, { cache: 'no-store' });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      status.textContent = data.error || 'Property status is unavailable.';
+      return;
+    }
+    const messages = {
+      PENDING: 'Pending verification. The property cannot activate until trusted authority review is complete.',
+      VERIFIED: 'Authority verified by the trusted NEO Pads review process.',
+      REVOKED: 'Authority revoked or suspended. The property cannot activate.'
+    };
+    status.textContent = `${data.authorityState}: ${messages[data.authorityState] || 'Current property state received.'} Listing state: ${data.propertyStatus}.`;
+  } catch (error) {
+    status.textContent = `Property status unavailable: ${error.message}`;
+  }
+}
+
+qs('#refreshPropertyStatus').addEventListener('click', refreshHostPropertyStatus);
+
 qs('#propertyForm').addEventListener('submit', async (event) => {
   event.preventDefault();
   const authorityStatus = qs('#propertyAuthorityStatus');
@@ -132,10 +163,12 @@ qs('#propertyForm').addEventListener('submit', async (event) => {
       authorityStatus.textContent = 'Property was not created. No authority state was changed.';
       return;
     }
+    if (data.id) qs('#hostPropertyId').value = String(data.id);
     const verified = data.propertyAuthorityVerified === true || data.authorityVerified === true;
     authorityStatus.textContent = verified
       ? 'Authority verified by the trusted NEO Pads review process.'
       : 'Pending verification. Submission does not self-approve property authority.';
+    await refreshHostPropertyStatus();
   } catch (error) {
     authorityStatus.textContent = 'Property submission could not be completed. Authority remains unverified.';
     qs('#hostStatus').textContent = `Property creation unavailable: ${error.message}`;
