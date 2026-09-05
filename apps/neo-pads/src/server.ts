@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import cors from "cors";
 import express from "express";
+import { rateLimit } from "express-rate-limit";
 import { getHomesharesBalance } from "./adapters/counterparty.js";
 import { createCheckout } from "./adapters/neo-counter.js";
 import { verifyNeopass } from "./adapters/neopass.js";
@@ -35,6 +36,13 @@ const HOMESHARES = "HOMESHARES";
 const ORANGE_CHIP_WALLET = "1Ky2wRYYrJzqdQJH64F7TR98fqLxJs7LK8";
 const PAYMENT_EVENT_STATUSES = new Set(["SETTLED", "REFUNDED", "DISPUTED"]);
 const SETTLEMENT_ASSETS = new Set(["BTC", "XCP", "NOMNI"]);
+const bookingStatusLimiter = rateLimit({
+  windowMs: 60_000,
+  limit: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "booking_status_rate_limited" }
+});
 
 function id(prefix: string) {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -326,7 +334,7 @@ app.post("/pads/reservations", async (req, res) => {
 });
 
 app.post("/pads/reservations/:bookingId/checkout", async (req, res) => {
-  const booking = await repository.getBooking(req.params.bookingId);
+  const booking = await repository.getBooking(String(req.params.bookingId));
   if (!booking) return res.status(404).json({ error: "booking_not_found" });
   const property = await repository.getProperty(booking.propertyId);
   if (!property) return res.status(404).json({ error: "property_not_found" });
@@ -351,12 +359,12 @@ app.post("/pads/reservations/:bookingId/checkout", async (req, res) => {
   }
 });
 
-app.get("/pads/reservations/:bookingId/status", async (req, res) => {
+app.get("/pads/reservations/:bookingId/status", bookingStatusLimiter, async (req, res) => {
   res.set("Cache-Control", "no-store");
   const token = bearer(req);
   if (!token) return res.status(401).json({ error: "neopass_authentication_required" });
 
-  const booking = await repository.getBooking(req.params.bookingId);
+  const booking = await repository.getBooking(String(req.params.bookingId));
   if (!booking) return res.status(404).json({ error: "booking_not_found" });
 
   try {
@@ -364,7 +372,10 @@ app.get("/pads/reservations/:bookingId/status", async (req, res) => {
     if (!canReadBookingStatus(booking, member)) {
       return res.status(403).json({ error: "booking_access_denied" });
     }
-  } catch {
+  } catch (error) {
+    if (error instanceof Error && /^neopass_verification_failed:(401|403)$/.test(error.message)) {
+      return res.status(401).json({ error: "neopass_authentication_invalid" });
+    }
     return res.status(502).json({ error: "neopass_unavailable" });
   }
 

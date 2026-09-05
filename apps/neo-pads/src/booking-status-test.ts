@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { bookingStatusPayload, canReadBookingStatus } from "./booking-status.js";
+import { createRepository } from "./repository-factory.js";
 import type { BookingRecord } from "./repository.js";
 
 const booking: BookingRecord = {
@@ -29,5 +30,22 @@ assert.deepEqual(bookingStatusPayload(booking, true), {
   settlementState: "SETTLED",
   entitlementState: "ACTIVE"
 });
+
+const localRepository = createRepository();
+await localRepository.saveBooking({ ...booking, state: "PAYMENT_PENDING", entitlement: "PENDING" });
+const localPayload = Buffer.from(JSON.stringify({
+  status: "SETTLED",
+  settlementAsset: "BTC",
+  networkAmount: 0.001,
+  txid: "test-tx"
+}));
+await localRepository.applyPaymentEvent({
+  eventId: "local-event",
+  bookingId: booking.id,
+  status: "SETTLED",
+  rawPayload: localPayload
+});
+assert.equal(await localRepository.hasSettledPayment(booking.id), true);
+await localRepository.close();
 
 console.log("NEO Pads authenticated booking status tests passed");
