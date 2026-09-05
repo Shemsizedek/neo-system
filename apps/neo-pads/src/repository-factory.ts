@@ -32,6 +32,7 @@ class LocalRepository implements Repository {
     if (this.store.hasWebhookEvent(input.eventId)) return { duplicate: true };
     const booking = await this.getBooking(input.bookingId);
     if (!booking) throw new Error("booking_not_found");
+    let nextBooking = booking;
     if (input.status === "SETTLED") {
       let payload: any = {};
       try { payload = JSON.parse(input.rawPayload.toString("utf8")); } catch {}
@@ -41,16 +42,15 @@ class LocalRepository implements Repository {
       if (!["BTC", "XCP", "NOMNI"].includes(asset) || !Number.isFinite(amount) || amount <= 0 || !reference) {
         throw new Error("invalid_settlement_evidence");
       }
-      booking.state = "CONFIRMED";
-      booking.entitlement = "ACTIVE";
+      nextBooking = { ...booking, state: "CONFIRMED", entitlement: "ACTIVE" };
       this.store.markSettledPayment(booking.id);
     }
-    else if (input.status === "REFUNDED") { booking.state = "REFUNDED"; booking.entitlement = "REVOKED"; }
-    else if (input.status === "DISPUTED") { booking.state = "DISPUTED"; booking.entitlement = "REVOKED"; }
-    this.store.setBooking(booking.id, booking);
+    else if (input.status === "REFUNDED") nextBooking = { ...booking, state: "REFUNDED", entitlement: "REVOKED" };
+    else if (input.status === "DISPUTED") nextBooking = { ...booking, state: "DISPUTED", entitlement: "REVOKED" };
+    this.store.setBooking(nextBooking.id, nextBooking);
     crypto.createHash("sha256").update(input.rawPayload).digest("hex");
     this.store.markWebhookEvent(input.eventId);
-    return { duplicate: false, booking };
+    return { duplicate: false, booking: nextBooking };
   }
 
   async ping() { return true; }
