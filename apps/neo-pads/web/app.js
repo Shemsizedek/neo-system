@@ -112,20 +112,34 @@ qs('#verifyHomeshares').addEventListener('click', async () => {
 
 qs('#propertyForm').addEventListener('submit', async (event) => {
   event.preventDefault();
+  const authorityStatus = qs('#propertyAuthorityStatus');
+  authorityStatus.textContent = 'Submitting property. Authority will remain pending until trusted review is completed.';
   const body = {
     hostWallet: qs('#hostWallet').value.trim(),
     title: qs('#propertyTitle').value.trim(),
     location: qs('#propertyLocation').value.trim(),
-    priceWorld: Number(qs('#propertyRate').value),
-    propertyAuthorityVerified: qs('#authorityVerified').checked
+    priceWorld: Number(qs('#propertyRate').value)
   };
-  const response = await fetch(`${API}/pads/properties`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify(body)
-  });
-  const data = await response.json();
-  qs('#hostStatus').textContent = JSON.stringify(data, null, 2);
+  try {
+    const response = await fetch(`${API}/pads/properties`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const data = await response.json().catch(() => ({}));
+    qs('#hostStatus').textContent = JSON.stringify(data, null, 2);
+    if (!response.ok) {
+      authorityStatus.textContent = 'Property was not created. No authority state was changed.';
+      return;
+    }
+    const verified = data.propertyAuthorityVerified === true || data.authorityVerified === true;
+    authorityStatus.textContent = verified
+      ? 'Authority verified by the trusted NEO Pads review process.'
+      : 'Pending verification. Submission does not self-approve property authority.';
+  } catch (error) {
+    authorityStatus.textContent = 'Property submission could not be completed. Authority remains unverified.';
+    qs('#hostStatus').textContent = `Property creation unavailable: ${error.message}`;
+  }
 });
 
 search().catch(() => {
