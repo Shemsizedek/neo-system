@@ -1,3 +1,5 @@
+import { readWorldLibrary, readWorldLibraryAsset } from "./library-registry.mjs";
+
 const READ_ONLY = true;
 
 export const HOLY_TEMPLES = Object.freeze({
@@ -20,9 +22,14 @@ export function health() {
   });
 }
 
-export function libraryCatalog(records = []) {
+export function libraryCatalog(records) {
+  if (records === undefined) return readWorldLibrary();
   if (!Array.isArray(records)) throw new TypeError("records must be an array");
   return records.map((record) => Object.freeze({ ...record }));
+}
+
+export function libraryAsset(assetId) {
+  return readWorldLibraryAsset(assetId);
 }
 
 export function classifyLibraryRecord(record) {

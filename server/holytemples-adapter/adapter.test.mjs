@@ -4,6 +4,7 @@ import {
   assertReadOnly,
   classifyLibraryRecord,
   health,
+  libraryAsset,
   libraryCatalog,
   mutate,
   storeCatalog,
@@ -32,6 +33,18 @@ test("library catalog accepts records without mutating source data", () => {
   const result = libraryCatalog(source);
   assert.notEqual(result[0], source[0]);
   assert.deepEqual(result, source);
+});
+
+test("library catalog defaults to the canonical read registry", () => {
+  const result = libraryCatalog();
+  assert.ok(result.length > 0);
+  assert.ok(result.some((record) => record.assetId === "world-library-neo-codex"));
+});
+
+test("library asset reads canonical records by asset id", () => {
+  const record = libraryAsset("world-library-neo-codex");
+  assert.equal(record.driveFileId, "0B-oe5yNz2jy4VlVfTVJrNGFYczA");
+  assert.equal(libraryAsset("missing"), null);
 });
 
 test("store exposes Spreadshop metadata only", () => {
