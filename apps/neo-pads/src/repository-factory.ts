@@ -19,7 +19,9 @@ class LocalRepository implements Repository {
       .filter((p) => p.status === "ACTIVE" && (!needle || p.location.toLowerCase().includes(needle)));
   }
   async saveProperty(value: PropertyRecord) { this.store.setProperty(value.id, value); }
-  async getBooking(id: string) { return this.store.bookings[id] as BookingRecord | undefined; }
+  async getBooking(id: string) {
+    return Object.hasOwn(this.store.bookings, id) ? this.store.bookings[id] as BookingRecord : undefined;
+  }
   async hasSettledPayment(bookingId: string) { return this.store.hasSettledPayment(bookingId); }
   async saveBooking(value: BookingRecord) { this.store.setBooking(value.id, value); }
   async markWalletVerified(wallet: string, challengeId: string) { this.store.markWalletVerified(wallet, challengeId); }
@@ -28,7 +30,7 @@ class LocalRepository implements Repository {
 
   async applyPaymentEvent(input: { eventId: string; bookingId: string; status: string; rawPayload: Buffer }) {
     if (this.store.hasWebhookEvent(input.eventId)) return { duplicate: true };
-    const booking = this.store.bookings[input.bookingId] as BookingRecord | undefined;
+    const booking = await this.getBooking(input.bookingId);
     if (!booking) throw new Error("booking_not_found");
     if (input.status === "SETTLED") {
       let payload: any = {};
