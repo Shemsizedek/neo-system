@@ -98,6 +98,27 @@ test('ensureAccessToken refreshes and persists a token near expiry', async () =>
   assert.equal(saved.refreshedAt, '2026-08-30T00:56:00.000Z');
 });
 
+test('fileOperation fails closed unless controlled-write mode is explicit', async () => {
+  const store = createMemoryTokenStore();
+  await store.set({ accessToken: 'ACCESS_1', apiDomain: 'https://api.example', connectedAt: '2026-08-30T00:00:00.000Z', expiresIn: 172800 });
+  const adapterFactory = () => ({ fileManager: async () => ({ errno: 0 }) });
+  const runtime = createTeraBoxRuntime({ env: { ...env, TERABOX_LIVE_MODE: 'read-only' }, tokenStore: store, adapterFactory });
+  await assert.rejects(runtime.fileOperation({ operation: 'rename', filelist: [{ path: '/a', newname: 'b' }] }), /controlled-write mode is required/);
+});
+
+test('fileOperation allows only supported bounded mutations in controlled-write mode', async () => {
+  const store = createMemoryTokenStore();
+  await store.set({ accessToken: 'ACCESS_1', apiDomain: 'https://api.example', connectedAt: '2026-08-30T00:00:00.000Z', expiresIn: 172800 });
+  const calls = [];
+  const adapterFactory = () => ({ fileManager: async input => { calls.push(input); return { errno: 0, request_id: 'op-1' }; } });
+  const runtime = createTeraBoxRuntime({ env: { ...env, TERABOX_LIVE_MODE: 'controlled-write' }, tokenStore: store, adapterFactory });
+  const result = await runtime.fileOperation({ operation: 'copy', filelist: [{ path: '/a', dest: '/b' }] });
+  assert.equal(result.request_id, 'op-1');
+  assert.equal(calls.length, 1);
+  await assert.rejects(runtime.fileOperation({ operation: 'upload', filelist: [{ path: '/a' }] }), /Unsupported/);
+  await assert.rejects(runtime.fileOperation({ operation: 'copy', filelist: [] }), /1-100 entries/);
+});
+
 test('status reports unconfigured runtime safely', async () => {
   const runtime = createTeraBoxRuntime({ env: {} });
   const status = await runtime.status();
