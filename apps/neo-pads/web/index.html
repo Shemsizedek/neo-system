@@ -25,6 +25,7 @@
         <input id="neopassToken" type="password" autocomplete="current-password" placeholder="Enter your NEOpass token" />
       </label>
       <button id="refreshBookingStatus" class="primary" type="button">Refresh status</button>
+      <p class="muted">After an authenticated check, NEO Pads will retry read-only verification for up to two minutes and stop automatically on a terminal booking state.</p>
     </section>
 
     <section id="marketplace" class="view active">
@@ -80,5 +81,6 @@
     <span>NEOpass · NEOworks · NEO Counter · Bitcoin / Counterparty</span>
   </footer>
   <script src="./app.js" type="module"></script>
+  <script src="./checkout-return-poller.js" type="module"></script>
 </body>
 </html>

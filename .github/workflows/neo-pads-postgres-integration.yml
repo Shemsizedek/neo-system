@@ -57,6 +57,10 @@ jobs:
           cache-dependency-path: apps/neo-pads/package.json
       - run: npm install
       - run: npm run typecheck
+      - name: Syntax-check browser checkout return scripts
+        run: |
+          node --check web/app.js
+          node --check web/checkout-return-poller.js
       - run: npm run test:adapter-contracts
       - run: npm run test:booking-status
       - run: npm run db:migrate
