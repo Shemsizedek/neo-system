@@ -100,8 +100,17 @@ export function createTeraBoxRuntime({
     });
   }
 
+  async function fileOperation({ operation, filelist, asyncMode = 1 } = {}) {
+    if (liveMode() !== 'controlled-write') throw new Error('TeraBox controlled-write mode is required');
+    if (!['copy', 'move', 'rename', 'delete'].includes(operation)) throw new Error('Unsupported TeraBox file operation');
+    if (!Array.isArray(filelist) || filelist.length === 0 || filelist.length > 100) throw new Error('filelist must contain 1-100 entries');
+    const teraBox = await client();
+    return teraBox.fileManager({ operation, filelist, asyncMode });
+  }
+
   return {
     configured,
+    liveMode,
 
     authorizationUrl() {
       required(env.TERABOX_CLIENT_ID, 'TERABOX_CLIENT_ID');
@@ -146,6 +155,7 @@ export function createTeraBoxRuntime({
 
     ensureAccessToken,
     client,
+    fileOperation,
 
     async refresh() {
       const record = await store.get();
@@ -167,6 +177,7 @@ export function createTeraBoxRuntime({
       return {
         service: 'terabox',
         configured: configured(),
+        liveMode: liveMode(),
         connected: Boolean(record?.accessToken),
         userId: record?.userId ?? null,
         apiDomain: record?.apiDomain ?? null,
