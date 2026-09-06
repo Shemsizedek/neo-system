@@ -1,18 +1,5 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
-
-const MUTATION_WORDS = /(^|_)(create|update|delete|destroy|send|write|post|put|patch|remove|pay|payout|withdraw|transfer|sign|custod|execute|manage|multi|remote|connection)(_|$)/i;
-const READ_WORDS = /(^|_)(read|list|get|fetch|search|retrieve|check|status|describe|inspect|query|find|lookup|observe|health)(_|$)/i;
-
-function normalizeTool(tool) {
-  const slug = String(tool.slug || tool.name || '');
-  const name = String(tool.name || slug);
-  const description = String(tool.description || tool.meta?.description || '');
-  const signature = `${slug}_${name}_${description}`;
-  const classification = !MUTATION_WORDS.test(signature) && (tool.readOnly === true || READ_WORDS.test(signature)) ? 'read' : 'write';
-  const toolkit = tool.toolkit && typeof tool.toolkit === 'object' ? (tool.toolkit.slug || tool.toolkit.name) : tool.toolkit;
-  const integration = String(toolkit || tool.integration || slug.split('_')[0] || 'composio').toLowerCase();
-  return { name, slug, integration, provider: 'composio', classification, capabilities: [slug], health: 'unknown', lastSuccessfulOperation: null };
-}
+import { createComposioProviderAdapter } from './provider-adapter.mjs';
 
 function redact(value) {
   if (Array.isArray(value)) return value.map(redact);
@@ -51,7 +38,7 @@ export function createComposioClient({ apiKey = process.env.COMPOSIO_API_KEY, ba
   };
 }
 
-export function createIntegrationHub({ composio = createComposioClient(), now = () => new Date().toISOString(), audit = () => {} } = {}) {
+export function createIntegrationHub({ composio = createComposioClient(), providerAdapter = createComposioProviderAdapter({ composio }), now = () => new Date().toISOString(), audit = () => {} } = {}) {
   const sessions = new Map();
 
   function record({ subject, integration, operation, classification, allowed }) {
@@ -62,11 +49,8 @@ export function createIntegrationHub({ composio = createComposioClient(), now = 
     const existing = sessions.get(subject);
     if (existing) return existing;
     try {
-      const created = await composio.createSession(subject);
-      const sessionId = created?.session_id;
-      if (!sessionId) throw new Error('Composio did not return a session id.');
-      const tools = await composio.listTools(sessionId);
-      const session = { sessionId, tools: (tools?.items || []).map(normalizeTool) };
+      const sessionId = await providerAdapter.createSession(subject);
+      const session = { sessionId, tools: await providerAdapter.listCapabilities(sessionId) };
       sessions.set(subject, session);
       return session;
     } catch (error) {
@@ -107,7 +91,7 @@ export function createIntegrationHub({ composio = createComposioClient(), now = 
       }
       record({ subject, integration, operation: tool, classification: candidate.classification, allowed: true });
       try {
-        const result = await composio.execute(session.sessionId, candidate.slug, argumentsValue);
+        const result = await providerAdapter.executeRead(session.sessionId, candidate, argumentsValue);
         candidate.lastSuccessfulOperation = now();
         return { integration, operation: candidate.slug, classification: 'read', readOnly: true, data: redact(result?.data ?? result), error: result?.error || null };
       } catch (error) {
