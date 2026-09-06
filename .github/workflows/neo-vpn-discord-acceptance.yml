@@ -1,0 +1,30 @@
+name: NEO VPN Discord Acceptance
+
+on:
+  pull_request:
+    paths:
+      - 'services/neo-vpn/discord/**'
+      - 'services/neo-vpn/docs/DISCORD-LIVE-ACCEPTANCE.md'
+      - '.github/workflows/neo-vpn-discord-acceptance.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+      - name: Install Discord gateway dependencies
+        working-directory: services/neo-vpn/discord
+        run: npm ci
+      - name: Static check
+        working-directory: services/neo-vpn/discord
+        run: npm run check
+      - name: Acceptance unit tests
+        working-directory: services/neo-vpn/discord
+        run: npm test
