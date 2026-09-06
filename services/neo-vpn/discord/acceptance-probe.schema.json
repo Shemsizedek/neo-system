@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["ok", "registrationReady", "executionReady", "infrastructureLive", "failures"],
+  "properties": {
+    "ok": {"type": "boolean"},
+    "registrationReady": {"type": "boolean"},
+    "executionReady": {"type": "boolean"},
+    "infrastructureLive": {"type": "boolean"},
+    "guildId": {"type": ["string", "null"]},
+    "commandCount": {"type": "integer", "minimum": 0},
+    "attestationSummary": {"type": ["string", "null"]},
+    "updatedAt": {"type": ["string", "null"]},
+    "failures": {"type": "array", "items": {"type": "string"}}
+  },
+  "additionalProperties": false
+}
