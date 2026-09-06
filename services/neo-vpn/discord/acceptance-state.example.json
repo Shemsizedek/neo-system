@@ -1,0 +1,10 @@
+{
+  "status": "online",
+  "gatewayConnected": true,
+  "guildAttested": true,
+  "commandsRegistered": true,
+  "guildId": "123456789012345678",
+  "commandCount": 6,
+  "attestationSummary": "verified roles=3 channels=1",
+  "infrastructureLive": false
+}
