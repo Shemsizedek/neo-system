@@ -1,0 +1,81 @@
+name: Deploy HolyTemples Adapter to Cloud Run
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: holytemples-adapter-cloud-run
+  cancel-in-progress: false
+
+env:
+  SERVICE_NAME: holytemples-adapter
+  OPERATOR_SECRET_NAME: neo-temple-operator-token
+  WP_PASSWORD_SECRET_NAME: holytemples-wordpress-application-password
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: holytemples-production
+    timeout-minutes: 20
+    env:
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID || secrets.GCP_PROJECT_ID }}
+      GCP_REGION: ${{ vars.GCP_REGION || secrets.GCP_REGION }}
+      GCP_WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER || secrets.GCP_WIF_PROVIDER }}
+      GCP_CLOUD_RUN_SERVICE_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_SERVICE_ACCOUNT || secrets.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+      GCP_CLOUD_RUN_RUNTIME_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_RUNTIME_ACCOUNT || secrets.GCP_CLOUD_RUN_RUNTIME_ACCOUNT }}
+      GCP_ARTIFACT_REGISTRY: ${{ vars.GCP_ARTIFACT_REGISTRY || secrets.GCP_ARTIFACT_REGISTRY }}
+      WORDPRESS_BASE_URL: https://holytemples.org
+      WORDPRESS_USERNAME: ${{ vars.HOLYTEMPLES_WORDPRESS_USERNAME }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Validate configuration
+        env:
+          NEO_TEMPLE_OPERATOR_TOKEN: ${{ secrets.NEO_TEMPLE_OPERATOR_TOKEN }}
+          WORDPRESS_APPLICATION_PASSWORD: ${{ secrets.HOLYTEMPLES_WORDPRESS_APPLICATION_PASSWORD }}
+        run: |
+          set -euo pipefail
+          for name in GCP_PROJECT_ID GCP_REGION GCP_WIF_PROVIDER GCP_CLOUD_RUN_SERVICE_ACCOUNT GCP_CLOUD_RUN_RUNTIME_ACCOUNT GCP_ARTIFACT_REGISTRY WORDPRESS_USERNAME NEO_TEMPLE_OPERATOR_TOKEN WORDPRESS_APPLICATION_PASSWORD; do
+            test -n "${!name:-}" || { echo "::error::Missing $name"; exit 1; }
+          done
+      - name: Test adapter
+        run: node --test server/holytemples-adapter/*.test.mjs
+      - uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@v3
+      - name: Build and push
+        env:
+          IMAGE: ${{ env.GCP_ARTIFACT_REGISTRY }}/holytemples-adapter:${{ github.sha }}
+        run: |
+          gcloud auth configure-docker "${GCP_REGION}-docker.pkg.dev" --quiet
+          docker build -f server/holytemples-adapter/Dockerfile -t "$IMAGE" .
+          docker push "$IMAGE"
+      - name: Sync secrets
+        env:
+          NEO_TEMPLE_OPERATOR_TOKEN: ${{ secrets.NEO_TEMPLE_OPERATOR_TOKEN }}
+          WORDPRESS_APPLICATION_PASSWORD: ${{ secrets.HOLYTEMPLES_WORDPRESS_APPLICATION_PASSWORD }}
+        run: |
+          set -euo pipefail
+          for secret in "$OPERATOR_SECRET_NAME" "$WP_PASSWORD_SECRET_NAME"; do
+            gcloud secrets describe "$secret" --project="$GCP_PROJECT_ID" >/dev/null
+          done
+          printf '%s' "$NEO_TEMPLE_OPERATOR_TOKEN" | gcloud secrets versions add "$OPERATOR_SECRET_NAME" --project="$GCP_PROJECT_ID" --data-file=-
+          printf '%s' "$WORDPRESS_APPLICATION_PASSWORD" | gcloud secrets versions add "$WP_PASSWORD_SECRET_NAME" --project="$GCP_PROJECT_ID" --data-file=-
+      - name: Deploy
+        env:
+          IMAGE: ${{ env.GCP_ARTIFACT_REGISTRY }}/holytemples-adapter:${{ github.sha }}
+        run: |
+          gcloud run deploy "$SERVICE_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --image="$IMAGE" --service-account="$GCP_CLOUD_RUN_RUNTIME_ACCOUNT" --set-env-vars="WORDPRESS_BASE_URL=$WORDPRESS_BASE_URL,WORDPRESS_USERNAME=$WORDPRESS_USERNAME" --set-secrets="NEO_TEMPLE_OPERATOR_TOKEN=$OPERATOR_SECRET_NAME:latest,WORDPRESS_APPLICATION_PASSWORD=$WP_PASSWORD_SECRET_NAME:latest" --allow-unauthenticated --quiet
+      - name: Verify public health and protected mutation boundary
+        run: |
+          set -euo pipefail
+          URL="$(gcloud run services describe "$SERVICE_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format='value(status.url)')"
+          test "$(curl -sS -o /dev/null -w '%{http_code}' "$URL/health")" = 200
+          test "$(curl -sS -o /dev/null -w '%{http_code}' -X POST "$URL/media")" = 401
+          echo "HolyTemples adapter: $URL" >> "$GITHUB_STEP_SUMMARY"
