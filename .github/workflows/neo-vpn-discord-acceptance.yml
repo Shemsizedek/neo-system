@@ -21,7 +21,7 @@ jobs:
           node-version: 24
       - name: Install Discord gateway dependencies
         working-directory: services/neo-vpn/discord
-        run: npm ci
+        run: npm install --ignore-scripts --no-package-lock
       - name: Static check
         working-directory: services/neo-vpn/discord
         run: npm run check
