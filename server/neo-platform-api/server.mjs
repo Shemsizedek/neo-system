@@ -51,6 +51,14 @@ export function createNeoPlatformApi({ now = () => new Date().toISOString(), aud
         let body = ''; for await (const chunk of req) body += chunk;
         return json(res,200,await commandRouter.execute(subject,JSON.parse(body || '{}')));
       }
+      if (url.pathname === '/api/v1/commands/capabilities' || url.pathname.match(/^\/api\/v1\/commands\/capabilities\/[^/]+\/status$/)) {
+        const subject = subjectResolver(req);
+        if (!subject) return json(res,401,{error:'neopass_identity_required',readOnly:true});
+        if (req.method !== 'GET') return json(res,405,{error:'method_not_allowed',readOnly:true});
+        const statusMatch = url.pathname.match(/^\/api\/v1\/commands\/capabilities\/([^/]+)\/status$/);
+        if (statusMatch) return json(res,200,{apiVersion:'v1',readOnly:true,...await commandRouter.capabilityStatus(subject,decodeURIComponent(statusMatch[1]))});
+        return json(res,200,{apiVersion:'v1',readOnly:true,...await commandRouter.listCapabilities(subject)});
+      }
       if (req.method !== 'GET') return json(res,405,{error:'method_not_allowed',readOnly:true});
       if (url.pathname === '/api/v1/platforms') return json(res,200,{apiVersion:'v1',generatedAt:now(),platforms:Object.entries(PLATFORM_REGISTRY).map(([id,value])=>({id,name:value.name,services:value.services}))});
       if (url.pathname === '/api/v1/oci/services') return json(res,200,{apiVersion:'v1',generatedAt:now(),...OCI_SERVICE_REGISTRY});

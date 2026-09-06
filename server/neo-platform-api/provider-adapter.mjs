@@ -8,7 +8,7 @@ function normalizeCapability(tool) {
   const signature = `${slug}_${name}_${description}`;
   const classification = !MUTATION_WORDS.test(signature) && (tool.readOnly === true || READ_WORDS.test(signature)) ? 'read' : 'write';
   const toolkit = tool.toolkit && typeof tool.toolkit === 'object' ? (tool.toolkit.slug || tool.toolkit.name) : tool.toolkit;
-  const capability = tool.capability || tool.neoCapability || deriveCapability(signature);
+  const capability = tool.capability || tool.neoCapability || deriveCapability(`${slug}_${name}`);
   return { name, slug, integration: String(toolkit || tool.integration || slug.split('_')[0] || 'composio').toLowerCase(), provider: 'composio', classification, capabilities: [slug], capability, health: 'unknown', lastSuccessfulOperation: null };
 }
 
@@ -30,7 +30,7 @@ export function createComposioProviderAdapter({ composio, now = () => new Date()
     },
     async listCapabilities(sessionId) {
       const tools = await composio.listTools(sessionId);
-      return (tools?.items || []).map(normalizeCapability);
+      return (tools?.items || []).map(normalizeCapability).filter(value => value.capability);
     },
     async executeRead(sessionId, capability, argumentsValue) {
       if (!capability || capability.classification !== 'read') throw new Error('read_only_operation_required');

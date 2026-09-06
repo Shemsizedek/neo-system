@@ -71,6 +71,15 @@ export function createIntegrationHub({ composio = createComposioClient(), provid
   }
 
   return {
+    async listCapabilities(subject) {
+      const session = await sessionFor(subject);
+      return session.tools.filter(value => value.capability).map(value => ({ capability: value.capability, provider: value.provider, classification: value.classification, health: value.health, lastSuccessfulOperation: value.lastSuccessfulOperation }));
+    },
+    async capabilityStatus(subject, capability) {
+      const item = (await sessionFor(subject)).tools.find(value => value.capability === capability);
+      if (!item) throw new IntegrationHubError('unknown_capability', 'Requested NEO capability is not available.', 404);
+      return { capability: item.capability, provider: item.provider, classification: item.classification, health: item.health, lastSuccessfulOperation: item.lastSuccessfulOperation };
+    },
     async list(subject) { return { integrations: integrations(await sessionFor(subject)) }; },
     async status(subject, integration) {
       const session = await sessionFor(subject);
