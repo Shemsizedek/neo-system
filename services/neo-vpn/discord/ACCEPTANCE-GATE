@@ -1,0 +1,2 @@
+registrationReady = gatewayConnected && guildAttested && commandsRegistered && configuredGuildMatches
+executionReady = registrationReady && NEO_VPN_INFRASTRUCTURE_LIVE=true
