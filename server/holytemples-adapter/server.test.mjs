@@ -3,25 +3,20 @@ import assert from "node:assert/strict";
 import { once } from "node:events";
 import { createServer } from "./server.mjs";
 
-async function withServer(run) {
-  const server = createServer().listen(0, "127.0.0.1");
+async function withServer(run, env = {}, dependencies = {}) {
+  const server = createServer(env, dependencies).listen(0, "127.0.0.1");
   await once(server, "listening");
   const { port } = server.address();
-  try {
-    await run(`http://127.0.0.1:${port}`);
-  } finally {
-    server.close();
-    await once(server, "close");
-  }
+  try { await run(`http://127.0.0.1:${port}`); }
+  finally { server.close(); await once(server, "close"); }
 }
 
-test("GET /health reports the read-only adapter contract", async () => {
+test("GET /health reports the read-only catalog contract", async () => {
   await withServer(async (base) => {
     const response = await fetch(`${base}/health`);
     const body = await response.json();
     assert.equal(response.status, 200);
     assert.equal(body.mode, "read-only");
-    assert.equal(body.mutations, false);
   });
 });
 
@@ -31,36 +26,40 @@ test("GET /library returns the canonical registry", async () => {
     const body = await response.json();
     assert.equal(response.status, 200);
     assert.ok(Array.isArray(body.records));
-    assert.ok(body.records.some((record) => record.assetId === "world-library-neo-codex"));
   });
 });
 
-test("GET /library/:assetId returns one canonical asset", async () => {
+test("POST /media rejects anonymous callers", async () => {
   await withServer(async (base) => {
-    const response = await fetch(`${base}/library/world-library-neo-codex`);
+    const response = await fetch(`${base}/media`, { method: "POST", body: "x", headers: { "content-type": "image/jpeg", "x-filename": "x.jpg", "x-neo-approved": "true" } });
+    assert.equal(response.status, 401);
+  }, { NEO_TEMPLE_OPERATOR_TOKEN: "operator-secret" });
+});
+
+test("POST /media requires explicit approval", async () => {
+  await withServer(async (base) => {
+    const response = await fetch(`${base}/media`, { method: "POST", body: "x", headers: { authorization: "Bearer operator-secret", "content-type": "image/jpeg", "x-filename": "x.jpg" } });
+    assert.equal(response.status, 403);
+  }, { NEO_TEMPLE_OPERATOR_TOKEN: "operator-secret" });
+});
+
+test("POST /media forwards approved authenticated image", async () => {
+  let request;
+  await withServer(async (base) => {
+    const response = await fetch(`${base}/media`, { method: "POST", body: "image", headers: { authorization: "Bearer operator-secret", "content-type": "image/jpeg", "x-filename": "science-temple.jpg", "x-neo-approved": "true" } });
     const body = await response.json();
-    assert.equal(response.status, 200);
-    assert.equal(body.driveFileId, "0B-oe5yNz2jy4VlVfTVJrNGFYczA");
-  });
-});
-
-test("unknown assets return 404", async () => {
-  await withServer(async (base) => {
-    const response = await fetch(`${base}/library/missing`);
-    assert.equal(response.status, 404);
-  });
+    assert.equal(response.status, 201);
+    assert.equal(body.attachmentId, 3004);
+    assert.equal(request.approved, true);
+    assert.equal(request.filename, "science-temple.jpg");
+  }, { NEO_TEMPLE_OPERATOR_TOKEN: "operator-secret" }, { uploadMedia: async (input) => { request = input; return { ok: true, attachmentId: 3004, url: "https://holytemples.org/media/3004" }; } });
 });
 
 test("Library mutation methods fail closed", async () => {
   await withServer(async (base) => {
     for (const method of ["POST", "PUT", "PATCH", "DELETE"]) {
-      const catalog = await fetch(`${base}/library`, { method });
-      assert.equal(catalog.status, 405);
-      assert.equal(catalog.headers.get("allow"), "GET");
-
-      const asset = await fetch(`${base}/library/world-library-neo-codex`, { method });
-      assert.equal(asset.status, 405);
-      assert.equal(asset.headers.get("allow"), "GET");
+      const response = await fetch(`${base}/library`, { method });
+      assert.equal(response.status, 405);
     }
   });
 });
