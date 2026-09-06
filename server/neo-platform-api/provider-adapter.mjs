@@ -11,7 +11,7 @@ function normalizeCapability(tool) {
   return { name, slug, integration: String(toolkit || tool.integration || slug.split('_')[0] || 'composio').toLowerCase(), provider: 'composio', classification, capabilities: [slug], health: 'unknown', lastSuccessfulOperation: null };
 }
 
-export function createComposioProviderAdapter({ composio }) {
+export function createComposioProviderAdapter({ composio, now = () => new Date().toISOString() }) {
   return {
     async createSession(subject) {
       const session = await composio.createSession(subject);
@@ -23,8 +23,9 @@ export function createComposioProviderAdapter({ composio }) {
       return (tools?.items || []).map(normalizeCapability);
     },
     async executeRead(sessionId, capability, argumentsValue) {
+      if (!capability || capability.classification !== 'read') throw new Error('read_only_operation_required');
       const result = await composio.execute(sessionId, capability.slug, argumentsValue);
-      capability.lastSuccessfulOperation = new Date().toISOString();
+      capability.lastSuccessfulOperation = now();
       return result;
     }
   };
