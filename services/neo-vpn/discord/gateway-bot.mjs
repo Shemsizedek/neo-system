@@ -20,11 +20,22 @@ const applicationId = process.env.DISCORD_APPLICATION_ID.trim();
 const guildId = process.env.DISCORD_GUILD_ID.trim();
 const infrastructureLive = process.env.NEO_VPN_INFRASTRUCTURE_LIVE === 'true';
 
+function csvSet(value = '') {
+  return new Set(value.split(',').map(v => v.trim()).filter(Boolean));
+}
+
 const roleSets = {
-  viewer: new Set((process.env.NEO_VPN_DISCORD_VIEWER_ROLE_IDS ?? '').split(',').map(v => v.trim()).filter(Boolean)),
-  operator: new Set((process.env.NEO_VPN_DISCORD_OPERATOR_ROLE_IDS ?? '').split(',').map(v => v.trim()).filter(Boolean)),
-  admin: new Set((process.env.NEO_VPN_DISCORD_ADMIN_ROLE_IDS ?? '').split(',').map(v => v.trim()).filter(Boolean))
+  viewer: csvSet(process.env.NEO_VPN_DISCORD_VIEWER_ROLE_IDS),
+  operator: csvSet(process.env.NEO_VPN_DISCORD_OPERATOR_ROLE_IDS),
+  admin: csvSet(process.env.NEO_VPN_DISCORD_ADMIN_ROLE_IDS)
 };
+const allowedChannelIds = csvSet(process.env.NEO_VPN_DISCORD_ALLOWED_CHANNEL_IDS);
+let guildAttested = false;
+let attestationSummary = 'pending';
+
+function configuredRoleIds() {
+  return [...new Set([...roleSets.viewer, ...roleSets.operator, ...roleSets.admin])];
+}
 
 function resolveRole(memberRoleIds = []) {
   const roles = new Set(memberRoleIds);
@@ -46,6 +57,38 @@ function optionsFromInteraction(interaction) {
   return result;
 }
 
+async function attestGuildConfiguration() {
+  const guild = await client.guilds.fetch(guildId);
+  const roles = await guild.roles.fetch();
+  const channels = await guild.channels.fetch();
+
+  const missingRoleIds = configuredRoleIds().filter(id => !roles.has(id));
+  const missingChannelIds = [...allowedChannelIds].filter(id => !channels.has(id));
+
+  if (missingRoleIds.length || missingChannelIds.length) {
+    const reasons = [];
+    if (missingRoleIds.length) reasons.push(`missing-role-ids:${missingRoleIds.join(',')}`);
+    if (missingChannelIds.length) reasons.push(`missing-channel-ids:${missingChannelIds.join(',')}`);
+    throw new Error(reasons.join(';'));
+  }
+
+  guildAttested = true;
+  attestationSummary = `verified roles=${configuredRoleIds().length} channels=${allowedChannelIds.size || 'unrestricted'}`;
+  await writeRuntimeState({
+    guildAttested: true,
+    attestationSummary,
+    configuredRoleCount: configuredRoleIds().length,
+    allowedChannelCount: allowedChannelIds.size,
+    guildId
+  });
+  console.log(JSON.stringify({
+    event: 'discord-guild-attested',
+    guildId,
+    configuredRoleCount: configuredRoleIds().length,
+    allowedChannelCount: allowedChannelIds.size
+  }));
+}
+
 async function registerGuildCommands() {
   const commands = JSON.parse(
     await fs.readFile(new URL('./application-commands.json', import.meta.url), 'utf8')
@@ -58,6 +101,8 @@ async function registerGuildCommands() {
     commandsRegistered: true,
     commandCount: commands.length,
     guildId,
+    guildAttested,
+    attestationSummary,
     infrastructureLive
   });
   console.log(JSON.stringify({ event: 'discord-commands-registered', guildId, count: commands.length }));
@@ -68,8 +113,11 @@ async function statusMessage() {
   return [
     '**NEO VPN Discord Control Plane**',
     `Gateway: ${state.gatewayConnected ? 'online' : 'starting/offline'}`,
+    `Guild attestation: ${state.guildAttested ? 'verified' : 'not verified'}`,
+    `Attestation detail: ${state.attestationSummary ?? attestationSummary}`,
     `Guild commands: ${state.commandsRegistered ? `registered (${state.commandCount ?? 0})` : 'pending'}`,
     `Guild lock: ${state.guildId === guildId ? 'verified' : 'pending'}`,
+    `Command channels: ${allowedChannelIds.size ? `${allowedChannelIds.size} allowlisted` : 'role-authorized channels'}`,
     `VPN data plane: ${infrastructureLive ? 'enabled' : 'not enabled'}`,
     `Updated: ${state.updatedAt ?? 'not yet recorded'}`
   ].join('\n');
@@ -81,6 +129,8 @@ await writeRuntimeState({
   status: 'starting',
   gatewayConnected: false,
   commandsRegistered: false,
+  guildAttested: false,
+  attestationSummary: 'pending',
   guildId,
   infrastructureLive
 });
@@ -95,10 +145,19 @@ client.once(Events.ClientReady, async readyClient => {
   });
   console.log(JSON.stringify({ event: 'discord-gateway-ready', userId: readyClient.user.id, guildId }));
   try {
+    await attestGuildConfiguration();
     await registerGuildCommands();
   } catch (error) {
-    await writeRuntimeState({ status: 'degraded', commandsRegistered: false, lastError: 'command-registration-failed' });
-    console.error(JSON.stringify({ event: 'discord-command-registration-error', message: error.message }));
+    guildAttested = false;
+    attestationSummary = error.message;
+    await writeRuntimeState({
+      status: 'degraded',
+      guildAttested: false,
+      commandsRegistered: false,
+      attestationSummary,
+      lastError: 'guild-attestation-failed'
+    });
+    console.error(JSON.stringify({ event: 'discord-guild-attestation-error', message: error.message }));
   }
 });
 
@@ -123,6 +182,19 @@ client.on(Events.InteractionCreate, async interaction => {
   try {
     if (command === 'vpn-status' || command === 'deployment-status') {
       await interaction.reply({ content: await statusMessage(), ephemeral: true });
+      return;
+    }
+
+    if (!guildAttested) {
+      await interaction.reply({
+        content: 'NEO VPN command execution is disabled until guild role/channel attestation passes.',
+        ephemeral: true
+      });
+      return;
+    }
+
+    if (allowedChannelIds.size && !allowedChannelIds.has(interaction.channelId)) {
+      await interaction.reply({ content: 'NEO VPN commands are not enabled in this channel.', ephemeral: true });
       return;
     }
 
