@@ -8,7 +8,17 @@ function normalizeCapability(tool) {
   const signature = `${slug}_${name}_${description}`;
   const classification = !MUTATION_WORDS.test(signature) && (tool.readOnly === true || READ_WORDS.test(signature)) ? 'read' : 'write';
   const toolkit = tool.toolkit && typeof tool.toolkit === 'object' ? (tool.toolkit.slug || tool.toolkit.name) : tool.toolkit;
-  return { name, slug, integration: String(toolkit || tool.integration || slug.split('_')[0] || 'composio').toLowerCase(), provider: 'composio', classification, capabilities: [slug], health: 'unknown', lastSuccessfulOperation: null };
+  const capability = tool.capability || tool.neoCapability || deriveCapability(signature);
+  return { name, slug, integration: String(toolkit || tool.integration || slug.split('_')[0] || 'composio').toLowerCase(), provider: 'composio', classification, capabilities: [slug], capability, health: 'unknown', lastSuccessfulOperation: null };
+}
+
+function deriveCapability(signature) {
+  const value = signature.toLowerCase();
+  const namespace = ['calendar', 'email', 'files', 'contacts', 'tasks', 'communications', 'development'].find(item => value.includes(item));
+  const operation = value.match(/(^|_)(list|get|fetch|search|retrieve|check|status|describe|inspect|query|find|lookup|observe|health)(_|$)/)?.[2];
+  if (!namespace || !operation) return null;
+  const resource = value.match(/(calendar|email|files|contacts|tasks|communications|development)[_ .-]+([a-z]+)/)?.[2];
+  return resource ? `${namespace}.${resource}.${operation}` : null;
 }
 
 export function createComposioProviderAdapter({ composio, now = () => new Date().toISOString() }) {

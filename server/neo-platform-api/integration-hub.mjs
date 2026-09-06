@@ -97,6 +97,14 @@ export function createIntegrationHub({ composio = createComposioClient(), provid
       } catch (error) {
         throw error instanceof IntegrationHubError ? error : new IntegrationHubError('composio_execution_failed', errorMessage(error), 502);
       }
+    },
+    async executeCapability(subject, capability, parameters) {
+      const session = await sessionFor(subject);
+      const candidate = session.tools.find(value => value.capability === capability);
+      if (!candidate) throw new IntegrationHubError('unknown_capability', 'Requested NEO capability is not available.', 404);
+      if (candidate.classification !== 'read') throw new IntegrationHubError('read_only_operation_required', 'Only approved read capabilities are available.', 403);
+      const result = await providerAdapter.executeRead(session.sessionId, candidate, parameters);
+      return { provider: candidate.provider, data: redact(result?.data ?? result) };
     }
   };
 }
