@@ -2,6 +2,7 @@ import http from 'node:http';
 import { readFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import { createNeoPrimeMarketData } from '../neo-prime/market-data.mjs';
+import { createIntegrationHub, resolveNeopassSubject, IntegrationHubError } from './integration-hub.mjs';
 
 export const PLATFORM_REGISTRY = {
   neopay: { name: 'NEOpay', source: ['apps/neopay', 'src/neopay'], services: ['wallet', 'portfolio', 'transaction-compose', 'dex-quotes'] },
@@ -24,13 +25,25 @@ function json(res, status, body) {
   res.end(payload);
 }
 
-export function createNeoPlatformApi({ now = () => new Date().toISOString(), marketData = createNeoPrimeMarketData({ now }) } = {}) {
+export function createNeoPlatformApi({ now = () => new Date().toISOString(), marketData = createNeoPrimeMarketData({ now }), integrationHub = createIntegrationHub({ now }), subjectResolver = resolveNeopassSubject, audit = () => {} } = {}) {
   return http.createServer(async (req, res) => {
     try {
-      if (req.method === 'OPTIONS') { res.writeHead(204, {'access-control-allow-origin':'*','access-control-allow-methods':'GET,OPTIONS','access-control-allow-headers':'content-type,authorization'}); return res.end(); }
-      if (req.method !== 'GET') return json(res,405,{error:'method_not_allowed',readOnly:true});
+      if (req.method === 'OPTIONS') { res.writeHead(204, {'access-control-allow-origin':'*','access-control-allow-methods':'GET,POST,OPTIONS','access-control-allow-headers':'content-type,authorization,x-neopass-subject'}); return res.end(); }
       const url = new URL(req.url || '/', 'http://neo.local');
       if (url.pathname === '/health') return json(res,200,{service:'neo-platform-api',status:'ok',generatedAt:now(),platforms:Object.keys(PLATFORM_REGISTRY).length,ociRegisteredServices:OCI_SERVICE_REGISTRY.services.length});
+      if (url.pathname.startsWith('/api/v1/integrations')) {
+        const subject = subjectResolver(req);
+        if (!subject) { audit({ integration: null, operation: url.pathname, classification: 'read', allowed: false, timestamp: now() }); return json(res,401,{error:'neopass_identity_required',readOnly:true}); }
+        if (req.method === 'GET' && url.pathname === '/api/v1/integrations') return json(res,200,{apiVersion:'v1',subject,readOnly:true,...await integrationHub.list(subject)});
+        const statusMatch = url.pathname.match(/^\/api\/v1\/integrations\/([^/]+)\/status$/);
+        if (req.method === 'GET' && statusMatch) return json(res,200,{apiVersion:'v1',subject,readOnly:true,integration:statusMatch[1],status:await integrationHub.status(subject,statusMatch[1])});
+        if (req.method === 'POST' && url.pathname === '/api/v1/integrations/execute-read') {
+          let body = ''; for await (const chunk of req) body += chunk;
+          const input = JSON.parse(body || '{}');
+          return json(res,200,{apiVersion:'v1',subject,...await integrationHub.execute(subject,input)});
+        }
+      }
+      if (req.method !== 'GET') return json(res,405,{error:'method_not_allowed',readOnly:true});
       if (url.pathname === '/api/v1/platforms') return json(res,200,{apiVersion:'v1',generatedAt:now(),platforms:Object.entries(PLATFORM_REGISTRY).map(([id,value])=>({id,name:value.name,services:value.services}))});
       if (url.pathname === '/api/v1/oci/services') return json(res,200,{apiVersion:'v1',generatedAt:now(),...OCI_SERVICE_REGISTRY});
       if (url.pathname === '/api/v1/prime/markets') { const assets=(url.searchParams.get('assets')||'XCP,NOMNI').split(',').map(v=>v.trim()).filter(Boolean).slice(0,20); return json(res,200,await marketData.snapshot({assets})); }
@@ -44,7 +57,7 @@ export function createNeoPlatformApi({ now = () => new Date().toISOString(), mar
         return json(res,200,{platform:id,name:item.name,status:'ready',generatedAt:now(),readOnly:true,source:item.source,services:item.services,transactionalExecution:'disabled-until-auth-and-runtime-binding'});
       }
       return json(res,404,{error:'not_found'});
-    } catch (error) { return json(res,502,{error:'upstream_failure',message:error?.message||'unknown error'}); }
+    } catch (error) { if (error instanceof IntegrationHubError) return json(res,error.status,{error:error.code,message:error.message,readOnly:true}); return json(res,502,{error:'upstream_failure',message:error?.message||'unknown error'}); }
   });
 }
 export function startNeoPlatformApi({port=Number(process.env.PORT||8787)}={}) { const server=createNeoPlatformApi(); server.listen(port,()=>console.log(`NEO Platform API listening on :${port}`)); return server; }
