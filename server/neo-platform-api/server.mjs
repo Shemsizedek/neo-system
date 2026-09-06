@@ -5,6 +5,7 @@ import { createNeoPrimeMarketData } from '../neo-prime/market-data.mjs';
 import { createIntegrationHub, resolveNeopassSubject, IntegrationHubError } from './integration-hub.mjs';
 import { createCommandRouter, CommandRouterError } from './command-router.mjs';
 import { createControlPlane, ControlPlaneError } from './control-plane.mjs';
+import { createTempleAdapter, TempleAdapterError } from './temple-adapter.mjs';
 
 export const PLATFORM_REGISTRY = {
   neopay: { name: 'NEOpay', source: ['apps/neopay', 'src/neopay'], services: ['wallet', 'portfolio', 'transaction-compose', 'dex-quotes'] },
@@ -27,7 +28,7 @@ function json(res, status, body) {
   res.end(payload);
 }
 
-export function createNeoPlatformApi({ now = () => new Date().toISOString(), audit = () => {}, marketData = createNeoPrimeMarketData({ now }), integrationHub = createIntegrationHub({ now, audit }), commandRouter = createCommandRouter({ integrationHub, now, audit }), controlPlane = createControlPlane({ commandRouter, now, audit }), subjectResolver = resolveNeopassSubject } = {}) {
+export function createNeoPlatformApi({ now = () => new Date().toISOString(), audit = () => {}, marketData = createNeoPrimeMarketData({ now }), integrationHub = createIntegrationHub({ now, audit }), commandRouter = createCommandRouter({ integrationHub, now, audit }), controlPlane = createControlPlane({ commandRouter, now, audit }), templeAdapter = createTempleAdapter({ controlPlane, now, audit }), subjectResolver = resolveNeopassSubject } = {}) {
   return http.createServer(async (req, res) => {
     try {
       if (req.method === 'OPTIONS') { res.writeHead(204, {'access-control-allow-origin':'*','access-control-allow-methods':'GET,POST,OPTIONS','access-control-allow-headers':'content-type,authorization,x-neopass-subject'}); return res.end(); }
@@ -66,6 +67,17 @@ export function createNeoPlatformApi({ now = () => new Date().toISOString(), aud
         let body = ''; for await (const chunk of req) body += chunk;
         return json(res,200,await controlPlane.execute(subject,applicationId,JSON.parse(body || '{}')));
       }
+      const templeRoute = url.pathname.match(/^\/api\/v1\/temple\/(health|capabilities|read)$/);
+      if (templeRoute) {
+        const subject = subjectResolver(req);
+        if (!subject) return json(res,401,{error:'neopass_identity_required',readOnly:true});
+        if (templeRoute[1] !== 'read' && req.method !== 'GET') return json(res,405,{error:'method_not_allowed',readOnly:true});
+        if (templeRoute[1] === 'health') return json(res,200,await templeAdapter.health(subject));
+        if (templeRoute[1] === 'capabilities') return json(res,200,await templeAdapter.capabilities(subject));
+        if (req.method !== 'POST') return json(res,405,{error:'method_not_allowed',readOnly:true});
+        let body = ''; for await (const chunk of req) body += chunk;
+        return json(res,200,await templeAdapter.read(subject,JSON.parse(body || '{}')));
+      }
       if (url.pathname === '/api/v1/commands/capabilities' || url.pathname.match(/^\/api\/v1\/commands\/capabilities\/[^/]+\/status$/)) {
         const subject = subjectResolver(req);
         if (!subject) return json(res,401,{error:'neopass_identity_required',readOnly:true});
@@ -88,7 +100,7 @@ export function createNeoPlatformApi({ now = () => new Date().toISOString(), aud
         return json(res,200,{platform:id,name:item.name,status:'ready',generatedAt:now(),readOnly:true,source:item.source,services:item.services,transactionalExecution:'disabled-until-auth-and-runtime-binding'});
       }
       return json(res,404,{error:'not_found'});
-    } catch (error) { if (error instanceof IntegrationHubError || error instanceof CommandRouterError || error instanceof ControlPlaneError) return json(res,error.status,{error:error.code,message:error.message,readOnly:true}); return json(res,502,{error:'upstream_failure',message:error?.message||'unknown error'}); }
+    } catch (error) { if (error instanceof IntegrationHubError || error instanceof CommandRouterError || error instanceof ControlPlaneError || error instanceof TempleAdapterError) return json(res,error.status,{error:error.code,message:error.message,readOnly:true}); return json(res,502,{error:'upstream_failure',message:error?.message||'unknown error'}); }
   });
 }
 export function startNeoPlatformApi({port=Number(process.env.PORT||8787)}={}) { const server=createNeoPlatformApi(); server.listen(port,()=>console.log(`NEO Platform API listening on :${port}`)); return server; }

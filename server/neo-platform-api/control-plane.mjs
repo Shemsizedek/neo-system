@@ -9,7 +9,7 @@ export const APPLICATION_REGISTRY = Object.freeze({
   'neo-teller': { displayName: 'NEO Teller', namespaces: ['calendar', 'contacts', 'files'], readOnly: true, health: 'ready', enabled: true },
   'neo-wire': { displayName: 'NEO Wire', namespaces: ['contacts', 'files', 'communications'], readOnly: true, health: 'ready', enabled: true },
   'neo-explorer': { displayName: 'NEO Explorer', namespaces: ['development', 'files'], readOnly: true, health: 'ready', enabled: true },
-  'world-temple': { displayName: 'World Temple / holytemples.org', namespaces: ['calendar', 'contacts', 'files', 'communications'], readOnly: true, health: 'ready', enabled: true }
+  'world-temple': { displayName: 'World Temple / holytemples.org', namespaces: ['calendar', 'email', 'contacts', 'files', 'tasks', 'communications', 'development'], readOnly: true, health: 'ready', enabled: true }
 });
 
 export class ControlPlaneError extends Error {
