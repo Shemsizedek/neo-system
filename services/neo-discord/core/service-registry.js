@@ -105,7 +105,7 @@ function relationsSummary(data={}){
 export async function operatorRead(service,interaction,env={}, {fetchImpl=fetch}={}){
   if(!service)return 'Unknown NEO Service.'
   if(!OPERATOR_ADAPTERS.has(service.id))return `**${service.name} — Operator Read**\nNo protected operator-read adapter is registered for this service.\nMutations / approvals / sensitive execution: disabled.`
-  if(!isDiscordOperator(interaction,env)){auditOperatorRead(interaction,service,'denied');return `**${service.name} — Operator Read**\nNOT AUTHORIZED. Configure an approved Discord operator user or role.\nNo protected source was queried.`}
+  if(!isDiscordOperator(interaction,env)){const actor=discordActor(interaction);auditOperatorRead(interaction,service,'denied');return `**${service.name} — Operator Read**\nNOT AUTHORIZED. Configure this Discord user ID as an operator: ${actor.id||'unavailable'}\nNo protected source was queried.`}
   const isMiner=service.id==='neo-miner'
   const url=isMiner?env.NEO_MINER_OPERATOR_URL:env.NEO_RELATIONS_OPERATOR_URL
   const token=isMiner?env.NEO_MINER_OPERATOR_TOKEN:env.NEO_RELATIONS_OPERATOR_TOKEN

@@ -1,0 +1,167 @@
+name: Deploy NEO Miner Read-Only to Cloud Run
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: neo-miner-readonly-cloud-run
+  cancel-in-progress: false
+
+env:
+  SERVICE_NAME: neo-miner-readonly
+  SECRET_NAME: neo-miner-operator-token
+  TELEMETRY_SECRET_NAME: neo-miner-telemetry-token
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: neo-miner-production
+    timeout-minutes: 20
+    env:
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID || secrets.GCP_PROJECT_ID }}
+      GCP_REGION: ${{ vars.GCP_REGION || secrets.GCP_REGION }}
+      GCP_WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER || secrets.GCP_WIF_PROVIDER }}
+      GCP_CLOUD_RUN_SERVICE_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_SERVICE_ACCOUNT || secrets.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+      GCP_CLOUD_RUN_RUNTIME_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_RUNTIME_ACCOUNT || secrets.GCP_CLOUD_RUN_RUNTIME_ACCOUNT }}
+      GCP_ARTIFACT_REGISTRY: ${{ vars.GCP_ARTIFACT_REGISTRY || secrets.GCP_ARTIFACT_REGISTRY }}
+      NEO_MINER_TELEMETRY_URL: ${{ vars.NEO_MINER_TELEMETRY_URL || secrets.NEO_MINER_TELEMETRY_URL }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7.0.1
+
+      - name: Validate configuration
+        env:
+          NEO_MINER_OPERATOR_TOKEN: ${{ secrets.NEO_MINER_OPERATOR_TOKEN }}
+          NEO_MINER_TELEMETRY_TOKEN: ${{ secrets.NEO_MINER_TELEMETRY_TOKEN }}
+        run: |
+          set -euo pipefail
+          for name in GCP_PROJECT_ID GCP_REGION GCP_WIF_PROVIDER GCP_CLOUD_RUN_SERVICE_ACCOUNT GCP_CLOUD_RUN_RUNTIME_ACCOUNT GCP_ARTIFACT_REGISTRY NEO_MINER_OPERATOR_TOKEN; do
+            test -n "${!name:-}" || { echo "::error::Missing $name"; exit 1; }
+          done
+          NORMALIZED_TOKEN="$(printf '%s' "$NEO_MINER_OPERATOR_TOKEN" | tr -d '[:space:]')"
+          [[ "$NORMALIZED_TOKEN" =~ ^[0-9a-fA-F]{64}$ ]] || {
+            echo "::error::NEO_MINER_OPERATOR_TOKEN must contain exactly 64 hexadecimal characters"
+            exit 1
+          }
+          if [[ -n "${NEO_MINER_TELEMETRY_URL:-}" || -n "${NEO_MINER_TELEMETRY_TOKEN:-}" ]]; then
+            test -n "${NEO_MINER_TELEMETRY_URL:-}" || { echo "::error::NEO_MINER_TELEMETRY_URL is required when NEO_MINER_TELEMETRY_TOKEN is set"; exit 1; }
+            test -n "${NEO_MINER_TELEMETRY_TOKEN:-}" || { echo "::error::NEO_MINER_TELEMETRY_TOKEN is required when NEO_MINER_TELEMETRY_URL is set"; exit 1; }
+            TELEMETRY_URL="$NEO_MINER_TELEMETRY_URL" node <<'NODE'
+          const url = new URL(process.env.TELEMETRY_URL)
+          if (url.protocol !== 'https:' || url.username || url.password || url.pathname !== '/snapshot' || url.search || url.hash) {
+            throw new Error('NEO_MINER_TELEMETRY_URL must be an HTTPS URL with exact /snapshot path and no credentials, query, or fragment')
+          }
+          NODE
+          fi
+
+      - name: Test read-only adapter
+        run: node --test server/miner-cloud-run-readonly/server.test.mjs
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+
+      - name: Set up Google Cloud CLI
+        uses: google-github-actions/setup-gcloud@v3
+
+      - name: Configure Artifact Registry authentication
+        run: gcloud auth configure-docker "${GCP_REGION}-docker.pkg.dev" --quiet
+
+      - name: Build and push immutable image
+        env:
+          IMAGE: ${{ env.GCP_ARTIFACT_REGISTRY }}/neo-miner-readonly:${{ github.sha }}
+        run: |
+          docker build -f server/miner-cloud-run-readonly/Dockerfile -t "$IMAGE" .
+          docker push "$IMAGE"
+
+      - name: Sync normalized operator token to Secret Manager
+        env:
+          NEO_MINER_OPERATOR_TOKEN: ${{ secrets.NEO_MINER_OPERATOR_TOKEN }}
+        run: |
+          NORMALIZED_TOKEN="$(printf '%s' "$NEO_MINER_OPERATOR_TOKEN" | tr -d '[:space:]')"
+          printf '%s' "$NORMALIZED_TOKEN" | gcloud secrets versions add "$SECRET_NAME" --data-file=-
+
+      - name: Sync telemetry token to Secret Manager
+        if: ${{ env.NEO_MINER_TELEMETRY_URL != '' }}
+        env:
+          NEO_MINER_TELEMETRY_TOKEN: ${{ secrets.NEO_MINER_TELEMETRY_TOKEN }}
+        run: |
+          set -euo pipefail
+          gcloud secrets describe "$TELEMETRY_SECRET_NAME" --project="$GCP_PROJECT_ID" >/dev/null || {
+            echo "::error::Missing Secret Manager secret $TELEMETRY_SECRET_NAME; provision it and grant the deployer secretVersionAdder plus the runtime secretAccessor"
+            exit 1
+          }
+          printf '%s' "$NEO_MINER_TELEMETRY_TOKEN" | gcloud secrets versions add "$TELEMETRY_SECRET_NAME" --project="$GCP_PROJECT_ID" --data-file=-
+
+      - name: Deploy read-only service
+        env:
+          IMAGE: ${{ env.GCP_ARTIFACT_REGISTRY }}/neo-miner-readonly:${{ github.sha }}
+        run: |
+          set -euo pipefail
+          DEPLOY_ARGS=(
+            "$SERVICE_NAME"
+            "--project=$GCP_PROJECT_ID"
+            "--region=$GCP_REGION"
+            "--image=$IMAGE"
+            "--service-account=$GCP_CLOUD_RUN_RUNTIME_ACCOUNT"
+            "--set-secrets=NEO_MINER_OPERATOR_TOKEN=$SECRET_NAME:latest"
+            "--allow-unauthenticated"
+            "--quiet"
+          )
+          if [[ -n "${NEO_MINER_TELEMETRY_URL:-}" ]]; then
+            DEPLOY_ARGS+=(
+              "--update-secrets=NEO_MINER_TELEMETRY_TOKEN=$TELEMETRY_SECRET_NAME:latest"
+              "--update-env-vars=NEO_MINER_TELEMETRY_URL=$NEO_MINER_TELEMETRY_URL,NEO_DEPLOYMENT_MODE=READ_ONLY_TELEMETRY"
+            )
+          else
+            DEPLOY_ARGS+=(
+              "--remove-secrets=NEO_MINER_TELEMETRY_TOKEN"
+              "--remove-env-vars=NEO_MINER_TELEMETRY_URL"
+              "--update-env-vars=NEO_DEPLOYMENT_MODE=READ_ONLY_BOOTSTRAP"
+            )
+          fi
+          gcloud run deploy "${DEPLOY_ARGS[@]}"
+
+      - name: Verify protected endpoint
+        env:
+          NEO_MINER_OPERATOR_TOKEN: ${{ secrets.NEO_MINER_OPERATOR_TOKEN }}
+        run: |
+          set -euo pipefail
+          URL="$(gcloud run services describe "$SERVICE_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format='value(status.url)')"
+          test -n "$URL"
+          NORMALIZED_TOKEN="$(printf '%s' "$NEO_MINER_OPERATOR_TOKEN" | tr -d '[:space:]')"
+          SERVICE_URL="$URL" OPERATOR_TOKEN="$NORMALIZED_TOKEN" node <<'NODE'
+          const base=process.env.SERVICE_URL
+          const token=process.env.OPERATOR_TOKEN
+          const checks=[
+            {name:'health',url:`${base}/health`,expected:200},
+            {name:'anonymous snapshot',url:`${base}/discord/snapshot`,expected:401},
+            {name:'authenticated snapshot',url:`${base}/discord/snapshot`,expected:200,headers:{authorization:`Bearer ${token}`}}
+          ]
+          let authenticated
+          for(const check of checks){
+            const response=await fetch(check.url,{headers:check.headers})
+            if(response.status!==check.expected){
+              throw new Error(`${check.name}: expected ${check.expected}, received ${response.status}`)
+            }
+            if(check.name==='authenticated snapshot') authenticated=await response.json()
+          }
+          const expected=process.env.NEO_MINER_TELEMETRY_URL?'READ_ONLY_TELEMETRY':'READ_ONLY_BOOTSTRAP'
+          if(authenticated?.mode!==expected){
+            throw new Error(`authenticated snapshot: expected mode ${expected}, received ${authenticated?.mode}`)
+          }
+          NODE
+          MODE="$([[ -n "${NEO_MINER_TELEMETRY_URL:-}" ]] && printf READ_ONLY_TELEMETRY || printf READ_ONLY_BOOTSTRAP)"
+          {
+            echo "## NEO Miner read-only Cloud Run deployment"
+            echo "Service URL: $URL"
+            echo "Protected operator URL: $URL/discord/snapshot"
+            echo "Mode: $MODE"
+          } >> "$GITHUB_STEP_SUMMARY"

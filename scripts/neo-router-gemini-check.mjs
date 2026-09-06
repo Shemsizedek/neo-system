@@ -20,7 +20,7 @@ if (!gemini?.configured) {
     })
 
     const text = String(result.text ?? '').trim()
-    const ok = text.includes('NEO_GEMINI_OK')
+    const ok = text === 'NEO_GEMINI_OK'
 
     console.log(JSON.stringify({
       ok,

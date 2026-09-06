@@ -1,5 +1,5 @@
 name: Omnitrix APK
-# v4.4.0 unified Noogle browser + direct cloud editor launch + structured Forms/Chat
+# Production APK build + GitHub Release distribution
 
 on:
   push:
@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build-apk:
@@ -30,10 +30,20 @@ jobs:
       - name: Prepare consumer APK
         run: |
           mkdir -p release
-          cp apps/omnitrix-android/app/build/outputs/apk/debug/app-debug.apk release/Omnitrix-Suit-v4.4.0.apk
-          sha256sum release/Omnitrix-Suit-v4.4.0.apk > release/Omnitrix-Suit-v4.4.0.apk.sha256
+          cp apps/omnitrix-android/app/build/outputs/apk/debug/app-debug.apk release/Omnitrix.apk
+          sha256sum release/Omnitrix.apk > release/Omnitrix.apk.sha256
       - uses: actions/upload-artifact@v4
         with:
-          name: Omnitrix-Suit-APK-v4.4.0
+          name: Omnitrix
           path: release/*
           if-no-files-found: error
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete omnitrix-latest --cleanup-tag --yes || true
+          gh release create omnitrix-latest \
+            release/Omnitrix.apk \
+            release/Omnitrix.apk.sha256 \
+            --title "Omnitrix Latest" \
+            --notes "Production Omnitrix Android APK. Built automatically from ${GITHUB_SHA}."

@@ -9,6 +9,14 @@ const commands=[
     {name:'action',description:'NEO Bots action',type:3,required:true,choices:[{name:'Evidence',value:'evidence'},{name:'Pending',value:'pending'},{name:'Approve',value:'approve'},{name:'Reject',value:'reject'}]},
     {name:'announcement',description:'CES announcement text for read-only notation evidence intake',type:3,required:false,max_length:2000},
     {name:'approval_id',description:'Approval ID for approve/reject',type:3,required:false,max_length:200}
+  ]},
+  {name:'services',description:'Inspect NEO Services and protected operator reads',type:1,options:[
+    {name:'service',description:'NEO Service',type:3,required:true,choices:[{name:'NEO Miner',value:'neo-miner'}]},
+    {name:'action',description:'Read-only action',type:3,required:true,choices:[
+      {name:'Details',value:'details'},
+      {name:'Status',value:'status'},
+      {name:'Protected operator read',value:'operator'}
+    ]}
   ]}
 ]
 
@@ -18,5 +26,6 @@ for(const command of commands){
   const r=await fetch(url,{method:'POST',headers:{authorization:`Bot ${token}`,'content-type':'application/json'},body:JSON.stringify(command)})
   const body=await r.text()
   if(!r.ok)throw new Error(`Discord command registration failed ${r.status}: ${body}`)
-  console.log(body)
+  const registered=JSON.parse(body)
+  console.log(`Registered /${registered.name} (${registered.id}) ${guildId?'for configured guild':'globally'}.`)
 }

@@ -1,5 +1,6 @@
 import type { Rail } from '../rails/types';
 import type { CatalogItem } from '../merchant/types';
+import { gatewayRails } from './money';
 
 export type NeoCheckoutIntent={
   v:'1';
@@ -37,9 +38,10 @@ export function readCheckoutIntent(search=window.location.search):NeoCheckoutInt
   const service=(p.get('service')||'neo-service').slice(0,MAX_SERVICE);
   const orderId=(p.get('order')||`neo_order_${crypto.randomUUID()}`).slice(0,MAX_ORDER);
   const label=(p.get('label')||service).slice(0,MAX_LABEL);
-  const requestedRail=p.get('rail');
-  const rail=(['BTC','XCP','NOMNI','USD'] as Rail[]).includes(requestedRail as Rail)?requestedRail as Rail:undefined;
   const requestedCurrency=(p.get('currency')||'USD').toUpperCase().slice(0,16);
+  const requestedRail=p.get('rail');
+  const allowedRails=gatewayRails(requestedCurrency);
+  const rail=allowedRails.includes(requestedRail as Rail)?requestedRail as Rail:undefined;
   const requestedAsset=(p.get('asset')||'').toUpperCase();
   const asset=ASSET_RE.test(requestedAsset)?requestedAsset:undefined;
   const rawAssetAmount=Number(p.get('asset_amount'));

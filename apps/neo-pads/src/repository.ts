@@ -38,6 +38,7 @@ export interface Repository {
   listActiveProperties(location?: string): Promise<PropertyRecord[]>;
   saveProperty(value: PropertyRecord): Promise<void>;
   getBooking(id: string): Promise<BookingRecord | undefined>;
+  hasSettledPayment(bookingId: string): Promise<boolean>;
   saveBooking(value: BookingRecord): Promise<void>;
   markWalletVerified(wallet: string, challengeId: string): Promise<void>;
   isWalletVerified(wallet: string): Promise<boolean>;

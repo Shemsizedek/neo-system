@@ -5,6 +5,7 @@ export interface RuntimeStoreShape {
   properties: Record<string, unknown>;
   bookings: Record<string, unknown>;
   processedWebhookEvents: Record<string, number>;
+  settledPayments: Record<string, number>;
   verifiedWallets: Record<string, { verifiedAt: number; expiresAt: number; challengeId: string }>;
 }
 
@@ -12,6 +13,7 @@ const emptyStore = (): RuntimeStoreShape => ({
   properties: {},
   bookings: {},
   processedWebhookEvents: {},
+  settledPayments: {},
   verifiedWallets: {}
 });
 
@@ -89,5 +91,14 @@ export class RuntimeStore {
   markWebhookEvent(eventId: string) {
     this.data.processedWebhookEvents[eventId] = Date.now();
     this.flush();
+  }
+
+  markSettledPayment(bookingId: string) {
+    this.data.settledPayments[bookingId] = Date.now();
+    this.flush();
+  }
+
+  hasSettledPayment(bookingId: string) {
+    return Boolean(this.data.settledPayments[bookingId]);
   }
 }
