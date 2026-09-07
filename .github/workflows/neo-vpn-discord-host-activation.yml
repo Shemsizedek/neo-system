@@ -1,0 +1,30 @@
+name: NEO VPN Discord Host Activation
+
+on:
+  pull_request:
+    paths:
+      - 'services/neo-vpn/discord/activate-host.sh'
+      - 'services/neo-vpn/discord/first-boot.sh'
+      - 'services/neo-vpn/discord/install-discord-service.sh'
+      - 'services/neo-vpn/docs/DISCORD-HOST-ACTIVATION.md'
+      - '.github/workflows/neo-vpn-discord-host-activation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Bash syntax validation
+        run: |
+          bash -n services/neo-vpn/discord/activate-host.sh
+          bash -n services/neo-vpn/discord/first-boot.sh
+          bash -n services/neo-vpn/discord/install-discord-service.sh
+      - name: Verify activation remains fail-closed
+        run: |
+          grep -F 'export NEO_VPN_INFRASTRUCTURE_LIVE=false' services/neo-vpn/discord/activate-host.sh
+          grep -F 'node acceptance-probe.mjs' services/neo-vpn/discord/activate-host.sh
+          grep -F 'chmod 0600 "$ENV_FILE"' services/neo-vpn/discord/activate-host.sh
