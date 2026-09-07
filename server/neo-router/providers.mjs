@@ -79,6 +79,37 @@ export function createXAIAdapter({ apiKey, model = 'grok-4.6', fetchImpl, timeou
   }
 }
 
+export function createMetaLlamaAdapter({
+  apiKey,
+  model = 'Llama-4-Maverick-17B-128E-Instruct-FP8',
+  baseUrl = 'https://api.llama.com/compat/v1',
+  fetchImpl,
+  timeoutMs,
+} = {}) {
+  const normalizedBaseUrl = baseUrl.replace(/\/$/, '')
+  return {
+    id: 'meta-llama',
+    configured: Boolean(apiKey),
+    async invoke({ system, prompt, maxTokens = 2048 }) {
+      if (!apiKey) throw new Error('LLAMA_API_KEY is not configured')
+      const body = await requestJson(`${normalizedBaseUrl}/chat/completions`, {
+        method: 'POST',
+        headers: jsonHeaders(apiKey),
+        body: JSON.stringify({
+          model,
+          messages: [
+            { role: 'system', content: system },
+            { role: 'user', content: prompt },
+          ],
+          max_tokens: maxTokens,
+        }),
+      }, fetchImpl, timeoutMs)
+      const text = body.choices?.[0]?.message?.content ?? ''
+      return { provider: 'meta-llama', model, text, raw: body }
+    },
+  }
+}
+
 export function createGeminiAdapter({ apiKey, model = 'gemini-3.7-flash', fetchImpl, timeoutMs } = {}) {
   return {
     id: 'gemini',
@@ -128,6 +159,7 @@ export function providersFromEnv(env = process.env) {
     createAnthropicAdapter({ apiKey: env.ANTHROPIC_API_KEY, model: env.ANTHROPIC_MODEL || undefined, timeoutMs }),
     createOpenAIAdapter({ apiKey: env.OPENAI_API_KEY, model: env.OPENAI_MODEL || undefined, timeoutMs }),
     createXAIAdapter({ apiKey: env.XAI_API_KEY, model: env.XAI_MODEL || undefined, timeoutMs }),
+    createMetaLlamaAdapter({ apiKey: env.LLAMA_API_KEY, model: env.LLAMA_MODEL || undefined, baseUrl: env.LLAMA_API_BASE || undefined, timeoutMs }),
     createGeminiAdapter({ apiKey: env.GOOGLE_API_KEY || env.GEMINI_API_KEY, model: env.GEMINI_MODEL || undefined, timeoutMs }),
     createCloudflareWorkersAIAdapter({ accountId: env.CLOUDFLARE_ACCOUNT_ID, apiToken: env.CLOUDFLARE_API_TOKEN, model: env.CLOUDFLARE_WORKERS_AI_MODEL || undefined, timeoutMs }),
   ]
