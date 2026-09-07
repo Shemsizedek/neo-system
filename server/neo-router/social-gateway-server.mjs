@@ -19,6 +19,36 @@ function trustedSubject(identity) {
   return subjectId.trim()
 }
 
+function httpsUri(value) {
+  if (!value) return false
+  try { return new URL(value).protocol === 'https:' } catch { return false }
+}
+
+export function socialRuntimeReadiness(env = process.env) {
+  const linkedin = {
+    clientId: Boolean(env.LINKEDIN_CLIENT_ID),
+    clientSecret: Boolean(env.LINKEDIN_CLIENT_SECRET),
+    redirectUri: Boolean(env.LINKEDIN_REDIRECT_URI),
+    redirectHttps: httpsUri(env.LINKEDIN_REDIRECT_URI),
+  }
+  linkedin.ready = Object.values(linkedin).every(Boolean)
+
+  const tiktok = {
+    clientKey: Boolean(env.TIKTOK_CLIENT_KEY),
+    clientSecret: Boolean(env.TIKTOK_CLIENT_SECRET),
+    redirectUri: Boolean(env.TIKTOK_REDIRECT_URI),
+    redirectHttps: httpsUri(env.TIKTOK_REDIRECT_URI),
+  }
+  tiktok.ready = Object.values(tiktok).every(Boolean)
+
+  return {
+    ready: linkedin.ready && tiktok.ready,
+    publishing: false,
+    linkedin,
+    tiktok,
+  }
+}
+
 export function createMemorySocialOAuthStore() {
   const pending = new Map()
   const connections = new Map()
@@ -54,13 +84,19 @@ export function createSocialGatewayServer({
       const callbackMatch = url.pathname.match(/^\/connect\/(linkedin|tiktok)\/callback$/)
 
       if (req.method === 'GET' && url.pathname === '/health') {
-        return respond(res, 200, { ok: true, service: 'neo-social-gateway', publishing: false })
+        return respond(res, 200, {
+          ok: true,
+          service: 'neo-social-gateway',
+          ...socialRuntimeReadiness(env),
+        })
       }
 
       if (req.method === 'GET' && connectMatch) {
         if (typeof resolveTrustedIdentity !== 'function') return respond(res, 401, { error: 'neopass_identity_required' })
         const identityId = trustedSubject(await resolveTrustedIdentity(req))
         const providerId = connectMatch[1]
+        const readiness = socialRuntimeReadiness(env)[providerId]
+        if (!readiness?.ready) return respond(res, 503, { error: `${providerId}_oauth_not_ready` })
         const { url: authorizationUrl, state } = buildSocialAuthorizationUrl({ providerId, identityId, env })
         await store.putState(state)
         return respond(res, 200, { providerId, authorizationUrl, state: state.nonce })
@@ -108,8 +144,10 @@ export function createSocialGatewayServer({
 }
 
 export function startSocialGatewayServer({
-  port = Number(process.env.NEO_SOCIAL_GATEWAY_PORT || 8799),
+  port = Number(process.env.PORT || process.env.NEO_SOCIAL_GATEWAY_PORT || 8799),
+  host = process.env.HOST || '127.0.0.1',
   resolveTrustedIdentity,
+  env = process.env,
 } = {}) {
-  return createSocialGatewayServer({ resolveTrustedIdentity }).listen(port, '127.0.0.1')
+  return createSocialGatewayServer({ resolveTrustedIdentity, env }).listen(port, host)
 }

@@ -1,0 +1,125 @@
+name: Deploy NEO Social Gateway to Cloud Run
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: neo-social-gateway-cloud-run
+  cancel-in-progress: false
+
+env:
+  SERVICE_NAME: neo-social-gateway
+  DOMAIN_NAME: gateway.holytemples.org
+  LINKEDIN_REDIRECT_URI: https://gateway.holytemples.org/connect/linkedin/callback
+  TIKTOK_REDIRECT_URI: https://gateway.holytemples.org/connect/tiktok/callback
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: holytemples-production
+    timeout-minutes: 25
+    env:
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID || secrets.GCP_PROJECT_ID }}
+      GCP_REGION: ${{ vars.GCP_REGION || secrets.GCP_REGION }}
+      GCP_WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER || secrets.GCP_WIF_PROVIDER }}
+      GCP_CLOUD_RUN_SERVICE_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_SERVICE_ACCOUNT || secrets.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+      GCP_CLOUD_RUN_RUNTIME_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_RUNTIME_ACCOUNT || secrets.GCP_CLOUD_RUN_RUNTIME_ACCOUNT }}
+      GCP_ARTIFACT_REGISTRY: ${{ vars.GCP_ARTIFACT_REGISTRY || secrets.GCP_ARTIFACT_REGISTRY }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - name: Validate GCP deployment configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in GCP_PROJECT_ID GCP_REGION GCP_WIF_PROVIDER GCP_CLOUD_RUN_SERVICE_ACCOUNT GCP_CLOUD_RUN_RUNTIME_ACCOUNT GCP_ARTIFACT_REGISTRY; do
+            test -n "${!name:-}" || { echo "::error::Missing $name"; exit 1; }
+          done
+
+      - name: Test social gateway
+        run: node --test server/neo-router/social-gateway-server.test.mjs server/neo-router/social-oauth.test.mjs
+
+      - uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+
+      - uses: google-github-actions/setup-gcloud@v3
+
+      - name: Build and push social gateway image
+        env:
+          IMAGE: ${{ env.GCP_ARTIFACT_REGISTRY }}/neo-social-gateway:${{ github.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gcloud auth configure-docker "${GCP_REGION}-docker.pkg.dev" --quiet
+          docker build -f server/neo-router/Dockerfile.social-gateway -t "$IMAGE" .
+          docker push "$IMAGE"
+
+      - name: Deploy Cloud Run service
+        env:
+          IMAGE: ${{ env.GCP_ARTIFACT_REGISTRY }}/neo-social-gateway:${{ github.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gcloud run deploy "$SERVICE_NAME" \
+            --project="$GCP_PROJECT_ID" \
+            --region="$GCP_REGION" \
+            --image="$IMAGE" \
+            --service-account="$GCP_CLOUD_RUN_RUNTIME_ACCOUNT" \
+            --set-env-vars="LINKEDIN_REDIRECT_URI=$LINKEDIN_REDIRECT_URI,TIKTOK_REDIRECT_URI=$TIKTOK_REDIRECT_URI" \
+            --allow-unauthenticated \
+            --quiet
+
+      - name: Verify generated Cloud Run URL
+        id: service
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL="$(gcloud run services describe "$SERVICE_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format='value(status.url)')"
+          test -n "$URL"
+          test "$(curl -sS -o /tmp/health.json -w '%{http_code}' "$URL/health")" = 200
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+          echo "### NEO Social Gateway" >> "$GITHUB_STEP_SUMMARY"
+          echo "Cloud Run service: $URL" >> "$GITHUB_STEP_SUMMARY"
+          echo '```json' >> "$GITHUB_STEP_SUMMARY"
+          cat /tmp/health.json >> "$GITHUB_STEP_SUMMARY"
+          echo >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Create or inspect gateway.holytemples.org domain mapping
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERIFIED="$(gcloud domains list-user-verified --format='value(id)' 2>/dev/null || true)"
+          if ! printf '%s\n' "$VERIFIED" | grep -Fxq 'holytemples.org'; then
+            echo "### Domain mapping pending ownership verification" >> "$GITHUB_STEP_SUMMARY"
+            echo "Verify holytemples.org in Google Search Console, then rerun this workflow." >> "$GITHUB_STEP_SUMMARY"
+            echo "https://search.google.com/search-console/welcome" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          if ! gcloud beta run domain-mappings describe --domain="$DOMAIN_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" >/dev/null 2>&1; then
+            gcloud beta run domain-mappings create \
+              --service="$SERVICE_NAME" \
+              --domain="$DOMAIN_NAME" \
+              --project="$GCP_PROJECT_ID" \
+              --region="$GCP_REGION" \
+              --quiet
+          fi
+
+          echo "### DNS records for $DOMAIN_NAME" >> "$GITHUB_STEP_SUMMARY"
+          echo '```yaml' >> "$GITHUB_STEP_SUMMARY"
+          gcloud beta run domain-mappings describe \
+            --domain="$DOMAIN_NAME" \
+            --project="$GCP_PROJECT_ID" \
+            --region="$GCP_REGION" \
+            --format='yaml(status.resourceRecords)' >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          echo "LinkedIn callback: $LINKEDIN_REDIRECT_URI" >> "$GITHUB_STEP_SUMMARY"
+          echo "TikTok callback: $TIKTOK_REDIRECT_URI" >> "$GITHUB_STEP_SUMMARY"
