@@ -1,6 +1,6 @@
 export { createNeoRouter } from './router.mjs'
 export { COMPOSIO_READ_ONLY_POLICY, composioHealth, composioRuntimeCheck, createComposioGateway, createReadOnlyAgent } from './composio-gateway.mjs'
-export { createAnthropicAdapter, createOpenAIAdapter, createXAIAdapter, createGeminiAdapter, createCloudflareWorkersAIAdapter, providersFromEnv } from './providers.mjs'
+export { createAnthropicAdapter, createOpenAIAdapter, createXAIAdapter, createMetaLlamaAdapter, createGeminiAdapter, createCloudflareWorkersAIAdapter, providersFromEnv } from './providers.mjs'
 export { DOCTRINE_PROFILE, EMERGING_INTERFACE_PROFILE, HUMAN_APPROVAL_ACTIONS, PROVIDER_ROLES } from './policy.mjs'
 export { CONNECTOR_ACCESS, DEFAULT_CONNECTORS, createConnectorRegistry } from './connectors.mjs'
 export { AIRBYTE_BINDINGS, resolveRuntimeBindings, runtimeBindingHealth } from './runtime-bindings.mjs'
