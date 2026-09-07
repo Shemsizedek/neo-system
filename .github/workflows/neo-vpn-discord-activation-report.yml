@@ -1,0 +1,24 @@
+name: NEO VPN Discord Activation Report
+
+on:
+  pull_request:
+    paths:
+      - 'services/neo-vpn/discord/activation-report.sh'
+      - '.github/workflows/neo-vpn-discord-activation-report.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Bash syntax validation
+        run: bash -n services/neo-vpn/discord/activation-report.sh
+      - name: Verify report remains fail-closed
+        run: |
+          grep -F 'export NEO_VPN_INFRASTRUCTURE_LIVE=false' services/neo-vpn/discord/activation-report.sh
+          grep -F "name: 'neo-vpn-discord.service'" services/neo-vpn/discord/activation-report.sh
+          ! grep -E 'DISCORD_BOT_TOKEN.*echo|cat .*discord.env' services/neo-vpn/discord/activation-report.sh
