@@ -36,14 +36,15 @@ test('Workers AI adapter uses the authenticated account endpoint', async () => {
   assert.equal(request.options.headers.authorization, 'Bearer secret')
 })
 
-test('environment config supports all four providers', () => {
+test('environment config supports all five providers', () => {
   const providers = providersFromEnv({
     ANTHROPIC_API_KEY: 'a', ANTHROPIC_MODEL: 'claude-custom',
     OPENAI_API_KEY: 'o', OPENAI_MODEL: 'openai-custom',
+    XAI_API_KEY: 'x', XAI_MODEL: 'grok-custom',
     GEMINI_API_KEY: 'g', GEMINI_MODEL: 'gemini-custom',
     CLOUDFLARE_ACCOUNT_ID: 'c', CLOUDFLARE_API_TOKEN: 't', CLOUDFLARE_WORKERS_AI_MODEL: '@cf/custom',
   })
-  assert.deepEqual(providers.map((provider) => provider.id), ['anthropic', 'openai', 'gemini', 'cloudflare'])
+  assert.deepEqual(providers.map((provider) => provider.id), ['anthropic', 'openai', 'xai', 'gemini', 'cloudflare'])
   assert.ok(providers.every((provider) => provider.configured))
 })
 
