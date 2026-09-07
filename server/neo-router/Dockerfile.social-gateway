@@ -1,7 +1,5 @@
 FROM node:24-bookworm-slim
 WORKDIR /app
-COPY package.json package-lock.json ./
-RUN npm ci
 ENV NODE_ENV=production
 COPY server/neo-router ./server/neo-router
 COPY server/neo-platform-api ./server/neo-platform-api
