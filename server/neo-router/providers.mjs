@@ -23,6 +23,14 @@ async function requestJson(url, options, fetchImpl = fetch, timeoutMs = 30_000) 
   return body
 }
 
+function responseText(body) {
+  if (typeof body?.output_text === 'string') return body.output_text
+  return body?.output
+    ?.flatMap((item) => item?.content ?? [])
+    ?.map((part) => part?.text ?? part?.content ?? '')
+    ?.join('') ?? ''
+}
+
 export function createAnthropicAdapter({ apiKey, model = 'claude-sonnet-5', fetchImpl, timeoutMs } = {}) {
   return {
     id: 'anthropic',
@@ -50,7 +58,23 @@ export function createOpenAIAdapter({ apiKey, model = 'gpt-5', fetchImpl, timeou
         headers: jsonHeaders(apiKey),
         body: JSON.stringify({ model, instructions: system, input: prompt, max_output_tokens: maxTokens }),
       }, fetchImpl, timeoutMs)
-      return { provider: 'openai', model, text: body.output_text ?? '', raw: body }
+      return { provider: 'openai', model, text: responseText(body), raw: body }
+    },
+  }
+}
+
+export function createXAIAdapter({ apiKey, model = 'grok-4.6', fetchImpl, timeoutMs } = {}) {
+  return {
+    id: 'xai',
+    configured: Boolean(apiKey),
+    async invoke({ system, prompt, maxTokens = 2048 }) {
+      if (!apiKey) throw new Error('XAI_API_KEY is not configured')
+      const body = await requestJson('https://api.x.ai/v1/responses', {
+        method: 'POST',
+        headers: jsonHeaders(apiKey),
+        body: JSON.stringify({ model, instructions: system, input: prompt, max_output_tokens: maxTokens }),
+      }, fetchImpl, timeoutMs)
+      return { provider: 'xai', model, text: responseText(body), raw: body }
     },
   }
 }
@@ -103,6 +127,7 @@ export function providersFromEnv(env = process.env) {
   return [
     createAnthropicAdapter({ apiKey: env.ANTHROPIC_API_KEY, model: env.ANTHROPIC_MODEL || undefined, timeoutMs }),
     createOpenAIAdapter({ apiKey: env.OPENAI_API_KEY, model: env.OPENAI_MODEL || undefined, timeoutMs }),
+    createXAIAdapter({ apiKey: env.XAI_API_KEY, model: env.XAI_MODEL || undefined, timeoutMs }),
     createGeminiAdapter({ apiKey: env.GOOGLE_API_KEY || env.GEMINI_API_KEY, model: env.GEMINI_MODEL || undefined, timeoutMs }),
     createCloudflareWorkersAIAdapter({ accountId: env.CLOUDFLARE_ACCOUNT_ID, apiToken: env.CLOUDFLARE_API_TOKEN, model: env.CLOUDFLARE_WORKERS_AI_MODEL || undefined, timeoutMs }),
   ]
