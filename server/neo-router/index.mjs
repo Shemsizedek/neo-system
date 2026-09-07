@@ -3,6 +3,7 @@ export { COMPOSIO_READ_ONLY_POLICY, composioHealth, composioRuntimeCheck, create
 export { createAnthropicAdapter, createOpenAIAdapter, createXAIAdapter, createMetaLlamaAdapter, createGeminiAdapter, createCloudflareWorkersAIAdapter, providersFromEnv } from './providers.mjs'
 export { SOCIAL_CHANNELS, authorizeSocialAction, getSocialChannel, socialDistributionFromEnv } from './social-distribution.mjs'
 export { OAUTH_PROVIDERS, buildSocialAuthorizationUrl, createOAuthState, exchangeSocialAuthorizationCode, getSocialOAuthProvider, validateOAuthState } from './social-oauth.mjs'
+export { createMemorySocialOAuthStore, createSocialGatewayServer, startSocialGatewayServer } from './social-gateway-server.mjs'
 export { DOCTRINE_PROFILE, EMERGING_INTERFACE_PROFILE, HUMAN_APPROVAL_ACTIONS, PROVIDER_ROLES } from './policy.mjs'
 export { CONNECTOR_ACCESS, DEFAULT_CONNECTORS, createConnectorRegistry } from './connectors.mjs'
 export { AIRBYTE_BINDINGS, resolveRuntimeBindings, runtimeBindingHealth } from './runtime-bindings.mjs'
