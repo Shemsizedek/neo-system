@@ -70,6 +70,19 @@ jobs:
           printf '%s' "$LINKEDIN_CLIENT_ID" | gcloud secrets versions add "$LINKEDIN_CLIENT_ID_SECRET_NAME" --project="$GCP_PROJECT_ID" --data-file=-
           printf '%s' "$LINKEDIN_CLIENT_SECRET" | gcloud secrets versions add "$LINKEDIN_CLIENT_SECRET_NAME" --project="$GCP_PROJECT_ID" --data-file=-
 
+      - name: Grant runtime service account secret access
+        shell: bash
+        run: |
+          set -euo pipefail
+          for secret in "$LINKEDIN_CLIENT_ID_SECRET_NAME" "$LINKEDIN_CLIENT_SECRET_NAME"; do
+            gcloud secrets add-iam-policy-binding "$secret" \
+              --project="$GCP_PROJECT_ID" \
+              --member="serviceAccount:$GCP_CLOUD_RUN_RUNTIME_ACCOUNT" \
+              --role="roles/secretmanager.secretAccessor" \
+              --condition=None \
+              --quiet 2>/dev/null || true
+          done
+
       - name: Build and push social gateway image
         env:
           IMAGE: ${{ env.GCP_ARTIFACT_REGISTRY }}/neo-social-gateway:${{ github.sha }}
