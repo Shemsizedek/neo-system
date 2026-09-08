@@ -16,6 +16,7 @@ test('LinkedIn authorization URL binds NEOpass identity to CSRF state', () => {
   assert.equal(parsed.origin + parsed.pathname, 'https://www.linkedin.com/oauth/v2/authorization')
   assert.equal(parsed.searchParams.get('client_id'), 'linkedin-client')
   assert.equal(parsed.searchParams.get('state'), 'fixed-state')
+  assert.equal(parsed.searchParams.get('scope'), 'openid profile email w_member_social')
   assert.equal(state.identityId, 'neo-user-1')
 })
 
@@ -52,6 +53,21 @@ test('OAuth callback fails closed when state does not match', async () => {
     code: 'auth-code',
     expectedState: { identityId: 'neo-user-3', providerId: 'linkedin', nonce: 'expected' },
     returnedState: 'attacker',
+    env: {
+      LINKEDIN_CLIENT_ID: 'id',
+      LINKEDIN_CLIENT_SECRET: 'secret',
+      LINKEDIN_REDIRECT_URI: 'https://neo.example/auth/linkedin/callback',
+    },
+  }), /state validation failed/)
+})
+
+test('OAuth callback rejects expired state during code exchange', async () => {
+  await assert.rejects(() => exchangeSocialAuthorizationCode({
+    providerId: 'linkedin',
+    code: 'auth-code',
+    expectedState: { identityId: 'neo-user-4', providerId: 'linkedin', nonce: 'expected', createdAt: 1 },
+    returnedState: 'expected',
+    oauthStateMaxAgeMs: 5,
     env: {
       LINKEDIN_CLIENT_ID: 'id',
       LINKEDIN_CLIENT_SECRET: 'secret',

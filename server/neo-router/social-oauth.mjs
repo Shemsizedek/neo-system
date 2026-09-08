@@ -7,7 +7,7 @@ const OAUTH_PROVIDERS = Object.freeze({
     clientIdEnv: 'LINKEDIN_CLIENT_ID',
     clientSecretEnv: 'LINKEDIN_CLIENT_SECRET',
     redirectEnv: 'LINKEDIN_REDIRECT_URI',
-    defaultScopes: Object.freeze(['openid', 'profile', 'w_member_social']),
+    defaultScopes: Object.freeze(['openid', 'profile', 'email', 'w_member_social']),
   }),
   tiktok: Object.freeze({
     authorizeUrl: 'https://www.tiktok.com/v2/auth/authorize/',
@@ -31,11 +31,12 @@ export function createOAuthState({ identityId, providerId, nonce = crypto.random
   return { identityId, providerId, nonce, createdAt: Date.now() }
 }
 
-export function validateOAuthState(expected, returnedState) {
+export function validateOAuthState(expected, returnedState, { maxAgeMs = 10 * 60 * 1000, now = Date.now() } = {}) {
   if (!expected?.nonce || !returnedState) return false
   const a = Buffer.from(expected.nonce)
   const b = Buffer.from(String(returnedState))
-  return a.length === b.length && crypto.timingSafeEqual(a, b)
+  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return false
+  return !Number.isFinite(expected.createdAt) || now - expected.createdAt <= maxAgeMs
 }
 
 export function buildSocialAuthorizationUrl({ providerId, identityId, scopes, env = process.env, nonce } = {}) {
@@ -56,9 +57,9 @@ export function buildSocialAuthorizationUrl({ providerId, identityId, scopes, en
   return { url: url.toString(), state }
 }
 
-export async function exchangeSocialAuthorizationCode({ providerId, code, expectedState, returnedState, env = process.env, fetchImpl = fetch } = {}) {
+export async function exchangeSocialAuthorizationCode({ providerId, code, expectedState, returnedState, env = process.env, fetchImpl = fetch, oauthStateMaxAgeMs = 10 * 60 * 1000 } = {}) {
   const provider = getSocialOAuthProvider(providerId)
-  if (!validateOAuthState(expectedState, returnedState)) throw new Error('OAuth state validation failed')
+  if (!validateOAuthState(expectedState, returnedState, { maxAgeMs: oauthStateMaxAgeMs })) throw new Error('OAuth state validation failed')
   if (!code) throw new Error('OAuth authorization code is required')
 
   const clientId = env[provider.clientIdEnv]

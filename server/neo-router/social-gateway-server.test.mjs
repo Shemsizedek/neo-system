@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { once } from 'node:events'
-import { createSocialGatewayServer, socialRuntimeReadiness } from './social-gateway-server.mjs'
+import { createMemorySocialOAuthStore, createSocialGatewayServer, socialRuntimeReadiness } from './social-gateway-server.mjs'
 
 async function withServer(server, fn) {
   server.listen(0, '127.0.0.1')
@@ -81,6 +81,16 @@ test('LinkedIn connect returns authorization URL without exposing secrets', asyn
   })
 })
 
+test('LinkedIn integration connect redirects to LinkedIn authorization', async () => {
+  const server = createSocialGatewayServer({ env, resolveTrustedIdentity: trusted })
+  await withServer(server, async (base) => {
+    const response = await fetch(`${base}/api/integrations/linkedin/connect`, { redirect: 'manual' })
+    assert.equal(response.status, 302)
+    assert.match(response.headers.get('location'), /^https:\/\/www\.linkedin\.com\/oauth\/v2\/authorization/)
+    assert.ok(response.headers.get('location').includes('scope=openid+profile+email+w_member_social'))
+  })
+})
+
 test('callback consumes state once, stores token server-side, and does not return token', async () => {
   let tokenRequests = 0
   const server = createSocialGatewayServer({
@@ -105,4 +115,35 @@ test('callback consumes state once, stores token server-side, and does not retur
     assert.deepEqual(await replay.json(), { error: 'oauth_state_invalid_or_expired' })
     assert.equal(tokenRequests, 1)
   })
+})
+
+test('LinkedIn integration callback consumes state and does not return token', async () => {
+  let savedConnection
+  const store = {
+    ...createMemorySocialOAuthStore(),
+    async saveConnection(connection) { savedConnection = connection },
+  }
+  const server = createSocialGatewayServer({
+    env,
+    resolveTrustedIdentity: trusted,
+    store,
+    fetchImpl: async () => ({ ok: true, json: async () => ({ access_token: 'secret-token', expires_in: 3600 }) }),
+  })
+  await withServer(server, async (base) => {
+    const start = await fetch(`${base}/api/integrations/linkedin/connect`, { redirect: 'manual' })
+    const authorization = new URL(start.headers.get('location'))
+    const callback = await fetch(`${base}/api/integrations/linkedin/callback?code=abc&state=${encodeURIComponent(authorization.searchParams.get('state'))}`)
+    assert.equal(callback.status, 200)
+    const body = await callback.json()
+    assert.deepEqual(body, { status: 'connected', providerId: 'linkedin', identityId: 'neo-user-1', publishing: 'approval-required' })
+    assert.equal(savedConnection.accessToken, 'secret-token')
+    assert.ok(!JSON.stringify(body).includes('secret-token'))
+  })
+})
+
+test('expired OAuth state is rejected and consumed', async () => {
+  const store = createMemorySocialOAuthStore()
+  await store.putState({ providerId: 'linkedin', nonce: 'expired', identityId: 'neo-user-1', createdAt: 1 })
+  assert.equal(await store.consumeState('linkedin', 'expired', { now: 10, maxAgeMs: 5 }), null)
+  assert.equal(await store.consumeState('linkedin', 'expired', { now: 10, maxAgeMs: 5 }), null)
 })
