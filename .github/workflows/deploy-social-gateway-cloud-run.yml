@@ -16,6 +16,8 @@ env:
   DOMAIN_NAME: gateway.holytemples.org
   LINKEDIN_REDIRECT_URI: https://gateway.holytemples.org/connect/linkedin/callback
   TIKTOK_REDIRECT_URI: https://gateway.holytemples.org/connect/tiktok/callback
+  LINKEDIN_CLIENT_ID_SECRET_NAME: neo-social-gateway-linkedin-client-id
+  LINKEDIN_CLIENT_SECRET_NAME: neo-social-gateway-linkedin-client-secret
 
 jobs:
   deploy:
@@ -33,10 +35,13 @@ jobs:
       - uses: actions/checkout@v7.0.1
 
       - name: Validate GCP deployment configuration
+        env:
+          LINKEDIN_CLIENT_ID: ${{ secrets.LINKEDIN_CLIENT_ID }}
+          LINKEDIN_CLIENT_SECRET: ${{ secrets.LINKEDIN_CLIENT_SECRET }}
         shell: bash
         run: |
           set -euo pipefail
-          for name in GCP_PROJECT_ID GCP_REGION GCP_WIF_PROVIDER GCP_CLOUD_RUN_SERVICE_ACCOUNT GCP_CLOUD_RUN_RUNTIME_ACCOUNT GCP_ARTIFACT_REGISTRY; do
+          for name in GCP_PROJECT_ID GCP_REGION GCP_WIF_PROVIDER GCP_CLOUD_RUN_SERVICE_ACCOUNT GCP_CLOUD_RUN_RUNTIME_ACCOUNT GCP_ARTIFACT_REGISTRY LINKEDIN_CLIENT_ID LINKEDIN_CLIENT_SECRET; do
             test -n "${!name:-}" || { echo "::error::Missing $name"; exit 1; }
           done
 
@@ -50,6 +55,20 @@ jobs:
           service_account: ${{ env.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
 
       - uses: google-github-actions/setup-gcloud@v3
+
+      - name: Sync LinkedIn secrets to Google Secret Manager
+        env:
+          LINKEDIN_CLIENT_ID: ${{ secrets.LINKEDIN_CLIENT_ID }}
+          LINKEDIN_CLIENT_SECRET: ${{ secrets.LINKEDIN_CLIENT_SECRET }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          for secret in "$LINKEDIN_CLIENT_ID_SECRET_NAME" "$LINKEDIN_CLIENT_SECRET_NAME"; do
+            gcloud secrets describe "$secret" --project="$GCP_PROJECT_ID" >/dev/null 2>&1 || \
+              gcloud secrets create "$secret" --project="$GCP_PROJECT_ID" --replication-policy="automatic"
+          done
+          printf '%s' "$LINKEDIN_CLIENT_ID" | gcloud secrets versions add "$LINKEDIN_CLIENT_ID_SECRET_NAME" --project="$GCP_PROJECT_ID" --data-file=-
+          printf '%s' "$LINKEDIN_CLIENT_SECRET" | gcloud secrets versions add "$LINKEDIN_CLIENT_SECRET_NAME" --project="$GCP_PROJECT_ID" --data-file=-
 
       - name: Build and push social gateway image
         env:
@@ -73,6 +92,7 @@ jobs:
             --image="$IMAGE" \
             --service-account="$GCP_CLOUD_RUN_RUNTIME_ACCOUNT" \
             --set-env-vars="LINKEDIN_REDIRECT_URI=$LINKEDIN_REDIRECT_URI,TIKTOK_REDIRECT_URI=$TIKTOK_REDIRECT_URI" \
+            --set-secrets="LINKEDIN_CLIENT_ID=$LINKEDIN_CLIENT_ID_SECRET_NAME:latest,LINKEDIN_CLIENT_SECRET=$LINKEDIN_CLIENT_SECRET_NAME:latest" \
             --allow-unauthenticated \
             --quiet
 
