@@ -56,10 +56,11 @@ export function createMemorySocialOAuthStore() {
     async putState(state) {
       pending.set(`${state.providerId}:${state.nonce}`, { ...state })
     },
-    async consumeState(providerId, nonce) {
+    async consumeState(providerId, nonce, { maxAgeMs = 10 * 60 * 1000, now = Date.now() } = {}) {
       const key = `${providerId}:${nonce}`
       const state = pending.get(key) ?? null
       pending.delete(key)
+      if (state && Number.isFinite(maxAgeMs) && now - state.createdAt > maxAgeMs) return null
       return state
     },
     async saveConnection(connection) {
@@ -76,12 +77,15 @@ export function createSocialGatewayServer({
   store = createMemorySocialOAuthStore(),
   env = process.env,
   fetchImpl = fetch,
+  oauthStateMaxAgeMs = 10 * 60 * 1000,
 } = {}) {
   return http.createServer(async (req, res) => {
     try {
       const url = new URL(req.url ?? '/', 'http://neo.local')
       const connectMatch = url.pathname.match(/^\/connect\/(linkedin|tiktok)$/)
+      const apiLinkedInConnect = url.pathname === '/api/integrations/linkedin/connect'
       const callbackMatch = url.pathname.match(/^\/connect\/(linkedin|tiktok)\/callback$/)
+      const apiLinkedInCallback = url.pathname === '/api/integrations/linkedin/callback'
 
       if (req.method === 'GET' && url.pathname === '/health') {
         return respond(res, 200, {
@@ -91,23 +95,27 @@ export function createSocialGatewayServer({
         })
       }
 
-      if (req.method === 'GET' && connectMatch) {
+      if (req.method === 'GET' && (connectMatch || apiLinkedInConnect)) {
         if (typeof resolveTrustedIdentity !== 'function') return respond(res, 401, { error: 'neopass_identity_required' })
         const identityId = trustedSubject(await resolveTrustedIdentity(req))
-        const providerId = connectMatch[1]
+        const providerId = apiLinkedInConnect ? 'linkedin' : connectMatch[1]
         const readiness = socialRuntimeReadiness(env)[providerId]
         if (!readiness?.ready) return respond(res, 503, { error: `${providerId}_oauth_not_ready` })
         const { url: authorizationUrl, state } = buildSocialAuthorizationUrl({ providerId, identityId, env })
         await store.putState(state)
+        if (apiLinkedInConnect) {
+          res.writeHead(302, { location: authorizationUrl, 'cache-control': 'no-store' })
+          return res.end()
+        }
         return respond(res, 200, { providerId, authorizationUrl, state: state.nonce })
       }
 
-      if (req.method === 'GET' && callbackMatch) {
-        const providerId = callbackMatch[1]
+      if (req.method === 'GET' && (callbackMatch || apiLinkedInCallback)) {
+        const providerId = apiLinkedInCallback ? 'linkedin' : callbackMatch[1]
         const returnedState = url.searchParams.get('state')
         const code = url.searchParams.get('code')
         if (!returnedState) return respond(res, 400, { error: 'oauth_state_required' })
-        const expectedState = await store.consumeState(providerId, returnedState)
+        const expectedState = await store.consumeState(providerId, returnedState, { maxAgeMs: oauthStateMaxAgeMs })
         if (!expectedState) return respond(res, 400, { error: 'oauth_state_invalid_or_expired' })
 
         const token = await exchangeSocialAuthorizationCode({
@@ -117,6 +125,7 @@ export function createSocialGatewayServer({
           returnedState,
           env,
           fetchImpl,
+          oauthStateMaxAgeMs,
         })
         await store.saveConnection({
           identityId: token.identityId,
