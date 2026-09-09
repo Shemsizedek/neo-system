@@ -1,0 +1,6 @@
+FROM node:24-alpine
+WORKDIR /app
+ENV NODE_ENV=production
+COPY server/neo-counter-backend ./server/neo-counter-backend
+EXPOSE 8080
+CMD ["node","server/neo-counter-backend/cloud-run-firestore.mjs"]

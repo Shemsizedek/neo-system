@@ -1,0 +1,149 @@
+name: Deploy NEO Counter Firestore to Cloud Run
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'server/neo-counter-backend/**'
+      - '.github/workflows/deploy-neo-counter-firestore-cloud-run.yml'
+
+permissions:
+  contents: read
+  id-token: write
+  actions: write
+
+concurrency:
+  group: neo-counter-firestore-cloud-run
+  cancel-in-progress: false
+
+env:
+  SERVICE_NAME: neo-counter-api
+  FIRESTORE_DATABASE_ID: '(default)'
+  TERMINALS_SECRET_NAME: neo-counter-terminals-json
+  STAFF_SECRET_NAME: neo-counter-staff-json
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: holytemples-production
+    timeout-minutes: 30
+    env:
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID || secrets.GCP_PROJECT_ID }}
+      GCP_REGION: ${{ vars.GCP_REGION || secrets.GCP_REGION }}
+      GCP_WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER || secrets.GCP_WIF_PROVIDER }}
+      GCP_CLOUD_RUN_SERVICE_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_SERVICE_ACCOUNT || secrets.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+      GCP_CLOUD_RUN_RUNTIME_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_RUNTIME_ACCOUNT || secrets.GCP_CLOUD_RUN_RUNTIME_ACCOUNT }}
+      GCP_ARTIFACT_REGISTRY: ${{ vars.GCP_ARTIFACT_REGISTRY || secrets.GCP_ARTIFACT_REGISTRY }}
+      NEO_COUNTER_TERMINALS_JSON: ${{ secrets.NEO_COUNTER_TERMINALS_JSON }}
+      NEO_COUNTER_STAFF_JSON: ${{ secrets.NEO_COUNTER_STAFF_JSON }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - name: Validate deployment configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in GCP_PROJECT_ID GCP_REGION GCP_WIF_PROVIDER GCP_CLOUD_RUN_SERVICE_ACCOUNT GCP_CLOUD_RUN_RUNTIME_ACCOUNT GCP_ARTIFACT_REGISTRY NEO_COUNTER_TERMINALS_JSON NEO_COUNTER_STAFF_JSON; do
+            test -n "${!name:-}" || { echo "::error::Missing $name"; exit 1; }
+          done
+
+      - name: Validate Firestore adapter and Counter semantics
+        run: node --test server/neo-counter-backend/firestore-context.test.mjs server/neo-counter-backend/firestore-rest-db.test.mjs
+
+      - uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+
+      - uses: google-github-actions/setup-gcloud@v3
+
+      - name: Verify Firestore and grant runtime data access
+        shell: bash
+        run: |
+          set -euo pipefail
+          gcloud services enable firestore.googleapis.com run.googleapis.com artifactregistry.googleapis.com secretmanager.googleapis.com --project="$GCP_PROJECT_ID"
+          gcloud firestore databases describe --database="$FIRESTORE_DATABASE_ID" --project="$GCP_PROJECT_ID" >/dev/null
+          gcloud projects add-iam-policy-binding "$GCP_PROJECT_ID" \
+            --member="serviceAccount:$GCP_CLOUD_RUN_RUNTIME_ACCOUNT" \
+            --role="roles/datastore.user" \
+            --condition=None \
+            --quiet >/dev/null
+
+      - name: Sync NEO Counter runtime secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          for secret in "$TERMINALS_SECRET_NAME" "$STAFF_SECRET_NAME"; do
+            gcloud secrets describe "$secret" --project="$GCP_PROJECT_ID" >/dev/null 2>&1 || \
+              gcloud secrets create "$secret" --project="$GCP_PROJECT_ID" --replication-policy=automatic
+          done
+          printf '%s' "$NEO_COUNTER_TERMINALS_JSON" | gcloud secrets versions add "$TERMINALS_SECRET_NAME" --project="$GCP_PROJECT_ID" --data-file=-
+          printf '%s' "$NEO_COUNTER_STAFF_JSON" | gcloud secrets versions add "$STAFF_SECRET_NAME" --project="$GCP_PROJECT_ID" --data-file=-
+          for secret in "$TERMINALS_SECRET_NAME" "$STAFF_SECRET_NAME"; do
+            gcloud secrets add-iam-policy-binding "$secret" \
+              --project="$GCP_PROJECT_ID" \
+              --member="serviceAccount:$GCP_CLOUD_RUN_RUNTIME_ACCOUNT" \
+              --role="roles/secretmanager.secretAccessor" \
+              --condition=None \
+              --quiet >/dev/null
+          done
+
+      - name: Ensure NEO Counter event index
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! gcloud firestore indexes composite list --project="$GCP_PROJECT_ID" --database="$FIRESTORE_DATABASE_ID" --format='value(collectionGroup,fields)' | grep -q '^neo_counter_events'; then
+            gcloud firestore indexes composite create \
+              --project="$GCP_PROJECT_ID" \
+              --database="$FIRESTORE_DATABASE_ID" \
+              --collection-group=neo_counter_events \
+              --query-scope=collection \
+              --field-config=field-path=merchantId,order=ascending \
+              --field-config=field-path=createdAt,order=descending \
+              --async
+          fi
+
+      - name: Build and push NEO Counter image
+        env:
+          IMAGE: ${{ env.GCP_ARTIFACT_REGISTRY }}/neo-counter-api:${{ github.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gcloud auth configure-docker "${GCP_REGION}-docker.pkg.dev" --quiet
+          docker build -f server/neo-counter-backend/Dockerfile.firestore -t "$IMAGE" .
+          docker push "$IMAGE"
+
+      - name: Deploy NEO Counter to Cloud Run
+        env:
+          IMAGE: ${{ env.GCP_ARTIFACT_REGISTRY }}/neo-counter-api:${{ github.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gcloud run deploy "$SERVICE_NAME" \
+            --project="$GCP_PROJECT_ID" \
+            --region="$GCP_REGION" \
+            --image="$IMAGE" \
+            --service-account="$GCP_CLOUD_RUN_RUNTIME_ACCOUNT" \
+            --set-env-vars="GOOGLE_CLOUD_PROJECT=$GCP_PROJECT_ID,FIRESTORE_DATABASE_ID=$FIRESTORE_DATABASE_ID,NEO_COUNTER_ALLOWED_ORIGIN=https://shemsizedek.github.io" \
+            --set-secrets="NEO_COUNTER_TERMINALS_JSON=$TERMINALS_SECRET_NAME:latest,NEO_COUNTER_STAFF_JSON=$STAFF_SECRET_NAME:latest" \
+            --allow-unauthenticated \
+            --quiet
+
+      - name: Verify production health and publish frontend endpoint
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL="$(gcloud run services describe "$SERVICE_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format='value(status.url)')"
+          test -n "$URL"
+          STATUS="$(curl -sS -o /tmp/neo-counter-health.json -w '%{http_code}' "$URL/health")"
+          test "$STATUS" = 200
+          node -e "const fs=require('fs');const x=JSON.parse(fs.readFileSync('/tmp/neo-counter-health.json'));if(x.ok!==true||x.storage!=='firestore')process.exit(1)"
+          gh variable set NEO_COUNTER_SYNC_ENDPOINT --repo "$GITHUB_REPOSITORY" --body "$URL"
+          echo "### NEO Counter Firestore" >> "$GITHUB_STEP_SUMMARY"
+          echo "Cloud Run service: $URL" >> "$GITHUB_STEP_SUMMARY"
+          echo "Firestore database: $FIRESTORE_DATABASE_ID" >> "$GITHUB_STEP_SUMMARY"
+          cat /tmp/neo-counter-health.json >> "$GITHUB_STEP_SUMMARY"
