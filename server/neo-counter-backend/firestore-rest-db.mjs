@@ -76,12 +76,21 @@ export function createFirestoreRestDb({projectId,databaseId='(default)',fetchImp
       doc:id=>doc(name,id),
       where(field,op,value){
         if(op!=='==')throw new Error('firestore_rest_only_equality_supported');
-        return {orderBy(orderField,direction='asc'){
-          return {limit(count){return {async get(){
-            const body={structuredQuery:{from:[{collectionId:name}],where:{fieldFilter:{field:{fieldPath:field},op:'EQUAL',value:encodeValue(value)}},orderBy:[{field:{fieldPath:orderField},direction:String(direction).toLowerCase()==='desc'?'DESCENDING':'ASCENDING'}],limit:Number(count)}};
-            const rows=await request(`${base}:runQuery`,{method:'POST',body});
-            return {docs:(rows||[]).filter(x=>x.document).map(x=>snapshot(x.document))};
-          }}};}};
+        return {
+          orderBy(orderField,direction='asc'){
+            return {
+              limit(count){
+                return {
+                  async get(){
+                    const body={structuredQuery:{from:[{collectionId:name}],where:{fieldFilter:{field:{fieldPath:field},op:'EQUAL',value:encodeValue(value)}},orderBy:[{field:{fieldPath:orderField},direction:String(direction).toLowerCase()==='desc'?'DESCENDING':'ASCENDING'}],limit:Number(count)}};
+                    const rows=await request(`${base}:runQuery`,{method:'POST',body});
+                    return {docs:(rows||[]).filter(x=>x.document).map(x=>snapshot(x.document))};
+                  }
+                };
+              }
+            };
+          }
+        };
       }
     };
   }
