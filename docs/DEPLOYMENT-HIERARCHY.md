@@ -1,31 +1,32 @@
 # NEO System Deployment Hierarchy
 
-## Primary: GitHub Pages
+## Production standard
+
+GitHub `main` is the source of truth.
+
+- Static/public frontend: GitHub Pages
+- Authenticated services and APIs: Google Cloud Run
+- Structured Temple/GISS registry: Google Cloud Firestore
+- CI/CD control: GitHub Actions
 
 Canonical public deployment:
 
 - https://shemsizedek.github.io/neo-system/
 - NEO JARVIS: https://shemsizedek.github.io/neo-system/neo-jarvis/
 
-GitHub `main` is the source of truth. The canonical Pages workflow is `.github/workflows/pages.yml`. Production-facing links, documentation, and health checks should prefer GitHub Pages.
+The canonical Pages workflow is `.github/workflows/pages.yml`. Production-facing links, documentation, and health checks should prefer GitHub Pages for static applications and the authorized Cloud Run origin for authenticated backend services.
 
-## Backup: Vercel
+## Platform rule
 
-Vercel is a secondary/fallback deployment target. It must mirror the same built `dist` artifact and `/neo-system/` route structure, but it is not the canonical public endpoint.
+Vercel is not part of the active NEO production or fallback architecture. Do not add Vercel deployment configuration, previews, status gates, backend hosting, or failover routing unless an explicit future architecture decision re-enables it.
 
-Operational rules:
+Cloudflare is likewise not a default application backend. Existing NEO production work should repeat the established GitHub Pages + Google Cloud Run + Firestore pattern rather than introduce another hosting platform.
 
-1. GitHub Pages deploys automatically from `main`.
-2. Vercel is used for backup availability, recovery testing, and preview/fallback access.
-3. A Vercel failure must not block or redefine GitHub Pages as production.
-4. Canonical links must point to GitHub Pages unless an incident explicitly triggers failover.
-5. `vercel.json` keeps Vercel route-compatible with the GitHub Pages `/neo-system/` base path.
-6. Never silently promote Vercel to primary. Failover should be an explicit operational decision.
+## Operational rules
 
-## NEO JARVIS
-
-Primary:
-`https://shemsizedek.github.io/neo-system/neo-jarvis/`
-
-Backup:
-Use the active Vercel project URL with `/neo-system/neo-jarvis/` after the Vercel project is connected and healthy.
+1. GitHub Pages deploys static/public applications from `main` through GitHub Actions.
+2. Google Cloud Run hosts authenticated NEO services and APIs.
+3. Firestore persists structured Temple/GISS registry state.
+4. Deployment checks for unused hosting platforms must not block production.
+5. New services should reuse this production pattern unless their technical requirements make it unsuitable.
+6. Any future hosting-platform change requires an explicit architecture decision before implementation.
