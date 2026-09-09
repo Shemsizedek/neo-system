@@ -1,0 +1,97 @@
+name: Deploy Temple GISS to Cloud Run
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: temple-giss-cloud-run
+  cancel-in-progress: false
+
+env:
+  SERVICE_NAME: neo-temple-giss
+  NEOPASS_SECRET_NAME: neo-pass-jwt-secret
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: holytemples-production
+    timeout-minutes: 20
+    env:
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID || secrets.GCP_PROJECT_ID }}
+      GCP_REGION: ${{ vars.GCP_REGION || secrets.GCP_REGION }}
+      GCP_WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER || secrets.GCP_WIF_PROVIDER }}
+      GCP_CLOUD_RUN_SERVICE_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_SERVICE_ACCOUNT || secrets.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+      GCP_CLOUD_RUN_RUNTIME_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_RUNTIME_ACCOUNT || secrets.GCP_CLOUD_RUN_RUNTIME_ACCOUNT }}
+      GCP_ARTIFACT_REGISTRY: ${{ vars.GCP_ARTIFACT_REGISTRY || secrets.GCP_ARTIFACT_REGISTRY }}
+      NEO_TEMPLE_FIRESTORE_DATABASE: ${{ vars.NEO_TEMPLE_FIRESTORE_DATABASE || '(default)' }}
+      NEO_PASS_JWT_ISSUER: ${{ vars.NEO_PASS_JWT_ISSUER }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Validate configuration
+        env:
+          NEO_PASS_JWT_SECRET: ${{ secrets.NEO_PASS_JWT_SECRET }}
+        run: |
+          set -euo pipefail
+          for name in GCP_PROJECT_ID GCP_REGION GCP_WIF_PROVIDER GCP_CLOUD_RUN_SERVICE_ACCOUNT GCP_CLOUD_RUN_RUNTIME_ACCOUNT GCP_ARTIFACT_REGISTRY NEO_PASS_JWT_SECRET; do
+            test -n "${!name:-}" || { echo "::error::Missing $name"; exit 1; }
+          done
+      - name: Test GISS runtime
+        run: node --test server/neo-platform-api/*.test.mjs
+      - uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@v3
+      - name: Build and push
+        env:
+          IMAGE: ${{ env.GCP_ARTIFACT_REGISTRY }}/neo-temple-giss:${{ github.sha }}
+        run: |
+          set -euo pipefail
+          gcloud auth configure-docker "${GCP_REGION}-docker.pkg.dev" --quiet
+          docker build -f server/neo-platform-api/Dockerfile.giss -t "$IMAGE" .
+          docker push "$IMAGE"
+      - name: Ensure Firestore runtime IAM
+        run: |
+          set -euo pipefail
+          gcloud projects add-iam-policy-binding "$GCP_PROJECT_ID" \
+            --member="serviceAccount:$GCP_CLOUD_RUN_RUNTIME_ACCOUNT" \
+            --role="roles/datastore.user" \
+            --condition=None \
+            --quiet
+          gcloud secrets describe "$NEOPASS_SECRET_NAME" --project="$GCP_PROJECT_ID" >/dev/null 2>&1 || \
+            gcloud secrets create "$NEOPASS_SECRET_NAME" --project="$GCP_PROJECT_ID" --replication-policy=automatic
+          printf '%s' '${{ secrets.NEO_PASS_JWT_SECRET }}' | gcloud secrets versions add "$NEOPASS_SECRET_NAME" --project="$GCP_PROJECT_ID" --data-file=-
+          gcloud secrets add-iam-policy-binding "$NEOPASS_SECRET_NAME" \
+            --project="$GCP_PROJECT_ID" \
+            --member="serviceAccount:$GCP_CLOUD_RUN_RUNTIME_ACCOUNT" \
+            --role="roles/secretmanager.secretAccessor" \
+            --quiet
+      - name: Deploy
+        env:
+          IMAGE: ${{ env.GCP_ARTIFACT_REGISTRY }}/neo-temple-giss:${{ github.sha }}
+        run: |
+          set -euo pipefail
+          ENV_VARS="GOOGLE_CLOUD_PROJECT=$GCP_PROJECT_ID,NEO_TEMPLE_FIRESTORE_DATABASE=$NEO_TEMPLE_FIRESTORE_DATABASE"
+          if [ -n "${NEO_PASS_JWT_ISSUER:-}" ]; then ENV_VARS="$ENV_VARS,NEO_PASS_JWT_ISSUER=$NEO_PASS_JWT_ISSUER"; fi
+          gcloud run deploy "$SERVICE_NAME" \
+            --project="$GCP_PROJECT_ID" \
+            --region="$GCP_REGION" \
+            --image="$IMAGE" \
+            --service-account="$GCP_CLOUD_RUN_RUNTIME_ACCOUNT" \
+            --set-env-vars="$ENV_VARS" \
+            --set-secrets="NEO_PASS_JWT_SECRET=$NEOPASS_SECRET_NAME:latest" \
+            --allow-unauthenticated \
+            --quiet
+      - name: Verify production boundary
+        run: |
+          set -euo pipefail
+          URL="$(gcloud run services describe "$SERVICE_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format='value(status.url)')"
+          test "$(curl -sS -o /tmp/health.json -w '%{http_code}' "$URL/health")" = 200
+          grep -q '"giss":"ready"' /tmp/health.json
+          test "$(curl -sS -o /dev/null -w '%{http_code}' "$URL/api/v1/temple/giss/eligibility")" = 401
+          echo "Temple GISS: $URL" >> "$GITHUB_STEP_SUMMARY"
