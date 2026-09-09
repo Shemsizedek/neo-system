@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>NEO Oracle</title>
+  <meta name="description" content="NEO Oracle — public reasoning surface powered by NEO Prime." />
+  <style>
+    :root{--g:#65ff8a;--bg:#010503;--p:#06110b;--line:#17452b;--text:#edfff2;--muted:#8da895;--danger:#ff7b7b}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 50% 0,#0b2819,#010503 55%);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,sans-serif}.app{max-width:900px;margin:auto;min-height:100vh;padding:18px;display:flex;flex-direction:column}.top{display:flex;justify-content:space-between;gap:14px;align-items:center}.brand{display:flex;gap:12px;align-items:center}.orb{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle,#d9ffe1,var(--g),#087a39);color:#00200b;font-size:22px}.status{font-size:11px;color:var(--muted)}.status.live{color:var(--g)}.hero{text-align:center;padding:58px 0 24px}.hero h1{font-size:42px;margin:0}.hero p{color:var(--muted);font-size:17px}.ideas{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.idea{border:1px solid var(--line);background:var(--p);border-radius:18px;padding:16px;color:#dfffe7;cursor:pointer}.thread{display:flex;flex-direction:column;gap:12px;margin:24px 0}.msg{border:1px solid var(--line);background:var(--p);border-radius:18px;padding:14px 16px;white-space:pre-wrap;line-height:1.45}.msg.user{margin-left:12%;border-color:#2d7046}.msg.oracle{margin-right:12%}.msg.error{border-color:#8c3434;color:#ffd8d8}.composer{margin-top:auto;position:sticky;bottom:0;padding:18px 0;background:linear-gradient(transparent,#010503 25%)}form{display:flex;gap:8px;border:1px solid #2d7046;background:#041009;padding:8px;border-radius:20px}textarea{flex:1;resize:none;border:0;outline:0;background:transparent;color:white;padding:9px;font:inherit;min-height:46px}button{border:0;border-radius:14px;background:var(--g);font-weight:900;padding:0 20px;cursor:pointer}button:disabled{opacity:.55;cursor:wait}.note{text-align:center;color:#587060;font-size:10px;margin-top:8px}@media(max-width:560px){.ideas{grid-template-columns:1fr}.hero{padding-top:42px}.msg.user,.msg.oracle{margin-left:0;margin-right:0}}
+  </style>
+</head>
+<body>
+<main class="app">
+  <header class="top">
+    <div class="brand"><div class="orb">✦</div><div><strong>NEO ORACLE</strong><div id="status" class="status">CONNECTING TO NEO PRIME…</div></div></div>
+    <div class="status">oracle.holytemples.org</div>
+  </header>
+  <section class="hero"><h1>What can I help you understand?</h1><p>Ask, research, plan, compare, and navigate the NEO ecosystem through the public NEO Prime reasoning boundary.</p></section>
+  <section class="ideas" id="ideas">
+    <button class="idea" type="button" onclick="seed('Explain Bitcoin and Counterparty in simple terms')">Learn Bitcoin + XCP</button>
+    <button class="idea" type="button" onclick="seed('Help me explore the NEO ecosystem')">Explore NEO</button>
+    <button class="idea" type="button" onclick="seed('Help me plan a project')">Plan a project</button>
+    <button class="idea" type="button" onclick="seed('Analyze this claim carefully and show uncertainty: ')">Analyze a claim</button>
+  </section>
+  <section id="thread" class="thread" aria-live="polite"></section>
+  <div class="composer">
+    <form id="form"><textarea id="q" placeholder="Message NEO Oracle" aria-label="Message NEO Oracle"></textarea><button id="send" type="submit">↑</button></form>
+    <div class="note">Public reasoning only. NEO Guard blocks administrative, financial, custody, and consequential execution without authorized operator approval.</div>
+  </div>
+</main>
+<script>
+const q=document.getElementById('q'),thread=document.getElementById('thread'),send=document.getElementById('send'),statusEl=document.getElementById('status'),ideas=document.getElementById('ideas');
+function seed(t){q.value=t;q.focus()}
+function add(role,text,cls=''){const el=document.createElement('div');el.className=`msg ${role} ${cls}`;el.textContent=text;thread.appendChild(el);el.scrollIntoView({behavior:'smooth',block:'end'});return el}
+async function health(){try{const r=await fetch('/healthz',{cache:'no-store'});const j=await r.json();if(r.ok&&j.ok){statusEl.textContent='NEO PRIME LIVE';statusEl.classList.add('live');return}throw new Error()}catch{statusEl.textContent='NEO PRIME DEGRADED';statusEl.classList.remove('live')}}
+async function ask(text){add('user',text);ideas.hidden=true;send.disabled=true;const pending=add('oracle','Thinking…');try{const r=await fetch('/api/oracle',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({missionId:'oracle-'+Date.now(),objective:text,capability:'reasoning',requestedAction:'analyze',preferredProviders:['gemini'],maxTokens:900})});const j=await r.json();pending.remove();if(r.status===202){add('oracle',j.text||'NEO Guard requires operator approval for that request.');return}if(!r.ok)throw new Error(j.message||j.error||'Oracle request failed');add('oracle',j.text||'NEO Oracle completed the request.')}catch(e){pending.remove();add('oracle',`Oracle is temporarily unavailable: ${e.message}`,'error')}finally{send.disabled=false;q.focus()}}
+document.getElementById('form').addEventListener('submit',e=>{e.preventDefault();const text=q.value.trim();if(!text)return;q.value='';ask(text)});
+health();
+</script>
+</body>
+</html>
