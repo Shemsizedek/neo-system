@@ -7,7 +7,6 @@ import { createCommandRouter, CommandRouterError } from './command-router.mjs';
 import { createControlPlane, ControlPlaneError } from './control-plane.mjs';
 import { createTempleAdapter, TempleAdapterError } from './temple-adapter.mjs';
 import { createGissHttpHandler } from './giss-http-routes.mjs';
-import { createTempleGissRuntime } from './temple-giss-runtime.mjs';
 
 export const PLATFORM_REGISTRY = {
   neopay: { name: 'NEOpay', source: ['apps/neopay', 'src/neopay'], services: ['wallet', 'portfolio', 'transaction-compose', 'dex-quotes'] },
@@ -24,12 +23,12 @@ export const PLATFORM_REGISTRY = {
 const OCI_SERVICE_REGISTRY = JSON.parse(readFileSync(new URL('../../infra/oci/neo-system-services.json', import.meta.url), 'utf8'));
 function json(res,status,body){const payload=JSON.stringify(body);res.writeHead(status,{'content-type':'application/json; charset=utf-8','content-length':Buffer.byteLength(payload),'access-control-allow-origin':'*','cache-control':'no-store'});res.end(payload);}
 
-export function createNeoPlatformApi({ now=()=>new Date().toISOString(), audit=()=>{}, marketData=createNeoPrimeMarketData({now}), integrationHub=createIntegrationHub({now,audit}), commandRouter=createCommandRouter({integrationHub,now,audit}), controlPlane=createControlPlane({commandRouter,now,audit}), templeAdapter=createTempleAdapter({controlPlane,now,audit}), subjectResolver=resolveNeopassSubject, templeGissRuntime=createTempleGissRuntime({now}) }={}) {
-  const gissHandler=createGissHttpHandler({service:templeGissRuntime.service,subjectResolver,now});
+export function createNeoPlatformApi({ now=()=>new Date().toISOString(), audit=()=>{}, marketData=createNeoPrimeMarketData({now}), integrationHub=createIntegrationHub({now,audit}), commandRouter=createCommandRouter({integrationHub,now,audit}), controlPlane=createControlPlane({commandRouter,now,audit}), templeAdapter=createTempleAdapter({controlPlane,now,audit}), subjectResolver=resolveNeopassSubject, templeGissRuntime=null }={}) {
+  const gissHandler=createGissHttpHandler({service:templeGissRuntime?.service||null,subjectResolver,now});
   return http.createServer(async(req,res)=>{try{
     if(req.method==='OPTIONS'){res.writeHead(204,{'access-control-allow-origin':'*','access-control-allow-methods':'GET,POST,OPTIONS','access-control-allow-headers':'content-type,authorization,x-neopass-subject'});return res.end();}
     const url=new URL(req.url||'/','http://neo.local');
-    if(url.pathname==='/health')return json(res,200,{service:'neo-platform-api',status:'ok',generatedAt:now(),platforms:Object.keys(PLATFORM_REGISTRY).length,ociRegisteredServices:OCI_SERVICE_REGISTRY.services.length});
+    if(url.pathname==='/health')return json(res,200,{service:'neo-platform-api',status:'ok',generatedAt:now(),platforms:Object.keys(PLATFORM_REGISTRY).length,ociRegisteredServices:OCI_SERVICE_REGISTRY.services.length,giss:templeGissRuntime?.service?'ready':'not_configured'});
     if(await gissHandler(req,res,url)) return;
     if(url.pathname.startsWith('/api/v1/integrations')){const subject=subjectResolver(req);if(!subject)return json(res,401,{error:'neopass_identity_required',readOnly:true});if(req.method==='GET'&&url.pathname==='/api/v1/integrations')return json(res,200,{apiVersion:'v1',subject,readOnly:true,...await integrationHub.list(subject)});const m=url.pathname.match(/^\/api\/v1\/integrations\/([^/]+)\/status$/);if(req.method==='GET'&&m)return json(res,200,{apiVersion:'v1',subject,readOnly:true,integration:m[1],status:await integrationHub.status(subject,m[1])});if(req.method==='POST'&&url.pathname==='/api/v1/integrations/execute-read'){let body='';for await(const chunk of req)body+=chunk;return json(res,200,{apiVersion:'v1',subject,...await integrationHub.execute(subject,JSON.parse(body||'{}'))});}}
     if(url.pathname==='/api/v1/commands/execute'){const subject=subjectResolver(req);if(!subject)return json(res,401,{error:'neopass_identity_required',readOnly:true});if(req.method!=='POST')return json(res,405,{error:'method_not_allowed',readOnly:true});let body='';for await(const chunk of req)body+=chunk;return json(res,200,await commandRouter.execute(subject,JSON.parse(body||'{}')));}
