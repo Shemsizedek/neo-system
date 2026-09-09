@@ -1,8 +1,8 @@
 FROM node:24-slim
 WORKDIR /app
 ENV NODE_ENV=production
-COPY package.json package-lock.json ./
-RUN npm ci --omit=dev
+COPY server/neo-platform-api/package.giss.json ./package.json
+RUN npm install --omit=dev --no-audit --no-fund
 COPY server ./server
 COPY infra ./infra
 EXPOSE 8080
