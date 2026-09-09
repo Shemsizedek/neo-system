@@ -1,6 +1,7 @@
 import http from 'node:http'
 import { createNeoRouter } from '../neo-router/router.mjs'
 import { providersFromEnv } from '../neo-router/providers.mjs'
+import { createVertexGeminiAdapter } from '../neo-router/vertex-provider.mjs'
 import { createNeoPrimeRuntime } from './runtime.mjs'
 
 const DEFAULT_ALLOWED_ORIGINS = Object.freeze([
@@ -35,9 +36,7 @@ async function readJson(req, maxBytes = 64 * 1024) {
     }
   }
   if (!raw) return {}
-  try {
-    return JSON.parse(raw)
-  } catch {
+  try { return JSON.parse(raw) } catch {
     const error = new Error('Invalid JSON body')
     error.statusCode = 400
     throw error
@@ -46,8 +45,7 @@ async function readJson(req, maxBytes = 64 * 1024) {
 
 function operatorAuthorized(req, token) {
   if (!token) return false
-  const value = req.headers.authorization || ''
-  return value === `Bearer ${token}`
+  return (req.headers.authorization || '') === `Bearer ${token}`
 }
 
 function normalizeMission(body) {
@@ -74,84 +72,56 @@ function responseText(result) {
   return result?.result?.text || result?.result?.output_text || result?.reason || result?.status || 'NEO Prime completed.'
 }
 
+function runtimeProviders(env) {
+  const standard = providersFromEnv(env)
+  const hasGeminiKey = Boolean(env.GOOGLE_API_KEY || env.GEMINI_API_KEY)
+  const projectId = env.GOOGLE_CLOUD_PROJECT || env.GCP_PROJECT_ID
+  if (hasGeminiKey || !projectId) return standard
+  return [
+    ...standard.filter((provider) => provider.id !== 'gemini'),
+    createVertexGeminiAdapter({
+      projectId,
+      location: env.GOOGLE_CLOUD_LOCATION || env.GCP_REGION || 'us-central1',
+      model: env.VERTEX_GEMINI_MODEL || 'gemini-2.5-flash',
+      timeoutMs: Number(env.NEO_ROUTER_PROVIDER_TIMEOUT_MS || 30_000),
+    }),
+  ]
+}
+
 export function createPrimeHttpServer({ env = process.env, providers, now = () => new Date().toISOString() } = {}) {
-  const activeProviders = providers ?? providersFromEnv(env)
+  const activeProviders = providers ?? runtimeProviders(env)
   const router = createNeoRouter({ providers: activeProviders })
   const prime = createNeoPrimeRuntime({ router })
   const operatorToken = env.NEO_PRIME_OPERATOR_TOKEN || ''
-  const allowedOrigins = new Set(
-    String(env.NEO_PRIME_ALLOWED_ORIGINS || DEFAULT_ALLOWED_ORIGINS.join(','))
-      .split(',').map((value) => value.trim()).filter(Boolean),
-  )
+  const allowedOrigins = new Set(String(env.NEO_PRIME_ALLOWED_ORIGINS || DEFAULT_ALLOWED_ORIGINS.join(',')).split(',').map((value) => value.trim()).filter(Boolean))
 
   return http.createServer(async (req, res) => {
     const origin = req.headers.origin
     const cors = corsHeaders(origin, allowedOrigins)
-
     if (req.method === 'OPTIONS') {
       if (origin && !allowedOrigins.has(origin)) return json(res, 403, { ok: false, error: 'origin_not_allowed' })
-      res.writeHead(204, cors)
-      return res.end()
+      res.writeHead(204, cors); return res.end()
     }
-
     if (req.method === 'GET' && (req.url === '/health' || req.url === '/healthz')) {
       const health = router.health()
-      return json(res, health.ok ? 200 : 503, {
-        ok: health.ok,
-        service: 'neo-prime-runtime',
-        prime: 'active',
-        guard: 'enforced',
-        configuredProviders: health.configured,
-        providers: health.providers,
-        capabilities: health.capabilities,
-        timestamp: now(),
-      }, cors)
+      return json(res, health.ok ? 200 : 503, { ok: health.ok, service: 'neo-prime-runtime', prime: 'active', guard: 'enforced', configuredProviders: health.configured, providers: health.providers, capabilities: health.capabilities, timestamp: now() }, cors)
     }
-
     if (req.method === 'POST' && (req.url === '/api/prime' || req.url === '/prime')) {
       if (origin && !allowedOrigins.has(origin)) return json(res, 403, { ok: false, error: 'origin_not_allowed' })
       try {
         const body = await readJson(req)
         const mission = normalizeMission(body)
-        const plan = prime.plan(mission, { cycle: body.cycle === 'angelic' ? 'angelic' : 'human' })
-        const authorized = operatorAuthorized(req, operatorToken)
-        const approved = body.approved === true && authorized && req.headers['x-neo-prime-approval'] === 'approved'
-
-        if (plan.approvalRequired && !approved) {
-          return json(res, 202, {
-            ok: true,
-            status: 'awaiting_approval',
-            text: 'NEO Guard halted this command pending explicit operator authorization.',
-            missionId: mission.missionId,
-            approvalRequired: true,
-            risk: plan.neoAlgo?.risk || 'yellow',
-            candidates: plan.candidates,
-            neoAlgo: plan.neoAlgo,
-          }, cors)
-        }
-
-        const result = await prime.execute(mission, { approved, cycle: body.cycle === 'angelic' ? 'angelic' : 'human' })
+        const cycle = body.cycle === 'angelic' ? 'angelic' : 'human'
+        const plan = prime.plan(mission, { cycle })
+        const approved = body.approved === true && operatorAuthorized(req, operatorToken) && req.headers['x-neo-prime-approval'] === 'approved'
+        if (plan.approvalRequired && !approved) return json(res, 202, { ok: true, status: 'awaiting_approval', text: 'NEO Guard halted this command pending explicit operator authorization.', missionId: mission.missionId, approvalRequired: true, risk: plan.neoAlgo?.risk || 'yellow', candidates: plan.candidates, neoAlgo: plan.neoAlgo }, cors)
+        const result = await prime.execute(mission, { approved, cycle })
         const status = result.status === 'completed' ? 200 : result.status === 'awaiting_approval' ? 202 : 503
-        return json(res, status, {
-          ok: result.status === 'completed',
-          status: result.status,
-          text: responseText(result),
-          missionId: mission.missionId,
-          route: result.route || null,
-          approvalRequired: Boolean(result.approvalRequired),
-          risk: result.neoAlgo?.risk || null,
-          neoAlgo: result.neoAlgo,
-          failures: result.failures || [],
-        }, cors)
+        return json(res, status, { ok: result.status === 'completed', status: result.status, text: responseText(result), missionId: mission.missionId, route: result.route || null, approvalRequired: Boolean(result.approvalRequired), risk: result.neoAlgo?.risk || null, neoAlgo: result.neoAlgo, failures: result.failures || [] }, cors)
       } catch (error) {
-        return json(res, error.statusCode || 500, {
-          ok: false,
-          error: error.statusCode ? 'bad_request' : 'prime_runtime_error',
-          message: error instanceof Error ? error.message : String(error),
-        }, cors)
+        return json(res, error.statusCode || 500, { ok: false, error: error.statusCode ? 'bad_request' : 'prime_runtime_error', message: error instanceof Error ? error.message : String(error) }, cors)
       }
     }
-
     return json(res, 404, { ok: false, error: 'not_found' }, cors)
   })
 }
@@ -159,9 +129,7 @@ export function createPrimeHttpServer({ env = process.env, providers, now = () =
 export function startPrimeServer({ env = process.env } = {}) {
   const port = Number(env.PORT || env.NEO_PRIME_PORT || 8080)
   const server = createPrimeHttpServer({ env })
-  server.listen(port, '0.0.0.0', () => {
-    console.log(`[neo-prime] listening on :${port}`)
-  })
+  server.listen(port, '0.0.0.0', () => console.log(`[neo-prime] listening on :${port}`))
   return server
 }
 
