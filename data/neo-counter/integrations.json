@@ -1,8 +1,12 @@
 {
-  "schemaVersion": "2026-08-29.v1",
+  "schemaVersion": "2026-09-09.v2",
+  "officialCheckout": "https://holytemples.org/checkout/",
+  "checkoutEngine": "https://shemsizedek.github.io/neo-system/neo-counter/",
   "checkoutBase": "https://shemsizedek.github.io/neo-system/neo-counter/",
   "adapter": "https://shemsizedek.github.io/neo-system/neo-counter/neo-checkout.js",
+  "templeBridge": "https://shemsizedek.github.io/neo-system/temple-checkout/bridge.js",
   "services": [
+    {"id":"world-temple","name":"World Temple of Karast","page":"https://holytemples.org/","checkout":"https://holytemples.org/checkout/"},
     {"id":"neopay","name":"NEOpay","page":"/neopay/"},
     {"id":"neo-teller","name":"NEO Teller","page":"/neo-teller/"},
     {"id":"neo-books","name":"NEO Books","page":"/neo-books/"},
