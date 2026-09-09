@@ -46,6 +46,7 @@ jobs:
           mkdir -p dist/neopay
           cp dist/index.html dist/neopay/index.html
           test -f dist/neopay/index.html
+          test -f dist/temple-checkout/bridge.js
       - name: Publish managed static service routes
         run: |
           test -f apps/neo-relations/site/index.html
@@ -138,6 +139,10 @@ jobs:
           node scripts/build-neo-counter-github-backend.mjs
           test -f dist/api/neo-counter/runtime.json
           test -f dist/api/neo-counter/build.json
+          test -f dist/api/neo-counter/services.json
+          test -f dist/api/neo-counter/integrations.json
+          test -f dist/api/neo-counter/currencies.json
+          test -f dist/api/neo-counter/checkout-platform.json
       - name: Build NEO Counter
         working-directory: apps/neo-counter
         run: |
@@ -148,6 +153,7 @@ jobs:
           test -f apps/neo-counter/dist/index.html
           test -f dist/api/neo-counter/runtime.json
           test -f dist/api/neo-counter/build.json
+          test -f dist/api/neo-counter/checkout-platform.json
           mkdir -p dist/neo-counter dist/apps/neo-counter
           cp -R apps/neo-counter/dist/. dist/neo-counter/
           cp -R apps/neo-counter/dist/. dist/apps/neo-counter/
@@ -196,6 +202,8 @@ jobs:
           echo "Public NEO Hub: /neo-hub/" >> "$GITHUB_STEP_SUMMARY"
           echo "NEO Prime: /neo-prime/" >> "$GITHUB_STEP_SUMMARY"
           echo "NEOpay: /neopay/" >> "$GITHUB_STEP_SUMMARY"
+          echo "Official checkout: https://holytemples.org/checkout/" >> "$GITHUB_STEP_SUMMARY"
+          echo "Temple checkout bridge: /temple-checkout/bridge.js" >> "$GITHUB_STEP_SUMMARY"
           echo "NEO Relations: /neo-relations/" >> "$GITHUB_STEP_SUMMARY"
           echo "NEO-PACER: /neo-pacer/" >> "$GITHUB_STEP_SUMMARY"
           echo "NEO Exchange ORIGIN: /neo-exchange/" >> "$GITHUB_STEP_SUMMARY"
@@ -219,14 +227,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./dist
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - name: Deploy to GitHub Pages
+          path: dist
+      - name: Deploy Pages
         id: deployment
         uses: actions/deploy-pages@v4
