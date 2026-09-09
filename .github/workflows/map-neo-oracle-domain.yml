@@ -1,0 +1,90 @@
+name: Map NEO Oracle Domain
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/map-neo-oracle-domain.yml'
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: neo-oracle-domain-map
+  cancel-in-progress: false
+
+env:
+  SERVICE_NAME: neo-prime-runtime
+  ORACLE_DOMAIN: oracle.holytemples.org
+
+jobs:
+  map-domain:
+    runs-on: ubuntu-latest
+    environment: holytemples-production
+    timeout-minutes: 15
+    env:
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID || secrets.GCP_PROJECT_ID }}
+      GCP_REGION: ${{ vars.GCP_REGION || secrets.GCP_REGION }}
+      GCP_WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER || secrets.GCP_WIF_PROVIDER }}
+      GCP_CLOUD_RUN_SERVICE_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_SERVICE_ACCOUNT || secrets.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - name: Validate mapping configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in GCP_PROJECT_ID GCP_REGION GCP_WIF_PROVIDER GCP_CLOUD_RUN_SERVICE_ACCOUNT; do
+            test -n "${!name:-}" || { echo "::error::Missing $name"; exit 1; }
+          done
+
+      - uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+
+      - uses: google-github-actions/setup-gcloud@v3
+
+      - name: Install Cloud Run beta commands
+        shell: bash
+        run: gcloud components install beta --quiet
+
+      - name: Ensure Oracle custom-domain mapping
+        shell: bash
+        run: |
+          set -euo pipefail
+          if gcloud beta run domain-mappings describe \
+            --domain="$ORACLE_DOMAIN" \
+            --project="$GCP_PROJECT_ID" \
+            --region="$GCP_REGION" >/dev/null 2>&1; then
+            echo "Oracle domain mapping already exists."
+          else
+            gcloud beta run domain-mappings create \
+              --service="$SERVICE_NAME" \
+              --domain="$ORACLE_DOMAIN" \
+              --project="$GCP_PROJECT_ID" \
+              --region="$GCP_REGION" \
+              --quiet
+          fi
+
+          echo '### Oracle domain mapping' >> "$GITHUB_STEP_SUMMARY"
+          gcloud beta run domain-mappings describe \
+            --domain="$ORACLE_DOMAIN" \
+            --project="$GCP_PROJECT_ID" \
+            --region="$GCP_REGION" \
+            --format='yaml(status.conditions,status.resourceRecords)' | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Verify Cloud Run origin directly
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL="$(gcloud run services describe "$SERVICE_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format='value(status.url)')"
+          test -n "$URL"
+          code="$(curl -sS -o /tmp/oracle.html -w '%{http_code}' "$URL/")"
+          echo "Cloud Run Oracle HTTP $code"
+          test "$code" = 200
+          grep -q 'NEO ORACLE' /tmp/oracle.html
+          echo "Cloud Run Oracle origin is healthy: $URL" >> "$GITHUB_STEP_SUMMARY"
