@@ -6,14 +6,14 @@ function json(res, status, body) {
   res.end(payload);
 }
 
-export function createGissHttpHandler({ service, subjectResolver, now = () => new Date().toISOString() } = {}) {
-  if (!service) throw new Error('giss_service_required');
+export function createGissHttpHandler({ service = null, subjectResolver, now = () => new Date().toISOString() } = {}) {
   if (!subjectResolver) throw new Error('subject_resolver_required');
 
   return async function handleGissRoute(req, res, url = new URL(req.url || '/', 'http://neo.local')) {
     const route = url.pathname;
     const recognized = route === '/api/v1/temple/citizen' || route === '/api/v1/temple/giss/eligibility' || route === '/api/v1/temple/giss/enroll' || route === '/api/v1/temple/giss/dashboard' || route === '/api/v1/temple/giss/portfolio' || route === '/api/v1/temple/giss/council';
     if (!recognized) return false;
+    if (!service) { json(res, 503, { error: 'giss_registry_not_configured', message: 'Temple GISS requires a configured durable registry.', readOnly: true }); return true; }
     const subject = subjectResolver(req);
     if (!subject) { json(res, 401, { error: 'neopass_identity_required', readOnly: true }); return true; }
     try {
