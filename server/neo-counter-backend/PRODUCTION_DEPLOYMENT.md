@@ -1,12 +1,14 @@
 # NEO Counter Production Connection
 
-GitHub Pages remains the canonical frontend. The authenticated backend is deployed separately on Google Cloud Run.
+GitHub Pages remains the canonical frontend. The authenticated backend runs on Google Cloud Run with Firestore as the authoritative production datastore.
 
-## Backend runtime
+## Production runtime
 
-The backend uses the NEO Counter service implementation in `server/neo-counter-backend` and its authorized persistent store. Production deployment must package the HTTP service for Cloud Run rather than depend on a vendor-specific serverless route wrapper.
+Use `server/neo-counter-backend/firestore-server.mjs` with an authenticated Firestore-compatible `db` injected by the Cloud Run bootstrap. Runtime credentials belong to the Google Cloud service identity/IAM layer; do not commit service-account JSON keys.
 
-Required backend environment variables include the authorized persistent-store configuration plus:
+The Firestore adapter is `server/neo-counter-backend/firestore-context.mjs` and preserves the existing HTTP contract while replacing Redis persistence.
+
+Required environment variables:
 
 - `NEO_COUNTER_ALLOWED_ORIGIN=https://shemsizedek.github.io`
 - `NEO_COUNTER_TERMINALS_JSON` containing enabled terminal IDs and SHA-256 terminal-secret hashes
@@ -14,17 +16,21 @@ Required backend environment variables include the authorized persistent-store c
 - `NEO_COUNTER_SESSION_TTL_MS` (optional; defaults to 8 hours)
 - `NEO_COUNTER_API_KEY_HASH` (optional administrative bootstrap credential)
 
-Do not commit terminal secrets, staff PINs, API keys, datastore tokens, private keys, seed phrases, or cardholder data.
+Do not commit terminal secrets, staff PINs, API keys, private keys, seed phrases, cardholder data, or service-account keys.
 
-Use the deployed Cloud Run service origin as the API base URL.
+## Firestore collections
+
+- `neo_counter_state` — merchant/entity envelopes
+- `neo_counter_events` — audit and transaction events; event document ID is the idempotency key
+- `neo_counter_sessions` — SHA-256 token hashes only; plaintext bearer tokens are never stored
+
+`putEnvelope` uses a Firestore transaction to compare the current version, write the next envelope, and append its audit event atomically. A stale write returns the current remote envelope as HTTP 409 through the service handler.
+
+`neo_counter_events` requires a composite index for `merchantId ASC, createdAt DESC` when Firestore requests it.
 
 ## GitHub Pages connection
 
-Set the GitHub repository variable `NEO_COUNTER_SYNC_ENDPOINT` to the deployed Cloud Run API base URL.
-
-The Pages workflow injects this value into `VITE_NEO_COUNTER_SYNC_ENDPOINT` only while building `apps/neo-counter`. It is a public API origin, not a credential.
-
-The browser acquires short-lived bearer sessions by posting terminal and staff credentials to `/session`. Bearer tokens exist only in memory and are cleared by refresh, tab close, or logout.
+Set repository variable `NEO_COUNTER_SYNC_ENDPOINT` to the deployed Cloud Run service origin. The Pages build exposes this only as the public API endpoint; it is not a credential.
 
 ## Production contract
 
@@ -37,6 +43,10 @@ The browser acquires short-lived bearer sessions by posting terminal and staff c
 - `GET /merchant/:merchantId/events`
 - `POST /merchant/:merchantId/events`
 
-Merchant state updates must remain atomic in the selected persistent adapter. A stale write returns HTTP 409 with the current remote envelope. Sessions must retain TTL expiration.
+## Runtime separation
 
-Local/on-prem operation continues to use the SQLite backend and does not require the hosted adapter.
+Production: Cloud Run + Firestore.
+
+Local/on-prem: the existing SQLite backend remains available for offline development and local operation.
+
+The Redis REST adapter is legacy migration code and is not the production source of truth.
