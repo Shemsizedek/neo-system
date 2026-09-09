@@ -1,0 +1,22 @@
+{
+  "schemaVersion": "2026-09-09.v1",
+  "officialHost": "https://holytemples.org",
+  "officialCheckoutPath": "/checkout/",
+  "officialCheckoutUrl": "https://holytemples.org/checkout/",
+  "engine": "neo-counter",
+  "engineUrl": "https://shemsizedek.github.io/neo-system/neo-counter/",
+  "wallet": "neopay",
+  "walletUrl": "https://shemsizedek.github.io/neo-system/neopay/",
+  "network": "bitcoin-mainnet",
+  "counterpartyApi": "https://api.counterparty.io:4000/v2",
+  "custody": "user-controlled",
+  "signing": "local-wallet-only",
+  "settlementProof": "bitcoin-txid-plus-counterparty-event",
+  "rules": {
+    "browserReturnIsPaymentProof": false,
+    "privateKeysInBackend": false,
+    "seedPhrasesInBackend": false,
+    "serverSideSigning": false,
+    "irreversibleFulfillmentRequiresIndependentVerification": true
+  }
+}
