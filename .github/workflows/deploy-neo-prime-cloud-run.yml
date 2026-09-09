@@ -20,6 +20,7 @@ concurrency:
 
 env:
   SERVICE_NAME: neo-prime-runtime
+  ORACLE_DOMAIN: oracle.holytemples.org
 
 jobs:
   deploy:
@@ -115,12 +116,35 @@ jobs:
             --region="$GCP_REGION"
             --image="$IMAGE"
             --service-account="$GCP_CLOUD_RUN_RUNTIME_ACCOUNT"
-            --set-env-vars="NEO_PRIME_ALLOWED_ORIGINS=https://shemsizedek.github.io,GOOGLE_CLOUD_PROJECT=$GCP_PROJECT_ID,GOOGLE_CLOUD_LOCATION=$GCP_REGION,VERTEX_GEMINI_MODEL=gemini-2.5-flash"
+            --set-env-vars="NEO_PRIME_ALLOWED_ORIGINS=https://shemsizedek.github.io,https://holytemples.org,https://www.holytemples.org,https://oracle.holytemples.org,GOOGLE_CLOUD_PROJECT=$GCP_PROJECT_ID,GOOGLE_CLOUD_LOCATION=$GCP_REGION,VERTEX_GEMINI_MODEL=gemini-2.5-flash"
             --allow-unauthenticated
             --quiet
           )
           [[ -z "$SET_SECRETS" ]] || args+=(--set-secrets="$SET_SECRETS")
           "${args[@]}"
+
+      - name: Ensure Oracle custom-domain mapping
+        shell: bash
+        run: |
+          set -euo pipefail
+          if gcloud beta run domain-mappings describe \
+            --domain="$ORACLE_DOMAIN" \
+            --project="$GCP_PROJECT_ID" \
+            --region="$GCP_REGION" >/tmp/oracle-domain.json 2>/dev/null; then
+            echo "Oracle domain mapping already exists."
+          else
+            gcloud beta run domain-mappings create \
+              --service="$SERVICE_NAME" \
+              --domain="$ORACLE_DOMAIN" \
+              --project="$GCP_PROJECT_ID" \
+              --region="$GCP_REGION" \
+              --quiet
+          fi
+          gcloud beta run domain-mappings describe \
+            --domain="$ORACLE_DOMAIN" \
+            --project="$GCP_PROJECT_ID" \
+            --region="$GCP_REGION" \
+            --format='yaml(status.conditions,status.resourceRecords)'
 
       - name: Verify production runtime and Vertex execution
         shell: bash
@@ -130,18 +154,30 @@ jobs:
           test -n "$URL"
 
           health_code="$(curl -sS -o /tmp/health.json -w '%{http_code}' "$URL/healthz")"
+          echo "health HTTP $health_code"
+          cat /tmp/health.json || true
+          echo
           test "$health_code" = 200
           grep -q '"gemini"' /tmp/health.json
 
+          oracle_code="$(curl -sS -o /tmp/oracle.html -w '%{http_code}' "$URL/")"
+          echo "oracle HTTP $oracle_code"
+          test "$oracle_code" = 200
+          grep -q 'NEO ORACLE' /tmp/oracle.html
+
           prime_code="$(curl -sS -o /tmp/prime.json -w '%{http_code}' \
-            -X POST "$URL/api/prime" \
+            -X POST "$URL/api/oracle" \
             -H 'content-type: application/json' \
-            --data '{"missionId":"deploy-smoke","objective":"Reply with a short confirmation that NEO Prime reasoning is online.","capability":"frontend","requestedAction":"analyze","preferredProviders":["gemini"],"maxTokens":64}')"
+            --data '{"missionId":"deploy-smoke","objective":"Reply with a short confirmation that NEO Oracle reasoning is online.","capability":"reasoning","requestedAction":"analyze","preferredProviders":["gemini"],"maxTokens":64}')"
+          echo "oracle reasoning HTTP $prime_code"
+          cat /tmp/prime.json || true
+          echo
           test "$prime_code" = 200
           grep -q '"status":"completed"' /tmp/prime.json
           grep -q '"route":"gemini"' /tmp/prime.json
 
-          echo "### NEO Prime Runtime LIVE" >> "$GITHUB_STEP_SUMMARY"
+          echo "### NEO Oracle + Prime LIVE" >> "$GITHUB_STEP_SUMMARY"
+          echo "Oracle: https://$ORACLE_DOMAIN/" >> "$GITHUB_STEP_SUMMARY"
           echo "Runtime: $URL/api/prime" >> "$GITHUB_STEP_SUMMARY"
           echo "Health:" >> "$GITHUB_STEP_SUMMARY"
           cat /tmp/health.json >> "$GITHUB_STEP_SUMMARY"

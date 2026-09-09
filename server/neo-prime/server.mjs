@@ -1,18 +1,33 @@
 import http from 'node:http'
+import { readFileSync } from 'node:fs'
 import { createNeoRouter } from '../neo-router/router.mjs'
 import { providersFromEnv } from '../neo-router/providers.mjs'
 import { createVertexGeminiAdapter } from '../neo-router/vertex-provider.mjs'
 import { createNeoPrimeRuntime } from './runtime.mjs'
 
+const ORACLE_HTML = readFileSync(new URL('./oracle.html', import.meta.url), 'utf8')
+
 const DEFAULT_ALLOWED_ORIGINS = Object.freeze([
   'https://shemsizedek.github.io',
   'https://holytemples.org',
   'https://www.holytemples.org',
+  'https://oracle.holytemples.org',
 ])
 
 function json(res, status, body, headers = {}) {
   res.writeHead(status, { 'content-type': 'application/json; charset=utf-8', ...headers })
   res.end(JSON.stringify(body))
+}
+
+function html(res, status, body) {
+  res.writeHead(status, {
+    'content-type': 'text/html; charset=utf-8',
+    'cache-control': 'public, max-age=300',
+    'content-security-policy': "default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self'; img-src 'self' data:; base-uri 'none'; frame-ancestors 'none'",
+    'x-content-type-options': 'nosniff',
+    'referrer-policy': 'strict-origin-when-cross-origin',
+  })
+  res.end(body)
 }
 
 function corsHeaders(origin, allowedOrigins) {
@@ -102,11 +117,14 @@ export function createPrimeHttpServer({ env = process.env, providers, now = () =
       if (origin && !allowedOrigins.has(origin)) return json(res, 403, { ok: false, error: 'origin_not_allowed' })
       res.writeHead(204, cors); return res.end()
     }
+    if (req.method === 'GET' && (req.url === '/' || req.url === '/oracle' || req.url === '/oracle/')) {
+      return html(res, 200, ORACLE_HTML)
+    }
     if (req.method === 'GET' && (req.url === '/health' || req.url === '/healthz')) {
       const health = router.health()
-      return json(res, health.ok ? 200 : 503, { ok: health.ok, service: 'neo-prime-runtime', prime: 'active', guard: 'enforced', configuredProviders: health.configured, providers: health.providers, capabilities: health.capabilities, timestamp: now() }, cors)
+      return json(res, health.ok ? 200 : 503, { ok: health.ok, service: 'neo-prime-runtime', prime: 'active', oracle: 'active', guard: 'enforced', configuredProviders: health.configured, providers: health.providers, capabilities: health.capabilities, timestamp: now() }, cors)
     }
-    if (req.method === 'POST' && (req.url === '/api/prime' || req.url === '/prime')) {
+    if (req.method === 'POST' && (req.url === '/api/prime' || req.url === '/prime' || req.url === '/api/oracle')) {
       if (origin && !allowedOrigins.has(origin)) return json(res, 403, { ok: false, error: 'origin_not_allowed' })
       try {
         const body = await readJson(req)
