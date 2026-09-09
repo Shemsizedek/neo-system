@@ -10,7 +10,9 @@ export function createFirestoreTempleRegistry({ db, now = () => new Date().toISO
     templeCitizens: 'templeCitizens',
     bookOfLifeRecords: 'templeBookOfLife',
     gissEnrollments: 'gissEnrollments',
-    degreeAssignments: 'templeDegreeAssignments'
+    degreeAssignments: 'templeDegreeAssignments',
+    nousPortfolios: 'templeNousPortfolios',
+    councilAdvancements: 'templeCouncilAdvancements'
   };
 
   async function firstWhere(collection, field, value) {
@@ -40,15 +42,24 @@ export function createFirestoreTempleRegistry({ db, now = () => new Date().toISO
       return firstWhere(collections.gissEnrollments, 'templeCitizenId', templeCitizenId);
     },
     async createGISSEnrollment(record) {
-      const ref = record.id
-        ? db.collection(collections.gissEnrollments).doc(record.id)
-        : db.collection(collections.gissEnrollments).doc();
+      // Stable citizen-scoped document IDs make retries idempotent. A caller may
+      // still provide an explicit ID for migrations/imports.
+      const id = record.id || `giss:${record.templeCitizenId}`;
+      const ref = db.collection(collections.gissEnrollments).doc(id);
+      const existing = await ref.get();
+      if (existing.exists) return { id: ref.id, ...existing.data() };
       const value = { ...record, createdAt: record.createdAt || now(), updatedAt: now() };
       await ref.set(value, { merge: false });
       return { id: ref.id, ...value };
     },
-    async getTempleDegreeAssignment(templeCitizenId) {
-      return firstWhere(collections.degreeAssignments, 'templeCitizenId', templeCitizenId);
+    async getTempleDegreeAssignment(enrollmentId) {
+      return firstWhere(collections.degreeAssignments, 'enrollmentId', enrollmentId);
+    },
+    async getNousPortfolio(enrollmentId) {
+      return firstWhere(collections.nousPortfolios, 'enrollmentId', enrollmentId);
+    },
+    async getCouncilAdvancement(enrollmentId) {
+      return firstWhere(collections.councilAdvancements, 'enrollmentId', enrollmentId);
     },
     async upsert(collectionKey, record, key = 'id') {
       const collection = collections[collectionKey];
