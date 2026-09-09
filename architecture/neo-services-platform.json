@@ -1,38 +1,47 @@
 {
-  "version": "1.0.0",
-  "name": "NEO Services Three-Plane Standard",
+  "version": "2.0.0",
+  "name": "NEO Services Five-Plane Standard",
   "scope": "all-neo-services",
   "planes": {
+    "sourceControl": {
+      "primary": "github",
+      "responsibilities": ["source-of-truth", "configuration", "service-contracts", "release-gates", "auditable-change-history"]
+    },
     "frontend": {
       "primary": "github-pages",
       "responsibilities": ["static-ui", "public-service-pages", "operator-dashboards-without-secrets"],
-      "forbidden": ["runtime-secrets", "private-signing-keys", "discord-bot-tokens", "privileged-github-tokens"]
+      "forbidden": ["runtime-secrets", "private-signing-keys", "service-account-keys", "privileged-tokens"]
     },
-    "backend": {
-      "primary": "github",
-      "responsibilities": ["source-of-truth", "configuration", "service-contracts", "github-actions-orchestration", "release-gates", "auditable-state"],
-      "constraints": ["github-pages-is-not-a-dynamic-backend", "github-actions-is-not-a-persistent-http-server"]
+    "data": {
+      "primary": "firestore",
+      "responsibilities": ["persistent-application-state", "registries", "identity-metadata", "service-configuration", "operational-records"],
+      "credentials": "runtime-identity-iam",
+      "constraints": ["no-browser-admin-credentials", "no-source-controlled-service-account-keys", "no-process-memory-fallback-for-authoritative-state"]
     },
-    "serverApi": {
+    "runtime": {
+      "primary": "provider-independent",
+      "responsibilities": ["apis", "workers", "agents", "protected-business-logic", "firestore-access"],
+      "constraints": ["must-not-depend-on-vercel", "must-not-place-business-logic-in-transport", "must-use-runtime-identity-for-firestore"]
+    },
+    "transport": {
       "primary": "discord",
-      "responsibilities": ["slash-commands", "interaction-responses", "operator-control-plane", "event-routing", "service-api-surface"],
-      "transport": {
-        "requiresPublicHttpsInteractionEndpoint": true,
-        "classification": "thin-transport-bridge",
-        "mayOwnNeoBusinessLogic": false,
-        "mayBecomeNeoBackend": false
-      }
+      "responsibilities": ["commands", "interaction-responses", "operator-control-plane", "event-routing"],
+      "classification": "thin-transport-bridge",
+      "mayOwnNeoBusinessLogic": false,
+      "mayBecomeNeoBackend": false
     }
   },
   "security": {
     "defaultDeny": true,
     "secretsRuntimeOnly": true,
+    "firestoreAccessRuntimeOnly": true,
     "discordMayApproveSensitiveActions": false,
     "aiMayApproveSensitiveActions": false,
     "crossServiceWritesRequireExplicitPolicy": true
   },
+  "prohibitedCoreDependencies": ["vercel"],
   "exceptions": {
     "allowed": true,
-    "requirements": ["documented-architecture-decision", "explicit-human-approval", "service-specific-security-review"]
+    "requirements": ["documented-architecture-decision", "explicit-human-approval", "service-specific-security-review", "migration-expiry"]
   }
 }

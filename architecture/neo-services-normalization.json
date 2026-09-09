@@ -1,38 +1,17 @@
 {
-  "version": "1.1.2",
+  "version": "2.0.0",
   "standard": "architecture/neo-services-platform.json",
-  "scope": "apps-directory",
+  "scope": "neo-system",
   "planes": {
-    "backend": "github",
+    "sourceControl": "github",
+    "ciCd": "github-actions",
     "frontend": "github-pages",
-    "serverApi": "discord"
+    "persistentData": "firestore",
+    "serviceRuntime": "provider-independent",
+    "transport": "discord"
   },
   "apps": [
-    {"id":"gisd"},
-    {"id":"neo-counter"},
-    {"id":"neo-dash"},
-    {"id":"neo-exchange"},
-    {"id":"neo-guardian"},
-    {"id":"neo-pads"},
-    {"id":"neo-prime"},
-    {"id":"neo-realty"},
-    {"id":"neo-relations"},
-    {"id":"neo-telegram"},
-    {"id":"neo-tv"},
-    {"id":"neopay"},
-    {"id":"neoscan"},
-    {"id":"noogle"},
-    {"id":"omnitrix-android"},
-    {"id":"omnitrix"}
-  ],
-  "legacyStandaloneDeployments": [
-    {"workflow":".github/workflows/neo-counter-cloudflare.yml","service":"neo-counter","status":"disabled"},
-    {"workflow":".github/workflows/neopay-cloudflare.yml","service":"neopay","status":"disabled"},
-    {"workflow":".github/workflows/neo-enterprise-cloudflare.yml","service":"neo-enterprise","status":"disabled"},
-    {"workflow":".github/workflows/neo-enterprise-federation-cloudflare.yml","service":"neo-enterprise-federation","status":"disabled"},
-    {"workflow":".github/workflows/neo-government-cloudflare.yml","service":"neo-government","status":"disabled"},
-    {"workflow":".github/workflows/neo-pacer-cloudflare.yml","service":"neo-pacer","status":"disabled"},
-    {"workflow":".github/workflows/neoscan-statements-cloudflare.yml","service":"neoscan-statements","status":"disabled"}
+    {"id":"gisd"},{"id":"neo-counter"},{"id":"neo-dash"},{"id":"neo-exchange"},{"id":"neo-guardian"},{"id":"neo-pads"},{"id":"neo-prime"},{"id":"neo-realty"},{"id":"neo-relations"},{"id":"neo-telegram"},{"id":"neo-tv"},{"id":"neopay"},{"id":"neoscan"},{"id":"noogle"},{"id":"omnitrix-android"},{"id":"omnitrix"}
   ],
   "pages": {
     "deploymentOwner": ".github/workflows/pages.yml",
@@ -40,6 +19,22 @@
     "singleArtifact": true,
     "serviceSpecificDeployments": false
   },
+  "persistence": {
+    "primary": "firestore",
+    "credentials": "runtime-identity-iam",
+    "allowProcessMemoryFallback": false,
+    "allowFrontendSecretAccess": false,
+    "dataAccess": "service-runtime-only"
+  },
+  "migrationExceptions": [
+    {
+      "service": "neo-counter",
+      "currentStore": "upstash-redis",
+      "targetStore": "firestore",
+      "status": "migration-required",
+      "reason": "existing hosted adapter is Redis-specific and must not be mislabeled as Firestore"
+    }
+  ],
   "allowedTransportBridges": [
     {
       "workflow": ".github/workflows/deploy-neo-discord.yml",
@@ -48,9 +43,17 @@
       "mayBecomeNeoBackend": false
     }
   ],
+  "prohibitedCoreDependencies": ["vercel"],
   "rules": {
     "standaloneCloudflareServiceBackend": false,
     "standaloneVercelServiceBackend": false,
+    "vercelCoreDependency": false,
+    "vercelServiceRuntime": false,
+    "firestorePrimaryPersistentStore": true,
+    "githubOwnsSourceCode": true,
+    "githubActionsOwnsCiCd": true,
+    "githubPagesOwnsStaticFrontend": true,
+    "serviceRuntimeOwnsBusinessLogic": true,
     "githubPagesSecrets": false,
     "singleGitHubPagesDeploymentOwner": true,
     "transportOwnsBusinessLogic": false
