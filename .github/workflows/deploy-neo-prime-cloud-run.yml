@@ -6,8 +6,7 @@ on:
     branches: [main]
     paths:
       - 'server/neo-prime/**'
-      - 'server/neo-router/router.mjs'
-      - 'server/neo-router/providers.mjs'
+      - 'server/neo-router/**'
       - 'core/neo-algo/**'
       - '.github/workflows/deploy-neo-prime-cloud-run.yml'
 
@@ -50,13 +49,9 @@ jobs:
           for name in GCP_PROJECT_ID GCP_REGION GCP_WIF_PROVIDER GCP_CLOUD_RUN_SERVICE_ACCOUNT GCP_CLOUD_RUN_RUNTIME_ACCOUNT GCP_ARTIFACT_REGISTRY; do
             test -n "${!name:-}" || { echo "::error::Missing $name"; exit 1; }
           done
-          if [[ -z "${OPENAI_API_KEY:-}${GEMINI_API_KEY:-}${ANTHROPIC_API_KEY:-}${XAI_API_KEY:-}${LLAMA_API_KEY:-}" ]]; then
-            echo "::error::Configure at least one Prime model provider secret: OPENAI_API_KEY, GEMINI_API_KEY, ANTHROPIC_API_KEY, XAI_API_KEY, or LLAMA_API_KEY"
-            exit 1
-          fi
 
       - name: Test NEO Prime runtime
-        run: node --test server/neo-prime/*.test.mjs
+        run: node --test server/neo-prime/*.test.mjs server/neo-router/vertex-provider.test.mjs
 
       - uses: google-github-actions/auth@v3
         with:
@@ -66,7 +61,17 @@ jobs:
 
       - uses: google-github-actions/setup-gcloud@v3
 
-      - name: Sync Prime secrets to Secret Manager
+      - name: Enable Vertex AI and authorize Prime runtime identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          gcloud services enable aiplatform.googleapis.com --project="$GCP_PROJECT_ID"
+          gcloud projects add-iam-policy-binding "$GCP_PROJECT_ID" \
+            --member="serviceAccount:$GCP_CLOUD_RUN_RUNTIME_ACCOUNT" \
+            --role="roles/aiplatform.user" \
+            --condition=None --quiet >/dev/null
+
+      - name: Sync optional Prime secrets to Secret Manager
         id: secrets
         shell: bash
         run: |
@@ -81,18 +86,11 @@ jobs:
           )
           secret_args=()
           for mapping in "${mappings[@]}"; do
-            env_name="${mapping%%:*}"
-            secret_name="${mapping#*:}"
-            value="${!env_name:-}"
+            env_name="${mapping%%:*}"; secret_name="${mapping#*:}"; value="${!env_name:-}"
             [[ -n "$value" ]] || continue
-            gcloud secrets describe "$secret_name" --project="$GCP_PROJECT_ID" >/dev/null 2>&1 || \
-              gcloud secrets create "$secret_name" --project="$GCP_PROJECT_ID" --replication-policy=automatic
+            gcloud secrets describe "$secret_name" --project="$GCP_PROJECT_ID" >/dev/null 2>&1 || gcloud secrets create "$secret_name" --project="$GCP_PROJECT_ID" --replication-policy=automatic
             printf '%s' "$value" | gcloud secrets versions add "$secret_name" --project="$GCP_PROJECT_ID" --data-file=-
-            gcloud secrets add-iam-policy-binding "$secret_name" \
-              --project="$GCP_PROJECT_ID" \
-              --member="serviceAccount:$GCP_CLOUD_RUN_RUNTIME_ACCOUNT" \
-              --role='roles/secretmanager.secretAccessor' \
-              --condition=None --quiet >/dev/null
+            gcloud secrets add-iam-policy-binding "$secret_name" --project="$GCP_PROJECT_ID" --member="serviceAccount:$GCP_CLOUD_RUN_RUNTIME_ACCOUNT" --role='roles/secretmanager.secretAccessor' --condition=None --quiet >/dev/null
             secret_args+=("$env_name=$secret_name:latest")
           done
           (IFS=,; echo "set_secrets=${secret_args[*]}" >> "$GITHUB_OUTPUT")
@@ -120,7 +118,7 @@ jobs:
             --region="$GCP_REGION"
             --image="$IMAGE"
             --service-account="$GCP_CLOUD_RUN_RUNTIME_ACCOUNT"
-            --set-env-vars='NEO_PRIME_ALLOWED_ORIGINS=https://shemsizedek.github.io,https://holytemples.org,https://www.holytemples.org'
+            --set-env-vars="NEO_PRIME_ALLOWED_ORIGINS=https://shemsizedek.github.io,GOOGLE_CLOUD_PROJECT=$GCP_PROJECT_ID,GOOGLE_CLOUD_LOCATION=$GCP_REGION,VERTEX_GEMINI_MODEL=gemini-2.5-flash"
             --allow-unauthenticated
             --quiet
           )
@@ -135,9 +133,7 @@ jobs:
           test -n "$URL"
           code="$(curl -sS -o /tmp/health.json -w '%{http_code}' "$URL/healthz")"
           test "$code" = 200
+          grep -q '"gemini"' /tmp/health.json
           echo "### NEO Prime Runtime LIVE" >> "$GITHUB_STEP_SUMMARY"
           echo "Runtime: $URL/api/prime" >> "$GITHUB_STEP_SUMMARY"
-          echo '```json' >> "$GITHUB_STEP_SUMMARY"
           cat /tmp/health.json >> "$GITHUB_STEP_SUMMARY"
-          echo >> "$GITHUB_STEP_SUMMARY"
-          echo '```' >> "$GITHUB_STEP_SUMMARY"
