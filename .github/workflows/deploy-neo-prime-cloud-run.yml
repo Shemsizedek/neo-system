@@ -51,7 +51,7 @@ jobs:
           done
 
       - name: Test NEO Prime runtime
-        run: node --test server/neo-prime/*.test.mjs server/neo-router/vertex-provider.test.mjs
+        run: node --test server/neo-prime/*.test.mjs server/neo-router/providers.test.mjs server/neo-router/vertex-provider.test.mjs
 
       - uses: google-github-actions/auth@v3
         with:
@@ -61,15 +61,12 @@ jobs:
 
       - uses: google-github-actions/setup-gcloud@v3
 
-      - name: Enable Vertex AI and authorize Prime runtime identity
+      - name: Use preconfigured Vertex AI project access
         shell: bash
         run: |
           set -euo pipefail
-          gcloud services enable aiplatform.googleapis.com --project="$GCP_PROJECT_ID"
-          gcloud projects add-iam-policy-binding "$GCP_PROJECT_ID" \
-            --member="serviceAccount:$GCP_CLOUD_RUN_RUNTIME_ACCOUNT" \
-            --role="roles/aiplatform.user" \
-            --condition=None --quiet >/dev/null
+          echo "Deployment CI is intentionally non-admin."
+          echo "Vertex AI API enablement and roles/aiplatform.user are treated as project-level prerequisites."
 
       - name: Sync optional Prime secrets to Secret Manager
         id: secrets
@@ -125,15 +122,29 @@ jobs:
           [[ -z "$SET_SECRETS" ]] || args+=(--set-secrets="$SET_SECRETS")
           "${args[@]}"
 
-      - name: Verify production runtime
+      - name: Verify production runtime and Vertex execution
         shell: bash
         run: |
           set -euo pipefail
           URL="$(gcloud run services describe "$SERVICE_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format='value(status.url)')"
           test -n "$URL"
-          code="$(curl -sS -o /tmp/health.json -w '%{http_code}' "$URL/healthz")"
-          test "$code" = 200
+
+          health_code="$(curl -sS -o /tmp/health.json -w '%{http_code}' "$URL/healthz")"
+          test "$health_code" = 200
           grep -q '"gemini"' /tmp/health.json
+
+          prime_code="$(curl -sS -o /tmp/prime.json -w '%{http_code}' \
+            -X POST "$URL/api/prime" \
+            -H 'content-type: application/json' \
+            --data '{"missionId":"deploy-smoke","objective":"Reply with a short confirmation that NEO Prime reasoning is online.","capability":"frontend","requestedAction":"analyze","preferredProviders":["gemini"],"maxTokens":64}')"
+          test "$prime_code" = 200
+          grep -q '"status":"completed"' /tmp/prime.json
+          grep -q '"route":"gemini"' /tmp/prime.json
+
           echo "### NEO Prime Runtime LIVE" >> "$GITHUB_STEP_SUMMARY"
           echo "Runtime: $URL/api/prime" >> "$GITHUB_STEP_SUMMARY"
+          echo "Health:" >> "$GITHUB_STEP_SUMMARY"
           cat /tmp/health.json >> "$GITHUB_STEP_SUMMARY"
+          echo >> "$GITHUB_STEP_SUMMARY"
+          echo "Vertex smoke test:" >> "$GITHUB_STEP_SUMMARY"
+          cat /tmp/prime.json >> "$GITHUB_STEP_SUMMARY"

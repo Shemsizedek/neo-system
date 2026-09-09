@@ -8,10 +8,7 @@ test('Gemini adapter sends the API key in the x-goog-api-key header', async () =
     apiKey: 'gemini-secret', model: 'gemini-test',
     fetchImpl: async (url, options) => {
       request = { url, options }
-      return {
-        ok: true,
-        json: async () => ({ candidates: [{ content: { parts: [{ text: 'gemini result' }] } }] }),
-      }
+      return { ok: true, json: async () => ({ candidates: [{ content: { parts: [{ text: 'gemini result' }] } }] }) }
     },
   })
   const result = await adapter.invoke({ system: 'policy', prompt: 'mission' })
@@ -52,7 +49,7 @@ test('Workers AI adapter uses the authenticated account endpoint', async () => {
   assert.equal(request.options.headers.authorization, 'Bearer secret')
 })
 
-test('environment config supports all six providers', () => {
+test('environment config supports all six logical providers', () => {
   const providers = providersFromEnv({
     ANTHROPIC_API_KEY: 'a', ANTHROPIC_MODEL: 'claude-custom',
     OPENAI_API_KEY: 'o', OPENAI_MODEL: 'openai-custom',
@@ -68,4 +65,10 @@ test('environment config supports all six providers', () => {
 test('GOOGLE_API_KEY takes precedence for Gemini', () => {
   const providers = providersFromEnv({ GOOGLE_API_KEY: 'google-auth-key', GEMINI_API_KEY: 'legacy-key' })
   assert.equal(providers.find((provider) => provider.id === 'gemini')?.configured, true)
+})
+
+test('Gemini falls back to keyless Vertex AI when Cloud project identity is available', () => {
+  const providers = providersFromEnv({ GOOGLE_CLOUD_PROJECT: 'neo-project', GOOGLE_CLOUD_LOCATION: 'us-central1' })
+  const gemini = providers.find((provider) => provider.id === 'gemini')
+  assert.equal(gemini?.configured, true)
 })
