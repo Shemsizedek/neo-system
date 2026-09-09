@@ -1,0 +1,1 @@
+NEO Prime runtime image intentionally installs no root monorepo dependencies. The production server uses Node.js built-ins plus local NEO modules only.
