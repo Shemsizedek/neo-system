@@ -1,0 +1,143 @@
+name: Deploy NEO Prime Runtime to Cloud Run
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'server/neo-prime/**'
+      - 'server/neo-router/router.mjs'
+      - 'server/neo-router/providers.mjs'
+      - 'core/neo-algo/**'
+      - '.github/workflows/deploy-neo-prime-cloud-run.yml'
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: neo-prime-cloud-run
+  cancel-in-progress: false
+
+env:
+  SERVICE_NAME: neo-prime-runtime
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: holytemples-production
+    timeout-minutes: 25
+    env:
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID || secrets.GCP_PROJECT_ID }}
+      GCP_REGION: ${{ vars.GCP_REGION || secrets.GCP_REGION }}
+      GCP_WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER || secrets.GCP_WIF_PROVIDER }}
+      GCP_CLOUD_RUN_SERVICE_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_SERVICE_ACCOUNT || secrets.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+      GCP_CLOUD_RUN_RUNTIME_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_RUNTIME_ACCOUNT || secrets.GCP_CLOUD_RUN_RUNTIME_ACCOUNT }}
+      GCP_ARTIFACT_REGISTRY: ${{ vars.GCP_ARTIFACT_REGISTRY || secrets.GCP_ARTIFACT_REGISTRY }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
+      LLAMA_API_KEY: ${{ secrets.LLAMA_API_KEY }}
+      NEO_PRIME_OPERATOR_TOKEN: ${{ secrets.NEO_PRIME_OPERATOR_TOKEN }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - name: Validate GCP deployment configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in GCP_PROJECT_ID GCP_REGION GCP_WIF_PROVIDER GCP_CLOUD_RUN_SERVICE_ACCOUNT GCP_CLOUD_RUN_RUNTIME_ACCOUNT GCP_ARTIFACT_REGISTRY; do
+            test -n "${!name:-}" || { echo "::error::Missing $name"; exit 1; }
+          done
+          if [[ -z "${OPENAI_API_KEY:-}${GEMINI_API_KEY:-}${ANTHROPIC_API_KEY:-}${XAI_API_KEY:-}${LLAMA_API_KEY:-}" ]]; then
+            echo "::error::Configure at least one Prime model provider secret: OPENAI_API_KEY, GEMINI_API_KEY, ANTHROPIC_API_KEY, XAI_API_KEY, or LLAMA_API_KEY"
+            exit 1
+          fi
+
+      - name: Test NEO Prime runtime
+        run: node --test server/neo-prime/*.test.mjs
+
+      - uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+
+      - uses: google-github-actions/setup-gcloud@v3
+
+      - name: Sync Prime secrets to Secret Manager
+        id: secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          mappings=(
+            'OPENAI_API_KEY:neo-prime-openai-api-key'
+            'GEMINI_API_KEY:neo-prime-gemini-api-key'
+            'ANTHROPIC_API_KEY:neo-prime-anthropic-api-key'
+            'XAI_API_KEY:neo-prime-xai-api-key'
+            'LLAMA_API_KEY:neo-prime-llama-api-key'
+            'NEO_PRIME_OPERATOR_TOKEN:neo-prime-operator-token'
+          )
+          secret_args=()
+          for mapping in "${mappings[@]}"; do
+            env_name="${mapping%%:*}"
+            secret_name="${mapping#*:}"
+            value="${!env_name:-}"
+            [[ -n "$value" ]] || continue
+            gcloud secrets describe "$secret_name" --project="$GCP_PROJECT_ID" >/dev/null 2>&1 || \
+              gcloud secrets create "$secret_name" --project="$GCP_PROJECT_ID" --replication-policy=automatic
+            printf '%s' "$value" | gcloud secrets versions add "$secret_name" --project="$GCP_PROJECT_ID" --data-file=-
+            gcloud secrets add-iam-policy-binding "$secret_name" \
+              --project="$GCP_PROJECT_ID" \
+              --member="serviceAccount:$GCP_CLOUD_RUN_RUNTIME_ACCOUNT" \
+              --role='roles/secretmanager.secretAccessor' \
+              --condition=None --quiet >/dev/null
+            secret_args+=("$env_name=$secret_name:latest")
+          done
+          (IFS=,; echo "set_secrets=${secret_args[*]}" >> "$GITHUB_OUTPUT")
+
+      - name: Build and push Prime runtime image
+        env:
+          IMAGE: ${{ env.GCP_ARTIFACT_REGISTRY }}/neo-prime-runtime:${{ github.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gcloud auth configure-docker "${GCP_REGION}-docker.pkg.dev" --quiet
+          docker build -f server/neo-prime/Dockerfile -t "$IMAGE" .
+          docker push "$IMAGE"
+
+      - name: Deploy Cloud Run service
+        env:
+          IMAGE: ${{ env.GCP_ARTIFACT_REGISTRY }}/neo-prime-runtime:${{ github.sha }}
+          SET_SECRETS: ${{ steps.secrets.outputs.set_secrets }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          args=(
+            gcloud run deploy "$SERVICE_NAME"
+            --project="$GCP_PROJECT_ID"
+            --region="$GCP_REGION"
+            --image="$IMAGE"
+            --service-account="$GCP_CLOUD_RUN_RUNTIME_ACCOUNT"
+            --set-env-vars='NEO_PRIME_ALLOWED_ORIGINS=https://shemsizedek.github.io,https://holytemples.org,https://www.holytemples.org'
+            --allow-unauthenticated
+            --quiet
+          )
+          [[ -z "$SET_SECRETS" ]] || args+=(--set-secrets="$SET_SECRETS")
+          "${args[@]}"
+
+      - name: Verify production runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL="$(gcloud run services describe "$SERVICE_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format='value(status.url)')"
+          test -n "$URL"
+          code="$(curl -sS -o /tmp/health.json -w '%{http_code}' "$URL/healthz")"
+          test "$code" = 200
+          echo "### NEO Prime Runtime LIVE" >> "$GITHUB_STEP_SUMMARY"
+          echo "Runtime: $URL/api/prime" >> "$GITHUB_STEP_SUMMARY"
+          echo '```json' >> "$GITHUB_STEP_SUMMARY"
+          cat /tmp/health.json >> "$GITHUB_STEP_SUMMARY"
+          echo >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
