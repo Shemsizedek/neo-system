@@ -35,8 +35,8 @@ jobs:
       GCP_CLOUD_RUN_SERVICE_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_SERVICE_ACCOUNT || secrets.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
       GCP_CLOUD_RUN_RUNTIME_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_RUNTIME_ACCOUNT || secrets.GCP_CLOUD_RUN_RUNTIME_ACCOUNT }}
       GCP_ARTIFACT_REGISTRY: ${{ vars.GCP_ARTIFACT_REGISTRY || secrets.GCP_ARTIFACT_REGISTRY }}
-      NEO_COUNTER_TERMINALS_JSON: ${{ secrets.NEO_COUNTER_TERMINALS_JSON }}
-      NEO_COUNTER_STAFF_JSON: ${{ secrets.NEO_COUNTER_STAFF_JSON }}
+      NEO_COUNTER_TERMINALS_JSON: ${{ secrets.NEO_COUNTER_TERMINALS_JSON || '[]' }}
+      NEO_COUNTER_STAFF_JSON: ${{ secrets.NEO_COUNTER_STAFF_JSON || '[]' }}
     steps:
       - uses: actions/checkout@v7.0.1
 
@@ -44,9 +44,13 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for name in GCP_PROJECT_ID GCP_REGION GCP_WIF_PROVIDER GCP_CLOUD_RUN_SERVICE_ACCOUNT GCP_CLOUD_RUN_RUNTIME_ACCOUNT GCP_ARTIFACT_REGISTRY NEO_COUNTER_TERMINALS_JSON NEO_COUNTER_STAFF_JSON; do
+          for name in GCP_PROJECT_ID GCP_REGION GCP_WIF_PROVIDER GCP_CLOUD_RUN_SERVICE_ACCOUNT GCP_CLOUD_RUN_RUNTIME_ACCOUNT GCP_ARTIFACT_REGISTRY; do
             test -n "${!name:-}" || { echo "::error::Missing $name"; exit 1; }
           done
+          node -e "JSON.parse(process.env.NEO_COUNTER_TERMINALS_JSON); JSON.parse(process.env.NEO_COUNTER_STAFF_JSON)"
+          if [ "$NEO_COUNTER_TERMINALS_JSON" = '[]' ] || [ "$NEO_COUNTER_STAFF_JSON" = '[]' ]; then
+            echo "::warning::NEO Counter is deploying in LOCKED_BOOTSTRAP mode; session authentication remains fail-closed until terminal and staff registries are provisioned."
+          fi
 
       - name: Validate Firestore adapter and Counter semantics
         run: node --test server/neo-counter-backend/firestore-context.test.mjs server/neo-counter-backend/firestore-rest-db.test.mjs
@@ -146,4 +150,9 @@ jobs:
           echo "### NEO Counter Firestore" >> "$GITHUB_STEP_SUMMARY"
           echo "Cloud Run service: $URL" >> "$GITHUB_STEP_SUMMARY"
           echo "Firestore database: $FIRESTORE_DATABASE_ID" >> "$GITHUB_STEP_SUMMARY"
+          if [ "$NEO_COUNTER_TERMINALS_JSON" = '[]' ] || [ "$NEO_COUNTER_STAFF_JSON" = '[]' ]; then
+            echo "Authentication mode: LOCKED_BOOTSTRAP" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Authentication mode: PROVISIONED" >> "$GITHUB_STEP_SUMMARY"
+          fi
           cat /tmp/neo-counter-health.json >> "$GITHUB_STEP_SUMMARY"
