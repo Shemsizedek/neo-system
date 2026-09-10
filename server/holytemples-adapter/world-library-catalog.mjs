@@ -1,6 +1,7 @@
 import { WORLD_LIBRARY_REGISTRY } from "./library-registry.mjs";
 import { DISCOVERED_SOURCE_FILES } from "./world-library-source-inventory.mjs";
 import { WORLD_LIBRARY_PRODUCTION_BATCH_2 } from "./world-library-production-batch-2.mjs";
+import { PRODUCTION_BATCH_3 } from "./world-library-production-batch-3.mjs";
 
 export const RESOURCE_TYPES = Object.freeze([
   "book", "audiobook", "audio", "document", "course material", "archive material",
@@ -33,7 +34,7 @@ export function canonicalResource(input) {
   });
 }
 
-const seed = [...WORLD_LIBRARY_REGISTRY, ...DISCOVERED_SOURCE_FILES, ...WORLD_LIBRARY_PRODUCTION_BATCH_2].map(canonicalResource);
+const seed = [...WORLD_LIBRARY_REGISTRY, ...DISCOVERED_SOURCE_FILES, ...WORLD_LIBRARY_PRODUCTION_BATCH_2, ...PRODUCTION_BATCH_3].map(canonicalResource);
 
 function dateValue(value) {
   const parsed = value ? Date.parse(value) : Number.NaN;
