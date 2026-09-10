@@ -6,12 +6,12 @@ const scrypt = promisify(scryptCallback);
 
 function encode(value) { return Buffer.from(JSON.stringify(value)).toString('base64url'); }
 
-export function issueNeopassToken({ subject, secret, issuer = 'neo-pass', now = () => Date.now(), ttlSeconds = 60 * 60 * 8 }) {
+export function issueNeopassToken({ subject, secret, issuer = 'neo-pass', now = () => Date.now(), ttlSeconds = 60 * 60 * 8, claims = {} }) {
   if (!subject || !secret) throw new Error('neopass_token_configuration_required');
   const value = now();
   const issuedAt = Math.floor((typeof value === 'number' ? value : Date.parse(value)) / 1000);
   const header = encode({ alg: 'HS256', typ: 'JWT' });
-  const payload = encode({ sub: subject, iss: issuer, iat: issuedAt, exp: issuedAt + ttlSeconds });
+  const payload = encode({ ...claims, sub: subject, iss: issuer, iat: issuedAt, exp: issuedAt + ttlSeconds });
   const signature = createHmac('sha256', secret).update(`${header}.${payload}`).digest('base64url');
   return `${header}.${payload}.${signature}`;
 }
@@ -41,12 +41,11 @@ async function verifyPassword(password, encoded) {
 
 export function createGoogleNeopassAuth({ clientId, jwtSecret, jwtIssuer = 'neo-pass', registry, verifyGoogleCredential, executiveAdminEmail = process.env.NEO_EXECUTIVE_ADMIN_EMAIL, executiveAdminUsername = process.env.NEO_EXECUTIVE_ADMIN_USERNAME || 'Shemsizedek', now = () => Date.now() } = {}) {
   if (!clientId || !jwtSecret || !registry || !verifyGoogleCredential) return null;
-  const executiveSubject = providerSubject => `verified-executive:${providerSubject}`;
   const executiveMember = subject => ({ subject, email: executiveAdminEmail, username: executiveAdminUsername, displayName: 'H.I.M Dr. Lawiy Zodok', neopassStatus: 'active', role: 'executive-admin', hasPassword: false, storageStatus: 'activation-pending' });
   return {
     clientId,
-    async session(subject) {
-      if (String(subject).startsWith('verified-executive:')) return executiveMember(subject);
+    async session(subject, sessionClaims = {}) {
+      if (sessionClaims.role === 'executive-admin' && sessionClaims.email?.toLowerCase() === executiveAdminEmail?.toLowerCase()) return executiveMember(subject);
       let record;
       try { record = await registry.getNEOpassCredential(subject); }
       catch { return { subject, displayName: 'NEOpass Member', neopassStatus: 'pending', storageStatus: 'unavailable' }; }
@@ -66,8 +65,8 @@ export function createGoogleNeopassAuth({ clientId, jwtSecret, jwtIssuer = 'neo-
         try { existing = await registry.getNEOpassCredential(subject); }
         catch {
           if (isExecutive) {
-            const fallbackSubject = executiveSubject(profile.sub);
-            return { token: issueNeopassToken({ subject: fallbackSubject, secret: jwtSecret, issuer: jwtIssuer, now }), member: executiveMember(fallbackSubject) };
+            const claims = { role: 'executive-admin', email: profile.email };
+            return { token: issueNeopassToken({ subject, secret: jwtSecret, issuer: jwtIssuer, now, claims }), member: executiveMember(subject) };
           }
           const error = new Error('neopass_registry_unavailable'); error.code = 'neopass_registry_unavailable'; throw error;
         }
@@ -93,8 +92,8 @@ export function createGoogleNeopassAuth({ clientId, jwtSecret, jwtIssuer = 'neo-
         try { record = await registry.upsert('neopassCredentials', account, 'subject'); }
         catch {
           if (isExecutive) {
-            const fallbackSubject = executiveSubject(profile.sub);
-            return { token: issueNeopassToken({ subject: fallbackSubject, secret: jwtSecret, issuer: jwtIssuer, now }), member: executiveMember(fallbackSubject) };
+            const claims = { role: 'executive-admin', email: profile.email };
+            return { token: issueNeopassToken({ subject, secret: jwtSecret, issuer: jwtIssuer, now, claims }), member: executiveMember(subject) };
           }
           const error = new Error('neopass_registry_unavailable'); error.code = 'neopass_registry_unavailable'; throw error;
         }

@@ -133,6 +133,7 @@ export function createNeopassSubjectResolver({ secret = process.env.NEO_PASS_JWT
       const expected = createHmac('sha256', secret).update(`${parts[0]}.${parts[1]}`).digest();
       const actual = Buffer.from(parts[2], 'base64url');
       if (actual.length !== expected.length || !timingSafeEqual(actual, expected)) return null;
+      req.neopassClaims = payload;
       return String(payload.sub);
     } catch {
       return null;
