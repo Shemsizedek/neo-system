@@ -15,10 +15,12 @@ import { formatGatewayDisplay, gatewayRails } from './gateway/money';
 
 type CartLine = CatalogItem & { qty:number };
 type Tx = { id:string; total:number; rail:Rail; status:string; createdAt:string; reference?:string; asset?:string };
+type MerchantView='Register'|'Transactions'|'CRM'|'Catalog'|'Devices'|'Sync'|'Treasury'|'Settings'|'Access';
 
 const RECEIVE_ADDRESS = import.meta.env.VITE_NEO_COUNTER_RECEIVE_ADDRESS || '';
 const CART_KEY='neo-counter-cart-v1';
 const TX_KEY='neo-counter-transactions-v1';
+const NAV:MerchantView[]=['Register','Transactions','CRM','Catalog','Devices','Sync','Treasury','Settings','Access'];
 
 function loadStored<T>(key:string,fallback:T):T{
   try{const raw=localStorage.getItem(key);return raw?JSON.parse(raw) as T:fallback;}catch{return fallback;}
@@ -28,6 +30,7 @@ export default function App(){
   const gatewayIntent=useMemo(()=>readCheckoutIntent(),[]);
   const [ops,setOps]=useState(loadMerchantOps);
   const [session,setSession]=useState<Session|null>(currentSession());
+  const [view,setView]=useState<MerchantView>('Register');
   const [cart,setCart]=useState<CartLine[]>(()=>gatewayIntent?[{...intentCartItem(gatewayIntent),qty:1}]:loadStored(CART_KEY,[]));
   const [rail,setRail]=useState<Rail>(gatewayIntent?.rail||(gatewayIntent?.asset?'XCP':'BTC'));
   const [checkout,setCheckout]=useState(Boolean(gatewayIntent));
@@ -61,6 +64,20 @@ export default function App(){
   const paymentId=useMemo(()=>`neo_pi_${crypto.randomUUID()}`,[checkout]);
   const quoted=quote?.unitAmount ?? 0;
   const qrPayload=RECEIVE_ADDRESS && quote?`neo-counter:${quote.asset}:${quoted.toFixed(8)}:${paymentId}:${RECEIVE_ADDRESS}`:`neo-counter:configuration-required:${paymentId}`;
+
+  const has=(permission:string)=>Boolean(session&&(session.permissions.includes('*')||session.permissions.includes(permission)));
+  const accessLevel=!session?'Local register':has('*')?'Platform Admin':has('settings')&&has('reports')?'Company Admin':has('reports')?'Manager':has('register')?'Cashier':'Viewer';
+  const canOpen=(next:MerchantView)=>{
+    if(next==='Register'||next==='Access')return true;
+    if(next==='Transactions')return has('reports')||has('refunds')||has('register');
+    if(next==='CRM')return has('reports')||has('settings');
+    if(next==='Catalog')return has('catalog')||has('settings');
+    if(next==='Devices')return has('devices')||has('settings');
+    if(next==='Sync')return has('settings');
+    if(next==='Treasury')return has('reports')||has('settings');
+    return has('settings');
+  };
+  const openView=(next:MerchantView)=>{if(canOpen(next))setView(next);};
 
   const add=(p:CatalogItem)=>setCart(c=>{const hit=c.find(x=>x.id===p.id);return hit?c.map(x=>x.id===p.id?{...x,qty:x.qty+1}:x):[...c,{...p,qty:1}];});
   const remove=(id:string)=>setCart(c=>c.map(x=>x.id===id?{...x,qty:x.qty-1}:x).filter(x=>x.qty>0));
@@ -109,23 +126,35 @@ export default function App(){
   };
   const reset=()=>{setCart([]);setCheckout(false);setStatus('idle');setQuote(null);setMessage('');};
   const settledTx=transactions.find(t=>t.id===paymentId);
-  const returnToService=()=>{
-    if(!gatewayIntent?.successUrl)return;
-    window.location.assign(checkoutResultUrl(gatewayIntent.successUrl,'success',paymentId,settledTx?.reference));
-  };
-  const cancelCheckout=()=>{
-    if(gatewayIntent?.cancelUrl){window.location.assign(checkoutResultUrl(gatewayIntent.cancelUrl,'cancel',paymentId));return;}
-    setCheckout(false);
+  const returnToService=()=>{if(gatewayIntent?.successUrl)window.location.assign(checkoutResultUrl(gatewayIntent.successUrl,'success',paymentId,settledTx?.reference));};
+  const cancelCheckout=()=>{if(gatewayIntent?.cancelUrl){window.location.assign(checkoutResultUrl(gatewayIntent.cancelUrl,'cancel',paymentId));return;}setCheckout(false);};
+
+  const registerView=<section className="grid"><div className="panel catalog"><div className="section-head"><h2>Catalog</h2><span>{products.length} items</span></div><div className="product-grid">{products.map(p=><button className="product" key={p.id} onClick={()=>add(p)}><span>{p.category} · {p.sku}</span><strong>{p.name}</strong><b>${(p.price/100).toFixed(2)}</b>{p.inventoryTracked&&<small>{p.quantity} available</small>}</button>)}</div></div><div className="panel cart"><h2>Current Sale</h2>{cart.length===0?<div className="empty">Tap an item to start a sale.</div>:cart.map(l=><div className="line" key={l.id}><div><strong>{l.name}</strong><small>{l.qty} × ${(l.price/100).toFixed(2)}</small></div><button aria-label={`Remove one ${l.name}`} onClick={()=>remove(l.id)}>−</button></div>)}<div className="totals"><div><span>Subtotal</span><b>${(subtotal/100).toFixed(2)}</b></div><div><span>{taxRule?.name||'Tax'}</span><b>${(tax/100).toFixed(2)}</b></div><div className="grand"><span>Total</span><b>${(total/100).toFixed(2)}</b></div></div><button className="pay" disabled={!cart.length} onClick={openCheckout}>Charge ${(total/100).toFixed(2)}</button></div></section>;
+  const transactionsView=<section className="panel tx"><div className="section-head"><h2>Transactions</h2><span>{transactions.length} recorded</span></div>{transactions.length===0?<div className="empty">No transactions yet.</div>:transactions.map(t=><div className="txrow" key={t.id}><span>{t.id}</span><span>{t.asset||t.rail}</span><strong>${(t.total/100).toFixed(2)}</strong><em>{t.status}</em></div>)}</section>;
+  const crmView=<section className="panel merchant-ops"><div className="section-head"><div><h2>Company CRM Access</h2><p>Merchant-scoped administration. Server permissions remain authoritative.</p></div><span>{accessLevel}</span></div><div className="ops-grid"><div className="ops-card"><h3>Company</h3><strong>{ops.merchant.name}</strong><p>{ops.merchant.id}</p><small>{session?.merchantId==='*'?'All merchant accounts':`Scope: ${session?.merchantId||'sign in required'}`}</small></div><div className="ops-card"><h3>Current Access</h3><strong>{accessLevel}</strong><p>{session?session.permissions.join(', ')||'viewer':'Register only until authenticated'}</p></div><div className="ops-card wide"><h3>Access Levels</h3><div className="access-matrix"><span><b>Platform Admin</b><small>All companies, reporting, configuration and support.</small></span><span><b>Company Admin</b><small>Own company settings, staff, catalog, devices, CRM and reports.</small></span><span><b>Manager</b><small>Operations, reports, CRM and approved refunds.</small></span><span><b>Cashier</b><small>Register and sale workflow only.</small></span><span><b>Viewer</b><small>Read-only company visibility where explicitly granted.</small></span></div></div><div className="ops-card wide"><h3>Company Staff</h3>{ops.staff.map(member=><div className="staff-row" key={member.id}><div><strong>{member.name}</strong><small>{member.role}</small></div><div className="perm-list">{member.permissions.map(p=><span key={p} className="granted">{p}</span>)}</div></div>)}</div></div></section>;
+  const catalogView=<section className="panel catalog"><div className="section-head"><h2>Catalog</h2><span>{products.length} active</span></div><div className="product-grid">{products.map(p=><button className="product" key={p.id} onClick={()=>{add(p);setView('Register')}}><span>{p.category} · {p.sku}</span><strong>{p.name}</strong><b>${(p.price/100).toFixed(2)}</b><small>{p.inventoryTracked?`${p.quantity} in stock`:'Inventory not tracked'}</small></button>)}</div></section>;
+  const treasuryView=<section className="panel"><div className="section-head"><div><h2>Treasury & Settlement</h2><p>Read-only operational status for this merchant.</p></div><span>{RECEIVE_ADDRESS?'Configured':'Needs receive address'}</span></div><div className="ops-grid"><div className="ops-card"><h3>Receive Address</h3><p>{RECEIVE_ADDRESS||'VITE_NEO_COUNTER_RECEIVE_ADDRESS is not configured.'}</p></div><div className="ops-card"><h3>Supported Rails</h3><p>BTC · XCP · NOMNI · verified Counterparty assets</p></div></div></section>;
+  const lockedView=<section className="panel access-locked"><h2>Access required</h2><p>Sign in with a company terminal/staff session to open this workspace.</p><button className="pay" onClick={()=>setView('Access')}>Open Access</button></section>;
+  const renderView=()=>{
+    if(!canOpen(view))return lockedView;
+    if(view==='Register')return registerView;
+    if(view==='Transactions')return transactionsView;
+    if(view==='CRM')return crmView;
+    if(view==='Catalog')return catalogView;
+    if(view==='Devices')return <DevicePanel />;
+    if(view==='Sync')return <SyncPanel state={ops} onRemote={setOps} online={online} session={session}/>;
+    if(view==='Treasury')return treasuryView;
+    if(view==='Settings')return <MerchantOpsPanel state={ops} onChange={setOps}/>;
+    return <AuthPanel merchantId={ops.merchant.id} onSession={next=>{setSession(next);if(next)setView('Register')}}/>;
   };
 
   return <div className="app-shell">
-    <aside className="sidebar"><div><div className="brand">NEO Counter</div><div className="tag">NEO Ecosystem Checkout Gateway</div></div><nav>{['Register','Transactions','Customers','Catalog','Devices','Sync','Treasury','Settings'].map((x,i)=><button key={x} className={i===0?'active':''}>{x}</button>)}</nav><div className="mode">{session?`${session.staffId} · ${session.terminalId}`:'Signed out'} · signing disabled</div></aside>
-    <main>
-      <header><div><h1>{gatewayIntent?'NEO Checkout Gateway':'Merchant Register'}</h1><p>{gatewayIntent?`${gatewayIntent.service} · ${gatewayIntent.orderId}`:`${location?.name} · ${taxRule?.enabled?`${(taxRule.rate*100).toFixed(2)}% tax`:'Tax disabled'}`}</p></div><div className="header-actions"><span className={`net ${online?'online':'offline'}`}>{online?'Online':'Offline'}</span><button className="terminal-btn" onClick={toggleFullscreen}>{fullscreen?'Exit Fullscreen':'Terminal Mode'}</button><div className="merchant">{ops.merchant.name}</div></div></header>
-      {!gatewayIntent&&<section className="grid"><div className="panel catalog"><h2>Catalog</h2><div className="product-grid">{products.map(p=><button className="product" key={p.id} onClick={()=>add(p)}><span>{p.category} · {p.sku}</span><strong>{p.name}</strong><b>${(p.price/100).toFixed(2)}</b>{p.inventoryTracked&&<small>{p.quantity} available</small>}</button>)}</div></div><div className="panel cart"><h2>Current Sale</h2>{cart.length===0?<div className="empty">Tap an item to start a sale.</div>:cart.map(l=><div className="line" key={l.id}><div><strong>{l.name}</strong><small>{l.qty} × ${(l.price/100).toFixed(2)}</small></div><button aria-label={`Remove one ${l.name}`} onClick={()=>remove(l.id)}>−</button></div>)}<div className="totals"><div><span>Subtotal</span><b>${(subtotal/100).toFixed(2)}</b></div><div><span>{taxRule?.name||'Tax'}</span><b>${(tax/100).toFixed(2)}</b></div><div className="grand"><span>Total</span><b>${(total/100).toFixed(2)}</b></div></div><button className="pay" disabled={!cart.length} onClick={openCheckout}>Charge ${(total/100).toFixed(2)}</button></div></section>}
-      {!gatewayIntent&&<><AuthPanel merchantId={ops.merchant.id} onSession={setSession}/><SyncPanel state={ops} onRemote={setOps} online={online} session={session}/><MerchantOpsPanel state={ops} onChange={setOps}/><DevicePanel /><section className="panel tx"><div className="section-head"><h2>Recent transactions</h2><span>{transactions.length} settled</span></div>{transactions.length===0?<div className="empty">No transactions yet.</div>:transactions.map(t=><div className="txrow" key={t.id}><span>{t.id}</span><span>{t.asset||t.rail}</span><strong>${(t.total/100).toFixed(2)}</strong><em>{t.status}</em></div>)}</section></>}
+    {!gatewayIntent&&<aside className="sidebar"><div><div className="brand">NEO Counter</div><div className="tag">Merchant Commerce Terminal</div></div><nav>{NAV.map(x=><button key={x} className={view===x?'active':''} disabled={!canOpen(x)} onClick={()=>openView(x)}>{x}</button>)}</nav><div className="mode"><span className={`live-pulse ${online?'on':''}`}/>{online?'Live':'Offline'} · {accessLevel}</div></aside>}
+    <main className={gatewayIntent?'checkout-main':''}>
+      <header><div><h1>{gatewayIntent?'NEO Checkout Gateway':view}</h1><p>{gatewayIntent?`${gatewayIntent.service} · ${gatewayIntent.orderId}`:`${ops.merchant.name} · ${location?.name}`}</p></div><div className="header-actions"><span className={`net ${online?'online':'offline'}`}>{online?'Online':'Offline'}</span>{!gatewayIntent&&<button className="terminal-btn" onClick={toggleFullscreen}>{fullscreen?'Exit Fullscreen':'Terminal Mode'}</button>}<div className="merchant">{gatewayIntent?'Retail Checkout':accessLevel}</div></div></header>
+      {gatewayIntent?null:renderView()}
     </main>
-    {!gatewayIntent&&<nav className="mobile-nav" aria-label="NEO Counter mobile navigation"><button className="active">Register</button><button>Transactions</button><button>Catalog</button><button>Sync</button></nav>}
-    {checkout&&<div className="modal-wrap"><div className="modal"><div className="modal-head"><div><h2>{gatewayIntent?.label||ops.receiptTemplates.find(x=>x.id===ops.activeReceiptTemplateId)?.header||'Payment Intent'}</h2><small>{gatewayIntent?`${gatewayIntent.service} · ${gatewayIntent.orderId}`:paymentId}</small></div><button aria-label="Close checkout" onClick={cancelCheckout}>×</button></div><div className="rail-row">{checkoutRails.map(r=><button key={r} className={rail===r?'selected':''} onClick={()=>loadQuote(r)}>{r}</button>)}</div><div className="checkout-body"><QRCodeSVG value={qrPayload} size={190}/><div><label>Customer pays</label><div className="asset-amount">{quote?`${quoted.toFixed(8)} ${quote.asset}`:'—'}</div><p>Display total: {displayTotal}</p>{gatewayIntent?.asset&&<p>Treasury asset: {gatewayIntent.asset}</p>}<p>Quote source: {quote?.source||'Not available'}</p><p>Receive address: {RECEIVE_ADDRESS||'Not configured'}</p><div className={`status ${status}`}>{status.replaceAll('_',' ')}</div>{message&&<p>{message}</p>}</div></div><div className="actions">{status==='settled'?(gatewayIntent?.successUrl?<button className="pay" onClick={returnToService}>Return to {gatewayIntent.service}</button>:<button className="pay" onClick={reset}>New Sale</button>):<button className="pay" disabled={status==='quoting'} onClick={observePayment}>{status==='quoting'?'Loading quote…':'Check Network'}</button>}</div><small className="disclaimer">NEO Counter is the shared checkout UI and read-only settlement observer. Published Treasury symbols are catalog metadata; a non-native token is settlement-ready only when an explicit Counterparty asset ID is supplied or independently mapped. Caller parameters are not payment proof. External services must verify the returned settlement reference before fulfillment. No private-key custody, server-side signing, or raw card processing.</small></div></div>}
+    {!gatewayIntent&&<nav className="mobile-nav" aria-label="NEO Counter mobile navigation">{(['Register','Transactions','CRM','Access'] as MerchantView[]).map(x=><button key={x} className={view===x?'active':''} disabled={!canOpen(x)} onClick={()=>openView(x)}>{x}</button>)}</nav>}
+    {checkout&&<div className="modal-wrap"><div className="modal"><div className="modal-head"><div><h2>{gatewayIntent?.label||ops.receiptTemplates.find(x=>x.id===ops.activeReceiptTemplateId)?.header||'Payment Intent'}</h2><small>{gatewayIntent?`${gatewayIntent.service} · ${gatewayIntent.orderId}`:paymentId}</small></div><button aria-label="Close checkout" onClick={cancelCheckout}>×</button></div><div className="rail-row">{checkoutRails.map(r=><button key={r} className={rail===r?'selected':''} onClick={()=>loadQuote(r)}>{r}</button>)}</div><div className="checkout-body"><QRCodeSVG value={qrPayload} size={190}/><div><label>Customer pays</label><div className="asset-amount">{quote?`${quoted.toFixed(8)} ${quote.asset}`:'—'}</div><p>Display total: {displayTotal}</p>{gatewayIntent?.asset&&<p>Treasury asset: {gatewayIntent.asset}</p>}<p>Quote source: {quote?.source||'Not available'}</p><p>Receive address: {RECEIVE_ADDRESS||'Not configured'}</p><div className={`status ${status}`}>{status.replaceAll('_',' ')}</div>{message&&<p>{message}</p>}</div></div><div className="actions">{status==='settled'?(gatewayIntent?.successUrl?<button className="pay" onClick={returnToService}>Return to {gatewayIntent.service}</button>:<button className="pay" onClick={reset}>New Sale</button>):<button className="pay" disabled={status==='quoting'} onClick={observePayment}>{status==='quoting'?'Loading quote…':'Check Network'}</button>}</div><small className="disclaimer">NEO Counter is the shared checkout UI and read-only settlement observer. Caller parameters are not payment proof. External services must verify the returned settlement reference before fulfillment. No private-key custody, server-side signing, or raw card processing.</small></div></div>}
   </div>;
 }
