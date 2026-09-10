@@ -38,6 +38,7 @@ jobs:
       GCP_CLOUD_RUN_RUNTIME_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_RUNTIME_ACCOUNT || secrets.GCP_CLOUD_RUN_RUNTIME_ACCOUNT }}
       GCP_ARTIFACT_REGISTRY: ${{ vars.GCP_ARTIFACT_REGISTRY || secrets.GCP_ARTIFACT_REGISTRY }}
       NEO_TEMPLE_FIRESTORE_DATABASE: ${{ vars.NEO_TEMPLE_FIRESTORE_DATABASE || '(default)' }}
+      NEO_TEMPLE_FIRESTORE_LOCATION: ${{ vars.NEO_TEMPLE_FIRESTORE_LOCATION || 'nam5' }}
       NEO_PASS_JWT_ISSUER: ${{ vars.NEO_PASS_JWT_ISSUER }}
     steps:
       - uses: actions/checkout@v7.0.1
@@ -57,6 +58,18 @@ jobs:
           workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
           service_account: ${{ env.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
       - uses: google-github-actions/setup-gcloud@v3
+      - name: Ensure Firestore production database
+        run: |
+          set -euo pipefail
+          if ! gcloud firestore databases describe --project="$GCP_PROJECT_ID" --database="$NEO_TEMPLE_FIRESTORE_DATABASE" >/dev/null 2>&1; then
+            gcloud firestore databases create \
+              --project="$GCP_PROJECT_ID" \
+              --database="$NEO_TEMPLE_FIRESTORE_DATABASE" \
+              --location="$NEO_TEMPLE_FIRESTORE_LOCATION" \
+              --type=firestore-native \
+              --delete-protection \
+              --quiet
+          fi
       - name: Build and push
         env:
           IMAGE: ${{ env.GCP_ARTIFACT_REGISTRY }}/neo-temple-giss:${{ github.sha }}
@@ -94,5 +107,7 @@ jobs:
           URL="$(gcloud run services describe "$SERVICE_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format='value(status.url)')"
           test "$(curl -sS -o /tmp/health.json -w '%{http_code}' "$URL/health")" = 200
           grep -q '"giss":"ready"' /tmp/health.json
+          test "$(curl -sS -o /tmp/crm-health.json -w '%{http_code}' "$URL/health/crm")" = 200
+          grep -q '"status":"ready"' /tmp/crm-health.json
           test "$(curl -sS -o /dev/null -w '%{http_code}' "$URL/api/v1/temple/giss/eligibility")" = 401
           echo "Temple GISS: $URL" >> "$GITHUB_STEP_SUMMARY"
