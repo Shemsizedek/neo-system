@@ -60,12 +60,12 @@ export function createGoogleNeopassAuth({ clientId, jwtSecret, jwtIssuer = 'neo-
         providerSubject: profile.sub,
         email: profile.email,
         emailKey: profile.email.toLowerCase(),
-        username: existing?.username || (isExecutive ? executiveAdminUsername : null),
-        usernameKey: existing?.usernameKey || (isExecutive ? executiveAdminUsername.toLowerCase() : null),
+        username: isExecutive ? executiveAdminUsername : existing?.username || null,
+        usernameKey: isExecutive ? executiveAdminUsername.toLowerCase() : existing?.usernameKey || null,
         displayName: profile.name || profile.email,
         picture: profile.picture || null,
-        status: existing?.status || (isExecutive ? 'active' : 'pending'),
-        role: existing?.role || (isExecutive ? 'executive-admin' : 'member'),
+        status: isExecutive ? 'active' : existing?.status || 'pending',
+        role: isExecutive ? 'executive-admin' : existing?.role || 'member',
         templeCitizenId: existing?.templeCitizenId || null,
         lastAuthenticatedAt: new Date(now()).toISOString()
       }, 'subject');
