@@ -3,7 +3,7 @@ const freeze = (value) => Object.freeze(value);
 export const WORLD_LIBRARY_SOURCE_ROOT = freeze({
   provider: "google-drive",
   folderId: "1yxwfQSQC5TjSLYaHXcNVOWFWDQ-Io0z9",
-  mode: "read-only",
+  mode: "live-production",
 });
 
 export const AUTHORIZED_COLLECTIONS = freeze([
@@ -30,11 +30,9 @@ export const BOOK_COLLECTIONS = freeze([
   ["18i_PQgOBGUvDcBi00mI-mPxiSdKZqVoN", "Debates And Discussions Scrolls"],
   ["1kTwx5Xss2BzgZeSpURdhUZL39Gx7qlyP", "The Right Knowledge Series"],
   ["13l9PoOgsQKtIZUr5tbs0T37fzMtpYTET", "The Ancient Egyptian Order Series"],
-  ["1dgd5zgfIypf138HWVuPvKm5_6RNS75oH", "The Nuwaupic Language Series"],
+  ["1dgd5zgfIypf138HWVuPvKm5_6RNS75o", "The Nuwaupic Language Series"],
 ].map(([id, title]) => freeze({ id, title })));
 
-// First verified recursive leaf scan. Additional collection scans append metadata only;
-// source files remain in place and are never copied, moved, renamed, or deleted.
 export const DISCOVERED_SOURCE_FILES = freeze([
   ["1TgTHPeSJHugqnYAKgysRxFNBU-1Sqg3X", "The Millennium Book Part 1", "2025-08-19T19:54:31.564Z"],
   ["1dd2oZaBpR_Q_HhoLEmf9TK_HIpEujg9d", "The Millennium Book Part 2", "2025-08-19T19:54:07.269Z"],
@@ -48,21 +46,9 @@ export const DISCOVERED_SOURCE_FILES = freeze([
   ["1cBXgLA5d4T8FsApbry53gyIE6ZhsIvpD", "Ancient Egypt, And The Pharoahs", "2025-01-07T20:17:44.067Z"],
   ["1qtZ46A6UP-1hPSK-DI_eLAep4WQQNWh5", "The Luciferian Conspiracy", "2023-05-29T22:48:47.000Z"],
 ].map(([sourceId, title, modifiedAt]) => freeze({
-  id: `drive-${sourceId}`,
-  title,
-  author: "Dr. Malachi Z. York",
-  resourceType: "book",
-  description: null,
-  coverImage: null,
-  source: "google-drive",
-  sourceId,
-  sourceUrl: `https://drive.google.com/file/d/${sourceId}/view`,
-  mediaUrl: `https://drive.google.com/file/d/${sourceId}/view`,
-  mimeType: "application/pdf",
-  edition: null,
-  modifiedAt,
-  accessClass: "REVIEW",
-  degreeMapping: [],
-  status: "REVIEW",
-  collection: "The Moorish Series",
+  id: `drive-${sourceId}`, title, author: "Dr. Malachi Z. York", resourceType: "book",
+  description: null, coverImage: null, source: "google-drive", sourceId,
+  sourceUrl: `https://drive.google.com/file/d/${sourceId}/view`, mediaUrl: `https://drive.google.com/file/d/${sourceId}/view`,
+  mimeType: "application/pdf", edition: null, modifiedAt,
+  accessClass: "GISD_EXCLUSIVE", degreeMapping: [], status: "GISD_EXCLUSIVE", collection: "The Moorish Series",
 })));
