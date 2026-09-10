@@ -21,7 +21,7 @@ concurrency:
 env:
   SERVICE_NAME: neo-temple-giss
   NEOPASS_SECRET_NAME: neo-pass-jwt-secret
-  GOOGLE_OAUTH_CLIENT_ID: 61704167834-nhop1f3li8mp1bhj8i2q7uncouf33l2g.apps.googleusercontent.com
+  GOOGLE_OAUTH_CLIENT_ID: 61704167834-leu32ev71q1oge7hqufqg5cjgfslm7ts.apps.googleusercontent.com
 
 jobs:
   deploy:
