@@ -55,22 +55,13 @@ jobs:
           gcloud auth configure-docker "${GCP_REGION}-docker.pkg.dev" --quiet
           docker build -f server/neo-platform-api/Dockerfile.giss -t "$IMAGE" .
           docker push "$IMAGE"
-      - name: Ensure Firestore runtime IAM
+      - name: Validate pre-provisioned runtime access
         run: |
           set -euo pipefail
-          gcloud projects add-iam-policy-binding "$GCP_PROJECT_ID" \
-            --member="serviceAccount:$GCP_CLOUD_RUN_RUNTIME_ACCOUNT" \
-            --role="roles/datastore.user" \
-            --condition=None \
-            --quiet
-          gcloud secrets describe "$NEOPASS_SECRET_NAME" --project="$GCP_PROJECT_ID" >/dev/null 2>&1 || \
-            gcloud secrets create "$NEOPASS_SECRET_NAME" --project="$GCP_PROJECT_ID" --replication-policy=automatic
-          printf '%s' '${{ secrets.NEO_PASS_JWT_SECRET }}' | gcloud secrets versions add "$NEOPASS_SECRET_NAME" --project="$GCP_PROJECT_ID" --data-file=-
-          gcloud secrets add-iam-policy-binding "$NEOPASS_SECRET_NAME" \
-            --project="$GCP_PROJECT_ID" \
-            --member="serviceAccount:$GCP_CLOUD_RUN_RUNTIME_ACCOUNT" \
-            --role="roles/secretmanager.secretAccessor" \
-            --quiet
+          gcloud secrets describe "$NEOPASS_SECRET_NAME" --project="$GCP_PROJECT_ID" >/dev/null || {
+            echo "::error::Secret $NEOPASS_SECRET_NAME is not provisioned. Runtime IAM and secrets are infrastructure prerequisites, not deployment-time mutations."
+            exit 1
+          }
       - name: Deploy
         env:
           IMAGE: ${{ env.GCP_ARTIFACT_REGISTRY }}/neo-temple-giss:${{ github.sha }}
