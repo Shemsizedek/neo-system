@@ -35,15 +35,16 @@ test("library catalog accepts records without mutating source data", () => {
   assert.deepEqual(result, source);
 });
 
-test("library catalog defaults to the canonical read registry", () => {
+test("library catalog defaults to the combined discovered catalog", () => {
   const result = libraryCatalog();
-  assert.ok(result.length > 0);
-  assert.ok(result.some((record) => record.assetId === "world-library-neo-codex"));
+  assert.ok(result.length > 8, "combined catalog should expose discovered inventory beyond the legacy registry");
+  assert.ok(result.some((record) => record.id === "world-library-neo-codex"));
+  assert.ok(result.some((record) => String(record.id).startsWith("drive-")), "discovered Drive resources must be reachable through the deployed adapter");
 });
 
-test("library asset reads canonical records by asset id", () => {
+test("library asset reads canonical combined-catalog records by id", () => {
   const record = libraryAsset("world-library-neo-codex");
-  assert.equal(record.driveFileId, "0B-oe5yNz2jy4VlVfTVJrNGFYczA");
+  assert.equal(record.sourceId, "0B-oe5yNz2jy4VlVfTVJrNGFYczA");
   assert.equal(libraryAsset("missing"), null);
 });
 

@@ -9,6 +9,7 @@ import {
   libraryResourceMedia,
   libraryResourceCover,
   libraryDegreeResources,
+  librarySourceVersions,
   preferLatest,
   WORLD_LIBRARY_OPERATIONS,
 } from "./world-library-catalog.mjs";
@@ -40,9 +41,17 @@ test("newest duplicate becomes canonical while older editions are preserved", ()
   assert.deepEqual(result.sourceVersions["same work"].map((r) => r.id), ["new", "old"]);
 });
 
-test("operation namespace exposes exactly the requested read operations", () => {
+test("source version lookup preserves superseded history", () => {
+  const versions = librarySourceVersions("The Luciferian Conspiracy");
+  assert.ok(Object.isFrozen(versions));
+  assert.ok(versions.length >= 1);
+  if (versions.length > 1) assert.equal(versions[1].status, "superseded");
+});
+
+test("operation namespace exposes the approved read-only operations", () => {
   assert.deepEqual(Object.keys(WORLD_LIBRARY_OPERATIONS).sort(), [
     "library.catalog.list", "library.catalog.search", "library.degree.resources",
     "library.resource.cover", "library.resource.get", "library.resource.media",
+    "library.source.versions",
   ].sort());
 });

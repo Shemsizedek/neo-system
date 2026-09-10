@@ -1,4 +1,4 @@
-import { readWorldLibrary, readWorldLibraryAsset } from "./library-registry.mjs";
+import { libraryCatalogList, libraryResourceGet } from "./world-library-catalog.mjs";
 
 const READ_ONLY = true;
 
@@ -23,13 +23,13 @@ export function health() {
 }
 
 export function libraryCatalog(records) {
-  if (records === undefined) return readWorldLibrary();
+  if (records === undefined) return libraryCatalogList();
   if (!Array.isArray(records)) throw new TypeError("records must be an array");
   return records.map((record) => Object.freeze({ ...record }));
 }
 
 export function libraryAsset(assetId) {
-  return readWorldLibraryAsset(assetId);
+  return libraryResourceGet(assetId);
 }
 
 export function classifyLibraryRecord(record) {
