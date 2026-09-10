@@ -10,6 +10,8 @@ import { APPLICATION_REGISTRY, createControlPlane } from './control-plane.mjs';
 import { TEMPLE_APPLICATION_ID, createTempleAdapter } from './temple-adapter.mjs';
 import { createGoogleNeopassAuth } from './neopass-google-auth.mjs';
 
+Date.now = () => Date.parse('2026-09-10T01:00:00.000Z');
+
 const marketData={async snapshot({assets}={}){return{service:'neo-prime-market-data',apiVersion:'v1',status:'ok',generatedAt:'2026-08-25T00:00:00.000Z',bitcoin:{symbol:'BTC',priceUsd:112000,blockHeight:910144,status:'ok',errors:[]},counterparty:Object.fromEntries((assets||['XCP','NOMNI']).map(symbol=>[symbol,{symbol,status:'ok'}]))}},async asset(symbol){return{symbol:String(symbol).toUpperCase(),status:'ok',supply:900000000}}};
 async function withServer(fn, options={}){const server=createNeoPlatformApi({now:()=> '2026-08-25T00:00:00.000Z',marketData,subjectResolver:req=>String(req.headers['x-neopass-subject']||'').trim()||null,...options});server.listen(0,'127.0.0.1');await once(server,'listening');const{port}=server.address();try{await fn(`http://127.0.0.1:${port}`)}finally{server.close();await once(server,'close')}}
 

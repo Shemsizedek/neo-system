@@ -49,12 +49,19 @@ export function createGoogleNeopassAuth({ clientId, jwtSecret, jwtIssuer = 'neo-
       return { subject, email: record.email, username: record.username, displayName: record.displayName, picture: record.picture, neopassStatus: record.status, role: record.role || 'member', hasPassword: Boolean(record.passwordHash) };
     },
     async login(credential) {
-      const profile = await verifyGoogleCredential(credential, clientId);
+      let profile;
+      try { profile = await verifyGoogleCredential(credential, clientId); }
+      catch { const error = new Error('google_token_invalid'); error.code = 'google_token_invalid'; throw error; }
       if (!profile?.sub || !profile.email || profile.email_verified !== true) throw new Error('google_identity_not_verified');
       const subject = `google:${profile.sub}`;
-      const existing = await registry.getNEOpassCredential(subject);
+      let existing;
+      try { existing = await registry.getNEOpassCredential(subject); }
+      catch {
+        try { existing = await registry.getNEOpassCredential(subject); }
+        catch { const error = new Error('neopass_registry_unavailable'); error.code = 'neopass_registry_unavailable'; throw error; }
+      }
       const isExecutive = executiveAdminEmail && profile.email.toLowerCase() === executiveAdminEmail.toLowerCase();
-      const record = await registry.upsert('neopassCredentials', {
+      const account = {
         subject,
         provider: 'google',
         providerSubject: profile.sub,
@@ -68,7 +75,13 @@ export function createGoogleNeopassAuth({ clientId, jwtSecret, jwtIssuer = 'neo-
         role: isExecutive ? 'executive-admin' : existing?.role || 'member',
         templeCitizenId: existing?.templeCitizenId || null,
         lastAuthenticatedAt: new Date(now()).toISOString()
-      }, 'subject');
+      };
+      let record;
+      try { record = await registry.upsert('neopassCredentials', account, 'subject'); }
+      catch {
+        try { record = await registry.upsert('neopassCredentials', account, 'subject'); }
+        catch { const error = new Error('neopass_registry_unavailable'); error.code = 'neopass_registry_unavailable'; throw error; }
+      }
       return {
         token: issueNeopassToken({ subject, secret: jwtSecret, issuer: jwtIssuer, now }),
         member: { subject, email: record.email, username: record.username, displayName: record.displayName, picture: record.picture, neopassStatus: record.status, role: record.role, hasPassword: Boolean(record.passwordHash) }
