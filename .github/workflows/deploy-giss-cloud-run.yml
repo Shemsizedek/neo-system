@@ -21,6 +21,7 @@ concurrency:
 env:
   SERVICE_NAME: neo-temple-giss
   NEOPASS_SECRET_NAME: neo-pass-jwt-secret
+  GOOGLE_OAUTH_CLIENT_ID: 61704167834-nhop1f3li8mp1bhj8i2q7uncouf33l2g.apps.googleusercontent.com
 
 jobs:
   deploy:
@@ -43,7 +44,7 @@ jobs:
           NEO_PASS_JWT_SECRET: ${{ secrets.NEO_PASS_JWT_SECRET }}
         run: |
           set -euo pipefail
-          for name in GCP_PROJECT_ID GCP_REGION GCP_WIF_PROVIDER GCP_CLOUD_RUN_SERVICE_ACCOUNT GCP_CLOUD_RUN_RUNTIME_ACCOUNT GCP_ARTIFACT_REGISTRY NEO_PASS_JWT_SECRET; do
+          for name in GCP_PROJECT_ID GCP_REGION GCP_WIF_PROVIDER GCP_CLOUD_RUN_SERVICE_ACCOUNT GCP_CLOUD_RUN_RUNTIME_ACCOUNT GCP_ARTIFACT_REGISTRY NEO_PASS_JWT_SECRET GOOGLE_OAUTH_CLIENT_ID; do
             test -n "${!name:-}" || { echo "::error::Missing $name"; exit 1; }
           done
       - name: Test GISS runtime
@@ -74,7 +75,7 @@ jobs:
           IMAGE: ${{ env.GCP_ARTIFACT_REGISTRY }}/neo-temple-giss:${{ github.sha }}
         run: |
           set -euo pipefail
-          ENV_VARS="GOOGLE_CLOUD_PROJECT=$GCP_PROJECT_ID,NEO_TEMPLE_FIRESTORE_DATABASE=$NEO_TEMPLE_FIRESTORE_DATABASE"
+          ENV_VARS="GOOGLE_CLOUD_PROJECT=$GCP_PROJECT_ID,NEO_TEMPLE_FIRESTORE_DATABASE=$NEO_TEMPLE_FIRESTORE_DATABASE,GOOGLE_OAUTH_CLIENT_ID=$GOOGLE_OAUTH_CLIENT_ID"
           if [ -n "${NEO_PASS_JWT_ISSUER:-}" ]; then ENV_VARS="$ENV_VARS,NEO_PASS_JWT_ISSUER=$NEO_PASS_JWT_ISSUER"; fi
           gcloud run deploy "$SERVICE_NAME" \
             --project="$GCP_PROJECT_ID" \

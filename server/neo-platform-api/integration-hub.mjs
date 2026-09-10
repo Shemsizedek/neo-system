@@ -121,7 +121,8 @@ export function createIntegrationHub({ composio = createComposioClient(), provid
 export function createNeopassSubjectResolver({ secret = process.env.NEO_PASS_JWT_SECRET, issuer = process.env.NEO_PASS_JWT_ISSUER } = {}) {
   return req => {
     const authorization = String(req.headers.authorization || '');
-    const token = authorization.startsWith('Bearer ') ? authorization.slice(7).trim() : '';
+    const cookie = String(req.headers.cookie || '').split(';').map(value => value.trim()).find(value => value.startsWith('neo_pass_session='));
+    const token = authorization.startsWith('Bearer ') ? authorization.slice(7).trim() : decodeURIComponent(cookie?.slice('neo_pass_session='.length) || '');
     if (!secret || !token) return null;
     const parts = token.split('.');
     if (parts.length !== 3) return null;

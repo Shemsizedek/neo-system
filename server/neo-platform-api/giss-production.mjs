@@ -3,12 +3,15 @@ import { createFirestoreTempleRegistry } from './firestore-temple-registry.mjs';
 import { createTempleGissRuntime } from './temple-giss-runtime.mjs';
 import { createNeopassSubjectResolver } from './integration-hub.mjs';
 import { createNeoPlatformApi } from './server.mjs';
+import { OAuth2Client } from 'google-auth-library';
+import { createGoogleNeopassAuth } from './neopass-google-auth.mjs';
 
 export function createGissProductionServer({
   projectId = process.env.GOOGLE_CLOUD_PROJECT || process.env.GCP_PROJECT_ID,
   databaseId = process.env.NEO_TEMPLE_FIRESTORE_DATABASE || '(default)',
   jwtSecret = process.env.NEO_PASS_JWT_SECRET,
   jwtIssuer = process.env.NEO_PASS_JWT_ISSUER,
+  googleClientId = process.env.GOOGLE_OAUTH_CLIENT_ID,
   now = () => new Date().toISOString()
 } = {}) {
   if (!projectId) throw new Error('gcp_project_required');
@@ -18,8 +21,14 @@ export function createGissProductionServer({
   const registry = createFirestoreTempleRegistry({ db, now });
   const templeGissRuntime = createTempleGissRuntime({ registry, now });
   const subjectResolver = createNeopassSubjectResolver({ secret: jwtSecret, issuer: jwtIssuer });
+  const googleClient = new OAuth2Client(googleClientId);
+  const verifyGoogleCredential = async (credential, audience) => {
+    const ticket = await googleClient.verifyIdToken({ idToken: credential, audience });
+    return ticket.getPayload();
+  };
+  const authService = createGoogleNeopassAuth({ clientId: googleClientId, jwtSecret, jwtIssuer, registry, verifyGoogleCredential });
 
-  return createNeoPlatformApi({ templeGissRuntime, subjectResolver, now });
+  return createNeoPlatformApi({ templeGissRuntime, subjectResolver, authService, now });
 }
 
 export function startGissProductionServer({ port = Number(process.env.PORT || 8080) } = {}) {
