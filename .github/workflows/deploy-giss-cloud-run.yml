@@ -70,14 +70,6 @@ jobs:
               --delete-protection \
               --quiet
           fi
-      - name: Grant CRM runtime Firestore access
-        run: |
-          set -euo pipefail
-          gcloud projects add-iam-policy-binding "$GCP_PROJECT_ID" \
-            --member="serviceAccount:$GCP_CLOUD_RUN_RUNTIME_ACCOUNT" \
-            --role="roles/datastore.user" \
-            --condition=None \
-            --quiet >/dev/null
       - name: Build and push
         env:
           IMAGE: ${{ env.GCP_ARTIFACT_REGISTRY }}/neo-temple-giss:${{ github.sha }}
