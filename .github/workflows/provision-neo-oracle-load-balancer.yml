@@ -1,0 +1,212 @@
+name: Provision NEO Oracle Load Balancer
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/provision-neo-oracle-load-balancer.yml'
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: neo-oracle-load-balancer
+  cancel-in-progress: false
+
+env:
+  SERVICE_NAME: neo-prime-runtime
+  ORACLE_DOMAIN: oracle.holytemples.org
+  ADDRESS_NAME: neo-oracle-ip
+  NEG_NAME: neo-oracle-serverless-neg
+  BACKEND_NAME: neo-oracle-backend
+  URL_MAP_NAME: neo-oracle-url-map
+  CERT_NAME: neo-oracle-managed-cert
+  HTTPS_PROXY_NAME: neo-oracle-https-proxy
+  HTTPS_RULE_NAME: neo-oracle-https-rule
+
+jobs:
+  provision:
+    runs-on: ubuntu-latest
+    environment: holytemples-production
+    timeout-minutes: 20
+    env:
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID || secrets.GCP_PROJECT_ID }}
+      GCP_REGION: ${{ vars.GCP_REGION || secrets.GCP_REGION }}
+      GCP_WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER || secrets.GCP_WIF_PROVIDER }}
+      GCP_CLOUD_RUN_SERVICE_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_SERVICE_ACCOUNT || secrets.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - name: Validate configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in GCP_PROJECT_ID GCP_REGION GCP_WIF_PROVIDER GCP_CLOUD_RUN_SERVICE_ACCOUNT; do
+            test -n "${!name:-}" || { echo "::error::Missing $name"; exit 1; }
+          done
+
+      - uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+
+      - uses: google-github-actions/setup-gcloud@v3
+
+      - name: Verify Cloud Run origin
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL="$(gcloud run services describe "$SERVICE_NAME" \
+            --project="$GCP_PROJECT_ID" \
+            --region="$GCP_REGION" \
+            --format='value(status.url)')"
+          test -n "$URL"
+          code="$(curl -sS -o /tmp/oracle.html -w '%{http_code}' "$URL/")"
+          test "$code" = 200
+          grep -q 'NEO ORACLE' /tmp/oracle.html
+          echo "Cloud Run Oracle origin healthy: $URL" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Enable Compute API
+        shell: bash
+        run: |
+          set -euo pipefail
+          gcloud services enable compute.googleapis.com \
+            --project="$GCP_PROJECT_ID" \
+            --quiet
+
+      - name: Reserve global IPv4 address
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! gcloud compute addresses describe "$ADDRESS_NAME" \
+            --project="$GCP_PROJECT_ID" \
+            --global >/dev/null 2>&1; then
+            gcloud compute addresses create "$ADDRESS_NAME" \
+              --project="$GCP_PROJECT_ID" \
+              --global \
+              --ip-version=IPV4 \
+              --network-tier=PREMIUM
+          fi
+          IP="$(gcloud compute addresses describe "$ADDRESS_NAME" \
+            --project="$GCP_PROJECT_ID" \
+            --global \
+            --format='value(address)')"
+          test -n "$IP"
+          echo "ORACLE_IP=$IP" >> "$GITHUB_ENV"
+          echo "Oracle global IP: $IP" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Create serverless NEG
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! gcloud compute network-endpoint-groups describe "$NEG_NAME" \
+            --project="$GCP_PROJECT_ID" \
+            --region="$GCP_REGION" >/dev/null 2>&1; then
+            gcloud compute network-endpoint-groups create "$NEG_NAME" \
+              --project="$GCP_PROJECT_ID" \
+              --region="$GCP_REGION" \
+              --network-endpoint-type=serverless \
+              --cloud-run-service="$SERVICE_NAME"
+          fi
+
+      - name: Create backend service
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! gcloud compute backend-services describe "$BACKEND_NAME" \
+            --project="$GCP_PROJECT_ID" \
+            --global >/dev/null 2>&1; then
+            gcloud compute backend-services create "$BACKEND_NAME" \
+              --project="$GCP_PROJECT_ID" \
+              --global \
+              --load-balancing-scheme=EXTERNAL_MANAGED \
+              --protocol=HTTPS
+          fi
+
+          NEG_URI="$(gcloud compute network-endpoint-groups describe "$NEG_NAME" \
+            --project="$GCP_PROJECT_ID" \
+            --region="$GCP_REGION" \
+            --format='value(selfLink)')"
+          BACKENDS="$(gcloud compute backend-services describe "$BACKEND_NAME" \
+            --project="$GCP_PROJECT_ID" \
+            --global \
+            --format='value(backends[].group)' || true)"
+          if ! grep -Fq "$NEG_URI" <<<"$BACKENDS"; then
+            gcloud compute backend-services add-backend "$BACKEND_NAME" \
+              --project="$GCP_PROJECT_ID" \
+              --global \
+              --network-endpoint-group="$NEG_NAME" \
+              --network-endpoint-group-region="$GCP_REGION"
+          fi
+
+      - name: Create URL map
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! gcloud compute url-maps describe "$URL_MAP_NAME" \
+            --project="$GCP_PROJECT_ID" >/dev/null 2>&1; then
+            gcloud compute url-maps create "$URL_MAP_NAME" \
+              --project="$GCP_PROJECT_ID" \
+              --default-service="$BACKEND_NAME"
+          fi
+
+      - name: Create Google-managed certificate
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! gcloud compute ssl-certificates describe "$CERT_NAME" \
+            --project="$GCP_PROJECT_ID" \
+            --global >/dev/null 2>&1; then
+            gcloud compute ssl-certificates create "$CERT_NAME" \
+              --project="$GCP_PROJECT_ID" \
+              --global \
+              --domains="$ORACLE_DOMAIN"
+          fi
+
+      - name: Create HTTPS proxy
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! gcloud compute target-https-proxies describe "$HTTPS_PROXY_NAME" \
+            --project="$GCP_PROJECT_ID" >/dev/null 2>&1; then
+            gcloud compute target-https-proxies create "$HTTPS_PROXY_NAME" \
+              --project="$GCP_PROJECT_ID" \
+              --url-map="$URL_MAP_NAME" \
+              --ssl-certificates="$CERT_NAME"
+          fi
+
+      - name: Create HTTPS forwarding rule
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! gcloud compute forwarding-rules describe "$HTTPS_RULE_NAME" \
+            --project="$GCP_PROJECT_ID" \
+            --global >/dev/null 2>&1; then
+            gcloud compute forwarding-rules create "$HTTPS_RULE_NAME" \
+              --project="$GCP_PROJECT_ID" \
+              --global \
+              --load-balancing-scheme=EXTERNAL_MANAGED \
+              --network-tier=PREMIUM \
+              --address="$ADDRESS_NAME" \
+              --target-https-proxy="$HTTPS_PROXY_NAME" \
+              --ports=443
+          fi
+
+      - name: Report DNS cutover and certificate status
+        shell: bash
+        run: |
+          set -euo pipefail
+          STATUS="$(gcloud compute ssl-certificates describe "$CERT_NAME" \
+            --project="$GCP_PROJECT_ID" \
+            --global \
+            --format='value(managed.status)')"
+          {
+            echo '### NEO Oracle External Application Load Balancer'
+            echo "- Domain: $ORACLE_DOMAIN"
+            echo "- Global IPv4: $ORACLE_IP"
+            echo "- Managed certificate status: ${STATUS:-UNKNOWN}"
+            echo "- DNS cutover required: replace the current oracle CNAME with A $ORACLE_IP"
+          } >> "$GITHUB_STEP_SUMMARY"
