@@ -70,6 +70,14 @@ jobs:
               --delete-protection \
               --quiet
           fi
+      - name: Grant CRM runtime Firestore access
+        run: |
+          set -euo pipefail
+          gcloud projects add-iam-policy-binding "$GCP_PROJECT_ID" \
+            --member="serviceAccount:$GCP_CLOUD_RUN_RUNTIME_ACCOUNT" \
+            --role="roles/datastore.user" \
+            --condition=None \
+            --quiet >/dev/null
       - name: Build and push
         env:
           IMAGE: ${{ env.GCP_ARTIFACT_REGISTRY }}/neo-temple-giss:${{ github.sha }}
@@ -107,7 +115,13 @@ jobs:
           URL="$(gcloud run services describe "$SERVICE_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format='value(status.url)')"
           test "$(curl -sS -o /tmp/health.json -w '%{http_code}' "$URL/health")" = 200
           grep -q '"giss":"ready"' /tmp/health.json
-          test "$(curl -sS -o /tmp/crm-health.json -w '%{http_code}' "$URL/health/crm")" = 200
+          CRM_STATUS=000
+          for attempt in {1..12}; do
+            CRM_STATUS="$(curl -sS -o /tmp/crm-health.json -w '%{http_code}' "$URL/health/crm")"
+            test "$CRM_STATUS" = 200 && break
+            sleep 5
+          done
+          test "$CRM_STATUS" = 200
           grep -q '"status":"ready"' /tmp/crm-health.json
           test "$(curl -sS -o /dev/null -w '%{http_code}' "$URL/api/v1/temple/giss/eligibility")" = 401
           echo "Temple GISS: $URL" >> "$GITHUB_STEP_SUMMARY"
