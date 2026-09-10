@@ -32,6 +32,11 @@ export function createFirestoreTempleRegistry({ db, now = () => new Date().toISO
     async getNEOpassCredential(subject) {
       return firstWhere(collections.neopassCredentials, 'subject', subject);
     },
+    async getNEOpassCredentialByLogin(login) {
+      const value = String(login || '').trim().toLowerCase();
+      return await firstWhere(collections.neopassCredentials, 'usernameKey', value)
+        || await firstWhere(collections.neopassCredentials, 'emailKey', value);
+    },
     async getTempleCitizen(id) {
       return getById(collections.templeCitizens, id);
     },

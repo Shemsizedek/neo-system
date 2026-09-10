@@ -1,6 +1,8 @@
-import { createHmac } from 'node:crypto';
+import { createHmac, randomBytes, scrypt as scryptCallback, timingSafeEqual } from 'node:crypto';
+import { promisify } from 'node:util';
 
 const SESSION_COOKIE = 'neo_pass_session';
+const scrypt = promisify(scryptCallback);
 
 function encode(value) { return Buffer.from(JSON.stringify(value)).toString('base64url'); }
 
@@ -22,34 +24,69 @@ export function clearSessionCookie() {
   return `${SESSION_COOKIE}=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`;
 }
 
-export function createGoogleNeopassAuth({ clientId, jwtSecret, jwtIssuer = 'neo-pass', registry, verifyGoogleCredential, now = () => Date.now() } = {}) {
+async function hashPassword(password) {
+  if (typeof password !== 'string' || password.length < 12 || password.length > 128) throw new Error('password_requirements_not_met');
+  const salt = randomBytes(16).toString('base64url');
+  const derived = await scrypt(password, salt, 64);
+  return `scrypt$${salt}$${Buffer.from(derived).toString('base64url')}`;
+}
+
+async function verifyPassword(password, encoded) {
+  const [scheme, salt, expectedValue] = String(encoded || '').split('$');
+  if (scheme !== 'scrypt' || !salt || !expectedValue || typeof password !== 'string') return false;
+  const expected = Buffer.from(expectedValue, 'base64url');
+  const actual = Buffer.from(await scrypt(password, salt, expected.length));
+  return actual.length === expected.length && timingSafeEqual(actual, expected);
+}
+
+export function createGoogleNeopassAuth({ clientId, jwtSecret, jwtIssuer = 'neo-pass', registry, verifyGoogleCredential, executiveAdminEmail = process.env.NEO_EXECUTIVE_ADMIN_EMAIL, executiveAdminUsername = process.env.NEO_EXECUTIVE_ADMIN_USERNAME || 'Shemsizedek', now = () => Date.now() } = {}) {
   if (!clientId || !jwtSecret || !registry || !verifyGoogleCredential) return null;
   return {
     clientId,
     async session(subject) {
       const record = await registry.getNEOpassCredential(subject);
       if (!record) return { subject, displayName: 'NEOpass Member', neopassStatus: 'pending' };
-      return { subject, email: record.email, displayName: record.displayName, picture: record.picture, neopassStatus: record.status };
+      return { subject, email: record.email, username: record.username, displayName: record.displayName, picture: record.picture, neopassStatus: record.status, role: record.role || 'member', hasPassword: Boolean(record.passwordHash) };
     },
     async login(credential) {
       const profile = await verifyGoogleCredential(credential, clientId);
       if (!profile?.sub || !profile.email || profile.email_verified !== true) throw new Error('google_identity_not_verified');
       const subject = `google:${profile.sub}`;
       const existing = await registry.getNEOpassCredential(subject);
+      const isExecutive = executiveAdminEmail && profile.email.toLowerCase() === executiveAdminEmail.toLowerCase();
       const record = await registry.upsert('neopassCredentials', {
         subject,
         provider: 'google',
         providerSubject: profile.sub,
         email: profile.email,
+        emailKey: profile.email.toLowerCase(),
+        username: existing?.username || (isExecutive ? executiveAdminUsername : null),
+        usernameKey: existing?.usernameKey || (isExecutive ? executiveAdminUsername.toLowerCase() : null),
         displayName: profile.name || profile.email,
         picture: profile.picture || null,
-        status: existing?.status || 'pending',
+        status: existing?.status || (isExecutive ? 'active' : 'pending'),
+        role: existing?.role || (isExecutive ? 'executive-admin' : 'member'),
         templeCitizenId: existing?.templeCitizenId || null,
         lastAuthenticatedAt: new Date(now()).toISOString()
       }, 'subject');
       return {
         token: issueNeopassToken({ subject, secret: jwtSecret, issuer: jwtIssuer, now }),
-        member: { subject, email: record.email, displayName: record.displayName, picture: record.picture, neopassStatus: record.status }
+        member: { subject, email: record.email, username: record.username, displayName: record.displayName, picture: record.picture, neopassStatus: record.status, role: record.role, hasPassword: Boolean(record.passwordHash) }
+      };
+    },
+    async setExecutivePassword(subject, password) {
+      const record = await registry.getNEOpassCredential(subject);
+      if (!record || record.role !== 'executive-admin' || record.email?.toLowerCase() !== executiveAdminEmail?.toLowerCase()) throw new Error('executive_bootstrap_forbidden');
+      const passwordHash = await hashPassword(password);
+      const saved = await registry.upsert('neopassCredentials', { ...record, passwordHash, passwordUpdatedAt: new Date(now()).toISOString() }, 'subject');
+      return { subject: saved.subject, username: saved.username, role: saved.role, hasPassword: true };
+    },
+    async passwordLogin(login, password) {
+      const record = await registry.getNEOpassCredentialByLogin(login);
+      if (!record || record.status !== 'active' || !await verifyPassword(password, record.passwordHash)) throw new Error('invalid_credentials');
+      return {
+        token: issueNeopassToken({ subject: record.subject, secret: jwtSecret, issuer: jwtIssuer, now }),
+        member: { subject: record.subject, email: record.email, username: record.username, displayName: record.displayName, picture: record.picture, neopassStatus: record.status, role: record.role || 'member', hasPassword: true }
       };
     }
   };

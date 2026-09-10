@@ -12,6 +12,8 @@ export function createGissProductionServer({
   jwtSecret = process.env.NEO_PASS_JWT_SECRET,
   jwtIssuer = process.env.NEO_PASS_JWT_ISSUER,
   googleClientId = process.env.GOOGLE_OAUTH_CLIENT_ID,
+  executiveAdminEmail = process.env.NEO_EXECUTIVE_ADMIN_EMAIL,
+  executiveAdminUsername = process.env.NEO_EXECUTIVE_ADMIN_USERNAME || 'Shemsizedek',
   now = () => new Date().toISOString()
 } = {}) {
   if (!projectId) throw new Error('gcp_project_required');
@@ -26,7 +28,7 @@ export function createGissProductionServer({
     const ticket = await googleClient.verifyIdToken({ idToken: credential, audience });
     return ticket.getPayload();
   };
-  const authService = createGoogleNeopassAuth({ clientId: googleClientId, jwtSecret, jwtIssuer, registry, verifyGoogleCredential });
+  const authService = createGoogleNeopassAuth({ clientId: googleClientId, jwtSecret, jwtIssuer, registry, verifyGoogleCredential, executiveAdminEmail, executiveAdminUsername });
 
   return createNeoPlatformApi({ templeGissRuntime, subjectResolver, authService, now });
 }
