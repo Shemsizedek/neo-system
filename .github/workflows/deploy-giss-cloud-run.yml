@@ -2,6 +2,13 @@ name: Deploy Temple GISS to Cloud Run
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'server/neo-platform-api/**'
+      - 'server/neo-prime/**'
+      - 'infra/oci/neo-system-services.json'
+      - '.github/workflows/deploy-giss-cloud-run.yml'
 
 permissions:
   contents: read
