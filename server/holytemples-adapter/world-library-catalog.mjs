@@ -1,4 +1,5 @@
 import { WORLD_LIBRARY_REGISTRY } from "./library-registry.mjs";
+import { DISCOVERED_SOURCE_FILES } from "./world-library-source-inventory.mjs";
 
 export const RESOURCE_TYPES = Object.freeze([
   "book", "audiobook", "audio", "document", "course material", "archive material",
@@ -31,7 +32,7 @@ export function canonicalResource(input) {
   });
 }
 
-const seed = WORLD_LIBRARY_REGISTRY.map(canonicalResource);
+const seed = [...WORLD_LIBRARY_REGISTRY, ...DISCOVERED_SOURCE_FILES].map(canonicalResource);
 
 function dateValue(value) {
   const parsed = value ? Date.parse(value) : Number.NaN;
@@ -39,7 +40,12 @@ function dateValue(value) {
 }
 
 function workKey(resource) {
-  return String(resource.title ?? "").trim().toLocaleLowerCase();
+  return String(resource.title ?? "")
+    .normalize("NFKD")
+    .replace(/\.pdf$/i, "")
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
+    .trim()
+    .toLocaleLowerCase();
 }
 
 export function preferLatest(resources) {
@@ -57,7 +63,7 @@ export function preferLatest(resources) {
   for (const [key, group] of groups) {
     group.sort((a, b) => dateValue(b.modifiedAt) - dateValue(a.modifiedAt));
     latest.push(group[0]);
-    sourceVersions[key] = freeze([...group]);
+    sourceVersions[key] = freeze(group.map((resource, index) => index === 0 ? resource : freeze({ ...resource, status: "superseded" })));
   }
   return freeze({ latest: freeze(latest), sourceVersions: freeze(sourceVersions) });
 }
@@ -105,6 +111,12 @@ export function libraryDegreeResources(degree) {
   ));
 }
 
+export function librarySourceVersions(title) {
+  if (!title) throw new TypeError("title is required");
+  const { sourceVersions } = preferLatest(seed);
+  return sourceVersions[workKey({ title })] ?? freeze([]);
+}
+
 export const WORLD_LIBRARY_OPERATIONS = freeze({
   "library.catalog.list": libraryCatalogList,
   "library.catalog.search": libraryCatalogSearch,
@@ -112,7 +124,8 @@ export const WORLD_LIBRARY_OPERATIONS = freeze({
   "library.resource.media": libraryResourceMedia,
   "library.resource.cover": libraryResourceCover,
   "library.degree.resources": libraryDegreeResources,
+  "library.source.versions": librarySourceVersions,
 });
 
-// Provider adapters may supply metadata to canonicalResource/preferLatest, but this
-// module never moves, copies, renames, deletes, or writes source files.
+// Provider metadata is read-only. This module never moves, copies, renames,
+// deletes, publishes, or writes source files.
