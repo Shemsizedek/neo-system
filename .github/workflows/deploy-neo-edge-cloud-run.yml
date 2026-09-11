@@ -145,6 +145,7 @@ jobs:
 
           urls=(
             'https://neo.holytemples.org/health'
+            'https://neo.holytemples.org/assets/neo-bridge.js'
             'https://router.holytemples.org/health'
             'https://algo.holytemples.org/health'
             'https://pay.holytemples.org/health'
