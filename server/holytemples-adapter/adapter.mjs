@@ -1,6 +1,4 @@
-import { libraryCatalogList, libraryResourceGet } from "./world-library-catalog.mjs";
-
-const READ_ONLY = true;
+import { libraryCatalogList, libraryCatalogSearch, libraryResourceGet } from "./world-library-catalog.mjs";
 
 export const HOLY_TEMPLES = Object.freeze({
   site: "https://holytemples.org",
@@ -16,20 +14,34 @@ export function health() {
   return Object.freeze({
     ok: true,
     service: "holytemples-adapter",
-    mode: "read-only",
-    mutations: false,
-    namespaces: ["library", "store"],
+    mode: "live-production",
+    namespaces: ["library", "store", "noogle"],
   });
 }
 
 export function libraryCatalog(records) {
-  if (records === undefined) return libraryCatalogList();
+  if (records === undefined) return libraryCatalogList({ accessClass: "PUBLIC_WORLD_LIBRARY" });
   if (!Array.isArray(records)) throw new TypeError("records must be an array");
   return records.map((record) => Object.freeze({ ...record }));
 }
 
-export function libraryAsset(assetId) {
-  return libraryResourceGet(assetId);
+export function authorizedLibraryCatalog(options = {}) {
+  return libraryCatalogList(options);
+}
+
+export function searchPublicLibrary(query) {
+  return libraryCatalogSearch(query, { accessClass: "PUBLIC_WORLD_LIBRARY" });
+}
+
+export function searchAuthorizedLibrary(query, options = {}) {
+  return libraryCatalogSearch(query, options);
+}
+
+export function libraryAsset(assetId, { authorized = false } = {}) {
+  const resource = libraryResourceGet(assetId);
+  if (!resource) return null;
+  if (!authorized && resource.accessClass !== "PUBLIC_WORLD_LIBRARY") return null;
+  return resource;
 }
 
 export function classifyLibraryRecord(record) {
@@ -43,12 +55,4 @@ export function classifyLibraryRecord(record) {
 
 export function storeCatalog() {
   return HOLY_TEMPLES.store;
-}
-
-export function assertReadOnly() {
-  return READ_ONLY;
-}
-
-export function mutate() {
-  throw new Error("Holy Temples adapter is read-only; mutations are disabled");
 }
