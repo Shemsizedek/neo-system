@@ -1,5 +1,5 @@
 {
-  "version": "1.1.0",
+  "version": "1.2.0",
   "domainRoot": "holytemples.org",
   "dnsTarget": "ghs.googlehosted.com.",
   "runtime": "google-cloud-run",
@@ -9,7 +9,8 @@
     {"host":"router.holytemples.org","service":"neo-router","role":"api"},
     {"host":"algo.holytemples.org","service":"neo-algo","role":"site-api"},
     {"host":"prime.holytemples.org","service":"neo-prime","role":"site-api"},
-    {"host":"pay.holytemples.org","service":"neopay","role":"site-api"},
+    {"host":"pay.holytemples.org","service":"neopay","role":"payments-wallet-entry-site-api"},
+    {"host":"neobank.holytemples.org","service":"neo-bank","role":"community-ces-site-api"},
     {"host":"hub.holytemples.org","service":"neo-hub","role":"site-api"},
     {"host":"counter.holytemples.org","service":"neo-counter","role":"site-api"},
     {"host":"wire.holytemples.org","service":"neo-wire","role":"site-api"},
@@ -36,11 +37,21 @@
   },
   "assetPolicy": {
     "nomniMetadata": "https://nomni.holytemples.org/nomni.json",
+    "nomniValuation": "https://nomni.holytemples.org/api/nomni/value",
+    "nomniSymbol": "∞",
+    "nomniValuationMode": "market-observed-not-guaranteed-redemption-peg",
     "nomniExternalReference": "https://xcp.coindaddy.io/NOMNI.json",
     "worldCurrencyReference": "https://holytemples.org/world-currency/",
     "neoCashPresentation": "application-facing base/quote asset",
     "counterpartyNativeBase": "XCP",
     "wrappingMode": "adapter-alias-until-an-on-chain-wrapper-contract-is-explicitly-deployed"
+  },
+  "ces": {
+    "host": "neobank.holytemples.org",
+    "database": "google-cloud-firestore",
+    "databaseHealthEndpoint": "/api/database/health",
+    "walletEntry": "https://pay.holytemples.org",
+    "policy": "NEO Bank is community CES access; Bitcoin/Counterparty wallet recovery and signing remain in NEOpay; CES mutations require authenticated backend authorization"
   },
   "rules": {
     "publicDnsDoesNotImplyServiceReady": true,
