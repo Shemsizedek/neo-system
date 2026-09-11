@@ -1,0 +1,36 @@
+{
+  "version": "1.0.0",
+  "domainRoot": "holytemples.org",
+  "dnsTarget": "ghs.googlehosted.com.",
+  "runtime": "google-cloud-run",
+  "frontend": "github-pages-or-service-ui",
+  "hosts": [
+    {"host":"neo.holytemples.org","service":"neo-system","role":"system-site-api"},
+    {"host":"router.holytemples.org","service":"neo-router","role":"api"},
+    {"host":"algo.holytemples.org","service":"neo-algo","role":"site-api"},
+    {"host":"prime.holytemples.org","service":"neo-prime","role":"site-api"},
+    {"host":"pay.holytemples.org","service":"neopay","role":"site-api"},
+    {"host":"hub.holytemples.org","service":"neo-hub","role":"site-api"},
+    {"host":"counter.holytemples.org","service":"neo-counter","role":"site-api"},
+    {"host":"wire.holytemples.org","service":"neo-wire","role":"site-api"},
+    {"host":"neogram.holytemples.org","service":"neogram","role":"site-api"},
+    {"host":"neofx.holytemples.org","service":"neo-fx","role":"site-api"},
+    {"host":"scan.holytemples.org","service":"neoscan","role":"site-api"},
+    {"host":"school.holytemples.org","service":"gisd","role":"site-api"},
+    {"host":"library.holytemples.org","service":"neo-library","role":"site-api"},
+    {"host":"book.holytemples.org","service":"neo-books","role":"site-api"},
+    {"host":"neopads.holytemples.org","service":"neo-pads","role":"site-api"},
+    {"host":"neopass.holytemples.org","service":"neopass","role":"site-api"},
+    {"host":"neovision.holytemples.org","service":"neo-tv","role":"site-api"},
+    {"host":"noogle.holytemples.org","service":"noogle","role":"site-api"},
+    {"host":"omnitrix.holytemples.org","service":"omnitrix","role":"site-api"},
+    {"host":"neodash.holytemples.org","service":"neo-dash","role":"site-api"}
+  ],
+  "rules": {
+    "publicDnsDoesNotImplyServiceReady": true,
+    "cloudRunMappingRequiredPerHost": true,
+    "tlsRequired": true,
+    "secretsRuntimeOnly": true,
+    "defaultDenyPrivilegedRoutes": true
+  }
+}
