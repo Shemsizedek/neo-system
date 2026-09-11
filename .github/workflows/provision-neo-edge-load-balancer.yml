@@ -1,0 +1,176 @@
+name: Provision NEO Edge Global Load Balancer
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/provision-neo-edge-load-balancer.yml'
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: neo-edge-global-load-balancer
+  cancel-in-progress: false
+
+jobs:
+  provision:
+    runs-on: ubuntu-latest
+    environment: holytemples-production
+    timeout-minutes: 30
+    env:
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID || secrets.GCP_PROJECT_ID }}
+      GCP_REGION: ${{ vars.GCP_REGION || secrets.GCP_REGION }}
+      GCP_WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER || secrets.GCP_WIF_PROVIDER }}
+      GCP_CLOUD_RUN_SERVICE_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_SERVICE_ACCOUNT || secrets.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+      SERVICE_NAME: neo-edge
+      NEG_NAME: neo-edge-neg
+      BACKEND_NAME: neo-edge-backend
+      URL_MAP_NAME: neo-edge-url-map
+      CERT_NAME: neo-edge-managed-cert
+      HTTPS_PROXY_NAME: neo-edge-https-proxy
+      HTTP_PROXY_NAME: neo-edge-http-proxy
+      HTTPS_RULE_NAME: neo-edge-https-rule
+      HTTP_RULE_NAME: neo-edge-http-rule
+      IP_NAME: neo-edge-global-ip
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - name: Validate deployment configuration
+        run: |
+          set -euo pipefail
+          for name in GCP_PROJECT_ID GCP_REGION GCP_WIF_PROVIDER GCP_CLOUD_RUN_SERVICE_ACCOUNT; do
+            test -n "${!name:-}" || { echo "::error::Missing $name"; exit 1; }
+          done
+
+      - uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+
+      - uses: google-github-actions/setup-gcloud@v3
+
+      - name: Ensure required APIs
+        run: |
+          set -euo pipefail
+          gcloud services enable compute.googleapis.com run.googleapis.com --project="$GCP_PROJECT_ID" --quiet
+
+      - name: Reserve global IPv4 address
+        run: |
+          set -euo pipefail
+          if ! gcloud compute addresses describe "$IP_NAME" --global --project="$GCP_PROJECT_ID" >/dev/null 2>&1; then
+            gcloud compute addresses create "$IP_NAME" --global --ip-version=IPV4 --project="$GCP_PROJECT_ID" --quiet
+          fi
+          EDGE_IP="$(gcloud compute addresses describe "$IP_NAME" --global --project="$GCP_PROJECT_ID" --format='value(address)')"
+          test -n "$EDGE_IP"
+          echo "NEO_EDGE_GLOBAL_IP=$EDGE_IP" >> "$GITHUB_ENV"
+          echo "NEO Edge global IPv4: $EDGE_IP" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Create serverless NEG
+        run: |
+          set -euo pipefail
+          if ! gcloud compute network-endpoint-groups describe "$NEG_NAME" --region="$GCP_REGION" --project="$GCP_PROJECT_ID" >/dev/null 2>&1; then
+            gcloud compute network-endpoint-groups create "$NEG_NAME" \
+              --region="$GCP_REGION" \
+              --network-endpoint-type=serverless \
+              --cloud-run-service="$SERVICE_NAME" \
+              --project="$GCP_PROJECT_ID" \
+              --quiet
+          fi
+
+      - name: Create global backend service
+        run: |
+          set -euo pipefail
+          if ! gcloud compute backend-services describe "$BACKEND_NAME" --global --project="$GCP_PROJECT_ID" >/dev/null 2>&1; then
+            gcloud compute backend-services create "$BACKEND_NAME" \
+              --global \
+              --load-balancing-scheme=EXTERNAL_MANAGED \
+              --project="$GCP_PROJECT_ID" \
+              --quiet
+          fi
+          if ! gcloud compute backend-services describe "$BACKEND_NAME" --global --project="$GCP_PROJECT_ID" --format='json(backends)' | grep -q "$NEG_NAME"; then
+            gcloud compute backend-services add-backend "$BACKEND_NAME" \
+              --global \
+              --network-endpoint-group="$NEG_NAME" \
+              --network-endpoint-group-region="$GCP_REGION" \
+              --project="$GCP_PROJECT_ID" \
+              --quiet
+          fi
+
+      - name: Create URL map
+        run: |
+          set -euo pipefail
+          if ! gcloud compute url-maps describe "$URL_MAP_NAME" --project="$GCP_PROJECT_ID" >/dev/null 2>&1; then
+            gcloud compute url-maps create "$URL_MAP_NAME" \
+              --default-service="$BACKEND_NAME" \
+              --project="$GCP_PROJECT_ID" \
+              --quiet
+          fi
+
+      - name: Create Google-managed certificate
+        run: |
+          set -euo pipefail
+          DOMAINS='neo.holytemples.org,router.holytemples.org,algo.holytemples.org,prime.holytemples.org,pay.holytemples.org,neobank.holytemples.org,hub.holytemples.org,counter.holytemples.org,wire.holytemples.org,neogram.holytemples.org,neofx.holytemples.org,scan.holytemples.org,school.holytemples.org,library.holytemples.org,book.holytemples.org,neopads.holytemples.org,neopass.holytemples.org,neovision.holytemples.org,noogle.holytemples.org,omnitrix.holytemples.org,neodash.holytemples.org,nomni.holytemples.org,wallet.holytemples.org,treasury.holytemples.org'
+          if ! gcloud compute ssl-certificates describe "$CERT_NAME" --global --project="$GCP_PROJECT_ID" >/dev/null 2>&1; then
+            gcloud compute ssl-certificates create "$CERT_NAME" \
+              --domains="$DOMAINS" \
+              --global \
+              --project="$GCP_PROJECT_ID" \
+              --quiet
+          fi
+
+      - name: Create HTTPS proxy and forwarding rule
+        run: |
+          set -euo pipefail
+          if ! gcloud compute target-https-proxies describe "$HTTPS_PROXY_NAME" --project="$GCP_PROJECT_ID" >/dev/null 2>&1; then
+            gcloud compute target-https-proxies create "$HTTPS_PROXY_NAME" \
+              --url-map="$URL_MAP_NAME" \
+              --ssl-certificates="$CERT_NAME" \
+              --project="$GCP_PROJECT_ID" \
+              --quiet
+          fi
+          if ! gcloud compute forwarding-rules describe "$HTTPS_RULE_NAME" --global --project="$GCP_PROJECT_ID" >/dev/null 2>&1; then
+            gcloud compute forwarding-rules create "$HTTPS_RULE_NAME" \
+              --global \
+              --load-balancing-scheme=EXTERNAL_MANAGED \
+              --address="$IP_NAME" \
+              --target-https-proxy="$HTTPS_PROXY_NAME" \
+              --ports=443 \
+              --project="$GCP_PROJECT_ID" \
+              --quiet
+          fi
+
+      - name: Create HTTP proxy and forwarding rule
+        run: |
+          set -euo pipefail
+          if ! gcloud compute target-http-proxies describe "$HTTP_PROXY_NAME" --project="$GCP_PROJECT_ID" >/dev/null 2>&1; then
+            gcloud compute target-http-proxies create "$HTTP_PROXY_NAME" \
+              --url-map="$URL_MAP_NAME" \
+              --project="$GCP_PROJECT_ID" \
+              --quiet
+          fi
+          if ! gcloud compute forwarding-rules describe "$HTTP_RULE_NAME" --global --project="$GCP_PROJECT_ID" >/dev/null 2>&1; then
+            gcloud compute forwarding-rules create "$HTTP_RULE_NAME" \
+              --global \
+              --load-balancing-scheme=EXTERNAL_MANAGED \
+              --address="$IP_NAME" \
+              --target-http-proxy="$HTTP_PROXY_NAME" \
+              --ports=80 \
+              --project="$GCP_PROJECT_ID" \
+              --quiet
+          fi
+
+      - name: Report DNS cutover target
+        run: |
+          set -euo pipefail
+          test -n "${NEO_EDGE_GLOBAL_IP:-}"
+          {
+            echo '### NEO Edge DNS cutover target'
+            echo
+            echo "Replace the current NEO subdomain CNAMEs with A records pointing to: **${NEO_EDGE_GLOBAL_IP}**"
+            echo
+            echo 'The managed certificate will remain PROVISIONING until the public DNS records resolve to this address.'
+          } >> "$GITHUB_STEP_SUMMARY"
