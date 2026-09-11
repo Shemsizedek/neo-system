@@ -30,16 +30,18 @@ jobs:
       GCP_REGION: ${{ vars.GCP_REGION || secrets.GCP_REGION }}
       GCP_WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER || secrets.GCP_WIF_PROVIDER }}
       GCP_CLOUD_RUN_SERVICE_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_SERVICE_ACCOUNT || secrets.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+      GCP_CLOUD_RUN_RUNTIME_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_RUNTIME_ACCOUNT || secrets.GCP_CLOUD_RUN_RUNTIME_ACCOUNT }}
+      GCP_ARTIFACT_REGISTRY: ${{ vars.GCP_ARTIFACT_REGISTRY || secrets.GCP_ARTIFACT_REGISTRY }}
+      SERVICE_NAME: neo-edge
     steps:
       - uses: actions/checkout@v7.0.1
 
       - name: Validate deployment configuration
         run: |
           set -euo pipefail
-          for name in GCP_PROJECT_ID GCP_REGION GCP_WIF_PROVIDER GCP_CLOUD_RUN_SERVICE_ACCOUNT; do
+          for name in GCP_PROJECT_ID GCP_REGION GCP_WIF_PROVIDER GCP_CLOUD_RUN_SERVICE_ACCOUNT GCP_CLOUD_RUN_RUNTIME_ACCOUNT GCP_ARTIFACT_REGISTRY; do
             test -n "${!name:-}" || { echo "::error::Missing $name"; exit 1; }
           done
-          test -f cloudbuild.neo-edge.yaml
           test -f deploy/neo-edge/Dockerfile
           test -f server/neo-edge/server.mjs
 
@@ -51,19 +53,69 @@ jobs:
 
       - uses: google-github-actions/setup-gcloud@v3
 
-      - name: Execute Cloud Build deployment
+      - name: Build and push NEO edge image
+        env:
+          IMAGE: ${{ env.GCP_ARTIFACT_REGISTRY }}/neo-edge:${{ github.sha }}
         run: |
           set -euo pipefail
-          gcloud builds submit . \
+          gcloud auth configure-docker "${GCP_REGION}-docker.pkg.dev" --quiet
+          docker build -f deploy/neo-edge/Dockerfile -t "$IMAGE" .
+          docker push "$IMAGE"
+
+      - name: Deploy NEO edge to Cloud Run
+        env:
+          IMAGE: ${{ env.GCP_ARTIFACT_REGISTRY }}/neo-edge:${{ github.sha }}
+        run: |
+          set -euo pipefail
+          gcloud run deploy "$SERVICE_NAME" \
             --project="$GCP_PROJECT_ID" \
-            --config=cloudbuild.neo-edge.yaml \
-            --substitutions=COMMIT_SHA="$GITHUB_SHA" \
+            --region="$GCP_REGION" \
+            --image="$IMAGE" \
+            --service-account="$GCP_CLOUD_RUN_RUNTIME_ACCOUNT" \
+            --port=8080 \
+            --allow-unauthenticated \
             --quiet
+
+      - name: Bind NEO domains to shared edge
+        run: |
+          set -euo pipefail
+          domains=(
+            neo.holytemples.org
+            router.holytemples.org
+            algo.holytemples.org
+            prime.holytemples.org
+            pay.holytemples.org
+            hub.holytemples.org
+            counter.holytemples.org
+            wire.holytemples.org
+            neogram.holytemples.org
+            neofx.holytemples.org
+            scan.holytemples.org
+            school.holytemples.org
+            library.holytemples.org
+            book.holytemples.org
+            neopads.holytemples.org
+            neopass.holytemples.org
+            neovision.holytemples.org
+            noogle.holytemples.org
+            omnitrix.holytemples.org
+            neodash.holytemples.org
+            nomni.holytemples.org
+            wallet.holytemples.org
+            treasury.holytemples.org
+          )
+          for domain in "${domains[@]}"; do
+            if gcloud run domain-mappings describe --domain="$domain" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" >/dev/null 2>&1; then
+              echo "Domain mapping exists: $domain"
+            else
+              gcloud run domain-mappings create --service="$SERVICE_NAME" --domain="$domain" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --quiet
+            fi
+          done
 
       - name: Verify NEO edge service and public hosts
         run: |
           set -euo pipefail
-          SERVICE_URL="$(gcloud run services describe neo-edge --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format='value(status.url)')"
+          SERVICE_URL="$(gcloud run services describe "$SERVICE_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format='value(status.url)')"
           echo "NEO edge Cloud Run URL: $SERVICE_URL" >> "$GITHUB_STEP_SUMMARY"
           test "$(curl -sS -o /dev/null -w '%{http_code}' -H 'Host: neo.holytemples.org' "$SERVICE_URL/health")" = 200
           for url in \
@@ -75,7 +127,7 @@ jobs:
             'https://nomni.holytemples.org/nomni.json' \
             'https://wallet.holytemples.org/api/wallet' \
             'https://treasury.holytemples.org/api/treasury'; do
-            code="$(curl --retry 6 --retry-delay 10 --retry-all-errors -sS -o /dev/null -w '%{http_code}' "$url" || true)"
+            code="$(curl --retry 8 --retry-delay 10 --retry-all-errors -sS -o /dev/null -w '%{http_code}' "$url" || true)"
             echo "$url -> $code" >> "$GITHUB_STEP_SUMMARY"
             test "$code" = 200
           done
