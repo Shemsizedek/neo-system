@@ -85,6 +85,7 @@ jobs:
             algo.holytemples.org
             prime.holytemples.org
             pay.holytemples.org
+            neobank.holytemples.org
             hub.holytemples.org
             counter.holytemples.org
             wire.holytemples.org
@@ -105,10 +106,10 @@ jobs:
             treasury.holytemples.org
           )
           for domain in "${domains[@]}"; do
-            if gcloud run domain-mappings describe --domain="$domain" --project="$GCP_PROJECT_ID" >/dev/null 2>&1; then
+            if gcloud beta run domain-mappings describe --domain="$domain" --project="$GCP_PROJECT_ID" >/dev/null 2>&1; then
               echo "Domain mapping exists: $domain"
             else
-              gcloud run domain-mappings create --service="$SERVICE_NAME" --domain="$domain" --project="$GCP_PROJECT_ID" --quiet
+              gcloud beta run domain-mappings create --service="$SERVICE_NAME" --domain="$domain" --project="$GCP_PROJECT_ID" --quiet
             fi
           done
 
@@ -123,6 +124,7 @@ jobs:
             'https://router.holytemples.org/health' \
             'https://algo.holytemples.org/health' \
             'https://pay.holytemples.org/health' \
+            'https://neobank.holytemples.org/health' \
             'https://noogle.holytemples.org/noogle/search?q=noology' \
             'https://nomni.holytemples.org/nomni.json' \
             'https://wallet.holytemples.org/api/wallet' \
