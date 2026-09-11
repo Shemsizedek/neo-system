@@ -1,6 +1,6 @@
 import http from "node:http";
 import { timingSafeEqual } from "node:crypto";
-import { health, libraryAsset, libraryCatalog } from "./adapter.mjs";
+import { health, libraryAsset, libraryCatalog, authorizedLibraryCatalog, searchPublicLibrary, searchAuthorizedLibrary } from "./adapter.mjs";
 import { createWordPressMediaUploader, WordPressMediaError } from "./wordpress-media.mjs";
 
 const MAX_MEDIA_BYTES = 5 * 1024 * 1024;
@@ -49,6 +49,7 @@ export function createServer(env = process.env, dependencies = {}) {
   return http.createServer(async (req, res) => {
     const url = requestUrl(req);
     if (!url) return respond(res, 400, { error: "INVALID_REQUEST_TARGET" });
+    const isAuthorized = authorized(req, env.NEO_TEMPLE_OPERATOR_TOKEN);
 
     if (req.method === "GET" && url.pathname === "/health") return respond(res, 200, health());
 
@@ -57,17 +58,32 @@ export function createServer(env = process.env, dependencies = {}) {
       return respond(res, 200, { records: libraryCatalog() });
     }
 
+    if (url.pathname === "/library/authorized") {
+      if (req.method !== "GET") return respond(res, 405, { error: "METHOD_NOT_ALLOWED" }, { allow: "GET" });
+      if (!isAuthorized) return respond(res, 401, { error: "UNAUTHORIZED" });
+      const accessClass = url.searchParams.get("accessClass") || undefined;
+      const collection = url.searchParams.get("collection") || undefined;
+      return respond(res, 200, { records: authorizedLibraryCatalog({ accessClass, collection }) });
+    }
+
+    if (url.pathname === "/noogle/search") {
+      if (req.method !== "GET") return respond(res, 405, { error: "METHOD_NOT_ALLOWED" }, { allow: "GET" });
+      const query = String(url.searchParams.get("q") || "").trim();
+      const records = isAuthorized ? searchAuthorizedLibrary(query) : searchPublicLibrary(query);
+      return respond(res, 200, { query, scope: isAuthorized ? "authorized" : "public", records });
+    }
+
     const assetMatch = url.pathname.match(/^\/library\/([^/]+)$/);
     if (assetMatch) {
       if (req.method !== "GET") return respond(res, 405, { error: "METHOD_NOT_ALLOWED" }, { allow: "GET" });
-      const record = libraryAsset(decodeURIComponent(assetMatch[1]));
+      const record = libraryAsset(decodeURIComponent(assetMatch[1]), { authorized: isAuthorized });
       if (!record) return respond(res, 404, { error: "LIBRARY_ASSET_NOT_FOUND" });
       return respond(res, 200, record);
     }
 
     if (url.pathname === "/media") {
       if (req.method !== "POST") return respond(res, 405, { error: "METHOD_NOT_ALLOWED" }, { allow: "POST" });
-      if (!authorized(req, env.NEO_TEMPLE_OPERATOR_TOKEN)) return respond(res, 401, { error: "UNAUTHORIZED" });
+      if (!isAuthorized) return respond(res, 401, { error: "UNAUTHORIZED" });
       if (req.headers["x-neo-approved"] !== "true") return respond(res, 403, { error: "APPROVAL_REQUIRED" });
       const filename = String(req.headers["x-filename"] || "").trim();
       const mimeType = String(req.headers["content-type"] || "").split(";")[0].trim().toLowerCase();
