@@ -1,0 +1,81 @@
+name: Deploy NEO Edge to Cloud Run
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'server/neo-edge/**'
+      - 'server/holytemples-adapter/**'
+      - 'deploy/neo-edge/**'
+      - 'cloudbuild.neo-edge.yaml'
+      - 'architecture/neo-hosts.json'
+      - '.github/workflows/deploy-neo-edge-cloud-run.yml'
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: neo-edge-cloud-run
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: holytemples-production
+    timeout-minutes: 30
+    env:
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID || secrets.GCP_PROJECT_ID }}
+      GCP_REGION: ${{ vars.GCP_REGION || secrets.GCP_REGION }}
+      GCP_WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER || secrets.GCP_WIF_PROVIDER }}
+      GCP_CLOUD_RUN_SERVICE_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_SERVICE_ACCOUNT || secrets.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - name: Validate deployment configuration
+        run: |
+          set -euo pipefail
+          for name in GCP_PROJECT_ID GCP_REGION GCP_WIF_PROVIDER GCP_CLOUD_RUN_SERVICE_ACCOUNT; do
+            test -n "${!name:-}" || { echo "::error::Missing $name"; exit 1; }
+          done
+          test -f cloudbuild.neo-edge.yaml
+          test -f deploy/neo-edge/Dockerfile
+          test -f server/neo-edge/server.mjs
+
+      - uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+
+      - uses: google-github-actions/setup-gcloud@v3
+
+      - name: Execute Cloud Build deployment
+        run: |
+          set -euo pipefail
+          gcloud builds submit . \
+            --project="$GCP_PROJECT_ID" \
+            --config=cloudbuild.neo-edge.yaml \
+            --substitutions=COMMIT_SHA="$GITHUB_SHA" \
+            --quiet
+
+      - name: Verify NEO edge service and public hosts
+        run: |
+          set -euo pipefail
+          SERVICE_URL="$(gcloud run services describe neo-edge --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format='value(status.url)')"
+          echo "NEO edge Cloud Run URL: $SERVICE_URL" >> "$GITHUB_STEP_SUMMARY"
+          test "$(curl -sS -o /dev/null -w '%{http_code}' -H 'Host: neo.holytemples.org' "$SERVICE_URL/health")" = 200
+          for url in \
+            'https://neo.holytemples.org/health' \
+            'https://router.holytemples.org/health' \
+            'https://algo.holytemples.org/health' \
+            'https://pay.holytemples.org/health' \
+            'https://noogle.holytemples.org/noogle/search?q=noology' \
+            'https://nomni.holytemples.org/nomni.json' \
+            'https://wallet.holytemples.org/api/wallet' \
+            'https://treasury.holytemples.org/api/treasury'; do
+            code="$(curl --retry 6 --retry-delay 10 --retry-all-errors -sS -o /dev/null -w '%{http_code}' "$url" || true)"
+            echo "$url -> $code" >> "$GITHUB_STEP_SUMMARY"
+            test "$code" = 200
+          done
