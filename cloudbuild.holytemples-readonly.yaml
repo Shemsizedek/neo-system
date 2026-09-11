@@ -5,21 +5,21 @@ steps:
       - -f
       - deploy/holytemples-readonly/Dockerfile
       - -t
-      - us-central1-docker.pkg.dev/$PROJECT_ID/neo-system/holytemples-readonly:$COMMIT_SHA
+      - us-central1-docker.pkg.dev/$PROJECT_ID/neo-system/neo-system-api:$COMMIT_SHA
       - .
 
   - name: gcr.io/cloud-builders/docker
     args:
       - push
-      - us-central1-docker.pkg.dev/$PROJECT_ID/neo-system/holytemples-readonly:$COMMIT_SHA
+      - us-central1-docker.pkg.dev/$PROJECT_ID/neo-system/neo-system-api:$COMMIT_SHA
 
   - name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
     entrypoint: gcloud
     args:
       - run
       - deploy
-      - holytemples-readonly
-      - --image=us-central1-docker.pkg.dev/$PROJECT_ID/neo-system/holytemples-readonly:$COMMIT_SHA
+      - neo-system-api
+      - --image=us-central1-docker.pkg.dev/$PROJECT_ID/neo-system/neo-system-api:$COMMIT_SHA
       - --region=us-central1
       - --platform=managed
       - --port=8080
@@ -27,7 +27,7 @@ steps:
       - --quiet
 
 images:
-  - us-central1-docker.pkg.dev/$PROJECT_ID/neo-system/holytemples-readonly:$COMMIT_SHA
+  - us-central1-docker.pkg.dev/$PROJECT_ID/neo-system/neo-system-api:$COMMIT_SHA
 
 options:
   logging: CLOUD_LOGGING_ONLY
