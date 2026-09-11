@@ -1,24 +1,21 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
-  assertReadOnly,
   classifyLibraryRecord,
   health,
   libraryAsset,
   libraryCatalog,
-  mutate,
+  searchPublicLibrary,
   storeCatalog,
 } from "./adapter.mjs";
 
-test("health contract is explicitly read-only", () => {
+test("health contract reports live production Noogle service", () => {
   assert.deepEqual(health(), {
     ok: true,
     service: "holytemples-adapter",
-    mode: "read-only",
-    mutations: false,
-    namespaces: ["library", "store"],
+    mode: "live-production",
+    namespaces: ["library", "store", "noogle"],
   });
-  assert.equal(assertReadOnly(), true);
 });
 
 test("library supports the canonical exposure statuses", () => {
@@ -35,16 +32,23 @@ test("library catalog accepts records without mutating source data", () => {
   assert.deepEqual(result, source);
 });
 
-test("library catalog defaults to the combined discovered catalog", () => {
+test("public catalog excludes GISD/GISS exclusive inventory", () => {
   const result = libraryCatalog();
-  assert.ok(result.length > 8, "combined catalog should expose discovered inventory beyond the legacy registry");
+  assert.ok(result.length > 0);
+  assert.ok(result.every((record) => record.accessClass === "PUBLIC_WORLD_LIBRARY"));
   assert.ok(result.some((record) => record.id === "world-library-neo-codex"));
-  assert.ok(result.some((record) => String(record.id).startsWith("drive-")), "discovered Drive resources must be reachable through the deployed adapter");
+  assert.ok(!result.some((record) => record.accessClass === "GISD_EXCLUSIVE"));
 });
 
-test("library asset reads canonical combined-catalog records by id", () => {
+test("public Noogle search preserves the public access boundary", () => {
+  const result = searchPublicLibrary("NEO");
+  assert.ok(result.every((record) => record.accessClass === "PUBLIC_WORLD_LIBRARY"));
+});
+
+test("library asset hides protected resources from anonymous reads", () => {
   const record = libraryAsset("world-library-neo-codex");
   assert.equal(record.sourceId, "0B-oe5yNz2jy4VlVfTVJrNGFYczA");
+  assert.equal(libraryAsset("drive-1tt6Ea2VIsCaKd8ArCj29Ze8Tj81VTos3"), null);
   assert.equal(libraryAsset("missing"), null);
 });
 
@@ -54,8 +58,4 @@ test("store exposes Spreadshop metadata only", () => {
     shopName: "Shemsizedek",
     prefix: "https://Shemsizedek.myspreadshop.com",
   });
-});
-
-test("all mutation attempts fail closed", () => {
-  assert.throws(() => mutate(), /read-only/);
 });
