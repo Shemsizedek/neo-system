@@ -55,7 +55,7 @@ jobs:
         env: {IMAGE: "${{ env.GCP_ARTIFACT_REGISTRY }}/neo-bank:${{ github.sha }}"}
         run: |
           set -euo pipefail
-          gcloud run deploy "$SERVICE_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --image="$IMAGE" --service-account="$GCP_CLOUD_RUN_RUNTIME_ACCOUNT" --port=8080 --allow-unauthenticated --set-env-vars="NEO_BANK_FIRESTORE_DATABASE=${{ vars.NEO_BANK_FIRESTORE_DATABASE || '(default)' }}" --quiet
+          gcloud run deploy "$SERVICE_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --image="$IMAGE" --service-account="$GCP_CLOUD_RUN_RUNTIME_ACCOUNT" --port=8080 --allow-unauthenticated --set-env-vars="GCP_PROJECT_ID=$GCP_PROJECT_ID,NEO_BANK_FIRESTORE_DATABASE=${{ vars.NEO_BANK_FIRESTORE_DATABASE || '(default)' }}" --quiet
       - name: Map domain
         run: |
           set -euo pipefail
