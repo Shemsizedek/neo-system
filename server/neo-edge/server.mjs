@@ -3,6 +3,48 @@ import { URL } from 'node:url';
 import { searchPublicLibrary, libraryCatalog, health as libraryHealth } from '../holytemples-adapter/adapter.mjs';
 
 const PORT = Number(process.env.PORT || 8080);
+const TREASURY_WALLET = '18FyntJG9hdXYvanm67mGgbyo1P7adckvg';
+
+const NOMNI = Object.freeze({
+  success: true,
+  asset: 'NOMNI',
+  network: 'bitcoin-counterparty',
+  asset_issuer_address: '1NySA74g62Mr28Unp4uCxwtQv9FkD7AVpk',
+  asset_owner_address: TREASURY_WALLET,
+  asset_supply: '900000000',
+  asset_divisible: false,
+  asset_locked: true,
+  treasury_wallet: TREASURY_WALLET,
+  canonical_url: 'https://nomni.holytemples.org/nomni.json',
+  world_currency_url: 'https://holytemples.org/world-currency/',
+  external_reference: 'https://xcp.coindaddy.io/NOMNI.json',
+  integration: {
+    format: 'NEO Asset Contract v1',
+    plug_and_play: true,
+    settlement_address: TREASURY_WALLET,
+    supported_surfaces: ['website','app','webapp','software','device','pos','server'],
+    discovery: ['/nomni.json','/api/nomni','/api/wallet','/api/treasury']
+  }
+});
+
+const TREASURY = Object.freeze({
+  name: 'World Treasury',
+  wallet: TREASURY_WALLET,
+  networks: ['bitcoin','counterparty'],
+  settlementAssetFamily: ['BTC','XCP','NOMNI','NEOCASH'],
+  policy: 'Enabled NEO settlement instructions reference the Treasury wallet unless a service-specific approved contract overrides it.',
+  privateKeysExposed: false
+});
+
+const SCAN_CONFIG = Object.freeze({
+  name: 'NEO Scan',
+  presentationBaseAsset: 'NEOCASH',
+  protocol: 'Counterparty on Bitcoin',
+  counterpartyNativeBaseAsset: 'XCP',
+  mode: 'application-adapter',
+  wrappingStatus: 'No on-chain XCP-to-NEOCASH wrapper is claimed by this API. NEOCASH is the NEO-facing presentation/quote layer until an explicit wrapper contract is deployed.',
+  treasuryWallet: TREASURY_WALLET
+});
 
 const SERVICES = Object.freeze({
   'neo.holytemples.org': { id: 'neo-system', name: 'NEO System', role: 'system', api: true },
@@ -24,7 +66,10 @@ const SERVICES = Object.freeze({
   'neovision.holytemples.org': { id: 'neo-tv', name: 'NEO TV', role: 'media', api: true },
   'noogle.holytemples.org': { id: 'noogle', name: 'Noogle', role: 'search', api: true },
   'omnitrix.holytemples.org': { id: 'omnitrix', name: 'Omnitrix', role: 'browser', api: true },
-  'neodash.holytemples.org': { id: 'neo-dash', name: 'NEO Dash', role: 'dashboard', api: true }
+  'neodash.holytemples.org': { id: 'neo-dash', name: 'NEO Dash', role: 'dashboard', api: true },
+  'nomni.holytemples.org': { id: 'nomni', name: 'N.O.M.N.I.', role: 'currency', api: true },
+  'wallet.holytemples.org': { id: 'neo-treasury-wallet', name: 'NEO Treasury Wallet', role: 'wallet', api: true },
+  'treasury.holytemples.org': { id: 'world-treasury', name: 'World Treasury', role: 'treasury', api: true }
 });
 
 const PUBLIC_ORIGINS = new Set([
@@ -72,10 +117,13 @@ function systemManifest() {
     edge: 'neo-edge',
     services: Object.keys(SERVICES).map(serviceSnapshot),
     publicSearch: '/noogle/search?q=',
+    treasuryWallet: TREASURY_WALLET,
+    assets: { NOMNI, scan: SCAN_CONFIG },
     policy: {
       publicLibraryOnly: true,
       protectedResourcesRemainServerSide: true,
-      runtimeSecretsInBrowser: false
+      runtimeSecretsInBrowser: false,
+      privateKeysNeverPublished: true
     }
   };
 }
@@ -112,6 +160,22 @@ export function createNeoEdgeServer() {
       return json(req, res, 200, systemManifest());
     }
 
+    if (req.method === 'GET' && (url.pathname === '/nomni.json' || url.pathname === '/api/nomni' || url.pathname === '/api/assets/NOMNI')) {
+      return json(req, res, 200, NOMNI);
+    }
+
+    if (req.method === 'GET' && (url.pathname === '/api/wallet' || url.pathname === '/wallet')) {
+      return json(req, res, 200, { wallet: TREASURY_WALLET, network: ['bitcoin','counterparty'], role: 'treasury-settlement', privateKeyExposed: false });
+    }
+
+    if (req.method === 'GET' && (url.pathname === '/api/treasury' || url.pathname === '/treasury')) {
+      return json(req, res, 200, TREASURY);
+    }
+
+    if (req.method === 'GET' && (url.pathname === '/api/scan/config' || url.pathname === '/scan/config')) {
+      return json(req, res, 200, SCAN_CONFIG);
+    }
+
     if (req.method === 'GET' && (url.pathname === '/library' || url.pathname === '/api/library')) {
       return json(req, res, 200, { records: libraryCatalog(), accessClass: 'PUBLIC_WORLD_LIBRARY' });
     }
@@ -130,11 +194,17 @@ export function createNeoEdgeServer() {
     }
 
     if (req.method === 'GET' && url.pathname === '/') {
+      const hostSpecific = host === 'nomni.holytemples.org' ? { asset: NOMNI }
+        : host === 'wallet.holytemples.org' ? { treasuryWallet: TREASURY_WALLET }
+        : host === 'treasury.holytemples.org' ? { treasury: TREASURY }
+        : host === 'scan.holytemples.org' ? { scan: SCAN_CONFIG }
+        : {};
       return json(req, res, 200, {
         service,
         system: 'NEO System',
         status: 'online',
-        endpoints: ['/health', '/api', '/services', '/library', '/noogle/search?q=']
+        ...hostSpecific,
+        endpoints: ['/health', '/api', '/services', '/nomni.json', '/api/wallet', '/api/treasury', '/api/scan/config', '/library', '/noogle/search?q=']
       });
     }
 
