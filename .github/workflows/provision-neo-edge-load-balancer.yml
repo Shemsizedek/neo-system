@@ -58,7 +58,7 @@ jobs:
           set -euo pipefail
           gcloud services enable compute.googleapis.com run.googleapis.com --project="$GCP_PROJECT_ID" --quiet
 
-      - name: Ensure load-balancer IAM
+      - name: Verify load-balancer IAM
         run: |
           set -euo pipefail
           member="serviceAccount:${GCP_CLOUD_RUN_SERVICE_ACCOUNT}"
@@ -66,11 +66,8 @@ jobs:
             --flatten='bindings[].members' \
             --filter="bindings.role:roles/compute.loadBalancerAdmin AND bindings.members:${member}" \
             --format='value(bindings.role)' | grep -qx 'roles/compute.loadBalancerAdmin'; then
-            gcloud projects add-iam-policy-binding "$GCP_PROJECT_ID" \
-              --member="$member" \
-              --role='roles/compute.loadBalancerAdmin' \
-              --condition=None \
-              --quiet
+            echo "::error::The GitHub deployment service account does not have roles/compute.loadBalancerAdmin. Grant that role outside this workflow using an IAM administrator, then rerun. The deployment identity must not self-grant project IAM."
+            exit 1
           fi
 
       - name: Reserve global IPv4 address
