@@ -105,10 +105,10 @@ jobs:
             treasury.holytemples.org
           )
           for domain in "${domains[@]}"; do
-            if gcloud run domain-mappings describe --domain="$domain" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" >/dev/null 2>&1; then
+            if gcloud run domain-mappings describe --domain="$domain" --project="$GCP_PROJECT_ID" >/dev/null 2>&1; then
               echo "Domain mapping exists: $domain"
             else
-              gcloud run domain-mappings create --service="$SERVICE_NAME" --domain="$domain" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --quiet
+              gcloud run domain-mappings create --service="$SERVICE_NAME" --domain="$domain" --project="$GCP_PROJECT_ID" --quiet
             fi
           done
 
