@@ -1,13 +1,21 @@
 import http from 'node:http';
 import { URL } from 'node:url';
 import { searchPublicLibrary, libraryCatalog, health as libraryHealth } from '../holytemples-adapter/adapter.mjs';
+import { createFirestoreRestDb } from '../neo-counter-backend/firestore-rest-db.mjs';
 
 const PORT = Number(process.env.PORT || 8080);
 const TREASURY_WALLET = '18FyntJG9hdXYvanm67mGgbyo1P7adckvg';
+const FIRESTORE_PROJECT_ID = process.env.GOOGLE_CLOUD_PROJECT || process.env.GCP_PROJECT_ID || process.env.GCLOUD_PROJECT || '';
+const FIRESTORE_DATABASE_ID = process.env.FIRESTORE_DATABASE_ID || '(default)';
+const TOKENSCAN_NOMNI_URL = 'https://tokenscan.io/api/asset/NOMNI';
+const NOMNI_FALLBACK_VALUE = Object.freeze({ usd: '20.72', xcp: '13.03076220', btc: null });
+let nomniValueCache = null;
 
 const NOMNI = Object.freeze({
   success: true,
   asset: 'NOMNI',
+  symbol: '∞',
+  display_name: 'NOMNI Infinity Dollar',
   network: 'bitcoin-counterparty',
   asset_issuer_address: '1NySA74g62Mr28Unp4uCxwtQv9FkD7AVpk',
   asset_owner_address: TREASURY_WALLET,
@@ -18,12 +26,14 @@ const NOMNI = Object.freeze({
   canonical_url: 'https://nomni.holytemples.org/nomni.json',
   world_currency_url: 'https://holytemples.org/world-currency/',
   external_reference: 'https://xcp.coindaddy.io/NOMNI.json',
+  valuation_url: 'https://nomni.holytemples.org/api/nomni/value',
+  valuation_policy: 'Market-observed value, not a guaranteed redemption peg.',
   integration: {
     format: 'NEO Asset Contract v1',
     plug_and_play: true,
     settlement_address: TREASURY_WALLET,
     supported_surfaces: ['website','app','webapp','software','device','pos','server'],
-    discovery: ['/nomni.json','/api/nomni','/api/wallet','/api/treasury']
+    discovery: ['/nomni.json','/api/nomni','/api/nomni/value','/api/wallet','/api/treasury']
   }
 });
 
@@ -46,12 +56,27 @@ const SCAN_CONFIG = Object.freeze({
   treasuryWallet: TREASURY_WALLET
 });
 
+const CES_CONFIG = Object.freeze({
+  name: 'NEO Bank',
+  system: 'Community Exchange System',
+  host: 'neobank.holytemples.org',
+  role: 'community-ces',
+  walletEntry: 'https://pay.holytemples.org',
+  settlement: 'NEOpay Bitcoin / Counterparty wallet',
+  currencySymbol: '∞',
+  database: 'Google Cloud Firestore',
+  databaseId: FIRESTORE_DATABASE_ID,
+  browserPrivateKeys: false,
+  policy: 'NEO Bank provides CES/community access. Bitcoin and Counterparty wallet recovery and signing belong to NEOpay.'
+});
+
 const SERVICES = Object.freeze({
   'neo.holytemples.org': { id: 'neo-system', name: 'NEO System', role: 'system', api: true },
   'router.holytemples.org': { id: 'neo-router', name: 'NEO Router', role: 'router', api: true },
   'algo.holytemples.org': { id: 'neo-algo', name: 'NEO Algo', role: 'intelligence', api: true },
   'prime.holytemples.org': { id: 'neo-prime', name: 'NEO Prime', role: 'orchestrator', api: true },
-  'pay.holytemples.org': { id: 'neopay', name: 'NEO Pay', role: 'payments', api: true },
+  'pay.holytemples.org': { id: 'neopay', name: 'NEO Pay', role: 'payments-wallet-entry', api: true },
+  'neobank.holytemples.org': { id: 'neo-bank', name: 'NEO Bank', role: 'community-ces', api: true },
   'hub.holytemples.org': { id: 'neo-hub', name: 'NEO Hub', role: 'hub', api: true },
   'counter.holytemples.org': { id: 'neo-counter', name: 'NEO Counter', role: 'commerce', api: true },
   'wire.holytemples.org': { id: 'neo-wire', name: 'NEO Wire', role: 'wire', api: true },
@@ -92,7 +117,7 @@ function cors(req, res) {
     res.setHeader('access-control-allow-origin', origin);
     res.setHeader('vary', 'Origin');
     res.setHeader('access-control-allow-methods', 'GET,OPTIONS');
-    res.setHeader('access-control-allow-headers', 'Accept,Content-Type');
+    res.setHeader('access-control-allow-headers', 'Accept,Content-Type,Authorization');
   }
 }
 
@@ -110,6 +135,60 @@ function serviceSnapshot(host) {
   return service ? { ...service, host, url: `https://${host}` } : null;
 }
 
+async function getNomniValuation() {
+  const now = Date.now();
+  if (nomniValueCache && now - nomniValueCache.cachedAt < 60_000) return nomniValueCache.value;
+  let value;
+  try {
+    const response = await fetch(TOKENSCAN_NOMNI_URL, { signal: AbortSignal.timeout(4500), headers: { accept: 'application/json' } });
+    if (!response.ok) throw new Error(`tokenscan_http_${response.status}`);
+    const asset = await response.json();
+    const estimated = asset?.estimated_value || {};
+    value = {
+      asset: 'NOMNI', symbol: '∞', unit: '1 NOMNI',
+      usd: String(estimated.usd ?? NOMNI_FALLBACK_VALUE.usd),
+      xcp: estimated.xcp == null ? NOMNI_FALLBACK_VALUE.xcp : String(estimated.xcp),
+      btc: estimated.btc == null ? NOMNI_FALLBACK_VALUE.btc : String(estimated.btc),
+      mode: 'market-observed', source: TOKENSCAN_NOMNI_URL,
+      observedAt: new Date().toISOString(), guaranteedPeg: false
+    };
+  } catch (error) {
+    value = {
+      asset: 'NOMNI', symbol: '∞', unit: '1 NOMNI', ...NOMNI_FALLBACK_VALUE,
+      mode: 'market-observed-fallback', source: 'CoinDaddy/TokenScan last-known snapshot',
+      observedAt: new Date().toISOString(), guaranteedPeg: false,
+      upstreamStatus: String(error?.message || error)
+    };
+  }
+  nomniValueCache = { cachedAt: now, value };
+  return value;
+}
+
+async function databaseHealth() {
+  if (!FIRESTORE_PROJECT_ID) return { connected: false, provider: 'firestore', databaseId: FIRESTORE_DATABASE_ID, error: 'firestore_project_id_missing' };
+  try {
+    const db = createFirestoreRestDb({ projectId: FIRESTORE_PROJECT_ID, databaseId: FIRESTORE_DATABASE_ID });
+    const snapshot = await db.collection('_neo_system').doc('connectivity').get();
+    return {
+      connected: true,
+      provider: 'firestore',
+      projectConfigured: true,
+      databaseId: FIRESTORE_DATABASE_ID,
+      sentinelExists: snapshot.exists,
+      checkedAt: new Date().toISOString()
+    };
+  } catch (error) {
+    return {
+      connected: false,
+      provider: 'firestore',
+      projectConfigured: true,
+      databaseId: FIRESTORE_DATABASE_ID,
+      error: String(error?.message || error),
+      checkedAt: new Date().toISOString()
+    };
+  }
+}
+
 function systemManifest() {
   return {
     system: 'NEO System',
@@ -119,11 +198,13 @@ function systemManifest() {
     publicSearch: '/noogle/search?q=',
     treasuryWallet: TREASURY_WALLET,
     assets: { NOMNI, scan: SCAN_CONFIG },
+    ces: CES_CONFIG,
     policy: {
       publicLibraryOnly: true,
       protectedResourcesRemainServerSide: true,
       runtimeSecretsInBrowser: false,
-      privateKeysNeverPublished: true
+      privateKeysNeverPublished: true,
+      cesMutationsRequireAuthenticatedBackend: true
     }
   };
 }
@@ -161,7 +242,11 @@ export function createNeoEdgeServer() {
     }
 
     if (req.method === 'GET' && (url.pathname === '/nomni.json' || url.pathname === '/api/nomni' || url.pathname === '/api/assets/NOMNI')) {
-      return json(req, res, 200, NOMNI);
+      return json(req, res, 200, { ...NOMNI, valuation: await getNomniValuation() });
+    }
+
+    if (req.method === 'GET' && (url.pathname === '/api/nomni/value' || url.pathname === '/value')) {
+      return json(req, res, 200, await getNomniValuation());
     }
 
     if (req.method === 'GET' && (url.pathname === '/api/wallet' || url.pathname === '/wallet')) {
@@ -174,6 +259,15 @@ export function createNeoEdgeServer() {
 
     if (req.method === 'GET' && (url.pathname === '/api/scan/config' || url.pathname === '/scan/config')) {
       return json(req, res, 200, SCAN_CONFIG);
+    }
+
+    if (req.method === 'GET' && (url.pathname === '/api/ces' || url.pathname === '/ces')) {
+      return json(req, res, 200, { ...CES_CONFIG, databaseHealth: '/api/database/health', mutationStatus: 'authentication-required' });
+    }
+
+    if (req.method === 'GET' && (url.pathname === '/api/database/health' || url.pathname === '/database/health')) {
+      const db = await databaseHealth();
+      return json(req, res, db.connected ? 200 : 503, db);
     }
 
     if (req.method === 'GET' && (url.pathname === '/library' || url.pathname === '/api/library')) {
@@ -194,17 +288,18 @@ export function createNeoEdgeServer() {
     }
 
     if (req.method === 'GET' && url.pathname === '/') {
-      const hostSpecific = host === 'nomni.holytemples.org' ? { asset: NOMNI }
+      const hostSpecific = host === 'nomni.holytemples.org' ? { asset: { ...NOMNI, valuation: await getNomniValuation() } }
         : host === 'wallet.holytemples.org' ? { treasuryWallet: TREASURY_WALLET }
         : host === 'treasury.holytemples.org' ? { treasury: TREASURY }
         : host === 'scan.holytemples.org' ? { scan: SCAN_CONFIG }
+        : host === 'neobank.holytemples.org' ? { ces: CES_CONFIG }
         : {};
       return json(req, res, 200, {
         service,
         system: 'NEO System',
         status: 'online',
         ...hostSpecific,
-        endpoints: ['/health', '/api', '/services', '/nomni.json', '/api/wallet', '/api/treasury', '/api/scan/config', '/library', '/noogle/search?q=']
+        endpoints: ['/health', '/api', '/services', '/nomni.json', '/api/nomni/value', '/api/wallet', '/api/treasury', '/api/scan/config', '/api/ces', '/api/database/health', '/library', '/noogle/search?q=']
       });
     }
 
