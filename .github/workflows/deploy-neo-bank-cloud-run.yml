@@ -24,6 +24,9 @@ jobs:
       GCP_ARTIFACT_REGISTRY: ${{ vars.GCP_ARTIFACT_REGISTRY || secrets.GCP_ARTIFACT_REGISTRY }}
       SERVICE_NAME: neo-bank
       DOMAIN: neobank.holytemples.org
+      BANK_NEG_NAME: neo-bank-neg
+      BANK_BACKEND_NAME: neo-bank-backend
+      URL_MAP_NAME: neo-edge-url-map
     steps:
       - uses: actions/checkout@v7.0.1
       - uses: actions/setup-node@v4
@@ -56,21 +59,35 @@ jobs:
         run: |
           set -euo pipefail
           gcloud run deploy "$SERVICE_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --image="$IMAGE" --service-account="$GCP_CLOUD_RUN_RUNTIME_ACCOUNT" --port=8080 --allow-unauthenticated --set-env-vars="GCP_PROJECT_ID=$GCP_PROJECT_ID,NEO_BANK_FIRESTORE_DATABASE=${{ vars.NEO_BANK_FIRESTORE_DATABASE || '(default)' }}" --quiet
-      - name: Map domain
-        run: |
-          set -euo pipefail
-          CURRENT_SERVICE="$(gcloud beta run domain-mappings describe --domain="$DOMAIN" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format='value(spec.routeName)' 2>/dev/null || true)"
-          if [ "$CURRENT_SERVICE" != "$SERVICE_NAME" ]; then
-            if [ -n "$CURRENT_SERVICE" ]; then
-              echo "Moving $DOMAIN from $CURRENT_SERVICE to $SERVICE_NAME"
-              gcloud beta run domain-mappings delete --domain="$DOMAIN" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --quiet
-            fi
-            gcloud beta run domain-mappings create --service="$SERVICE_NAME" --domain="$DOMAIN" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --quiet
-          fi
-      - name: Verify deployed service
+      - name: Verify Cloud Run origin
         run: |
           set -euo pipefail
           SERVICE_URL="$(gcloud run services describe "$SERVICE_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format='value(status.url)')"
           test "$(curl --retry 5 --retry-delay 5 -sS -o /dev/null -w '%{http_code}' "$SERVICE_URL/health")" = 200
           test "$(curl -sS -o /dev/null -w '%{http_code}' "$SERVICE_URL/api/v1/nomni/valuation")" = 200
-          echo "NEO Bank: $SERVICE_URL" >> "$GITHUB_STEP_SUMMARY"
+          echo "NEO_BANK_SERVICE_URL=$SERVICE_URL" >> "$GITHUB_ENV"
+      - name: Route domain through NEO HTTPS load balancer
+        run: |
+          set -euo pipefail
+          if ! gcloud compute network-endpoint-groups describe "$BANK_NEG_NAME" --region="$GCP_REGION" --project="$GCP_PROJECT_ID" >/dev/null 2>&1; then
+            gcloud compute network-endpoint-groups create "$BANK_NEG_NAME" --region="$GCP_REGION" --network-endpoint-type=serverless --cloud-run-service="$SERVICE_NAME" --project="$GCP_PROJECT_ID" --quiet
+          fi
+          if ! gcloud compute backend-services describe "$BANK_BACKEND_NAME" --global --project="$GCP_PROJECT_ID" >/dev/null 2>&1; then
+            gcloud compute backend-services create "$BANK_BACKEND_NAME" --global --load-balancing-scheme=EXTERNAL_MANAGED --project="$GCP_PROJECT_ID" --quiet
+          fi
+          if ! gcloud compute backend-services describe "$BANK_BACKEND_NAME" --global --project="$GCP_PROJECT_ID" --format='json(backends)' | grep -q "$BANK_NEG_NAME"; then
+            gcloud compute backend-services add-backend "$BANK_BACKEND_NAME" --global --network-endpoint-group="$BANK_NEG_NAME" --network-endpoint-group-region="$GCP_REGION" --project="$GCP_PROJECT_ID" --quiet
+          fi
+          gcloud compute url-maps describe "$URL_MAP_NAME" --project="$GCP_PROJECT_ID" >/dev/null
+          if ! gcloud compute url-maps describe "$URL_MAP_NAME" --project="$GCP_PROJECT_ID" --format='json(hostRules,pathMatchers)' | grep -q 'neo-bank-matcher'; then
+            gcloud compute url-maps add-path-matcher "$URL_MAP_NAME" --path-matcher-name=neo-bank-matcher --default-service="$BANK_BACKEND_NAME" --new-hosts="$DOMAIN" --project="$GCP_PROJECT_ID" --quiet
+          fi
+      - name: Verify production domain
+        run: |
+          set -euo pipefail
+          test -n "${NEO_BANK_SERVICE_URL:-}"
+          test "$(curl --retry 12 --retry-delay 10 --retry-all-errors -sS -o /dev/null -w '%{http_code}' "https://$DOMAIN/health")" = 200
+          test "$(curl --retry 12 --retry-delay 10 --retry-all-errors -sS -o /dev/null -w '%{http_code}' "https://$DOMAIN/api/v1/community/status")" = 200
+          test "$(curl --retry 12 --retry-delay 10 --retry-all-errors -sS -o /dev/null -w '%{http_code}' "https://$DOMAIN/api/v1/nomni/valuation")" = 200
+          echo "NEO Bank origin: $NEO_BANK_SERVICE_URL" >> "$GITHUB_STEP_SUMMARY"
+          echo "NEO Bank production: https://$DOMAIN/" >> "$GITHUB_STEP_SUMMARY"
