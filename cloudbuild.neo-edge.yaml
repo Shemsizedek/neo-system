@@ -52,6 +52,9 @@ steps:
           noogle.holytemples.org
           omnitrix.holytemples.org
           neodash.holytemples.org
+          nomni.holytemples.org
+          wallet.holytemples.org
+          treasury.holytemples.org
         )
         for domain in "${domains[@]}"; do
           if gcloud run domain-mappings describe --domain="$domain" --region=us-central1 >/dev/null 2>&1; then
