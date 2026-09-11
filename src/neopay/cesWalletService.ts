@@ -9,9 +9,8 @@ export async function getCesTraderData(profile:CesProfile):Promise<CesTraderData
  const base=String(import.meta.env.VITE_CES_API_BASE||'').replace(/\/$/,'')
  if(!profile.accountNumber)return{transactions:[],online:false,message:'Enter your CES Account Number to link this wallet for CES exchange.'}
  if(!base)return{transactions:[],online:false,message:'CES account saved. Live CES balance/history will appear when the authorized CES API endpoint is configured.'}
- const url=`${base}/trader/${encodeURIComponent(profile.accountNumber)}?wallet=${encodeURIComponent(profile.walletAddress)}`
- const r=await fetch(url,{headers:{accept:'application/json'},credentials:'omit'})
+ const r=await fetch(`${base}/community/status`,{headers:{accept:'application/json'},credentials:'omit'})
  if(!r.ok)throw new Error(`CES API ${r.status}`)
  const d=await r.json()
- return{balance:Number(d.balance??0),currency:String(d.currency||'CES'),transactions:Array.isArray(d.transactions)?d.transactions:[],online:true}
+ return{transactions:[],online:d.database==='connected',message:d.database==='connected'?'CES database connected. Sign in to NEO Bank to view protected account balances and history.':'CES database is currently unavailable.'}
 }

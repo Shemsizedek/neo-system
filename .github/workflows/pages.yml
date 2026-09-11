@@ -35,6 +35,8 @@ jobs:
         env:
           VITE_NEOPAY_COUNTERPARTY_API: ${{ vars.NEOPAY_COUNTERPARTY_API }}
           VITE_NEOPAY_BITCOIN_API: ${{ vars.NEOPAY_BITCOIN_API }}
+          VITE_NEOBANK_URL: https://neobank.holytemples.org/
+          VITE_CES_API_BASE: https://neobank.holytemples.org/api/v1
           VITE_NEO_MINER_OPERATOR_API: ${{ vars.NEO_MINER_OPERATOR_API }}
         run: npm run build
       - name: Build Pages platform API snapshots

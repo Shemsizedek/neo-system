@@ -1,0 +1,76 @@
+name: Deploy NEO Bank to Cloud Run
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['server/neo-bank/**','deploy/neo-bank/**','.github/workflows/deploy-neo-bank-cloud-run.yml','architecture/neo-hosts.json']
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: neo-bank-cloud-run
+  cancel-in-progress: false
+jobs:
+  test-and-deploy:
+    runs-on: ubuntu-latest
+    environment: holytemples-production
+    timeout-minutes: 30
+    env:
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID || secrets.GCP_PROJECT_ID }}
+      GCP_REGION: ${{ vars.GCP_REGION || secrets.GCP_REGION }}
+      GCP_WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER || secrets.GCP_WIF_PROVIDER }}
+      GCP_CLOUD_RUN_SERVICE_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_SERVICE_ACCOUNT || secrets.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+      GCP_CLOUD_RUN_RUNTIME_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_RUNTIME_ACCOUNT || secrets.GCP_CLOUD_RUN_RUNTIME_ACCOUNT }}
+      GCP_ARTIFACT_REGISTRY: ${{ vars.GCP_ARTIFACT_REGISTRY || secrets.GCP_ARTIFACT_REGISTRY }}
+      SERVICE_NAME: neo-bank
+      DOMAIN: neobank.holytemples.org
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v4
+        with: {node-version: 24}
+      - name: Test NEO Bank
+        run: node --test server/neo-bank/*.test.mjs
+      - name: Validate deployment configuration
+        run: |
+          set -euo pipefail
+          for name in GCP_PROJECT_ID GCP_REGION GCP_WIF_PROVIDER GCP_CLOUD_RUN_SERVICE_ACCOUNT GCP_CLOUD_RUN_RUNTIME_ACCOUNT GCP_ARTIFACT_REGISTRY; do
+            test -n "${!name:-}" || { echo "::error::Missing $name"; exit 1; }
+          done
+      - uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@v3
+      - name: Install gcloud beta component
+        run: gcloud components install beta --quiet
+      - name: Build and push image
+        env: {IMAGE: "${{ env.GCP_ARTIFACT_REGISTRY }}/neo-bank:${{ github.sha }}"}
+        run: |
+          set -euo pipefail
+          gcloud auth configure-docker "${GCP_REGION}-docker.pkg.dev" --quiet
+          docker build -f deploy/neo-bank/Dockerfile -t "$IMAGE" .
+          docker push "$IMAGE"
+      - name: Deploy service
+        env: {IMAGE: "${{ env.GCP_ARTIFACT_REGISTRY }}/neo-bank:${{ github.sha }}"}
+        run: |
+          set -euo pipefail
+          gcloud run deploy "$SERVICE_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --image="$IMAGE" --service-account="$GCP_CLOUD_RUN_RUNTIME_ACCOUNT" --port=8080 --allow-unauthenticated --set-env-vars="NEO_BANK_FIRESTORE_DATABASE=${{ vars.NEO_BANK_FIRESTORE_DATABASE || '(default)' }}" --quiet
+      - name: Map domain
+        run: |
+          set -euo pipefail
+          CURRENT_SERVICE="$(gcloud beta run domain-mappings describe --domain="$DOMAIN" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format='value(spec.routeName)' 2>/dev/null || true)"
+          if [ "$CURRENT_SERVICE" != "$SERVICE_NAME" ]; then
+            if [ -n "$CURRENT_SERVICE" ]; then
+              echo "Moving $DOMAIN from $CURRENT_SERVICE to $SERVICE_NAME"
+              gcloud beta run domain-mappings delete --domain="$DOMAIN" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --quiet
+            fi
+            gcloud beta run domain-mappings create --service="$SERVICE_NAME" --domain="$DOMAIN" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --quiet
+          fi
+      - name: Verify deployed service
+        run: |
+          set -euo pipefail
+          SERVICE_URL="$(gcloud run services describe "$SERVICE_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format='value(status.url)')"
+          test "$(curl --retry 5 --retry-delay 5 -sS -o /dev/null -w '%{http_code}' "$SERVICE_URL/health")" = 200
+          test "$(curl -sS -o /dev/null -w '%{http_code}' "$SERVICE_URL/api/v1/nomni/valuation")" = 200
+          echo "NEO Bank: $SERVICE_URL" >> "$GITHUB_STEP_SUMMARY"

@@ -44,10 +44,12 @@ jobs:
           const p=JSON.parse(fs.readFileSync('architecture/neo-services-platform.json','utf8'))
           if(p.scope!=='all-neo-services') throw new Error('architecture scope must cover all NEO Services')
           if(p.planes.frontend.primary!=='github-pages') throw new Error('GitHub Pages must be the frontend plane')
-          if(p.planes.backend.primary!=='github') throw new Error('GitHub must be the backend plane')
-          if(p.planes.serverApi.primary!=='discord') throw new Error('Discord must be the server/API plane')
-          if(p.planes.serverApi.transport.mayOwnNeoBusinessLogic!==false) throw new Error('transport bridges may not own NEO business logic')
-          if(p.planes.serverApi.transport.mayBecomeNeoBackend!==false) throw new Error('transport bridges may not become the NEO backend')
+          if(p.planes.sourceControl.primary!=='github') throw new Error('GitHub must be the source-control plane')
+          if(p.planes.data.primary!=='firestore') throw new Error('Firestore must be the data plane')
+          if(p.planes.runtime.primary!=='google-cloud-run') throw new Error('Google Cloud Run must be the runtime plane')
+          if(p.planes.transport.primary!=='discord') throw new Error('Discord must be the transport plane')
+          if(p.planes.transport.mayOwnNeoBusinessLogic!==false) throw new Error('transport bridges may not own NEO business logic')
+          if(p.planes.transport.mayBecomeNeoBackend!==false) throw new Error('transport bridges may not become the NEO backend')
           NODE
       - name: Validate NEO Services app inventory
         run: |

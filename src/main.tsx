@@ -72,7 +72,7 @@ function RootRouter(){
   const isNeoFx=normalized==='/neofx'||normalized.startsWith('/neofx/')
   const isNEOpay=normalized==='/neopay'||normalized.startsWith('/neopay/')
   const isTeller=normalized==='/teller'||normalized.startsWith('/teller/')
-  const bankHref=`${base}/neopay/ces.html`
+  const bankHref=String(import.meta.env.VITE_NEOBANK_URL||'https://neobank.holytemples.org/')
 
   useEffect(()=>{if(isCommand) window.location.replace(discordControlRoute('command'))},[isCommand])
   if(isCommand) return <main style={{padding:24,color:'#d9ffe3',background:'#010503',minHeight:'100vh'}}>Opening NEO Prime — Discord is the server/API control plane…</main>
