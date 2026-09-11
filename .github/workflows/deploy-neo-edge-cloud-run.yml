@@ -87,7 +87,7 @@ jobs:
           set -euo pipefail
           SERVICE_URL="$(gcloud run services describe "$SERVICE_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format='value(status.url)')"
           test -n "$SERVICE_URL"
-          code="$(curl --retry 5 --retry-delay 3 --retry-all-errors -sS -o /tmp/neo-edge-health.json -w '%{http_code}' -H 'Host: neo.holytemples.org' "$SERVICE_URL/health")"
+          code="$(curl --retry 5 --retry-delay 3 --retry-all-errors -sS -o /tmp/neo-edge-health.json -w '%{http_code}' -H 'X-Forwarded-Host: neo.holytemples.org' "$SERVICE_URL/health")"
           test "$code" = 200
           echo "NEO_EDGE_SERVICE_URL=$SERVICE_URL" >> "$GITHUB_ENV"
           echo "NEO edge Cloud Run origin healthy: $SERVICE_URL" >> "$GITHUB_STEP_SUMMARY"
@@ -140,7 +140,7 @@ jobs:
         run: |
           set -euo pipefail
           test -n "${NEO_EDGE_SERVICE_URL:-}"
-          direct_code="$(curl --retry 5 --retry-delay 3 --retry-all-errors -sS -o /dev/null -w '%{http_code}' -H 'Host: neo.holytemples.org' "$NEO_EDGE_SERVICE_URL/health")"
+          direct_code="$(curl --retry 5 --retry-delay 3 --retry-all-errors -sS -o /dev/null -w '%{http_code}' -H 'X-Forwarded-Host: neo.holytemples.org' "$NEO_EDGE_SERVICE_URL/health")"
           test "$direct_code" = 200
 
           urls=(
