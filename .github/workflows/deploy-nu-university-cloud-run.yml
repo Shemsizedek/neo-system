@@ -46,6 +46,8 @@ jobs:
           workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
           service_account: ${{ env.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
       - uses: google-github-actions/setup-gcloud@v3
+      - name: Install gcloud beta commands
+        run: gcloud components install beta --quiet
       - name: Build and push
         env:
           IMAGE: ${{ env.GCP_ARTIFACT_REGISTRY }}/neo-nu-university:${{ github.sha }}
@@ -77,6 +79,13 @@ jobs:
               --domain="$DOMAIN_NAME" \
               --quiet
           fi
+          gcloud beta run domain-mappings describe \
+            --project="$GCP_PROJECT_ID" \
+            --region="$GCP_REGION" \
+            --domain="$DOMAIN_NAME" \
+            --format=json > /tmp/domain-mapping.json
+          echo '### Required DNS records' >> "$GITHUB_STEP_SUMMARY"
+          jq -r '.status.resourceRecords[]? | "- \(.type) \(.name) -> \(.rrdata)"' /tmp/domain-mapping.json >> "$GITHUB_STEP_SUMMARY"
       - name: Verify production service
         run: |
           set -euo pipefail
