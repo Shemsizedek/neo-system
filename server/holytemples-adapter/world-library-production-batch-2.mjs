@@ -86,4 +86,4 @@ export const WORLD_LIBRARY_PRODUCTION_BATCH_2 = freeze(rows.map(([sourceId,title
   sourceUrl:`https://drive.google.com/file/d/${sourceId}/view`, mediaUrl:`https://drive.google.com/file/d/${sourceId}/view`,
   mimeType:"application/pdf", edition:null, modifiedAt,
   accessClass:"GISD_EXCLUSIVE", degreeMapping:[], status:"GISD_EXCLUSIVE", collection
-}))));
+})));
