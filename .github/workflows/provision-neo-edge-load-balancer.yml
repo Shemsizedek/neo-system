@@ -58,6 +58,21 @@ jobs:
           set -euo pipefail
           gcloud services enable compute.googleapis.com run.googleapis.com --project="$GCP_PROJECT_ID" --quiet
 
+      - name: Ensure load-balancer IAM
+        run: |
+          set -euo pipefail
+          member="serviceAccount:${GCP_CLOUD_RUN_SERVICE_ACCOUNT}"
+          if ! gcloud projects get-iam-policy "$GCP_PROJECT_ID" \
+            --flatten='bindings[].members' \
+            --filter="bindings.role:roles/compute.loadBalancerAdmin AND bindings.members:${member}" \
+            --format='value(bindings.role)' | grep -qx 'roles/compute.loadBalancerAdmin'; then
+            gcloud projects add-iam-policy-binding "$GCP_PROJECT_ID" \
+              --member="$member" \
+              --role='roles/compute.loadBalancerAdmin' \
+              --condition=None \
+              --quiet
+          fi
+
       - name: Reserve global IPv4 address
         run: |
           set -euo pipefail
