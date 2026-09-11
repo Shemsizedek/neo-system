@@ -2,11 +2,14 @@
   "version": 1,
   "storage": "github",
   "missions": [],
-  "updatedAt": "2026-09-11T22:32:25.749Z",
+  "updatedAt": "2026-09-11T23:25:01.371Z",
   "lastRun": {
-    "workerId": "github-actions-worker-v4",
-    "at": "2026-09-11T22:32:25.749Z",
-    "runId": "34654428995"
+    "at": "2026-09-11T23:25:01.371Z",
+    "status": "healthy",
+    "processed": 0,
+    "queued": 0,
+    "backend": "github-actions",
+    "frontend": "github-pages"
   },
   "schemaVersion": 3,
   "savedAt": "2026-09-11T22:32:25.749Z",
