@@ -1,5 +1,5 @@
 {
-  "version": "1.0.0",
+  "version": "1.1.0",
   "domainRoot": "holytemples.org",
   "dnsTarget": "ghs.googlehosted.com.",
   "runtime": "google-cloud-run",
@@ -15,7 +15,7 @@
     {"host":"wire.holytemples.org","service":"neo-wire","role":"site-api"},
     {"host":"neogram.holytemples.org","service":"neogram","role":"site-api"},
     {"host":"neofx.holytemples.org","service":"neo-fx","role":"site-api"},
-    {"host":"scan.holytemples.org","service":"neoscan","role":"site-api"},
+    {"host":"scan.holytemples.org","service":"neoscan","role":"token-explorer-site-api"},
     {"host":"school.holytemples.org","service":"gisd","role":"site-api"},
     {"host":"library.holytemples.org","service":"neo-library","role":"site-api"},
     {"host":"book.holytemples.org","service":"neo-books","role":"site-api"},
@@ -24,13 +24,30 @@
     {"host":"neovision.holytemples.org","service":"neo-tv","role":"site-api"},
     {"host":"noogle.holytemples.org","service":"noogle","role":"site-api"},
     {"host":"omnitrix.holytemples.org","service":"omnitrix","role":"site-api"},
-    {"host":"neodash.holytemples.org","service":"neo-dash","role":"site-api"}
+    {"host":"neodash.holytemples.org","service":"neo-dash","role":"site-api"},
+    {"host":"nomni.holytemples.org","service":"nomni","role":"currency-site-api"},
+    {"host":"wallet.holytemples.org","service":"neo-treasury-wallet","role":"wallet-api"},
+    {"host":"treasury.holytemples.org","service":"world-treasury","role":"treasury-site-api"}
   ],
+  "treasury": {
+    "network": "bitcoin-counterparty",
+    "walletAddress": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+    "settlementPolicy": "all-enabled-NEO-service settlement instructions reference the treasury wallet unless an explicit service contract overrides it"
+  },
+  "assetPolicy": {
+    "nomniMetadata": "https://nomni.holytemples.org/nomni.json",
+    "nomniExternalReference": "https://xcp.coindaddy.io/NOMNI.json",
+    "worldCurrencyReference": "https://holytemples.org/world-currency/",
+    "neoCashPresentation": "application-facing base/quote asset",
+    "counterpartyNativeBase": "XCP",
+    "wrappingMode": "adapter-alias-until-an-on-chain-wrapper-contract-is-explicitly-deployed"
+  },
   "rules": {
     "publicDnsDoesNotImplyServiceReady": true,
     "cloudRunMappingRequiredPerHost": true,
     "tlsRequired": true,
     "secretsRuntimeOnly": true,
-    "defaultDenyPrivilegedRoutes": true
+    "defaultDenyPrivilegedRoutes": true,
+    "neverEmbedPrivateKeys": true
   }
 }
