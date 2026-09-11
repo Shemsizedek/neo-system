@@ -28,6 +28,7 @@ export function canonicalResource(input) {
     mimeType: input.mimeType ?? null,
     edition: input.edition ?? null,
     modifiedAt: input.modifiedAt ?? null,
+    collection: input.collection ?? input.series ?? null,
     accessClass: input.accessClass ?? input.status ?? "REVIEW",
     degreeMapping: cloneArray(input.degreeMapping),
     status: input.status ?? "REVIEW",
@@ -70,12 +71,13 @@ export function preferLatest(resources) {
   return freeze({ latest: freeze(latest), sourceVersions: freeze(sourceVersions) });
 }
 
-export function libraryCatalogList({ resourceType, accessClass, status } = {}) {
+export function libraryCatalogList({ resourceType, accessClass, status, collection } = {}) {
   const { latest } = preferLatest(seed);
   return freeze(latest.filter((r) =>
     (!resourceType || r.resourceType === resourceType) &&
     (!accessClass || r.accessClass === accessClass) &&
-    (!status || r.status === status)
+    (!status || r.status === status) &&
+    (!collection || r.collection === collection)
   ));
 }
 
@@ -84,7 +86,7 @@ export function libraryCatalogSearch(query, options = {}) {
   const needle = query.trim().toLocaleLowerCase();
   if (!needle) return libraryCatalogList(options);
   return freeze(libraryCatalogList(options).filter((r) =>
-    [r.title, r.author, r.description, r.edition, ...(r.degreeMapping ?? [])]
+    [r.title, r.author, r.description, r.edition, r.collection, ...(r.degreeMapping ?? [])]
       .filter(Boolean).join(" ").toLocaleLowerCase().includes(needle)
   ));
 }
