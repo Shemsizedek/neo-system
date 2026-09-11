@@ -2,6 +2,8 @@ import http from 'node:http';
 import { URL } from 'node:url';
 import { searchPublicLibrary, libraryCatalog, health as libraryHealth } from '../holytemples-adapter/adapter.mjs';
 import { createFirestoreRestDb } from '../neo-counter-backend/firestore-rest-db.mjs';
+import { readFile } from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
 
 const PORT = Number(process.env.PORT || 8080);
 const TREASURY_WALLET = '18FyntJG9hdXYvanm67mGgbyo1P7adckvg';
@@ -9,6 +11,7 @@ const FIRESTORE_PROJECT_ID = process.env.GOOGLE_CLOUD_PROJECT || process.env.GCP
 const FIRESTORE_DATABASE_ID = process.env.FIRESTORE_DATABASE_ID || '(default)';
 const TOKENSCAN_NOMNI_URL = 'https://tokenscan.io/api/asset/NOMNI';
 const NOMNI_FALLBACK_VALUE = Object.freeze({ usd: '20.72', xcp: '13.03076220', btc: null });
+const BRIDGE_ASSET_PATH = fileURLToPath(new URL('./assets/neo-bridge.js', import.meta.url));
 let nomniValueCache = null;
 
 const NOMNI = Object.freeze({
@@ -130,6 +133,22 @@ function json(req, res, status, body) {
   res.end(JSON.stringify(body));
 }
 
+async function javascript(req, res, path) {
+  try {
+    const body = await readFile(path, 'utf8');
+    cors(req, res);
+    res.writeHead(200, {
+      'content-type': 'text/javascript; charset=utf-8',
+      'cache-control': 'public, max-age=300, stale-while-revalidate=86400',
+      'x-content-type-options': 'nosniff',
+      'cross-origin-resource-policy': 'cross-origin'
+    });
+    res.end(body);
+  } catch {
+    json(req, res, 404, { error: 'asset_not_found' });
+  }
+}
+
 function serviceSnapshot(host) {
   const service = SERVICES[host];
   return service ? { ...service, host, url: `https://${host}` } : null;
@@ -222,6 +241,10 @@ export function createNeoEdgeServer() {
     const url = new URL(req.url || '/', `https://${host || 'neo.holytemples.org'}`);
 
     if (!service) return json(req, res, 421, { error: 'unknown_neo_host', host });
+
+    if (req.method === 'GET' && url.pathname === '/assets/neo-bridge.js') {
+      return javascript(req, res, BRIDGE_ASSET_PATH);
+    }
 
     if (req.method === 'GET' && url.pathname === '/health') {
       return json(req, res, 200, {
