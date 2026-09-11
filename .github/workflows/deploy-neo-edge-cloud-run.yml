@@ -53,6 +53,9 @@ jobs:
 
       - uses: google-github-actions/setup-gcloud@v3
 
+      - name: Install gcloud beta component
+        run: gcloud components install beta --quiet
+
       - name: Build and push NEO edge image
         env:
           IMAGE: ${{ env.GCP_ARTIFACT_REGISTRY }}/neo-edge:${{ github.sha }}
