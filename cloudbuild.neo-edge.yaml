@@ -1,0 +1,72 @@
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - -f
+      - deploy/neo-edge/Dockerfile
+      - -t
+      - us-central1-docker.pkg.dev/$PROJECT_ID/neo-system/neo-edge:$COMMIT_SHA
+      - .
+
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - us-central1-docker.pkg.dev/$PROJECT_ID/neo-system/neo-edge:$COMMIT_SHA
+
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - neo-edge
+      - --image=us-central1-docker.pkg.dev/$PROJECT_ID/neo-system/neo-edge:$COMMIT_SHA
+      - --region=us-central1
+      - --platform=managed
+      - --port=8080
+      - --allow-unauthenticated
+      - --quiet
+
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+    entrypoint: bash
+    args:
+      - -ceu
+      - |
+        domains=(
+          neo.holytemples.org
+          router.holytemples.org
+          algo.holytemples.org
+          prime.holytemples.org
+          pay.holytemples.org
+          hub.holytemples.org
+          counter.holytemples.org
+          wire.holytemples.org
+          neogram.holytemples.org
+          neofx.holytemples.org
+          scan.holytemples.org
+          school.holytemples.org
+          library.holytemples.org
+          book.holytemples.org
+          neopads.holytemples.org
+          neopass.holytemples.org
+          neovision.holytemples.org
+          noogle.holytemples.org
+          omnitrix.holytemples.org
+          neodash.holytemples.org
+        )
+        for domain in "${domains[@]}"; do
+          if gcloud run domain-mappings describe --domain="$domain" --region=us-central1 >/dev/null 2>&1; then
+            echo "Domain mapping exists: $domain"
+          else
+            gcloud run domain-mappings create \
+              --service=neo-edge \
+              --domain="$domain" \
+              --region=us-central1 \
+              --quiet
+          fi
+        done
+
+images:
+  - us-central1-docker.pkg.dev/$PROJECT_ID/neo-system/neo-edge:$COMMIT_SHA
+
+options:
+  logging: CLOUD_LOGGING_ONLY
