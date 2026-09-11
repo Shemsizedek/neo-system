@@ -46,6 +46,8 @@ jobs:
           workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
           service_account: ${{ env.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
       - uses: google-github-actions/setup-gcloud@v3
+      - name: Install gcloud beta commands
+        run: gcloud components install beta --quiet
       - name: Build and push
         env:
           IMAGE: ${{ env.GCP_ARTIFACT_REGISTRY }}/neo-nu-city:${{ github.sha }}
