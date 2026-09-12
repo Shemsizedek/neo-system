@@ -6,6 +6,7 @@ import { promisify } from 'node:util';
 const execFileAsync = promisify(execFile);
 const here = path.dirname(fileURLToPath(import.meta.url));
 const vpnRoot = path.resolve(here, '..');
+const WIREGUARD_PUBLIC_KEY = /\b[A-Za-z0-9+/]{43}=\b/g;
 
 const COMMANDS = Object.freeze({
   'vpn-audit': path.join(vpnRoot, 'scripts', 'peer-audit.sh'),
@@ -14,6 +15,15 @@ const COMMANDS = Object.freeze({
 
 export function allowedLocalCommands() {
   return Object.keys(COMMANDS);
+}
+
+export function sanitizeLocalOutput(value, maxLength = 1600) {
+  const redacted = String(value ?? '')
+    .replace(WIREGUARD_PUBLIC_KEY, '[public-key]')
+    .replace(/\u0000/g, '')
+    .trim();
+  if (redacted.length <= maxLength) return redacted;
+  return `${redacted.slice(0, maxLength)}\n[output truncated]`;
 }
 
 export async function executeLocalReadOnly(command, options = {}) {
@@ -39,15 +49,15 @@ export async function executeLocalReadOnly(command, options = {}) {
     return {
       ok: true,
       command,
-      stdout: stdout.trim(),
-      stderr: stderr.trim()
+      stdout: sanitizeLocalOutput(stdout),
+      stderr: sanitizeLocalOutput(stderr)
     };
   } catch (error) {
     return {
       ok: false,
       command,
-      stdout: String(error.stdout ?? '').trim(),
-      stderr: String(error.stderr ?? '').trim(),
+      stdout: sanitizeLocalOutput(error.stdout),
+      stderr: sanitizeLocalOutput(error.stderr),
       reason: error.killed ? 'timeout' : `exit-${error.code ?? 'error'}`
     };
   }
