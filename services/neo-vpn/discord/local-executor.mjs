@@ -6,7 +6,7 @@ import { promisify } from 'node:util';
 const execFileAsync = promisify(execFile);
 const here = path.dirname(fileURLToPath(import.meta.url));
 const vpnRoot = path.resolve(here, '..');
-const WIREGUARD_PUBLIC_KEY = /\b[A-Za-z0-9+/]{43}=\b/g;
+const WIREGUARD_PUBLIC_KEY = /[A-Za-z0-9+/]{43}=/g;
 
 const COMMANDS = Object.freeze({
   'vpn-audit': path.join(vpnRoot, 'scripts', 'peer-audit.sh'),
