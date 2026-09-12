@@ -2,6 +2,7 @@ import http from 'node:http';
 
 const SOURCE_ORIGIN = 'https://nuuniversitytxdot.wordpress.com';
 const PUBLIC_ORIGIN = 'https://city.holytemples.org';
+const GISS_SCHOOL = 'https://egov.holytemples.org/portal/school';
 const SERVICE_NAME = 'neo-nu-city';
 
 const HOP_BY_HOP = new Set([
@@ -13,6 +14,11 @@ function send(res,status,body,headers={}){
   const payload=Buffer.isBuffer(body)?body:Buffer.from(body);
   res.writeHead(status,{'content-length':payload.length,...headers});
   res.end(payload);
+}
+
+function redirect(res,location,status=302){
+  res.writeHead(status,{location,'cache-control':'no-store','x-neo-proxy':'city-holytemples'});
+  res.end();
 }
 
 function rewrite(value=''){
@@ -31,16 +37,20 @@ function copyRequestHeaders(req){
   headers.set('host','nuuniversitytxdot.wordpress.com');
   headers.set('x-forwarded-host','city.holytemples.org');
   headers.set('x-forwarded-proto','https');
-  headers.set('user-agent',headers.get('user-agent')||'NEO-City-Proxy/1.0 (+https://holytemples.org)');
+  headers.set('user-agent',headers.get('user-agent')||'NEO-City-Proxy/1.1 (+https://holytemples.org)');
   return headers;
 }
 
 async function proxy(req,res){
   const incoming=new URL(req.url||'/',PUBLIC_ORIGIN);
   if(incoming.pathname==='/health'){
-    return send(res,200,JSON.stringify({service:SERVICE_NAME,status:'ok',source:SOURCE_ORIGIN,public:PUBLIC_ORIGIN}),{
+    return send(res,200,JSON.stringify({service:SERVICE_NAME,status:'ok',source:SOURCE_ORIGIN,public:PUBLIC_ORIGIN,giss:GISS_SCHOOL}),{
       'content-type':'application/json; charset=utf-8','cache-control':'no-store'
     });
+  }
+
+  if(incoming.pathname==='/giss'||incoming.pathname==='/login'||incoming.pathname==='/portal'){
+    return redirect(res,GISS_SCHOOL,302);
   }
 
   const target=new URL(incoming.pathname+incoming.search,SOURCE_ORIGIN);
