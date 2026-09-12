@@ -1,1 +1,1 @@
-{"name":"neo-bank-service","private":true,"version":"1.0.0","type":"module","engines":{"node":"24.x"},"dependencies":{"@google-cloud/firestore":"7.11.5"}}
+{"name":"neo-bank-service","private":true,"version":"2.0.0","type":"module","engines":{"node":"24.x"},"dependencies":{"@google-cloud/firestore":"7.11.5","google-auth-library":"10.3.0"}}
