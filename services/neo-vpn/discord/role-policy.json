@@ -1,9 +1,9 @@
 {
   "version": 1,
   "roles": {
-    "viewer": ["vpn-status", "vpn-audit", "deployment-status"],
-    "operator": ["vpn-status", "vpn-audit", "deployment-status", "peer-request"],
-    "admin": ["vpn-status", "vpn-audit", "deployment-status", "peer-request", "peer-revoke", "incident-lockdown"]
+    "viewer": ["vpn-status", "activation-status", "vpn-audit", "deployment-status"],
+    "operator": ["vpn-status", "activation-status", "vpn-audit", "deployment-status", "peer-request"],
+    "admin": ["vpn-status", "activation-status", "vpn-audit", "deployment-status", "peer-request", "peer-revoke", "incident-lockdown"]
   },
   "principles": {
     "default": "deny",
