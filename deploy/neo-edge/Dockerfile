@@ -5,5 +5,6 @@ COPY server/neo-counter-backend/firestore-rest-db.mjs ./server/neo-counter-backe
 COPY server/neo-edge ./server/neo-edge
 ENV NODE_ENV=production
 ENV PORT=8080
+ENV NEO_PLATFORM_API_ORIGIN=https://egov.holytemples.org
 EXPOSE 8080
-CMD ["node", "server/neo-edge/server.mjs"]
+CMD ["node", "server/neo-edge/production.mjs"]

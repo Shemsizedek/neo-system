@@ -45,7 +45,12 @@ jobs:
           done
           test -f deploy/neo-edge/Dockerfile
           test -f server/neo-edge/server.mjs
+          test -f server/neo-edge/production.mjs
+          test -f server/neo-edge/wire-app.mjs
           test -f server/neo-counter-backend/firestore-rest-db.mjs
+          node --check server/neo-edge/server.mjs
+          node --check server/neo-edge/production.mjs
+          node --check server/neo-edge/wire-app.mjs
 
       - uses: google-github-actions/auth@v3
         with:
@@ -77,7 +82,7 @@ jobs:
             --region="$GCP_REGION" \
             --image="$IMAGE" \
             --service-account="$GCP_CLOUD_RUN_RUNTIME_ACCOUNT" \
-            --set-env-vars="GCP_PROJECT_ID=$GCP_PROJECT_ID,FIRESTORE_DATABASE_ID=(default)" \
+            --set-env-vars="GCP_PROJECT_ID=$GCP_PROJECT_ID,FIRESTORE_DATABASE_ID=(default),NEO_PLATFORM_API_ORIGIN=https://egov.holytemples.org" \
             --port=8080 \
             --allow-unauthenticated \
             --quiet
@@ -89,8 +94,14 @@ jobs:
           test -n "$SERVICE_URL"
           code="$(curl --retry 5 --retry-delay 3 --retry-all-errors -sS -o /tmp/neo-edge-health.json -w '%{http_code}' -H 'X-Forwarded-Host: neo.holytemples.org' "$SERVICE_URL/health")"
           test "$code" = 200
+          wire_code="$(curl --retry 5 --retry-delay 3 --retry-all-errors -sS -o /tmp/neo-wire.html -w '%{http_code}' -H 'X-Forwarded-Host: wire.holytemples.org' "$SERVICE_URL/")"
+          test "$wire_code" = 200
+          grep -q 'NEO Wire' /tmp/neo-wire.html
+          status_code="$(curl --retry 5 --retry-delay 3 --retry-all-errors -sS -o /tmp/neo-wire-status.json -w '%{http_code}' -H 'X-Forwarded-Host: wire.holytemples.org' "$SERVICE_URL/api/wire/status")"
+          test "$status_code" = 200
+          grep -q 'live-production' /tmp/neo-wire-status.json
           echo "NEO_EDGE_SERVICE_URL=$SERVICE_URL" >> "$GITHUB_ENV"
-          echo "NEO edge Cloud Run origin healthy: $SERVICE_URL" >> "$GITHUB_STEP_SUMMARY"
+          echo "NEO edge + NEO Wire production origin healthy: $SERVICE_URL" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Bind NEO domains to shared edge
         run: |
@@ -147,6 +158,8 @@ jobs:
             'https://neo.holytemples.org/health'
             'https://neo.holytemples.org/assets/neo-bridge.js'
             'https://neo.holytemples.org/assets/neo-suite.js'
+            'https://wire.holytemples.org/'
+            'https://wire.holytemples.org/api/wire/status'
             'https://router.holytemples.org/health'
             'https://algo.holytemples.org/health'
             'https://pay.holytemples.org/health'

@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
-export const CRM_TYPES = Object.freeze(['app', 'platform', 'module', 'plugin']);
+export const CRM_TYPES = Object.freeze(['app', 'platform', 'module', 'plugin', 'member', 'lead', 'contact', 'organization']);
 export const CRM_STATUSES = Object.freeze(['draft', 'active', 'paused', 'retired']);
 
 export class CrmStoreError extends Error {
