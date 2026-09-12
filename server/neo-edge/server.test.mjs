@@ -27,3 +27,12 @@ test('keeps unknown assets closed', async () => withServer(async base => {
   const response = await fetch(`${base}/assets/not-real.js`, { headers: { 'x-forwarded-host': 'neo.holytemples.org' } });
   assert.equal(response.status, 404);
 }));
+
+test('serves the modular NEO Temple Suite', async () => withServer(async base => {
+  const response = await fetch(`${base}/assets/neo-suite.js`, { headers: { 'x-forwarded-host': 'neo.holytemples.org' } });
+  assert.equal(response.status, 200);
+  const source = await response.text();
+  assert.match(source, /class NeoNoogleSearch/);
+  assert.match(source, /class NeoNomniValue/);
+  assert.match(source, /window\.NeoTempleSuite/);
+}));
