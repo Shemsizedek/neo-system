@@ -6,6 +6,12 @@
     "dm_permission": false
   },
   {
+    "name": "activation-status",
+    "description": "Show Discord control-plane activation acceptance status",
+    "type": 1,
+    "dm_permission": false
+  },
+  {
     "name": "vpn-audit",
     "description": "Run a read-only NEO VPN peer and policy audit",
     "type": 1,
