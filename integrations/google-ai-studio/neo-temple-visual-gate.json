@@ -1,0 +1,59 @@
+{
+  "schemaVersion": "1.0",
+  "name": "NEO Temple Visual Gate",
+  "repository": "Shemsizedek/neo-system",
+  "sourceBranch": "main",
+  "workingBranchPattern": "feat/ai-studio-*",
+  "targets": [
+    "integrations/wordpress/neo-temple-bridge/**",
+    "server/**/public/**",
+    "apps/**/src/**",
+    "packages/**/src/**"
+  ],
+  "allowedChanges": [
+    "UI layout",
+    "visual hierarchy",
+    "responsive behavior",
+    "accessibility",
+    "component styling",
+    "non-sensitive copy",
+    "read-only presentation of existing API data"
+  ],
+  "protectedAreas": [
+    "secrets and credentials",
+    "authentication and authorization semantics",
+    "NEOpass signing or verification logic",
+    "wallet keys, signing, custody, or transaction execution",
+    "Counterparty or Bitcoin settlement logic",
+    "CES/NOMNI valuation, issuance, accounting, or monetary logic",
+    "production infrastructure and deployment authority"
+  ],
+  "productionSurface": {
+    "wordpressPlugin": "integrations/wordpress/neo-temple-bridge/neo-temple-bridge.php",
+    "api": "https://neo.holytemples.org/api",
+    "assets": [
+      "https://neo.holytemples.org/assets/neo-bridge.js",
+      "https://neo.holytemples.org/assets/neo-suite.js"
+    ],
+    "shortcode": "neo_ai_surface"
+  },
+  "requiredValidation": [
+    "no secrets added to source",
+    "no protected-area behavior changed",
+    "existing project validation commands pass",
+    "responsive layout reviewed",
+    "accessibility reviewed",
+    "changes submitted by pull request before production"
+  ],
+  "firstAssignment": {
+    "id": "neo-temple-executive-dashboard-v1",
+    "objective": "Enhance the NEO Temple executive dashboard visual system while preserving existing API contracts and runtime behavior.",
+    "surface": "neo_ai_surface module=dashboard",
+    "constraints": [
+      "reuse existing components and API data",
+      "do not create a parallel backend",
+      "do not modify financial or wallet semantics",
+      "keep all generated work on a feat/ai-studio-* branch"
+    ]
+  }
+}
