@@ -9,6 +9,7 @@ import fs from 'node:fs/promises';
 import rolePolicy from './role-policy.json' with { type: 'json' };
 import { createControlRecord } from './control-plane.mjs';
 import { evaluateAcceptance } from './acceptance-probe.mjs';
+import { executeLocalReadOnly } from './local-executor.mjs';
 import { readRuntimeState, writeRuntimeState } from './runtime-state.mjs';
 
 const required = ['DISCORD_BOT_TOKEN', 'DISCORD_APPLICATION_ID', 'DISCORD_GUILD_ID'];
@@ -144,6 +145,18 @@ async function activationStatusMessage() {
   ].join('\n');
 }
 
+async function vpnAuditMessage() {
+  const result = await executeLocalReadOnly('vpn-audit');
+  const lines = [
+    '**NEO VPN Read-Only Audit**',
+    `Result: ${result.ok ? 'passed' : 'not ready / failed'}`
+  ];
+  if (result.stdout) lines.push(result.stdout);
+  if (result.stderr) lines.push(result.stderr);
+  if (!result.ok) lines.push(`Reason: ${result.reason}`);
+  return lines.join('\n');
+}
+
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
 await writeRuntimeState({
@@ -221,6 +234,11 @@ client.on(Events.InteractionCreate, async interaction => {
 
     if (allowedChannelIds.size && !allowedChannelIds.has(interaction.channelId)) {
       await interaction.reply({ content: 'NEO VPN commands are not enabled in this channel.', ephemeral: true });
+      return;
+    }
+
+    if (command === 'vpn-audit') {
+      await interaction.reply({ content: await vpnAuditMessage(), ephemeral: true });
       return;
     }
 
