@@ -8,6 +8,7 @@ import {
 import fs from 'node:fs/promises';
 import rolePolicy from './role-policy.json' with { type: 'json' };
 import { createControlRecord } from './control-plane.mjs';
+import { evaluateAcceptance } from './acceptance-probe.mjs';
 import { readRuntimeState, writeRuntimeState } from './runtime-state.mjs';
 
 const required = ['DISCORD_BOT_TOKEN', 'DISCORD_APPLICATION_ID', 'DISCORD_GUILD_ID'];
@@ -123,6 +124,26 @@ async function statusMessage() {
   ].join('\n');
 }
 
+async function activationStatusMessage() {
+  const state = await readRuntimeState();
+  const acceptance = evaluateAcceptance(state, {
+    DISCORD_GUILD_ID: guildId,
+    NEO_VPN_INFRASTRUCTURE_LIVE: infrastructureLive ? 'true' : 'false'
+  });
+  return [
+    '**NEO VPN Discord Activation**',
+    `Registration ready: ${acceptance.registrationReady ? 'yes' : 'no'}`,
+    `Execution ready: ${acceptance.executionReady ? 'yes' : 'no'}`,
+    `Gateway: ${state.gatewayConnected ? 'online' : 'offline'}`,
+    `Guild attestation: ${state.guildAttested ? 'verified' : 'not verified'}`,
+    `Guild commands: ${state.commandsRegistered ? `registered (${state.commandCount ?? 0})` : 'pending'}`,
+    `Guild lock: ${state.guildId === guildId ? 'verified' : 'mismatch/pending'}`,
+    `VPN data plane: ${infrastructureLive ? 'enabled' : 'locked off'}`,
+    `Failures: ${acceptance.failures.length ? acceptance.failures.join(', ') : 'none'}`,
+    `Updated: ${state.updatedAt ?? 'not yet recorded'}`
+  ].join('\n');
+}
+
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
 await writeRuntimeState({
@@ -182,6 +203,11 @@ client.on(Events.InteractionCreate, async interaction => {
   try {
     if (command === 'vpn-status' || command === 'deployment-status') {
       await interaction.reply({ content: await statusMessage(), ephemeral: true });
+      return;
+    }
+
+    if (command === 'activation-status') {
+      await interaction.reply({ content: await activationStatusMessage(), ephemeral: true });
       return;
     }
 
