@@ -4,11 +4,11 @@
   "type": "module",
   "scripts": {
     "start": "node gateway-bot.mjs",
-    "check": "node --check gateway-bot.mjs && node --check runtime-preflight.mjs && node --check generate-install-url.mjs && node --check acceptance-probe.mjs",
+    "check": "node --check gateway-bot.mjs && node --check runtime-preflight.mjs && node --check generate-install-url.mjs && node --check acceptance-probe.mjs && node --check local-executor.mjs",
     "preflight": "node runtime-preflight.mjs",
     "install-url": "node generate-install-url.mjs",
     "acceptance": "node acceptance-probe.mjs",
-    "test": "node --test acceptance-probe.test.mjs"
+    "test": "node --test acceptance-probe.test.mjs local-executor.test.mjs"
   },
   "dependencies": {
     "discord.js": "14.27.0"
