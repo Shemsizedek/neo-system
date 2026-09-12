@@ -22,6 +22,8 @@ jobs:
       GCP_CLOUD_RUN_SERVICE_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_SERVICE_ACCOUNT || secrets.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
       GCP_CLOUD_RUN_RUNTIME_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_RUNTIME_ACCOUNT || secrets.GCP_CLOUD_RUN_RUNTIME_ACCOUNT }}
       GCP_ARTIFACT_REGISTRY: ${{ vars.GCP_ARTIFACT_REGISTRY || secrets.GCP_ARTIFACT_REGISTRY }}
+      GOOGLE_OAUTH_CLIENT_ID: ${{ vars.GOOGLE_OAUTH_CLIENT_ID || secrets.GOOGLE_OAUTH_CLIENT_ID }}
+      NEO_EXECUTIVE_ADMIN_EMAIL: ${{ vars.NEO_EXECUTIVE_ADMIN_EMAIL || secrets.NEO_EXECUTIVE_ADMIN_EMAIL }}
       SERVICE_NAME: neo-bank
       DOMAIN: neobank.holytemples.org
       BANK_NEG_NAME: neo-bank-neg
@@ -36,7 +38,7 @@ jobs:
       - name: Validate deployment configuration
         run: |
           set -euo pipefail
-          for name in GCP_PROJECT_ID GCP_REGION GCP_WIF_PROVIDER GCP_CLOUD_RUN_SERVICE_ACCOUNT GCP_CLOUD_RUN_RUNTIME_ACCOUNT GCP_ARTIFACT_REGISTRY; do
+          for name in GCP_PROJECT_ID GCP_REGION GCP_WIF_PROVIDER GCP_CLOUD_RUN_SERVICE_ACCOUNT GCP_CLOUD_RUN_RUNTIME_ACCOUNT GCP_ARTIFACT_REGISTRY GOOGLE_OAUTH_CLIENT_ID NEO_EXECUTIVE_ADMIN_EMAIL; do
             test -n "${!name:-}" || { echo "::error::Missing $name"; exit 1; }
           done
       - uses: google-github-actions/auth@v3
@@ -58,7 +60,7 @@ jobs:
         env: {IMAGE: "${{ env.GCP_ARTIFACT_REGISTRY }}/neo-bank:${{ github.sha }}"}
         run: |
           set -euo pipefail
-          gcloud run deploy "$SERVICE_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --image="$IMAGE" --service-account="$GCP_CLOUD_RUN_RUNTIME_ACCOUNT" --port=8080 --allow-unauthenticated --set-env-vars="GCP_PROJECT_ID=$GCP_PROJECT_ID,NEO_BANK_FIRESTORE_DATABASE=${{ vars.NEO_BANK_FIRESTORE_DATABASE || '(default)' }}" --quiet
+          gcloud run deploy "$SERVICE_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --image="$IMAGE" --service-account="$GCP_CLOUD_RUN_RUNTIME_ACCOUNT" --port=8080 --allow-unauthenticated --set-env-vars="GCP_PROJECT_ID=$GCP_PROJECT_ID,NEO_BANK_FIRESTORE_DATABASE=${{ vars.NEO_BANK_FIRESTORE_DATABASE || '(default)' }},GOOGLE_OAUTH_CLIENT_ID=$GOOGLE_OAUTH_CLIENT_ID,NEO_EXECUTIVE_ADMIN_EMAIL=$NEO_EXECUTIVE_ADMIN_EMAIL,NEO_PASS_JWT_ISSUER=neo-pass" --set-secrets="NEO_PASS_JWT_SECRET=neo-pass-jwt-secret:latest" --quiet
       - name: Verify Cloud Run origin
         run: |
           set -euo pipefail

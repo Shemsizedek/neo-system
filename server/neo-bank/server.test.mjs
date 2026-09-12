@@ -5,7 +5,7 @@ import {createNeoBankServer} from './server.mjs';
 import {quoteFromOrders} from './market.mjs';
 
 async function running(options,fn){const server=createNeoBankServer(options);server.listen(0,'127.0.0.1');await once(server,'listening');try{return await fn(`http://127.0.0.1:${server.address().port}`)}finally{server.close();await once(server,'close')}}
-const store={ping:async()=>true,account:async id=>id==='CES-1'?{balance:25,currency:'NOMNI'}:null};
+const store={ping:async()=>true,account:async id=>id==='CES-1'?{balance:25,currency:'NOMNI'}:null,ensureMember:async identity=>({accountNumber:'CES-1234567890',displayName:identity.name,role:identity.role}),accountBySubject:async subject=>subject==='google:user-1'?{accountNumber:'CES-1234567890',displayName:'NEO',email:'neo@example.test',role:'executive-admin',balance:25,creditLimit:100,status:'active'}:null,directory:async()=>[{accountNumber:'CES-1234567890',displayName:'NEO',role:'executive-admin'}],listOffers:async()=>[],statements:async()=>({account:{accountNumber:'CES-1234567890',displayName:'NEO',role:'executive-admin',balance:25,creditLimit:100},entries:[]}),updateAccount:async(accountNumber,input)=>({accountNumber,creditLimit:Number(input.creditLimit),status:input.status})};
 
 test('calculates NOMNI/XCP midpoint from live order sides',()=>{
   const quote=quoteFromOrders({result:[
@@ -35,4 +35,21 @@ test('private CES account data requires a server token',async()=>running({store,
 
 test('public bank page has no wallet recovery form or wallet crypto scripts',async()=>running({store},async base=>{
   const html=await fetch(base).then(r=>r.text());assert.doesNotMatch(html,/neoPassphrase|wallet-crypto|unlockNeo|Open your Bitcoin/i);assert.match(html,/NEO Bank/);assert.match(html,/Open NEOpay/);
+}));
+
+test('Google NEOpass creates a secure session and unlocks the CES dashboard',async()=>running({store,sessionSecret:'session-secret',googleClientId:'client-1',executiveAdminEmail:'neo@example.test',verifyGoogleCredential:async()=>({sub:'user-1',email:'neo@example.test',email_verified:true,name:'NEO'})},async base=>{
+  const login=await fetch(`${base}/api/v1/auth/google`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({credential:'verified'})});
+  assert.equal(login.status,200);assert.match(login.headers.get('set-cookie'),/HttpOnly; Secure; SameSite=Strict/);
+  const cookie=login.headers.get('set-cookie').split(';')[0],me=await fetch(`${base}/api/v1/me`,{headers:{cookie}});
+  assert.equal(me.status,200);assert.equal((await me.json()).account.role,'executive-admin');
+}));
+
+test('CES application routes reject unauthenticated access',async()=>running({store,sessionSecret:'session-secret'},async base=>{
+  for(const path of ['/api/v1/me','/api/v1/directory','/api/v1/offers','/api/v1/statements'])assert.equal((await fetch(`${base}${path}`)).status,401);
+}));
+
+test('executive admin can govern CES credit limits',async()=>running({store,sessionSecret:'session-secret',googleClientId:'client-1',executiveAdminEmail:'neo@example.test',verifyGoogleCredential:async()=>({sub:'user-1',email:'neo@example.test',email_verified:true,name:'NEO'})},async base=>{
+  const login=await fetch(`${base}/api/v1/auth/google`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({credential:'verified'})}),cookie=login.headers.get('set-cookie').split(';')[0];
+  const response=await fetch(`${base}/api/v1/admin/accounts/CES-1234567890`,{method:'PATCH',headers:{cookie,'content-type':'application/json'},body:JSON.stringify({creditLimit:500,status:'active'})});
+  assert.equal(response.status,200);assert.equal((await response.json()).account.creditLimit,500);
 }));
