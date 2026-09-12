@@ -86,8 +86,23 @@ jobs:
         run: |
           set -euo pipefail
           test -n "${NEO_BANK_SERVICE_URL:-}"
-          test "$(curl --retry 12 --retry-delay 10 --retry-all-errors -sS -o /dev/null -w '%{http_code}' "https://$DOMAIN/health")" = 200
-          test "$(curl --retry 12 --retry-delay 10 --retry-all-errors -sS -o /dev/null -w '%{http_code}' "https://$DOMAIN/api/v1/community/status")" = 200
-          test "$(curl --retry 12 --retry-delay 10 --retry-all-errors -sS -o /dev/null -w '%{http_code}' "https://$DOMAIN/api/v1/nomni/valuation")" = 200
+          wait_for_200() {
+            local path="$1"
+            local code=""
+            for attempt in $(seq 1 30); do
+              code="$(curl --connect-timeout 10 --max-time 30 -sS -o /dev/null -w '%{http_code}' "https://$DOMAIN$path" || true)"
+              if [ "$code" = 200 ]; then
+                echo "$path returned HTTP 200 on attempt $attempt"
+                return 0
+              fi
+              echo "Waiting for load-balancer propagation: $path returned HTTP ${code:-000} (attempt $attempt/30)"
+              sleep 10
+            done
+            echo "::error::$path did not return HTTP 200 after 5 minutes"
+            return 1
+          }
+          wait_for_200 /health
+          wait_for_200 /api/v1/community/status
+          wait_for_200 /api/v1/nomni/valuation
           echo "NEO Bank origin: $NEO_BANK_SERVICE_URL" >> "$GITHUB_STEP_SUMMARY"
           echo "NEO Bank production: https://$DOMAIN/" >> "$GITHUB_STEP_SUMMARY"
