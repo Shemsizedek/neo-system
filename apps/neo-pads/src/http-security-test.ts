@@ -44,6 +44,20 @@ try {
   const propertyId = String(created.body.id);
   assert.ok(propertyId);
 
+  const missingWalletStatus = await json(await fetch(
+    `${base}/pads/properties/${encodeURIComponent(propertyId)}/status`
+  ));
+  assert.equal(missingWalletStatus.response.status, 403);
+  assert.equal(missingWalletStatus.body.error, "verified_host_wallet_required");
+
+  const pendingHostStatus = await json(await fetch(
+    `${base}/pads/properties/${encodeURIComponent(propertyId)}/status?wallet=${encodeURIComponent(wallet)}`
+  ));
+  assert.equal(pendingHostStatus.response.status, 200);
+  assert.equal(pendingHostStatus.body.authorityState, "PENDING");
+  assert.equal(pendingHostStatus.body.propertyAuthorityVerified, false);
+  assert.match(pendingHostStatus.response.headers.get("cache-control") ?? "", /no-store/);
+
   const unauthorizedAdmin = await fetch(`${base}/admin/pads/properties/${encodeURIComponent(propertyId)}/authority`, {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -61,6 +75,13 @@ try {
   }));
   assert.equal(authorizedAdmin.response.status, 200);
   assert.equal(authorizedAdmin.body.propertyAuthorityVerified, true);
+
+  const verifiedHostStatus = await json(await fetch(
+    `${base}/pads/properties/${encodeURIComponent(propertyId)}/status?wallet=${encodeURIComponent(wallet)}`
+  ));
+  assert.equal(verifiedHostStatus.response.status, 200);
+  assert.equal(verifiedHostStatus.body.authorityState, "VERIFIED");
+  assert.equal(verifiedHostStatus.body.canActivate, true);
 
   await pool.query("UPDATE neo_pads_properties SET status='ACTIVE' WHERE id=$1", [propertyId]);
 
