@@ -1,0 +1,139 @@
+name: Provision WordPress Front Doors
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/provision-wordpress-front-doors.yml'
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: neo-wordpress-front-doors
+  cancel-in-progress: false
+
+jobs:
+  provision:
+    runs-on: ubuntu-latest
+    environment: holytemples-production
+    timeout-minutes: 30
+    env:
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID || secrets.GCP_PROJECT_ID }}
+      GCP_REGION: ${{ vars.GCP_REGION || secrets.GCP_REGION }}
+      GCP_WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER || secrets.GCP_WIF_PROVIDER }}
+      GCP_CLOUD_RUN_SERVICE_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_SERVICE_ACCOUNT || secrets.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+      URL_MAP_NAME: neo-edge-url-map
+      HTTPS_PROXY_NAME: neo-edge-https-proxy
+      PRIMARY_CERT_NAME: neo-edge-managed-cert
+      ALIAS_CERT_NAME: neo-wordpress-front-doors-cert
+      CITY_SERVICE: neo-nu-city
+      UNIVERSITY_SERVICE: neo-nu-university
+      CITY_NEG: neo-nu-city-frontdoor-neg
+      UNIVERSITY_NEG: neo-nu-university-frontdoor-neg
+      CITY_BACKEND: neo-nu-city-frontdoor-backend
+      UNIVERSITY_BACKEND: neo-nu-university-frontdoor-backend
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - name: Validate configuration
+        run: |
+          set -euo pipefail
+          for name in GCP_PROJECT_ID GCP_REGION GCP_WIF_PROVIDER GCP_CLOUD_RUN_SERVICE_ACCOUNT; do
+            test -n "${!name:-}" || { echo "::error::Missing $name"; exit 1; }
+          done
+
+      - uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+
+      - uses: google-github-actions/setup-gcloud@v3
+
+      - name: Ensure front-door serverless NEGs
+        run: |
+          set -euo pipefail
+          if ! gcloud compute network-endpoint-groups describe "$CITY_NEG" --region="$GCP_REGION" --project="$GCP_PROJECT_ID" >/dev/null 2>&1; then
+            gcloud compute network-endpoint-groups create "$CITY_NEG" \
+              --region="$GCP_REGION" \
+              --network-endpoint-type=serverless \
+              --cloud-run-service="$CITY_SERVICE" \
+              --project="$GCP_PROJECT_ID" --quiet
+          fi
+          if ! gcloud compute network-endpoint-groups describe "$UNIVERSITY_NEG" --region="$GCP_REGION" --project="$GCP_PROJECT_ID" >/dev/null 2>&1; then
+            gcloud compute network-endpoint-groups create "$UNIVERSITY_NEG" \
+              --region="$GCP_REGION" \
+              --network-endpoint-type=serverless \
+              --cloud-run-service="$UNIVERSITY_SERVICE" \
+              --project="$GCP_PROJECT_ID" --quiet
+          fi
+
+      - name: Ensure front-door backend services
+        run: |
+          set -euo pipefail
+          for backend in "$CITY_BACKEND" "$UNIVERSITY_BACKEND"; do
+            if ! gcloud compute backend-services describe "$backend" --global --project="$GCP_PROJECT_ID" >/dev/null 2>&1; then
+              gcloud compute backend-services create "$backend" \
+                --global \
+                --load-balancing-scheme=EXTERNAL_MANAGED \
+                --project="$GCP_PROJECT_ID" --quiet
+            fi
+          done
+          if ! gcloud compute backend-services describe "$CITY_BACKEND" --global --project="$GCP_PROJECT_ID" --format='json(backends)' | grep -q "$CITY_NEG"; then
+            gcloud compute backend-services add-backend "$CITY_BACKEND" \
+              --global \
+              --network-endpoint-group="$CITY_NEG" \
+              --network-endpoint-group-region="$GCP_REGION" \
+              --project="$GCP_PROJECT_ID" --quiet
+          fi
+          if ! gcloud compute backend-services describe "$UNIVERSITY_BACKEND" --global --project="$GCP_PROJECT_ID" --format='json(backends)' | grep -q "$UNIVERSITY_NEG"; then
+            gcloud compute backend-services add-backend "$UNIVERSITY_BACKEND" \
+              --global \
+              --network-endpoint-group="$UNIVERSITY_NEG" \
+              --network-endpoint-group-region="$GCP_REGION" \
+              --project="$GCP_PROJECT_ID" --quiet
+          fi
+
+      - name: Route City and University hosts on existing NEO edge
+        run: |
+          set -euo pipefail
+          if ! gcloud compute url-maps describe "$URL_MAP_NAME" --project="$GCP_PROJECT_ID" --format=json | grep -q 'city.holytemples.org'; then
+            gcloud compute url-maps add-path-matcher "$URL_MAP_NAME" \
+              --path-matcher-name=nu-city-frontdoor \
+              --default-service="$CITY_BACKEND" \
+              --new-hosts=city.holytemples.org \
+              --project="$GCP_PROJECT_ID" --quiet
+          fi
+          if ! gcloud compute url-maps describe "$URL_MAP_NAME" --project="$GCP_PROJECT_ID" --format=json | grep -q 'university.holytemples.org'; then
+            gcloud compute url-maps add-path-matcher "$URL_MAP_NAME" \
+              --path-matcher-name=nu-university-frontdoor \
+              --default-service="$UNIVERSITY_BACKEND" \
+              --new-hosts=university.holytemples.org \
+              --project="$GCP_PROJECT_ID" --quiet
+          fi
+
+      - name: Ensure HTTPS certificate for both front doors
+        run: |
+          set -euo pipefail
+          if ! gcloud compute ssl-certificates describe "$ALIAS_CERT_NAME" --global --project="$GCP_PROJECT_ID" >/dev/null 2>&1; then
+            gcloud compute ssl-certificates create "$ALIAS_CERT_NAME" \
+              --domains=city.holytemples.org,university.holytemples.org \
+              --global \
+              --project="$GCP_PROJECT_ID" --quiet
+          fi
+          gcloud compute target-https-proxies update "$HTTPS_PROXY_NAME" \
+            --ssl-certificates="$PRIMARY_CERT_NAME,$ALIAS_CERT_NAME" \
+            --project="$GCP_PROJECT_ID" --quiet
+
+      - name: Report front-door cutover
+        run: |
+          {
+            echo '### WordPress front doors'
+            echo '- city.holytemples.org -> neo-nu-city -> nuuniversitytxdot.wordpress.com'
+            echo '- university.holytemples.org -> neo-nu-university -> nuuniversitydot.wordpress.com/the-nu-univ-system/'
+            echo '- No Cloud Run custom-domain mapping is used.'
+            echo '- Both hosts use the existing NEO global load balancer.'
+          } >> "$GITHUB_STEP_SUMMARY"
