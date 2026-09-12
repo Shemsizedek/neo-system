@@ -18,7 +18,7 @@ concurrency:
 
 env:
   SERVICE_NAME: neo-nu-university
-  DOMAIN_NAME: university.holytemples.org
+  PUBLIC_ALIAS: university.holytemples.org
 
 jobs:
   deploy:
@@ -46,8 +46,6 @@ jobs:
           workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
           service_account: ${{ env.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
       - uses: google-github-actions/setup-gcloud@v3
-      - name: Install gcloud beta commands
-        run: gcloud components install beta --quiet
       - name: Build and push
         env:
           IMAGE: ${{ env.GCP_ARTIFACT_REGISTRY }}/neo-nu-university:${{ github.sha }}
@@ -56,7 +54,7 @@ jobs:
           gcloud auth configure-docker "${GCP_REGION}-docker.pkg.dev" --quiet
           docker build -f server/nu-university-proxy/Dockerfile -t "$IMAGE" .
           docker push "$IMAGE"
-      - name: Deploy public university proxy
+      - name: Deploy public university mirror
         env:
           IMAGE: ${{ env.GCP_ARTIFACT_REGISTRY }}/neo-nu-university:${{ github.sha }}
         run: |
@@ -68,25 +66,7 @@ jobs:
             --service-account="$GCP_CLOUD_RUN_RUNTIME_ACCOUNT" \
             --allow-unauthenticated \
             --quiet
-      - name: Ensure custom domain mapping
-        run: |
-          set -euo pipefail
-          if ! gcloud beta run domain-mappings describe --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --domain="$DOMAIN_NAME" >/dev/null 2>&1; then
-            gcloud beta run domain-mappings create \
-              --project="$GCP_PROJECT_ID" \
-              --region="$GCP_REGION" \
-              --service="$SERVICE_NAME" \
-              --domain="$DOMAIN_NAME" \
-              --quiet
-          fi
-          gcloud beta run domain-mappings describe \
-            --project="$GCP_PROJECT_ID" \
-            --region="$GCP_REGION" \
-            --domain="$DOMAIN_NAME" \
-            --format=json > /tmp/domain-mapping.json
-          echo '### Required DNS records' >> "$GITHUB_STEP_SUMMARY"
-          jq -r '.status.resourceRecords[]? | "- \(.type) \(.name) -> \(.rrdata)"' /tmp/domain-mapping.json >> "$GITHUB_STEP_SUMMARY"
-      - name: Verify production service
+      - name: Verify mirror service
         run: |
           set -euo pipefail
           URL="$(gcloud run services describe "$SERVICE_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format='value(status.url)')"
@@ -94,5 +74,6 @@ jobs:
           grep -q '"status":"ok"' /tmp/health.json
           ROOT_STATUS="$(curl -L -sS -o /tmp/root.html -w '%{http_code}' "$URL/")"
           test "$ROOT_STATUS" = 200 || test "$ROOT_STATUS" = 503
-          echo "Nu University service: $URL" >> "$GITHUB_STEP_SUMMARY"
-          echo "Custom domain: https://$DOMAIN_NAME" >> "$GITHUB_STEP_SUMMARY"
+          echo "Nu University mirror: $URL" >> "$GITHUB_STEP_SUMMARY"
+          echo "Front-facing alias: https://$PUBLIC_ALIAS" >> "$GITHUB_STEP_SUMMARY"
+          echo "Domain ownership mapping is intentionally not managed by this workflow." >> "$GITHUB_STEP_SUMMARY"
