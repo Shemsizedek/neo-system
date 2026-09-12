@@ -1,4 +1,5 @@
 export { createNeoRouter } from './router.mjs'
+export { createNeoAiGatewayServer, startNeoAiGatewayServer } from './ai-gateway-server.mjs'
 export { COMPOSIO_READ_ONLY_POLICY, composioHealth, composioRuntimeCheck, createComposioGateway, createReadOnlyAgent } from './composio-gateway.mjs'
 export { createAnthropicAdapter, createOpenAIAdapter, createXAIAdapter, createMetaLlamaAdapter, createGeminiAdapter, createCloudflareWorkersAIAdapter, providersFromEnv } from './providers.mjs'
 export { SOCIAL_CHANNELS, authorizeSocialAction, getSocialChannel, socialDistributionFromEnv } from './social-distribution.mjs'
