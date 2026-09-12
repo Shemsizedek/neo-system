@@ -8,6 +8,7 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const vpnRoot = path.resolve(here, '..');
 const WIREGUARD_PUBLIC_KEY = /[A-Za-z0-9+/]{43}=/g;
 
+// Deliberately fixed: Discord never supplies an executable path or shell fragment.
 const COMMANDS = Object.freeze({
   'vpn-audit': path.join(vpnRoot, 'scripts', 'peer-audit.sh'),
   'vpn-runtime-status': path.join(vpnRoot, 'scripts', 'status-report.sh')
