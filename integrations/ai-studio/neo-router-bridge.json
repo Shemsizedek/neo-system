@@ -1,0 +1,53 @@
+{
+  "version": "1.0.0",
+  "name": "NEO AI Studio Router Bridge",
+  "repository": "Shemsizedek/neo-system",
+  "source": {
+    "platform": "google-ai-studio",
+    "githubConnect": "https://github-connect.ai.studio/",
+    "branchPattern": "feat/ai-studio-*"
+  },
+  "controlPlane": {
+    "name": "NEO Router v2",
+    "module": "server/neo-router",
+    "providerNeutral": true,
+    "capabilityRoutes": {
+      "orchestration": ["anthropic", "openai", "gemini"],
+      "reasoning": ["openai", "anthropic", "gemini"],
+      "frontend": ["gemini", "openai", "anthropic"],
+      "edge": ["cloudflare-workers-ai", "gemini", "openai"]
+    }
+  },
+  "providerEnvironment": {
+    "anthropic": ["ANTHROPIC_API_KEY", "ANTHROPIC_MODEL"],
+    "openai": ["OPENAI_API_KEY", "OPENAI_MODEL"],
+    "gemini": ["GOOGLE_API_KEY", "GEMINI_API_KEY", "GEMINI_MODEL"],
+    "xai": ["XAI_API_KEY", "XAI_MODEL"],
+    "cloudflareWorkersAI": ["CLOUDFLARE_ACCOUNT_ID", "CLOUDFLARE_API_TOKEN", "CLOUDFLARE_WORKERS_AI_MODEL"]
+  },
+  "rules": {
+    "serverOnlySecrets": true,
+    "forbidViteSecretPrefix": true,
+    "directMainWrites": false,
+    "pullRequestRequired": true,
+    "runtimeValidationRequired": true,
+    "reuseExistingProviders": true,
+    "parallelBackendAllowed": false
+  },
+  "protectedDomains": [
+    "secret-values",
+    "neopass-signing",
+    "wallet-private-keys",
+    "wallet-signing",
+    "custody",
+    "bitcoin-counterparty-settlement",
+    "ces-ledger-authority",
+    "nomni-monetary-policy",
+    "production-iam"
+  ],
+  "handoff": {
+    "input": "AI Studio-generated repository changes",
+    "route": "feature branch -> validation -> pull request -> approved merge",
+    "production": "existing NEO deployment workflows"
+  }
+}
