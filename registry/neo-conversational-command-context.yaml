@@ -1,0 +1,90 @@
+schema_version: "1.0"
+context_id: "neo-conversational-command-2026-09-13"
+status: "canonical"
+parent: "NEO System"
+project: "Project 144"
+
+surfaces:
+  consumer:
+    ai_name: "NEO Oracle"
+    privileged_controls: false
+    products:
+      - "Noogle"
+      - "NEO Oracle"
+      - "NEO Bank/Pay"
+      - "NEO Prime + NEOfx"
+      - "NEO TV"
+      - "NEO Wire"
+      - "NEO Miner"
+      - "NEO Lingo"
+      - "NEO Algo + World Credit Clock"
+      - "NEO Books + CFO"
+      - "NEO Bank CES"
+      - "Noocratic Legal Corpus"
+  enterprise:
+    audience:
+      - "sole proprietor"
+      - "private company"
+      - "public company"
+      - "institution"
+    business_infrastructure:
+      - "NEO Teller"
+      - "NEO Counter"
+      - "NEO Bank/Pay"
+      - "NEO Books + CFO"
+      - "NEO Prime + NEOfx"
+      - "CES"
+  government:
+    ai_name: "NEOsync"
+    access: "private-authenticated"
+    control_plane: true
+
+command_model:
+  style: "JARVIS-like conversational executive interface"
+  input:
+    - "text"
+    - "voice where browser-supported"
+  read_capabilities:
+    - "executive briefs"
+    - "cross-module retrieval"
+    - "service health"
+    - "attention and escalation queues"
+    - "linked source-record context"
+  write_capabilities:
+    - "executive task creation"
+    - "assignment"
+    - "notes"
+    - "action proposals"
+  state_change_protocol:
+    requires_explicit_confirmation: true
+    preserves_source_authorization: true
+    audited: true
+
+propagation:
+  neo_algo:
+    role: "routing, prioritization, policy reasoning, action classification"
+  neo_oracle:
+    role: "public product explanation without private control-plane disclosure"
+  giss_neo_lms:
+    role: "architecture, governance and workflow curriculum"
+  neosync:
+    role: "private executive conversational orchestration"
+  neo_law:
+    role: "authorization, audit, authority-boundary and records controls"
+  internal_neo_society:
+    role: "role boundaries, responsible use, accountability and social norms"
+  nia_project_144:
+    role: "provenance, intelligence routing, decision support and audit"
+  neo_router:
+    role: "authorized module discovery and routing"
+  neo_lingo:
+    role: "terminology normalization"
+
+boundaries:
+  - "NEO Oracle is public-facing; NEOsync is private Government-facing."
+  - "Consumer, Enterprise and Government frontends remain separated."
+  - "NEO Teller and NEO Counter are not general-consumer homepage products."
+  - "Chat never bypasses source-module permissions."
+  - "No silent wallet signing, fund transfer, terminal execution or coercive enforcement from conversational UI."
+
+source_document: "docs/architecture/NEO-SYSTEM-CONVERSATIONAL-COMMAND-CANONICAL-CONTEXT.md"
