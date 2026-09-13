@@ -1,0 +1,50 @@
+schema_version: "1.0"
+name: "NEOsync Operational Memory + Executive Knowledge Graph"
+status: "private-government"
+owner_system: "NEOsync"
+parent: "NEO System"
+capabilities:
+  - persistent structured executive memory
+  - entity registry
+  - typed relationship graph
+  - provenance-aware metadata
+  - graph traversal
+  - operational context retrieval
+  - audit history
+entity_types:
+  - PERSON
+  - ORGANIZATION
+  - MODULE
+  - PROJECT
+  - CASE
+  - TASK
+  - DECISION
+  - POLICY
+  - DOCUMENT
+  - SYSTEM
+  - OFFICE
+  - EVENT
+integration:
+  neo_algo: "Ranks, traverses and reasons over graph relationships without overriding source authority."
+  neo_oracle: "Attaches provenance, source class, confidence and fact/doctrine/inference distinctions."
+  giss_neo_lms: "Uses approved graph context for teaching, research and institutional continuity."
+  neosync: "Primary operational-memory consumer; retrieves project, case, task, decision and organization context."
+  neo_law: "Preserves jurisdiction, authority, legal-status and non-legal-effect boundaries."
+  neo_society: "Applies privacy, interpersonal context and internal social norms to memory use."
+  nia: "May contribute authorized intelligence entities and relationships with provenance/confidence metadata."
+  neo_router: "Routes authenticated graph lookup and update requests to the memory service."
+  neo_lingo: "Normalizes entity names, aliases, relations and domain terminology."
+security:
+  access: "Cloudflare Access required"
+  machine_to_machine: "Use service token or private binding"
+  prohibited_effects:
+    - wallet signing
+    - fund movement
+    - terminal execution
+    - permission bypass
+    - coercive enforcement
+    - automatic external legal effect
+canonical_queries:
+  - "Where did we leave off with Treasury?"
+  - "Show everything connected to Shelton Estate & Co."
+  - "Continue the last Tribunal matter I was reviewing."
