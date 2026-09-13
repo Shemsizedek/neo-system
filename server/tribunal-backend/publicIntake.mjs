@@ -102,8 +102,10 @@ export function claimPublicIntake(db,service,principal,workspaceId,intakeId){
 export function promotePublicIntake(db,service,principal,workspaceId,intakeId,{claimNo=''}={}){
   service.authorize(principal,workspaceId,'CLERK')
   ensurePublicIntakeSchema(db)
-  const row=db.prepare('SELECT * FROM public_intakes WHERE id=? AND assigned_workspace_id=?').get(intakeId,workspaceId)
-  if(!row)throw new Error('Assigned public intake not found.')
+  const row=db.prepare('SELECT * FROM public_intakes WHERE id=?').get(intakeId)
+  if(!row)throw new Error('Public intake not found.')
+  if(!row.assigned_workspace_id)throw new Error('Intake must be claimed for review before promotion.')
+  if(row.assigned_workspace_id!==workspaceId)throw new Error('Public intake is assigned to another workspace.')
   if(row.status==='PROMOTED')return {intake:projectRow(row),filingId:row.promoted_filing_id,idempotent:true}
   if(row.status!=='UNDER_REVIEW')throw new Error('Intake must be claimed for review before promotion.')
   const payload=decryptEnvelope(JSON.parse(row.payload_envelope))
