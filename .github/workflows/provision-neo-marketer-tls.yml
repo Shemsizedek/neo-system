@@ -1,0 +1,88 @@
+name: Provision NEO Marketer TLS
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/provision-neo-marketer-tls.yml'
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: neo-marketer-tls
+  cancel-in-progress: false
+
+jobs:
+  provision:
+    runs-on: ubuntu-latest
+    environment: holytemples-production
+    timeout-minutes: 20
+    env:
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID || secrets.GCP_PROJECT_ID }}
+      GCP_WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER || secrets.GCP_WIF_PROVIDER }}
+      GCP_CLOUD_RUN_SERVICE_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_SERVICE_ACCOUNT || secrets.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+      IP_NAME: neo-edge-global-ip
+      HTTPS_PROXY_NAME: neo-edge-https-proxy
+      BASE_CERT_NAME: neo-edge-managed-cert
+      MARKETER_CERT_NAME: neo-marketer-managed-cert
+      DOMAIN: marketer.holytemples.org
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - name: Validate configuration
+        run: |
+          set -euo pipefail
+          for name in GCP_PROJECT_ID GCP_WIF_PROVIDER GCP_CLOUD_RUN_SERVICE_ACCOUNT; do
+            test -n "${!name:-}" || { echo "::error::Missing $name"; exit 1; }
+          done
+
+      - uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+
+      - uses: google-github-actions/setup-gcloud@v3
+
+      - name: Resolve NEO Edge IP
+        run: |
+          set -euo pipefail
+          EDGE_IP="$(gcloud compute addresses describe "$IP_NAME" --global --project="$GCP_PROJECT_ID" --format='value(address)')"
+          test -n "$EDGE_IP"
+          echo "NEO_EDGE_GLOBAL_IP=$EDGE_IP" >> "$GITHUB_ENV"
+          echo "NEO Edge global IPv4: $EDGE_IP" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Create marketer managed certificate
+        run: |
+          set -euo pipefail
+          if ! gcloud compute ssl-certificates describe "$MARKETER_CERT_NAME" --global --project="$GCP_PROJECT_ID" >/dev/null 2>&1; then
+            gcloud compute ssl-certificates create "$MARKETER_CERT_NAME" \
+              --domains="$DOMAIN" \
+              --global \
+              --project="$GCP_PROJECT_ID" \
+              --quiet
+          fi
+
+      - name: Attach marketer certificate to shared HTTPS proxy
+        run: |
+          set -euo pipefail
+          gcloud compute target-https-proxies describe "$HTTPS_PROXY_NAME" --project="$GCP_PROJECT_ID" >/dev/null
+          gcloud compute target-https-proxies update "$HTTPS_PROXY_NAME" \
+            --ssl-certificates="$BASE_CERT_NAME,$MARKETER_CERT_NAME" \
+            --project="$GCP_PROJECT_ID" \
+            --quiet
+
+      - name: Report DNS cutover requirement
+        run: |
+          set -euo pipefail
+          test -n "${NEO_EDGE_GLOBAL_IP:-}"
+          {
+            echo '### NEO Marketer DNS gate'
+            echo
+            echo "Create DNS A record: **marketer.holytemples.org -> ${NEO_EDGE_GLOBAL_IP}**"
+            echo
+            echo 'The Google-managed certificate can become ACTIVE only after public DNS resolves to the NEO Edge global IP.'
+          } >> "$GITHUB_STEP_SUMMARY"
