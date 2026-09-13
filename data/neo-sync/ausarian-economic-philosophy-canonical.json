@@ -1,0 +1,78 @@
+{
+  "id": "NEO-AUSARIAN-ECONOMIC-DOCTRINE-001",
+  "title": "Ausarian Economic Philosophy — Natural Economic Order",
+  "originator": "H.I.M. Dr. Lawiy Zodok",
+  "status": "FOUNDATIONAL_NEO_ECONOMIC_DOCTRINE",
+  "canonical_document": "docs/AUSARIAN_ECONOMIC_PHILOSOPHY.md",
+  "systems": [
+    "NEO System",
+    "NEO Algo",
+    "NEO Oracle",
+    "GISD NEO LMS",
+    "GISS NEO LMS",
+    "NEOsync Digital Etheric Intelligence",
+    "NEO Law",
+    "Internal NEO Society social norms",
+    "NEO Investments",
+    "NEO Digital Capital",
+    "World Monetary System",
+    "CES / Mutual Credit",
+    "NEO Bank / NEOpay / NEO Counter",
+    "World Treasury / Nibiru Reserve",
+    "Nu City / Project 144",
+    "NEO Library / Neopedia"
+  ],
+  "core_principles": [
+    "Production before extraction",
+    "Circulation with accountability",
+    "Capital serves productive life",
+    "Community resilience matters",
+    "Technology should increase economic agency",
+    "Stewardship constrains exploitation",
+    "Economic freedom requires economic responsibility",
+    "Abundance should challenge monopoly rents",
+    "Value representations must remain auditable",
+    "Ethics and economics are inseparable"
+  ],
+  "world_monetary_system": {
+    "MB": "World Monetary Base — Bitcoin / Mutual Credits",
+    "M0": "Cryptographic Commercial Paper / Metallic Instrument",
+    "M1": "XCP / XCPC Index — Tokenized CES Transaction Accounts",
+    "M2": "NMNI Index — Tokenized CES Trade / Share / Money-Market Accounts",
+    "M3": "WOME Index — Tokenized CES Institutional / Government Accounts",
+    "M4": "Bond Index — Tokenized CES Bond Accounts",
+    "M5": "Home Index — Tokenized CES Home Accounts",
+    "M6": "Bank Index — Tokenized E-Wallet Accounts",
+    "M7": "Hemp Index — Tokenized CES Hemp Accounts",
+    "M8": "Utility Index — Tokenized E-Wallet / Utility Accounts",
+    "M9": "Metal Index — Gold / Silver Tokenized Market Accounts",
+    "reserve_capital": "SVC / XCP",
+    "circulatory_capital": "NOMNI / XCP"
+  },
+  "gesell_synthesis": "Productive abundance should discipline scarcity rents.",
+  "ethical_influences": [
+    "Silvio Gesell — The Natural Economic Order",
+    "James P. Gills — A Biblical Economics Manifesto",
+    "J. Philip Wogaman — Economics and Ethics: A Christian Enquiry"
+  ],
+  "boundaries": [
+    "NEO MB and M0-M9 are internal system classifications, not official central-bank monetary aggregates.",
+    "Doctrine must remain distinguishable from empirical claims, accounting rules, legal status, and executable financial protocols.",
+    "External-source claims and quotations require source verification.",
+    "Tokenized balances, mutual credits, NOMNI, XCP, and CES representations must not be described as legal tender or bank deposits unless the governing legal structure establishes that status.",
+    "High-impact financial or legal actions require separate authorization, compliance, risk, and jurisdictional review."
+  ],
+  "provenance": {
+    "source_type": "USER_SUPPLIED_CANONICAL_NEO_DOCTRINE",
+    "conversation_integration": "Canonicalized from the Ausarian Economic Philosophy conversation and the NEO economic-doctrine document.",
+    "preserve_distinctions": [
+      "doctrine",
+      "theory",
+      "empirical evidence",
+      "law",
+      "accounting",
+      "market data",
+      "investment conclusion"
+    ]
+  }
+}
