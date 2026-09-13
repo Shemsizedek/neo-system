@@ -94,7 +94,8 @@ jobs:
               --tags=world-court-web \
               --metadata=enable-oslogin=TRUE \
               --metadata-from-file=startup-script=deploy/world-court/gcp/bootstrap-world-court.sh \
-              --no-service-account
+              --no-service-account \
+              --no-scopes
           else
             gcloud compute instances add-metadata "$INSTANCE_NAME" \
               --project="$GCP_PROJECT_ID" \
