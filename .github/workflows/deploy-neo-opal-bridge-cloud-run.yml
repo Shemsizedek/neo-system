@@ -26,7 +26,6 @@ jobs:
       GCP_CLOUD_RUN_SERVICE_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_SERVICE_ACCOUNT || secrets.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
       GCP_CLOUD_RUN_RUNTIME_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_RUNTIME_ACCOUNT || secrets.GCP_CLOUD_RUN_RUNTIME_ACCOUNT }}
       GCP_ARTIFACT_REGISTRY: ${{ vars.GCP_ARTIFACT_REGISTRY || secrets.GCP_ARTIFACT_REGISTRY }}
-      NEO_OPAL_BRIDGE_TOKEN: ${{ secrets.NEO_OPAL_BRIDGE_TOKEN }}
       SERVICE_NAME: neo-opal-bridge
       DOMAIN: opal.holytemples.org
       OPAL_NEG_NAME: neo-opal-bridge-neg
@@ -41,7 +40,7 @@ jobs:
       - name: Validate deployment configuration
         run: |
           set -euo pipefail
-          for name in GCP_PROJECT_ID GCP_REGION GCP_WIF_PROVIDER GCP_CLOUD_RUN_SERVICE_ACCOUNT GCP_CLOUD_RUN_RUNTIME_ACCOUNT GCP_ARTIFACT_REGISTRY NEO_OPAL_BRIDGE_TOKEN; do
+          for name in GCP_PROJECT_ID GCP_REGION GCP_WIF_PROVIDER GCP_CLOUD_RUN_SERVICE_ACCOUNT GCP_CLOUD_RUN_RUNTIME_ACCOUNT GCP_ARTIFACT_REGISTRY; do
             test -n "${!name:-}" || { echo "::error::Missing $name"; exit 1; }
           done
       - uses: google-github-actions/auth@v3
