@@ -2,20 +2,22 @@
 /**
  * Plugin Name: NEO Temple Suite
  * Description: Governed WordPress blocks for NEO telemetry, Noogle, NOMNI, World Library, NEOpass, NEOpay, Google AI Studio visual surfaces, and the authenticated NEO AI Gateway.
- * Version: 4.1.0
+ * Version: 4.1.1
  * Author: NEO System
  */
 if (!defined('ABSPATH')) exit;
 
-const NEO_TEMPLE_SUITE_VERSION = '4.1.0';
+const NEO_TEMPLE_SUITE_VERSION = '4.1.1';
 const NEO_TEMPLE_API = 'https://neo.holytemples.org/api';
 const NEO_TEMPLE_AI_ENDPOINT = 'https://neo.holytemples.org/api/ai/execute';
 
 function neo_temple_suite_enqueue() {
     wp_enqueue_script('neo-temple-bridge', 'https://neo.holytemples.org/assets/neo-bridge.js', array(), NEO_TEMPLE_SUITE_VERSION, true);
+    wp_enqueue_script('neo-neopass-runtime', 'https://neo.holytemples.org/assets/neopass-runtime.js', array('neo-temple-bridge'), NEO_TEMPLE_SUITE_VERSION, true);
     wp_enqueue_script('neo-temple-suite', 'https://neo.holytemples.org/assets/neo-suite.js', array('neo-temple-bridge'), NEO_TEMPLE_SUITE_VERSION, true);
-    wp_enqueue_script('neo-temple-ai', 'https://neo.holytemples.org/assets/neo-ai.js', array('neo-temple-bridge'), NEO_TEMPLE_SUITE_VERSION, true);
+    wp_enqueue_script('neo-temple-ai', 'https://neo.holytemples.org/assets/neo-ai.js', array('neo-neopass-runtime'), NEO_TEMPLE_SUITE_VERSION, true);
     wp_script_add_data('neo-temple-bridge', 'strategy', 'defer');
+    wp_script_add_data('neo-neopass-runtime', 'strategy', 'defer');
     wp_script_add_data('neo-temple-suite', 'strategy', 'defer');
     wp_script_add_data('neo-temple-ai', 'strategy', 'defer');
 }
