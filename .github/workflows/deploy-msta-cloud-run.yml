@@ -1,0 +1,77 @@
+name: Deploy MSTA Legacy Preservation to Cloud Run
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'server/msta-legacy-proxy/**'
+      - '.github/workflows/deploy-msta-cloud-run.yml'
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: msta-legacy-cloud-run
+  cancel-in-progress: false
+
+env:
+  SERVICE_NAME: neo-msta-legacy
+  PUBLIC_ALIAS: msta.holytemples.org
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: holytemples-production
+    timeout-minutes: 20
+    env:
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID || secrets.GCP_PROJECT_ID }}
+      GCP_REGION: ${{ vars.GCP_REGION || secrets.GCP_REGION }}
+      GCP_WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER || secrets.GCP_WIF_PROVIDER }}
+      GCP_CLOUD_RUN_SERVICE_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_SERVICE_ACCOUNT || secrets.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+      GCP_CLOUD_RUN_RUNTIME_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_RUNTIME_ACCOUNT || secrets.GCP_CLOUD_RUN_RUNTIME_ACCOUNT }}
+      GCP_ARTIFACT_REGISTRY: ${{ vars.GCP_ARTIFACT_REGISTRY || secrets.GCP_ARTIFACT_REGISTRY }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Validate configuration
+        run: |
+          set -euo pipefail
+          for name in GCP_PROJECT_ID GCP_REGION GCP_WIF_PROVIDER GCP_CLOUD_RUN_SERVICE_ACCOUNT GCP_CLOUD_RUN_RUNTIME_ACCOUNT GCP_ARTIFACT_REGISTRY; do
+            test -n "${!name:-}" || { echo "::error::Missing $name"; exit 1; }
+          done
+      - uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@v3
+      - name: Build and push
+        env:
+          IMAGE: ${{ env.GCP_ARTIFACT_REGISTRY }}/neo-msta-legacy:${{ github.sha }}
+        run: |
+          set -euo pipefail
+          gcloud auth configure-docker "${GCP_REGION}-docker.pkg.dev" --quiet
+          docker build -f server/msta-legacy-proxy/Dockerfile -t "$IMAGE" .
+          docker push "$IMAGE"
+      - name: Deploy public preservation service
+        env:
+          IMAGE: ${{ env.GCP_ARTIFACT_REGISTRY }}/neo-msta-legacy:${{ github.sha }}
+        run: |
+          set -euo pipefail
+          gcloud run deploy "$SERVICE_NAME" \
+            --project="$GCP_PROJECT_ID" \
+            --region="$GCP_REGION" \
+            --image="$IMAGE" \
+            --service-account="$GCP_CLOUD_RUN_RUNTIME_ACCOUNT" \
+            --allow-unauthenticated \
+            --quiet
+      - name: Verify preservation service
+        run: |
+          set -euo pipefail
+          URL="$(gcloud run services describe "$SERVICE_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format='value(status.url)')"
+          test "$(curl -sS -o /tmp/health.json -w '%{http_code}' "$URL/health")" = 200
+          grep -q '"status":"ok"' /tmp/health.json
+          echo "MSTA preservation service: $URL" >> "$GITHUB_STEP_SUMMARY"
+          echo "Front-facing alias: https://$PUBLIC_ALIAS" >> "$GITHUB_STEP_SUMMARY"
+          echo "Domain mapping is intentionally not managed by this workflow." >> "$GITHUB_STEP_SUMMARY"
