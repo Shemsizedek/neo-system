@@ -1,0 +1,85 @@
+{
+  "id": "NEO-PA-SARUN-LINGO-SECURITY-001",
+  "status": "CANONICAL_INTERNAL_SYSTEM_CONTEXT",
+  "parentSystem": "NEO System",
+  "domains": [
+    "Pa Sarun Naming System",
+    "NIA-010 Pa Sarun Naming Auditor",
+    "NEO Lingo Codex v1.0",
+    "NEO Cipher #D — 999/144 Yamassee Secure Script Protocol"
+  ],
+  "routedSystems": [
+    "NEO Algo",
+    "NEO Oracle",
+    "GISD NEO LMS",
+    "GISS NEO LMS",
+    "NEOsync (Digital Etheric Intelligence)",
+    "NEO Law",
+    "Internal NEO Society Social Norms",
+    "LUMEN",
+    "SCROLL",
+    "NEO Library",
+    "Neopedia",
+    "NEO Cipher #D"
+  ],
+  "authority": {
+    "agentMode": "ADVISORY",
+    "mayAudit": true,
+    "mayExplain": true,
+    "mayRender": true,
+    "mayTranslate": true,
+    "mayPrepareRegistryRecords": true,
+    "mayConferTitles": false,
+    "mayGrantNaturalizationSuffixes": false,
+    "mayApproveRoyalHouses": false,
+    "mayOverrideTempleOfficials": false,
+    "auditOutcomes": ["VALID", "INVALID", "HUMAN REVIEW REQUIRED"]
+  },
+  "namingRules": {
+    "hriCouncilAuthorizationRequired": true,
+    "earnedNaturalizationSuffixPermanent": true,
+    "defaultLanguageMixing": "PROHIBITED",
+    "magismMixingException": true,
+    "neterMajorLesson": 8,
+    "sarunPersonalNameAllowed": false,
+    "hotepStandaloneAllowed": false,
+    "nisutBitLiteralWordsInRenderedName": false,
+    "publicRitualCategoryStacking": false
+  },
+  "neoLingo": {
+    "plainLanguageFirst": true,
+    "preserveSpecializedTerms": true,
+    "overridePaSarunAuthority": false
+  },
+  "security": {
+    "yamasseeLayerRole": "PRESENTATION_AND_ENCODING",
+    "fontFamily": "YAMASSEEGLYPH",
+    "fontBinaryInRepository": false,
+    "protocol": {
+      "marker": "#D",
+      "cycle": 999,
+      "resonance": 144
+    },
+    "cryptographicRule": "Use standards-based authenticated cryptography; protocol constants and glyphs are not substitutes for keys or entropy.",
+    "languageCredentialRule": "Language-aware credentials must retain cryptographically secure randomness and must not rely on vocabulary obscurity alone.",
+    "unhackableClaimAuthorized": false
+  },
+  "futureSources": {
+    "yamasseeNuwaubianLanguageBooks": "PENDING_INGESTION",
+    "requirements": [
+      "preserve source provenance",
+      "separate source claims from interpretation",
+      "mark uncertain linguistic conclusions",
+      "do not silently canonize inferred vocabulary or morphology"
+    ]
+  },
+  "crossReferences": [
+    "registry/pa-sarun.yaml",
+    "docs/pa-sarun-naming-system.md",
+    "registry/neo-lingo.yaml",
+    "docs/neo-lingo-codex.md",
+    "registry/neo-cipher.yaml",
+    "docs/neo-cipher-999-144.md",
+    "registry/pa-sarun-neo-lingo-security-cross-system.yaml"
+  ]
+}
