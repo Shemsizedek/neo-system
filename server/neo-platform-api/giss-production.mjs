@@ -7,6 +7,7 @@ import { OAuth2Client } from 'google-auth-library';
 import { createGoogleNeopassAuth } from './neopass-google-auth.mjs';
 import { createFirestoreCrmStore } from './firestore-crm-store.mjs';
 import { createFirestoreSchoolStore } from './firestore-school-store.mjs';
+import { attachNeopassBrowserTokenExchange } from './browser-token-exchange.mjs';
 
 export function createGissProductionServer({
   projectId = process.env.GOOGLE_CLOUD_PROJECT || process.env.GCP_PROJECT_ID,
@@ -34,7 +35,8 @@ export function createGissProductionServer({
   };
   const authService = createGoogleNeopassAuth({ clientId: googleClientId, jwtSecret, jwtIssuer, registry, verifyGoogleCredential, executiveAdminEmail, executiveAdminUsername });
 
-  return createNeoPlatformApi({ templeGissRuntime, subjectResolver, authService, crmStore, schoolStore, now });
+  const server = createNeoPlatformApi({ templeGissRuntime, subjectResolver, authService, crmStore, schoolStore, now });
+  return attachNeopassBrowserTokenExchange(server, { authService, subjectResolver });
 }
 
 export function startGissProductionServer({ port = Number(process.env.PORT || 8080) } = {}) {
