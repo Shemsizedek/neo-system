@@ -1,11 +1,15 @@
 {
-  "version": "1.4.0",
+  "version": "1.5.0",
   "domainRoot": "holytemples.org",
   "dnsTarget": "ghs.googlehosted.com.",
   "runtime": "google-cloud-run",
   "frontend": "github-pages-or-service-ui",
+  "officialEntrypoints": {
+    "system": "https://neo.holytemples.org",
+    "hub": "https://hub.holytemples.org"
+  },
   "hosts": [
-    {"host":"neo.holytemples.org","service":"neo-system","role":"system-site-api"},
+    {"host":"neo.holytemples.org","service":"neo-system","role":"canonical-system-gateway","official":true},
     {"host":"router.holytemples.org","service":"neo-router","role":"api"},
     {"host":"algo.holytemples.org","service":"neo-algo","role":"site-api"},
     {"host":"prime.holytemples.org","service":"neo-prime","role":"site-api"},
@@ -13,7 +17,7 @@
     {"host":"neobank.holytemples.org","service":"neo-bank","role":"community-ces-site-api"},
     {"host":"marketer.holytemples.org","service":"neo-marketer","role":"marketing-intelligence-campaign-command-site-api"},
     {"host":"opal.holytemples.org","service":"neo-opal-bridge","role":"google-opal-integration-code-delivery-control-plane"},
-    {"host":"hub.holytemples.org","service":"neo-hub","role":"site-api"},
+    {"host":"hub.holytemples.org","service":"neo-hub","role":"canonical-public-hub","official":true},
     {"host":"counter.holytemples.org","service":"neo-counter","role":"site-api"},
     {"host":"wire.holytemples.org","service":"neo-wire","role":"site-api"},
     {"host":"neogram.holytemples.org","service":"neogram","role":"site-api"},
