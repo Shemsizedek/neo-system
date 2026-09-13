@@ -1,7 +1,7 @@
 import { inventoryCesForms } from './ces-form-mapper.mjs';
 
 const DEFAULT_SURFACES = Object.freeze([
-  { key: 'login', label: 'Legacy Login', path: '/', risk: 'auth' },
+  { key: 'login', label: 'Legacy Login', path: '/login.asp', risk: 'auth' },
   { key: 'transactions', label: 'Transactions', path: null, risk: 'financial-read' },
   { key: 'offerings', label: 'Offerings', path: null, risk: 'financial-read' },
   { key: 'publications', label: 'Publications', path: null, risk: 'content-read' },
