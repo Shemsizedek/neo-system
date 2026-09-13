@@ -1,0 +1,12 @@
+{
+  "service": "neo-tv",
+  "release": "1.1.0",
+  "environment": "production",
+  "status": "source-ready",
+  "canonicalPath": "/neo-system/neo-tv/",
+  "productionPath": "/neo-system/neo-tv/production.html",
+  "providers": ["nasa-plus", "pbs"],
+  "frontendSecrets": false,
+  "privilegedBackendExposed": false,
+  "verification": "If this file is reachable from the public GitHub Pages origin, the NEO TV static production artifact was deployed."
+}
