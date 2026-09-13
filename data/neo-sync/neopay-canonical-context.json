@@ -1,0 +1,129 @@
+{
+  "id": "neopay-canonical-context-2026-09-13",
+  "status": "canonical",
+  "registeredAt": "2026-09-13",
+  "sourceType": "conversation-derived architecture and implementation record",
+  "primaryRepository": "Shemsizedek/neo-system",
+  "component": "NEOpay",
+  "productIdentity": "Bitcoin/Counterparty XCP wallet, market terminal and W.O.M.E. interface for the NEO System",
+  "canonicalDecisions": {
+    "githubPrimary": true,
+    "base44Role": "secondary-prototyping-backup",
+    "frontend": "GitHub Pages compatible static application",
+    "runtimeGateway": "Cloudflare Worker",
+    "counterpartyApiVersion": "v2",
+    "custodyModel": "non-custodial",
+    "signingModel": "user-controlled",
+    "broadcastPolicy": "fail-closed-until-verified-production-route"
+  },
+  "securityRules": [
+    "Never request, store, log, transmit, or hard-code private keys, seed phrases, mnemonics, or WIF secrets.",
+    "Do not simulate successful transaction execution.",
+    "Do not guess production broadcast endpoints.",
+    "Require explicit authorization for state-changing financial actions.",
+    "Keep observation, composition, signing, broadcast, and confirmation as distinct states.",
+    "Represent missing or unverifiable blockchain data as unavailable rather than fabricated.",
+    "Fail closed when signing, identity, authorization, endpoint, or network state is uncertain."
+  ],
+  "executionStateModel": [
+    "OBSERVED",
+    "REVIEWED",
+    "COMPOSED",
+    "AWAITING_USER_SIGNATURE",
+    "SIGNED",
+    "BROADCAST_REQUESTED",
+    "BROADCAST_ACCEPTED",
+    "CONFIRMED"
+  ],
+  "implementationBaseline": [
+    "#/neopay first-class route",
+    "wallet/dashboard read views",
+    "balances and transactions",
+    "NOMNI asset views",
+    "orderbook, trades and economics views",
+    "review-oriented exchange flow",
+    "Counterparty service abstraction",
+    "Cloudflare Worker API proxy",
+    "compose-order gateway path",
+    "signed-transaction broadcast boundary",
+    "generic injected browser signer adapter",
+    "GitHub Actions Cloudflare deployment workflow",
+    "GitHub Pages API-base integration"
+  ],
+  "currentInfrastructureGate": {
+    "cloudflareDeployment": "blocked",
+    "githubActionsSecretsPresent": true,
+    "lastObservedCloudflareErrorCode": 7003,
+    "interpretation": "Cloudflare account/object resolution failure before Worker deployment; verify Account ID and API token belong to the same authorized account and Workers scope.",
+    "applicationLogicChangeRequiredForThisError": false
+  },
+  "propagation": {
+    "neoAlgo": {
+      "role": "consume and reason over normalized wallet, asset, market, order, trade, economics, transaction and authorization-state signals",
+      "constraints": [
+        "distinguish on-chain facts from calculated and estimated values",
+        "distinguish intent from unsigned, signed, broadcast and confirmed states"
+      ]
+    },
+    "neoOracle": {
+      "role": "provenance-bearing Bitcoin/Counterparty state and external-data verification",
+      "constraints": [
+        "preserve source and timestamp/block context when available",
+        "label direct, derived, estimated and unavailable values"
+      ]
+    },
+    "gissNeoLms": {
+      "role": "applied curriculum for Bitcoin, Counterparty, wallet security, signing, broadcasting, API gateways, provenance and fail-closed financial architecture"
+    },
+    "gisdNeoLms": {
+      "role": "parallel education and implementation-learning context"
+    },
+    "neoSync": {
+      "role": "orchestrate authorized reads, health checks, summaries, transaction preparation, execution gates, deployment diagnostics and audit records",
+      "constraints": [
+        "never bypass user-controlled signing",
+        "never silently escalate review state into execution"
+      ]
+    },
+    "neoLaw": {
+      "role": "internal rules for consent, authorization, custody, signing authority, auditability, asset representations, recordkeeping and disclosure",
+      "constraint": "internal doctrine does not substitute for applicable external law or regulation"
+    },
+    "internalNeoSociety": {
+      "norms": [
+        "user custody remains user custody",
+        "no secret extraction",
+        "no fake balances, trades, confirmations or broadcasts",
+        "no silent execution",
+        "explicit authorization before state-changing financial actions",
+        "visible provenance and confidence",
+        "fail closed under uncertainty"
+      ]
+    },
+    "neoRouter": {
+      "role": "route read, analyze, compose, sign-request, broadcast-request, confirmation, audit and error operation classes through appropriate authorization gates"
+    },
+    "neoLingo": {
+      "role": "normalize wallet, address, asset, balance, transaction, order, order match, dispenser, compose, signer, unsigned/signed transaction, broadcast, confirmation, custody, Counterparty, XCP, NOMNI and W.O.M.E. terminology"
+    },
+    "neoInvestments": {
+      "role": "consume verified NEOpay ledger and market state for authorized Bitcoin-native investment and capital-markets workflows"
+    },
+    "neoDigitalCapital": {
+      "role": "use NEOpay as an approved wallet/market interface without weakening custody, legal, or provenance controls"
+    },
+    "familyOffice": {
+      "role": "treasury and portfolio consumption of verified NEOpay data subject to authorization and applicable legal/compliance boundaries"
+    }
+  },
+  "productionReadinessGates": [
+    "Cloudflare Worker successfully deployed to correct authorized account",
+    "Worker health verified externally",
+    "proxied Counterparty reads verified",
+    "frontend points to verified Worker API base",
+    "concrete user-controlled signer integration verified",
+    "production broadcast route verified from authoritative Counterparty behavior/documentation",
+    "end-to-end execution verified without exposing custody secrets"
+  ],
+  "supersessionRule": "This record remains authoritative until an explicit later canonical NEO System decision supersedes it."
+}
