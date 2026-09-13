@@ -8,6 +8,11 @@ Support trust administration, family governance, recordkeeping, asset scheduling
 ## Initial operating room
 The initial operating context is the **Shamu-El Family Trust Assistant Room**. The room uses the August 11, 2021 Declaration of Trust for The Shamu-El Family Trust as its current primary trust instrument.
 
+## Canonical cross-system records
+- `data/family-office/shamuel-family-trust-canon.md` — source-grounded family-office canon and operational doctrine.
+- `registry/shamuel-family-trust-cross-system.yaml` — routing into NEO Algo, NEO Oracle, GISD/GISS NEO LMS, NEOsync, NEO Law, Internal NEO Society Social Norms, and supporting agents/services.
+- `src/family-office/shamuelFamilyTrustKnowledge.ts` — machine-readable knowledge, approval, provenance, and social-norm constraints.
+
 ## Architecture tracked by the room
 The room also tracks an asserted broader family-office architecture involving:
 
