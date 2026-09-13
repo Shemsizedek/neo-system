@@ -1,0 +1,25 @@
+{
+  "version":"1.0.0",
+  "component":"NEOsync Memory Ingestion + Automatic Context Linking",
+  "parent":"NEO System",
+  "integrations":{
+    "NEO Algo":"uses normalized operational graph context for ranking, prioritization and decision support without overriding source authority",
+    "NEO Oracle":"preserves provenance, confidence and source distinctions when operational records become graph knowledge",
+    "GISS NEO LMS":"may use approved, non-sensitive graph context for curriculum continuity and institutional knowledge",
+    "NEOsync":"receives persistent cross-session context from approved source systems",
+    "NEO Law":"requires jurisdiction, authority, status and external-effect boundaries to remain attached to legal records",
+    "Internal NEO Society":"uses operational relationships for coordination while respecting privacy, role and social-boundary policies",
+    "N.I.A.":"may consume provenance-aware operational intelligence under authorized collection rules",
+    "NEO Router":"routes approved source events into ingestion and routes context requests to the memory graph",
+    "NEO Lingo":"normalizes entity names, roles, statuses and relationship terminology without altering canonical identifiers"
+  },
+  "officialEntrypoints":["https://neo.holytemples.org","https://hub.holytemples.org"],
+  "sourceClasses":["executive-inbox","government-adapter-fabric","command-board","canonical-architecture"],
+  "guardrails":[
+    "source records remain authoritative",
+    "ingestion creates operational context, not independent legal or financial authority",
+    "no credentials or private keys are stored in graph metadata",
+    "state-changing source actions remain confirmation-gated and source-authorized",
+    "public Hub surfaces must not expose private Government graph contents"
+  ]
+}

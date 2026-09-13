@@ -1,0 +1,25 @@
+name: Verify NEO Official Entrypoints
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 */6 * * *'
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check canonical HTTPS entrypoints
+        shell: bash
+        run: |
+          set +e
+          for url in https://neo.holytemples.org https://hub.holytemples.org; do
+            code=$(curl -L -sS -o /tmp/body -w '%{http_code}' --connect-timeout 10 --max-time 20 "$url")
+            echo "$url -> HTTP $code"
+            if [ "$code" -ge 200 ] && [ "$code" -lt 500 ]; then
+              echo "reachable=true" >> "$GITHUB_STEP_SUMMARY"
+            else
+              echo "reachable=false for $url (HTTP $code)" >> "$GITHUB_STEP_SUMMARY"
+            fi
+          done
+          exit 0

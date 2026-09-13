@@ -1,0 +1,10 @@
+{
+  "$schema":"node_modules/wrangler/config-schema.json",
+  "name":"neo-memory-ingest",
+  "main":"src/index.js",
+  "compatibility_date":"2026-09-13",
+  "workers_dev":true,
+  "observability":{"enabled":true},
+  "durable_objects":{"bindings":[{"name":"MEMORY_GRAPH","class_name":"MemoryGraphStore","script_name":"neo-memory-graph"}]},
+  "triggers":{"crons":["*/15 * * * *"]}
+}
