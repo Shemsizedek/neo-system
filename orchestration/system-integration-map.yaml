@@ -1,0 +1,96 @@
+schema_version: "1.0"
+integration_record:
+  id: "NEO-SOURCE-2026-09-13-MISSION-ALPHA"
+  status: "canonical"
+  parent: "Project 144"
+  chamber: "Private Chamber of Shemsizedek"
+  agency: "N.I.A."
+  operating_system: "NEOsync"
+  router: "NIA-001"
+
+core_agents:
+  NIA-001: {codename: ORIGIN, role: "coordination, routing, synthesis"}
+  NIA-002: {codename: SCROLL, role: "archives, provenance, version history"}
+  NIA-003: {codename: ATHENAEUM, role: "research, verification, evidence synthesis"}
+  NIA-004: {codename: COMPASS, role: "strategy, prioritization, execution design"}
+  NIA-005: {codename: ECHO, role: "media, communications, brand continuity"}
+  NIA-006: {codename: LEDGER, role: "treasury, financial models, economic intelligence"}
+  NIA-007: {codename: LUMEN, role: "education, curriculum, assessment, knowledge transfer"}
+  NIA-008: {codename: FORGE, role: "technology, architecture, integration, automation"}
+
+systems:
+  neo_algo:
+    use:
+      - "decision routing"
+      - "analytical decomposition"
+      - "assumption/fact/doctrine separation"
+      - "specialist review"
+    primary_agents: ["NIA-001", "NIA-003", "NIA-004"]
+  neo_oracle:
+    use:
+      - "evidence verification"
+      - "confidence and provenance"
+      - "source-backed synthesis"
+    primary_agents: ["NIA-003", "NIA-002", "NIA-001"]
+  giss_neo_lms:
+    use:
+      - "curriculum generation"
+      - "assessment design"
+      - "source-backed instruction"
+      - "program versioning"
+    primary_agents: ["NIA-007", "NIA-003", "NIA-002", "NIA-004"]
+  neosync_dei:
+    use:
+      - "canonical agent orchestration"
+      - "mission routing"
+      - "multi-agent synthesis"
+    primary_agents: ["NIA-001", "NIA-002", "NIA-003", "NIA-004", "NIA-005", "NIA-006", "NIA-007", "NIA-008"]
+  neo_law:
+    use:
+      - "legal research routing"
+      - "fact/authority/argument/theory separation"
+      - "provenance and record preservation"
+    primary_agents: ["NIA-003", "NIA-004", "NIA-002", "NIA-001"]
+  neo_society_internal_norms:
+    use:
+      - "least privilege"
+      - "approval before consequential action"
+      - "provenance before repetition"
+      - "version control"
+      - "preserve uncertainty and dissent"
+      - "human ownership of material unresolved choices"
+    primary_agents: ["NIA-001", "NIA-002"]
+
+additional_targets:
+  - "N.I.A. Project 144 workflows"
+  - "NEO Lifestyle / Shemsizedek media operations"
+  - "Nu University / Noone University"
+  - "NEO Investments"
+  - "Shelton Estate & Co. Family Office"
+  - "NEO Technology infrastructure"
+  - "World Temple archives, education, and administration"
+  - "tribunal/court research and records workflows"
+  - "NEO Society governance"
+
+routing_defaults:
+  research_strategy: ["NIA-003", "NIA-004", "NIA-001"]
+  research_media: ["NIA-003", "NIA-005", "NIA-001"]
+  research_education: ["NIA-003", "NIA-007", "NIA-001"]
+  strategy_finance: ["NIA-004", "NIA-006", "NIA-001"]
+  strategy_technology: ["NIA-004", "NIA-008", "NIA-001"]
+  technology_cost: ["NIA-008", "NIA-006", "NIA-001"]
+  canonical_archive: ["specialist", "NIA-002", "NIA-001"]
+
+controls:
+  preserve_provenance: true
+  least_privilege: true
+  bounded_hops: true
+  human_checkpoint_required_for:
+    - "canonical_write"
+    - "external_publication"
+    - "transaction"
+    - "financial_commitment"
+    - "credential_change"
+    - "destructive_operation"
+    - "production_deployment"
+    - "public_institutional_representation"
