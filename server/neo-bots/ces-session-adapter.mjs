@@ -44,11 +44,17 @@ export function createCesSessionAdapter({
       throw new Error(`missing CES credentials for ${exchange.exchangeId}`);
     }
 
-    resolveTrustedUrl(credentials.loginPath || '/');
-    resolveTrustedUrl(credentials.submitPath || credentials.loginPath || '/');
+    const loginUrl = resolveTrustedUrl(credentials.loginPath || '/');
+    const submitUrl = resolveTrustedUrl(credentials.submitPath || credentials.loginPath || '/');
 
     const loginPage = await request(credentials.loginPath || '/');
     const html = await loginPage.text();
+    validateCesLoginContract(html, {
+      pageUrl: loginPage.url || loginUrl.toString(),
+      submitUrl: submitUrl.toString(),
+      usernameField: credentials.usernameField || 'username',
+      passwordField: credentials.passwordField || 'password',
+    });
     const csrf = csrfParser(html, credentials);
 
     const body = new URLSearchParams();
@@ -125,6 +131,34 @@ export function createCesSessionAdapter({
       });
     },
     reviewInterexchangeSettlement(payload) { return discoverForms(payload.exchange, payload.path || '/win/virtual.asp'); },
+  };
+}
+
+export function validateCesLoginContract(html, { pageUrl, submitUrl, usernameField, passwordField } = {}) {
+  if (!pageUrl || !submitUrl) throw new Error('CES login contract validation requires pageUrl and submitUrl');
+  if (!usernameField || !passwordField) throw new Error('CES login contract validation requires configured credential field names');
+
+  const forms = inventoryCesForms(html, { pageUrl });
+  const expectedSubmit = new URL(submitUrl, pageUrl).toString();
+  const form = forms.find((candidate) => {
+    if (String(candidate.method || 'GET').toUpperCase() !== 'POST') return false;
+    const action = new URL(candidate.action || pageUrl, pageUrl).toString();
+    if (action !== expectedSubmit) return false;
+    const names = new Set((candidate.fields || []).map((field) => field.name).filter(Boolean));
+    return names.has(usernameField) && names.has(passwordField);
+  });
+
+  if (!form) {
+    throw new Error('CES login contract mismatch: configured POST action or credential field names were not found on the login page');
+  }
+
+  return {
+    ok: true,
+    action: expectedSubmit,
+    method: 'POST',
+    usernameField,
+    passwordField,
+    fingerprint: form.fingerprint,
   };
 }
 
