@@ -1,0 +1,41 @@
+{
+  "schemaVersion": "1.0",
+  "purpose": "Historical recovery inventory for the Noone Society / MSTA preservation service. Names listed here are archival discovery candidates only; no IM Creator route is inferred without source evidence.",
+  "verifiedLegacyRoutes": [
+    {
+      "label": "Moorish Parliament",
+      "legacyUrl": "https://www.im-creator.com/free/noonesociety/moorish_parliament",
+      "publicPath": "/moorish-parliament",
+      "status": "verified-url"
+    },
+    {
+      "label": "Noone Society",
+      "legacyUrl": "http://www.im-creator.com/free/noonesociety/noone-society",
+      "publicPath": "/noone-society",
+      "status": "verified-url"
+    }
+  ],
+  "historicalNameCandidates": [
+    "Nu Unified Temple",
+    "Noone Embassy",
+    "Noone Society Financial Services",
+    "Noone Commonwealth Fund",
+    "Nu Omni Bank",
+    "Nu Omni Credit Union",
+    "Noone Crown Treasury",
+    "Noone Project",
+    "Noone Council for Education",
+    "Noone Council for Health",
+    "Noone Council for Transportation",
+    "Noone Council for Entertainment",
+    "Noone Council for Law",
+    "Noone Council for Natural Law Practitioners",
+    "Noone Council for Homestead & Social Affairs"
+  ],
+  "rules": {
+    "doNotGuessLegacySlugs": true,
+    "requireEvidenceBeforePublishingRoute": true,
+    "preserveHistoricalPresentationWhenRecovered": true,
+    "layerNeoEnhancementsOutsideHistoricalCopy": true
+  }
+}
