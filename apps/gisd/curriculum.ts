@@ -8,6 +8,11 @@ import {
   curriculumThemeForDegree,
   elementForDegree,
 } from "../../core/neo-algo/templistCurriculum.js";
+import {
+  SACRED_CHAMBERS,
+  SACRED_CHAMBERS_POLICY,
+  SACRED_CHAMBERS_SOURCE,
+} from "../../core/neo-algo/sacredChambers.js";
 
 export type GisdLearningBand =
   | "True Light Elementary"
@@ -66,6 +71,36 @@ export function buildGisdDegreeRecord(degree: number) {
   };
 }
 
+export const GISD_SACRED_CHAMBERS_MODULE = {
+  id: "GISD-ML9-SACRED-CHAMBERS",
+  majorLesson: 9,
+  title: "Sacred Chambers of the Noological Order",
+  access: "restricted",
+  source: SACRED_CHAMBERS_SOURCE,
+  doctrineId: SACRED_CHAMBERS_POLICY.doctrineId,
+  chambers: SACRED_CHAMBERS,
+  learningObjectives: [
+    "Explain the Sacred Quadrivium: Solar, Lunar, Earth, and Stellar Orders.",
+    "Distinguish private doctrine and internal policy from public law and independently verified fact.",
+    "Apply consent, privacy, anti-coercion, grievance, and conflict-of-interest safeguards.",
+    "Explain the Temple Pledge System as an internal contribution and stewardship framework.",
+    "Describe the Holy Mother safeguarding and continuity function.",
+    "Understand covenant literacy, household administration, and private governance boundaries.",
+  ],
+  ageGate: {
+    generalDoctrine: "age-appropriate instruction may be taught without intimate content",
+    adultIntimateCurriculum: "18+ only",
+  },
+  assessment: [
+    "doctrine comprehension",
+    "consent and safeguarding case study",
+    "privacy/NDA literacy",
+    "Temple Pledge ledger exercise",
+    "governance and conflict-resolution scenario",
+  ],
+  sourceBoundary: "Internal/source-supplied doctrine. Referenced historical, metaphysical, legal, scientific, or third-party claims require separate verification before presentation as fact.",
+} as const;
+
 export const GISD_TEMPLIST_CURRICULUM = {
   id: "GISD-TEMPLIST-144",
   name: "GISD Templist Curriculum — 144 Degrees",
@@ -73,6 +108,7 @@ export const GISD_TEMPLIST_CURRICULUM = {
   universalEntryRule: "Every initiate begins at Temple Degree 1 regardless of age or prior schooling. Complexity and sophistication of assignments are adapted to age and readiness, not the degree sequence itself.",
   learnerTerm: "Templist",
   majorLessons: MAJOR_LESSONS,
+  ninthMajorLessonModules: [GISD_SACRED_CHAMBERS_MODULE],
   schoolBands: {
     elementary: "Degrees 1-5 — True Light Elementary",
     middle: "Degrees 6-8 — Nun Middle",
