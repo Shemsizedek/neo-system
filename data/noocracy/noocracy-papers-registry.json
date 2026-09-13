@@ -1,0 +1,83 @@
+{
+  "schema": "neo.noocracy-papers.registry.v1",
+  "status": "active",
+  "updated": "2026-09-13",
+  "author": "H.I.M. Dr. Lawiy Zodok Shamu-El",
+  "series": "The Noocracy Papers",
+  "canonicalAddress": "To the People of the Global Village:",
+  "defaultVoice": "first-person",
+  "purpose": "Philosophical and constitutional counterpoint to the Federalist Papers developing Noocracy, the Global Village, World Parliament, Noocratic republicanism, and governance through Nous, sound reasoning, ethical judgment, liberty, peace, justice, public trust, and collective security.",
+  "draftingRules": [
+    "Do not merely summarize a Federalist source paper.",
+    "Preserve every material argument, objection, analogy, historical illustration, political principle, and conclusion in argumentative function.",
+    "Translate or answer each preserved function through the Noocratic perspective.",
+    "Distinguish local autonomy from destructive political fragmentation.",
+    "Preserve liberty, minority rights, prosperity, peace, justice, and public trust as governing objectives.",
+    "Prefer wisdom, evidence, ethical deliberation, transparency, and sound reasoning over faction, domination, mob passion, or personal ambition.",
+    "Distinguish source-derived claims, Noocratic interpretation, externally verified facts, and project aspirations or institutional claims."
+  ],
+  "papers": [
+    {"number":1,"title":"The Indigenous Recovery","status":"canonical","themes":["Global Village","indigenous recovery","political prosperity","constitutional relationships"]},
+    {"number":2,"title":"Letter of Clarity","status":"canonical-working","themes":["foreign force and influence","unity","treaties","public safety","international obligation"]},
+    {"number":3,"title":null,"status":"active-title-pending","themes":["foreign force and influence","peace","treaties","international obligations","coherent governance"]},
+    {"number":4,"title":null,"status":"active-title-pending","themes":["commerce","foreign rivalry","deterrence","common defense","coordinated policy","divide-and-rule prevention"]},
+    {"number":5,"title":"Empress Nzinga and the Noocratic Vision of Unity","status":"canonical","themes":["unity","sovereignty","diplomacy","strategic cohesion","resistance to foreign domination","African political history"]},
+    {"number":6,"title":"The Perils of Disunity and the Wisdom of Divine Order","status":"canonical","themes":["internal conflict","faction","ambition","commercial rivalry","comparative Indigenous and African political traditions"]},
+    {"number":7,"title":null,"status":"active-title-pending","themes":["territorial disputes","commercial rivalry","shared debt","contract impairment","alliances","foreign entanglement"]},
+    {"number":8,"title":"The Perils of Disunion and the Noocratic Vision for Collective Harmony","status":"canonical","themes":["war","militarization","standing armies","executive expansion","civil liberty","civil-military balance"]},
+    {"number":9,"title":"The Imperative of Wisdom-Governance for Unity and Stability","status":"canonical","themes":["faction","insurrection","checks and balances","representation","political scale","confederate republicanism","Montesquieu","local autonomy"]},
+    {"number":10,"title":"The Governance of Factions and the Equilibrium of Society","status":"canonical","themes":["faction","majority faction","minority rights","liberty","property interests","representation","large political sphere","diversity","ethical deliberation"]}
+  ],
+  "sourceClasses": {
+    "sourceDerived": "Directly supported by supplied or project materials.",
+    "noocraticInterpretation": "Philosophical reinterpretation or synthesis authored within the NEO project.",
+    "externallyVerifiedFact": "Supported independently by reliable external historical, legal, scientific, or other sources.",
+    "projectAspirationOrInstitutionalClaim": "A declared NEO objective, jurisdictional assertion, governance model, or organizational position not automatically treated as externally established fact."
+  },
+  "routing": {
+    "neoAlgo": {
+      "mode": "semantic-reasoning-corpus",
+      "tags": ["noocracy","noocracy-papers","noocratic-republicanism","global-village","world-parliament","noology","nous","neoteric-method","governance","constitutional-theory","federalist-counterpoint","faction","representation","liberty","minority-rights","collective-security","political-philosophy","social-order","public-trust","diplomacy","anti-fragmentation"]
+    },
+    "neoOracle": {
+      "mode": "high-priority-interpretive-source",
+      "domains": ["Noocracy","World Parliament","Global Village governance","local sovereignty and wider union","faction","representation","political stability","institutional design"]
+    },
+    "gissNeoLms": {
+      "mode": "curriculum",
+      "subjects": ["Civics","Government","Law","Logic & Noology","History & Ourstory","Rhetoric & Dialectics","Comparative political philosophy","Constitutional reasoning"],
+      "learningObjects": ["paired Federalist-vs-Noocracy readings","argument maps","faction case studies","World Parliament simulations","comparative constitutional essays","source-provenance exercises","liberty-unity-representation debates"]
+    },
+    "neoSync": {
+      "mode": "cross-domain-canon-memory",
+      "preserve": ["canonical address","authorial voice","series numbering","paper titles","source distinctions","inter-paper continuity"]
+    },
+    "neoLaw": {
+      "mode": "jurisprudential-context",
+      "themes": ["layered governance","due process","impartial adjudication","conflicts of interest","public trust","minority rights","limits on factional majorities","civil-military balance","treaty and compact reasoning","local competence within wider union","World Parliament constitutional architecture"],
+      "guardrail": "Do not treat internal doctrine or proposed constitutional provisions as externally enforceable law without independent legal support."
+    },
+    "neoSocietySocialNorms": {
+      "mode": "internal-civic-norms",
+      "norms": ["reason before faction","evidence before rumor","dialogue before escalation","public good with individual rights","minority participation","respect for lawful local customs","conflict-of-interest transparency","no fabricated historical quotations","distinguish belief doctrine interpretation and verified fact","leadership as stewardship"]
+    },
+    "neoPrimeGatewayKnowledge": {
+      "mode": "canonical-read-mostly",
+      "mutationPolicy": "approval-gated and provenance-preserving"
+    },
+    "neoSocietyPublicEducationMedia": {
+      "mode": "editorial-source",
+      "uses": ["articles","explainers","lectures","posts","video scripts","courses","publication workflows"]
+    }
+  },
+  "guardrails": [
+    "Do not invent historical quotations.",
+    "Do not collapse distinct Indigenous, African, Asian, European, or other traditions into one undifferentiated system.",
+    "Do not represent NEO institutional or jurisdictional claims as externally recognized facts without independent support.",
+    "Do not treat Noocracy as requiring suppression of liberty, compelled ideological uniformity, or elimination of local identity.",
+    "Do not confuse a philosophical case for World Parliament with an assertion that a legally sovereign world government presently exists.",
+    "Preserve canonical terminology and paper numbering.",
+    "Future revisions should be additive and provenance-preserving."
+  ],
+  "nextGate": "Continue from Noocracy Papers No. 11 using the corresponding Federalist Papers as argumentative templates while preserving this registry as controlling NEO System canon."
+}
