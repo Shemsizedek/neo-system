@@ -1,0 +1,32 @@
+{
+  "version": "1.0.0",
+  "platforms": [
+    {
+      "id": "nasa-plus",
+      "name": "NASA+",
+      "kind": "public-streaming",
+      "access": "free",
+      "launchUrl": "https://plus.nasa.gov/",
+      "liveUrl": "https://www.nasa.gov/live/",
+      "description": "NASA's official free, ad-free streaming service with live mission coverage and on-demand programming.",
+      "sourceClass": "green",
+      "playbackMode": "official-player",
+      "audience": "all",
+      "kidsSafe": true
+    },
+    {
+      "id": "pbs",
+      "name": "PBS",
+      "kind": "public-broadcaster",
+      "access": "free-local-live",
+      "launchUrl": "https://www.pbs.org/livestream/",
+      "appsUrl": "https://www.pbs.org/pbs-app/",
+      "description": "Official PBS live-TV gateway. Local station livestream availability is geographic and station dependent.",
+      "sourceClass": "green",
+      "playbackMode": "official-player",
+      "geo": "US local station service area",
+      "audience": "all",
+      "kidsSafe": true
+    }
+  ]
+}

@@ -1,20 +1,46 @@
 {
-  "version": "0.6.0",
+  "version": "1.0.0",
   "policy": {
-    "purpose": "Registry for lawful public television, public-access, government, educational, FAST, and free-to-air provider integrations.",
+    "purpose": "Production registry for lawful public television, public-access, government, educational, FAST, and free-to-air provider integrations.",
     "acceptedSourceClasses": ["green", "yellow"],
     "requirements": [
       "Provider must expose an official or otherwise authorized playback source.",
       "Geographic and platform restrictions must be respected.",
       "No credential bypass, DRM circumvention, scraped private feeds, or unauthorized rebroadcasting.",
-      "Embedding or playback must comply with the provider's terms and applicable rights."
+      "Embedding or playback must comply with provider terms and applicable rights."
     ]
   },
   "providerClasses": [
     {"id":"public-broadcaster","name":"Public Broadcaster","description":"National, regional, state, municipal, educational, or community public broadcasters."},
     {"id":"public-access","name":"Public Access","description":"Community and municipal public, educational, and governmental access channels."},
     {"id":"free-to-air","name":"Free-to-Air","description":"Authorized over-the-air services made available through official digital feeds or tuner adapters."},
+    {"id":"government","name":"Government Media","description":"Official government and public-agency streaming services."},
     {"id":"fast","name":"FAST","description":"Free ad-supported streaming television providers with authorized integration paths."}
   ],
-  "providers": []
+  "providers": [
+    {
+      "id":"nasa-plus",
+      "name":"NASA+",
+      "class":"government",
+      "status":"live",
+      "sourceClass":"green",
+      "officialUrl":"https://plus.nasa.gov/",
+      "liveUrl":"https://www.nasa.gov/live/",
+      "playbackMode":"official-player",
+      "geo":"global where NASA service is available",
+      "description":"Official NASA streaming platform with live mission programming and on-demand content."
+    },
+    {
+      "id":"pbs",
+      "name":"PBS Live TV",
+      "class":"public-broadcaster",
+      "status":"live",
+      "sourceClass":"green",
+      "officialUrl":"https://www.pbs.org/livestream/",
+      "appsUrl":"https://www.pbs.org/pbs-app/",
+      "playbackMode":"official-player",
+      "geo":"United States and territories; local station service-area restrictions apply",
+      "description":"Official PBS local-station live television gateway. Availability depends on station and viewer location."
+    }
+  ]
 }
