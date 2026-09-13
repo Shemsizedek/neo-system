@@ -1,0 +1,70 @@
+id: NEO-TEMPLIST-CROSS-SYSTEM-001
+status: CANONICAL_INTERNAL_CURRICULUM
+source: Temple Degrees working session and approved Templist curriculum records
+
+routing:
+  neo_algo:
+    mode: reasoning_context
+    module: src/noology/templistCurriculumKnowledge.ts
+  neo_oracle:
+    mode: doctrine_aware_answer_context
+    module: src/noology/neoOracleTemplistContext.ts
+  gisd_giss_lms:
+    mode: curriculum_delivery_and_portfolio
+    module: apps/gisd/curriculum.ts
+  neosync:
+    mode: provenance_preserving_knowledge_sync
+    module: src/noology/neoSync.ts
+  neo_law:
+    mode: internal_ecclesiastical_educational_doctrine
+    module: src/noology/neoLawTemplistDoctrine.ts
+  neo_society:
+    mode: internal_social_norms
+    module: src/noology/neoSocietyTemplistNorms.ts
+  lumen:
+    mode: education_intelligence
+    policy: agents/lumen/templist-curriculum-policy.md
+  scroll:
+    mode: archival_version_control
+  neo_library:
+    mode: source_and_provenance_index
+  neopedia:
+    mode: derivative_knowledge_with_source_status_preserved
+
+canonical_rules:
+  learner_term: Templist
+  noonebu: Reserved for Elite and Elect contexts only
+  major_lesson_names_immutable: true
+  exact_tests_immutable_when_supplied: true
+  study_lists_preserved: true
+  trivium:
+    - Grammar
+    - Logic
+    - Rhetoric
+  quadrivium:
+    - Arithmetic
+    - Geometry
+    - Harmonics / Music
+    - Astronomy
+  quintivium:
+    attribution: Dr. Lawiy Zodok Shamu-El
+    arts:
+      - Dialectics
+      - Harmonics
+      - Physics
+      - Optics
+      - Noology
+    rule: Do not rename, expand, reduce, or substitute this list.
+  neology: New words must be reasoned through the grammar, etymology, morphology, and dialectics of the particular language.
+  cross_references:
+    - The Neoteric Method
+    - The Noocracy Papers
+    - Ra-Ka Nous Reiki™ / Rekai™
+    - Noology
+    - Neology
+
+boundaries:
+  - Internal curriculum doctrine is distinct from externally verified historical, legal, scientific, medical, and accreditation claims.
+  - Ether 1-26 is internal doctrine rather than established periodic chemistry.
+  - Rekai™ is a spiritual/wellness curriculum and not a medical credential.
+  - Internal Temple or NEO Law classification does not by itself create external civil jurisdiction or enforceable third-party authority.
