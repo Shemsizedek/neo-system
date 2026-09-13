@@ -1,0 +1,72 @@
+{
+  "id": "templist-codex-canons-canonical",
+  "version": "1.0.0",
+  "status": "CANONICAL_COMPLETE",
+  "classification": "SOURCE_SUPPLIED_DOCTRINE",
+  "authorityContext": "Holy Temples of Moorish Science, Branch Temple No. 24 — World Temple",
+  "systems": [
+    "NEO System",
+    "NEO Algo",
+    "NEO Oracle",
+    "GISD NEO LMS",
+    "GISS NEO LMS",
+    "NEOsync",
+    "NEO Law",
+    "Internal NEO Society Social Norms",
+    "Temple Tribunal",
+    "NEO Prime",
+    "NEO Knowledge Graph"
+  ],
+  "codex": {
+    "title": "Templist Codex of Canons",
+    "books": 9,
+    "book8": {
+      "title": "The Holy Instructions of the Circle Seven",
+      "canonRange": "1671-1710",
+      "focus": "Holy Koran Circle Seven Holy Instructions of Prophet Noble Drew Ali",
+      "neotericMethod": "Obligatory framework for Noologic thinking, study, inquiry, interpretation, and instruction."
+    },
+    "book9": {
+      "title": "The Holy Tablets and the Ecclesiastical Deed Poll",
+      "canonRange": "1711-1730",
+      "focus": "Holy Tablets, Ecclesiastical Deed Poll, Seven Seals, Book of Wisdom, Book of Destiny / Mother Tablet, and related sacred-text framework as supplied by the Temple source tradition."
+    }
+  },
+  "draftingProtocol": {
+    "strictFormat": true,
+    "canonTemplate": "Can. <number> Text for Canon goes next.",
+    "oneCanonPerEntry": true,
+    "combineCanonNumbers": false,
+    "preserveCanonNumbering": true,
+    "preserveChapterTitleArticleStructure": true,
+    "preserveSubsections": ["§1", "§2", "§3", "1/", "2/", "3/"],
+    "innovationWithoutInstruction": false,
+    "defaultAction": "Adapt only the institutional perspective while preserving legal function, sequence, and structure."
+  },
+  "reasoningProtocol": {
+    "method": "Neoteric Method",
+    "role": "Required Noologic reasoning discipline for Book 8 and downstream NEO reasoning surfaces.",
+    "controls": [
+      "preserve source terminology",
+      "distinguish internal doctrine from externally verified fact",
+      "maintain provenance",
+      "avoid fabrication of missing source material",
+      "use sound right reasoning",
+      "maintain canonical sequence"
+    ]
+  },
+  "integration": {
+    "neoAlgo": ["canonical constraints", "Neoteric reasoning obligation", "format discipline", "provenance-aware doctrine routing"],
+    "neoOracle": ["Temple-law retrieval context", "source-aware canonical interpretation", "do-not-invent control"],
+    "gisdGissLms": ["Temple canon study source", "Book 8 Holy Instructions curriculum", "Neoteric Method instruction"],
+    "neoSync": ["canonical source registry", "cross-system synchronization", "versioned Temple-law metadata"],
+    "neoLaw": ["Templist Codex canonical authority source", "tribunal procedure reference", "Book 8 and Book 9 registry"],
+    "socialNorms": ["consistency", "truthfulness", "format discipline", "source fidelity", "respect for Temple process"]
+  },
+  "sourceIntegrity": {
+    "conversationDerived": true,
+    "preserveUserSuppliedReligiousFraming": true,
+    "externalHistoricalLegalScientificClaimsRequireIndependentVerification": true,
+    "doNotPromoteInternalDoctrineToExternalFactWithoutEvidence": true
+  }
+}
