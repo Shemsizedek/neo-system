@@ -2,6 +2,7 @@ import { createHmac, randomBytes, scrypt as scryptCallback, timingSafeEqual } fr
 import { promisify } from 'node:util';
 
 const SESSION_COOKIE = 'neo_pass_session';
+const BROWSER_TOKEN_TTL_SECONDS = 5 * 60;
 const scrypt = promisify(scryptCallback);
 
 function encode(value) { return Buffer.from(JSON.stringify(value)).toString('base64url'); }
@@ -51,6 +52,27 @@ export function createGoogleNeopassAuth({ clientId, jwtSecret, jwtIssuer = 'neo-
       catch { return { subject, displayName: 'NEOpass Member', neopassStatus: 'pending', storageStatus: 'unavailable' }; }
       if (!record) return { subject, displayName: 'NEOpass Member', neopassStatus: 'pending' };
       return { subject, email: record.email, username: record.username, displayName: record.displayName, picture: record.picture, neopassStatus: record.status, role: record.role || 'member', hasPassword: Boolean(record.passwordHash) };
+    },
+    async browserToken(subject, sessionClaims = {}) {
+      if (!subject) throw new Error('neopass_identity_required');
+      const member = await this.session(subject, sessionClaims);
+      if (member.neopassStatus !== 'active' && member.role !== 'executive-admin') {
+        const error = new Error('neopass_active_membership_required');
+        error.code = 'neopass_active_membership_required';
+        throw error;
+      }
+      const current = now();
+      const issuedAt = Math.floor((typeof current === 'number' ? current : Date.parse(current)) / 1000);
+      const expiresAt = issuedAt + BROWSER_TOKEN_TTL_SECONDS;
+      const token = issueNeopassToken({
+        subject,
+        secret: jwtSecret,
+        issuer: jwtIssuer,
+        now,
+        ttlSeconds: BROWSER_TOKEN_TTL_SECONDS,
+        claims: { scope: 'neo:oracle:execute', token_use: 'browser', role: member.role || 'member' }
+      });
+      return { token, expiresAt, member };
     },
     async login(credential) {
       let profile;
@@ -121,4 +143,4 @@ export function createGoogleNeopassAuth({ clientId, jwtSecret, jwtIssuer = 'neo-
   };
 }
 
-export { SESSION_COOKIE };
+export { SESSION_COOKIE, BROWSER_TOKEN_TTL_SECONDS };

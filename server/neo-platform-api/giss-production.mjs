@@ -8,6 +8,7 @@ import { createGoogleNeopassAuth } from './neopass-google-auth.mjs';
 import { createFirestoreCrmStore } from './firestore-crm-store.mjs';
 import { createFirestoreSchoolStore } from './firestore-school-store.mjs';
 import { createSchoolActionHandler } from './giss-school-actions.mjs';
+import { attachNeopassBrowserTokenExchange } from './browser-token-exchange.mjs';
 
 export function createGissProductionServer({
   projectId = process.env.GOOGLE_CLOUD_PROJECT || process.env.GCP_PROJECT_ID,
@@ -50,7 +51,7 @@ export function createGissProductionServer({
       if (!res.writableEnded) res.end(JSON.stringify({error:'giss_route_failure'}));
     }
   });
-  return server;
+  return attachNeopassBrowserTokenExchange(server, { authService, subjectResolver });
 }
 
 export function startGissProductionServer({ port = Number(process.env.PORT || 8080) } = {}) {
