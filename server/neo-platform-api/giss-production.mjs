@@ -7,6 +7,7 @@ import { OAuth2Client } from 'google-auth-library';
 import { createGoogleNeopassAuth } from './neopass-google-auth.mjs';
 import { createFirestoreCrmStore } from './firestore-crm-store.mjs';
 import { createFirestoreSchoolStore } from './firestore-school-store.mjs';
+import { createSchoolActionHandler } from './giss-school-actions.mjs';
 
 export function createGissProductionServer({
   projectId = process.env.GOOGLE_CLOUD_PROJECT || process.env.GCP_PROJECT_ID,
@@ -34,7 +35,22 @@ export function createGissProductionServer({
   };
   const authService = createGoogleNeopassAuth({ clientId: googleClientId, jwtSecret, jwtIssuer, registry, verifyGoogleCredential, executiveAdminEmail, executiveAdminUsername });
 
-  return createNeoPlatformApi({ templeGissRuntime, subjectResolver, authService, crmStore, schoolStore, now });
+  const server = createNeoPlatformApi({ templeGissRuntime, subjectResolver, authService, crmStore, schoolStore, now });
+  const coreHandler = server.listeners('request')[0];
+  const schoolActions = createSchoolActionHandler({ schoolStore, subjectResolver });
+  server.removeAllListeners('request');
+  server.on('request', async (req, res) => {
+    try {
+      const url = new URL(req.url || '/', 'http://neo.local');
+      if (await schoolActions(req, res, url)) return;
+      return coreHandler(req, res);
+    } catch (error) {
+      console.error('GISS production route failure:', error?.code || error?.message || 'unknown');
+      if (!res.headersSent) res.writeHead(500, {'content-type':'application/json; charset=utf-8'});
+      if (!res.writableEnded) res.end(JSON.stringify({error:'giss_route_failure'}));
+    }
+  });
+  return server;
 }
 
 export function startGissProductionServer({ port = Number(process.env.PORT || 8080) } = {}) {
