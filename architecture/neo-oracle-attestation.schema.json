@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://neo-system.local/schemas/neo-oracle-attestation.schema.json",
+  "title": "NEO Oracle DSI Attestation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "attestation_id",
+    "request_commitment",
+    "result_commitment",
+    "policy_hash",
+    "model_set_hash",
+    "node_id",
+    "decision",
+    "confidence",
+    "created_at",
+    "signature"
+  ],
+  "properties": {
+    "version": {"type": "string", "const": "0.1"},
+    "attestation_id": {"type": "string", "minLength": 16},
+    "request_commitment": {"$ref": "#/$defs/hash"},
+    "result_commitment": {"$ref": "#/$defs/hash"},
+    "evidence_root": {"$ref": "#/$defs/hash"},
+    "policy_hash": {"$ref": "#/$defs/hash"},
+    "model_set_hash": {"$ref": "#/$defs/hash"},
+    "node_id": {"type": "string", "minLength": 3},
+    "role": {
+      "type": "string",
+      "enum": ["researcher", "reasoner", "simulator", "planner", "critic", "verifier", "domain-specialist", "human-reviewer"]
+    },
+    "decision": {
+      "type": "string",
+      "enum": ["accept", "reject", "abstain", "needs-review"]
+    },
+    "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+    "minority_report": {"type": "string", "maxLength": 12000},
+    "created_at": {"type": "string", "format": "date-time"},
+    "signature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["algorithm", "public_key_id", "value"],
+      "properties": {
+        "algorithm": {"type": "string", "enum": ["schnorr-secp256k1", "ed25519", "ecdsa-secp256k1"]},
+        "public_key_id": {"type": "string", "minLength": 3},
+        "value": {"type": "string", "minLength": 32}
+      }
+    }
+  },
+  "$defs": {
+    "hash": {
+      "type": "string",
+      "pattern": "^[A-Fa-f0-9]{64}$"
+    }
+  }
+}
