@@ -9,6 +9,7 @@ import {TribunalPacketPanel} from './TribunalPacketPanel'
 import {CaseOperationsPanel} from './CaseOperationsPanel'
 import {ServerOperationsPanel} from './ServerOperationsPanel'
 import {CommunicationsConsole} from './CommunicationsConsole'
+import {ServiceComplianceConsole} from './ServiceComplianceConsole'
 
 export function TribunalDashboard(){
   const [caseFile,setCaseFile]=useState<TribunalCase>(tribunalCases[0])
@@ -43,6 +44,7 @@ export function TribunalDashboard(){
 
     <ServerOperationsPanel caseFile={caseFile} setCaseFile={setCaseFile}/>
     <CommunicationsConsole/>
+    <ServiceComplianceConsole claimNo={caseFile.claimNo}/>
     <CaseOperationsPanel caseFile={caseFile}/>
 
     <section className="card panel"><div className="paneltitle"><div><span>Attach Corpus Authority</span><small>Every Tribunal proposition links to a specific authority and source object</small></div><Link2 size={18}/></div><div className="tribunalcitegrid"><label>Authority<select value={authorityId} onChange={e=>{const next=e.target.value;setAuthorityId(next);setSourceId(sourcesForAuthority(next)[0]?.sourceId??'')}}>{corpusRecords.filter(r=>sourcesForAuthority(r.id).length).map(r=><option value={r.id} key={r.id}>{r.id} — {r.shortTitle??r.title}</option>)}</select></label><label>Source<select value={sourceId} onChange={e=>setSourceId(e.target.value)}>{availableSources.map(s=><option value={s.sourceId} key={s.sourceId}>{s.sourceId} — {s.title}</option>)}</select></label></div><label>Proposition<textarea value={proposition} onChange={e=>setProposition(e.target.value)} rows={3}/></label><div className="route"><span>LINK</span><b>{authority?.id??'—'} → {sourceId||'select source'} → {caseFile.claimNo}</b></div><button className="primary" disabled={!sourceId||!proposition.trim()} onClick={attach}>Attach validated citation</button></section>
