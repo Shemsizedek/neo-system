@@ -1,5 +1,5 @@
 {
-  "version": "1.3.0",
+  "version": "1.4.0",
   "domainRoot": "holytemples.org",
   "dnsTarget": "ghs.googlehosted.com.",
   "runtime": "google-cloud-run",
@@ -12,6 +12,7 @@
     {"host":"pay.holytemples.org","service":"neopay","role":"payments-wallet-entry-site-api"},
     {"host":"neobank.holytemples.org","service":"neo-bank","role":"community-ces-site-api"},
     {"host":"marketer.holytemples.org","service":"neo-marketer","role":"marketing-intelligence-campaign-command-site-api"},
+    {"host":"opal.holytemples.org","service":"neo-opal-bridge","role":"google-opal-integration-code-delivery-control-plane"},
     {"host":"hub.holytemples.org","service":"neo-hub","role":"site-api"},
     {"host":"counter.holytemples.org","service":"neo-counter","role":"site-api"},
     {"host":"wire.holytemples.org","service":"neo-wire","role":"site-api"},
