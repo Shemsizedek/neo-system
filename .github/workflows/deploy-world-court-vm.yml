@@ -1,0 +1,137 @@
+name: Deploy World Court VM
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/deploy-world-court-vm.yml'
+      - 'deploy/world-court/**'
+      - 'server/tribunal-backend/**'
+      - 'src/tribunal/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: world-court-production-vm
+  cancel-in-progress: false
+
+env:
+  INSTANCE_NAME: world-court-node-001
+  ADDRESS_NAME: world-court-node-001-ip
+  FIREWALL_NAME: world-court-web-ingress
+  MACHINE_TYPE: e2-small
+  DOMAIN: court.holytemples.org
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: holytemples-production
+    timeout-minutes: 25
+    env:
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID || secrets.GCP_PROJECT_ID }}
+      GCP_REGION: ${{ vars.GCP_REGION || secrets.GCP_REGION || 'us-central1' }}
+      GCP_ZONE: ${{ vars.GCP_ZONE || secrets.GCP_ZONE || 'us-central1-a' }}
+      GCP_WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER || secrets.GCP_WIF_PROVIDER }}
+      GCP_CLOUD_RUN_SERVICE_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_SERVICE_ACCOUNT || secrets.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - name: Validate GCP configuration
+        run: |
+          set -euo pipefail
+          for name in GCP_PROJECT_ID GCP_REGION GCP_ZONE GCP_WIF_PROVIDER GCP_CLOUD_RUN_SERVICE_ACCOUNT; do
+            test -n "${!name:-}" || { echo "::error::Missing $name"; exit 1; }
+          done
+
+      - uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+
+      - uses: google-github-actions/setup-gcloud@v3
+
+      - name: Ensure static address and web firewall
+        id: infra
+        run: |
+          set -euo pipefail
+          if ! gcloud compute addresses describe "$ADDRESS_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" >/dev/null 2>&1; then
+            gcloud compute addresses create "$ADDRESS_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION"
+          fi
+          IP="$(gcloud compute addresses describe "$ADDRESS_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format='value(address)')"
+          test -n "$IP"
+          echo "ip=$IP" >> "$GITHUB_OUTPUT"
+
+          if ! gcloud compute firewall-rules describe "$FIREWALL_NAME" --project="$GCP_PROJECT_ID" >/dev/null 2>&1; then
+            gcloud compute firewall-rules create "$FIREWALL_NAME" \
+              --project="$GCP_PROJECT_ID" \
+              --network=default \
+              --direction=INGRESS \
+              --priority=1000 \
+              --action=ALLOW \
+              --rules=tcp:80,tcp:443 \
+              --source-ranges=0.0.0.0/0 \
+              --target-tags=world-court-web
+          fi
+
+      - name: Create or refresh dedicated court host
+        run: |
+          set -euo pipefail
+          IP="${{ steps.infra.outputs.ip }}"
+          if ! gcloud compute instances describe "$INSTANCE_NAME" --project="$GCP_PROJECT_ID" --zone="$GCP_ZONE" >/dev/null 2>&1; then
+            gcloud compute instances create "$INSTANCE_NAME" \
+              --project="$GCP_PROJECT_ID" \
+              --zone="$GCP_ZONE" \
+              --machine-type="$MACHINE_TYPE" \
+              --image-family=debian-12 \
+              --image-project=debian-cloud \
+              --boot-disk-size=20GB \
+              --boot-disk-type=pd-balanced \
+              --address="$IP" \
+              --tags=world-court-web \
+              --metadata=enable-oslogin=TRUE \
+              --metadata-from-file=startup-script=deploy/world-court/gcp/bootstrap-world-court.sh \
+              --no-service-account
+          else
+            gcloud compute instances add-metadata "$INSTANCE_NAME" \
+              --project="$GCP_PROJECT_ID" \
+              --zone="$GCP_ZONE" \
+              --metadata-from-file=startup-script=deploy/world-court/gcp/bootstrap-world-court.sh
+            gcloud compute instances reset "$INSTANCE_NAME" --project="$GCP_PROJECT_ID" --zone="$GCP_ZONE"
+          fi
+
+      - name: Wait for public court health
+        run: |
+          set -euo pipefail
+          IP="${{ steps.infra.outputs.ip }}"
+          ok=0
+          for i in $(seq 1 60); do
+            if curl -fsS --max-time 5 -H "Host: $DOMAIN" "http://$IP/health" >/tmp/health.json 2>/dev/null; then
+              cat /tmp/health.json
+              ok=1
+              break
+            fi
+            echo "Waiting for bootstrap ($i/60)..."
+            sleep 10
+          done
+          if [[ "$ok" != 1 ]]; then
+            echo "::error::World Court host did not become healthy in time"
+            gcloud compute instances get-serial-port-output "$INSTANCE_NAME" --project="$GCP_PROJECT_ID" --zone="$GCP_ZONE" --port=1 --start=-20000 || true
+            exit 1
+          fi
+
+      - name: Publish deployment coordinates
+        run: |
+          IP="${{ steps.infra.outputs.ip }}"
+          {
+            echo "## World Court host"
+            echo "- Instance: $INSTANCE_NAME"
+            echo "- Zone: $GCP_ZONE"
+            echo "- Static IPv4: $IP"
+            echo "- HTTP health: http://$IP/health (Host: $DOMAIN)"
+            echo "- DNS target required: $DOMAIN -> $IP"
+            echo "- TLS timer on host will provision HTTPS after DNS resolves to this IP."
+          } >> "$GITHUB_STEP_SUMMARY"
