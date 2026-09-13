@@ -1,0 +1,80 @@
+id: NEO-SHAMUEL-FAMILY-TRUST-CROSS-SYSTEM-001
+status: CANONICAL_INTERNAL_OPERATIONAL_CONTEXT
+source:
+  primary: August 11 2021 Declaration of Trust for The Shamu-El Family Trust
+  room: Shamu-El Family Trust Assistant Room
+  operational_agent: NIA-009 STEWARD
+
+routing:
+  neo_algo:
+    mode: source_weighted_reasoning_context
+    module: src/family-office/shamuelFamilyTrustKnowledge.ts
+  neo_oracle:
+    mode: provenance_labeled_trust_answer_context
+    module: src/family-office/shamuelFamilyTrustKnowledge.ts
+  gisd_giss_lms:
+    mode: trust_governance_and_family_office_case_learning
+    source: data/family-office/shamuel-family-trust-canon.md
+  neosync:
+    mode: provenance_preserving_family_office_sync
+    agent: agents/family-office/agent.yaml
+    prompt: agents/family-office/system-prompt.md
+  neo_law:
+    mode: private_trust_estate_fiduciary_context
+    rule: jurisdiction_first_primary_authority_analysis
+  neo_society:
+    mode: internal_family_stewardship_norms
+  ledger:
+    mode: treasury_analysis_only
+    approval_gate: required_for_money_movement_or_transactions
+  scroll:
+    mode: archival_provenance_and_version_control
+  athenaeum:
+    mode: legal_tax_and_source_research
+  compass:
+    mode: family_office_strategy
+  origin:
+    mode: cross_system_coordination
+  neo_library:
+    mode: controlled_source_index
+  neopedia:
+    mode: derivative_knowledge_with_source_status_preserved
+
+source_classes:
+  executed_source_fact: highest_internal_priority
+  approved_record: authoritative_if_validly_approved
+  user_assertion: preserve_but_do_not_promote_to_executed_fact
+  analysis: label_as_analysis
+  external_authority: cite_and_separate_from_internal_sources
+  unknown: surface_missing_evidence
+
+approval_controls:
+  required:
+    - money_movement
+    - beneficiary_distribution
+    - trade_or_custody_change
+    - trust_amendment_revocation_restatement_combination_division_termination
+    - trustee_or_signer_appointment_removal_replacement
+    - deed_assignment_security_instrument_execution
+    - tax_regulatory_court_or_financial_filing
+    - external_commitment
+    - legal_title_change
+    - unsupported_canonical_fact_promotion
+
+internal_social_norms:
+  - stewardship_before_consumption
+  - source_before_assertion
+  - fiduciary_duty_before_convenience
+  - privacy_by_default
+  - disclose_conflicts
+  - avoid_undocumented_commingling
+  - record_material_decisions
+  - distinguish_roles_and_authorities
+  - internal_titles_do_not_replace_documented_legal_authority
+  - preserve_intergenerational_continuity_with_auditable_records
+
+boundaries:
+  - Executed instruments control trust-specific facts over derivative NEO records.
+  - User-described relationships among affiliated trusts remain asserted architecture until governing records are supplied and reviewed.
+  - Internal NEO governance does not override applicable public law, tax law, fiduciary duties, court orders, title rules, or regulatory requirements.
+  - Educational and analytical outputs are not substitutes for licensed legal, tax, accounting, investment, or fiduciary professionals where required.
