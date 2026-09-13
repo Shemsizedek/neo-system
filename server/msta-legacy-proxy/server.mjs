@@ -24,6 +24,15 @@ function send(res, status, body, headers = {}) {
   res.end(payload);
 }
 
+function escapeHtml(value = '') {
+  return String(value)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
+}
+
 function copyRequestHeaders(req, target) {
   const headers = new Headers();
   for (const [key, value] of Object.entries(req.headers)) {
@@ -45,9 +54,33 @@ function rewriteText(value = '') {
     .replaceAll('http://www.im-creator.com/free/noonesociety/noone-society', `${PUBLIC_ORIGIN}/noone-society`);
 }
 
+function legacyNavigation(source) {
+  const escapedSource = escapeHtml(source);
+  return `<section class="neo-legacy-nav" aria-label="MSTA legacy navigation">
+    <style>
+      .neo-legacy-nav{box-sizing:border-box;position:relative;z-index:2147483646;margin:24px auto;padding:18px;max-width:1120px;border:1px solid rgba(214,182,101,.42);border-radius:18px;background:rgba(8,10,9,.96);color:#f3efe1;font:600 14px/1.35 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;box-shadow:0 14px 40px rgba(0,0,0,.3)}
+      .neo-legacy-nav *{box-sizing:border-box}.neo-legacy-nav__label{margin:0 0 12px;color:#d6b665;letter-spacing:.16em;text-transform:uppercase;font-size:11px}.neo-legacy-nav__actions{display:flex;flex-wrap:wrap;gap:10px}.neo-legacy-nav a{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:10px 15px;border:1px solid #d6b665;border-radius:999px;color:#f3efe1!important;background:#111512;text-decoration:none!important;font-weight:700}.neo-legacy-nav a:hover,.neo-legacy-nav a:focus-visible{background:#d6b665;color:#080a09!important;outline:none}.neo-legacy-nav a.neo-legacy-nav__source{border-color:#5b625b;color:#c9c2af!important}.neo-legacy-nav a.neo-legacy-nav__source:hover,.neo-legacy-nav a.neo-legacy-nav__source:focus-visible{background:#303730;color:#fff!important}.neo-legacy-nav__note{margin:12px 0 0;color:#aaa390;font-weight:500;font-size:12px}
+    </style>
+    <div class="neo-legacy-nav__label">MSTA Legacy Preservation</div>
+    <div class="neo-legacy-nav__actions">
+      <a href="${PUBLIC_ORIGIN}/moorish-parliament">Moorish Parliament</a>
+      <a href="${PUBLIC_ORIGIN}/noone-society">Noone Society</a>
+      <a class="neo-legacy-nav__source" href="${escapedSource}" target="_blank" rel="noopener noreferrer external">Original Legacy Source ↗</a>
+      <a href="https://holytemples.org/">World Temple of Karast</a>
+    </div>
+    <p class="neo-legacy-nav__note">Preserved legacy navigation. Original-source access is clearly labeled and kept separate from the NEO-hosted preservation routes.</p>
+  </section>`;
+}
+
+function injectLegacyNavigation(html, source) {
+  const nav = legacyNavigation(source);
+  if (/<\/body>/i.test(html)) return html.replace(/<\/body>/i, `${nav}</body>`);
+  return `${html}${nav}`;
+}
+
 function unavailablePage(source) {
-  const escaped = source.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;');
-  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>MSTA Legacy Preservation | World Temple of Karast</title><style>body{margin:0;background:#080a09;color:#f3efe1;font:16px/1.55 Georgia,serif}.wrap{max-width:760px;margin:10vh auto;padding:2rem}.mark{letter-spacing:.16em;text-transform:uppercase;color:#d6b665;font:700 12px/1.2 system-ui}h1{font-size:clamp(2.4rem,7vw,4.8rem);line-height:1;margin:.7rem 0 1rem}p{color:#c7c0af}code{word-break:break-all;color:#d6b665}.box{border:1px solid #373b36;padding:1.2rem;margin-top:1.5rem;background:#111512}a{color:#d6b665}</style></head><body><main class="wrap"><div class="mark">MSTA Legacy Preservation</div><h1>Source archive temporarily unavailable.</h1><p>The NEO preservation service has the original Noone Society / IM Creator address registered, but the legacy host did not answer this request. The source is not being replaced with invented content.</p><div class="box"><strong>Registered source</strong><br><code>${escaped}</code></div><p>When an IM Creator export, saved HTML, screenshot set, or archival snapshot is supplied, this route can serve the faithful preserved version directly from NEO infrastructure.</p><p><a href="https://holytemples.org/">Return to World Temple of Karast</a></p></main></body></html>`;
+  const escaped = escapeHtml(source);
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>MSTA Legacy Preservation | World Temple of Karast</title><style>body{margin:0;background:#080a09;color:#f3efe1;font:16px/1.55 Georgia,serif}.wrap{max-width:760px;margin:10vh auto;padding:2rem}.mark{letter-spacing:.16em;text-transform:uppercase;color:#d6b665;font:700 12px/1.2 system-ui}h1{font-size:clamp(2.4rem,7vw,4.8rem);line-height:1;margin:.7rem 0 1rem}p{color:#c7c0af}code{word-break:break-all;color:#d6b665}.box{border:1px solid #373b36;padding:1.2rem;margin-top:1.5rem;background:#111512}</style></head><body><main class="wrap"><div class="mark">MSTA Legacy Preservation</div><h1>Source archive temporarily unavailable.</h1><p>The NEO preservation service has the original Noone Society / IM Creator address registered, but the legacy host did not answer this request. The source is not being replaced with invented content.</p><div class="box"><strong>Registered source</strong><br><code>${escaped}</code></div><p>When an IM Creator export, saved HTML, screenshot set, or archival snapshot is supplied, this route can serve the faithful preserved version directly from NEO infrastructure.</p></main>${legacyNavigation(source)}</body></html>`;
 }
 
 async function proxy(req, res) {
@@ -111,7 +144,12 @@ async function proxy(req, res) {
     return res.end();
   }
 
-  if (/text\/(html|css|javascript)|application\/(javascript|json|xml|rss\+xml|atom\+xml)|image\/svg\+xml/i.test(type)) {
+  if (/text\/html/i.test(type)) {
+    const mirrored = rewriteText(await upstream.text());
+    return send(res, upstream.status, injectLegacyNavigation(mirrored, source), headers);
+  }
+
+  if (/text\/(css|javascript)|application\/(javascript|json|xml|rss\+xml|atom\+xml)|image\/svg\+xml/i.test(type)) {
     return send(res, upstream.status, rewriteText(await upstream.text()), headers);
   }
 
