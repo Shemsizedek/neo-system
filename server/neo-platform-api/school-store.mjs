@@ -99,11 +99,15 @@ export const SCHOOL_SEED = [
 ];
 
 export function createInMemorySchoolStore({ now=()=>new Date().toISOString(), id=()=>randomUUID() }={}) {
-  const courses=new Map(), assignments=new Map();
+  const courses=new Map(), assignments=new Map(), enrollments=new Map();
+  const enrollmentKey=(subject,courseId)=>`${clean(subject,240)}::${clean(courseId,120)}`;
+  const getCourse=courseId=>{const course=courses.get(clean(courseId,120));if(!course)throw new SchoolStoreError('course_not_found',404);return course;};
   return {
     async ensureSeed(items=SCHOOL_SEED){ for(const item of items){ if(!courses.has(item.id)) courses.set(item.id,{...item,createdAt:now(),updatedAt:now()}); } },
-    async dashboard(){ return { courses:[...courses.values()].filter(x=>x.status!=='archived'), assignments:[...assignments.values()].filter(x=>x.status!=='closed'), students:[], teachers:[] }; },
+    async dashboard({subject}={}){ return { courses:[...courses.values()].filter(x=>x.status!=='archived'), assignments:[...assignments.values()].filter(x=>x.status!=='closed'), students:[], teachers:[], enrollments:subject?[...enrollments.values()].filter(x=>x.subject===subject):[] }; },
     async createCourse(input, actor){ const value={id:id(),...normalizeCourse(input),createdBy:actor,createdAt:now(),updatedAt:now()}; courses.set(value.id,value); return structuredClone(value); },
-    async createAssignment(input, actor){ if(!courses.has(clean(input.courseId,120))) throw new SchoolStoreError('course_not_found',404); const value={id:id(),...normalizeAssignment(input),createdBy:actor,createdAt:now(),updatedAt:now()}; assignments.set(value.id,value); return structuredClone(value); }
+    async createAssignment(input, actor){ if(!courses.has(clean(input.courseId,120))) throw new SchoolStoreError('course_not_found',404); const value={id:id(),...normalizeAssignment(input),createdBy:actor,createdAt:now(),updatedAt:now()}; assignments.set(value.id,value); return structuredClone(value); },
+    async enroll(courseId,subject){ const course=getCourse(courseId), key=enrollmentKey(subject,course.id); if(enrollments.has(key))return structuredClone(enrollments.get(key)); const value={id:id(),subject,courseId:course.id,status:'active',completedLessons:[],nextLessonOrder:(course.lessons||[])[0]?.order||null,enrolledAt:now(),updatedAt:now()}; enrollments.set(key,value); return structuredClone(value); },
+    async completeLesson(courseId,lessonOrder,subject){ const course=getCourse(courseId), key=enrollmentKey(subject,course.id), enrollment=enrollments.get(key); if(!enrollment)throw new SchoolStoreError('enrollment_required',403); const order=Number(lessonOrder), lessons=[...(course.lessons||[])].sort((a,b)=>a.order-b.order), lesson=lessons.find(x=>Number(x.order)===order); if(!lesson)throw new SchoolStoreError('lesson_not_found',404); const completed=new Set((enrollment.completedLessons||[]).map(Number)); const prior=lessons.filter(x=>Number(x.order)<order); if(prior.some(x=>!completed.has(Number(x.order))))throw new SchoolStoreError('lesson_locked',409); completed.add(order); const completedLessons=[...completed].sort((a,b)=>a-b), next=lessons.find(x=>!completed.has(Number(x.order)))?.order||null; const value={...enrollment,completedLessons,nextLessonOrder:next,status:next===null?'completed':'active',completedAt:next===null?now():null,updatedAt:now()}; enrollments.set(key,value); return structuredClone(value); }
   };
 }
