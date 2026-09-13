@@ -56,24 +56,33 @@ export const SCHOOL_SEED = [
     style:'Blended',
     semester:1,
     timezone:'Central Time (US & Canada)',
-    startDate:'2019-09-23',
-    endDate:'2020-06-25',
     completionRule:'Lessons and their sections must be completed in order.',
     accessCodeRequired:false,
     color:'gold',
     status:'published',
+    currentSchedule:[
+      { day:'Monday', scope:'Global' },
+      { day:'Wednesday', scope:'Global' }
+    ],
     lessons:[
       { order:1, title:'Civics 101 Lesson 1', description:CIVICS_101_LESSON_DESCRIPTION, personalized:true, schedule:CIVICS_101_MONTHS },
       { order:2, title:'Civics 101 Lesson 2', description:CIVICS_101_LESSON_DESCRIPTION, personalized:true, schedule:CIVICS_101_MONTHS },
       { order:3, title:'Civics 101 Lesson 3', description:CIVICS_101_LESSON_DESCRIPTION, personalized:false, schedule:CIVICS_101_MONTHS }
     ],
-    meetingSchedule:[
-      { day:'Friday', start:'11:00 pm', end:'3:35 pm', scope:'Global' },
-      { day:'Sunday', start:'11:00 am', end:'3:35 pm', scope:'Global' }
-    ],
     legacy:{
       platform:'EDU20 / NEO LMS',
       catalogClassId:'933232',
+      courseCode:'Civil',
+      credits:100,
+      style:'Blended',
+      semester:1,
+      timezone:'Central Time (US & Canada)',
+      startDate:'2019-09-23',
+      endDate:'2020-06-25',
+      meetingSchedule:[
+        { day:'Friday', start:'11:00 pm', end:'3:35 pm', scope:'Global' },
+        { day:'Sunday', start:'11:00 am', end:'3:35 pm', scope:'Global' }
+      ],
       sourceUrl:'https://nu-university.edu20.org/visitor_catalog_class/show/933232',
       archiveCatalogUrl:'https://web.archive.org/web/20200922005241/https://nu-university.edu20.org/visitor_catalog_class/show/920252',
       archiveIndex:'https://web.archive.org/web/*/https://nu-university.edu20.org/*',
