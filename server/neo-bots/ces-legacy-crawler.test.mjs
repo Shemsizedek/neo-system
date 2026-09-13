@@ -36,6 +36,39 @@ test('crawler emits a read-only discovery manifest', async () => {
   assert.equal(manifest.pages[0].forms[0].fingerprint.startsWith('fnv1a-'), true);
 });
 
+test('default legacy discovery pins the public login route and never submits credentials', async () => {
+  const calls = [];
+  const request = async (path, options = {}) => {
+    calls.push({ path, method: options.method });
+    return {
+      ok: true,
+      status: 200,
+      url: `https://www.community-exchange.org${path}`,
+      async text() {
+        if (path === '/login.asp') {
+          return `<html><head><title>User Login</title></head><body>
+            <form method="post" action="/login.asp">
+              <input name="account" type="text">
+              <input name="password" type="password">
+            </form>
+          </body></html>`;
+        }
+        return '<html><body>Virtual Trader</body></html>';
+      },
+    };
+  };
+  const crawler = createLegacyCesCrawler({ request });
+  const manifest = await crawler.crawl({ exchangeId: 'NMNI', adminAccount: 'NMNI0000', bankAccount: 'NMNIBANK' });
+  const login = manifest.pages.find((page) => page.key === 'login');
+  assert.equal(calls[0].path, '/login.asp');
+  assert.equal(calls.every((call) => call.method === 'GET'), true);
+  assert.equal(login.finalUrl, 'https://www.community-exchange.org/login.asp');
+  assert.equal(login.forms[0].action, 'https://www.community-exchange.org/login.asp');
+  assert.deepEqual(login.forms[0].fieldNames, ['account', 'password']);
+  assert.equal(login.writable, false);
+  assert.equal(login.discoveryOnly, true);
+});
+
 test('crawler marks unknown routes without requesting them', async () => {
   let calls = 0;
   const crawler = createLegacyCesCrawler({
