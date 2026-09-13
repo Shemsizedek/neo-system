@@ -29,7 +29,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     environment: holytemples-production
-    timeout-minutes: 25
+    timeout-minutes: 30
     env:
       GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID || secrets.GCP_PROJECT_ID }}
       GCP_REGION: ${{ vars.GCP_REGION || secrets.GCP_REGION || 'us-central1' }}
@@ -124,6 +124,30 @@ jobs:
             exit 1
           fi
 
+      - name: Verify DNS and HTTPS production endpoint
+        run: |
+          set -euo pipefail
+          IP="${{ steps.infra.outputs.ip }}"
+          ok=0
+          for i in $(seq 1 60); do
+            DNS="$(getent ahostsv4 "$DOMAIN" | awk '{print $1}' | sort -u || true)"
+            echo "DNS attempt $i: ${DNS:-unresolved}"
+            if grep -qx "$IP" <<<"$DNS"; then
+              if curl -fsS --max-time 10 "https://$DOMAIN/health" >/tmp/https-health.json 2>/dev/null; then
+                cat /tmp/https-health.json
+                ok=1
+                break
+              fi
+            fi
+            sleep 10
+          done
+          if [[ "$ok" != 1 ]]; then
+            echo "::error::HTTPS gate failed for https://$DOMAIN/health"
+            echo "Expected DNS address: $IP"
+            gcloud compute instances get-serial-port-output "$INSTANCE_NAME" --project="$GCP_PROJECT_ID" --zone="$GCP_ZONE" --port=1 --start=-30000 || true
+            exit 1
+          fi
+
       - name: Publish deployment coordinates
         run: |
           IP="${{ steps.infra.outputs.ip }}"
@@ -132,7 +156,7 @@ jobs:
             echo "- Instance: $INSTANCE_NAME"
             echo "- Zone: $GCP_ZONE"
             echo "- Static IPv4: $IP"
-            echo "- HTTP health: http://$IP/health (Host: $DOMAIN)"
-            echo "- DNS target required: $DOMAIN -> $IP"
-            echo "- TLS timer on host will provision HTTPS after DNS resolves to this IP."
+            echo "- DNS: $DOMAIN -> $IP"
+            echo "- HTTPS health: https://$DOMAIN/health"
+            echo "- Production transport gate: VERIFIED"
           } >> "$GITHUB_STEP_SUMMARY"
