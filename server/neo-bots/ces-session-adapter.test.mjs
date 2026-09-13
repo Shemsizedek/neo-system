@@ -11,18 +11,29 @@ function response(body = '', { status = 200, headers = {}, url } = {}) {
 }
 
 const validatedSession = async () => ({ authenticated: true, reason: 'test-session' });
+const loginForm = '<form method="post" action="/login.asp"><input name="account"><input name="password" type="password"></form>';
+const trustedCredentialProvider = async (exchange) => ({
+  username: exchange?.adminAccount || 'NMNI0000',
+  password: 'vault-secret',
+  loginPath: '/login.asp',
+  submitPath: '/login.asp',
+  usernameField: 'account',
+  passwordField: 'password',
+});
 
 test('CES adapter authenticates using injected credentials without persisting secrets', async () => {
   const calls = [];
   const fetchImpl = async (url, options = {}) => {
     calls.push({ url: String(url), options });
-    if ((options.method || 'GET') === 'GET') return response('<input value="abc123" name="csrfToken" type="hidden">', { headers: { 'set-cookie': 'ASPSESSIONID=xyz; Path=/; HttpOnly' } });
+    if ((options.method || 'GET') === 'GET') {
+      return response(`${loginForm}<input value="abc123" name="csrfToken" type="hidden">`, { headers: { 'set-cookie': 'ASPSESSIONID=xyz; Path=/; HttpOnly' } });
+    }
     return response('', { status: 302, headers: { location: '/win/home.asp' } });
   };
   const adapter = createCesSessionAdapter({
     fetchImpl,
     sessionValidator: validatedSession,
-    credentialProvider: async (exchange) => ({ username: exchange.adminAccount, password: 'secret-from-vault', loginPath: '/login.asp', submitPath: '/login.asp', usernameField: 'account', passwordField: 'password', csrfField: 'csrfToken' }),
+    credentialProvider: async (exchange) => ({ ...(await trustedCredentialProvider(exchange)), password: 'secret-from-vault', csrfField: 'csrfToken' }),
   });
   const result = await adapter.login(resolveCesIdentity('NMNI'));
   assert.equal(result.authenticated, true);
@@ -57,8 +68,8 @@ test('cookie jar retains multiple cookies and replaces duplicate names', () => {
 
 test('login fails closed when authenticated session cannot be validated', async () => {
   const adapter = createCesSessionAdapter({
-    fetchImpl: async (url, options = {}) => (options.method === 'POST' ? response('', { status: 302 }) : response('<form></form>')),
-    credentialProvider: async () => ({ username: 'NMNI0000', password: 'vault-secret' }),
+    fetchImpl: async (url, options = {}) => (options.method === 'POST' ? response('', { status: 302 }) : response(loginForm)),
+    credentialProvider: trustedCredentialProvider,
   });
   await assert.rejects(() => adapter.login(resolveCesIdentity('NMNI')), /did not validate an authenticated session/);
 });
@@ -68,9 +79,9 @@ test('Virtual Trader review remains read-only', async () => {
   const fetchImpl = async (url, options = {}) => {
     if ((options.method || 'GET') === 'POST') postCount += 1;
     if (String(url).includes('/win/virtual.asp')) return response('<h1>Virtual Trader</h1>');
-    return response('<form></form>');
+    return response(loginForm);
   };
-  const adapter = createCesSessionAdapter({ fetchImpl, sessionValidator: validatedSession, credentialProvider: async () => ({ username: 'NMNI0000', password: 'vault-secret' }) });
+  const adapter = createCesSessionAdapter({ fetchImpl, sessionValidator: validatedSession, credentialProvider: trustedCredentialProvider });
   const result = await adapter.reviewVirtualTrader({ exchange: resolveCesIdentity('NMNI') });
   assert.equal(result.operation, 'reviewVirtualTrader');
   assert.equal(result.pageDetected, true);
@@ -85,9 +96,9 @@ test('legacy control-panel discovery persists a reusable manifest', async () => 
     if (method === 'POST') { postCount += 1; return response('', { status: 302 }); }
     const target = String(url);
     if (target.includes('/win/virtual.asp')) return response('<title>Virtual Trader</title><h1>Virtual Trader</h1><a href="/win/stats.asp">Stats</a>', { url: target });
-    return response('<title>CES Login</title><form method="post" action="/login.asp"><input name="account"></form>', { url: target });
+    return response(`<title>CES Login</title>${loginForm}`, { url: target });
   };
-  const adapter = createCesSessionAdapter({ fetchImpl, manifestStore: store, sessionValidator: validatedSession, credentialProvider: async () => ({ username: 'NMNI0000', password: 'vault-secret' }) });
+  const adapter = createCesSessionAdapter({ fetchImpl, manifestStore: store, sessionValidator: validatedSession, credentialProvider: trustedCredentialProvider });
   const exchange = resolveCesIdentity('NMNI');
   const result = await adapter.discoverLegacyControlPanel(exchange);
   const persisted = await adapter.getLegacyDiscoveryManifest('NMNI');
