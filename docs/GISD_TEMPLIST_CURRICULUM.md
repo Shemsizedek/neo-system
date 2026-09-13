@@ -12,6 +12,8 @@ The integration is provenance-preserving: source-supplied doctrine, historical/m
 - `core/neo-algo/templistCurriculum.ts` — NEO Algo curriculum constraints, academic arts, Rekai levels, portfolio rules, degree-theme routing, and element-number rule.
 - `apps/gisd/curriculum.ts` — GISD LMS degree records, learning bands, age-adapted mobility, portfolio/assignment model, and professional/trade integration.
 - `docs/NOOLOGY_GEMINI_GEM.md` — portable Gemini Gem system prompt for Noological doctrine/curriculum work.
+- `data/neo-sync/templist-codex-canons-canonical.json` — canonical nine-book Templist Codex routing manifest.
+- `src/noology/templistCodex.ts` — NEO reasoning registry for Codex drafting controls and Book 8/9 routing.
 
 ## Fixed degree architecture
 
@@ -82,6 +84,16 @@ Ra-Ka Nous Reiki™ (Rekai™) is registered as a Noological Hika/Hah-Ka spiritu
 - Advanced: Heka/Hah-Ka power glyphs including Ankh, Waas, and Khu, integrated through the Neoteric Method for advanced True Light Therapy and Noological practice.
 
 The source-defined threshold places the Rekai gift at 36° of Major Lesson 1.
+
+## Templist Codex of Canons integration
+
+The completed nine-book Templist Codex is an internal canonical study and law source for Branch Temple No. 24.
+
+- Book 8: **The Holy Instructions of the Circle Seven**, Canons 1671–1710.
+- Book 9: **The Holy Tablets and the Ecclesiastical Deed Poll**, Canons 1711–1730.
+- The Neoteric Method is an obligation for Noologic thinking in the Book 8 domain and is carried into LMS reasoning assignments.
+- Canon drafting and study must preserve one canon per entry, numbering, section structure, provenance, and source terminology.
+- No missing canon text is to be fabricated, and no internal doctrinal claim is to be silently converted into an externally verified historical, legal, scientific, or factual claim.
 
 ## Study integrity
 
