@@ -1,0 +1,96 @@
+name: Deploy NEO Marketer to Cloud Run
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['server/neo-marketer/**','deploy/neo-marketer/**','.github/workflows/deploy-neo-marketer-cloud-run.yml','architecture/neo-hosts.json']
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: neo-marketer-cloud-run
+  cancel-in-progress: false
+jobs:
+  test-and-deploy:
+    runs-on: ubuntu-latest
+    environment: holytemples-production
+    timeout-minutes: 30
+    env:
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID || secrets.GCP_PROJECT_ID }}
+      GCP_REGION: ${{ vars.GCP_REGION || secrets.GCP_REGION }}
+      GCP_WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER || secrets.GCP_WIF_PROVIDER }}
+      GCP_CLOUD_RUN_SERVICE_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_SERVICE_ACCOUNT || secrets.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+      GCP_CLOUD_RUN_RUNTIME_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_RUNTIME_ACCOUNT || secrets.GCP_CLOUD_RUN_RUNTIME_ACCOUNT }}
+      GCP_ARTIFACT_REGISTRY: ${{ vars.GCP_ARTIFACT_REGISTRY || secrets.GCP_ARTIFACT_REGISTRY }}
+      SERVICE_NAME: neo-marketer
+      DOMAIN: marketer.holytemples.org
+      MARKETER_NEG_NAME: neo-marketer-neg
+      MARKETER_BACKEND_NAME: neo-marketer-backend
+      URL_MAP_NAME: neo-edge-url-map
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v4
+        with: {node-version: 24}
+      - name: Test NEO Marketer
+        run: node --test server/neo-marketer/*.test.mjs
+      - name: Validate deployment configuration
+        run: |
+          set -euo pipefail
+          for name in GCP_PROJECT_ID GCP_REGION GCP_WIF_PROVIDER GCP_CLOUD_RUN_SERVICE_ACCOUNT GCP_CLOUD_RUN_RUNTIME_ACCOUNT GCP_ARTIFACT_REGISTRY; do
+            test -n "${!name:-}" || { echo "::error::Missing $name"; exit 1; }
+          done
+      - uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@v3
+      - name: Build and push image
+        env: {IMAGE: "${{ env.GCP_ARTIFACT_REGISTRY }}/neo-marketer:${{ github.sha }}"}
+        run: |
+          set -euo pipefail
+          gcloud auth configure-docker "${GCP_REGION}-docker.pkg.dev" --quiet
+          docker build -f deploy/neo-marketer/Dockerfile -t "$IMAGE" .
+          docker push "$IMAGE"
+      - name: Deploy service
+        env: {IMAGE: "${{ env.GCP_ARTIFACT_REGISTRY }}/neo-marketer:${{ github.sha }}"}
+        run: |
+          set -euo pipefail
+          gcloud run deploy "$SERVICE_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --image="$IMAGE" --service-account="$GCP_CLOUD_RUN_RUNTIME_ACCOUNT" --port=8080 --allow-unauthenticated --quiet
+      - name: Verify Cloud Run origin
+        run: |
+          set -euo pipefail
+          SERVICE_URL="$(gcloud run services describe "$SERVICE_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format='value(status.url)')"
+          test "$(curl --retry 5 --retry-delay 5 -sS -o /dev/null -w '%{http_code}' "$SERVICE_URL/health")" = 200
+          test "$(curl -sS -o /dev/null -w '%{http_code}' "$SERVICE_URL/api/marketer/status")" = 200
+          echo "NEO_MARKETER_SERVICE_URL=$SERVICE_URL" >> "$GITHUB_ENV"
+      - name: Route domain through NEO HTTPS load balancer
+        run: |
+          set -euo pipefail
+          if ! gcloud compute network-endpoint-groups describe "$MARKETER_NEG_NAME" --region="$GCP_REGION" --project="$GCP_PROJECT_ID" >/dev/null 2>&1; then
+            gcloud compute network-endpoint-groups create "$MARKETER_NEG_NAME" --region="$GCP_REGION" --network-endpoint-type=serverless --cloud-run-service="$SERVICE_NAME" --project="$GCP_PROJECT_ID" --quiet
+          fi
+          if ! gcloud compute backend-services describe "$MARKETER_BACKEND_NAME" --global --project="$GCP_PROJECT_ID" >/dev/null 2>&1; then
+            gcloud compute backend-services create "$MARKETER_BACKEND_NAME" --global --load-balancing-scheme=EXTERNAL_MANAGED --project="$GCP_PROJECT_ID" --quiet
+          fi
+          if ! gcloud compute backend-services describe "$MARKETER_BACKEND_NAME" --global --project="$GCP_PROJECT_ID" --format='json(backends)' | grep -q "$MARKETER_NEG_NAME"; then
+            gcloud compute backend-services add-backend "$MARKETER_BACKEND_NAME" --global --network-endpoint-group="$MARKETER_NEG_NAME" --network-endpoint-group-region="$GCP_REGION" --project="$GCP_PROJECT_ID" --quiet
+          fi
+          gcloud compute url-maps describe "$URL_MAP_NAME" --project="$GCP_PROJECT_ID" >/dev/null
+          if ! gcloud compute url-maps describe "$URL_MAP_NAME" --project="$GCP_PROJECT_ID" --format='json(hostRules,pathMatchers)' | grep -q 'neo-marketer-matcher'; then
+            gcloud compute url-maps add-path-matcher "$URL_MAP_NAME" --path-matcher-name=neo-marketer-matcher --default-service="$MARKETER_BACKEND_NAME" --new-hosts="$DOMAIN" --project="$GCP_PROJECT_ID" --quiet
+          fi
+      - name: Verify production domain
+        run: |
+          set -euo pipefail
+          for attempt in $(seq 1 30); do
+            code="$(curl --connect-timeout 10 --max-time 30 -sS -o /dev/null -w '%{http_code}' "https://$DOMAIN/health" || true)"
+            if [ "$code" = 200 ]; then
+              echo "NEO Marketer production: https://$DOMAIN/" >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            echo "Waiting for production routing: HTTP ${code:-000} (attempt $attempt/30)"
+            sleep 10
+          done
+          echo "::error::https://$DOMAIN/health did not return HTTP 200"
+          exit 1
