@@ -1,0 +1,28 @@
+name: NEO Hacker
+
+on:
+  pull_request:
+    paths:
+      - 'server/neo-hacker/**'
+      - '.github/workflows/neo-hacker.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'server/neo-hacker/**'
+      - '.github/workflows/neo-hacker.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  defensive-policy-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Run NEO Hacker safety tests
+        run: node --test server/neo-hacker/*.test.mjs
