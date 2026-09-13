@@ -1,0 +1,110 @@
+id: NEO-NVSN-CROSS-SYSTEM-001
+status: CANONICAL_INTERNAL_ARCHITECTURE
+source: NVSN and NEO Wire working sessions plus merged NVSN ORIGIN v0.1
+canonical_record: data/nvsn/nvsn-conversation-canon.md
+implementation_root: src/nvsn
+
+routing:
+  neo_algo:
+    mode: reasoning_context
+    preserve:
+      - transport abstraction
+      - route optimization
+      - resilience and graceful degradation
+      - topology reasoning
+      - identity and protocol separation
+      - communications versus settlement separation
+  neo_oracle:
+    mode: architecture_aware_answer_context
+    preserve:
+      - implemented versus planned
+      - simulation versus production
+      - external technology versus NEO architecture
+      - technical capability versus legal authorization
+  gisd_giss_lms:
+    mode: curriculum_delivery_and_engineering_lab
+    topics:
+      - communications engineering
+      - distributed systems
+      - networking and routing
+      - cybersecurity
+      - SDR and radio literacy
+      - satellite ground station concepts
+      - Bitcoin and Lightning settlement architecture
+      - Counterparty tokenization
+      - resilient systems design
+  neosync:
+    mode: provenance_preserving_cross_domain_sync
+    links:
+      - NVSN
+      - NEO Wire
+      - NEO Identity
+      - NEO Mobile
+      - NEO Teller
+      - NEO Counter
+      - NEO Miner
+      - Bitcoin
+      - Lightning
+      - Counterparty XCP
+      - World Currency
+  neo_law:
+    mode: internal_policy_and_compliance_context
+    preserve:
+      - jurisdiction-first analysis
+      - spectrum and telecom authorization boundaries
+      - privacy and cybersecurity requirements
+      - financial and custody distinctions
+      - internal policy versus public law
+  neo_society:
+    mode: internal_social_norms
+    norms:
+      - lawful access
+      - consent
+      - privacy
+      - secure communications
+      - non-interference
+      - truthful capability claims
+      - credential and private-key protection
+      - responsible distributed-infrastructure participation
+  neo_wire:
+    mode: application_over_nvsn
+    rule: NVSN is communications infrastructure; NEO Wire is a telecommunications and financial-communications service.
+  neo_library:
+    mode: canonical_source_and_provenance_index
+  neopedia:
+    mode: derivative_knowledge_with_source_status_preserved
+  scroll:
+    mode: archival_version_control
+
+canonical_principles:
+  maxim: "NVSN connects. NEO Wire communicates. Bitcoin settles. Counterparty tokenizes. World Currency denominates. NEOsync coordinates."
+  nvsn_role: distributed software-defined communications fabric
+  bitcoin_role: final monetary settlement and selected integrity anchoring
+  lightning_role: instant and micropayment settlement where appropriate
+  counterparty_role: Bitcoin-native tokenization and asset layer
+  world_currency_role: denomination and payment-routing layer
+  neo_telegram_role: common logical message envelope
+  neo_identity_role: cryptographic identity and endpoint resolution
+
+boundaries:
+  - NVSN is not synonymous with NEO Wire.
+  - Communications payloads generally remain off-chain; Bitcoin is not the bulk-data carrier.
+  - Virtual satellite refers to software-defined orchestration of authorized physical infrastructure, not hardware-free satellite communications.
+  - A telephone number may resolve to cryptographic endpoints but is not itself inherently a blockchain address.
+  - Counterparty assets do not automatically create legal fiat, securities, commodity, or other regulated rights.
+  - Internal NEO policy does not itself create external civil jurisdiction or override public law.
+  - Simulation, planned architecture, and deployed production infrastructure must remain separately labeled.
+  - Unauthorized RF transmission, interception, third-party system access, or access-control bypass is outside the authorized architecture.
+
+roadmap:
+  v0_2:
+    - cryptographic identity
+    - encrypted NEO Telegram envelopes
+    - replay protection
+    - persistent store-and-forward queues
+    - route policy controls
+  v0_3:
+    - transport adapter SDK
+    - NEO Wire adapter interfaces
+    - observability and node telemetry
+    - policy-based routing
