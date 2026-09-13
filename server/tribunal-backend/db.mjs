@@ -8,8 +8,7 @@ mkdirSync(dirname(defaultPath),{recursive:true})
 export function openTribunalDb(path=defaultPath){
   const db=new DatabaseSync(path)
   db.exec(`
-    PRAGMA journal_mode=WAL;
-    PRAGMA foreign_keys=ON;
+    PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON;
     CREATE TABLE IF NOT EXISTS schema_meta(version INTEGER NOT NULL,applied_at TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS users(id TEXT PRIMARY KEY,email TEXT UNIQUE NOT NULL,display_name TEXT NOT NULL,password_hash TEXT NOT NULL,created_at TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS sessions(token_hash TEXT PRIMARY KEY,user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,expires_at TEXT NOT NULL,created_at TEXT NOT NULL);
@@ -29,23 +28,12 @@ export function openTribunalDb(path=defaultPath){
     CREATE TABLE IF NOT EXISTS service_recipients(id TEXT PRIMARY KEY,workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,claim_no TEXT NOT NULL,notice_id TEXT NOT NULL,recipient_name TEXT NOT NULL,destination TEXT NOT NULL,channel TEXT NOT NULL,status TEXT NOT NULL,deadline_at TEXT,served_at TEXT,last_attempt_at TEXT,created_by TEXT NOT NULL,updated_at TEXT NOT NULL,created_at TEXT NOT NULL,UNIQUE(workspace_id,notice_id,destination,channel));
     CREATE TABLE IF NOT EXISTS service_ledger(seq INTEGER PRIMARY KEY AUTOINCREMENT,entry_id TEXT UNIQUE NOT NULL,workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,claim_no TEXT NOT NULL,notice_id TEXT NOT NULL,recipient_id TEXT,communication_id TEXT,action TEXT NOT NULL,status TEXT NOT NULL,evidence_hash TEXT,previous_hash TEXT,entry_hash TEXT NOT NULL UNIQUE,actor_user_id TEXT NOT NULL,details_json TEXT NOT NULL,created_at TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS service_proofs(id TEXT PRIMARY KEY,workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,claim_no TEXT NOT NULL,notice_id TEXT NOT NULL,recipient_id TEXT NOT NULL,proof_type TEXT NOT NULL,statement TEXT NOT NULL,payload_hash TEXT NOT NULL,ledger_head TEXT,created_by TEXT NOT NULL,created_at TEXT NOT NULL);
+    CREATE TABLE IF NOT EXISTS service_rule_profiles(id TEXT PRIMARY KEY,workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,name TEXT NOT NULL,jurisdiction TEXT NOT NULL,procedure TEXT NOT NULL,days INTEGER NOT NULL,business_days INTEGER NOT NULL DEFAULT 0,holidays_json TEXT NOT NULL,authority_json TEXT,rule_fingerprint TEXT NOT NULL,enabled INTEGER NOT NULL DEFAULT 1,created_by TEXT NOT NULL,updated_at TEXT NOT NULL,created_at TEXT NOT NULL);
+    CREATE TABLE IF NOT EXISTS alternate_service_decisions(id TEXT PRIMARY KEY,workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,recipient_id TEXT NOT NULL REFERENCES service_recipients(id) ON DELETE CASCADE,decision TEXT NOT NULL,method TEXT,reason TEXT NOT NULL,authority_json TEXT,approved_by TEXT NOT NULL,fingerprint TEXT NOT NULL,created_at TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS audit_log(seq INTEGER PRIMARY KEY AUTOINCREMENT,workspace_id TEXT NOT NULL,actor_user_id TEXT NOT NULL,action TEXT NOT NULL,subject TEXT NOT NULL,payload_hash TEXT NOT NULL,previous_hash TEXT,entry_hash TEXT NOT NULL UNIQUE,created_at TEXT NOT NULL);
-    CREATE INDEX IF NOT EXISTS idx_audit_workspace_seq ON audit_log(workspace_id,seq);
-    CREATE INDEX IF NOT EXISTS idx_efiles_workspace_claim ON efiles(workspace_id,claim_no);
-    CREATE INDEX IF NOT EXISTS idx_notices_workspace_claim ON notices(workspace_id,claim_no);
-    CREATE INDEX IF NOT EXISTS idx_hearings_workspace_claim ON hearings(workspace_id,claim_no);
-    CREATE INDEX IF NOT EXISTS idx_delivery_workspace_notice ON delivery_attempts(workspace_id,notice_id);
-    CREATE INDEX IF NOT EXISTS idx_templates_workspace ON communication_templates(workspace_id,created_at);
-    CREATE INDEX IF NOT EXISTS idx_outbox_workspace_status ON communication_outbox(workspace_id,status,next_attempt_at);
-    CREATE INDEX IF NOT EXISTS idx_calendar_workspace_hearing ON calendar_exports(workspace_id,hearing_id);
-    CREATE INDEX IF NOT EXISTS idx_service_recipient_claim ON service_recipients(workspace_id,claim_no,notice_id);
-    CREATE INDEX IF NOT EXISTS idx_service_ledger_claim ON service_ledger(workspace_id,claim_no,seq);
-    CREATE INDEX IF NOT EXISTS idx_service_deadline ON service_recipients(workspace_id,status,deadline_at);
+    CREATE INDEX IF NOT EXISTS idx_audit_workspace_seq ON audit_log(workspace_id,seq); CREATE INDEX IF NOT EXISTS idx_efiles_workspace_claim ON efiles(workspace_id,claim_no); CREATE INDEX IF NOT EXISTS idx_notices_workspace_claim ON notices(workspace_id,claim_no); CREATE INDEX IF NOT EXISTS idx_hearings_workspace_claim ON hearings(workspace_id,claim_no); CREATE INDEX IF NOT EXISTS idx_delivery_workspace_notice ON delivery_attempts(workspace_id,notice_id); CREATE INDEX IF NOT EXISTS idx_templates_workspace ON communication_templates(workspace_id,created_at); CREATE INDEX IF NOT EXISTS idx_outbox_workspace_status ON communication_outbox(workspace_id,status,next_attempt_at); CREATE INDEX IF NOT EXISTS idx_calendar_workspace_hearing ON calendar_exports(workspace_id,hearing_id); CREATE INDEX IF NOT EXISTS idx_service_recipient_claim ON service_recipients(workspace_id,claim_no,notice_id); CREATE INDEX IF NOT EXISTS idx_service_ledger_claim ON service_ledger(workspace_id,claim_no,seq); CREATE INDEX IF NOT EXISTS idx_service_deadline ON service_recipients(workspace_id,status,deadline_at); CREATE INDEX IF NOT EXISTS idx_service_rules ON service_rule_profiles(workspace_id,jurisdiction,procedure,enabled); CREATE INDEX IF NOT EXISTS idx_alt_service_recipient ON alternate_service_decisions(workspace_id,recipient_id,created_at);
   `)
   const current=db.prepare('SELECT MAX(version) AS version FROM schema_meta').get()?.version||0
-  if(current<1)db.prepare('INSERT INTO schema_meta(version,applied_at) VALUES(1,?)').run(new Date().toISOString())
-  if(current<2)db.prepare('INSERT INTO schema_meta(version,applied_at) VALUES(2,?)').run(new Date().toISOString())
-  if(current<3)db.prepare('INSERT INTO schema_meta(version,applied_at) VALUES(3,?)').run(new Date().toISOString())
-  if(current<4)db.prepare('INSERT INTO schema_meta(version,applied_at) VALUES(4,?)').run(new Date().toISOString())
+  for(let v=current+1;v<=5;v++)db.prepare('INSERT INTO schema_meta(version,applied_at) VALUES(?,?)').run(v,new Date().toISOString())
   return db
 }
