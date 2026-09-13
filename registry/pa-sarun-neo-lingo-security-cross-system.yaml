@@ -1,0 +1,103 @@
+id: NEO-PA-SARUN-LINGO-SECURITY-001
+status: CANONICAL_INTERNAL_SYSTEM_CONTEXT
+source: Pa Sarun / NEO Lingo / Yamassee secure-script working specification
+parent_system: NEO System
+
+routing:
+  neo_algo:
+    mode: constraint_aware_reasoning_context
+    module: src/integration/paSarunNeoLingoSecurityContext.ts
+  neo_oracle:
+    mode: doctrine_aware_answer_context
+    module: src/integration/paSarunNeoLingoSecurityContext.ts
+  gisd_giss_lms:
+    mode: curriculum_and_reference_context
+    module: src/integration/paSarunNeoLingoSecurityContext.ts
+  neosync:
+    mode: provenance_preserving_policy_sync
+    module: src/integration/paSarunNeoLingoSecurityContext.ts
+  neo_law:
+    mode: internal_ecclesiastical_policy_and_authority_boundary
+    module: src/integration/paSarunNeoLingoSecurityContext.ts
+  neo_society:
+    mode: internal_social_norms_and_naming_etiquette
+    module: src/integration/paSarunNeoLingoSecurityContext.ts
+  lumen:
+    mode: education_and_plain_language_translation
+  scroll:
+    mode: archival_version_control
+  neo_library:
+    mode: source_and_provenance_index
+  neopedia:
+    mode: derivative_knowledge_with_authority_status_preserved
+  neo_cipher:
+    mode: defensive_secure_communications_context
+    references:
+      - registry/neo-cipher.yaml
+      - docs/neo-cipher-999-144.md
+
+canonical_domains:
+  - Pa Sarun Naming System
+  - NIA-010 Pa Sarun Naming Auditor
+  - NEO Lingo Codex v1.0
+  - NEO Cipher #D — 999/144 Yamassee Secure Script Protocol
+
+pa_sarun_authority_boundary:
+  advisory_only: true
+  prohibited_agent_actions:
+    - independently confer titles
+    - independently grant naturalization suffixes
+    - independently approve Royal Houses
+    - override authorized Temple officials
+  audit_outcomes:
+    - VALID
+    - INVALID
+    - HUMAN REVIEW REQUIRED
+
+core_naming_controls:
+  naturalization_suffixes_are_permanent_once_earned: true
+  hri_requires_authorized_temple_council_status: true
+  language_mixing_default: prohibited
+  magism_language_mixing_exception: true
+  neter_restricted_to_major_lesson_8: true
+  sarun_not_personal_name: true
+  hotep_not_complete_personal_name: true
+  nisut_bit_uses_location_not_literal_label: true
+  expanded_ritual_categories_not_publicly_stacked: true
+
+neo_lingo:
+  role: plain_language_translation_layer
+  plain_language_first: true
+  preserve_specialized_terminology: true
+  may_override_pa_sarun_vocabulary: false
+
+security:
+  yamassee_font_role: presentation_and_encoding_layer
+  font_binary_committed: false
+  cryptographic_security_source: standards_based_cryptography
+  protocol_constants:
+    marker: "#D"
+    cycle: 999
+    resonance: 144
+  note: "999, 144, and #D are protocol/domain constants and do not substitute for entropy, keys, or cryptographic review."
+  future_language_materials:
+    - authoritative Yamassee/Nuwaubian lexicon
+    - language-aware passphrase generation
+    - mnemonic secret structures
+    - symbolic token vocabulary
+    - internal authentication phrases
+  rule: "Language-derived credentials must retain cryptographically secure randomness and must not rely on vocabulary obscurity alone."
+
+social_norms:
+  - Use authorized titles only.
+  - Do not imply Temple authority that has not been granted.
+  - Preserve earned naturalization suffixes without reassignment by degree advancement.
+  - Lead with plain-language explanation when specialized NEO terminology could obscure meaning.
+  - Treat Yamassee/Nuwaubian glyph rendering as cultural and communication infrastructure, not proof of cryptographic secrecy.
+  - Escalate unresolved doctrinal or naming conflicts to authorized human Temple review.
+
+boundaries:
+  - Internal Temple naming doctrine is distinct from external civil identity or government-issued status.
+  - NEO Lingo explains authoritative vocabulary but does not rewrite it.
+  - NEO Cipher is defensive security infrastructure; no claim of mathematical unhackability is authorized.
+  - Font licensing and token-gated entitlement are separate from encryption-key management.
