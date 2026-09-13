@@ -1,0 +1,152 @@
+{
+  "id": "sacred-records-anun-re",
+  "status": "active",
+  "updated": "2026-09-13",
+  "primaryChamber": "Dr. Lawiy Daily Learning Hall",
+  "primaryRecord": "The Sacred Records of Anun-Re",
+  "purpose": "Continuous personal learning, divination, grimoire transcription, reflective practice, and noological synthesis with strict provenance separation between canon, interpretation, and externally verified fact.",
+  "dailyTemplate": [
+    "nuwaubianRune",
+    "sumerKemeticZodiac",
+    "sumerKemeticTreeNumerology",
+    "noologicalSymbolOfPower",
+    "optionalAdditionalDivination",
+    "summaryInsight"
+  ],
+  "cadence": {
+    "target": "daily-by-noon-local-time"
+  },
+  "nuwaubianRunePolicy": {
+    "firstAnchor": true,
+    "authorizedCorpusOnly": true,
+    "preserveCanonicalMeaningBeforeInterpretation": true,
+    "doNotInventMissingRuneData": true,
+    "confirmedEntries": [
+      {
+        "name": "Hayuh",
+        "meaning": "Life Force and wholeness",
+        "reversal": false,
+        "formNote": "circle rune with a line through the middle"
+      },
+      {
+        "name": "The Blank Card",
+        "meaning": "Unknown, destiny, beginning, and end",
+        "reversal": false,
+        "formNote": "blank rune"
+      }
+    ]
+  },
+  "provenanceClasses": [
+    "user-authored-canon",
+    "traditional-source-material",
+    "interpretive-divination",
+    "externally-verified-fact",
+    "speculative-synthesis"
+  ],
+  "pastLifePolicy": {
+    "classification": "reflective-metaphysical-interpretation",
+    "mustNotPresentAsVerifiedHistoryWithoutEvidence": true,
+    "preserveDistinctCulturalTraditions": true
+  },
+  "geneticResearchPolicy": {
+    "publicRepoStoresRawDNA": false,
+    "publicRepoStoresExactBirthAnchors": false,
+    "distinguishMacroHaplogroupFromSubcladeAge": true,
+    "populationAssociationDoesNotProveNamedAncientDescent": true,
+    "preferPeerReviewedPopulationGenetics": true,
+    "privateAccessControlledStoreRecommended": true
+  },
+  "routing": {
+    "neoAlgo": {
+      "mode": "semantic-reasoning-corpus",
+      "uses": [
+        "daily-symbolic-synthesis",
+        "noological-interpretation",
+        "provenance-aware-comparison",
+        "rune-continuity",
+        "journal-pattern-recognition"
+      ]
+    },
+    "neoOracle": {
+      "mode": "high-priority-interpretive-context",
+      "requirements": [
+        "preserve-reading-order",
+        "separate-canonical-rune-meaning-from-generated-interpretation",
+        "state-uncertainty",
+        "never-fabricate-source-tradition",
+        "separate-spiritual-interpretation-from-scientific-historical-fact"
+      ]
+    },
+    "gissNeoLms": {
+      "mode": "curriculum",
+      "subjects": [
+        "Logic & Noology",
+        "Comparative Religion",
+        "History & Ourstory",
+        "Symbolism & Semiotics",
+        "Ancient Civilizations",
+        "Divination Systems as Cultural Knowledge Technologies",
+        "Research Methods & Source Provenance",
+        "Personal Reflective Practice"
+      ]
+    },
+    "neoSync": {
+      "mode": "cross-domain-continuity-memory",
+      "preserve": [
+        "daily-sequence",
+        "rune-history",
+        "grimoire-page-continuity",
+        "approved-definitions",
+        "recurring-symbols",
+        "interpretive-themes",
+        "revision-history"
+      ]
+    },
+    "neoLaw": {
+      "mode": "internal-governance-and-record-integrity",
+      "uses": [
+        "provenance",
+        "chain-of-custody",
+        "access-control",
+        "evidentiary-distinction",
+        "audit-trail"
+      ],
+      "divinationIsLegalEvidence": false
+    },
+    "neoSociety": {
+      "mode": "internal-reflective-social-norms",
+      "norms": [
+        "reason-before-certainty",
+        "distinguish-knowledge-from-intuition",
+        "respect-distinct-traditions",
+        "record-uncertainty",
+        "no-fabricated-quotations-lineages-deities-or-events",
+        "divination-not-substitute-for-scientific-medical-legal-or-financial-evidence"
+      ]
+    },
+    "neoPrimeGatewayKnowledge": {
+      "mode": "canonical-read-mostly",
+      "canonicalRuneDefinitionChangesApprovalGated": true,
+      "dailyReadingsAppendOnly": true
+    }
+  },
+  "tags": [
+    "learning-hall",
+    "sacred-records",
+    "anun-re",
+    "daily-reading",
+    "nuwaubian-runes",
+    "noology",
+    "divination",
+    "i-ching",
+    "sumer",
+    "kemet",
+    "tree-numerology",
+    "symbol-of-power",
+    "grimoire",
+    "true-light",
+    "provenance",
+    "comparative-religion",
+    "reflective-practice"
+  ]
+}
