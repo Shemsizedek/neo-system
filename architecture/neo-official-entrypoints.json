@@ -1,0 +1,34 @@
+{
+  "version":"1.0.0",
+  "domainRoot":"holytemples.org",
+  "officialEntrypoints":{
+    "system":{
+      "host":"neo.holytemples.org",
+      "url":"https://neo.holytemples.org",
+      "service":"neo-system",
+      "role":"canonical-system-gateway",
+      "visibility":"public-entry-with-private-routes-protected"
+    },
+    "hub":{
+      "host":"hub.holytemples.org",
+      "url":"https://hub.holytemples.org",
+      "service":"neo-hub",
+      "role":"canonical-public-hub",
+      "visibility":"public"
+    }
+  },
+  "connections":[
+    {"from":"neo.holytemples.org","to":"NEOsync Executive Command Board","relation":"PRIVATE_EXECUTIVE_ENTRY","authorization":"Cloudflare Access"},
+    {"from":"neo.holytemples.org","to":"NEOsync Operational Memory Graph","relation":"PRIVATE_CONTEXT_SERVICE","authorization":"Cloudflare Access or private service binding"},
+    {"from":"hub.holytemples.org","to":"neo.holytemples.org","relation":"PUBLIC_HUB_TO_SYSTEM","authorization":"public discovery only"},
+    {"from":"NEOsync Memory Ingestion","to":"NEOsync Operational Memory Graph","relation":"AUTOMATIC_CONTEXT_LINKING","authorization":"Durable Object service binding"}
+  ],
+  "rules":{
+    "canonicalNeoHost":"neo.holytemples.org",
+    "canonicalHubHost":"hub.holytemples.org",
+    "tlsRequired":true,
+    "publicHubMustNotExposeGovernmentCredentials":true,
+    "privateGovernmentRoutesRequireAuthentication":true,
+    "dnsOrRegistryPresenceDoesNotByItselfProveLiveDeployment":true
+  }
+}
