@@ -3,6 +3,7 @@ export const ADAPTERS=[
 {id:'executive',name:'NEOsync Executive Office',kind:'service-or-repository',env:'NEOSYNC_API_URL',healthPath:'/health',repoPath:'server/neo-router/executive-command.mjs'},
 {id:'neosync-chat',name:'NEOsync Conversational Command',kind:'service-or-repository',env:'NEOSYNC_CONVERSATION_URL',healthPath:'/health',repoPath:'cloudflare/neo-conversation/src/index.js'},
 {id:'command-board',name:'NEOsync Executive Command Board',kind:'service-or-repository',env:'NEOSYNC_COMMAND_BOARD_URL',healthPath:'/health',repoPath:'cloudflare/neo-command-board/src/index.js'},
+{id:'memory-graph',name:'NEOsync Operational Memory Graph',kind:'service-or-repository',env:'NEOSYNC_MEMORY_GRAPH_URL',healthPath:'/health',repoPath:'cloudflare/neo-memory-graph/src/index.js'},
 {id:'executive-inbox',name:'NEOsync Executive Inbox',kind:'service-or-repository',env:'EXECUTIVE_INBOX_URL',healthPath:'/health',repoPath:'cloudflare/neo-executive-inbox/src/index.js'},
 {id:'enterprise',name:'NEO Enterprise Command Federation',kind:'service-or-repository',env:'ENTERPRISE_FEDERATION_URL',healthPath:'/health',repoPath:'cloudflare/neo-enterprise-federation/src/index.js'},
 {id:'escalation-desk',name:'NEOsync Escalation Desk',kind:'service-or-repository',env:'ESCALATION_DESK_URL',healthPath:'/health',repoPath:'cloudflare/neo-escalation-desk/src/index.js'},
