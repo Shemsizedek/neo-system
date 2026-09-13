@@ -49,6 +49,16 @@ jobs:
           workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
           service_account: ${{ env.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
       - uses: google-github-actions/setup-gcloud@v3
+      - name: Grant runtime secret access
+        run: |
+          set -euo pipefail
+          gcloud secrets describe NEO_OPAL_BRIDGE_TOKEN --project="$GCP_PROJECT_ID" >/dev/null
+          gcloud secrets add-iam-policy-binding NEO_OPAL_BRIDGE_TOKEN \
+            --project="$GCP_PROJECT_ID" \
+            --member="serviceAccount:$GCP_CLOUD_RUN_RUNTIME_ACCOUNT" \
+            --role="roles/secretmanager.secretAccessor" \
+            --condition=None \
+            --quiet >/dev/null
       - name: Build and push image
         env: {IMAGE: "${{ env.GCP_ARTIFACT_REGISTRY }}/neo-opal-bridge:${{ github.sha }}"}
         run: |
