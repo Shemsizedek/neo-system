@@ -1,0 +1,22 @@
+[Unit]
+Description=NEO World Interfaith Court Backend
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=neo
+Group=neo
+WorkingDirectory=/opt/neo-system
+EnvironmentFile=/etc/neo/world-court.env
+ExecStart=/usr/bin/node server/tribunal-backend/server.mjs
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/neo-world-court
+
+[Install]
+WantedBy=multi-user.target
