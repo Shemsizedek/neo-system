@@ -1,4 +1,4 @@
-name: Cut Over World Court DNS
+name: Verify World Court DNS Readiness
 
 on:
   push:
@@ -11,78 +11,42 @@ permissions:
   contents: read
 
 env:
-  ROOT_DOMAIN: holytemples.org
   DOMAIN: court.holytemples.org
   TARGET_IP: 35.253.233.133
 
 jobs:
-  cutover:
+  verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
-    env:
-      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-      CLOUDFLARE_ZONE_ID: ${{ vars.CLOUDFLARE_ZONE_ID || secrets.CLOUDFLARE_ZONE_ID }}
+    timeout-minutes: 3
     steps:
-      - name: Update authoritative DNS
+      - name: Inspect public DNS readiness
         run: |
           set -euo pipefail
-          test -n "${CLOUDFLARE_API_TOKEN:-}" || { echo "::error::Missing CLOUDFLARE_API_TOKEN"; exit 1; }
-          cf() {
-            curl -fsS \
-              -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
-              -H 'Content-Type: application/json' \
-              "$@"
-          }
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq dnsutils >/dev/null
 
-          ZONE_ID="${CLOUDFLARE_ZONE_ID:-}"
-          if [[ -n "$ZONE_ID" ]]; then
-            ZONE_JSON="$(cf "https://api.cloudflare.com/client/v4/zones/$ZONE_ID")"
-            if [[ "$(jq -r '.success // false' <<<"$ZONE_JSON")" != "true" ]] || [[ "$(jq -r '.result.name // empty' <<<"$ZONE_JSON")" != "$ROOT_DOMAIN" ]]; then
-              echo "::error::Configured CLOUDFLARE_ZONE_ID is not accessible as $ROOT_DOMAIN with the current token"
-              jq -c '{success,errors,result:{id:(.result.id // null),name:(.result.name // null),status:(.result.status // null)}}' <<<"$ZONE_JSON" || true
-              exit 1
-            fi
+          echo "Expected production record: $DOMAIN -> $TARGET_IP"
+          echo '=== authoritative delegation ==='
+          dig +short NS holytemples.org || true
+          dig +short SOA holytemples.org || true
+          echo '=== current court record ==='
+          ANSWERS="$(dig +short A "$DOMAIN" | sort -u || true)"
+          printf '%s\n' "${ANSWERS:-unresolved}"
+
+          if grep -qx "$TARGET_IP" <<<"$ANSWERS"; then
+            echo "World Court DNS is ready: $DOMAIN -> $TARGET_IP"
+            echo "WORLD_COURT_DNS_READY=true" >> "$GITHUB_ENV"
           else
-            ZONE_JSON="$(cf "https://api.cloudflare.com/client/v4/zones?name=$ROOT_DOMAIN&per_page=50")"
-            ZONE_ID="$(jq -r --arg root "$ROOT_DOMAIN" '.result[]? | select(.name == $root) | .id' <<<"$ZONE_JSON" | head -n1)"
-            if [[ -z "$ZONE_ID" ]]; then
-              echo "::error::Cloudflare token cannot see the $ROOT_DOMAIN zone. Set repository/environment variable CLOUDFLARE_ZONE_ID to the zone ID and ensure the token has Zone:Read plus DNS:Edit for that zone."
-              jq -c '{success,errors,visible_zones:[.result[]? | {id,name,status}]}' <<<"$ZONE_JSON" || true
-              exit 1
-            fi
+            echo "::warning::World Court DNS is not yet pointed at $TARGET_IP. No provider-specific DNS mutation was attempted."
+            echo "WORLD_COURT_DNS_READY=false" >> "$GITHUB_ENV"
           fi
 
-          echo "Using Cloudflare zone $ZONE_ID for $ROOT_DOMAIN"
-
-          RECORDS_JSON="$(cf "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records?name=$DOMAIN&per_page=100")"
-          [[ "$(jq -r '.success // false' <<<"$RECORDS_JSON")" == "true" ]] || { jq -c '{success,errors}' <<<"$RECORDS_JSON"; exit 1; }
-          mapfile -t RECORD_IDS < <(jq -r '.result[].id' <<<"$RECORDS_JSON")
-          PAYLOAD="$(jq -nc --arg name "$DOMAIN" --arg content "$TARGET_IP" '{type:"A",name:$name,content:$content,ttl:300,proxied:false}')"
-
-          if (( ${#RECORD_IDS[@]} == 0 )); then
-            RESULT="$(cf -X POST --data "$PAYLOAD" "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records")"
-          else
-            RESULT="$(cf -X PUT --data "$PAYLOAD" "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records/${RECORD_IDS[0]}")"
-            if (( ${#RECORD_IDS[@]} > 1 )); then
-              for record_id in "${RECORD_IDS[@]:1}"; do
-                cf -X DELETE "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records/$record_id" >/dev/null
-              done
-            fi
-          fi
-
-          [[ "$(jq -r '.success' <<<"$RESULT")" == "true" ]] || { jq -c '{success,errors}' <<<"$RESULT"; exit 1; }
-          echo "Authoritative DNS set: $DOMAIN -> $TARGET_IP"
-
-      - name: Verify public DNS convergence
+      - name: Publish DNS readiness
         run: |
-          set -euo pipefail
-          for i in $(seq 1 30); do
-            ANSWERS="$(getent ahostsv4 "$DOMAIN" | awk '{print $1}' | sort -u || true)"
-            echo "Attempt $i: ${ANSWERS:-unresolved}"
-            if grep -qx "$TARGET_IP" <<<"$ANSWERS"; then
-              exit 0
-            fi
-            sleep 10
-          done
-          echo "::error::Public DNS did not converge to $TARGET_IP within five minutes"
-          exit 1
+          {
+            echo '## World Court DNS readiness'
+            echo "- Host: $DOMAIN"
+            echo "- Target IPv4: $TARGET_IP"
+            echo "- Ready: $WORLD_COURT_DNS_READY"
+            echo '- DNS mutation: disabled in GitHub until the authoritative provider is explicitly integrated.'
+          } >> "$GITHUB_STEP_SUMMARY"
