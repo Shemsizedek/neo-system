@@ -66,11 +66,20 @@ cat >/usr/local/sbin/world-court-tls.sh <<'EOF'
 set -euo pipefail
 DOMAIN="court.holytemples.org"
 CERT="/etc/letsencrypt/live/$DOMAIN/fullchain.pem"
-[[ -f "$CERT" ]] && exit 0
+
+# A redeploy replaces the base Nginx site file, which can remove Certbot's
+# HTTPS directives even though the certificate itself remains on disk.
+# Exit only when both the certificate AND an active 443 server are present.
+if [[ -f "$CERT" ]] && nginx -T 2>/dev/null | grep -Eq 'listen[[:space:]]+443([[:space:]]|;)'; then
+  exit 0
+fi
+
 IP="$(curl -fsS -H 'Metadata-Flavor: Google' 'http://metadata.google.internal/computeMetadata/v1/instance/network-interfaces/0/access-configs/0/external-ip')"
 DNS="$(getent ahostsv4 "$DOMAIN" | awk '{print $1}' | sort -u)"
 if grep -qx "$IP" <<<"$DNS"; then
-  certbot --nginx -d "$DOMAIN" --non-interactive --agree-tos --register-unsafely-without-email --redirect
+  certbot --nginx -d "$DOMAIN" --non-interactive --agree-tos --register-unsafely-without-email --redirect --keep-until-expiring
+  nginx -t
+  systemctl reload nginx
 fi
 EOF
 chmod 0755 /usr/local/sbin/world-court-tls.sh
@@ -101,6 +110,9 @@ EOF
 
 systemctl daemon-reload
 systemctl enable --now world-court-tls.timer
+# Run once immediately so a normal redeploy restores HTTPS without waiting for
+# the timer. Failure is retried by the timer and caught by the deployment gate.
+/usr/local/sbin/world-court-tls.sh || true
 
 for _ in $(seq 1 30); do
   if curl -fsS http://127.0.0.1/health >/dev/null; then
