@@ -26,7 +26,5 @@ jobs:
           dig +short SOA holytemples.org
           echo '=== court A (system resolver) ==='
           getent ahostsv4 court.holytemples.org | awk '{print $1}' | sort -u || true
-          echo '=== court A (Google) ==='
+          echo '=== court A (Google public resolver) ==='
           dig @8.8.8.8 +short A court.holytemples.org || true
-          echo '=== court A (Cloudflare) ==='
-          dig @1.1.1.1 +short A court.holytemples.org || true
