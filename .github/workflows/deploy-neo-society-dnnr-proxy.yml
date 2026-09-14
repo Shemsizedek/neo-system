@@ -21,12 +21,19 @@ env:
   SOCIETY_HOST: society.holytemples.org
   LIFESTYLE_HOST: lifestyle.holytemples.org
   DNNR_UPSTREAM_ORIGIN: https://neo.dnnr.io
+  NEG_NAME: neo-society-dnnr-neg
+  BACKEND_SERVICE: neo-society-dnnr-backend
+  URL_MAP: neo-society-dnnr-map
+  SSL_CERT: neo-society-dnnr-cert
+  HTTPS_PROXY: neo-society-dnnr-https
+  GLOBAL_IP: neo-society-dnnr-ip
+  HTTPS_RULE: neo-society-dnnr-https-rule
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     environment: holytemples-production
-    timeout-minutes: 25
+    timeout-minutes: 35
     env:
       GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID || secrets.GCP_PROJECT_ID }}
       GCP_REGION: ${{ vars.GCP_REGION || secrets.GCP_REGION }}
@@ -94,7 +101,7 @@ jobs:
           echo "NEO_SOCIETY_PROXY_URL=$URL" >> "$GITHUB_ENV"
           echo "NEO Society DNNR proxy origin healthy: $URL" >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Bind branded domains
+      - name: Try native Cloud Run domain mapping
         run: |
           set -uo pipefail
           pending=0
@@ -107,10 +114,97 @@ jobs:
               echo "Domain mapping created: $domain"
             else
               pending=$((pending + 1))
-              echo "::warning::Domain mapping pending for $domain. The Cloud Run origin is deployed; finish DNS/domain verification if required."
+              echo "::warning::Native domain mapping pending for $domain; HTTPS load balancer fallback will be provisioned."
             fi
           done
-          echo "Domain mappings pending: $pending" >> "$GITHUB_STEP_SUMMARY"
+          echo "Native domain mappings pending: $pending" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Provision HTTPS load balancer fallback
+        run: |
+          set -euo pipefail
+
+          if ! gcloud compute network-endpoint-groups describe "$NEG_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" >/dev/null 2>&1; then
+            gcloud compute network-endpoint-groups create "$NEG_NAME" \
+              --project="$GCP_PROJECT_ID" \
+              --region="$GCP_REGION" \
+              --network-endpoint-type=serverless \
+              --cloud-run-service="$SERVICE_NAME" \
+              --quiet
+          fi
+
+          if ! gcloud compute backend-services describe "$BACKEND_SERVICE" --project="$GCP_PROJECT_ID" --global >/dev/null 2>&1; then
+            gcloud compute backend-services create "$BACKEND_SERVICE" \
+              --project="$GCP_PROJECT_ID" \
+              --global \
+              --load-balancing-scheme=EXTERNAL_MANAGED \
+              --protocol=HTTP \
+              --quiet
+          fi
+
+          NEG_URL="$(gcloud compute network-endpoint-groups describe "$NEG_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format='value(selfLink)')"
+          CURRENT_BACKENDS="$(gcloud compute backend-services describe "$BACKEND_SERVICE" --project="$GCP_PROJECT_ID" --global --format='value(backends.group)' || true)"
+          if [[ "$CURRENT_BACKENDS" != *"$NEG_URL"* ]]; then
+            gcloud compute backend-services add-backend "$BACKEND_SERVICE" \
+              --project="$GCP_PROJECT_ID" \
+              --global \
+              --network-endpoint-group="$NEG_NAME" \
+              --network-endpoint-group-region="$GCP_REGION" \
+              --quiet
+          fi
+
+          if ! gcloud compute url-maps describe "$URL_MAP" --project="$GCP_PROJECT_ID" >/dev/null 2>&1; then
+            gcloud compute url-maps create "$URL_MAP" \
+              --project="$GCP_PROJECT_ID" \
+              --default-service="$BACKEND_SERVICE" \
+              --quiet
+          fi
+
+          if ! gcloud compute ssl-certificates describe "$SSL_CERT" --project="$GCP_PROJECT_ID" --global >/dev/null 2>&1; then
+            gcloud compute ssl-certificates create "$SSL_CERT" \
+              --project="$GCP_PROJECT_ID" \
+              --global \
+              --domains="$SOCIETY_HOST,$LIFESTYLE_HOST" \
+              --quiet
+          fi
+
+          if ! gcloud compute target-https-proxies describe "$HTTPS_PROXY" --project="$GCP_PROJECT_ID" >/dev/null 2>&1; then
+            gcloud compute target-https-proxies create "$HTTPS_PROXY" \
+              --project="$GCP_PROJECT_ID" \
+              --url-map="$URL_MAP" \
+              --ssl-certificates="$SSL_CERT" \
+              --quiet
+          fi
+
+          if ! gcloud compute addresses describe "$GLOBAL_IP" --project="$GCP_PROJECT_ID" --global >/dev/null 2>&1; then
+            gcloud compute addresses create "$GLOBAL_IP" \
+              --project="$GCP_PROJECT_ID" \
+              --global \
+              --ip-version=IPV4 \
+              --network-tier=PREMIUM \
+              --quiet
+          fi
+
+          LB_IP="$(gcloud compute addresses describe "$GLOBAL_IP" --project="$GCP_PROJECT_ID" --global --format='value(address)')"
+          test -n "$LB_IP"
+
+          if ! gcloud compute forwarding-rules describe "$HTTPS_RULE" --project="$GCP_PROJECT_ID" --global >/dev/null 2>&1; then
+            gcloud compute forwarding-rules create "$HTTPS_RULE" \
+              --project="$GCP_PROJECT_ID" \
+              --global \
+              --load-balancing-scheme=EXTERNAL_MANAGED \
+              --network-tier=PREMIUM \
+              --address="$LB_IP" \
+              --target-https-proxy="$HTTPS_PROXY" \
+              --ports=443 \
+              --quiet
+          fi
+
+          echo "NEO_SOCIETY_LB_IP=$LB_IP" >> "$GITHUB_ENV"
+          echo "### HTTPS load balancer fallback" >> "$GITHUB_STEP_SUMMARY"
+          echo "Static IPv4: $LB_IP" >> "$GITHUB_STEP_SUMMARY"
+          echo "DNS A records required:" >> "$GITHUB_STEP_SUMMARY"
+          echo "- $SOCIETY_HOST -> $LB_IP" >> "$GITHUB_STEP_SUMMARY"
+          echo "- $LIFESTYLE_HOST -> $LB_IP" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Probe DNNR upstream through branded routing
         run: |
