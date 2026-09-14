@@ -1,13 +1,42 @@
 {
-  "generatedAt": "2026-09-13T20:53:03.851Z",
+  "generatedAt": "2026-09-14T05:00:13.035Z",
   "items": [
     {
-      "id": "DRAFT:8eea6e5e995acd5a",
+      "id": "DRAFT:2138275d77589525",
+      "title": "Untitled",
+      "summary": "HOME | Table of Contents | The Seven Thunders | A Personal Note from the Receiver | Prayer of the Ansaars | The Glossary | Figures Back | Next Your browser does not support inline frames or is currently configured not to display inline frames. HOME | Table of Contents | The Seven Thunders | A Personal Note from the Receiver | Prayer of the Ansaars | The Glossary | Figures http://HolyTablets.NuwaubianFacts.com Please ",
+      "sourceId": "SRC-HOLY-TABLETS-WEB",
+      "sourceUrl": "https://holytablets.nuwaubianfacts.com/100/051.htm",
+      "sourceHash": "2138275d775895259a2f6cff14319e440fcaa0e993d1a5ec487f48f1d7649a2c",
+      "sourceMode": "PRIMARY_SACRED",
+      "headings": [],
+      "claimStatus": "SOURCE_STATES",
+      "quality": {
+        "dimensions": {
+          "provenance": 9,
+          "truthfulness": 8,
+          "soundRightReason": 7,
+          "coherence": 7,
+          "ethics": 9,
+          "reciprocity": 7,
+          "natureAlignment": 6,
+          "craftsmanship": 5,
+          "consequence": 8
+        },
+        "average": 7.333333333333333,
+        "potency": "DYNAMIC_BALANCE",
+        "gate": "PASS",
+        "note": "Heuristic artifact-quality assessment only; not a score of persons, identities or protected characteristics."
+      },
+      "publicationStatus": "DRAFT_READY_FOR_REVIEW"
+    },
+    {
+      "id": "DRAFT:0388de20cf642c8a",
       "title": "World Temple &#8211; Omniversal Church",
-      "summary": "World Temple &#8211; Omniversal Church Skip to content World Temple N.U.T &#8211; Omniversal Church Home Holy Ministries Holy Ordainment Holy Charter Holy Tablets Holy See World Temple City World Library World Mission Statement World Ministries World Leaders World Committees World Chaplain World Parliament World Education World Treasury of Merit World Police World Interfaith Court Global District World Bulletin Membe",
+      "summary": "World Temple &#8211; Omniversal Church Skip to content World Temple N.U.T &#8211; Omniversal Church Home Holy Ministries Holy Ordainment Holy Charter Holy Tablets Holy See World Temple City World Library World Mission Statement World Ministries World Leaders World Committees World Chaplain World Parliament World Education World Treasury of Merit World Police World Interfaith Court Global District World Bulletin Templ",
       "sourceId": "SRC-WORLD-TEMPLE-WEB",
       "sourceUrl": "https://holytemples.org/",
-      "sourceHash": "8eea6e5e995acd5adeb75c185054d5d98157f8ac2904ec16b8b5f4f002879a40",
+      "sourceHash": "0388de20cf642c8a2cd377230e93561f3e860f2907a525df0f3284626e6521c4",
       "sourceMode": "PRIMARY_INSTITUTIONAL",
       "headings": [
         "World Temple Network",
