@@ -19,7 +19,7 @@ permissions:
 jobs:
   smoke:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -27,6 +27,9 @@ jobs:
           node-version: '24'
       - name: Validate manifest JSON
         run: node -e "JSON.parse(require('fs').readFileSync('services/neo-terabox-bridge/manifest.json','utf8')); console.log('manifest: PASS')"
+      - name: Install bridge dependencies
+        working-directory: services/neo-terabox-bridge
+        run: npm install --no-audit --no-fund
       - name: Run bridge smoke test
         working-directory: services/neo-terabox-bridge
         run: npm run smoke
