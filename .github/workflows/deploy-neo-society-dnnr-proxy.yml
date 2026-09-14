@@ -25,7 +25,7 @@ env:
   BACKEND_SERVICE: neo-society-dnnr-backend
   URL_MAP: neo-society-dnnr-map
   SSL_CERT: neo-society-dnnr-cert
-  HTTPS_PROXY: neo-society-dnnr-https
+  LB_HTTPS_PROXY: neo-society-dnnr-https
   GLOBAL_IP: neo-society-dnnr-ip
   HTTPS_RULE: neo-society-dnnr-https-rule
 
@@ -167,8 +167,8 @@ jobs:
               --quiet
           fi
 
-          if ! gcloud compute target-https-proxies describe "$HTTPS_PROXY" --project="$GCP_PROJECT_ID" >/dev/null 2>&1; then
-            gcloud compute target-https-proxies create "$HTTPS_PROXY" \
+          if ! gcloud compute target-https-proxies describe "$LB_HTTPS_PROXY" --project="$GCP_PROJECT_ID" >/dev/null 2>&1; then
+            gcloud compute target-https-proxies create "$LB_HTTPS_PROXY" \
               --project="$GCP_PROJECT_ID" \
               --url-map="$URL_MAP" \
               --ssl-certificates="$SSL_CERT" \
@@ -194,7 +194,7 @@ jobs:
               --load-balancing-scheme=EXTERNAL_MANAGED \
               --network-tier=PREMIUM \
               --address="$LB_IP" \
-              --target-https-proxy="$HTTPS_PROXY" \
+              --target-https-proxy="$LB_HTTPS_PROXY" \
               --ports=443 \
               --quiet
           fi
