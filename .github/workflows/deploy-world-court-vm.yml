@@ -25,7 +25,6 @@ env:
   FIREWALL_NAME: world-court-web-ingress
   MACHINE_TYPE: e2-small
   DOMAIN: court.holytemples.org
-  ROOT_DOMAIN: holytemples.org
 
 jobs:
   deploy:
@@ -38,7 +37,6 @@ jobs:
       GCP_ZONE: ${{ vars.GCP_ZONE || secrets.GCP_ZONE || 'us-central1-a' }}
       GCP_WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER || secrets.GCP_WIF_PROVIDER }}
       GCP_CLOUD_RUN_SERVICE_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_SERVICE_ACCOUNT || secrets.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
-      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
     steps:
       - uses: actions/checkout@v7.0.1
 
@@ -80,50 +78,6 @@ jobs:
               --target-tags=world-court-web
           fi
 
-      - name: Synchronize authoritative court DNS
-        env:
-          IP: ${{ steps.infra.outputs.ip }}
-        run: |
-          set -euo pipefail
-          test -n "${CLOUDFLARE_API_TOKEN:-}" || { echo "::error::Missing CLOUDFLARE_API_TOKEN; authoritative DNS still points court.holytemples.org at WordPress."; exit 1; }
-
-          cf() {
-            curl -fsS \
-              -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
-              -H 'Content-Type: application/json' \
-              "$@"
-          }
-
-          ZONE_JSON="$(cf "https://api.cloudflare.com/client/v4/zones?name=$ROOT_DOMAIN&status=active")"
-          ZONE_ID="$(jq -r '.result[0].id // empty' <<<"$ZONE_JSON")"
-          if [[ -z "$ZONE_ID" ]]; then
-            echo "::error::Cloudflare token cannot resolve the active $ROOT_DOMAIN zone. Grant Zone:Read and DNS:Edit for this zone."
-            jq -c '{success,errors}' <<<"$ZONE_JSON" || true
-            exit 1
-          fi
-
-          RECORDS_JSON="$(cf "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records?name=$DOMAIN&per_page=100")"
-          mapfile -t RECORD_IDS < <(jq -r '.result[].id' <<<"$RECORDS_JSON")
-          PAYLOAD="$(jq -nc --arg name "$DOMAIN" --arg content "$IP" '{type:"A",name:$name,content:$content,ttl:300,proxied:false}')"
-
-          if (( ${#RECORD_IDS[@]} == 0 )); then
-            RESULT="$(cf -X POST --data "$PAYLOAD" "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records")"
-          else
-            RESULT="$(cf -X PUT --data "$PAYLOAD" "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records/${RECORD_IDS[0]}")"
-            if (( ${#RECORD_IDS[@]} > 1 )); then
-              for record_id in "${RECORD_IDS[@]:1}"; do
-                cf -X DELETE "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records/$record_id" >/dev/null
-              done
-            fi
-          fi
-
-          if [[ "$(jq -r '.success' <<<"$RESULT")" != "true" ]]; then
-            echo "::error::Cloudflare rejected the court DNS update."
-            jq -c '{success,errors}' <<<"$RESULT" || true
-            exit 1
-          fi
-          echo "Authoritative DNS synchronized: $DOMAIN -> $IP (DNS only, TTL 300)."
-
       - name: Create or refresh dedicated court host
         run: |
           set -euo pipefail
@@ -151,7 +105,7 @@ jobs:
             gcloud compute instances reset "$INSTANCE_NAME" --project="$GCP_PROJECT_ID" --zone="$GCP_ZONE"
           fi
 
-      - name: Wait for public court health
+      - name: Wait for public court origin health
         run: |
           set -euo pipefail
           IP="${{ steps.infra.outputs.ip }}"
@@ -171,29 +125,36 @@ jobs:
             exit 1
           fi
 
-      - name: Verify DNS and HTTPS production endpoint
+      - name: Inspect production DNS readiness
+        id: dns
         run: |
           set -euo pipefail
           IP="${{ steps.infra.outputs.ip }}"
-          ok=0
-          for i in $(seq 1 60); do
-            DNS="$(getent ahostsv4 "$DOMAIN" | awk '{print $1}' | sort -u || true)"
-            echo "DNS attempt $i: ${DNS:-unresolved}"
-            if grep -qx "$IP" <<<"$DNS"; then
-              if curl -fsS --max-time 10 "https://$DOMAIN/health" >/tmp/https-health.json 2>/dev/null; then
-                cat /tmp/https-health.json
-                ok=1
-                break
-              fi
+          DNS="$(getent ahostsv4 "$DOMAIN" | awk '{print $1}' | sort -u || true)"
+          echo "Current DNS: ${DNS:-unresolved}"
+          echo "Expected DNS: $IP"
+          if grep -qx "$IP" <<<"$DNS"; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+            echo "Production DNS already points to the World Court host."
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::$DOMAIN is not yet pointed at $IP. DNS is externally managed; this workflow will not mutate provider records."
+          fi
+
+      - name: Verify HTTPS when DNS is ready
+        if: steps.dns.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 30); do
+            if curl -fsS --max-time 10 "https://$DOMAIN/health" >/tmp/https-health.json 2>/dev/null; then
+              cat /tmp/https-health.json
+              exit 0
             fi
+            echo "Waiting for HTTPS ($i/30)..."
             sleep 10
           done
-          if [[ "$ok" != 1 ]]; then
-            echo "::error::HTTPS gate failed for https://$DOMAIN/health"
-            echo "Expected DNS address: $IP"
-            gcloud compute instances get-serial-port-output "$INSTANCE_NAME" --project="$GCP_PROJECT_ID" --zone="$GCP_ZONE" --port=1 --start=-30000 || true
-            exit 1
-          fi
+          echo "::error::HTTPS gate failed for https://$DOMAIN/health after DNS became ready"
+          exit 1
 
       - name: Publish deployment coordinates
         run: |
@@ -203,8 +164,13 @@ jobs:
             echo "- Instance: $INSTANCE_NAME"
             echo "- Zone: $GCP_ZONE"
             echo "- Static IPv4: $IP"
-            echo "- DNS: $DOMAIN -> $IP"
-            echo "- E-File: https://$DOMAIN/efile"
-            echo "- HTTPS health: https://$DOMAIN/health"
-            echo "- Production transport gate: VERIFIED"
+            echo "- Intended DNS: $DOMAIN -> $IP"
+            echo "- Origin health: VERIFIED"
+            echo "- DNS ready: ${{ steps.dns.outputs.ready }}"
+            if [[ "${{ steps.dns.outputs.ready }}" == "true" ]]; then
+              echo "- HTTPS health: VERIFIED"
+              echo "- E-File: https://$DOMAIN/efile"
+            else
+              echo "- HTTPS health: PENDING EXTERNAL DNS CUTOVER"
+            fi
           } >> "$GITHUB_STEP_SUMMARY"
