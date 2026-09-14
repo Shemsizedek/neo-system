@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="robots" content="index,follow" />
+  <title>World Interfaith Court — E-File Intake</title>
+  <style>
+    :root{color-scheme:dark;--bg:#070707;--panel:#111;--line:#2b2b2b;--text:#f5f5f5;--muted:#b8b8b8;--accent:#d4af37;--danger:#ffb4b4}
+    *{box-sizing:border-box} body{margin:0;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:linear-gradient(180deg,#050505,#101010);color:var(--text);min-height:100vh}
+    main{width:min(980px,92vw);margin:0 auto;padding:48px 0 72px}.eyebrow{letter-spacing:.18em;text-transform:uppercase;color:var(--accent);font-size:.78rem;font-weight:700}
+    h1{font-size:clamp(2rem,5vw,4rem);line-height:1.02;margin:.5rem 0 1rem}.lead{color:var(--muted);max-width:760px;line-height:1.7}
+    .notice{border:1px solid var(--line);background:#0c0c0c;padding:16px 18px;border-radius:14px;margin:26px 0;color:var(--muted);line-height:1.55}
+    form{background:rgba(17,17,17,.96);border:1px solid var(--line);border-radius:18px;padding:clamp(20px,4vw,38px);box-shadow:0 24px 80px rgba(0,0,0,.35)}
+    fieldset{border:0;padding:0;margin:0 0 28px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}.full{grid-column:1/-1}
+    label{display:block;font-weight:650;margin-bottom:7px}input,select,textarea{width:100%;background:#090909;color:var(--text);border:1px solid #333;border-radius:10px;padding:12px 13px;font:inherit;outline:none}
+    input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(212,175,55,.12)}textarea{min-height:210px;resize:vertical}.help{font-size:.85rem;color:var(--muted);margin-top:6px}
+    .consent{display:flex;gap:10px;align-items:flex-start}.consent input{width:auto;margin-top:5px}.actions{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+    button{appearance:none;border:0;border-radius:999px;background:var(--accent);color:#111;padding:13px 22px;font-weight:800;cursor:pointer}button:hover{filter:brightness(1.06)}
+    .footer{margin-top:22px;color:var(--muted);font-size:.9rem;line-height:1.6}.hp{position:absolute!important;left:-9999px!important;width:1px!important;height:1px!important;overflow:hidden!important}
+    @media(max-width:720px){.grid{grid-template-columns:1fr}.full{grid-column:auto}main{padding-top:28px}}
+  </style>
+</head>
+<body>
+  <main>
+    <div class="eyebrow">World Temple of Karast · Global Temple District</div>
+    <h1>World Interfaith Court E-File</h1>
+    <p class="lead">Submit an institutional case intake for review. Submissions enter the encrypted World Interfaith Court moderation queue and are not promoted into the Tribunal E-File ledger until reviewed by authorized Tribunal personnel.</p>
+    <div class="notice"><strong>Important:</strong> A submission receipt confirms institutional intake only. It does not itself establish case acceptance, jurisdiction, service, adjudication, or external legal sufficiency.</div>
+
+    <form method="post" action="/v1/public/intake" accept-charset="UTF-8">
+      <fieldset>
+        <div class="grid">
+          <div class="full">
+            <label for="caseType">Case type *</label>
+            <select id="caseType" name="caseType" required>
+              <option value="">Select a case type</option>
+              <option>Civil / Equity</option>
+              <option>Contract / Agreement</option>
+              <option>Family / Community</option>
+              <option>Religious / Ecclesiastical</option>
+              <option>Administrative / Institutional</option>
+              <option>Arbitration / Mediation Request</option>
+              <option>Other</option>
+            </select>
+          </div>
+
+          <div><label for="petitioner">Petitioner *</label><input id="petitioner" name="petitioner" maxlength="240" required autocomplete="name" /></div>
+          <div><label for="petitionerEmail">Petitioner email *</label><input id="petitionerEmail" name="petitionerEmail" type="email" maxlength="254" required autocomplete="email" /></div>
+          <div><label for="petitionerLocation">Petitioner location</label><input id="petitionerLocation" name="petitionerLocation" maxlength="500" /></div>
+          <div><label for="petitionerCouncil">Petitioner council / representative</label><input id="petitionerCouncil" name="petitionerCouncil" maxlength="240" /></div>
+
+          <div><label for="respondent">Respondent *</label><input id="respondent" name="respondent" maxlength="240" required /></div>
+          <div><label for="respondentEmail">Respondent email</label><input id="respondentEmail" name="respondentEmail" type="email" maxlength="254" /></div>
+          <div><label for="respondentLocation">Respondent location</label><input id="respondentLocation" name="respondentLocation" maxlength="500" /></div>
+          <div><label for="respondentCouncil">Respondent council / representative</label><input id="respondentCouncil" name="respondentCouncil" maxlength="240" /></div>
+
+          <div class="full"><label for="claimNo">Existing claim / reference number</label><input id="claimNo" name="claimNo" maxlength="120" /><div class="help">Leave blank for a new intake.</div></div>
+          <div class="full"><label for="statement">Statement of claim / request *</label><textarea id="statement" name="statement" maxlength="12000" required></textarea><div class="help">Provide the material facts, requested relief, and any relevant dates or agreements. Do not submit passwords or private access credentials.</div></div>
+
+          <div class="hp" aria-hidden="true"><label for="website">Website</label><input id="website" name="website" tabindex="-1" autocomplete="off" /></div>
+
+          <div class="full consent">
+            <input id="consent" name="consent" type="checkbox" value="true" required />
+            <label for="consent">I consent to submit this information to the World Interfaith Court institutional intake system for review and recordkeeping. *</label>
+          </div>
+        </div>
+      </fieldset>
+      <div class="actions"><button type="submit">Submit E-File Intake</button><span class="help">A receipt code will be issued after successful submission.</span></div>
+    </form>
+    <div class="footer">Secure production endpoint: <strong>court.holytemples.org</strong>. Public submissions are encrypted at the Tribunal application boundary and placed into a review queue before any promotion into the authenticated Tribunal workflow.</div>
+  </main>
+</body>
+</html>
