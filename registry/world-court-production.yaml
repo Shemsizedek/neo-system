@@ -1,0 +1,49 @@
+schema_version: "1.0"
+id: "NEO-WORLD-COURT-PROD-001"
+name: "World Court Production Service"
+parent_system: "NEO System"
+service: "World Interfaith Court / NEO Tribunal"
+status: "PRODUCTION_CONNECTED"
+verified_at: "2026-09-14T19:07:44Z"
+
+production:
+  domain: "court.holytemples.org"
+  static_ipv4: "35.253.233.133"
+  instance: "world-court-node-001"
+  runtime: "GCP Compute Engine"
+  backend_service: "neo-tribunal-backend"
+  backend_version: "1.11"
+  schema: 6
+  health_endpoint: "https://court.holytemples.org/health"
+  efile_endpoint: "https://court.holytemples.org/efile"
+
+verification:
+  github_workflow: ".github/workflows/deploy-world-court-vm.yml"
+  github_run_id: 34884922099
+  source_commit: "5f5ae33b7affd5ff42b9b51c4104b4d9a74d819e"
+  origin_health: VERIFIED
+  dns: VERIFIED
+  https: VERIFIED
+  dns_provider_mutation: DISABLED
+  note: "DNS is verified by public resolution only. NEO deployment automation does not assume or mutate an external DNS provider."
+
+capabilities:
+  communications_worker: "scheduler-ready"
+  service_automation: "ready"
+  service_ledger: "hash-chained"
+  service_compliance: "console-ready"
+  deadline_policy: "ready"
+  public_intake: "moderated"
+
+routing:
+  neosync: "Operational orchestration, workflow state, scheduling, and authenticated task routing."
+  neo_law: "Authority/source classification and legal-policy boundaries; no automatic external jurisdictional effect."
+  neo_oracle: "Provenance-aware analysis and verification support."
+  neo_algo: "Reasoning and prioritization support without overriding source authority or human adjudication."
+  neo_router: "Routes authenticated NEO service traffic to approved World Court surfaces."
+
+boundaries:
+  - "Production-connected describes the verified technical deployment state."
+  - "The system must not represent internal ecclesiastical, contractual, or arbitral authority as external civil jurisdiction without an independently applicable legal basis."
+  - "Privileged Tribunal APIs and backend bearer tokens must not be exposed through public forms or static frontend markup."
+  - "Consequential adjudicative determinations remain subject to authorized human decision-making under the governing procedure."
