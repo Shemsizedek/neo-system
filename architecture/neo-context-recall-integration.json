@@ -1,0 +1,35 @@
+{
+  "version":"1.0.0",
+  "id":"neosync-context-recall",
+  "name":"NEOsync Context Recall + Cross-System Semantic Retrieval",
+  "status":"active",
+  "privacy":"private-government",
+  "service":"cloudflare/neo-context-recall",
+  "memorySource":"cloudflare/neo-memory-graph",
+  "officialEntrypoints":{
+    "system":"https://neo.holytemples.org",
+    "publicHub":"https://hub.holytemples.org"
+  },
+  "capabilities":["natural-language-recall","graph-expansion","recency-ranking","provenance-aware-retrieval","continuity-context"],
+  "integrations":{
+    "NEO Algo":"Use ranked operational context as bounded reasoning input; preserve source and confidence.",
+    "NEO Oracle":"Distinguish recalled facts, internal doctrine, inference, and unknowns; retain provenance.",
+    "GISS NEO LMS":"Use approved context for institutional continuity and learning references without exposing private Government data publicly.",
+    "NEOsync":"Primary executive recall layer for persistent operational continuity.",
+    "NEO Law":"Treat recalled legal records as records/context, not automatic legal conclusions or authority.",
+    "Internal NEO Society":"Use recalled norms and decisions only within their recorded scope and status.",
+    "N.I.A. / Project 144":"Preserve provenance, confidence, timestamps, and source distinctions in intelligence workflows.",
+    "NEO Router":"Route recall requests to the private context-recall service and never to public Hub clients.",
+    "NEO Lingo":"Normalize terminology while preserving canonical entity IDs and source meaning."
+  },
+  "security":{
+    "cloudflareAccessRequired":true,
+    "publicGraphExposure":false,
+    "readOnlyRetrieval":true,
+    "walletSigning":false,
+    "fundMovement":false,
+    "terminalExecution":false,
+    "permissionBypass":false,
+    "automaticExternalLegalEffect":false
+  }
+}
