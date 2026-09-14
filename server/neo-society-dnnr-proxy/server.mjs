@@ -57,7 +57,7 @@ function rewriteLocation(value, req) {
   return value;
 }
 
-function rewriteCookie(value, req) {
+function rewriteCookie(value) {
   if (!value) return value;
   return value
     .replace(/;\s*Domain=[^;]+/gi, '')
@@ -83,13 +83,19 @@ function copyRequestHeaders(req) {
   const headers = new Headers();
   for (const [key, raw] of Object.entries(req.headers)) {
     const lower = key.toLowerCase();
-    if (HOP_BY_HOP.has(lower) || lower === 'host' || raw == null) continue;
+    if (HOP_BY_HOP.has(lower) || lower === 'host' || lower === 'x-forwarded-host' || raw == null) continue;
     const value = Array.isArray(raw) ? raw.join(', ') : String(raw);
     headers.set(key, value);
   }
-  headers.set('host', new URL(UPSTREAM_ORIGIN).host);
-  headers.set('x-forwarded-host', publicHost(req));
-  headers.set('x-forwarded-proto', publicProto(req));
+
+  const upstream = new URL(UPSTREAM_ORIGIN);
+  headers.set('host', upstream.host);
+  // Keep DNNR seeing its own canonical host. The branded public host is a
+  // presentation layer only; exposing it upstream can trigger canonical-host
+  // redirect loops on white-label SaaS platforms.
+  headers.set('x-forwarded-host', upstream.host);
+  headers.set('x-forwarded-proto', 'https');
+  headers.set('x-neo-public-host', publicHost(req));
   headers.set('x-neo-proxy', 'neo-society-dnnr');
   return headers;
 }
@@ -119,6 +125,10 @@ async function fetchUpstream(req, targetUrl, body) {
     const allowedHost = new URL(UPSTREAM_ORIGIN).host;
     if (next.host !== allowedHost) return response;
 
+    if (next.href === current) {
+      throw new Error(`Upstream self-redirect detected at ${next.href}`);
+    }
+
     if (i === MAX_REDIRECTS) {
       throw new Error(`Upstream redirect limit exceeded at ${next.href}`);
     }
@@ -145,7 +155,7 @@ function setResponseHeaders(res, upstream, req) {
   }
 
   const cookies = upstream.headers.getSetCookie?.() || [];
-  if (cookies.length) res.setHeader('set-cookie', cookies.map((cookie) => rewriteCookie(cookie, req)));
+  if (cookies.length) res.setHeader('set-cookie', cookies.map((cookie) => rewriteCookie(cookie)));
 
   res.setHeader('x-neo-route', publicHost(req) === LIFESTYLE_HOST ? 'lifestyle' : 'society');
   res.setHeader('x-neo-upstream', 'dnnr');
