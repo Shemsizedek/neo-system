@@ -1,8 +1,14 @@
 (() => {
   'use strict';
 
-  const VERSION = '3.2.0';
+  const VERSION = '3.3.0';
   const DEFAULT_API = 'https://neo.holytemples.org/api';
+  const TEMPLE_HOST = 'holytemples.org';
+  const EXIT_PATH = '/external-service/';
+  const LEGACY_EXTERNAL_MAP = Object.freeze({
+    'society.holytemples.org': 'https://neo.dnnr.io/',
+    'lifestyle.holytemples.org': 'https://neo.dnnr.io/neo/ambassador-application'
+  });
   const selectors = [
     '[data-neo-temple-dashboard]',
     '#neo-holytemples-root',
@@ -107,9 +113,91 @@
     root.dataset.neoMounted = 'true';
   };
 
+  const isTempleHost = hostname => hostname === TEMPLE_HOST || hostname === `www.${TEMPLE_HOST}` || hostname.endsWith(`.${TEMPLE_HOST}`);
+
+  const normalizeOutboundTarget = rawHref => {
+    try {
+      const url = new URL(rawHref, window.location.href);
+      if (!['http:', 'https:'].includes(url.protocol)) return null;
+      if (LEGACY_EXTERNAL_MAP[url.hostname]) return LEGACY_EXTERNAL_MAP[url.hostname];
+      if (isTempleHost(url.hostname)) return null;
+      return url.href;
+    } catch {
+      return null;
+    }
+  };
+
+  const buildExitUrl = target => {
+    const exit = new URL(EXIT_PATH, `https://${TEMPLE_HOST}`);
+    exit.searchParams.set('destination', target);
+    return exit.href;
+  };
+
+  const hydrateExitNotice = () => {
+    if (window.location.hostname !== TEMPLE_HOST && window.location.hostname !== `www.${TEMPLE_HOST}`) return;
+    if (window.location.pathname.replace(/\/+$/, '/') !== EXIT_PATH) return;
+
+    const raw = new URL(window.location.href).searchParams.get('destination');
+    const target = raw ? normalizeOutboundTarget(raw) || (() => {
+      try {
+        const candidate = new URL(raw);
+        return ['http:', 'https:'].includes(candidate.protocol) ? candidate.href : null;
+      } catch {
+        return null;
+      }
+    })() : null;
+
+    const destination = document.getElementById('neo-external-destination');
+    const continueLink = document.getElementById('neo-external-continue');
+    if (!continueLink) return;
+
+    if (!target) {
+      if (destination) destination.textContent = 'No external destination was supplied.';
+      continueLink.hidden = true;
+      continueLink.removeAttribute('href');
+      return;
+    }
+
+    const targetUrl = new URL(target);
+    if (destination) destination.textContent = targetUrl.hostname;
+    continueLink.href = target;
+    continueLink.hidden = false;
+    continueLink.dataset.neoExternalBypass = 'true';
+    continueLink.rel = 'nofollow noopener noreferrer';
+  };
+
+  const installOutboundGuard = () => {
+    if (window.location.hostname !== TEMPLE_HOST && window.location.hostname !== `www.${TEMPLE_HOST}`) return;
+
+    document.addEventListener('click', event => {
+      const anchor = event.target?.closest?.('a[href]');
+      if (!anchor) return;
+      if (anchor.dataset.neoExternalBypass === 'true') return;
+      if (anchor.hasAttribute('download')) return;
+
+      const href = anchor.getAttribute('href') || '';
+      if (!href || href.startsWith('#')) return;
+      if (/^(mailto:|tel:|sms:|javascript:|data:|blob:)/i.test(href)) return;
+
+      const target = normalizeOutboundTarget(href);
+      if (!target) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+      const exitUrl = buildExitUrl(target);
+      if (anchor.target === '_blank' || event.metaKey || event.ctrlKey || event.shiftKey) {
+        window.open(exitUrl, '_blank', 'noopener,noreferrer');
+      } else {
+        window.location.assign(exitUrl);
+      }
+    }, true);
+  };
+
   const scan = scope => selectors.forEach(selector => scope.querySelectorAll(selector).forEach(mount));
   const boot = () => {
     scan(document);
+    hydrateExitNotice();
+    installOutboundGuard();
     new MutationObserver(records => records.forEach(record => record.addedNodes.forEach(node => {
       if (node.nodeType !== 1) return;
       if (selectors.some(selector => node.matches?.(selector))) mount(node);
@@ -117,5 +205,10 @@
     }))).observe(document.documentElement, { childList: true, subtree: true });
   };
   document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', boot, { once: true }) : boot();
-  window.NeoTempleBridge = Object.freeze({ version: VERSION, mount, refresh: element => element?.refresh?.() });
+  window.NeoTempleBridge = Object.freeze({
+    version: VERSION,
+    mount,
+    refresh: element => element?.refresh?.(),
+    outbound: Object.freeze({ buildExitUrl, normalizeOutboundTarget })
+  });
 })();
