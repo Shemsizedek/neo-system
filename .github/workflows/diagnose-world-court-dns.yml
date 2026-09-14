@@ -1,0 +1,32 @@
+name: Diagnose World Court DNS
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/diagnose-world-court-dns.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Inspect delegation and court record
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq dnsutils >/dev/null
+          echo '=== NS ==='
+          dig +short NS holytemples.org
+          echo '=== SOA ==='
+          dig +short SOA holytemples.org
+          echo '=== court A (system resolver) ==='
+          getent ahostsv4 court.holytemples.org | awk '{print $1}' | sort -u || true
+          echo '=== court A (Google) ==='
+          dig @8.8.8.8 +short A court.holytemples.org || true
+          echo '=== court A (Cloudflare) ==='
+          dig @1.1.1.1 +short A court.holytemples.org || true
