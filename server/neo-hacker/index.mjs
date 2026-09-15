@@ -8,3 +8,5 @@ export { createDeviceRegistry, hashTelemetryPayload } from './deviceRegistry.mjs
 export { evaluateRouterTrust } from './routerTrustGate.mjs';
 export { hashAttestationSnapshot, createBaseline, evaluateAttestation, continuousAttestationDecision } from './attestation.mjs';
 export { createQuarantineRecord, applyQuarantine, enforceQuarantine } from './quarantine.mjs';
+export { createRecoveryRequest, signRecoveryRequest, verifyRecoveryRequest, evaluateRetrust } from './recoveryTrust.mjs';
+export { createIncidentLedger, SEVERITY, EVENT_STATE } from './incidentLedger.mjs';
