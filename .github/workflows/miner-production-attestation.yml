@@ -38,6 +38,7 @@ jobs:
           NEO_OPERATOR_ORIGIN: ${{ inputs.console_origin }}
           NEO_ATTEST_OPERATOR_ID: ${{ secrets.NEO_ATTEST_OPERATOR_ID }}
           NEO_ATTEST_OPERATOR_PASSWORD: ${{ secrets.NEO_ATTEST_OPERATOR_PASSWORD }}
+          NEO_OPERATOR_ALLOWED_DOMAINS: ${{ vars.NEO_OPERATOR_ALLOWED_DOMAINS }}
           NEO_ATTESTATION_OUTPUT: production-attestation.json
         run: node server/miner-production/attestProductionLive.mjs
 

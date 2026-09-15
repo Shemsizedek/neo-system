@@ -2,8 +2,21 @@ const base=String(process.env.NEO_OPERATOR_PUBLIC_URL||'').replace(/\/$/,'')
 const origin=String(process.env.NEO_OPERATOR_ORIGIN||'')
 const operatorId=String(process.env.NEO_SMOKE_OPERATOR_ID||'')
 const password=String(process.env.NEO_SMOKE_OPERATOR_PASSWORD||'')
+const allowedDomains=String(process.env.NEO_OPERATOR_ALLOWED_DOMAINS||'').split(',').map(d=>d.trim()).filter(Boolean)
+
 if(!base||!origin)throw new Error('NEO_OPERATOR_PUBLIC_URL_AND_ORIGIN_REQUIRED')
 if(!base.startsWith('https://')||!origin.startsWith('https://'))throw new Error('HTTPS_REQUIRED')
+
+// Validate operator URL against repository-controlled allowlist to prevent credential exfiltration
+if(allowedDomains.length===0)throw new Error('OPERATOR_SMOKE_ALLOWLIST_REQUIRED')
+const operatorHostname=new URL(base).hostname.toLowerCase()
+const originHostname=new URL(origin).hostname.toLowerCase()
+const isAllowed=hostname=>allowedDomains.some(allowed=>{
+  const domain=allowed.toLowerCase()
+  return hostname===domain||hostname.endsWith(`.${domain}`)
+})
+if(!isAllowed(operatorHostname))throw new Error(`OPERATOR_SMOKE_OPERATOR_DOMAIN_NOT_ALLOWED: ${operatorHostname}`)
+if(!isAllowed(originHostname))throw new Error(`OPERATOR_SMOKE_ORIGIN_DOMAIN_NOT_ALLOWED: ${originHostname}`)
 
 async function request(path,{method='GET',body,cookie,csrf}={}){
   const headers={origin}
