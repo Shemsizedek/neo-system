@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://neo-system.local/schemas/neo-oracle-bitcoin-anchor.schema.json",
+  "title": "NEO Oracle Bitcoin Root-of-Trust Anchor Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "batch_id",
+    "merkle_root",
+    "attestation_count",
+    "network",
+    "commitment_method",
+    "created_at"
+  ],
+  "properties": {
+    "version": {"type": "string", "const": "0.1"},
+    "batch_id": {"type": "string", "minLength": 8},
+    "merkle_root": {"$ref": "#/$defs/hash"},
+    "attestation_count": {"type": "integer", "minimum": 1},
+    "network": {"type": "string", "enum": ["regtest", "signet", "testnet", "mainnet"]},
+    "commitment_method": {
+      "type": "string",
+      "enum": ["op_return", "taproot-commitment", "external-proof-reference"]
+    },
+    "bitcoin_txid": {"$ref": "#/$defs/hash"},
+    "bitcoin_block_hash": {"$ref": "#/$defs/hash"},
+    "bitcoin_block_height": {"type": "integer", "minimum": 0},
+    "policy_hash": {"$ref": "#/$defs/hash"},
+    "node_registry_hash": {"$ref": "#/$defs/hash"},
+    "created_at": {"type": "string", "format": "date-time"},
+    "anchored_at": {"type": "string", "format": "date-time"}
+  },
+  "$defs": {
+    "hash": {
+      "type": "string",
+      "pattern": "^[A-Fa-f0-9]{64}$"
+    }
+  }
+}
