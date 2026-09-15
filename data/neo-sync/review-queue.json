@@ -1,13 +1,13 @@
 {
-  "generatedAt": "2026-09-15T04:57:59.346Z",
+  "generatedAt": "2026-09-15T11:47:24.783Z",
   "items": [
     {
       "type": "NEW_PAGE",
       "sourceId": "SRC-HOLY-TABLETS-WEB",
-      "url": "https://holytablets.nuwaubianfacts.com/thereceiver.htm",
+      "url": "https://holytablets.nuwaubianfacts.com/7thunders.htm",
       "title": "Untitled",
-      "currentHash": "f741dc6a2ca6ace83a16707c127dccd7002214b2878f7a197696c5145bcbe26e",
-      "currentExcerpt": "HOME | Table of Contents | The Seven Thunders | A Personal Note from the Receiver | Prayer of the Ansaars | The Glossary | Figures A Personal Note From The Receiver I call you to accept this truth as bestowed upon me by the masters who guide my pen, for of myself I could not have done the works of it. There were a host of great Nuwaubian leaders, such as Duse Ali, The Honorable Elijah Muhammad, Sheikh Al-Haj Daoud Fa",
+      "currentHash": "8d4ac9d90c3c16a07998744aefff44490aaa0c143baa96f26bf2e66065fe6f25",
+      "currentExcerpt": "HOME | Table of Contents | The Seven Thunders | A Personal Note from the Receiver | Prayer of the Ansaars | The Glossary | Figures The Seven Thunders \"The Seven Plagues\" The Seven thunders have been recorded by the ancient for thousand of years by the Hopis, the Yamassee, and the Nuwaubians, have logged these thunders as a sign of the coming of a new planet, \"Nibiru\", the coming in of a new era, the sign of the end o",
       "quality": {
         "dimensions": {
           "provenance": 9,
@@ -30,9 +30,9 @@
     {
       "type": "REMOVED_OR_UNREACHABLE",
       "sourceId": "SRC-HOLY-TABLETS-WEB",
-      "url": "https://holytablets.nuwaubianfacts.com/7thunders.htm",
+      "url": "https://holytablets.nuwaubianfacts.com/100/051.htm",
       "title": "Untitled",
-      "previousHash": "8d4ac9d90c3c16a07998744aefff44490aaa0c143baa96f26bf2e66065fe6f25",
+      "previousHash": "2138275d775895259a2f6cff14319e440fcaa0e993d1a5ec487f48f1d7649a2c",
       "decision": "REVIEW_REQUIRED"
     }
   ]
