@@ -51,19 +51,38 @@ jobs:
       - name: Build installable production-candidate APK
         run: gradle -p apps/neo-guardian --no-daemon assembleDebug
 
-      - name: Prepare stable release signing
+      - name: Prepare optional stable release signing
         if: github.event_name != 'pull_request' && env.GUARDIAN_KEYSTORE_BASE64 != ''
+        shell: bash
         run: |
-          echo "$GUARDIAN_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/neo-guardian-release.jks"
-          echo "GUARDIAN_KEYSTORE_PATH=$RUNNER_TEMP/neo-guardian-release.jks" >> "$GITHUB_ENV"
+          set +e
+          printf '%s' "$GUARDIAN_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/neo-guardian-release.jks"
+          decode_status=$?
+          if [ "$decode_status" -eq 0 ] && [ -s "$RUNNER_TEMP/neo-guardian-release.jks" ]; then
+            echo "GUARDIAN_KEYSTORE_PATH=$RUNNER_TEMP/neo-guardian-release.jks" >> "$GITHUB_ENV"
+            echo "GUARDIAN_SIGNING_READY=true" >> "$GITHUB_ENV"
+          else
+            rm -f "$RUNNER_TEMP/neo-guardian-release.jks"
+            echo "GUARDIAN_SIGNING_READY=false" >> "$GITHUB_ENV"
+            echo "::warning::Stable signing material could not be prepared. The production-candidate APK will still be published."
+          fi
+          exit 0
 
-      - name: Build stable signed release APK
-        if: github.event_name != 'pull_request' && env.GUARDIAN_KEYSTORE_BASE64 != ''
+      - name: Build optional stable signed release APK
+        id: stable_release
+        if: github.event_name != 'pull_request' && env.GUARDIAN_SIGNING_READY == 'true'
+        continue-on-error: true
         run: gradle -p apps/neo-guardian --no-daemon assembleRelease
 
+      - name: Report stable signing result
+        if: github.event_name != 'pull_request' && env.GUARDIAN_SIGNING_READY == 'true' && steps.stable_release.outcome == 'failure'
+        run: echo "::warning::Stable signed release build failed. Production-candidate publication remains valid and independent."
+
       - name: Stage APKs and checksums
+        if: always() && !cancelled()
         run: |
           mkdir -p dist
+          test -f apps/neo-guardian/app/build/outputs/apk/debug/app-debug.apk
           cp apps/neo-guardian/app/build/outputs/apk/debug/app-debug.apk dist/NEO-Guardian-v3.2.0-production-candidate.apk
           sha256sum dist/NEO-Guardian-v3.2.0-production-candidate.apk > dist/NEO-Guardian-v3.2.0-production-candidate.sha256
           if [ -f apps/neo-guardian/app/build/outputs/apk/release/app-release.apk ]; then
@@ -72,6 +91,7 @@ jobs:
           fi
 
       - name: Upload production artifact
+        if: always() && !cancelled()
         uses: actions/upload-artifact@v4
         with:
           name: NEO-Guardian-v3.2.0
