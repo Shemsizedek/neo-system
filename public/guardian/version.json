@@ -1,10 +1,10 @@
 {
   "app": "NEO Guardian",
-  "version": "3.1.0",
-  "version_code": 6,
+  "version": "3.2.0",
+  "version_code": 7,
   "channel": "production",
   "minimum_android_api": 26,
   "published_at": "2026-09-15",
   "download_url": "https://shemsizedek.github.io/neo-system/guardian/",
-  "notes": "Adds the production-safe Work Shield posture engine and canonical NEO protected-infrastructure policy. Work Shield evaluates ordinary Android security signals locally, distinguishes observations from suspicions, preserves the no-spyware boundary, and never silently remediates production infrastructure."
+  "notes": "Adds the explicit visible Work Shield session, encrypted local posture baseline and bounded incident/audit ledger, posture-change detection, HIGH-risk local alerts, and read-only HTTPS/TLS checks for canonical NEO public infrastructure. Monitoring runs only while the Work Shield screen is visible and explicitly enabled; no covert background surveillance or infrastructure mutation is introduced."
 }
