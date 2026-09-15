@@ -1,4 +1,4 @@
-import type { NomniLineageEvent } from './nomniBlockchainLineage'
+import type { NomniLineageEvent, NomniLineageEventType } from './nomniBlockchainLineage'
 import type { NomniTransactionProof } from './nomniTransactionVerificationGate'
 
 export type CounterpartyCoreEvent = {
@@ -41,14 +41,21 @@ function normalized(value?: string): string | undefined {
   return value?.trim().toUpperCase()
 }
 
+function counterpartyEventMatches(eventType: NomniLineageEventType, decoded?: string): boolean {
+  if (!decoded) return true
+  const normalizedDecoded = normalized(decoded)?.replace(/[-\s]+/g, '_')
+  return normalizedDecoded === eventType
+}
+
 export function reconcileNomniCounterpartyCoreEvent(input: {
   event: NomniLineageEvent
   counterparty: CounterpartyCoreEvent
   bitcoin: BitcoinTransactionAnchor
 }): NomniCoreReconciliationResult {
   const { event, counterparty, bitcoin } = input
+  const hasTxHash = Boolean(event.txHash)
   const checks: Record<string, boolean> = {
-    transactionIdentity: counterparty.txHash === event.txHash && bitcoin.txHash === event.txHash,
+    transactionIdentity: hasTxHash && counterparty.txHash === event.txHash && bitcoin.txHash === event.txHash,
     nomniAsset: normalized(counterparty.asset) === 'NOMNI',
     counterpartyValid: counterparty.valid,
     counterpartyConfirmed: counterparty.confirmed,
@@ -57,8 +64,7 @@ export function reconcileNomniCounterpartyCoreEvent(input: {
       event.blockIndex === undefined ||
       (counterparty.blockIndex === event.blockIndex &&
         (bitcoin.blockIndex === undefined || bitcoin.blockIndex === event.blockIndex)),
-    eventTypeReconciled:
-      !counterparty.eventType || normalized(counterparty.eventType) === normalized(event.type),
+    eventTypeReconciled: counterpartyEventMatches(event.eventType, counterparty.eventType),
     sourceReconciled:
       !event.sourceAddress || !counterparty.sourceAddress || event.sourceAddress === counterparty.sourceAddress,
     destinationReconciled:
@@ -87,16 +93,34 @@ export function reconcileNomniCounterpartyCoreEvent(input: {
     }
   }
 
+  const txHash = event.txHash
+  if (!txHash) {
+    return {
+      status: 'REJECTED',
+      checks: { ...checks, transactionIdentity: false },
+      reasons: ['NOMNI lineage event has no transaction hash to reconcile.']
+    }
+  }
+
+  const decodedQuantity = counterparty.quantity === undefined ? event.quantity : Number(counterparty.quantity)
+  if (decodedQuantity !== undefined && !Number.isFinite(decodedQuantity)) {
+    return {
+      status: 'REVIEW',
+      checks: { ...checks, quantityValid: false },
+      reasons: ['Counterparty Core quantity could not be normalized to a finite number.']
+    }
+  }
+
   const proof: NomniTransactionProof = {
-    txHash: event.txHash,
+    txHash,
     blockIndex: event.blockIndex ?? counterparty.blockIndex ?? bitcoin.blockIndex,
     blockTime: event.blockTime ?? counterparty.blockTime,
     sourceAddress: counterparty.sourceAddress ?? event.sourceAddress,
     destinationAddress: counterparty.destinationAddress ?? event.destinationAddress,
     asset: 'NOMNI',
-    eventType: event.type,
-    quantity: counterparty.quantity === undefined ? event.quantity : Number(counterparty.quantity),
-    decodedBy: counterparty.coreVersion ? `Counterparty Core ${counterparty.coreVersion}` : 'Counterparty Core',
+    eventType: event.eventType,
+    quantity: decodedQuantity,
+    decodedBy: [counterparty.coreVersion ? `Counterparty Core ${counterparty.coreVersion}` : 'Counterparty Core'],
     rawSourceUrls: stableUnique([counterparty.apiUrl, bitcoin.sourceUrl, ...event.sourceUrls]),
     counterpartyConfirmed: true,
     bitcoinConfirmed: true
@@ -112,7 +136,7 @@ export function reconcileNomniCounterpartyCoreEvent(input: {
 
 export const nomniCounterpartyCoreReconciliationGateV1 = {
   id: 'NEO-NOMNI-COUNTERPARTY-CORE-RECONCILIATION-GATE',
-  version: '1.0.0',
+  version: '1.0.1',
   purpose: 'Convert direct Counterparty Core decoding plus an underlying Bitcoin transaction anchor into a NOMNI transaction proof without trusting third-party explorer labels as protocol truth.',
   principles: [
     'Counterparty Core is treated as the Counterparty protocol decoding source; the underlying Bitcoin transaction remains an independent anchoring requirement.',
