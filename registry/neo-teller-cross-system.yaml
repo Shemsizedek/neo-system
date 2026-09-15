@@ -1,0 +1,52 @@
+id: NEO-TELLER-CROSS-SYSTEM-001
+status: CANONICAL_INTERNAL_ARCHITECTURE
+source: NEO Teller development conversation through v0.8
+canonical_record: data/neo-sync/neo-teller-cross-system-canon.md
+
+routing:
+  neo_algo:
+    mode: transaction_device_risk_reasoning
+    topics: [state_machine, confirmation_policy, reconciliation, exceptions, device_health]
+  neo_oracle:
+    mode: provenance_aware_teller_context
+    rules: [separate_design_from_deployment, separate_internal_claims_from_verified_external_facts]
+  gisd_giss_lms:
+    mode: curriculum_delivery
+    topics: [bitcoin, counterparty, non_custodial_signing, double_entry, settlement, reconciliation, atm_operations, device_security]
+  neosync:
+    mode: authorized_operational_orchestration
+    topics: [health, alerts, settlement, reconciliation, maintenance, audit]
+  neo_law:
+    mode: jurisdiction_first_compliance_analysis
+    topics: [payments, money_transmission, virtual_currency, securities, privacy, consumer_protection, aml_kyc, sanctions, accessibility, cybersecurity, atm_operations]
+  neo_society:
+    mode: internal_social_norms
+    principles: [informed_authorization, user_key_control, transparent_status, no_silent_variance_absorption, operator_accountability, privacy_minimization]
+  neo_router:
+    mode: least_privilege_event_routing
+  neo_evidence_audit:
+    mode: provenance_and_integrity_records
+  neo_library_neopedia:
+    mode: architecture_and_educational_index
+
+security:
+  custody: NON_CUSTODIAL
+  server_side_private_keys: PROHIBITED
+  signing: USER_CONTROLLED
+  broadcast: EXPLICIT_AUTHORIZATION_ONLY
+  settlement: CONFIRMATION_POLICY_GATED
+  ledger_balance_required: true
+  reconciliation_exceptions_require_review: true
+  tamper_response: LOCK
+  remote_unlock: PROHIBITED
+
+factual_boundaries:
+  regulated_network_analogy_is_not_membership: true
+  licenses_and_provider_connections_must_be_verified: true
+  tokenized_atm_investment_rights_require_legal_analysis: true
+  market_data_must_be_independently_verified: true
+
+roadmap:
+  next: v0.9
+  name: ATM fleet control and provisioning
+  scope: [authenticated_enrollment, device_certificates, attestation, configuration_profiles, fleet_groups, maintenance_state, staged_deployment, audited_operator_commands]
