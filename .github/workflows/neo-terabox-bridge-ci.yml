@@ -1,0 +1,37 @@
+name: NEO TeraBox Bridge CI
+
+on:
+  pull_request:
+    paths:
+      - 'services/neo-terabox-bridge/**'
+      - '.github/workflows/neo-terabox-bridge-ci.yml'
+  push:
+    branches:
+      - main
+      - 'feat/neo-terabox-bridge-v1'
+    paths:
+      - 'services/neo-terabox-bridge/**'
+      - '.github/workflows/neo-terabox-bridge-ci.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Validate manifest JSON
+        run: node -e "JSON.parse(require('fs').readFileSync('services/neo-terabox-bridge/manifest.json','utf8')); console.log('manifest: PASS')"
+      - name: Install bridge dependencies
+        working-directory: services/neo-terabox-bridge
+        run: npm install --no-audit --no-fund
+      - name: Run bridge smoke test
+        working-directory: services/neo-terabox-bridge
+        run: npm run smoke
+      - name: Build container
+        run: docker build -t neo-terabox-bridge:ci services/neo-terabox-bridge
