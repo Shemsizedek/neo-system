@@ -1,34 +1,4 @@
 {
-  "generatedAt": "2026-09-15T11:47:24.783Z",
-  "items": [
-    {
-      "id": "DRAFT:8d4ac9d90c3c16a0",
-      "title": "Untitled",
-      "summary": "HOME | Table of Contents | The Seven Thunders | A Personal Note from the Receiver | Prayer of the Ansaars | The Glossary | Figures The Seven Thunders \"The Seven Plagues\" The Seven thunders have been recorded by the ancient for thousand of years by the Hopis, the Yamassee, and the Nuwaubians, have logged these thunders as a sign of the coming of a new planet, \"Nibiru\", the coming in of a new era, the sign of the end o",
-      "sourceId": "SRC-HOLY-TABLETS-WEB",
-      "sourceUrl": "https://holytablets.nuwaubianfacts.com/7thunders.htm",
-      "sourceHash": "8d4ac9d90c3c16a07998744aefff44490aaa0c143baa96f26bf2e66065fe6f25",
-      "sourceMode": "PRIMARY_SACRED",
-      "headings": [],
-      "claimStatus": "SOURCE_STATES",
-      "quality": {
-        "dimensions": {
-          "provenance": 9,
-          "truthfulness": 8,
-          "soundRightReason": 7,
-          "coherence": 7,
-          "ethics": 9,
-          "reciprocity": 7,
-          "natureAlignment": 6,
-          "craftsmanship": 5,
-          "consequence": 8
-        },
-        "average": 7.333333333333333,
-        "potency": "DYNAMIC_BALANCE",
-        "gate": "PASS",
-        "note": "Heuristic artifact-quality assessment only; not a score of persons, identities or protected characteristics."
-      },
-      "publicationStatus": "DRAFT_READY_FOR_REVIEW"
-    }
-  ]
+  "generatedAt": "2026-09-15T21:23:54.424Z",
+  "items": []
 }
