@@ -149,7 +149,7 @@ jobs:
 
       - name: Install runtime dependencies
         if: steps.config.outputs.configured == 'true'
-        run: npm install
+        run: npm ci
 
       - name: Apply database migrations
         if: steps.config.outputs.configured == 'true'
