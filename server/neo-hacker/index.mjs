@@ -6,3 +6,5 @@ export { createDeviceIdentity, createEnrollmentChallenge, signEnrollment, verify
 export { sanitizeTelemetry, collectLinuxSnapshot, validateCollectorPrivacy } from './linuxCollector.mjs';
 export { createDeviceRegistry, hashTelemetryPayload } from './deviceRegistry.mjs';
 export { evaluateRouterTrust } from './routerTrustGate.mjs';
+export { hashAttestationSnapshot, createBaseline, evaluateAttestation, continuousAttestationDecision } from './attestation.mjs';
+export { createQuarantineRecord, applyQuarantine, enforceQuarantine } from './quarantine.mjs';
