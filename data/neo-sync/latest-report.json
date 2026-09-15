@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-14T21:51:53.162Z",
+  "generatedAt": "2026-09-15T04:57:59.346Z",
   "architecture": "crawler -> hash -> revision diff -> candidate graph relations -> 9-Ethereal quality gate -> Neopedia draft/review queue",
   "sources": [
     {
@@ -9,7 +9,7 @@
       "pages": 30,
       "errors": [
         {
-          "url": "https://holytablets.nuwaubianfacts.com/thereceiver.htm",
+          "url": "https://holytablets.nuwaubianfacts.com/7thunders.htm",
           "error": "fetch failed"
         }
       ]
@@ -22,9 +22,9 @@
       "errors": []
     }
   ],
-  "changes": 3,
-  "candidateRelations": 2,
-  "neopediaDrafts": 2,
+  "changes": 2,
+  "candidateRelations": 1,
+  "neopediaDrafts": 1,
   "reviewQueuePath": "data/neo-sync/review-queue.json",
   "relationQueuePath": "data/neo-sync/candidate-relations.json",
   "draftsPath": "data/neo-sync/neopedia-drafts.json",

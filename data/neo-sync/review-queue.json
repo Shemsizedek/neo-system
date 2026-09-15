@@ -1,13 +1,13 @@
 {
-  "generatedAt": "2026-09-14T21:51:53.162Z",
+  "generatedAt": "2026-09-15T04:57:59.346Z",
   "items": [
     {
       "type": "NEW_PAGE",
       "sourceId": "SRC-HOLY-TABLETS-WEB",
-      "url": "https://holytablets.nuwaubianfacts.com/100/051.htm",
+      "url": "https://holytablets.nuwaubianfacts.com/thereceiver.htm",
       "title": "Untitled",
-      "currentHash": "2138275d775895259a2f6cff14319e440fcaa0e993d1a5ec487f48f1d7649a2c",
-      "currentExcerpt": "HOME | Table of Contents | The Seven Thunders | A Personal Note from the Receiver | Prayer of the Ansaars | The Glossary | Figures Back | Next Your browser does not support inline frames or is currently configured not to display inline frames. HOME | Table of Contents | The Seven Thunders | A Personal Note from the Receiver | Prayer of the Ansaars | The Glossary | Figures http://HolyTablets.NuwaubianFacts.com Please ",
+      "currentHash": "f741dc6a2ca6ace83a16707c127dccd7002214b2878f7a197696c5145bcbe26e",
+      "currentExcerpt": "HOME | Table of Contents | The Seven Thunders | A Personal Note from the Receiver | Prayer of the Ansaars | The Glossary | Figures A Personal Note From The Receiver I call you to accept this truth as bestowed upon me by the masters who guide my pen, for of myself I could not have done the works of it. There were a host of great Nuwaubian leaders, such as Duse Ali, The Honorable Elijah Muhammad, Sheikh Al-Haj Daoud Fa",
       "quality": {
         "dimensions": {
           "provenance": 9,
@@ -30,36 +30,10 @@
     {
       "type": "REMOVED_OR_UNREACHABLE",
       "sourceId": "SRC-HOLY-TABLETS-WEB",
-      "url": "https://holytablets.nuwaubianfacts.com/thereceiver.htm",
+      "url": "https://holytablets.nuwaubianfacts.com/7thunders.htm",
       "title": "Untitled",
-      "previousHash": "f741dc6a2ca6ace83a16707c127dccd7002214b2878f7a197696c5145bcbe26e",
+      "previousHash": "8d4ac9d90c3c16a07998744aefff44490aaa0c143baa96f26bf2e66065fe6f25",
       "decision": "REVIEW_REQUIRED"
-    },
-    {
-      "type": "NEW_PAGE",
-      "sourceId": "SRC-WORLD-TEMPLE-WEB",
-      "url": "https://holytemples.org/",
-      "title": "World Temple &#8211; Omniversal Church",
-      "currentHash": "0388de20cf642c8a2cd377230e93561f3e860f2907a525df0f3284626e6521c4",
-      "currentExcerpt": "World Temple &#8211; Omniversal Church Skip to content World Temple N.U.T &#8211; Omniversal Church Home Holy Ministries Holy Ordainment Holy Charter Holy Tablets Holy See World Temple City World Library World Mission Statement World Ministries World Leaders World Committees World Chaplain World Parliament World Education World Treasury of Merit World Police World Interfaith Court Global District World Bulletin Templ",
-      "quality": {
-        "dimensions": {
-          "provenance": 9,
-          "truthfulness": 8,
-          "soundRightReason": 7,
-          "coherence": 7,
-          "ethics": 9,
-          "reciprocity": 7,
-          "natureAlignment": 6,
-          "craftsmanship": 8,
-          "consequence": 8
-        },
-        "average": 7.666666666666667,
-        "potency": "9_ETHER_COHERENT",
-        "gate": "PASS",
-        "note": "Heuristic artifact-quality assessment only; not a score of persons, identities or protected characteristics."
-      },
-      "decision": "CANDIDATE"
     }
   ]
 }
