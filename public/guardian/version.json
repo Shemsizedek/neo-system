@@ -1,10 +1,10 @@
 {
   "app": "NEO Guardian",
-  "version": "3.0.0",
-  "version_code": 5,
+  "version": "3.1.0",
+  "version_code": 6,
   "channel": "production",
   "minimum_android_api": 26,
-  "published_at": "2026-08-28",
+  "published_at": "2026-09-15",
   "download_url": "https://shemsizedek.github.io/neo-system/guardian/",
-  "notes": "Production control center with opt-in live network intelligence, public update feed, clickable remediation links, support, privacy, terms, and the v2 local defense console."
+  "notes": "Adds the production-safe Work Shield posture engine and canonical NEO protected-infrastructure policy. Work Shield evaluates ordinary Android security signals locally, distinguishes observations from suspicions, preserves the no-spyware boundary, and never silently remediates production infrastructure."
 }
