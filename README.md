@@ -1,5 +1,9 @@
 # NEO System
 
+**Official app:** https://neo.holytemples.org/
+
+**Canonical source:** GitHub — `Shemsizedek/neo-system`
+
 A modular digital control plane for the New Ethereal Order ecosystem.
 
 The repository began as **NEO Teller — ORIGIN**, a Bitcoin / Counterparty XCP ATM and teller-terminal sandbox. The v0.1 foundation now preserves that financial simulator while adding the system shell for executive administration, legal/canonical research, tribunal case review, World Chaplaincy E-File, records, the four Global Arms administrative domains, and the Noogle / Omnitrix knowledge-and-browser foundation.
