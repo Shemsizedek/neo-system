@@ -1,0 +1,36 @@
+{
+  "schema_version": "1.0.0",
+  "canonical_source": {
+    "provider": "github",
+    "repository": "Shemsizedek/neo-system",
+    "primary": true
+  },
+  "protected_public_endpoints": [
+    "https://neo.holytemples.org/",
+    "https://holytemples.org/",
+    "https://court.holytemples.org/",
+    "https://shemsizedek.github.io/neo-system/"
+  ],
+  "health_policy": {
+    "read_only_checks_only": true,
+    "dns_checks": true,
+    "tls_checks": true,
+    "https_availability_checks": true,
+    "github_deployment_checks": true,
+    "vercel_is_primary": false,
+    "vercel_only_failure_is_primary_outage": false,
+    "silent_remediation": false
+  },
+  "privacy": {
+    "raw_keystrokes": false,
+    "passwords": false,
+    "seed_phrases": false,
+    "authentication_secrets": false,
+    "private_messages": false,
+    "microphone_recordings": false,
+    "camera_recordings": false,
+    "clipboard_contents": false,
+    "unrelated_personal_files": false,
+    "third_party_communications": false
+  }
+}
