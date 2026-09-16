@@ -15,6 +15,7 @@
         <meta-data android:name="org.neosystem.identity.AUTHENTICATION_BYPASS" android:value="false" />
         <activity android:name=".ProductionActivity" android:exported="true" android:screenOrientation="unspecified"><intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter></activity>
         <activity android:name=".WorkShieldActivity" android:exported="true" android:label="NEO Work Shield" android:screenOrientation="unspecified"><intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter></activity>
+        <activity android:name=".EndpointActivity" android:exported="true" android:label="NEO Endpoint" android:screenOrientation="unspecified"><intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter></activity>
         <activity android:name=".MainActivity" android:exported="false" android:screenOrientation="unspecified" />
         <service android:name=".GuardianForegroundService" android:exported="false" android:stopWithTask="true" />
     </application>
