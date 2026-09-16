@@ -83,17 +83,17 @@ jobs:
         run: |
           mkdir -p dist
           test -f apps/neo-guardian/app/build/outputs/apk/debug/app-debug.apk
-          cp apps/neo-guardian/app/build/outputs/apk/debug/app-debug.apk dist/NEO-Guardian-v3.2.0-production-candidate.apk
-          sha256sum dist/NEO-Guardian-v3.2.0-production-candidate.apk > dist/NEO-Guardian-v3.2.0-production-candidate.sha256
+          cp apps/neo-guardian/app/build/outputs/apk/debug/app-debug.apk dist/NEO-Guardian-v3.3.0-production-candidate.apk
+          sha256sum dist/NEO-Guardian-v3.3.0-production-candidate.apk > dist/NEO-Guardian-v3.3.0-production-candidate.sha256
           if [ -f apps/neo-guardian/app/build/outputs/apk/release/app-release.apk ]; then
-            cp apps/neo-guardian/app/build/outputs/apk/release/app-release.apk dist/NEO-Guardian-v3.2.0-release.apk
-            sha256sum dist/NEO-Guardian-v3.2.0-release.apk > dist/NEO-Guardian-v3.2.0-release.sha256
+            cp apps/neo-guardian/app/build/outputs/apk/release/app-release.apk dist/NEO-Guardian-v3.3.0-release.apk
+            sha256sum dist/NEO-Guardian-v3.3.0-release.apk > dist/NEO-Guardian-v3.3.0-release.sha256
           fi
 
       - name: Upload production artifact
         if: always() && !cancelled()
         uses: actions/upload-artifact@v4
         with:
-          name: NEO-Guardian-v3.2.0
+          name: NEO-Guardian-v3.3.0
           path: dist/*
           retention-days: 30
