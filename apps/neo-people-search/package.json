@@ -1,0 +1,14 @@
+{
+  "name": "@neo-system/people-search",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Authorized identity discovery and relationship intelligence for the NEO System",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
