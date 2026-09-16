@@ -1,0 +1,171 @@
+name: Deploy NEO Guardian to Cloud Run
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'server/neoguard-control-plane/**'
+      - '.github/workflows/deploy-neoguard-cloud-run.yml'
+      - 'docs/neoguard-cloud-run.md'
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: neoguard-cloud-run
+  cancel-in-progress: false
+
+env:
+  SERVICE_NAME: neoguard
+  DOMAIN: neoguard.holytemples.org
+  SECRET_NAME: neoguard-enrollment-token
+  GUARD_NEG_NAME: neoguard-neg
+  GUARD_BACKEND_NAME: neoguard-backend
+  URL_MAP_NAME: neo-edge-url-map
+
+jobs:
+  test-and-deploy:
+    runs-on: ubuntu-latest
+    environment: holytemples-production
+    timeout-minutes: 30
+    env:
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID || secrets.GCP_PROJECT_ID }}
+      GCP_REGION: ${{ vars.GCP_REGION || secrets.GCP_REGION }}
+      GCP_WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER || secrets.GCP_WIF_PROVIDER }}
+      GCP_CLOUD_RUN_SERVICE_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_SERVICE_ACCOUNT || secrets.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+      GCP_CLOUD_RUN_RUNTIME_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_RUNTIME_ACCOUNT || secrets.GCP_CLOUD_RUN_RUNTIME_ACCOUNT }}
+      GCP_ARTIFACT_REGISTRY: ${{ vars.GCP_ARTIFACT_REGISTRY || secrets.GCP_ARTIFACT_REGISTRY }}
+      NEOGUARD_ENROLLMENT_TOKEN: ${{ secrets.NEOGUARD_ENROLLMENT_TOKEN }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Validate configuration
+        run: |
+          set -euo pipefail
+          for name in GCP_PROJECT_ID GCP_REGION GCP_WIF_PROVIDER GCP_CLOUD_RUN_SERVICE_ACCOUNT GCP_CLOUD_RUN_RUNTIME_ACCOUNT GCP_ARTIFACT_REGISTRY NEOGUARD_ENROLLMENT_TOKEN; do
+            test -n "${!name:-}" || { echo "::error::Missing $name"; exit 1; }
+          done
+          test "${#NEOGUARD_ENROLLMENT_TOKEN}" -ge 32 || { echo "::error::NEOGUARD_ENROLLMENT_TOKEN must be at least 32 characters"; exit 1; }
+
+      - name: Test Guardian control plane
+        run: node --test server/neoguard-control-plane/*.test.mjs
+
+      - name: Build local production image
+        run: docker build -f server/neoguard-control-plane/Dockerfile -t neoguard-control-plane:${{ github.sha }} .
+
+      - uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+
+      - uses: google-github-actions/setup-gcloud@v3
+
+      - name: Build and push immutable image
+        env:
+          IMAGE: ${{ env.GCP_ARTIFACT_REGISTRY }}/neoguard:${{ github.sha }}
+        run: |
+          set -euo pipefail
+          gcloud auth configure-docker "${GCP_REGION}-docker.pkg.dev" --quiet
+          docker tag neoguard-control-plane:${{ github.sha }} "$IMAGE"
+          docker push "$IMAGE"
+
+      - name: Sync enrollment bootstrap secret
+        run: |
+          set -euo pipefail
+          if ! gcloud secrets describe "$SECRET_NAME" --project="$GCP_PROJECT_ID" >/dev/null 2>&1; then
+            gcloud secrets create "$SECRET_NAME" --project="$GCP_PROJECT_ID" --replication-policy=automatic --quiet
+          fi
+          printf '%s' "$NEOGUARD_ENROLLMENT_TOKEN" | gcloud secrets versions add "$SECRET_NAME" --project="$GCP_PROJECT_ID" --data-file=-
+
+      - name: Deploy Guardian service
+        env:
+          IMAGE: ${{ env.GCP_ARTIFACT_REGISTRY }}/neoguard:${{ github.sha }}
+        run: |
+          set -euo pipefail
+          gcloud run deploy "$SERVICE_NAME" \
+            --project="$GCP_PROJECT_ID" \
+            --region="$GCP_REGION" \
+            --image="$IMAGE" \
+            --service-account="$GCP_CLOUD_RUN_RUNTIME_ACCOUNT" \
+            --port=8080 \
+            --set-secrets="NEOGUARD_ENROLLMENT_TOKEN=$SECRET_NAME:latest" \
+            --allow-unauthenticated \
+            --quiet
+
+      - name: Verify Cloud Run origin
+        run: |
+          set -euo pipefail
+          SERVICE_URL="$(gcloud run services describe "$SERVICE_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format='value(status.url)')"
+          test -n "$SERVICE_URL"
+          code="$(curl --retry 6 --retry-delay 5 --connect-timeout 10 --max-time 30 -sS -o /tmp/neoguard-health.json -w '%{http_code}' "$SERVICE_URL/healthz")"
+          test "$code" = 200
+          grep -q '"ok":true' /tmp/neoguard-health.json
+          echo "NEOGUARD_SERVICE_URL=$SERVICE_URL" >> "$GITHUB_ENV"
+
+      - name: Route canonical hostname through NEO HTTPS load balancer
+        run: |
+          set -euo pipefail
+          gcloud compute url-maps describe "$URL_MAP_NAME" --project="$GCP_PROJECT_ID" >/dev/null
+
+          if ! gcloud compute network-endpoint-groups describe "$GUARD_NEG_NAME" --region="$GCP_REGION" --project="$GCP_PROJECT_ID" >/dev/null 2>&1; then
+            gcloud compute network-endpoint-groups create "$GUARD_NEG_NAME" \
+              --region="$GCP_REGION" \
+              --network-endpoint-type=serverless \
+              --cloud-run-service="$SERVICE_NAME" \
+              --project="$GCP_PROJECT_ID" \
+              --quiet
+          fi
+
+          if ! gcloud compute backend-services describe "$GUARD_BACKEND_NAME" --global --project="$GCP_PROJECT_ID" >/dev/null 2>&1; then
+            gcloud compute backend-services create "$GUARD_BACKEND_NAME" \
+              --global \
+              --load-balancing-scheme=EXTERNAL_MANAGED \
+              --project="$GCP_PROJECT_ID" \
+              --quiet
+          fi
+
+          if ! gcloud compute backend-services describe "$GUARD_BACKEND_NAME" --global --project="$GCP_PROJECT_ID" --format='json(backends)' | grep -q "$GUARD_NEG_NAME"; then
+            gcloud compute backend-services add-backend "$GUARD_BACKEND_NAME" \
+              --global \
+              --network-endpoint-group="$GUARD_NEG_NAME" \
+              --network-endpoint-group-region="$GCP_REGION" \
+              --project="$GCP_PROJECT_ID" \
+              --quiet
+          fi
+
+          if ! gcloud compute url-maps describe "$URL_MAP_NAME" --project="$GCP_PROJECT_ID" --format='json(hostRules,pathMatchers)' | grep -q 'neoguard-matcher'; then
+            gcloud compute url-maps add-path-matcher "$URL_MAP_NAME" \
+              --path-matcher-name=neoguard-matcher \
+              --default-service="$GUARD_BACKEND_NAME" \
+              --new-hosts="$DOMAIN" \
+              --project="$GCP_PROJECT_ID" \
+              --quiet
+          fi
+
+      - name: Verify canonical production hostname
+        run: |
+          set -euo pipefail
+          wait_for_health() {
+            local code=''
+            for attempt in $(seq 1 30); do
+              code="$(curl --connect-timeout 10 --max-time 30 -sS -o /tmp/neoguard-domain-health.json -w '%{http_code}' "https://$DOMAIN/healthz" || true)"
+              if [ "$code" = 200 ] && grep -q '"ok":true' /tmp/neoguard-domain-health.json; then
+                echo "Guardian health verified on attempt $attempt"
+                return 0
+              fi
+              echo "Waiting for HTTPS routing: HTTP ${code:-000} (attempt $attempt/30)"
+              sleep 10
+            done
+            echo "::error::https://$DOMAIN/healthz did not become healthy after 5 minutes"
+            return 1
+          }
+          wait_for_health
+          echo "NEO Guardian origin: $NEOGUARD_SERVICE_URL" >> "$GITHUB_STEP_SUMMARY"
+          echo "NEO Guardian production: https://$DOMAIN/" >> "$GITHUB_STEP_SUMMARY"
+          echo "Health: https://$DOMAIN/healthz" >> "$GITHUB_STEP_SUMMARY"
