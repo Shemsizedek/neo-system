@@ -10,3 +10,4 @@ export { hashAttestationSnapshot, createBaseline, evaluateAttestation, continuou
 export { createQuarantineRecord, applyQuarantine, enforceQuarantine } from './quarantine.mjs';
 export { createRecoveryRequest, signRecoveryRequest, verifyRecoveryRequest, evaluateRetrust } from './recoveryTrust.mjs';
 export { createIncidentLedger, SEVERITY, EVENT_STATE } from './incidentLedger.mjs';
+export { validateGuardianEnvelope, classifyNeoOutage } from './guardianEnvelope.mjs';
