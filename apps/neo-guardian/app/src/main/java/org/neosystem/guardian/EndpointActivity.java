@@ -67,7 +67,11 @@ public final class EndpointActivity extends Activity {
 
         Button start = button("START 2-HOUR NEO DEV SESSION");
         start.setOnClickListener(v -> {
-            GuardianSecureStore.put(this, DEV_SESSION_UNTIL, Long.toString(System.currentTimeMillis() + DEV_SESSION_MS));
+            String untilValue = Long.toString(System.currentTimeMillis() + DEV_SESSION_MS);
+            if (!safeStore(DEV_SESSION_UNTIL, untilValue)) {
+                Toast.makeText(this, "Secure local store unavailable; development session was not started.", Toast.LENGTH_LONG).show();
+                return;
+            }
             GuardianAuditChain.append(this, "INFO|OBSERVATION|User started bounded NEO development session");
             Toast.makeText(this, "NEO development session approved for 2 hours.", Toast.LENGTH_LONG).show();
             render();
@@ -76,7 +80,10 @@ public final class EndpointActivity extends Activity {
 
         Button end = button("END NEO DEV SESSION");
         end.setOnClickListener(v -> {
-            GuardianSecureStore.put(this, DEV_SESSION_UNTIL, "0");
+            if (!safeStore(DEV_SESSION_UNTIL, "0")) {
+                Toast.makeText(this, "Secure local store unavailable; development session state was not changed.", Toast.LENGTH_LONG).show();
+                return;
+            }
             GuardianAuditChain.append(this, "INFO|OBSERVATION|User ended NEO development session");
             Toast.makeText(this, "Session ended. Turn USB/Wireless debugging off unless you still need it.", Toast.LENGTH_LONG).show();
             render();
@@ -111,11 +118,21 @@ public final class EndpointActivity extends Activity {
     private String endpointId() {
         String id = GuardianSecureStore.get(this, ENDPOINT_ID);
         if (id == null || id.isEmpty()) {
-            id = "neo:endpoint:" + UUID.randomUUID();
-            GuardianSecureStore.put(this, ENDPOINT_ID, id);
+            String generated = "neo:endpoint:" + UUID.randomUUID();
+            if (!safeStore(ENDPOINT_ID, generated)) return "neo:endpoint:secure-store-unavailable";
             GuardianAuditChain.append(this, "INFO|OBSERVATION|Generated local NEO endpoint identifier");
+            id = generated;
         }
         return id;
+    }
+
+    private boolean safeStore(String key, String value) {
+        try {
+            GuardianSecureStore.put(this, key, value);
+            return true;
+        } catch (Throwable ignored) {
+            return false;
+        }
     }
 
     private long readLong(String key) {
