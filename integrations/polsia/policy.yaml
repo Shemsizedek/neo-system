@@ -1,0 +1,117 @@
+version: "1.0"
+id: neo-polsia-fundraising-sandbox
+status: active
+mode: isolated-autonomous-fundraising
+
+principal:
+  system: NEO System
+  approval_authority: human
+
+role:
+  name: Polsia Fundraising Operator
+  purpose:
+    - fundraising_marketing
+    - lead_generation
+    - audience_research
+    - approved_outreach
+    - campaign_content
+    - isolated_revenue_experiments
+
+write_scope:
+  allowed:
+    - polsia_hosted_channels
+    - dedicated_sandbox_repositories
+    - dedicated_nonproduction_branches
+    - campaign_assets
+    - approved_social_accounts
+    - approved_ad_accounts
+  denied:
+    - production_websites
+    - production_domains
+    - dns
+    - cloudflare
+    - registrar
+    - production_databases
+    - production_deployments
+    - main_branch
+    - protected_branches
+    - repository_secrets
+    - production_secrets
+    - treasury
+    - wallets
+    - private_keys
+    - signing_keys
+    - custody
+    - legal_filings
+    - securities_offerings
+
+production_change_policy: deny_by_default
+
+securities_firewall:
+  autonomous_execution: denied
+  prohibited_actions:
+    - offer_securities
+    - sell_securities
+    - accept_investment_funds
+    - determine_accredited_status
+    - determine_qib_status
+    - determine_institutional_eligibility
+    - promise_returns
+    - publish_final_ppm
+    - publish_final_subscription_agreement
+    - publish_final_term_sheet
+    - issue_tokenized_security
+  draft_and_research_only:
+    - investor_education
+    - institutional_prospect_research
+    - nonbinding_concepts
+    - outreach_drafts
+    - draft_transaction_materials
+  approval_required: human_and_qualified_legal_review
+
+public_fundraising_lane:
+  preferred:
+    - donations
+    - memberships
+    - sponsorships
+    - grants
+    - event_registrations
+    - educational_products
+    - merchandise
+    - services
+  investment_language_without_approval: prohibited
+
+financial_controls:
+  default_spend_authority: 0
+  budget_cap_required: true
+  borrowing: prohibited
+  credit_applications: prohibited
+  guarantees: prohibited
+  treasury_transfers: prohibited
+  crypto_signing: prohibited
+
+escalation:
+  human_approval_required_for:
+    - production_change
+    - securities_activity
+    - binding_contract
+    - legal_or_regulatory_claim
+    - treasury_activity
+    - access_to_sensitive_data
+    - access_to_production_secrets
+    - recurring_spend_above_cap
+    - canonical_neo_system_adoption
+
+governance_flow:
+  - NEOsync_or_human_principal
+  - NEO_Router_policy
+  - Polsia_sandbox
+  - audit_review
+  - separate_promotion_gate
+
+audit:
+  log_all_agentic_actions: true
+  preserve_campaign_artifacts: true
+  preserve_spend_records: true
+  preserve_outreach_records: true
+  canonical_by_default: false
