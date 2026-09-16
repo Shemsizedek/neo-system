@@ -1,0 +1,92 @@
+name: Deploy NEO Guardian to Cloud Run
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'server/neoguard-control-plane/**'
+      - '.github/workflows/deploy-neoguard-cloud-run.yml'
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: neoguard-cloud-run-production
+  cancel-in-progress: false
+
+env:
+  SERVICE_NAME: neo-guardian
+  CANONICAL_HOST: neoguard.holytemples.org
+  ENROLLMENT_SECRET_NAME: neoguard-enrollment-token
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: holytemples-production
+    timeout-minutes: 20
+    env:
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID || secrets.GCP_PROJECT_ID }}
+      GCP_REGION: ${{ vars.GCP_REGION || secrets.GCP_REGION }}
+      GCP_WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER || secrets.GCP_WIF_PROVIDER }}
+      GCP_CLOUD_RUN_SERVICE_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_SERVICE_ACCOUNT || secrets.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+      GCP_CLOUD_RUN_RUNTIME_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_RUNTIME_ACCOUNT || secrets.GCP_CLOUD_RUN_RUNTIME_ACCOUNT }}
+      GCP_ARTIFACT_REGISTRY: ${{ vars.GCP_ARTIFACT_REGISTRY || secrets.GCP_ARTIFACT_REGISTRY }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Validate deployment configuration
+        run: |
+          set -euo pipefail
+          for name in GCP_PROJECT_ID GCP_REGION GCP_WIF_PROVIDER GCP_CLOUD_RUN_SERVICE_ACCOUNT GCP_CLOUD_RUN_RUNTIME_ACCOUNT GCP_ARTIFACT_REGISTRY; do
+            test -n "${!name:-}" || { echo "::error::Missing $name"; exit 1; }
+          done
+      - name: Test Guardian control plane
+        run: node --test server/neoguard-control-plane/*.test.mjs
+      - uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@v3
+      - name: Validate pre-provisioned enrollment secret
+        run: |
+          set -euo pipefail
+          gcloud secrets describe "$ENROLLMENT_SECRET_NAME" --project="$GCP_PROJECT_ID" >/dev/null || {
+            echo "::error::Secret $ENROLLMENT_SECRET_NAME is not provisioned. Create it in Secret Manager and grant the Cloud Run runtime identity secretAccessor before deployment."
+            exit 1
+          }
+      - name: Build and push Guardian image
+        env:
+          IMAGE: ${{ env.GCP_ARTIFACT_REGISTRY }}/neo-guardian:${{ github.sha }}
+        run: |
+          set -euo pipefail
+          gcloud auth configure-docker "${GCP_REGION}-docker.pkg.dev" --quiet
+          docker build -f server/neoguard-control-plane/Dockerfile -t "$IMAGE" .
+          docker push "$IMAGE"
+      - name: Deploy Guardian control plane
+        env:
+          IMAGE: ${{ env.GCP_ARTIFACT_REGISTRY }}/neo-guardian:${{ github.sha }}
+        run: |
+          set -euo pipefail
+          gcloud run deploy "$SERVICE_NAME" \
+            --project="$GCP_PROJECT_ID" \
+            --region="$GCP_REGION" \
+            --image="$IMAGE" \
+            --service-account="$GCP_CLOUD_RUN_RUNTIME_ACCOUNT" \
+            --set-env-vars="NEOGUARD_CANONICAL_HOST=$CANONICAL_HOST" \
+            --set-secrets="NEOGUARD_ENROLLMENT_TOKEN=$ENROLLMENT_SECRET_NAME:latest" \
+            --allow-unauthenticated \
+            --quiet
+      - name: Verify Cloud Run production boundary
+        run: |
+          set -euo pipefail
+          URL="$(gcloud run services describe "$SERVICE_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format='value(status.url)')"
+          test -n "$URL"
+          STATUS="$(curl -sS -o /tmp/neoguard-health.json -w '%{http_code}' "$URL/healthz")"
+          test "$STATUS" = 200
+          grep -q '"ok":true' /tmp/neoguard-health.json
+          grep -q 'NEO Guardian Control Plane' /tmp/neoguard-health.json
+          echo "NEO Guardian Cloud Run: $URL" >> "$GITHUB_STEP_SUMMARY"
+          echo "Canonical host target: https://$CANONICAL_HOST" >> "$GITHUB_STEP_SUMMARY"
+          echo "Cloud Run health verified. Custom-domain DNS/HTTPS must be verified separately before declaring the canonical hostname live." >> "$GITHUB_STEP_SUMMARY"
