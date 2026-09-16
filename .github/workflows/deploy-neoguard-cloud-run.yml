@@ -79,8 +79,7 @@ jobs:
         run: |
           set -euo pipefail
           if ! gcloud secrets describe "$SECRET_NAME" --project="$GCP_PROJECT_ID" >/dev/null 2>&1; then
-            echo "::error::Secret Manager secret $SECRET_NAME does not exist; create it before cutover."
-            exit 1
+            gcloud secrets create "$SECRET_NAME" --project="$GCP_PROJECT_ID" --replication-policy=automatic --quiet
           fi
           printf '%s' "$NEOGUARD_ENROLLMENT_TOKEN" | gcloud secrets versions add "$SECRET_NAME" --project="$GCP_PROJECT_ID" --data-file=-
 
