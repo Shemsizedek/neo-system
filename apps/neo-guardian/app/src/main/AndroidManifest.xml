@@ -1,47 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
     <uses-permission android:name="android.permission.USE_FINGERPRINT" />
-
-    <application
-        android:allowBackup="false"
-        android:fullBackupContent="false"
-        android:label="NEO Guardian"
-        android:icon="@drawable/neo_guardian_logo"
-        android:roundIcon="@drawable/neo_guardian_logo"
-        android:usesCleartextTraffic="false"
-        android:theme="@android:style/Theme.Material.NoActionBar">
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <application android:allowBackup="false" android:fullBackupContent="false" android:label="NEO Guardian" android:icon="@drawable/neo_guardian_logo" android:roundIcon="@drawable/neo_guardian_logo" android:usesCleartextTraffic="false" android:theme="@android:style/Theme.Material.NoActionBar">
         <meta-data android:name="org.neosystem.identity.SUBJECT_ID" android:value="neo:founder:000001" />
         <meta-data android:name="org.neosystem.identity.ACCOUNT_ORDINAL" android:value="1" />
         <meta-data android:name="org.neosystem.identity.ACCOUNT_CLASS" android:value="founder" />
         <meta-data android:name="org.neosystem.identity.BOOTSTRAP_ROLE" android:value="founder_owner" />
         <meta-data android:name="org.neosystem.identity.AUTHENTICATION_BYPASS" android:value="false" />
-        <activity
-            android:name=".ProductionActivity"
-            android:exported="true"
-            android:screenOrientation="unspecified">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
-        <activity
-            android:name=".WorkShieldActivity"
-            android:exported="true"
-            android:label="NEO Work Shield"
-            android:screenOrientation="unspecified">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
-        <activity
-            android:name=".MainActivity"
-            android:exported="false"
-            android:screenOrientation="unspecified" />
+        <activity android:name=".ProductionActivity" android:exported="true" android:screenOrientation="unspecified"><intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter></activity>
+        <activity android:name=".WorkShieldActivity" android:exported="true" android:label="NEO Work Shield" android:screenOrientation="unspecified"><intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter></activity>
+        <activity android:name=".MainActivity" android:exported="false" android:screenOrientation="unspecified" />
+        <service android:name=".GuardianForegroundService" android:exported="false" android:stopWithTask="true" />
     </application>
 </manifest>
