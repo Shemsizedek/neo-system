@@ -1,10 +1,10 @@
 {
   "app": "NEO Guardian",
-  "version": "3.2.0",
-  "version_code": 7,
+  "version": "3.3.0",
+  "version_code": 8,
   "channel": "production",
   "minimum_android_api": 26,
   "published_at": "2026-09-15",
   "download_url": "https://shemsizedek.github.io/neo-system/guardian/",
-  "notes": "Adds the explicit visible Work Shield session, encrypted local posture baseline and bounded incident/audit ledger, posture-change detection, HIGH-risk local alerts, and read-only HTTPS/TLS checks for canonical NEO public infrastructure. Monitoring runs only while the Work Shield screen is visible and explicitly enabled; no covert background surveillance or infrastructure mutation is introduced."
+  "notes": "Adds NEO Social Shield platform-adapter normalization, a unified evidence-first incident timeline, and dedicated Social Shield CI. Social telemetry is accepted only from official APIs or user-authorized exports; unsupported telemetry is reported as a limitation instead of invented evidence. No passwords, session tokens, seed phrases, recovery codes, covert monitoring, attribution without reliable evidence, or platform mutation bypasses are introduced."
 }
