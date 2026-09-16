@@ -51,8 +51,7 @@ public final class EndpointActivity extends Activity {
 
     private void render() {
         content.removeAllViews();
-        TextView title = text("NEO Endpoint v3.4", 26, true, Color.WHITE);
-        content.addView(title);
+        content.addView(text("NEO Endpoint v3.4", 26, true, Color.WHITE));
         content.addView(text("Protected Android enrollment • local-first • explicit authorization", 13, false, Color.rgb(153,168,187)));
 
         String endpointId = endpointId();
@@ -61,7 +60,7 @@ public final class EndpointActivity extends Activity {
         boolean dev = globalEnabled(Settings.Global.DEVELOPMENT_SETTINGS_ENABLED);
         long until = readLong(DEV_SESSION_UNTIL);
         boolean approved = until > System.currentTimeMillis();
-        String state = state(dev, usb, wireless, approved);
+        String state = state(usb, wireless, approved);
 
         card("ENDPOINT ID", endpointId + "\nThis random NEO identifier is not a MAC address, IP address, password, or Android hardware credential.", Color.rgb(105,169,255));
         card("ENDPOINT STATE", state + "\nDeveloper options: " + onOff(dev) + "\nUSB debugging: " + onOff(usb) + "\nWireless debugging: " + onOff(wireless) + "\nApproved NEO dev session: " + (approved ? "ACTIVE" : "NONE"), state.equals("WARNING") ? Color.rgb(255,184,77) : Color.rgb(75,220,170));
@@ -92,12 +91,13 @@ public final class EndpointActivity extends Activity {
         developerSettings.setOnClickListener(v -> safeStart(new Intent(Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS)));
         content.addView(developerSettings);
 
-        card("AUTHORIZED HOSTS", "ADB pairing remains under Android's own cryptographic authorization. Guardian does not collect the six-digit pairing code or ADB private keys. Host enrollment records should contain only a NEO endpoint ID, a public-key fingerprint, approval time, and optional label.", Color.rgb(105,169,255));
+        card("AUTHORIZED HOSTS", "ADB pairing remains under Android's own cryptographic authorization. Guardian does not collect the six-digit pairing code or ADB private keys. Host enrollment records should contain only a NEO endpoint ID, a public-key fingerprint, approval time, expiry, and optional label.", Color.rgb(105,169,255));
         card("PAIRING RULE", "Type the temporary six-digit code only into the authorized ADB host when adb pair prompts for it. Do not paste the code into chat, source control, tickets, or NEO telemetry.", Color.rgb(75,220,170));
+        card("EVIDENCE RULE", "Debugging being enabled outside an approved session is a WARNING, not proof that anyone accessed the phone. HIGH/CRITICAL require corroborating independent evidence through Guardian/NEO Hacker.", Color.rgb(255,184,77));
         card("LIMITS", "A normal Android app cannot enumerate every ADB host key or silently control Developer Options. NEO Endpoint therefore observes Android-exposed state and keeps Android's authorization boundary intact.", Color.rgb(153,168,187));
     }
 
-    private String state(boolean dev, boolean usb, boolean wireless, boolean approved) {
+    private String state(boolean usb, boolean wireless, boolean approved) {
         if ((usb || wireless) && !approved) return "WARNING";
         if (approved && (usb || wireless)) return "DEV_SESSION";
         return "NORMAL";
