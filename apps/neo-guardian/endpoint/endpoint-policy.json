@@ -1,0 +1,43 @@
+{
+  "version": "3.4.0",
+  "mode": "defensive-user-authorized",
+  "enrollment": {
+    "explicit_user_consent": true,
+    "unique_endpoint_id": true,
+    "adb_pairing_code_storage": false,
+    "adb_private_key_storage_in_registry": false,
+    "hardware_identifier_as_authentication": false
+  },
+  "developer_security": {
+    "developer_options_observe": true,
+    "usb_debugging_observe": true,
+    "wireless_debugging_observe": true,
+    "oem_unlocking_observe": true,
+    "approved_session_required_for_debugging": true,
+    "approved_session_default_minutes": 120,
+    "adb_authorization_timeout_should_remain_enabled": true
+  },
+  "authorized_host_registry": {
+    "allowed_fields": ["endpoint_id", "host_label", "adb_public_key_sha256", "approved_at", "expires_at"],
+    "private_key_storage": false,
+    "pairing_code_storage": false,
+    "public_adb_endpoint": false
+  },
+  "bridge": {
+    "default_arbitrary_shell": false,
+    "named_diagnostics_only": true,
+    "least_privilege": true,
+    "step_up_for_consequential_actions": true,
+    "public_internet_adb_exposure": false
+  },
+  "privacy": {
+    "password_collection": false,
+    "pin_collection": false,
+    "biometric_collection": false,
+    "message_content_collection": false,
+    "keystroke_collection": false,
+    "pairing_code_collection": false,
+    "private_keys_in_public_registry": false
+  },
+  "states": ["NORMAL", "DEV_SESSION", "WARNING", "HIGH", "CRITICAL"]
+}

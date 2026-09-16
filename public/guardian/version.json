@@ -1,10 +1,10 @@
 {
   "app": "NEO Guardian",
-  "version": "3.3.0",
-  "version_code": 8,
+  "version": "3.4.0",
+  "version_code": 9,
   "channel": "production",
   "minimum_android_api": 26,
-  "published_at": "2026-09-15",
+  "published_at": "2026-09-16",
   "download_url": "https://shemsizedek.github.io/neo-system/guardian/",
-  "notes": "Adds NEO Social Shield platform-adapter normalization, a unified evidence-first incident timeline, and dedicated Social Shield CI. Social telemetry is accepted only from official APIs or user-authorized exports; unsupported telemetry is reported as a limitation instead of invented evidence. No passwords, session tokens, seed phrases, recovery codes, covert monitoring, attribution without reliable evidence, or platform mutation bypasses are introduced."
+  "notes": "Adds NEO Endpoint developer-security enrollment: a local endpoint identity, bounded user-approved development sessions, Android-exposed USB/Wireless debugging posture, direct routes to Android authorization settings, and a safe ADB enrollment helper for authorized hosts. Pairing codes, ADB private keys, passwords, PINs, biometrics, message contents, and hardware identifiers are not collected as credentials. ADB is not exposed to the public Internet and the bridge does not create a permanent unrestricted remote shell."
 }

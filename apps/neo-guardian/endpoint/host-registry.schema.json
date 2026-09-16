@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "NEO Guardian Authorized Host Registry Entry",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["endpoint_id", "host_label", "adb_public_key_sha256", "approved_at"],
+  "properties": {
+    "endpoint_id": {"type": "string", "pattern": "^neo:endpoint:"},
+    "host_label": {"type": "string", "minLength": 1, "maxLength": 120},
+    "adb_public_key_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "approved_at": {"type": "string", "format": "date-time"},
+    "expires_at": {"type": ["string", "null"], "format": "date-time"}
+  },
+  "description": "Stores metadata/fingerprints only. Never store ADB private keys, Android pairing codes, device PINs, biometrics, passwords, or session secrets."
+}
