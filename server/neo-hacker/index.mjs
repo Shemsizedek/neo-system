@@ -11,3 +11,4 @@ export { createQuarantineRecord, applyQuarantine, enforceQuarantine } from './qu
 export { createRecoveryRequest, signRecoveryRequest, verifyRecoveryRequest, evaluateRetrust } from './recoveryTrust.mjs';
 export { createIncidentLedger, SEVERITY, EVENT_STATE } from './incidentLedger.mjs';
 export { validateGuardianEnvelope, classifyNeoOutage } from './guardianEnvelope.mjs';
+export { createGuardianSecurityPipeline } from './guardianPipeline.mjs';
