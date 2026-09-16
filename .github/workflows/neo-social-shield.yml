@@ -1,0 +1,51 @@
+name: NEO Social Shield CI
+
+on:
+  pull_request:
+    paths:
+      - 'server/neo-hacker/**'
+      - 'governance/NEO_SOCIAL_SHIELD_STANDARD.md'
+      - 'apps/neo-guardian/**'
+      - 'public/guardian/**'
+      - '.github/workflows/neo-social-shield.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'server/neo-hacker/**'
+      - 'governance/NEO_SOCIAL_SHIELD_STANDARD.md'
+      - 'apps/neo-guardian/**'
+      - 'public/guardian/**'
+      - '.github/workflows/neo-social-shield.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  social-shield-node:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Run Social Shield security tests
+        run: node --test server/neo-hacker/*.test.mjs
+
+  guardian-android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - name: Install Android SDK packages
+        run: sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
+      - name: Install Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+      - name: Compile Guardian debug candidate
+        working-directory: apps/neo-guardian
+        run: gradle assembleDebug --no-daemon
