@@ -10,6 +10,7 @@ async function start() {
 async function post(base, path, token, payload) {
   return fetch(base+path,{method:'POST',headers:{'content-type':'application/json',authorization:`Bearer ${token}`},body:JSON.stringify(payload)});
 }
+function authPayload(payload, nonce='test_nonce_0000001') { return {...payload, nonce, sentAt:new Date().toISOString()}; }
 
 test('canonical host is neoguard.holytemples.org', () => assert.equal(SERVICE.canonicalHost,'neoguard.holytemples.org'));
 
@@ -33,8 +34,8 @@ test('event ingestion requires device auth and inert NEO Hacker schema', async (
   const {s,base}=await start(); try {
     const p={endpointId:'neo:endpoint:000001',hostPublicKeyFingerprint:'AA:BB:CC:DD:EE:FF:00:11:22:33:44:55:66:77:88:99'};
     const e=await post(base,'/v1/enroll','this-is-a-long-test-enrollment-token',p); const token=(await e.json()).deviceToken;
-    assert.equal((await post(base,'/v1/events','bad-token-that-is-long-enough',{endpointId:p.endpointId,event:{schema:'neo.hacker.endpoint-event.v1'}})).status,401);
-    const r=await post(base,'/v1/events',token,{endpointId:p.endpointId,event:{schema:'neo.hacker.endpoint-event.v1'}}); const j=await r.json();
+    assert.equal((await post(base,'/v1/events','bad-token-that-is-long-enough',authPayload({endpointId:p.endpointId,event:{schema:'neo.hacker.endpoint-event.v1'}},'test_nonce_0000002'))).status,401);
+    const r=await post(base,'/v1/events',token,authPayload({endpointId:p.endpointId,event:{schema:'neo.hacker.endpoint-event.v1'}},'test_nonce_0000003')); const j=await r.json();
     assert.equal(r.status,202); assert.equal(j.toolAuthority,'NONE'); assert.equal(j.consequentialAction,false);
   } finally {s.close();}
 });
