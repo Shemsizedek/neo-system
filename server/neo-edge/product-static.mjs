@@ -7,6 +7,8 @@ const EXCHANGE_ROOT = fileURLToPath(new URL('../../apps/neo-exchange/dist/', imp
 const FINANCE_FILE = fileURLToPath(new URL('../../apps/noogle/web/finance.html', import.meta.url));
 const TELLER_ROOT = fileURLToPath(new URL('../../public/neo-teller/', import.meta.url));
 const MINER_ROOT = fileURLToPath(new URL('../../public/neo-miner/', import.meta.url));
+const ENTERPRISE_ROOT = fileURLToPath(new URL('../../docs/neo-enterprise/', import.meta.url));
+const ENTERPRISE_API_ROOT = fileURLToPath(new URL('../../dist/api/enterprise/', import.meta.url));
 const PLATFORM_SHELL_CSS = fileURLToPath(new URL('../../public/platform-shell.css', import.meta.url));
 const PLATFORM_SHELL_JS = fileURLToPath(new URL('../../public/platform-shell.js', import.meta.url));
 
@@ -50,6 +52,26 @@ async function serveFile(req, res, absolutePath, contentType) {
     res.writeHead(200, {
       'content-type': contentType,
       'cache-control': contentType.startsWith('text/html') ? 'no-store' : 'public, max-age=300',
+      'x-content-type-options': 'nosniff',
+      'referrer-policy': 'strict-origin-when-cross-origin'
+    });
+    if (req.method === 'HEAD') return res.end();
+    res.end(body);
+    return true;
+  } catch (error) {
+    if (error?.code === 'ENOENT') return false;
+    json(res, 500, { error: 'product_asset_unavailable', detail: String(error?.message || error) });
+    return true;
+  }
+}
+
+async function serveText(req, res, absolutePath, transform) {
+  try {
+    let body = await readFile(absolutePath, 'utf8');
+    if (transform) body = transform(body);
+    res.writeHead(200, {
+      'content-type': 'text/html; charset=utf-8',
+      'cache-control': 'no-store',
       'x-content-type-options': 'nosniff',
       'referrer-policy': 'strict-origin-when-cross-origin'
     });
@@ -190,11 +212,69 @@ async function serveMiner(req, res, url, host) {
   return true;
 }
 
+function enterprisePublicHtml(body, admin = false) {
+  const replacements = admin ? [
+    ['../../neopay/', 'https://pay.holytemples.org/'],
+    ['../../neo-books/', 'https://book.holytemples.org/'],
+    ['../../neo-counter/', 'https://counter.holytemples.org/'],
+    ['../../neo-teller/', 'https://teller.holytemples.org/'],
+    ['../../neo-prime/', 'https://prime.holytemples.org/'],
+    ['../../api/enterprise/', '/api/enterprise/']
+  ] : [
+    ['../neo-hub/', 'https://hub.holytemples.org/'],
+    ['../neopay/', 'https://pay.holytemples.org/'],
+    ['../neo-books/', 'https://book.holytemples.org/'],
+    ['../neo-prime/', 'https://prime.holytemples.org/'],
+    ['../neo-teller/', 'https://teller.holytemples.org/'],
+    ['../neo-counter/', 'https://counter.holytemples.org/'],
+    ['../api/enterprise/', '/api/enterprise/']
+  ];
+  return replacements.reduce((value, [from, to]) => value.split(from).join(to), body);
+}
+
+async function serveEnterprise(req, res, url, host) {
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
+    json(res, 405, { error: 'method_not_allowed', service: 'neo-enterprise' });
+    return true;
+  }
+  if (url.pathname === '/health') {
+    json(res, 200, { ok: true, service: 'neo-enterprise', mode: 'PUBLIC_PRODUCTION', host, privateMembershipsExposed: false });
+    return true;
+  }
+  if (url.pathname === '/api') {
+    json(res, 200, { service: 'neo-enterprise', name: 'NEO Enterprise', role: 'business-institutional-suite', mode: 'PUBLIC_PRODUCTION', publicDirectory: '/api/enterprise/organizations.json', privateMembershipsExposed: false, ui: 'https://enterprise.holytemples.org/' });
+    return true;
+  }
+  if (url.pathname === '/' || url.pathname === '/ui' || url.pathname === '/index.html') {
+    const served = await serveText(req, res, resolve(ENTERPRISE_ROOT, 'index.html'), body => enterprisePublicHtml(body, false));
+    if (!served) json(res, 500, { error: 'neo_enterprise_ui_unavailable' });
+    return true;
+  }
+  if (url.pathname === '/admin' || url.pathname === '/admin/' || url.pathname === '/admin/index.html') {
+    const served = await serveText(req, res, resolve(ENTERPRISE_ROOT, 'admin/index.html'), body => enterprisePublicHtml(body, true));
+    if (!served) json(res, 500, { error: 'neo_enterprise_admin_ui_unavailable' });
+    return true;
+  }
+  if (url.pathname.startsWith('/api/enterprise/')) {
+    const name = url.pathname.slice('/api/enterprise/'.length);
+    if (!['index.json', 'organizations.json', 'roles.json'].includes(name)) {
+      json(res, 404, { error: 'not_found', service: 'neo-enterprise', path: url.pathname });
+      return true;
+    }
+    const served = await serveFile(req, res, resolve(ENTERPRISE_API_ROOT, name), 'application/json; charset=utf-8');
+    if (!served) json(res, 500, { error: 'neo_enterprise_public_api_unavailable', asset: name });
+    return true;
+  }
+  json(res, 404, { error: 'not_found', service: 'neo-enterprise', path: url.pathname });
+  return true;
+}
+
 export async function serveProductStatic(req, res, url, host) {
   if (host === 'relations.holytemples.org') return serveRelations(req, res, url, host);
   if (host === 'neofx.holytemples.org') return serveExchange(req, res, url, host);
   if (host === 'finance.holytemples.org') return serveFinance(req, res, url, host);
   if (host === 'teller.holytemples.org') return serveTeller(req, res, url, host);
   if (host === 'miner.holytemples.org') return serveMiner(req, res, url, host);
+  if (host === 'enterprise.holytemples.org') return serveEnterprise(req, res, url, host);
   return false;
 }

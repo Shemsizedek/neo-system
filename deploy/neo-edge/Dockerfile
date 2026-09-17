@@ -5,6 +5,13 @@ RUN npm install
 COPY apps/neo-exchange ./
 RUN npm run build -- --base=/
 
+FROM node:22-alpine AS enterprise-build
+WORKDIR /build
+COPY server/neo-enterprise ./server/neo-enterprise
+COPY registry/enterprise ./registry/enterprise
+COPY scripts/build-enterprise-pages.mjs ./scripts/build-enterprise-pages.mjs
+RUN node scripts/build-enterprise-pages.mjs
+
 FROM node:22-alpine
 WORKDIR /app
 COPY server/holytemples-adapter ./server/holytemples-adapter
@@ -16,9 +23,11 @@ COPY apps/neo-relations/site ./apps/neo-relations/site
 COPY apps/noogle/web/finance.html ./apps/noogle/web/finance.html
 COPY public/neo-teller ./public/neo-teller
 COPY public/neo-miner ./public/neo-miner
+COPY docs/neo-enterprise ./docs/neo-enterprise
 COPY public/platform-shell.css ./public/platform-shell.css
 COPY public/platform-shell.js ./public/platform-shell.js
 COPY --from=exchange-build /build/apps/neo-exchange/dist ./apps/neo-exchange/dist
+COPY --from=enterprise-build /build/dist/api/enterprise ./dist/api/enterprise
 ENV NODE_ENV=production
 ENV PORT=8080
 ENV NEO_PLATFORM_API_ORIGIN=https://egov.holytemples.org
