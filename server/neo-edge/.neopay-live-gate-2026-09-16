@@ -1,0 +1,5 @@
+NEOpay production live gate trigger.
+
+Purpose: redeploy the current NEO Edge Cloud Run service from canonical main so pay.holytemples.org and related NEO Edge routes are verified against the present five-plane architecture.
+
+Safety: this marker contains no secrets and changes no runtime business logic.
