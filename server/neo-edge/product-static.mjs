@@ -5,6 +5,9 @@ import { fileURLToPath } from 'node:url';
 const RELATIONS_ROOT = fileURLToPath(new URL('../../apps/neo-relations/site/', import.meta.url));
 const EXCHANGE_ROOT = fileURLToPath(new URL('../../apps/neo-exchange/dist/', import.meta.url));
 const FINANCE_FILE = fileURLToPath(new URL('../../apps/noogle/web/finance.html', import.meta.url));
+const TELLER_ROOT = fileURLToPath(new URL('../../public/neo-teller/', import.meta.url));
+const PLATFORM_SHELL_CSS = fileURLToPath(new URL('../../public/platform-shell.css', import.meta.url));
+const PLATFORM_SHELL_JS = fileURLToPath(new URL('../../public/platform-shell.js', import.meta.url));
 
 const RELATIONS_FILES = Object.freeze({
   '/': ['index.html', 'text/html; charset=utf-8'],
@@ -133,9 +136,48 @@ async function serveFinance(req, res, url, host) {
   return true;
 }
 
+async function serveTeller(req, res, url, host) {
+  if (url.pathname.startsWith('/api/v1/teller/')) return false;
+  if (req.method !== 'GET' && req.method !== 'HEAD') return false;
+  if (url.pathname === '/health') {
+    json(res, 200, { ok: true, service: 'neo-teller', mode: 'READ_ONLY', host, network: '/api/v1/teller/network' });
+    return true;
+  }
+  if (url.pathname === '/api') {
+    json(res, 200, { service: 'neo-teller', name: 'NEO Teller', role: 'atm-terminal-platform', mode: 'READ_ONLY', liveData: '/api/v1/teller/network', signing: false, broadcast: false, ui: 'https://teller.holytemples.org/' });
+    return true;
+  }
+  if (url.pathname === '/neo-system/api/platforms/neo-teller.json' || url.pathname === '/api/platforms/neo-teller.json') {
+    json(res, 200, {
+      id: 'neo-teller',
+      name: 'NEO Teller',
+      status: 'ready',
+      generatedAt: new Date().toISOString(),
+      endpoint: '/api/v1/teller/network',
+      capabilities: [
+        { name: 'Bitcoin network telemetry', mode: 'LIVE / READ_ONLY' },
+        { name: 'Counterparty asset telemetry', mode: 'LIVE / READ_ONLY' },
+        { name: 'ATM session architecture', mode: 'UI / POLICY GATED' },
+        { name: 'Signing and broadcast', mode: 'DISABLED' }
+      ]
+    });
+    return true;
+  }
+  if (url.pathname === '/platform-shell.css') return serveFile(req, res, PLATFORM_SHELL_CSS, 'text/css; charset=utf-8');
+  if (url.pathname === '/platform-shell.js') return serveFile(req, res, PLATFORM_SHELL_JS, 'text/javascript; charset=utf-8');
+  if (url.pathname === '/' || url.pathname === '/ui' || url.pathname === '/index.html') {
+    const served = await serveFile(req, res, resolve(TELLER_ROOT, 'index.html'), 'text/html; charset=utf-8');
+    if (!served) json(res, 500, { error: 'neo_teller_ui_unavailable' });
+    return true;
+  }
+  json(res, 404, { error: 'not_found', service: 'neo-teller', path: url.pathname });
+  return true;
+}
+
 export async function serveProductStatic(req, res, url, host) {
   if (host === 'relations.holytemples.org') return serveRelations(req, res, url, host);
   if (host === 'neofx.holytemples.org') return serveExchange(req, res, url, host);
   if (host === 'finance.holytemples.org') return serveFinance(req, res, url, host);
+  if (host === 'teller.holytemples.org') return serveTeller(req, res, url, host);
   return false;
 }
