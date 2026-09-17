@@ -1,22 +1,13 @@
 import type express from 'express';
 import type { PropertyRepository } from './repository.js';
-import { createSellerStore } from './seller-store.js';
+import { createSellerStore, type SellerStore } from './seller-store.js';
 import { requireSeller, type SellerPrincipal } from './seller-auth.js';
 
 type SellerRequest = express.Request & { neoRealtyPrincipal?: SellerPrincipal };
 const routeParam=(v:string|string[]|undefined)=>Array.isArray(v)?(v[0]??''):(v??'');
 
-export function registerSellerRoutes(app:express.Express, repository:PropertyRepository){
+export function registerSellerRoutes(app:express.Express, repository:PropertyRepository):SellerStore{
   const store=createSellerStore();
-
-  app.post('/seller/properties/:id/claim', requireSeller, async(req:SellerRequest,res)=>{
-    try{
-      const id=routeParam(req.params.id); const principal=req.neoRealtyPrincipal!; const property=await repository.get(id);
-      if(!property)return res.status(404).json({error:'not_found'});
-      await store.assign(id,principal.id,principal.role);
-      res.status(201).json({data:{propertyId:id,principalId:principal.id,role:principal.role},disclaimer:'Digital listing ownership is an account-control relationship only and is not proof of deed/title ownership.'});
-    }catch(e){res.status(500).json({error:e instanceof Error?e.message:'seller_store_error'});}
-  });
 
   app.post('/seller/properties/:id/media', requireSeller, async(req:SellerRequest,res)=>{
     try{
@@ -36,4 +27,6 @@ export function registerSellerRoutes(app:express.Express, repository:PropertyRep
   app.get('/properties/:id/media', async(req,res)=>{
     try{const id=routeParam(req.params.id);const property=await repository.get(id);if(!property||property.status!=='active'||property.authority.claimStatus!=='verified')return res.status(404).json({error:'not_found'});const rows=await store.listMedia(id,false);res.json({data:rows,count:rows.length});}catch(e){res.status(500).json({error:e instanceof Error?e.message:'seller_store_error'});}
   });
+
+  return store;
 }
