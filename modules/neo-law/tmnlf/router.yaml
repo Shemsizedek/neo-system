@@ -1,0 +1,61 @@
+version: "0.2.0"
+id: tmnlf-matter-router
+
+intake:
+  required_fields:
+    - matter_id
+    - objective
+    - jurisdiction.resolution_status
+  reject_on:
+    - fabricated_authority
+    - unsupported_fact_promotion
+
+routes:
+  neo_algo:
+    inputs: [facts, issues, risks, open_questions]
+    outputs: [contradictions, reasoning_map, option_analysis]
+  neo_oracle:
+    inputs: [authorities, jurisdiction, open_questions]
+    outputs: [verified_sources, provenance, authority_status]
+  neo_law:
+    inputs: [jurisdiction, authorities, procedure]
+    outputs: [legal_classification, compliance_flags, escalation_flags]
+  neosync:
+    inputs: [matter]
+    outputs: [workflow_state, drafts, executive_actions, audit_events]
+  giss_neo_lms:
+    inputs: [validated_nonconfidential_learning_extract]
+    outputs: [educational_material]
+    controls:
+      - redact_private_matter_data
+      - label_internal_doctrine
+      - label_controlling_law
+  neo_society:
+    inputs: [validated_internal_norm_extract]
+    outputs: [dispute_prevention_guidance]
+    controls:
+      - no_public_law_misclassification
+
+human_review:
+  mandatory_when:
+    - counsel_escalation_true
+    - filing_or_service_action
+    - waiver_or_admission
+    - settlement_or_release
+    - material_asset_disposition
+    - regulatory_submission
+
+privacy:
+  default: PRIVATE
+  external_model_export: MINIMUM_NECESSARY
+  public_training_export: PROHIBITED
+  secrets_in_logs: PROHIBITED
+
+audit:
+  preserve:
+    - source_refs
+    - authority_verification_status
+    - evidence_verification_status
+    - model_or_agent
+    - action_timestamp
+    - human_approval_when_required
