@@ -1,0 +1,9 @@
+{
+  "$schema":"node_modules/wrangler/config-schema.json",
+  "name":"nvsn-homebase",
+  "main":"src/index.js",
+  "compatibility_date":"2026-09-17",
+  "workers_dev":true,
+  "observability":{"enabled":true},
+  "routes":[{"pattern":"nvsn.holytemples.org","custom_domain":true}]
+}
