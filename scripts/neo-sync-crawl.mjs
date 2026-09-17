@@ -3,6 +3,10 @@
 import { createHash } from 'node:crypto'
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname } from 'node:path'
+import { createNeoBootstrapReadOnlyProvider } from '../core/neo-bootstrap/read-only-provider.mjs'
+
+const bootstrapProvider = await createNeoBootstrapReadOnlyProvider()
+const neoSyncContext = bootstrapProvider.getModuleContext('neosync')
 
 const SOURCES = [
   { id: 'SRC-HOLY-TABLETS-WEB', title: 'The Holy Tablets by Dr. Malachi Z. York', url: 'https://holytablets.nuwaubianfacts.com/', mode: 'PRIMARY_SACRED', maxPages: 30 },
@@ -128,7 +132,7 @@ for (const source of SOURCES) {
   runs.push(run)
   const priorPages = new Map((previous.sources?.[source.id]?.pages ?? []).map(p => [p.url, p]))
   const currentPages = run.pages.map(page => ({ url: page.url, title: page.title, hash: page.hash, bytes: page.bytes, excerpt: page.excerpt, headings: page.headings, quality: page.quality }))
-  nextState.sources[source.id] = { title: source.title, rootUrl: source.url, mode: source.mode, pages: currentPages }
+  nextState.sources[source.id] = { title: source.title, rootUrl: source.rootUrl, mode: source.mode, pages: currentPages }
 
   for (const page of currentPages) {
     const before = priorPages.get(page.url)
@@ -175,6 +179,8 @@ for (let i = 0; i < changedPages.length; i++) {
 const report = {
   generatedAt: new Date().toISOString(),
   architecture: 'crawler -> hash -> revision diff -> candidate graph relations -> 9-Ethereal quality gate -> Neopedia draft/review queue',
+  neoSystemContext: neoSyncContext,
+  crossSystemControls: bootstrapProvider.getCrossSystemControls(),
   sources: runs.map(r => ({ sourceId: r.sourceId, title: r.title, rootUrl: r.rootUrl, pages: r.pages.length, errors: r.errors })),
   changes: review.length,
   candidateRelations: relations.length,
