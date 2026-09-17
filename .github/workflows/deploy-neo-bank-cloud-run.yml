@@ -57,10 +57,12 @@ jobs:
           docker build -f deploy/neo-bank/Dockerfile -t "$IMAGE" .
           docker push "$IMAGE"
       - name: Deploy service
-        env: {IMAGE: "${{ env.GCP_ARTIFACT_REGISTRY }}/neo-bank:${{ github.sha }}"}
+        env:
+          IMAGE: "${{ env.GCP_ARTIFACT_REGISTRY }}/neo-bank:${{ github.sha }}"
+          NEO_BANK_FIRESTORE_DATABASE: "${{ vars.NEO_BANK_FIRESTORE_DATABASE || '(default)' }}"
         run: |
           set -euo pipefail
-          gcloud run deploy "$SERVICE_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --image="$IMAGE" --service-account="$GCP_CLOUD_RUN_RUNTIME_ACCOUNT" --port=8080 --allow-unauthenticated --set-env-vars="GCP_PROJECT_ID=$GCP_PROJECT_ID,NEO_BANK_FIRESTORE_DATABASE=${{ vars.NEO_BANK_FIRESTORE_DATABASE || '(default)' }},GOOGLE_OAUTH_CLIENT_ID=$GOOGLE_OAUTH_CLIENT_ID,NEO_EXECUTIVE_ADMIN_EMAIL=$NEO_EXECUTIVE_ADMIN_EMAIL,NEO_PASS_JWT_ISSUER=neo-pass" --set-secrets="NEO_PASS_JWT_SECRET=neo-pass-jwt-secret:latest" --quiet
+          gcloud run deploy "$SERVICE_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --image="$IMAGE" --service-account="$GCP_CLOUD_RUN_RUNTIME_ACCOUNT" --port=8080 --allow-unauthenticated --set-env-vars="GCP_PROJECT_ID=$GCP_PROJECT_ID,NEO_BANK_FIRESTORE_DATABASE=$NEO_BANK_FIRESTORE_DATABASE,GOOGLE_OAUTH_CLIENT_ID=$GOOGLE_OAUTH_CLIENT_ID,NEO_EXECUTIVE_ADMIN_EMAIL=$NEO_EXECUTIVE_ADMIN_EMAIL,NEO_PASS_JWT_ISSUER=neo-pass" --set-secrets="NEO_PASS_JWT_SECRET=neo-pass-jwt-secret:latest" --quiet
       - name: Verify Cloud Run origin
         run: |
           set -euo pipefail
