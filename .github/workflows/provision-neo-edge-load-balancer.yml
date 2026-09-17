@@ -1,3 +1,4 @@
+# Reconcile trigger: 2026-09-17 production UI front-door verification
 name: Provision NEO Edge Global Load Balancer
 
 on:
