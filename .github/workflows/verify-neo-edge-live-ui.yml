@@ -1,0 +1,85 @@
+name: Verify NEO Edge Live UI
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/verify-neo-edge-live-ui.yml'
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    environment: holytemples-production
+    timeout-minutes: 15
+    env:
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID || secrets.GCP_PROJECT_ID }}
+      GCP_WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER || secrets.GCP_WIF_PROVIDER }}
+      GCP_CLOUD_RUN_SERVICE_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_SERVICE_ACCOUNT || secrets.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+      CERT_NAME: neo-edge-managed-cert
+      IP_NAME: neo-edge-global-ip
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@v3
+
+      - name: Read front-door state
+        run: |
+          set -euo pipefail
+          EDGE_IP="$(gcloud compute addresses describe "$IP_NAME" --global --project="$GCP_PROJECT_ID" --format='value(address)')"
+          CERT_STATUS="$(gcloud compute ssl-certificates describe "$CERT_NAME" --global --project="$GCP_PROJECT_ID" --format='value(managed.status)')"
+          DOMAIN_STATUS="$(gcloud compute ssl-certificates describe "$CERT_NAME" --global --project="$GCP_PROJECT_ID" --format='json(managed.domainStatus)')"
+          test -n "$EDGE_IP"
+          echo "NEO_EDGE_GLOBAL_IP=$EDGE_IP" >> "$GITHUB_ENV"
+          echo "NEO_CERT_STATUS=$CERT_STATUS" >> "$GITHUB_ENV"
+          {
+            echo '### NEO Edge live front door'
+            echo "- Global IPv4: $EDGE_IP"
+            echo "- Certificate: $CERT_STATUS"
+            echo '```json'
+            echo "$DOMAIN_STATUS"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Verify live HTML surfaces
+        run: |
+          set -euo pipefail
+          hosts=(
+            neo.holytemples.org router.holytemples.org algo.holytemples.org prime.holytemples.org
+            pay.holytemples.org neobank.holytemples.org hub.holytemples.org counter.holytemples.org
+            wire.holytemples.org neogram.holytemples.org neofx.holytemples.org scan.holytemples.org
+            school.holytemples.org library.holytemples.org book.holytemples.org neopads.holytemples.org
+            neopass.holytemples.org neovision.holytemples.org noogle.holytemples.org omnitrix.holytemples.org
+            neodash.holytemples.org nomni.holytemples.org wallet.holytemples.org treasury.holytemples.org
+          )
+          failures=0
+          for host in "${hosts[@]}"; do
+            headers="$(mktemp)"; body="$(mktemp)"
+            code="$(curl --connect-timeout 10 --max-time 25 --retry 2 --retry-delay 2 --resolve "$host:443:${NEO_EDGE_GLOBAL_IP}" -sS -D "$headers" -o "$body" -w '%{http_code}' "https://$host/" || true)"
+            ctype="$(awk 'BEGIN{IGNORECASE=1} /^content-type:/ {gsub(/\r/,""); print $2}' "$headers" | tail -1)"
+            bytes="$(wc -c < "$body" | tr -d ' ')"
+            verdict=PASS
+            if [[ "$code" != "200" ]] || [[ "$ctype" != text/html* ]] || (( bytes < 300 )); then
+              verdict=FAIL; failures=$((failures+1))
+            fi
+            echo "| $host | $code | ${ctype:-none} | $bytes | $verdict |" >> /tmp/neo-ui-table.md
+            rm -f "$headers" "$body"
+          done
+          {
+            echo '### Shared NEO UI HTTPS probes'
+            echo '| Host | HTTP | Content-Type | Bytes | Result |'
+            echo '|---|---:|---|---:|---|'
+            cat /tmp/neo-ui-table.md
+          } >> "$GITHUB_STEP_SUMMARY"
+          if (( failures > 0 )); then
+            echo "::error::$failures NEO UI surface(s) failed the live HTML gate"
+            exit 1
+          fi
