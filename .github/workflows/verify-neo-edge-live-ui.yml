@@ -21,6 +21,7 @@ jobs:
       GCP_WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER || secrets.GCP_WIF_PROVIDER }}
       GCP_CLOUD_RUN_SERVICE_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_SERVICE_ACCOUNT || secrets.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
       CERT_NAME: neo-edge-managed-cert
+      RELATIONS_CERT_NAME: neo-edge-relations-cert
       IP_NAME: neo-edge-global-ip
     steps:
       - uses: actions/checkout@v7.0.1
@@ -36,16 +37,21 @@ jobs:
           set -euo pipefail
           EDGE_IP="$(gcloud compute addresses describe "$IP_NAME" --global --project="$GCP_PROJECT_ID" --format='value(address)')"
           CERT_STATUS="$(gcloud compute ssl-certificates describe "$CERT_NAME" --global --project="$GCP_PROJECT_ID" --format='value(managed.status)')"
+          RELATIONS_CERT_STATUS="$(gcloud compute ssl-certificates describe "$RELATIONS_CERT_NAME" --global --project="$GCP_PROJECT_ID" --format='value(managed.status)')"
           DOMAIN_STATUS="$(gcloud compute ssl-certificates describe "$CERT_NAME" --global --project="$GCP_PROJECT_ID" --format='json(managed.domainStatus)')"
+          RELATIONS_DOMAIN_STATUS="$(gcloud compute ssl-certificates describe "$RELATIONS_CERT_NAME" --global --project="$GCP_PROJECT_ID" --format='json(managed.domainStatus)')"
           test -n "$EDGE_IP"
+          test "$CERT_STATUS" = ACTIVE
+          test "$RELATIONS_CERT_STATUS" = ACTIVE
           echo "NEO_EDGE_GLOBAL_IP=$EDGE_IP" >> "$GITHUB_ENV"
-          echo "NEO_CERT_STATUS=$CERT_STATUS" >> "$GITHUB_ENV"
           {
             echo '### NEO Edge live front door'
             echo "- Global IPv4: $EDGE_IP"
-            echo "- Certificate: $CERT_STATUS"
+            echo "- Primary certificate: $CERT_STATUS"
+            echo "- Relations certificate: $RELATIONS_CERT_STATUS"
             echo '```json'
             echo "$DOMAIN_STATUS"
+            echo "$RELATIONS_DOMAIN_STATUS"
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
 
@@ -59,6 +65,7 @@ jobs:
             school.holytemples.org library.holytemples.org book.holytemples.org neopads.holytemples.org
             neopass.holytemples.org neovision.holytemples.org noogle.holytemples.org omnitrix.holytemples.org
             neodash.holytemples.org nomni.holytemples.org wallet.holytemples.org treasury.holytemples.org
+            relations.holytemples.org
           )
           failures=0
           for host in "${hosts[@]}"; do
@@ -74,7 +81,7 @@ jobs:
             rm -f "$headers" "$body"
           done
           {
-            echo '### Shared NEO UI HTTPS probes'
+            echo '### NEO UI HTTPS probes'
             echo '| Host | HTTP | Content-Type | Bytes | Result |'
             echo '|---|---:|---|---:|---|'
             cat /tmp/neo-ui-table.md
@@ -83,3 +90,13 @@ jobs:
             echo "::error::$failures NEO UI surface(s) failed the live HTML gate"
             exit 1
           fi
+
+      - name: Verify NEO Relations application assets
+        run: |
+          set -euo pipefail
+          for path in /health /api /data/tenants.json /data/status.json /styles.css /app.js; do
+            code="$(curl --connect-timeout 10 --max-time 25 --retry 2 --retry-delay 2 --resolve "relations.holytemples.org:443:${NEO_EDGE_GLOBAL_IP}" -sS -o /tmp/relations-asset -w '%{http_code}' "https://relations.holytemples.org${path}" || true)"
+            echo "relations${path} -> $code" >> "$GITHUB_STEP_SUMMARY"
+            test "$code" = 200
+            test -s /tmp/relations-asset || { echo "::error::Empty Relations response at $path"; exit 1; }
+          done
