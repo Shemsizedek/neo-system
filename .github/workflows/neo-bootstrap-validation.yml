@@ -1,0 +1,39 @@
+name: NEO Bootstrap Validation
+
+on:
+  pull_request:
+    paths:
+      - 'bootstrap/ai/**'
+      - 'core/neo-bootstrap/**'
+      - 'scripts/validate-neo-system-bootstrap.mjs'
+      - '.github/workflows/neo-bootstrap-validation.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'bootstrap/ai/**'
+      - 'core/neo-bootstrap/**'
+      - 'scripts/validate-neo-system-bootstrap.mjs'
+      - '.github/workflows/neo-bootstrap-validation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Run bootstrap unit tests
+        run: node --test core/neo-bootstrap/context-loader.test.mjs
+
+      - name: Validate repository bootstrap state
+        run: node scripts/validate-neo-system-bootstrap.mjs
