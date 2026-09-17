@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 
 const RELATIONS_ROOT = fileURLToPath(new URL('../../apps/neo-relations/site/', import.meta.url));
 const EXCHANGE_ROOT = fileURLToPath(new URL('../../apps/neo-exchange/dist/', import.meta.url));
+const FINANCE_FILE = fileURLToPath(new URL('../../apps/noogle/web/finance.html', import.meta.url));
 
 const RELATIONS_FILES = Object.freeze({
   '/': ['index.html', 'text/html; charset=utf-8'],
@@ -68,13 +69,7 @@ async function serveRelations(req, res, url, host) {
     return true;
   }
   if (url.pathname === '/api') {
-    json(res, 200, {
-      service: 'neo-relations',
-      name: 'NEO Relations',
-      role: 'crm',
-      mode: 'live-production',
-      ui: 'https://relations.holytemples.org/'
-    });
+    json(res, 200, { service: 'neo-relations', name: 'NEO Relations', role: 'crm', mode: 'live-production', ui: 'https://relations.holytemples.org/' });
     return true;
   }
   const entry = RELATIONS_FILES[url.pathname];
@@ -96,28 +91,20 @@ async function serveExchange(req, res, url, host) {
     return true;
   }
   if (url.pathname === '/api') {
-    json(res, 200, {
-      service: 'neo-exchange',
-      name: 'NEO Exchange',
-      role: 'markets',
-      mode: 'live-production',
-      marketData: '/api/neo-exchange/markets',
-      ui: 'https://neofx.holytemples.org/'
-    });
+    json(res, 200, { service: 'neo-exchange', name: 'NEO Exchange', role: 'markets', mode: 'live-production', marketData: '/api/neo-exchange/markets', ui: 'https://neofx.holytemples.org/' });
     return true;
   }
 
   const pathname = url.pathname === '/' || url.pathname === '/ui' ? '/index.html' : decodeURIComponent(url.pathname);
   const candidate = resolve(EXCHANGE_ROOT, `.${pathname}`);
   const safeRoot = resolve(EXCHANGE_ROOT) + sep;
-  if (!(candidate + (candidate.endsWith(sep) ? '' : '')).startsWith(safeRoot) && candidate !== resolve(EXCHANGE_ROOT, 'index.html')) {
+  if (!candidate.startsWith(safeRoot) && candidate !== resolve(EXCHANGE_ROOT, 'index.html')) {
     json(res, 400, { error: 'invalid_path', service: 'neo-exchange' });
     return true;
   }
   const contentType = CONTENT_TYPES[extname(candidate).toLowerCase()] || 'application/octet-stream';
   const served = await serveFile(req, res, candidate, contentType);
   if (served) return true;
-
   if (!extname(pathname)) {
     const fallback = await serveFile(req, res, resolve(EXCHANGE_ROOT, 'index.html'), 'text/html; charset=utf-8');
     if (fallback) return true;
@@ -126,8 +113,29 @@ async function serveExchange(req, res, url, host) {
   return true;
 }
 
+async function serveFinance(req, res, url, host) {
+  if (url.pathname.startsWith('/api/neo-exchange/')) return false;
+  if (req.method !== 'GET' && req.method !== 'HEAD') return false;
+  if (url.pathname === '/health') {
+    json(res, 200, { ok: true, service: 'noogle-finance', mode: 'live-production', marketData: 'neo-exchange', host });
+    return true;
+  }
+  if (url.pathname === '/api') {
+    json(res, 200, { service: 'noogle-finance', name: 'Noogle Finance', role: 'market-intelligence', mode: 'live-production', marketData: '/api/neo-exchange/markets', ui: 'https://finance.holytemples.org/' });
+    return true;
+  }
+  if (url.pathname === '/' || url.pathname === '/ui' || url.pathname === '/index.html') {
+    const served = await serveFile(req, res, FINANCE_FILE, 'text/html; charset=utf-8');
+    if (!served) json(res, 500, { error: 'noogle_finance_ui_unavailable' });
+    return true;
+  }
+  json(res, 404, { error: 'not_found', service: 'noogle-finance', path: url.pathname });
+  return true;
+}
+
 export async function serveProductStatic(req, res, url, host) {
   if (host === 'relations.holytemples.org') return serveRelations(req, res, url, host);
   if (host === 'neofx.holytemples.org') return serveExchange(req, res, url, host);
+  if (host === 'finance.holytemples.org') return serveFinance(req, res, url, host);
   return false;
 }
