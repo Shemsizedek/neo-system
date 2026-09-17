@@ -100,3 +100,24 @@ jobs:
             test "$code" = 200
             test -s /tmp/relations-asset || { echo "::error::Empty Relations response at $path"; exit 1; }
           done
+
+      - name: Verify NEO Exchange application and market API
+        run: |
+          set -euo pipefail
+          host=neofx.holytemples.org
+          curl --connect-timeout 10 --max-time 25 --retry 2 --retry-delay 2 --resolve "$host:443:${NEO_EDGE_GLOBAL_IP}" -fsS "https://$host/" -o /tmp/neofx-index.html
+          grep -qi 'NEO EXCHANGE' /tmp/neofx-index.html || grep -q '/assets/' /tmp/neofx-index.html
+          mapfile -t assets < <(grep -oE '/assets/[^"'"'"' ]+\.(js|css)' /tmp/neofx-index.html | sort -u)
+          test "${#assets[@]}" -ge 1 || { echo '::error::No built Exchange assets found in index'; exit 1; }
+          for path in "${assets[@]}"; do
+            code="$(curl --connect-timeout 10 --max-time 25 --retry 2 --retry-delay 2 --resolve "$host:443:${NEO_EDGE_GLOBAL_IP}" -sS -o /tmp/neofx-asset -w '%{http_code}' "https://$host${path}" || true)"
+            echo "neofx${path} -> $code" >> "$GITHUB_STEP_SUMMARY"
+            test "$code" = 200
+            test -s /tmp/neofx-asset
+          done
+          for path in /health /api /api/neo-exchange/health /api/neo-exchange/markets '/api/neo-exchange/orderbook?base=BTC&quote=XCP&limit=5'; do
+            code="$(curl --connect-timeout 10 --max-time 40 --retry 1 --retry-delay 2 --resolve "$host:443:${NEO_EDGE_GLOBAL_IP}" -sS -o /tmp/neofx-api -w '%{http_code}' "https://$host${path}" || true)"
+            echo "neofx${path} -> $code" >> "$GITHUB_STEP_SUMMARY"
+            test "$code" = 200
+            test -s /tmp/neofx-api
+          done

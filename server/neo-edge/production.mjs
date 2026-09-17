@@ -2,6 +2,7 @@ import http from 'node:http';
 import { createNeoEdgeServer } from './server.mjs';
 import { isWirePlatformPath, proxyWirePlatform, serveWireApp, wireServiceManifest } from './wire-app.mjs';
 import { serveProductStatic } from './product-static.mjs';
+import { handleNeoExchangeRequest } from '../../api/neo-exchange/server.mjs';
 
 const PORT=Number(process.env.PORT||8080);
 const LEGACY_HOST='127.0.0.1';
@@ -34,7 +35,7 @@ const SERVICE_UI=Object.freeze({
 
 function hostOf(req){return String(req.headers['x-forwarded-host']||req.headers.host||'').split(',')[0].trim().split(':')[0].toLowerCase()}
 function json(res,status,body){res.writeHead(status,{'content-type':'application/json; charset=utf-8','cache-control':'no-store','x-content-type-options':'nosniff'});res.end(JSON.stringify(body))}
-function escapeHtml(value=''){return String(value).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]))}
+function escapeHtml(value=''){return String(value).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[ch]))}
 function html(res,status,body){res.writeHead(status,{'content-type':'text/html; charset=utf-8','cache-control':'no-store','x-content-type-options':'nosniff','referrer-policy':'strict-origin-when-cross-origin','content-security-policy':"default-src 'self'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src 'self'; img-src 'self' data: https:; frame-ancestors 'self' https://holytemples.org https://*.holytemples.org"});res.end(body)}
 
 function serviceConsole(host){
@@ -64,6 +65,10 @@ export async function startNeoEdgeProduction(){
   const front=http.createServer(async(req,res)=>{
     const host=hostOf(req);
     const url=new URL(req.url||'/',`https://${host||'neo.holytemples.org'}`);
+    if(host==='neofx.holytemples.org'&&url.pathname.startsWith('/api/neo-exchange/')){
+      const handled=await handleNeoExchangeRequest(req,res,{fallthrough:true});
+      if(handled!==false)return handled;
+    }
     const productServed=await serveProductStatic(req,res,url,host);
     if(productServed!==false)return productServed;
     if(host!=='wire.holytemples.org'&&req.method==='GET'&&(url.pathname==='/'||url.pathname==='/ui'))return html(res,200,serviceConsole(host));
