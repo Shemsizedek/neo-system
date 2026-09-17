@@ -3,6 +3,10 @@
 import { createHash } from 'node:crypto'
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname } from 'node:path'
+import { createNeoBootstrapReadOnlyProvider } from '../core/neo-bootstrap/read-only-provider.mjs'
+
+const bootstrapProvider = await createNeoBootstrapReadOnlyProvider()
+const neoSyncContext = bootstrapProvider.getModuleContext('neosync')
 
 const SOURCES = [
   { id: 'SRC-HOLY-TABLETS-WEB', title: 'The Holy Tablets by Dr. Malachi Z. York', url: 'https://holytablets.nuwaubianfacts.com/', mode: 'PRIMARY_SACRED', maxPages: 30 },
@@ -175,6 +179,8 @@ for (let i = 0; i < changedPages.length; i++) {
 const report = {
   generatedAt: new Date().toISOString(),
   architecture: 'crawler -> hash -> revision diff -> candidate graph relations -> 9-Ethereal quality gate -> Neopedia draft/review queue',
+  neoSystemContext: neoSyncContext,
+  crossSystemControls: bootstrapProvider.getCrossSystemControls(),
   sources: runs.map(r => ({ sourceId: r.sourceId, title: r.title, rootUrl: r.rootUrl, pages: r.pages.length, errors: r.errors })),
   changes: review.length,
   candidateRelations: relations.length,

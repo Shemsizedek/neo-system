@@ -4,8 +4,10 @@ import { createRedisDeadLetterQueue } from '../server/neo-router/dead-letter.mjs
 import { createWorkerFleet } from '../server/neo-router/worker-fleet.mjs'
 import { createLiveConnectorAgents } from '../server/neo-router/connector-agents.mjs'
 import { reconcileMissionPlan } from '../server/neo-router/mission-planner.mjs'
+import { createNeoBootstrapReadOnlyProvider } from '../core/neo-bootstrap/read-only-provider.mjs'
 
 const runtime=createPersistentMissionRuntime()
+const bootstrapProvider=await createNeoBootstrapReadOnlyProvider()
 const hasRedis=Boolean(process.env.UPSTASH_REDIS_REST_URL&&process.env.UPSTASH_REDIS_REST_TOKEN)
 const leaseManager=hasRedis?createRedisLeaseManager():Object.freeze({
   mode:'github-actions-concurrency',durable:true,
@@ -21,7 +23,12 @@ const result=await runtime.withEngine(async(engine)=>{
   const fleet=createWorkerFleet({engine,adapters,leaseManager,deadLetter})
   const executions=await fleet.tick()
   const plans=engine.list({status:'running'}).filter(m=>m.provenance?.includes('planner:v6')).map(m=>reconcileMissionPlan(engine,m.id))
-  return {workers:fleet.describe(),executions,plans,persistence:runtime.store.mode,leaseMode:leaseManager.mode,deadLetterMode:deadLetter.mode}
+  return {
+    workers:fleet.describe(),executions,plans,persistence:runtime.store.mode,
+    leaseMode:leaseManager.mode,deadLetterMode:deadLetter.mode,
+    neoSystemContext:bootstrapProvider.getModuleContext('neosync'),
+    neoRouterContext:{...bootstrapProvider.getModuleContext('neo-algo'),routing:bootstrapProvider.getRouting()},
+  }
 })
 
 console.log(JSON.stringify({worker:'neo-router-v6-live-agent-fleet',result},null,2))

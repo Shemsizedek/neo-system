@@ -1,6 +1,22 @@
 {
-  "generatedAt": "2026-09-17T17:02:14.293Z",
+  "generatedAt": "2026-09-17T18:47:36.593Z",
   "architecture": "crawler -> hash -> revision diff -> candidate graph relations -> 9-Ethereal quality gate -> Neopedia draft/review queue",
+  "neoSystemContext": {
+    "moduleId": "neosync",
+    "routedDomains": [
+      "synchronization"
+    ],
+    "authority": "analytical-and-contextual-only",
+    "humanReviewRequired": true,
+    "autonomousOperationalAuthority": false
+  },
+  "crossSystemControls": {
+    "preserve_source": true,
+    "preserve_provenance": true,
+    "preserve_uncertainty": true,
+    "preserve_conflicts": true,
+    "human_review": true
+  },
   "sources": [
     {
       "sourceId": "SRC-HOLY-TABLETS-WEB",
