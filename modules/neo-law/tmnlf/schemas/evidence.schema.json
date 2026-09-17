@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://neo-system.local/tmnlf/evidence.schema.json",
+  "title": "TMNLF Evidence",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["evidence_id", "description", "source", "verification_status"],
+  "properties": {
+    "evidence_id": {"type": "string", "pattern": "^EVID-[A-Za-z0-9._-]+$"},
+    "description": {"type": "string", "minLength": 1},
+    "source": {"type": "string", "minLength": 1},
+    "document_date": {"type": ["string", "null"], "format": "date"},
+    "received_at": {"type": ["string", "null"], "format": "date-time"},
+    "content_hash": {"type": ["string", "null"]},
+    "verification_status": {"enum": ["VERIFIED", "UNVERIFIED", "DISPUTED", "INCOMPLETE"]},
+    "custody_events": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["event", "actor"],
+        "properties": {
+          "timestamp": {"type": ["string", "null"], "format": "date-time"},
+          "event": {"type": "string"},
+          "actor": {"type": "string"},
+          "notes": {"type": "string"}
+        }
+      }
+    },
+    "supports": {"type": "array", "items": {"type": "string"}},
+    "contradicts": {"type": "array", "items": {"type": "string"}}
+  }
+}
