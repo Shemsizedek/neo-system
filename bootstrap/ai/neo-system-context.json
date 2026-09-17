@@ -1,0 +1,54 @@
+{
+  "schema": "neo-system-ai-context",
+  "version": "1.0",
+  "system": {
+    "id": "neo-system",
+    "name": "NEO System",
+    "repository": "Shemsizedek/neo-system",
+    "architecture": "additive"
+  },
+  "controls": {
+    "preserveExisting": true,
+    "provenanceRequired": true,
+    "humanReviewRequired": true,
+    "fabricateMissingData": false,
+    "autonomousOperationalAuthority": false
+  },
+  "modules": [
+    "neo-gas",
+    "neo-algo",
+    "neo-oracle",
+    "giss",
+    "neo-lms",
+    "neosync",
+    "digital-etheric-intelligence",
+    "neo-law",
+    "neo-society",
+    "neo-lingo",
+    "neo-lexicon"
+  ],
+  "knowledgePipeline": [
+    "SOURCE",
+    "PROVENANCE",
+    "EPISTEMIC_STATUS",
+    "ANALYSIS",
+    "ALTERNATIVE_EXPLANATIONS",
+    "ASSESSMENT",
+    "HUMAN_REVIEW",
+    "SYSTEM_ROUTING"
+  ],
+  "epistemicStates": [
+    "KNOWN",
+    "UNKNOWN",
+    "UNVERIFIED",
+    "DISPUTED",
+    "ASSESSED"
+  ],
+  "readinessDimensions": [
+    "capability",
+    "capacity",
+    "readiness",
+    "deployment"
+  ],
+  "securityMode": "defensive-intelligence-support"
+}
