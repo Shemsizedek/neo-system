@@ -1,0 +1,36 @@
+name: Audit NEO Production UI
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 * * * *'
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Audit DNS, TLS, HTTP and rendered UI
+        shell: bash
+        run: |
+          set +e
+          mkdir -p artifacts
+          node scripts/audit-neo-ui.mjs | tee artifacts/neo-ui-audit.json
+          status=${PIPESTATUS[0]}
+          echo "audit_exit_code=$status" >> "$GITHUB_ENV"
+          exit 0
+      - name: Publish audit artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: neo-ui-audit
+          path: artifacts/neo-ui-audit.json
+          if-no-files-found: error
+      - name: Enforce production UI contract
+        run: test "${audit_exit_code}" = "0"
