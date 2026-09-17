@@ -1,4 +1,4 @@
-import type { QueuedTelegram } from './storeForward';
+import type { QueuedTelegram } from './types';
 
 export interface QueuePersistence {
   load(): Promise<QueuedTelegram[]>;
