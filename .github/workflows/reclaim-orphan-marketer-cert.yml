@@ -1,0 +1,59 @@
+name: Reclaim Orphan Marketer Certificate
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/reclaim-orphan-marketer-cert.yml'
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  reclaim:
+    runs-on: ubuntu-latest
+    environment: holytemples-production
+    timeout-minutes: 10
+    env:
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID || secrets.GCP_PROJECT_ID }}
+      GCP_WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER || secrets.GCP_WIF_PROVIDER }}
+      GCP_CLOUD_RUN_SERVICE_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_SERVICE_ACCOUNT || secrets.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+      CERT_NAME: neo-marketer-managed-cert
+      DOMAIN: marketer.holytemples.org
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@v3
+
+      - name: Prove certificate is orphaned
+        run: |
+          set -euo pipefail
+          if ! gcloud compute ssl-certificates describe "$CERT_NAME" --global --project="$GCP_PROJECT_ID" >/dev/null 2>&1; then
+            echo "$CERT_NAME is already absent; nothing to reclaim." >> "$GITHUB_STEP_SUMMARY"
+            echo 'CERT_ABSENT=1' >> "$GITHUB_ENV"
+            exit 0
+          fi
+          domains="$(gcloud compute ssl-certificates describe "$CERT_NAME" --global --project="$GCP_PROJECT_ID" --format='value(managed.domains)')"
+          status="$(gcloud compute ssl-certificates describe "$CERT_NAME" --global --project="$GCP_PROJECT_ID" --format='value(managed.status)')"
+          test "$domains" = "$DOMAIN" || { echo "::error::Unexpected domains on $CERT_NAME: $domains"; exit 1; }
+          test "$status" != 'ACTIVE' || { echo "::error::$CERT_NAME is ACTIVE; refusing automatic reclamation"; exit 1; }
+          refs="$(gcloud compute target-https-proxies list --project="$GCP_PROJECT_ID" --format='value(name,sslCertificates)' | grep -F "$CERT_NAME" || true)"
+          test -z "$refs" || { echo "::error::$CERT_NAME is attached to an HTTPS proxy; refusing deletion"; echo "$refs"; exit 1; }
+          echo "Validated orphan: $CERT_NAME ($DOMAIN), status=$status, no proxy attachments." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Delete only the validated orphan certificate
+        if: env.CERT_ABSENT != '1'
+        run: |
+          set -euo pipefail
+          gcloud compute ssl-certificates delete "$CERT_NAME" --global --project="$GCP_PROJECT_ID" --quiet
+          if gcloud compute ssl-certificates describe "$CERT_NAME" --global --project="$GCP_PROJECT_ID" >/dev/null 2>&1; then
+            echo "::error::$CERT_NAME still exists after deletion"
+            exit 1
+          fi
+          echo "Reclaimed one global SSL certificate quota slot by deleting orphaned $CERT_NAME." >> "$GITHUB_STEP_SUMMARY"
