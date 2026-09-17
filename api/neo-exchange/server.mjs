@@ -1,4 +1,5 @@
 import http from 'node:http';
+import { fileURLToPath } from 'node:url';
 
 const PORT = Number(process.env.PORT || 8787);
 const COUNTERPARTY_API_BASE = (process.env.COUNTERPARTY_API_BASE || 'https://api.counterparty.io:4000').replace(/\/$/, '');
@@ -12,16 +13,19 @@ const PRIORITY_ASSETS = ['BTC', 'XCP', 'NOMNI', 'NEOCASH'];
 function send(res, status, body) {
   res.writeHead(status, {
     'content-type': 'application/json; charset=utf-8',
+    'cache-control': 'no-store',
+    'x-content-type-options': 'nosniff',
     'access-control-allow-origin': ALLOWED_ORIGIN,
     'access-control-allow-methods': 'GET,POST,OPTIONS',
     'access-control-allow-headers': 'content-type'
   });
   res.end(JSON.stringify(body));
+  return true;
 }
 
 async function counterparty(path) {
   const response = await fetch(`${COUNTERPARTY_API_BASE}${path}`, {
-    headers: { accept: 'application/json', 'user-agent': 'neo-exchange/0.2' }
+    headers: { accept: 'application/json', 'user-agent': 'neo-exchange/0.3-production' }
   });
   if (!response.ok) throw new Error(`Counterparty upstream ${response.status}`);
   return response.json();
@@ -127,7 +131,8 @@ async function addressBalances(address) {
   }));
 }
 
-const server = http.createServer(async (req, res) => {
+export async function handleNeoExchangeRequest(req, res, options = {}) {
+  const { fallthrough = false } = options;
   if (req.method === 'OPTIONS') return send(res, 204, {});
   const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
 
@@ -136,7 +141,7 @@ const server = http.createServer(async (req, res) => {
       return send(res, 200, {
         ok: true,
         service: 'neo-exchange-api',
-        version: '0.2-live-markets',
+        version: '0.3-production',
         counterparty_api_base: COUNTERPARTY_API_BASE,
         execution: 'review-gated'
       });
@@ -206,6 +211,7 @@ const server = http.createServer(async (req, res) => {
       });
     }
 
+    if (fallthrough) return false;
     return send(res, 404, { error: 'Not found' });
   } catch (error) {
     return send(res, 502, {
@@ -213,8 +219,15 @@ const server = http.createServer(async (req, res) => {
       detail: error instanceof Error ? error.message : String(error)
     });
   }
-});
+}
 
-server.listen(PORT, () => {
-  console.log(`NEO Exchange API listening on :${PORT}`);
-});
+const isDirect = process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1];
+if (isDirect) {
+  const server = http.createServer(async (req, res) => {
+    const handled = await handleNeoExchangeRequest(req, res, { fallthrough: true });
+    if (!handled) send(res, 404, { error: 'Not found' });
+  });
+  server.listen(PORT, () => {
+    console.log(`NEO Exchange API listening on :${PORT}`);
+  });
+}
