@@ -1,4 +1,3 @@
-# Reconcile trigger: 2026-09-17 production UI front-door verification
 name: Provision NEO Edge Global Load Balancer
 
 on:
@@ -31,6 +30,7 @@ jobs:
       BACKEND_NAME: neo-edge-backend
       URL_MAP_NAME: neo-edge-url-map
       CERT_NAME: neo-edge-managed-cert
+      RELATIONS_CERT_NAME: neo-edge-relations-cert
       HTTPS_PROXY_NAME: neo-edge-https-proxy
       HTTP_PROXY_NAME: neo-edge-http-proxy
       HTTPS_RULE_NAME: neo-edge-https-rule
@@ -123,25 +123,34 @@ jobs:
               --quiet
           fi
 
-      - name: Create Google-managed certificate
+      - name: Ensure Google-managed certificates
         run: |
           set -euo pipefail
           DOMAINS='neo.holytemples.org,router.holytemples.org,algo.holytemples.org,prime.holytemples.org,pay.holytemples.org,neobank.holytemples.org,hub.holytemples.org,counter.holytemples.org,wire.holytemples.org,neogram.holytemples.org,neofx.holytemples.org,scan.holytemples.org,school.holytemples.org,library.holytemples.org,book.holytemples.org,neopads.holytemples.org,neopass.holytemples.org,neovision.holytemples.org,noogle.holytemples.org,omnitrix.holytemples.org,neodash.holytemples.org,nomni.holytemples.org,wallet.holytemples.org,treasury.holytemples.org'
           if ! gcloud compute ssl-certificates describe "$CERT_NAME" --global --project="$GCP_PROJECT_ID" >/dev/null 2>&1; then
-            gcloud compute ssl-certificates create "$CERT_NAME" \
-              --domains="$DOMAINS" \
+            gcloud compute ssl-certificates create "$CERT_NAME" --domains="$DOMAINS" --global --project="$GCP_PROJECT_ID" --quiet
+          fi
+          if ! gcloud compute ssl-certificates describe "$RELATIONS_CERT_NAME" --global --project="$GCP_PROJECT_ID" >/dev/null 2>&1; then
+            gcloud compute ssl-certificates create "$RELATIONS_CERT_NAME" \
+              --domains='relations.holytemples.org' \
               --global \
               --project="$GCP_PROJECT_ID" \
               --quiet
           fi
 
-      - name: Create HTTPS proxy and forwarding rule
+      - name: Create or update HTTPS proxy and forwarding rule
         run: |
           set -euo pipefail
+          CERTS="$CERT_NAME,$RELATIONS_CERT_NAME"
           if ! gcloud compute target-https-proxies describe "$HTTPS_PROXY_NAME" --project="$GCP_PROJECT_ID" >/dev/null 2>&1; then
             gcloud compute target-https-proxies create "$HTTPS_PROXY_NAME" \
               --url-map="$URL_MAP_NAME" \
-              --ssl-certificates="$CERT_NAME" \
+              --ssl-certificates="$CERTS" \
+              --project="$GCP_PROJECT_ID" \
+              --quiet
+          else
+            gcloud compute target-https-proxies update "$HTTPS_PROXY_NAME" \
+              --ssl-certificates="$CERTS" \
               --project="$GCP_PROJECT_ID" \
               --quiet
           fi
@@ -176,14 +185,14 @@ jobs:
               --quiet
           fi
 
-      - name: Report DNS cutover target
+      - name: Report DNS cutover targets
         run: |
           set -euo pipefail
           test -n "${NEO_EDGE_GLOBAL_IP:-}"
           {
             echo '### NEO Edge DNS cutover target'
             echo
-            echo "Replace the current NEO subdomain CNAMEs with A records pointing to: **${NEO_EDGE_GLOBAL_IP}**"
-            echo
-            echo 'The managed certificate will remain PROVISIONING until the public DNS records resolve to this address.'
+            echo "Shared edge IPv4: **${NEO_EDGE_GLOBAL_IP}**"
+            echo '- Existing 24 NEO hosts remain on the active primary certificate.'
+            echo '- `relations.holytemples.org` should resolve to the same IPv4 for its dedicated managed certificate to activate.'
           } >> "$GITHUB_STEP_SUMMARY"
