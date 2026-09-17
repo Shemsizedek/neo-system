@@ -1,0 +1,44 @@
+version: "1.0"
+
+id: neo-system-knowledge-router
+
+routing:
+  defense_intelligence:
+    - neo-gas
+    - giss
+    - neo-algo
+  forecasting:
+    - neo-oracle
+    - neo-algo
+    - giss
+  education:
+    - neo-lms
+  legal_governance:
+    - neo-law
+  social_norms:
+    - neo-society
+  language:
+    - neo-lingo
+    - neo-lexicon
+  synchronization:
+    - neosync
+    - digital-etheric-intelligence
+  humanitarian:
+    - neo-gas
+    - giss
+    - neo-algo
+    - neo-lms
+
+cross_system:
+  preserve_source: true
+  preserve_provenance: true
+  preserve_uncertainty: true
+  preserve_conflicts: true
+  human_review: true
+
+rules:
+  conversation_to_fact: prohibited
+  prediction_to_certainty: prohibited
+  doctrine_to_external_law: prohibited
+  symbolic_claim_to_scientific_fact: prohibited
+  algorithm_to_operational_authority: prohibited

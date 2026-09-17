@@ -1,0 +1,102 @@
+schema: neo-system-ai-context
+version: "1.0"
+
+system:
+  id: neo-system
+  name: "NEO System"
+  repository: "Shemsizedek/neo-system"
+  architecture: additive
+  source_of_truth: repository
+
+principles:
+  preserve_existing: true
+  provenance_required: true
+  human_review_required: true
+  fabricate_missing_data: false
+  historical_sources_immutable: true
+
+knowledge_states:
+  - KNOWN
+  - UNKNOWN
+  - UNVERIFIED
+  - DISPUTED
+  - ASSESSED
+
+modules:
+  neo_gas:
+    name: "NEO Global Arms System"
+    function: "defensive intelligence and security"
+    motto: "Intelligence. Readiness. Protection. Peace."
+    autonomous_command: false
+  neo_algo:
+    function: "analytical decision support"
+    operational_authority: false
+  neo_oracle:
+    function: "strategic foresight and scenario analysis"
+    predictions_are_certainty: false
+  giss:
+    function: "intelligence and security knowledge"
+  neo_lms:
+    function: "learning and training"
+  neosync:
+    function: "cross-system knowledge synchronization"
+    overwrite_conflicts: false
+  digital_etheric_intelligence:
+    function: "NEO conceptual and semantic synchronization"
+    scientifically_verified_by_name_alone: false
+  neo_law:
+    function: "internal governance and legal knowledge"
+    external_authority_automatic: false
+  neo_society:
+    function: "internal NEO social norms"
+  neo_lingo:
+    function: "linguistic and contextual analysis"
+  neo_lexicon:
+    function: "terminology and semantic provenance"
+
+analysis_standard:
+  sequence:
+    - SOURCE
+    - CONFIDENCE
+    - ANALYSIS
+    - ALTERNATIVE_EXPLANATIONS
+    - ASSESSMENT
+    - DEFENSIVE_RESPONSE
+
+readiness:
+  distinguish:
+    - capability
+    - capacity
+    - readiness
+    - deployment
+
+security:
+  prohibited:
+    - autonomous_targeting
+    - weapon_control
+    - attack_execution
+    - offensive_cyber
+    - malware_deployment
+    - credential_theft
+    - unauthorized_surveillance
+    - assassination
+    - political_violence
+    - coercive_enforcement
+    - autonomous_use_of_force
+
+governance:
+  document_chain:
+    - HISTORICAL_SOURCE
+    - ADDENDUM
+    - AMENDMENT
+    - IMPLEMENTATION_RULE
+    - CURRENT_POLICY
+  distinguish_internal_external_authority: true
+
+knowledge_ingestion:
+  preserve_original: true
+  record_provenance: true
+  classify_epistemic_status: true
+  preserve_conflicts: true
+  route_to_relevant_modules: true
+  conversation_is_automatically_fact: false
