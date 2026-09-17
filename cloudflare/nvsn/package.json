@@ -1,0 +1,1 @@
+{"name":"nvsn-homebase","private":true,"type":"module","devDependencies":{"wrangler":"^4.33.1"},"scripts":{"deploy":"wrangler deploy","check":"wrangler deploy --dry-run"}}

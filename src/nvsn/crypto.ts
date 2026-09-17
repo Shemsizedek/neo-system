@@ -31,6 +31,12 @@ function base64ToBytes(value: string): Uint8Array {
   return Uint8Array.from(binary, (char) => char.charCodeAt(0));
 }
 
+function exactArrayBuffer(bytes: Uint8Array): ArrayBuffer {
+  const copy = new Uint8Array(bytes.byteLength);
+  copy.set(bytes);
+  return copy.buffer;
+}
+
 export async function generateNodeSigningKey(): Promise<CryptoKeyPair> {
   return crypto.subtle.generateKey({ name: 'Ed25519' }, true, ['sign', 'verify']);
 }
@@ -41,12 +47,12 @@ export async function exportPublicSigningKey(publicKey: CryptoKey): Promise<stri
 }
 
 export async function importPublicSigningKey(encoded: string): Promise<CryptoKey> {
-  return crypto.subtle.importKey('raw', base64ToBytes(encoded), { name: 'Ed25519' }, true, ['verify']);
+  return crypto.subtle.importKey('raw', exactArrayBuffer(base64ToBytes(encoded)), { name: 'Ed25519' }, true, ['verify']);
 }
 
 export async function signTelegram(telegram: object, privateKey: CryptoKey): Promise<string> {
   const data = new TextEncoder().encode(canonicalTelegramPayload(telegram));
-  const signature = await crypto.subtle.sign({ name: 'Ed25519' }, privateKey, data);
+  const signature = await crypto.subtle.sign({ name: 'Ed25519' }, privateKey, exactArrayBuffer(data));
   return `ed25519:${bytesToBase64(new Uint8Array(signature))}`;
 }
 
@@ -54,5 +60,5 @@ export async function verifyTelegramSignature(telegram: object, publicKey: Crypt
   const signature = (telegram as { signature?: string }).signature;
   if (!signature?.startsWith('ed25519:')) return false;
   const data = new TextEncoder().encode(canonicalTelegramPayload(telegram));
-  return crypto.subtle.verify({ name: 'Ed25519' }, publicKey, base64ToBytes(signature.slice(8)), data);
+  return crypto.subtle.verify({ name: 'Ed25519' }, publicKey, exactArrayBuffer(base64ToBytes(signature.slice(8))), exactArrayBuffer(data));
 }
