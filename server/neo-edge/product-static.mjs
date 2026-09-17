@@ -6,6 +6,7 @@ const RELATIONS_ROOT = fileURLToPath(new URL('../../apps/neo-relations/site/', i
 const EXCHANGE_ROOT = fileURLToPath(new URL('../../apps/neo-exchange/dist/', import.meta.url));
 const FINANCE_FILE = fileURLToPath(new URL('../../apps/noogle/web/finance.html', import.meta.url));
 const TELLER_ROOT = fileURLToPath(new URL('../../public/neo-teller/', import.meta.url));
+const MINER_ROOT = fileURLToPath(new URL('../../public/neo-miner/', import.meta.url));
 const PLATFORM_SHELL_CSS = fileURLToPath(new URL('../../public/platform-shell.css', import.meta.url));
 const PLATFORM_SHELL_JS = fileURLToPath(new URL('../../public/platform-shell.js', import.meta.url));
 
@@ -97,7 +98,6 @@ async function serveExchange(req, res, url, host) {
     json(res, 200, { service: 'neo-exchange', name: 'NEO Exchange', role: 'markets', mode: 'live-production', marketData: '/api/neo-exchange/markets', ui: 'https://neofx.holytemples.org/' });
     return true;
   }
-
   const pathname = url.pathname === '/' || url.pathname === '/ui' ? '/index.html' : decodeURIComponent(url.pathname);
   const candidate = resolve(EXCHANGE_ROOT, `.${pathname}`);
   const safeRoot = resolve(EXCHANGE_ROOT) + sep;
@@ -148,19 +148,7 @@ async function serveTeller(req, res, url, host) {
     return true;
   }
   if (url.pathname === '/neo-system/api/platforms/neo-teller.json' || url.pathname === '/api/platforms/neo-teller.json') {
-    json(res, 200, {
-      id: 'neo-teller',
-      name: 'NEO Teller',
-      status: 'ready',
-      generatedAt: new Date().toISOString(),
-      endpoint: '/api/v1/teller/network',
-      capabilities: [
-        { name: 'Bitcoin network telemetry', mode: 'LIVE / READ_ONLY' },
-        { name: 'Counterparty asset telemetry', mode: 'LIVE / READ_ONLY' },
-        { name: 'ATM session architecture', mode: 'UI / POLICY GATED' },
-        { name: 'Signing and broadcast', mode: 'DISABLED' }
-      ]
-    });
+    json(res, 200, { id: 'neo-teller', name: 'NEO Teller', status: 'ready', generatedAt: new Date().toISOString(), endpoint: '/api/v1/teller/network', capabilities: [{ name: 'Bitcoin network telemetry', mode: 'LIVE / READ_ONLY' },{ name: 'Counterparty asset telemetry', mode: 'LIVE / READ_ONLY' },{ name: 'ATM session architecture', mode: 'UI / POLICY GATED' },{ name: 'Signing and broadcast', mode: 'DISABLED' }] });
     return true;
   }
   if (url.pathname === '/platform-shell.css') return serveFile(req, res, PLATFORM_SHELL_CSS, 'text/css; charset=utf-8');
@@ -174,10 +162,39 @@ async function serveTeller(req, res, url, host) {
   return true;
 }
 
+async function serveMiner(req, res, url, host) {
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
+    json(res, 405, { error: 'method_not_allowed', service: 'neo-miner' });
+    return true;
+  }
+  if (url.pathname === '/health') {
+    json(res, 200, { ok: true, service: 'neo-miner', mode: 'PUBLIC_READ_ONLY', host });
+    return true;
+  }
+  if (url.pathname === '/api') {
+    json(res, 200, { service: 'neo-miner', name: 'NEO Miner', role: 'bitcoin-mining-control-plane', mode: 'PUBLIC_READ_ONLY', deviceCommands: 'AUTHENTICATED_ONLY', ui: 'https://miner.holytemples.org/' });
+    return true;
+  }
+  if (url.pathname === '/neo-system/api/platforms/neo-miner.json' || url.pathname === '/api/platforms/neo-miner.json') {
+    json(res, 200, { id: 'neo-miner', name: 'NEO Miner', status: 'ready', generatedAt: new Date().toISOString(), endpoint: '/api', capabilities: [{ name: 'Mining fleet dashboard', mode: 'UI / LIVE PRODUCTION' },{ name: 'Hashrate and device telemetry', mode: 'READ_ONLY SURFACE' },{ name: 'Mining commerce and contract products', mode: 'UI / POLICY GATED' },{ name: 'Device commands and credentials', mode: 'AUTHENTICATED SERVICES ONLY' }] });
+    return true;
+  }
+  if (url.pathname === '/platform-shell.css' || url.pathname === '/../platform-shell.css') return serveFile(req, res, PLATFORM_SHELL_CSS, 'text/css; charset=utf-8');
+  if (url.pathname === '/platform-shell.js' || url.pathname === '/../platform-shell.js') return serveFile(req, res, PLATFORM_SHELL_JS, 'text/javascript; charset=utf-8');
+  if (url.pathname === '/' || url.pathname === '/ui' || url.pathname === '/index.html') {
+    const served = await serveFile(req, res, resolve(MINER_ROOT, 'index.html'), 'text/html; charset=utf-8');
+    if (!served) json(res, 500, { error: 'neo_miner_ui_unavailable' });
+    return true;
+  }
+  json(res, 404, { error: 'not_found', service: 'neo-miner', path: url.pathname });
+  return true;
+}
+
 export async function serveProductStatic(req, res, url, host) {
   if (host === 'relations.holytemples.org') return serveRelations(req, res, url, host);
   if (host === 'neofx.holytemples.org') return serveExchange(req, res, url, host);
   if (host === 'finance.holytemples.org') return serveFinance(req, res, url, host);
   if (host === 'teller.holytemples.org') return serveTeller(req, res, url, host);
+  if (host === 'miner.holytemples.org') return serveMiner(req, res, url, host);
   return false;
 }

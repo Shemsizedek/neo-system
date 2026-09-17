@@ -15,6 +15,7 @@ COPY api/neo-exchange ./api/neo-exchange
 COPY apps/neo-relations/site ./apps/neo-relations/site
 COPY apps/noogle/web/finance.html ./apps/noogle/web/finance.html
 COPY public/neo-teller ./public/neo-teller
+COPY public/neo-miner ./public/neo-miner
 COPY public/platform-shell.css ./public/platform-shell.css
 COPY public/platform-shell.js ./public/platform-shell.js
 COPY --from=exchange-build /build/apps/neo-exchange/dist ./apps/neo-exchange/dist
