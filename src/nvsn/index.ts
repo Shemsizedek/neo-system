@@ -4,3 +4,5 @@ export * from './telegram';
 export * from './registry';
 export * from './router';
 export * from './simulator';
+export * from './security';
+export * from './queue';
