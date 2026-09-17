@@ -83,6 +83,15 @@ jobs:
           fi
           printf '%s' "$NEOGUARD_ENROLLMENT_TOKEN" | gcloud secrets versions add "$SECRET_NAME" --project="$GCP_PROJECT_ID" --data-file=-
 
+      - name: Grant Guardian runtime access to enrollment secret
+        run: |
+          set -euo pipefail
+          gcloud secrets add-iam-policy-binding "$SECRET_NAME" \
+            --project="$GCP_PROJECT_ID" \
+            --member="serviceAccount:$GCP_CLOUD_RUN_RUNTIME_ACCOUNT" \
+            --role="roles/secretmanager.secretAccessor" \
+            --quiet
+
       - name: Deploy Guardian service
         env:
           IMAGE: ${{ env.GCP_ARTIFACT_REGISTRY }}/neoguard:${{ github.sha }}
@@ -112,40 +121,17 @@ jobs:
         run: |
           set -euo pipefail
           gcloud compute url-maps describe "$URL_MAP_NAME" --project="$GCP_PROJECT_ID" >/dev/null
-
           if ! gcloud compute network-endpoint-groups describe "$GUARD_NEG_NAME" --region="$GCP_REGION" --project="$GCP_PROJECT_ID" >/dev/null 2>&1; then
-            gcloud compute network-endpoint-groups create "$GUARD_NEG_NAME" \
-              --region="$GCP_REGION" \
-              --network-endpoint-type=serverless \
-              --cloud-run-service="$SERVICE_NAME" \
-              --project="$GCP_PROJECT_ID" \
-              --quiet
+            gcloud compute network-endpoint-groups create "$GUARD_NEG_NAME" --region="$GCP_REGION" --network-endpoint-type=serverless --cloud-run-service="$SERVICE_NAME" --project="$GCP_PROJECT_ID" --quiet
           fi
-
           if ! gcloud compute backend-services describe "$GUARD_BACKEND_NAME" --global --project="$GCP_PROJECT_ID" >/dev/null 2>&1; then
-            gcloud compute backend-services create "$GUARD_BACKEND_NAME" \
-              --global \
-              --load-balancing-scheme=EXTERNAL_MANAGED \
-              --project="$GCP_PROJECT_ID" \
-              --quiet
+            gcloud compute backend-services create "$GUARD_BACKEND_NAME" --global --load-balancing-scheme=EXTERNAL_MANAGED --project="$GCP_PROJECT_ID" --quiet
           fi
-
           if ! gcloud compute backend-services describe "$GUARD_BACKEND_NAME" --global --project="$GCP_PROJECT_ID" --format='json(backends)' | grep -q "$GUARD_NEG_NAME"; then
-            gcloud compute backend-services add-backend "$GUARD_BACKEND_NAME" \
-              --global \
-              --network-endpoint-group="$GUARD_NEG_NAME" \
-              --network-endpoint-group-region="$GCP_REGION" \
-              --project="$GCP_PROJECT_ID" \
-              --quiet
+            gcloud compute backend-services add-backend "$GUARD_BACKEND_NAME" --global --network-endpoint-group="$GUARD_NEG_NAME" --network-endpoint-group-region="$GCP_REGION" --project="$GCP_PROJECT_ID" --quiet
           fi
-
           if ! gcloud compute url-maps describe "$URL_MAP_NAME" --project="$GCP_PROJECT_ID" --format='json(hostRules,pathMatchers)' | grep -q 'neoguard-matcher'; then
-            gcloud compute url-maps add-path-matcher "$URL_MAP_NAME" \
-              --path-matcher-name=neoguard-matcher \
-              --default-service="$GUARD_BACKEND_NAME" \
-              --new-hosts="$DOMAIN" \
-              --project="$GCP_PROJECT_ID" \
-              --quiet
+            gcloud compute url-maps add-path-matcher "$URL_MAP_NAME" --path-matcher-name=neoguard-matcher --default-service="$GUARD_BACKEND_NAME" --new-hosts="$DOMAIN" --project="$GCP_PROJECT_ID" --quiet
           fi
 
       - name: Verify canonical production hostname
