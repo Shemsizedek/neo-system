@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://neo-system.local/tmnlf/authority.schema.json",
+  "title": "TMNLF Authority",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["authority_id", "classification", "title", "jurisdiction", "verification_status"],
+  "properties": {
+    "authority_id": {"type": "string", "pattern": "^AUTH-[A-Za-z0-9._-]+$"},
+    "classification": {"enum": ["CONSTITUTION", "TREATY", "STATUTE", "REGULATION", "CASE", "COURT_RULE", "CONTRACT", "ADMINISTRATIVE_GUIDANCE", "HISTORICAL", "SCHOLARLY", "NATURAL_LAW", "INTERNAL_DOCTRINE"]},
+    "title": {"type": "string", "minLength": 1},
+    "citation": {"type": ["string", "null"]},
+    "jurisdiction": {"type": "string", "minLength": 1},
+    "source_url": {"type": ["string", "null"], "format": "uri"},
+    "source_repository": {"type": ["string", "null"]},
+    "retrieved_at": {"type": ["string", "null"], "format": "date-time"},
+    "verification_status": {"enum": ["VERIFIED_PRIMARY", "VERIFIED_SECONDARY", "UNVERIFIED", "DISPUTED"]},
+    "controlling_status": {"enum": ["CONTROLLING", "PERSUASIVE", "NONCONTROLLING", "UNKNOWN"]},
+    "notes": {"type": "string"}
+  }
+}
