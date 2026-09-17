@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://neo-system.local/tmnlf/matter.schema.json",
+  "title": "TMNLF Matter",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["matter_id", "name", "status", "jurisdiction", "objective", "facts", "issues", "authorities", "evidence", "next_actions"],
+  "properties": {
+    "matter_id": {"type": "string", "pattern": "^TMNLF-[0-9]{3,}$"},
+    "name": {"type": "string", "minLength": 1},
+    "principal": {"type": "string"},
+    "counterparties": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "status": {"enum": ["INTAKE", "RESEARCH", "FACT_DEVELOPMENT", "EVIDENCE_COLLECTION", "DRAFTING", "REVIEW", "FILED", "RESPONSE_PENDING", "NEGOTIATION", "ESCALATION", "RESOLVED", "ARCHIVED"]},
+    "priority": {"enum": ["LOW", "NORMAL", "HIGH", "CRITICAL"]},
+    "jurisdiction": {
+      "type": "object",
+      "required": ["resolution_status"],
+      "properties": {
+        "resolution_status": {"enum": ["RESOLVED", "PARTIAL", "UNRESOLVED"]},
+        "territorial": {"type": ["string", "null"]},
+        "subject_matter": {"type": ["string", "null"]},
+        "personal": {"type": ["string", "null"]},
+        "venue": {"type": ["string", "null"]},
+        "governing_law": {"type": ["string", "null"]},
+        "procedure": {"type": ["string", "null"]}
+      }
+    },
+    "objective": {"type": "string", "minLength": 1},
+    "facts": {"type": "array", "items": {"$ref": "#/$defs/classifiedStatement"}},
+    "issues": {"type": "array", "items": {"type": "string"}},
+    "authorities": {"type": "array", "items": {"$ref": "authority.schema.json"}},
+    "evidence": {"type": "array", "items": {"$ref": "evidence.schema.json"}},
+    "risks": {"type": "array", "items": {"type": "string"}},
+    "decisions": {"type": "array", "items": {"type": "string"}},
+    "open_questions": {"type": "array", "items": {"type": "string"}},
+    "next_actions": {"type": "array", "items": {"type": "string"}},
+    "counsel_escalation": {"type": "boolean", "default": false}
+  },
+  "$defs": {
+    "classifiedStatement": {
+      "type": "object",
+      "required": ["class", "text"],
+      "properties": {
+        "class": {"enum": ["FACT", "LAW", "ARGUMENT", "THEORY", "UNKNOWN"]},
+        "text": {"type": "string", "minLength": 1},
+        "source_refs": {"type": "array", "items": {"type": "string"}}
+      }
+    }
+  }
+}
