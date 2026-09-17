@@ -1,6 +1,7 @@
 import http from 'node:http';
 import { createNeoEdgeServer } from './server.mjs';
 import { isWirePlatformPath, proxyWirePlatform, serveWireApp, wireServiceManifest } from './wire-app.mjs';
+import { serveProductStatic } from './product-static.mjs';
 
 const PORT=Number(process.env.PORT||8080);
 const LEGACY_HOST='127.0.0.1';
@@ -63,6 +64,8 @@ export async function startNeoEdgeProduction(){
   const front=http.createServer(async(req,res)=>{
     const host=hostOf(req);
     const url=new URL(req.url||'/',`https://${host||'neo.holytemples.org'}`);
+    const productServed=await serveProductStatic(req,res,url,host);
+    if(productServed!==false)return productServed;
     if(host!=='wire.holytemples.org'&&req.method==='GET'&&(url.pathname==='/'||url.pathname==='/ui'))return html(res,200,serviceConsole(host));
     if(host!=='wire.holytemples.org')return proxyLegacy(req,res,legacyPort);
     try{
