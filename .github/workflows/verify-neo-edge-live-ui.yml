@@ -22,6 +22,7 @@ jobs:
       GCP_CLOUD_RUN_SERVICE_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_SERVICE_ACCOUNT || secrets.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
       CERT_NAME: neo-edge-managed-cert
       RELATIONS_CERT_NAME: neo-edge-relations-cert
+      FINANCE_CERT_NAME: neo-edge-finance-cert
       IP_NAME: neo-edge-global-ip
     steps:
       - uses: actions/checkout@v7.0.1
@@ -38,21 +39,18 @@ jobs:
           EDGE_IP="$(gcloud compute addresses describe "$IP_NAME" --global --project="$GCP_PROJECT_ID" --format='value(address)')"
           CERT_STATUS="$(gcloud compute ssl-certificates describe "$CERT_NAME" --global --project="$GCP_PROJECT_ID" --format='value(managed.status)')"
           RELATIONS_CERT_STATUS="$(gcloud compute ssl-certificates describe "$RELATIONS_CERT_NAME" --global --project="$GCP_PROJECT_ID" --format='value(managed.status)')"
-          DOMAIN_STATUS="$(gcloud compute ssl-certificates describe "$CERT_NAME" --global --project="$GCP_PROJECT_ID" --format='json(managed.domainStatus)')"
-          RELATIONS_DOMAIN_STATUS="$(gcloud compute ssl-certificates describe "$RELATIONS_CERT_NAME" --global --project="$GCP_PROJECT_ID" --format='json(managed.domainStatus)')"
+          FINANCE_CERT_STATUS="$(gcloud compute ssl-certificates describe "$FINANCE_CERT_NAME" --global --project="$GCP_PROJECT_ID" --format='value(managed.status)')"
           test -n "$EDGE_IP"
           test "$CERT_STATUS" = ACTIVE
           test "$RELATIONS_CERT_STATUS" = ACTIVE
+          test "$FINANCE_CERT_STATUS" = ACTIVE
           echo "NEO_EDGE_GLOBAL_IP=$EDGE_IP" >> "$GITHUB_ENV"
           {
             echo '### NEO Edge live front door'
             echo "- Global IPv4: $EDGE_IP"
             echo "- Primary certificate: $CERT_STATUS"
             echo "- Relations certificate: $RELATIONS_CERT_STATUS"
-            echo '```json'
-            echo "$DOMAIN_STATUS"
-            echo "$RELATIONS_DOMAIN_STATUS"
-            echo '```'
+            echo "- Finance certificate: $FINANCE_CERT_STATUS"
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Verify live HTML surfaces
@@ -65,7 +63,7 @@ jobs:
             school.holytemples.org library.holytemples.org book.holytemples.org neopads.holytemples.org
             neopass.holytemples.org neovision.holytemples.org noogle.holytemples.org omnitrix.holytemples.org
             neodash.holytemples.org nomni.holytemples.org wallet.holytemples.org treasury.holytemples.org
-            relations.holytemples.org
+            relations.holytemples.org finance.holytemples.org
           )
           failures=0
           for host in "${hosts[@]}"; do
@@ -74,9 +72,7 @@ jobs:
             ctype="$(awk 'BEGIN{IGNORECASE=1} /^content-type:/ {gsub(/\r/,""); print $2}' "$headers" | tail -1)"
             bytes="$(wc -c < "$body" | tr -d ' ')"
             verdict=PASS
-            if [[ "$code" != "200" ]] || [[ "$ctype" != text/html* ]] || (( bytes < 300 )); then
-              verdict=FAIL; failures=$((failures+1))
-            fi
+            if [[ "$code" != "200" ]] || [[ "$ctype" != text/html* ]] || (( bytes < 300 )); then verdict=FAIL; failures=$((failures+1)); fi
             echo "| $host | $code | ${ctype:-none} | $bytes | $verdict |" >> /tmp/neo-ui-table.md
             rm -f "$headers" "$body"
           done
@@ -86,10 +82,7 @@ jobs:
             echo '|---|---:|---|---:|---|'
             cat /tmp/neo-ui-table.md
           } >> "$GITHUB_STEP_SUMMARY"
-          if (( failures > 0 )); then
-            echo "::error::$failures NEO UI surface(s) failed the live HTML gate"
-            exit 1
-          fi
+          test "$failures" -eq 0
 
       - name: Verify NEO Relations application assets
         run: |
@@ -98,7 +91,7 @@ jobs:
             code="$(curl --connect-timeout 10 --max-time 25 --retry 2 --retry-delay 2 --resolve "relations.holytemples.org:443:${NEO_EDGE_GLOBAL_IP}" -sS -o /tmp/relations-asset -w '%{http_code}' "https://relations.holytemples.org${path}" || true)"
             echo "relations${path} -> $code" >> "$GITHUB_STEP_SUMMARY"
             test "$code" = 200
-            test -s /tmp/relations-asset || { echo "::error::Empty Relations response at $path"; exit 1; }
+            test -s /tmp/relations-asset
           done
 
       - name: Verify NEO Exchange application and market API
@@ -106,13 +99,10 @@ jobs:
           set -euo pipefail
           host=neofx.holytemples.org
           curl --connect-timeout 10 --max-time 25 --retry 2 --retry-delay 2 --resolve "$host:443:${NEO_EDGE_GLOBAL_IP}" -fsS "https://$host/" -o /tmp/neofx-index.html
-          grep -qi 'NEO EXCHANGE' /tmp/neofx-index.html || grep -q '/assets/' /tmp/neofx-index.html
           mapfile -t assets < <(grep -oE '/assets/[^"'"'"' ]+\.(js|css)' /tmp/neofx-index.html | sort -u)
-          test "${#assets[@]}" -ge 1 || { echo '::error::No built Exchange assets found in index'; exit 1; }
+          test "${#assets[@]}" -ge 1
           for path in "${assets[@]}"; do
-            code="$(curl --connect-timeout 10 --max-time 25 --retry 2 --retry-delay 2 --resolve "$host:443:${NEO_EDGE_GLOBAL_IP}" -sS -o /tmp/neofx-asset -w '%{http_code}' "https://$host${path}" || true)"
-            echo "neofx${path} -> $code" >> "$GITHUB_STEP_SUMMARY"
-            test "$code" = 200
+            curl --connect-timeout 10 --max-time 25 --resolve "$host:443:${NEO_EDGE_GLOBAL_IP}" -fsS "https://$host${path}" -o /tmp/neofx-asset
             test -s /tmp/neofx-asset
           done
           for path in /health /api /api/neo-exchange/health /api/neo-exchange/markets '/api/neo-exchange/orderbook?base=BTC&quote=XCP&limit=5'; do
@@ -121,3 +111,21 @@ jobs:
             test "$code" = 200
             test -s /tmp/neofx-api
           done
+
+      - name: Verify Noogle Finance live market UI
+        run: |
+          set -euo pipefail
+          host=finance.holytemples.org
+          for path in / /health /api /api/neo-exchange/health /api/neo-exchange/markets; do
+            code="$(curl --connect-timeout 10 --max-time 40 --retry 1 --retry-delay 2 --resolve "$host:443:${NEO_EDGE_GLOBAL_IP}" -sS -o /tmp/finance-response -w '%{http_code}' "https://$host${path}" || true)"
+            echo "finance${path} -> $code" >> "$GITHUB_STEP_SUMMARY"
+            test "$code" = 200
+            test -s /tmp/finance-response
+          done
+          curl --resolve "$host:443:${NEO_EDGE_GLOBAL_IP}" -fsS "https://$host/" -o /tmp/finance-index.html
+          grep -q 'NOOGLE FINANCE' /tmp/finance-index.html
+          grep -q '/api/neo-exchange/markets' /tmp/finance-index.html
+          if grep -q 'neo-market-symbols.js\|neo-market-tape.js' /tmp/finance-index.html; then
+            echo '::error::Finance still references removed legacy market assets'
+            exit 1
+          fi
