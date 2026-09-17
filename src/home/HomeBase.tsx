@@ -1,7 +1,7 @@
 import {
   ArrowRight, BookOpen, BrainCircuit, Building2, CircleDollarSign,
   Compass, GraduationCap, Landmark, Network, ShieldCheck, Sparkles,
-  LockKeyhole, RadioTower, Globe2, Bot, Activity, Database, Users
+  LockKeyhole, RadioTower, Globe2, Bot, Activity, Database, Users, Scale
 } from 'lucide-react'
 import {foundationalPrinciples,neoModules} from '../neoSystem'
 
@@ -19,6 +19,7 @@ const pillars=[
 
 const routes:{label:string;section:string;desc:string;access:Access;Icon:typeof Network}[]=[
   {label:'Command Center',section:'overview',desc:'System-wide status, mission and module registry',access:'CONTROLLED',Icon:Network},
+  {label:'TMNLF Counsel Console',section:'counsel',desc:'Matter intake, evidence, authorities, jurisdiction and review controls',access:'PRIVATE',Icon:Scale},
   {label:'NEO CFO',section:'cfo',desc:'Finance, cash flow, credit and investment coordination',access:'PRIVATE',Icon:CircleDollarSign},
   {label:'NEO Treasury',section:'treasury',desc:'Treasury, trust and revenue administration',access:'PRIVATE',Icon:Landmark},
   {label:'Legal Corpus',section:'corpus',desc:'Authorities, instruments, records and provenance',access:'CONTROLLED',Icon:BookOpen}
