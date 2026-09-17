@@ -23,6 +23,7 @@ jobs:
       CERT_NAME: neo-edge-managed-cert
       RELATIONS_CERT_NAME: neo-edge-relations-cert
       FINANCE_CERT_NAME: neo-edge-finance-cert
+      HTTPS_PROXY_NAME: neo-edge-https-proxy
       IP_NAME: neo-edge-global-ip
     steps:
       - uses: actions/checkout@v7.0.1
