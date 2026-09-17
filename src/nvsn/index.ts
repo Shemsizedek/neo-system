@@ -6,3 +6,8 @@ export * from './router';
 export * from './simulator';
 export * from './security';
 export * from './queue';
+export * from './adapter';
+export * from './telemetry';
+export * from './policy';
+export * from './persistence';
+export * from './neoWire';
