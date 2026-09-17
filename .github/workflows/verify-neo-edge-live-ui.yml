@@ -40,18 +40,28 @@ jobs:
           CERT_STATUS="$(gcloud compute ssl-certificates describe "$CERT_NAME" --global --project="$GCP_PROJECT_ID" --format='value(managed.status)')"
           RELATIONS_CERT_STATUS="$(gcloud compute ssl-certificates describe "$RELATIONS_CERT_NAME" --global --project="$GCP_PROJECT_ID" --format='value(managed.status)')"
           FINANCE_CERT_STATUS="$(gcloud compute ssl-certificates describe "$FINANCE_CERT_NAME" --global --project="$GCP_PROJECT_ID" --format='value(managed.status)')"
-          test -n "$EDGE_IP"
-          test "$CERT_STATUS" = ACTIVE
-          test "$RELATIONS_CERT_STATUS" = ACTIVE
-          test "$FINANCE_CERT_STATUS" = ACTIVE
-          echo "NEO_EDGE_GLOBAL_IP=$EDGE_IP" >> "$GITHUB_ENV"
+          FINANCE_DOMAIN_STATUS="$(gcloud compute ssl-certificates describe "$FINANCE_CERT_NAME" --global --project="$GCP_PROJECT_ID" --format='json(managed.domainStatus)' || true)"
+
+          echo "NEO Edge global IPv4: ${EDGE_IP:-missing}"
+          echo "Primary certificate: ${CERT_STATUS:-missing}"
+          echo "Relations certificate: ${RELATIONS_CERT_STATUS:-missing}"
+          echo "Finance certificate: ${FINANCE_CERT_STATUS:-missing}"
+          echo "Finance domain status: ${FINANCE_DOMAIN_STATUS:-unknown}"
+
           {
             echo '### NEO Edge live front door'
-            echo "- Global IPv4: $EDGE_IP"
-            echo "- Primary certificate: $CERT_STATUS"
-            echo "- Relations certificate: $RELATIONS_CERT_STATUS"
-            echo "- Finance certificate: $FINANCE_CERT_STATUS"
+            echo "- Global IPv4: ${EDGE_IP:-missing}"
+            echo "- Primary certificate: ${CERT_STATUS:-missing}"
+            echo "- Relations certificate: ${RELATIONS_CERT_STATUS:-missing}"
+            echo "- Finance certificate: ${FINANCE_CERT_STATUS:-missing}"
+            echo "- Finance domain status: \`${FINANCE_DOMAIN_STATUS:-unknown}\`"
           } >> "$GITHUB_STEP_SUMMARY"
+
+          test -n "$EDGE_IP" || { echo '::error::NEO Edge global IPv4 is missing'; exit 1; }
+          test "$CERT_STATUS" = ACTIVE || { echo "::error::$CERT_NAME is $CERT_STATUS, expected ACTIVE"; exit 1; }
+          test "$RELATIONS_CERT_STATUS" = ACTIVE || { echo "::error::$RELATIONS_CERT_NAME is $RELATIONS_CERT_STATUS, expected ACTIVE"; exit 1; }
+          test "$FINANCE_CERT_STATUS" = ACTIVE || { echo "::error::$FINANCE_CERT_NAME is $FINANCE_CERT_STATUS, expected ACTIVE. Ensure finance.holytemples.org resolves to $EDGE_IP and the certificate is attached to $HTTPS_PROXY_NAME"; exit 1; }
+          echo "NEO_EDGE_GLOBAL_IP=$EDGE_IP" >> "$GITHUB_ENV"
 
       - name: Verify live HTML surfaces
         run: |
