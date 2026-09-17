@@ -1,0 +1,2 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {createTmnlfStore} from './store.mjs';
+test('persists matters and audit events across store reopen',()=>{const path=`/tmp/tmnlf-${Date.now()}.sqlite`;let s=createTmnlfStore(path);const m=s.create({name:'Test Matter',objective:'Validate persistence'},'test');assert.match(m.id,/^TMNLF-001$/);assert.equal(s.listAudit(m.id)[0].eventType,'matter.created');s.close();s=createTmnlfStore(path);assert.equal(s.get(m.id).name,'Test Matter');assert.equal(s.listAudit(m.id).length,1);s.close()});
