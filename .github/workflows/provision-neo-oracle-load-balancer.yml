@@ -116,6 +116,26 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+
+          if gcloud compute backend-services describe "$BACKEND_NAME" \
+            --project="$GCP_PROJECT_ID" \
+            --global >/dev/null 2>&1; then
+            PROTOCOL="$(gcloud compute backend-services describe "$BACKEND_NAME" \
+              --project="$GCP_PROJECT_ID" \
+              --global \
+              --format='value(protocol)')"
+            BACKENDS="$(gcloud compute backend-services describe "$BACKEND_NAME" \
+              --project="$GCP_PROJECT_ID" \
+              --global \
+              --format='value(backends[].group)' || true)"
+            if [ "$PROTOCOL" != "HTTP" ] && [ -z "$BACKENDS" ]; then
+              gcloud compute backend-services delete "$BACKEND_NAME" \
+                --project="$GCP_PROJECT_ID" \
+                --global \
+                --quiet
+            fi
+          fi
+
           if ! gcloud compute backend-services describe "$BACKEND_NAME" \
             --project="$GCP_PROJECT_ID" \
             --global >/dev/null 2>&1; then
@@ -123,7 +143,7 @@ jobs:
               --project="$GCP_PROJECT_ID" \
               --global \
               --load-balancing-scheme=EXTERNAL_MANAGED \
-              --protocol=HTTPS
+              --protocol=HTTP
           fi
 
           NEG_URI="$(gcloud compute network-endpoint-groups describe "$NEG_NAME" \
