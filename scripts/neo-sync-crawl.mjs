@@ -132,7 +132,7 @@ for (const source of SOURCES) {
   runs.push(run)
   const priorPages = new Map((previous.sources?.[source.id]?.pages ?? []).map(p => [p.url, p]))
   const currentPages = run.pages.map(page => ({ url: page.url, title: page.title, hash: page.hash, bytes: page.bytes, excerpt: page.excerpt, headings: page.headings, quality: page.quality }))
-  nextState.sources[source.id] = { title: source.title, rootUrl: source.rootUrl, mode: source.mode, pages: currentPages }
+  nextState.sources[source.id] = { title: source.title, rootUrl: source.url, mode: source.mode, pages: currentPages }
 
   for (const page of currentPages) {
     const before = priorPages.get(page.url)
