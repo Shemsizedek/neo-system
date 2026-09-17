@@ -10,13 +10,19 @@ WORKDIR /app
 COPY server/holytemples-adapter ./server/holytemples-adapter
 COPY server/neo-counter-backend/firestore-rest-db.mjs ./server/neo-counter-backend/firestore-rest-db.mjs
 COPY server/neo-edge ./server/neo-edge
+COPY server/neo-teller-backend ./server/neo-teller-backend
 COPY api/neo-exchange ./api/neo-exchange
 COPY apps/neo-relations/site ./apps/neo-relations/site
 COPY apps/noogle/web/finance.html ./apps/noogle/web/finance.html
+COPY public/neo-teller ./public/neo-teller
+COPY public/platform-shell.css ./public/platform-shell.css
+COPY public/platform-shell.js ./public/platform-shell.js
 COPY --from=exchange-build /build/apps/neo-exchange/dist ./apps/neo-exchange/dist
 ENV NODE_ENV=production
 ENV PORT=8080
 ENV NEO_PLATFORM_API_ORIGIN=https://egov.holytemples.org
 ENV NEO_EXCHANGE_ALLOWED_ORIGIN=https://neofx.holytemples.org
+ENV COUNTERPARTY_API_URL=https://api.counterparty.io:4000
+ENV BITCOIN_ELECTRS_URL=https://blockstream.info/api
 EXPOSE 8080
 CMD ["node", "server/neo-edge/production.mjs"]

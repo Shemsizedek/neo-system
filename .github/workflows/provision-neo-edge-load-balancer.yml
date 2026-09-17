@@ -32,6 +32,7 @@ jobs:
       CERT_NAME: neo-edge-managed-cert
       RELATIONS_CERT_NAME: neo-edge-relations-cert
       FINANCE_CERT_NAME: neo-edge-finance-cert
+      TELLER_CERT_NAME: neo-edge-teller-cert
       HTTPS_PROXY_NAME: neo-edge-https-proxy
       HTTP_PROXY_NAME: neo-edge-http-proxy
       HTTPS_RULE_NAME: neo-edge-https-rule
@@ -137,11 +138,14 @@ jobs:
           if ! gcloud compute ssl-certificates describe "$FINANCE_CERT_NAME" --global --project="$GCP_PROJECT_ID" >/dev/null 2>&1; then
             gcloud compute ssl-certificates create "$FINANCE_CERT_NAME" --domains='finance.holytemples.org' --global --project="$GCP_PROJECT_ID" --quiet
           fi
+          if ! gcloud compute ssl-certificates describe "$TELLER_CERT_NAME" --global --project="$GCP_PROJECT_ID" >/dev/null 2>&1; then
+            gcloud compute ssl-certificates create "$TELLER_CERT_NAME" --domains='teller.holytemples.org' --global --project="$GCP_PROJECT_ID" --quiet
+          fi
 
       - name: Create or update HTTPS proxy and forwarding rule
         run: |
           set -euo pipefail
-          CERTS="$CERT_NAME,$RELATIONS_CERT_NAME,$FINANCE_CERT_NAME"
+          CERTS="$CERT_NAME,$RELATIONS_CERT_NAME,$FINANCE_CERT_NAME,$TELLER_CERT_NAME"
           if ! gcloud compute target-https-proxies describe "$HTTPS_PROXY_NAME" --project="$GCP_PROJECT_ID" >/dev/null 2>&1; then
             gcloud compute target-https-proxies create "$HTTPS_PROXY_NAME" \
               --url-map="$URL_MAP_NAME" \
@@ -192,5 +196,6 @@ jobs:
             echo "Shared edge IPv4: **${NEO_EDGE_GLOBAL_IP}**"
             echo '- Existing 24 NEO hosts remain on the active primary certificate.'
             echo '- `relations.holytemples.org` uses its dedicated managed certificate.'
-            echo '- `finance.holytemples.org` should resolve to the same IPv4 for its dedicated managed certificate to activate.'
+            echo '- `finance.holytemples.org` uses its dedicated managed certificate.'
+            echo '- `teller.holytemples.org` should resolve to the same IPv4 for its dedicated managed certificate to activate.'
           } >> "$GITHUB_STEP_SUMMARY"

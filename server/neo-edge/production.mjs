@@ -3,6 +3,7 @@ import { createNeoEdgeServer } from './server.mjs';
 import { isWirePlatformPath, proxyWirePlatform, serveWireApp, wireServiceManifest } from './wire-app.mjs';
 import { serveProductStatic } from './product-static.mjs';
 import { handleNeoExchangeRequest } from '../../api/neo-exchange/server.mjs';
+import { handleNeoTellerRequest } from '../neo-teller-backend/server.mjs';
 
 const PORT=Number(process.env.PORT||8080);
 const LEGACY_HOST='127.0.0.1';
@@ -67,6 +68,10 @@ export async function startNeoEdgeProduction(){
     const url=new URL(req.url||'/',`https://${host||'neo.holytemples.org'}`);
     if((host==='neofx.holytemples.org'||host==='finance.holytemples.org')&&url.pathname.startsWith('/api/neo-exchange/')){
       const handled=await handleNeoExchangeRequest(req,res,{fallthrough:true});
+      if(handled!==false)return handled;
+    }
+    if(host==='teller.holytemples.org'&&url.pathname.startsWith('/api/v1/teller/')){
+      const handled=await handleNeoTellerRequest(req,res,{fallthrough:true});
       if(handled!==false)return handled;
     }
     const productServed=await serveProductStatic(req,res,url,host);

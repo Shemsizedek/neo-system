@@ -23,6 +23,7 @@ jobs:
       CERT_NAME: neo-edge-managed-cert
       RELATIONS_CERT_NAME: neo-edge-relations-cert
       FINANCE_CERT_NAME: neo-edge-finance-cert
+      TELLER_CERT_NAME: neo-edge-teller-cert
       HTTPS_PROXY_NAME: neo-edge-https-proxy
       IP_NAME: neo-edge-global-ip
     steps:
@@ -41,27 +42,21 @@ jobs:
           CERT_STATUS="$(gcloud compute ssl-certificates describe "$CERT_NAME" --global --project="$GCP_PROJECT_ID" --format='value(managed.status)')"
           RELATIONS_CERT_STATUS="$(gcloud compute ssl-certificates describe "$RELATIONS_CERT_NAME" --global --project="$GCP_PROJECT_ID" --format='value(managed.status)')"
           FINANCE_CERT_STATUS="$(gcloud compute ssl-certificates describe "$FINANCE_CERT_NAME" --global --project="$GCP_PROJECT_ID" --format='value(managed.status)')"
-          FINANCE_DOMAIN_STATUS="$(gcloud compute ssl-certificates describe "$FINANCE_CERT_NAME" --global --project="$GCP_PROJECT_ID" --format='json(managed.domainStatus)' || true)"
+          TELLER_CERT_STATUS="$(gcloud compute ssl-certificates describe "$TELLER_CERT_NAME" --global --project="$GCP_PROJECT_ID" --format='value(managed.status)')"
+          TELLER_DOMAIN_STATUS="$(gcloud compute ssl-certificates describe "$TELLER_CERT_NAME" --global --project="$GCP_PROJECT_ID" --format='json(managed.domainStatus)' || true)"
 
           echo "NEO Edge global IPv4: ${EDGE_IP:-missing}"
           echo "Primary certificate: ${CERT_STATUS:-missing}"
           echo "Relations certificate: ${RELATIONS_CERT_STATUS:-missing}"
           echo "Finance certificate: ${FINANCE_CERT_STATUS:-missing}"
-          echo "Finance domain status: ${FINANCE_DOMAIN_STATUS:-unknown}"
-
-          {
-            echo '### NEO Edge live front door'
-            echo "- Global IPv4: ${EDGE_IP:-missing}"
-            echo "- Primary certificate: ${CERT_STATUS:-missing}"
-            echo "- Relations certificate: ${RELATIONS_CERT_STATUS:-missing}"
-            echo "- Finance certificate: ${FINANCE_CERT_STATUS:-missing}"
-            echo "- Finance domain status: \`${FINANCE_DOMAIN_STATUS:-unknown}\`"
-          } >> "$GITHUB_STEP_SUMMARY"
+          echo "Teller certificate: ${TELLER_CERT_STATUS:-missing}"
+          echo "Teller domain status: ${TELLER_DOMAIN_STATUS:-unknown}"
 
           test -n "$EDGE_IP" || { echo '::error::NEO Edge global IPv4 is missing'; exit 1; }
           test "$CERT_STATUS" = ACTIVE || { echo "::error::$CERT_NAME is $CERT_STATUS, expected ACTIVE"; exit 1; }
           test "$RELATIONS_CERT_STATUS" = ACTIVE || { echo "::error::$RELATIONS_CERT_NAME is $RELATIONS_CERT_STATUS, expected ACTIVE"; exit 1; }
-          test "$FINANCE_CERT_STATUS" = ACTIVE || { echo "::error::$FINANCE_CERT_NAME is $FINANCE_CERT_STATUS, expected ACTIVE. Ensure finance.holytemples.org resolves to $EDGE_IP and the certificate is attached to $HTTPS_PROXY_NAME"; exit 1; }
+          test "$FINANCE_CERT_STATUS" = ACTIVE || { echo "::error::$FINANCE_CERT_NAME is $FINANCE_CERT_STATUS, expected ACTIVE"; exit 1; }
+          test "$TELLER_CERT_STATUS" = ACTIVE || { echo "::error::$TELLER_CERT_NAME is $TELLER_CERT_STATUS, expected ACTIVE. Ensure teller.holytemples.org resolves to $EDGE_IP and the certificate is attached to $HTTPS_PROXY_NAME"; exit 1; }
           echo "NEO_EDGE_GLOBAL_IP=$EDGE_IP" >> "$GITHUB_ENV"
 
       - name: Verify live HTML surfaces
@@ -74,7 +69,7 @@ jobs:
             school.holytemples.org library.holytemples.org book.holytemples.org neopads.holytemples.org
             neopass.holytemples.org neovision.holytemples.org noogle.holytemples.org omnitrix.holytemples.org
             neodash.holytemples.org nomni.holytemples.org wallet.holytemples.org treasury.holytemples.org
-            relations.holytemples.org finance.holytemples.org
+            relations.holytemples.org finance.holytemples.org teller.holytemples.org
           )
           failures=0
           for host in "${hosts[@]}"; do
@@ -87,12 +82,6 @@ jobs:
             echo "| $host | $code | ${ctype:-none} | $bytes | $verdict |" >> /tmp/neo-ui-table.md
             rm -f "$headers" "$body"
           done
-          {
-            echo '### NEO UI HTTPS probes'
-            echo '| Host | HTTP | Content-Type | Bytes | Result |'
-            echo '|---|---:|---|---:|---|'
-            cat /tmp/neo-ui-table.md
-          } >> "$GITHUB_STEP_SUMMARY"
           test "$failures" -eq 0
 
       - name: Verify NEO Relations application assets
@@ -100,7 +89,6 @@ jobs:
           set -euo pipefail
           for path in /health /api /data/tenants.json /data/status.json /styles.css /app.js; do
             code="$(curl --connect-timeout 10 --max-time 25 --retry 2 --retry-delay 2 --resolve "relations.holytemples.org:443:${NEO_EDGE_GLOBAL_IP}" -sS -o /tmp/relations-asset -w '%{http_code}' "https://relations.holytemples.org${path}" || true)"
-            echo "relations${path} -> $code" >> "$GITHUB_STEP_SUMMARY"
             test "$code" = 200
             test -s /tmp/relations-asset
           done
@@ -118,7 +106,6 @@ jobs:
           done
           for path in /health /api /api/neo-exchange/health /api/neo-exchange/markets '/api/neo-exchange/orderbook?base=BTC&quote=XCP&limit=5'; do
             code="$(curl --connect-timeout 10 --max-time 40 --retry 1 --retry-delay 2 --resolve "$host:443:${NEO_EDGE_GLOBAL_IP}" -sS -o /tmp/neofx-api -w '%{http_code}' "https://$host${path}" || true)"
-            echo "neofx${path} -> $code" >> "$GITHUB_STEP_SUMMARY"
             test "$code" = 200
             test -s /tmp/neofx-api
           done
@@ -129,14 +116,27 @@ jobs:
           host=finance.holytemples.org
           for path in / /health /api /api/neo-exchange/health /api/neo-exchange/markets; do
             code="$(curl --connect-timeout 10 --max-time 40 --retry 1 --retry-delay 2 --resolve "$host:443:${NEO_EDGE_GLOBAL_IP}" -sS -o /tmp/finance-response -w '%{http_code}' "https://$host${path}" || true)"
-            echo "finance${path} -> $code" >> "$GITHUB_STEP_SUMMARY"
             test "$code" = 200
             test -s /tmp/finance-response
           done
           curl --resolve "$host:443:${NEO_EDGE_GLOBAL_IP}" -fsS "https://$host/" -o /tmp/finance-index.html
           grep -q 'NOOGLE FINANCE' /tmp/finance-index.html
           grep -q '/api/neo-exchange/markets' /tmp/finance-index.html
-          if grep -q 'neo-market-symbols.js\|neo-market-tape.js' /tmp/finance-index.html; then
-            echo '::error::Finance still references removed legacy market assets'
-            exit 1
-          fi
+          ! grep -q 'neo-market-symbols.js\|neo-market-tape.js' /tmp/finance-index.html
+
+      - name: Verify NEO Teller live UI and read-only network API
+        run: |
+          set -euo pipefail
+          host=teller.holytemples.org
+          for path in / /health /api /platform-shell.css /platform-shell.js /neo-system/api/platforms/neo-teller.json /api/v1/teller/health /api/v1/teller/network; do
+            code="$(curl --connect-timeout 10 --max-time 40 --retry 1 --retry-delay 2 --resolve "$host:443:${NEO_EDGE_GLOBAL_IP}" -sS -o /tmp/teller-response -w '%{http_code}' "https://$host${path}" || true)"
+            echo "teller${path} -> $code" >> "$GITHUB_STEP_SUMMARY"
+            test "$code" = 200
+            test -s /tmp/teller-response
+          done
+          curl --resolve "$host:443:${NEO_EDGE_GLOBAL_IP}" -fsS "https://$host/" -o /tmp/teller-index.html
+          grep -q 'NEO Teller' /tmp/teller-index.html
+          curl --resolve "$host:443:${NEO_EDGE_GLOBAL_IP}" -fsS "https://$host/api/v1/teller/network" -o /tmp/teller-network.json
+          grep -q '"readOnly":true' /tmp/teller-network.json
+          grep -q '"sign":false' /tmp/teller-network.json
+          grep -q '"broadcast":false' /tmp/teller-network.json
