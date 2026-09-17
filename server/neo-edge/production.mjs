@@ -35,7 +35,7 @@ const SERVICE_UI=Object.freeze({
 
 function hostOf(req){return String(req.headers['x-forwarded-host']||req.headers.host||'').split(',')[0].trim().split(':')[0].toLowerCase()}
 function json(res,status,body){res.writeHead(status,{'content-type':'application/json; charset=utf-8','cache-control':'no-store','x-content-type-options':'nosniff'});res.end(JSON.stringify(body))}
-function escapeHtml(value=''){return String(value).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[ch]))}
+function escapeHtml(value=''){return String(value).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]))}
 function html(res,status,body){res.writeHead(status,{'content-type':'text/html; charset=utf-8','cache-control':'no-store','x-content-type-options':'nosniff','referrer-policy':'strict-origin-when-cross-origin','content-security-policy':"default-src 'self'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src 'self'; img-src 'self' data: https:; frame-ancestors 'self' https://holytemples.org https://*.holytemples.org"});res.end(body)}
 
 function serviceConsole(host){
@@ -65,7 +65,7 @@ export async function startNeoEdgeProduction(){
   const front=http.createServer(async(req,res)=>{
     const host=hostOf(req);
     const url=new URL(req.url||'/',`https://${host||'neo.holytemples.org'}`);
-    if(host==='neofx.holytemples.org'&&url.pathname.startsWith('/api/neo-exchange/')){
+    if((host==='neofx.holytemples.org'||host==='finance.holytemples.org')&&url.pathname.startsWith('/api/neo-exchange/')){
       const handled=await handleNeoExchangeRequest(req,res,{fallthrough:true});
       if(handled!==false)return handled;
     }

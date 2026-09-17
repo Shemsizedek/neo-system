@@ -12,6 +12,7 @@ COPY server/neo-counter-backend/firestore-rest-db.mjs ./server/neo-counter-backe
 COPY server/neo-edge ./server/neo-edge
 COPY api/neo-exchange ./api/neo-exchange
 COPY apps/neo-relations/site ./apps/neo-relations/site
+COPY apps/noogle/web/finance.html ./apps/noogle/web/finance.html
 COPY --from=exchange-build /build/apps/neo-exchange/dist ./apps/neo-exchange/dist
 ENV NODE_ENV=production
 ENV PORT=8080
