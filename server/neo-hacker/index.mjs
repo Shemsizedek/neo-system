@@ -12,3 +12,4 @@ export { createRecoveryRequest, signRecoveryRequest, verifyRecoveryRequest, eval
 export { createIncidentLedger, SEVERITY, EVENT_STATE } from './incidentLedger.mjs';
 export { validateGuardianEnvelope, classifyNeoOutage } from './guardianEnvelope.mjs';
 export { createGuardianSecurityPipeline } from './guardianPipeline.mjs';
+export { analyzeSecurityIncident, analyzeIncidentLedger } from './securityAnalysis.mjs';
