@@ -1,0 +1,40 @@
+name: Verify NEO-PACER Shared Front Door
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'server/neo-edge/product-static.mjs'
+      - 'docs/neo-pacer/**'
+      - 'data/neo-pacer/**'
+      - '.github/workflows/verify-neo-pacer-shared-path.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Verify PACER live path
+        run: |
+          set -euo pipefail
+          base='https://neo.holytemples.org/pacer'
+          code="$(curl -sS -o /tmp/redirect -w '%{http_code}' "$base")"
+          test "$code" = 308
+          for path in / /styles.css /app.js /health /api /data/neo-pacer/cases.json /data/neo-pacer/evidence.json /data/neo-pacer/title-chain.json; do
+            code="$(curl --connect-timeout 10 --max-time 30 --retry 2 --retry-delay 2 -sS -o /tmp/pacer-response -w '%{http_code}' "$base$path" || true)"
+            echo "$base$path -> $code" >> "$GITHUB_STEP_SUMMARY"
+            test "$code" = 200
+            test -s /tmp/pacer-response
+          done
+          curl -fsS "$base/" -o /tmp/pacer-index.html
+          grep -q 'NEO-PACER' /tmp/pacer-index.html
+          grep -q 'Evidence Vault' /tmp/pacer-index.html
+          curl -fsS "$base/app.js" -o /tmp/pacer-app.js
+          grep -q "const RAW='/pacer/data/neo-pacer';" /tmp/pacer-app.js
+          curl -fsS "$base/api" -o /tmp/pacer-api.json
+          grep -q '"externalJurisdictionCreated":false' /tmp/pacer-api.json
