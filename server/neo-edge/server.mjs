@@ -98,7 +98,8 @@ const SERVICES = Object.freeze({
   'neodash.holytemples.org': { id: 'neo-dash', name: 'NEO Dash', role: 'dashboard', api: true },
   'nomni.holytemples.org': { id: 'nomni', name: 'N.O.M.N.I.', role: 'currency', api: true },
   'wallet.holytemples.org': { id: 'neo-treasury-wallet', name: 'NEO Treasury Wallet', role: 'wallet', api: true },
-  'treasury.holytemples.org': { id: 'world-treasury', name: 'World Treasury', role: 'treasury', api: true }
+  'treasury.holytemples.org': { id: 'world-treasury', name: 'World Treasury', role: 'treasury', api: true },
+  'nvsn.holytemples.org': { id: 'nvsn', name: 'NEO Virtual Satellite Network', role: 'communications-fabric', api: true }
 });
 
 const PUBLIC_ORIGINS = new Set([

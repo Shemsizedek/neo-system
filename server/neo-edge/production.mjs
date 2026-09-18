@@ -31,7 +31,8 @@ const SERVICE_UI=Object.freeze({
   'neodash.holytemples.org':{name:'NEO Dash',role:'Dashboard',summary:'Operations dashboard for the NEO ecosystem.'},
   'nomni.holytemples.org':{name:'N.O.M.N.I.',role:'Currency Platform',summary:'NOMNI asset information, valuation and integration services.'},
   'wallet.holytemples.org':{name:'NEO Treasury Wallet',role:'Wallet',summary:'Treasury wallet information and settlement entrypoint.'},
-  'treasury.holytemples.org':{name:'World Treasury',role:'Treasury',summary:'Treasury and reserve information surface.'}
+  'treasury.holytemples.org':{name:'World Treasury',role:'Treasury',summary:'Treasury and reserve information surface.'},
+  'nvsn.holytemples.org':{name:'NEO Virtual Satellite Network',role:'Communications Fabric',summary:'Software-defined distributed communications fabric connecting authorized terrestrial, Internet, radio, telephone and satellite-capable nodes.'}
 });
 
 function hostOf(req){return String(req.headers['x-forwarded-host']||req.headers.host||'').split(',')[0].trim().split(':')[0].toLowerCase()}
