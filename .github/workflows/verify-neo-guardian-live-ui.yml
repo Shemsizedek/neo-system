@@ -1,0 +1,62 @@
+name: Verify NEO Guardian Live UI
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/verify-neo-guardian-live-ui.yml'
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    environment: holytemples-production
+    timeout-minutes: 15
+    env:
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID || secrets.GCP_PROJECT_ID }}
+      GCP_WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER || secrets.GCP_WIF_PROVIDER }}
+      GCP_CLOUD_RUN_SERVICE_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_SERVICE_ACCOUNT || secrets.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+      IP_NAME: neo-edge-global-ip
+      GUARDIAN_CERT_NAME: neo-edge-guardian-cert
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@v3
+
+      - name: Verify Guardian front door
+        run: |
+          set -euo pipefail
+          EDGE_IP="$(gcloud compute addresses describe "$IP_NAME" --global --project="$GCP_PROJECT_ID" --format='value(address)')"
+          CERT_STATUS="$(gcloud compute ssl-certificates describe "$GUARDIAN_CERT_NAME" --global --project="$GCP_PROJECT_ID" --format='value(managed.status)')"
+          echo "Guardian edge IPv4: ${EDGE_IP:-missing}"
+          echo "Guardian certificate: ${CERT_STATUS:-missing}"
+          test -n "$EDGE_IP"
+          test "$CERT_STATUS" = ACTIVE
+          echo "NEO_EDGE_GLOBAL_IP=$EDGE_IP" >> "$GITHUB_ENV"
+
+      - name: Verify Guardian UI and defensive boundary
+        run: |
+          set -euo pipefail
+          host=guardian.holytemples.org
+          for path in / /ui /privacy.html /terms.html /version.json /health /api /api/identity/founder.json; do
+            code="$(curl --connect-timeout 10 --max-time 30 --retry 2 --retry-delay 2 --resolve "$host:443:${NEO_EDGE_GLOBAL_IP}" -sS -o /tmp/guardian-response -w '%{http_code}' "https://$host${path}" || true)"
+            echo "guardian${path} -> $code" >> "$GITHUB_STEP_SUMMARY"
+            test "$code" = 200
+            test -s /tmp/guardian-response
+          done
+          curl --resolve "$host:443:${NEO_EDGE_GLOBAL_IP}" -fsS "https://$host/" -o /tmp/guardian-index.html
+          grep -q 'NEO GUARDIAN' /tmp/guardian-index.html
+          grep -q 'Mobile Defense Center' /tmp/guardian-index.html
+          curl --resolve "$host:443:${NEO_EDGE_GLOBAL_IP}" -fsS "https://$host/privacy.html" -o /tmp/guardian-privacy.html
+          grep -q 'Local-first operation' /tmp/guardian-privacy.html
+          curl --resolve "$host:443:${NEO_EDGE_GLOBAL_IP}" -fsS "https://$host/api" -o /tmp/guardian-api.json
+          grep -q 'USER_CONTROLLED_ANDROID_SETTINGS_ONLY' /tmp/guardian-api.json
+          grep -q '"privilegedDeviceActions":false' <(curl --resolve "$host:443:${NEO_EDGE_GLOBAL_IP}" -fsS "https://$host/health")

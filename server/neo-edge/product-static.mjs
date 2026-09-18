@@ -8,6 +8,8 @@ const FINANCE_FILE = fileURLToPath(new URL('../../apps/noogle/web/finance.html',
 const TELLER_ROOT = fileURLToPath(new URL('../../public/neo-teller/', import.meta.url));
 const MINER_ROOT = fileURLToPath(new URL('../../public/neo-miner/', import.meta.url));
 const ENTERPRISE_ROOT = fileURLToPath(new URL('../../docs/neo-enterprise/', import.meta.url));
+const GUARDIAN_ROOT = fileURLToPath(new URL('../../public/guardian/', import.meta.url));
+const FOUNDER_IDENTITY_FILE = fileURLToPath(new URL('../../public/api/identity/founder.json', import.meta.url));
 const ENTERPRISE_API_ROOT = fileURLToPath(new URL('../../dist/api/enterprise/', import.meta.url));
 const PLATFORM_SHELL_CSS = fileURLToPath(new URL('../../public/platform-shell.css', import.meta.url));
 const PLATFORM_SHELL_JS = fileURLToPath(new URL('../../public/platform-shell.js', import.meta.url));
@@ -269,6 +271,55 @@ async function serveEnterprise(req, res, url, host) {
   return true;
 }
 
+
+async function serveGuardian(req, res, url, host) {
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
+    json(res, 405, { error: 'method_not_allowed', service: 'neo-guardian' });
+    return true;
+  }
+  if (url.pathname === '/health') {
+    json(res, 200, { ok: true, service: 'neo-guardian', mode: 'DEFENSIVE_PUBLIC_PRODUCTION', host, privilegedDeviceActions: false });
+    return true;
+  }
+  if (url.pathname === '/api') {
+    json(res, 200, {
+      service: 'neo-guardian',
+      name: 'NEO Guardian',
+      role: 'mobile-defense-center',
+      mode: 'DEFENSIVE_PUBLIC_PRODUCTION',
+      version: '/version.json',
+      founderIdentity: '/api/identity/founder.json',
+      privilegedDeviceActions: 'USER_CONTROLLED_ANDROID_SETTINGS_ONLY',
+      ui: 'https://guardian.holytemples.org/'
+    });
+    return true;
+  }
+  if (url.pathname === '/api/identity/founder.json') {
+    const served = await serveFile(req, res, FOUNDER_IDENTITY_FILE, 'application/json; charset=utf-8');
+    if (!served) json(res, 500, { error: 'guardian_identity_unavailable' });
+    return true;
+  }
+  const files = {
+    '/': ['index.html', 'text/html; charset=utf-8'],
+    '/ui': ['index.html', 'text/html; charset=utf-8'],
+    '/index.html': ['index.html', 'text/html; charset=utf-8'],
+    '/privacy': ['privacy.html', 'text/html; charset=utf-8'],
+    '/privacy.html': ['privacy.html', 'text/html; charset=utf-8'],
+    '/terms': ['terms.html', 'text/html; charset=utf-8'],
+    '/terms.html': ['terms.html', 'text/html; charset=utf-8'],
+    '/version.json': ['version.json', 'application/json; charset=utf-8']
+  };
+  const entry = files[url.pathname];
+  if (!entry) {
+    json(res, 404, { error: 'not_found', service: 'neo-guardian', path: url.pathname });
+    return true;
+  }
+  const [relativePath, contentType] = entry;
+  const served = await serveFile(req, res, resolve(GUARDIAN_ROOT, relativePath), contentType);
+  if (!served) json(res, 500, { error: 'neo_guardian_asset_unavailable', path: relativePath });
+  return true;
+}
+
 export async function serveProductStatic(req, res, url, host) {
   if (host === 'relations.holytemples.org') return serveRelations(req, res, url, host);
   if (host === 'neofx.holytemples.org') return serveExchange(req, res, url, host);
@@ -276,5 +327,6 @@ export async function serveProductStatic(req, res, url, host) {
   if (host === 'teller.holytemples.org') return serveTeller(req, res, url, host);
   if (host === 'miner.holytemples.org') return serveMiner(req, res, url, host);
   if (host === 'enterprise.holytemples.org') return serveEnterprise(req, res, url, host);
+  if (host === 'guardian.holytemples.org') return serveGuardian(req, res, url, host);
   return false;
 }
