@@ -9,6 +9,8 @@ const TELLER_ROOT = fileURLToPath(new URL('../../public/neo-teller/', import.met
 const MINER_ROOT = fileURLToPath(new URL('../../public/neo-miner/', import.meta.url));
 const ENTERPRISE_ROOT = fileURLToPath(new URL('../../docs/neo-enterprise/', import.meta.url));
 const GUARDIAN_ROOT = fileURLToPath(new URL('../../public/guardian/', import.meta.url));
+const PACER_ROOT = fileURLToPath(new URL('../../docs/neo-pacer/', import.meta.url));
+const PACER_DATA_ROOT = fileURLToPath(new URL('../../data/neo-pacer/', import.meta.url));
 const FOUNDER_IDENTITY_FILE = fileURLToPath(new URL('../../public/api/identity/founder.json', import.meta.url));
 const ENTERPRISE_API_ROOT = fileURLToPath(new URL('../../dist/api/enterprise/', import.meta.url));
 const PLATFORM_SHELL_CSS = fileURLToPath(new URL('../../public/platform-shell.css', import.meta.url));
@@ -320,6 +322,74 @@ async function serveGuardian(req, res, url, host) {
   return true;
 }
 
+
+async function servePacer(req, res, url, host) {
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
+    json(res, 405, { error: 'method_not_allowed', service: 'neo-pacer' });
+    return true;
+  }
+  if (url.pathname === '/health') {
+    json(res, 200, { ok: true, service: 'neo-pacer', mode: 'PUBLIC_READ_ONLY', host, sourceOfTruth: 'neo-system/data/neo-pacer' });
+    return true;
+  }
+  if (url.pathname === '/api') {
+    json(res, 200, {
+      service: 'neo-pacer',
+      name: 'NEO-PACER',
+      role: 'public-tribunal-records',
+      mode: 'PUBLIC_READ_ONLY',
+      cases: '/data/neo-pacer/cases.json',
+      evidence: '/data/neo-pacer/evidence.json',
+      titleChain: '/data/neo-pacer/title-chain.json',
+      externalJurisdictionCreated: false,
+      ui: 'https://pacer.holytemples.org/'
+    });
+    return true;
+  }
+  if (url.pathname === '/' || url.pathname === '/ui' || url.pathname === '/index.html') {
+    const served = await serveFile(req, res, resolve(PACER_ROOT, 'index.html'), 'text/html; charset=utf-8');
+    if (!served) json(res, 500, { error: 'neo_pacer_ui_unavailable' });
+    return true;
+  }
+  if (url.pathname === '/styles.css') return serveFile(req, res, resolve(PACER_ROOT, 'styles.css'), 'text/css; charset=utf-8');
+  if (url.pathname === '/app.js') {
+    try {
+      let body = await readFile(resolve(PACER_ROOT, 'app.js'), 'utf8');
+      body = body.replace(
+        "const RAW='https://raw.githubusercontent.com/Shemsizedek/neo-system/main/data/neo-pacer';",
+        "const RAW='/data/neo-pacer';"
+      );
+      res.writeHead(200, {
+        'content-type': 'text/javascript; charset=utf-8',
+        'cache-control': 'no-store',
+        'x-content-type-options': 'nosniff',
+        'referrer-policy': 'strict-origin-when-cross-origin'
+      });
+      if (req.method === 'HEAD') return res.end();
+      res.end(body);
+      return true;
+    } catch (error) {
+      if (error?.code === 'ENOENT') {
+        json(res, 500, { error: 'neo_pacer_app_unavailable' });
+        return true;
+      }
+      throw error;
+    }
+  }
+  if (url.pathname.startsWith('/data/neo-pacer/')) {
+    const name = url.pathname.slice('/data/neo-pacer/'.length);
+    if (!/^[a-z0-9-]+\.json$/i.test(name)) {
+      json(res, 400, { error: 'invalid_path', service: 'neo-pacer' });
+      return true;
+    }
+    const served = await serveFile(req, res, resolve(PACER_DATA_ROOT, name), 'application/json; charset=utf-8');
+    if (!served) json(res, 404, { error: 'not_found', service: 'neo-pacer', path: url.pathname });
+    return true;
+  }
+  json(res, 404, { error: 'not_found', service: 'neo-pacer', path: url.pathname });
+  return true;
+}
+
 export async function serveProductStatic(req, res, url, host) {
   if (host === 'relations.holytemples.org') return serveRelations(req, res, url, host);
   if (host === 'neofx.holytemples.org') return serveExchange(req, res, url, host);
@@ -328,5 +398,6 @@ export async function serveProductStatic(req, res, url, host) {
   if (host === 'miner.holytemples.org') return serveMiner(req, res, url, host);
   if (host === 'enterprise.holytemples.org') return serveEnterprise(req, res, url, host);
   if (host === 'guardian.holytemples.org') return serveGuardian(req, res, url, host);
+  if (host === 'pacer.holytemples.org') return servePacer(req, res, url, host);
   return false;
 }
