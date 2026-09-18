@@ -30,7 +30,10 @@ jobs:
       BACKEND_NAME: neo-edge-backend
       URL_MAP_NAME: neo-edge-url-map
       CERT_NAME: neo-edge-managed-cert
-      CERT_ROTATION_NAME: neo-edge-managed-cert-nvsn
+      CERT_MAP_NAME: neo-edge-certificate-map
+      CERT_MAP_ENTRY_NAME: neo-edge-wildcard-entry
+      CERT_MANAGER_CERT_NAME: neo-edge-holytemples-wildcard
+      DNS_AUTH_NAME: neo-edge-holytemples-dns-auth
       RELATIONS_CERT_NAME: neo-edge-relations-cert
       FINANCE_CERT_NAME: neo-edge-finance-cert
       TELLER_CERT_NAME: neo-edge-teller-cert
@@ -126,38 +129,54 @@ jobs:
               --quiet
           fi
 
-      - name: Ensure Google-managed certificates
+      - name: Prepare Certificate Manager wildcard TLS
         run: |
           set -euo pipefail
-          DOMAINS='neo.holytemples.org,router.holytemples.org,algo.holytemples.org,prime.holytemples.org,pay.holytemples.org,neobank.holytemples.org,hub.holytemples.org,counter.holytemples.org,wire.holytemples.org,neogram.holytemples.org,neofx.holytemples.org,scan.holytemples.org,school.holytemples.org,library.holytemples.org,book.holytemples.org,neopads.holytemples.org,neopass.holytemples.org,neovision.holytemples.org,noogle.holytemples.org,omnitrix.holytemples.org,neodash.holytemples.org,nomni.holytemples.org,wallet.holytemples.org,treasury.holytemples.org,nvsn.holytemples.org'
-          if ! gcloud compute ssl-certificates describe "$CERT_ROTATION_NAME" --global --project="$GCP_PROJECT_ID" >/dev/null 2>&1; then
-            echo "::notice::Creating additive replacement certificate $CERT_ROTATION_NAME; the active $CERT_NAME remains attached until replacement activation."
-            gcloud compute ssl-certificates create "$CERT_ROTATION_NAME" --domains="$DOMAINS" --global --project="$GCP_PROJECT_ID" --quiet
+          gcloud services enable certificatemanager.googleapis.com --project="$GCP_PROJECT_ID" --quiet
+
+          if ! gcloud certificate-manager dns-authorizations describe "$DNS_AUTH_NAME" --location=global --project="$GCP_PROJECT_ID" >/dev/null 2>&1; then
+            gcloud certificate-manager dns-authorizations create "$DNS_AUTH_NAME" \
+              --domain=holytemples.org --location=global --project="$GCP_PROJECT_ID"
           fi
 
-          ROTATION_STATUS="$(gcloud compute ssl-certificates describe "$CERT_ROTATION_NAME" --global --project="$GCP_PROJECT_ID" --format='value(managed.status)')"
-          echo "Replacement certificate status: $ROTATION_STATUS"
-          if [ "$ROTATION_STATUS" != "ACTIVE" ]; then
-            echo "::error::Replacement certificate is not ACTIVE yet. Existing certificate/proxy attachments remain unchanged."
-            exit 1
+          echo '### Certificate Manager DNS authorization' >> "$GITHUB_STEP_SUMMARY"
+          gcloud certificate-manager dns-authorizations describe "$DNS_AUTH_NAME" \
+            --location=global --project="$GCP_PROJECT_ID" \
+            --format='yaml(dnsResourceRecord)' >> "$GITHUB_STEP_SUMMARY"
+
+          echo "::notice::DNS authorization must be published at the authoritative DNS provider before wildcard certificate provisioning can complete."
+
+          if ! gcloud certificate-manager certificates describe "$CERT_MANAGER_CERT_NAME" --location=global --project="$GCP_PROJECT_ID" >/dev/null 2>&1; then
+            gcloud certificate-manager certificates create "$CERT_MANAGER_CERT_NAME" \
+              --domains='*.holytemples.org' \
+              --dns-authorizations="$DNS_AUTH_NAME" \
+              --location=global --project="$GCP_PROJECT_ID"
           fi
-          if ! gcloud compute ssl-certificates describe "$RELATIONS_CERT_NAME" --global --project="$GCP_PROJECT_ID" >/dev/null 2>&1; then
-            gcloud compute ssl-certificates create "$RELATIONS_CERT_NAME" --domains='relations.holytemples.org' --global --project="$GCP_PROJECT_ID" --quiet
+
+          CERT_STATE="$(gcloud certificate-manager certificates describe "$CERT_MANAGER_CERT_NAME" --location=global --project="$GCP_PROJECT_ID" --format='value(managed.state)')"
+          echo "Certificate Manager wildcard state: $CERT_STATE"
+          if [ "$CERT_STATE" != "ACTIVE" ]; then
+            echo "::notice::Wildcard certificate is not ACTIVE yet. Existing Compute Engine certificates and HTTPS proxy remain unchanged."
+            exit 0
           fi
-          if ! gcloud compute ssl-certificates describe "$FINANCE_CERT_NAME" --global --project="$GCP_PROJECT_ID" >/dev/null 2>&1; then
-            gcloud compute ssl-certificates create "$FINANCE_CERT_NAME" --domains='finance.holytemples.org' --global --project="$GCP_PROJECT_ID" --quiet
+
+          if ! gcloud certificate-manager maps describe "$CERT_MAP_NAME" --location=global --project="$GCP_PROJECT_ID" >/dev/null 2>&1; then
+            gcloud certificate-manager maps create "$CERT_MAP_NAME" --location=global --project="$GCP_PROJECT_ID"
           fi
-          if ! gcloud compute ssl-certificates describe "$TELLER_CERT_NAME" --global --project="$GCP_PROJECT_ID" >/dev/null 2>&1; then
-            gcloud compute ssl-certificates create "$TELLER_CERT_NAME" --domains='teller.holytemples.org' --global --project="$GCP_PROJECT_ID" --quiet
+          if ! gcloud certificate-manager maps entries describe "$CERT_MAP_ENTRY_NAME" --map="$CERT_MAP_NAME" --location=global --project="$GCP_PROJECT_ID" >/dev/null 2>&1; then
+            gcloud certificate-manager maps entries create "$CERT_MAP_ENTRY_NAME" \
+              --map="$CERT_MAP_NAME" \
+              --hostname='*.holytemples.org' \
+              --certificates="$CERT_MANAGER_CERT_NAME" \
+              --location=global --project="$GCP_PROJECT_ID"
           fi
+
       - name: Create or update HTTPS proxy and forwarding rule
         run: |
           set -euo pipefail
-          CERTS="$CERT_ROTATION_NAME,$RELATIONS_CERT_NAME,$FINANCE_CERT_NAME,$TELLER_CERT_NAME"
           if ! gcloud compute target-https-proxies describe "$HTTPS_PROXY_NAME" --project="$GCP_PROJECT_ID" >/dev/null 2>&1; then
             gcloud compute target-https-proxies create "$HTTPS_PROXY_NAME" \
               --url-map="$URL_MAP_NAME" \
-              --ssl-certificates="$CERTS" \
               --project="$GCP_PROJECT_ID" \
               --quiet
           else
