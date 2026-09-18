@@ -171,6 +171,11 @@ jobs:
               --location=global --project="$GCP_PROJECT_ID"
           fi
 
+          echo "::notice::Wildcard certificate is ACTIVE; attaching Certificate Manager map to the existing HTTPS proxy."
+          gcloud compute target-https-proxies update "$HTTPS_PROXY_NAME" \
+            --certificate-map="$CERT_MAP_NAME" \
+            --project="$GCP_PROJECT_ID" --quiet
+
       - name: Create or update HTTPS proxy and forwarding rule
         run: |
           set -euo pipefail
@@ -221,7 +226,7 @@ jobs:
             echo '### NEO Edge DNS cutover target'
             echo
             echo "Shared edge IPv4: **${NEO_EDGE_GLOBAL_IP}**"
-            echo '- NVSN is consolidated onto the primary NEO Edge managed certificate with the existing NEO hosts.'
+            echo '- NVSN TLS is served by the Certificate Manager wildcard map once its managed certificate is ACTIVE.'
             echo '- `relations.holytemples.org` uses its dedicated managed certificate.'
             echo '- `finance.holytemples.org` uses its dedicated managed certificate.'
             echo '- `teller.holytemples.org` should resolve to the same IPv4 for its dedicated managed certificate to activate.'
