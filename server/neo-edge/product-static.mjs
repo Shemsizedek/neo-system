@@ -323,7 +323,7 @@ async function serveGuardian(req, res, url, host) {
 }
 
 
-async function servePacer(req, res, url, host) {
+async function servePacer(req, res, url, host, prefix = '') {
   if (req.method !== 'GET' && req.method !== 'HEAD') {
     json(res, 405, { error: 'method_not_allowed', service: 'neo-pacer' });
     return true;
@@ -342,7 +342,7 @@ async function servePacer(req, res, url, host) {
       evidence: '/data/neo-pacer/evidence.json',
       titleChain: '/data/neo-pacer/title-chain.json',
       externalJurisdictionCreated: false,
-      ui: 'https://pacer.holytemples.org/'
+      ui: prefix ? `https://neo.holytemples.org${prefix}/` : 'https://pacer.holytemples.org/'
     });
     return true;
   }
@@ -357,7 +357,7 @@ async function servePacer(req, res, url, host) {
       let body = await readFile(resolve(PACER_ROOT, 'app.js'), 'utf8');
       body = body.replace(
         "const RAW='https://raw.githubusercontent.com/Shemsizedek/neo-system/main/data/neo-pacer';",
-        "const RAW='/data/neo-pacer';"
+        `const RAW='${prefix}/data/neo-pacer';`
       );
       res.writeHead(200, {
         'content-type': 'text/javascript; charset=utf-8',
@@ -391,6 +391,16 @@ async function servePacer(req, res, url, host) {
 }
 
 export async function serveProductStatic(req, res, url, host) {
+  if (host === 'neo.holytemples.org' && url.pathname === '/pacer') {
+    res.writeHead(308, { location: '/pacer/', 'cache-control': 'no-store' });
+    res.end();
+    return true;
+  }
+  if (host === 'neo.holytemples.org' && url.pathname.startsWith('/pacer/')) {
+    const inner = new URL(url.toString());
+    inner.pathname = url.pathname.slice('/pacer'.length) || '/';
+    return servePacer(req, res, inner, host, '/pacer');
+  }
   if (host === 'relations.holytemples.org') return serveRelations(req, res, url, host);
   if (host === 'neofx.holytemples.org') return serveExchange(req, res, url, host);
   if (host === 'finance.holytemples.org') return serveFinance(req, res, url, host);
