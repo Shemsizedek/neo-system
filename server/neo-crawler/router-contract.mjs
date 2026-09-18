@@ -14,7 +14,8 @@ export function createCrawlerRouteEvent(envelope, targets = Object.values(CRAWLE
     type: 'neo.crawler.ingested',
     schemaVersion: '1.1',
     createdAt: new Date().toISOString(),
-    source: { service: envelope.service, version: envelope.version, adapter: envelope.adapter },
+    source: 'neo-crawler',
+    sourceMeta: { service: envelope.service, version: envelope.version, adapter: envelope.adapter },
     governance: envelope.classification,
     targets: [...new Set(targets)],
     payload: envelope
