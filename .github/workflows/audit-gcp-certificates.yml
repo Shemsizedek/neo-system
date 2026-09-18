@@ -2,8 +2,9 @@ name: Audit GCP SSL Certificate Inventory
 
 on:
   workflow_dispatch:
+  # Temporary branch-trigger path for NVSN certificate inventory.
   push:
-    branches: [main]
+    branches: [main, ops/audit-gcp-certs-nvsn]
     paths:
       - '.github/workflows/audit-gcp-certificates.yml'
 
