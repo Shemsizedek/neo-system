@@ -1,0 +1,78 @@
+name: Provision NEO Guardian Production Edge
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/provision-neo-guardian-edge.yml'
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: neo-guardian-production-edge
+  cancel-in-progress: false
+
+jobs:
+  provision:
+    runs-on: ubuntu-latest
+    environment: holytemples-production
+    timeout-minutes: 20
+    env:
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID || secrets.GCP_PROJECT_ID }}
+      GCP_WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER || secrets.GCP_WIF_PROVIDER }}
+      GCP_CLOUD_RUN_SERVICE_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_SERVICE_ACCOUNT || secrets.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+      HTTPS_PROXY_NAME: neo-edge-https-proxy
+      IP_NAME: neo-edge-global-ip
+      GUARDIAN_CERT_NAME: neo-edge-guardian-cert
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@v3
+
+      - name: Ensure Guardian managed certificate
+        run: |
+          set -euo pipefail
+          if ! gcloud compute ssl-certificates describe "$GUARDIAN_CERT_NAME" --global --project="$GCP_PROJECT_ID" >/dev/null 2>&1; then
+            gcloud compute ssl-certificates create "$GUARDIAN_CERT_NAME" \
+              --domains='guardian.holytemples.org' \
+              --global \
+              --project="$GCP_PROJECT_ID" \
+              --quiet
+          fi
+
+      - name: Attach Guardian certificate without dropping existing certificates
+        run: |
+          set -euo pipefail
+          mapfile -t current < <(gcloud compute target-https-proxies describe "$HTTPS_PROXY_NAME" \
+            --project="$GCP_PROJECT_ID" \
+            --format='value(sslCertificates)' | tr ';' '\n' | sed '/^$/d')
+          certs=()
+          seen_guardian=0
+          for cert in "${current[@]}"; do
+            name="${cert##*/}"
+            certs+=("$name")
+            [[ "$name" == "$GUARDIAN_CERT_NAME" ]] && seen_guardian=1
+          done
+          if [[ "$seen_guardian" -eq 0 ]]; then certs+=("$GUARDIAN_CERT_NAME"); fi
+          joined="$(IFS=,; echo "${certs[*]}")"
+          test -n "$joined"
+          gcloud compute target-https-proxies update "$HTTPS_PROXY_NAME" \
+            --ssl-certificates="$joined" \
+            --project="$GCP_PROJECT_ID" \
+            --quiet
+
+      - name: Report DNS activation target
+        run: |
+          set -euo pipefail
+          EDGE_IP="$(gcloud compute addresses describe "$IP_NAME" --global --project="$GCP_PROJECT_ID" --format='value(address)')"
+          test -n "$EDGE_IP"
+          echo "Guardian host: guardian.holytemples.org" >> "$GITHUB_STEP_SUMMARY"
+          echo "DNS target: $EDGE_IP" >> "$GITHUB_STEP_SUMMARY"
+          echo "No DNS mutation is performed by this workflow." >> "$GITHUB_STEP_SUMMARY"
