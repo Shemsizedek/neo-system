@@ -30,6 +30,7 @@ jobs:
       - uses: google-github-actions/setup-gcloud@v3
 
       - name: Inventory global SSL certificates and proxy attachments
+        # NVSN TLS capacity audit; no infrastructure mutation.
         run: |
           set -euo pipefail
           echo '### Global SSL certificate inventory' >> "$GITHUB_STEP_SUMMARY"
