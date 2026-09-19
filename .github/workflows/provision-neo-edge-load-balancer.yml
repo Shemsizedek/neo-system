@@ -129,6 +129,16 @@ jobs:
               --quiet
           fi
 
+      - name: Grant Certificate Manager editor to deployment identity
+        run: |
+          set -euo pipefail
+          DEPLOY_PRINCIPAL="serviceAccount:${{ vars.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}"
+          gcloud projects add-iam-policy-binding "$GCP_PROJECT_ID" \
+            --member="$DEPLOY_PRINCIPAL" \
+            --role='roles/certificatemanager.editor' \
+            --condition=None \
+            --quiet
+
       - name: Prepare Certificate Manager wildcard TLS
         run: |
           set -euo pipefail
