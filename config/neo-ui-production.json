@@ -1,5 +1,5 @@
 {
-  "version": "1.1.0",
+  "version": "1.1.1",
   "domainRoot": "holytemples.org",
   "policy": {
     "tlsRequired": true,
@@ -37,10 +37,12 @@
     {"id":"world-treasury","host":"treasury.holytemples.org","kind":"treasury","access":"authenticated","uiRequired":true,"source":"server/neo-edge"},
     {"id":"world-court","host":"court.holytemples.org","kind":"tribunal-platform","access":"public-intake-authenticated-workspace","uiRequired":true,"source":"deploy/world-court"},
     {"id":"egov","host":"egov.holytemples.org","kind":"government-platform","access":"public-entry-authenticated-routes","uiRequired":true,"source":"server/neo-platform-api"},
-    {"id":"neo-society","host":"society.holytemples.org","kind":"lifestyle-platform","access":"public","uiRequired":true,"source":"holytemples.org"},
-    {"id":"neo-lifestyle","host":"lifestyle.holytemples.org","kind":"ambassador-platform","access":"public","uiRequired":true,"source":"holytemples.org"},
     {"id":"nu-university","host":"university.holytemples.org","kind":"education","access":"public-and-role-gated","uiRequired":true,"source":"holytemples.org"},
     {"id":"neo-oracle","host":"oracle.holytemples.org","kind":"synthetic-intelligence","access":"authenticated","uiRequired":true,"source":"core"}
+  ],
+  "redirectSurfaces": [
+    {"id":"neo-society","host":"society.holytemples.org","kind":"redirect","target":"https://neo.dnnr.io/","source":"server/neo-society-dnnr-proxy"},
+    {"id":"neo-lifestyle","host":"lifestyle.holytemples.org","kind":"redirect","target":"https://neo.dnnr.io/neo/ambassador-application","source":"server/neo-society-dnnr-proxy"}
   ],
   "plannedSurfaces": [
     {"id":"neo-teller","host":"teller.holytemples.org","kind":"atm-pos","source":"server/neo-teller-backend","originStatus":"needs-runtime-binding"},
