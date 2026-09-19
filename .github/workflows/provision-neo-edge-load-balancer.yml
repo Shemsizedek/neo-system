@@ -129,26 +129,17 @@ jobs:
               --quiet
           fi
 
-      - name: Grant Certificate Manager editor to authenticated deployment identity
+      - name: Verify Certificate Manager IAM
         run: |
           set -euo pipefail
-          ACTIVE_ACCOUNT="$(gcloud auth list --filter=status:ACTIVE --format='value(account)' | head -n1)"
-          if [ -z "$ACTIVE_ACCOUNT" ]; then
-            echo "::error::No active Google Cloud account was resolved from Workload Identity Federation."
+          member="serviceAccount:${GCP_CLOUD_RUN_SERVICE_ACCOUNT}"
+          if ! gcloud projects get-iam-policy "$GCP_PROJECT_ID" \
+            --flatten='bindings[].members' \
+            --filter="bindings.role:roles/certificatemanager.editor AND bindings.members:${member}" \
+            --format='value(bindings.role)' | grep -qx 'roles/certificatemanager.editor'; then
+            echo "::error::The GitHub deployment service account does not have roles/certificatemanager.editor. Grant that role once using an IAM administrator, then rerun. The deployment identity must not self-grant project IAM."
             exit 1
           fi
-          case "$ACTIVE_ACCOUNT" in
-            *.gserviceaccount.com) DEPLOY_PRINCIPAL="serviceAccount:$ACTIVE_ACCOUNT" ;;
-            *)
-              echo "::error::Authenticated principal is not a service account; refusing to modify IAM automatically."
-              exit 1
-              ;;
-          esac
-          gcloud projects add-iam-policy-binding "$GCP_PROJECT_ID" \
-            --member="$DEPLOY_PRINCIPAL" \
-            --role='roles/certificatemanager.editor' \
-            --condition=None \
-            --quiet
 
       - name: Prepare Certificate Manager wildcard TLS
         run: |
