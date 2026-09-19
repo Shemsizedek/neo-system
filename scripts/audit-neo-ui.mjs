@@ -17,6 +17,18 @@ function classifyBody(text = '') {
   };
 }
 
+async function resolveHost(host, result) {
+  try {
+    const records = await lookup(host, { all: true });
+    result.dns = records.length > 0;
+    result.addresses = records.map(r => r.address);
+    return result.dns;
+  } catch (error) {
+    result.issue = `DNS unresolved: ${error.code || error.message}`;
+    return false;
+  }
+}
+
 async function audit(surface) {
   const result = {
     id: surface.id,
@@ -31,14 +43,7 @@ async function audit(surface) {
     issue: null
   };
 
-  try {
-    const records = await lookup(surface.host, { all: true });
-    result.dns = records.length > 0;
-    result.addresses = records.map(r => r.address);
-  } catch (error) {
-    result.issue = `DNS unresolved: ${error.code || error.message}`;
-    return result;
-  }
+  if (!(await resolveHost(surface.host, result))) return result;
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -78,13 +83,58 @@ async function audit(surface) {
   return result;
 }
 
-async function runPool(items) {
+async function auditRedirect(surface) {
+  const result = {
+    id: surface.id,
+    host: surface.host,
+    kind: 'redirect',
+    target: surface.target,
+    dns: false,
+    https: false,
+    status: null,
+    location: null,
+    redirectOk: false,
+    issue: null
+  };
+
+  if (!(await resolveHost(surface.host, result))) return result;
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(`https://${surface.host}/`, {
+      redirect: 'manual',
+      signal: controller.signal,
+      headers: { 'user-agent': 'NEO-UI-Auditor/1.0', accept: 'text/html,*/*;q=0.5' }
+    });
+    result.https = true;
+    result.status = response.status;
+    result.location = response.headers.get('location');
+
+    const expected = new URL(surface.target).href;
+    if (response.status >= 300 && response.status < 400 && result.location) {
+      const actual = new URL(result.location, `https://${surface.host}/`).href;
+      result.redirectOk = actual === expected;
+    }
+
+    if (!result.redirectOk) {
+      result.issue = `Redirect contract failed: HTTP ${response.status}, location=${result.location || 'none'}`;
+    }
+  } catch (error) {
+    result.issue = `HTTPS redirect failed: ${error.name === 'AbortError' ? 'timeout' : error.message}`;
+  } finally {
+    clearTimeout(timer);
+  }
+  return result;
+}
+
+async function runPool(items, fn = audit) {
   const out = [];
   let index = 0;
   async function worker() {
     while (index < items.length) {
       const item = items[index++];
-      out.push(await audit(item));
+      out.push(await fn(item));
       await delay(25);
     }
   }
@@ -93,7 +143,9 @@ async function runPool(items) {
 }
 
 const results = await runPool(matrix.surfaces);
+const redirectResults = await runPool(matrix.redirectSurfaces || [], auditRedirect);
 const failed = results.filter(r => r.issue);
+const redirectFailed = redirectResults.filter(r => r.issue);
 const uiFailures = failed.filter(r => r.uiRequired);
 
 console.log(JSON.stringify({
@@ -103,9 +155,13 @@ console.log(JSON.stringify({
     surfaces: results.length,
     healthy: results.length - failed.length,
     failed: failed.length,
-    uiFailures: uiFailures.length
+    uiFailures: uiFailures.length,
+    redirects: redirectResults.length,
+    healthyRedirects: redirectResults.length - redirectFailed.length,
+    redirectFailures: redirectFailed.length
   },
-  results
+  results,
+  redirectResults
 }, null, 2));
 
-if (failed.length) process.exitCode = 1;
+if (failed.length || redirectFailed.length) process.exitCode = 1;
