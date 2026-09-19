@@ -4,6 +4,13 @@ on:
   workflow_dispatch:
   schedule:
     - cron: '17 * * * *'
+  push:
+    branches:
+      - main
+    paths:
+      - 'config/neo-ui-production.json'
+      - 'scripts/audit-neo-ui.mjs'
+      - '.github/workflows/audit-neo-ui.yml'
 
 permissions:
   contents: read
