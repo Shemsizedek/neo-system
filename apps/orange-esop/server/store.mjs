@@ -1,5 +1,6 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
+import { randomUUID } from 'node:crypto';
 
 const EMPTY = Object.freeze({
   participants: {},
@@ -14,6 +15,8 @@ const EMPTY = Object.freeze({
 });
 
 export class JsonEsopStore {
+  #queue = Promise.resolve();
+
   constructor({ file = process.env.ORANGE_ESOP_STORE_FILE || path.resolve('.data/orange-esop.json') } = {}) {
     this.file = file;
   }
@@ -28,22 +31,44 @@ export class JsonEsopStore {
 
   async #write(data) {
     await fs.mkdir(path.dirname(this.file), { recursive: true });
-    const tmp = `${this.file}.tmp`;
+    const tmp = `${this.file}.${randomUUID()}.tmp`;
     await fs.writeFile(tmp, JSON.stringify(data, null, 2));
     await fs.rename(tmp, this.file);
   }
 
+  async #mutate(fn) {
+    const operation = this.#queue.then(async () => {
+      const data = await this.#read();
+      const result = await fn(data);
+      await this.#write(data);
+      return result;
+    });
+    this.#queue = operation.catch(() => {});
+    return operation;
+  }
+
   async snapshot() { return this.#read(); }
 
-  async upsertParticipant(participant) {
+  async summary() {
     const data = await this.#read();
-    data.participants[participant.participantId] = {
-      ...(data.participants[participant.participantId] || {}),
-      ...participant,
-      updatedAt: new Date().toISOString()
+    return {
+      participantCount: Object.keys(data.participants || {}).length,
+      stewardshipEntries: (data.stewardship || []).length,
+      reconciliation: data.reconciliation || null,
+      auditCount: (data.audit || []).length
     };
-    await this.#write(data);
-    return data.participants[participant.participantId];
+  }
+
+  async upsertParticipant(participant) {
+    return this.#mutate(async data => {
+      data.participants[participant.participantId] = {
+        ...(data.participants[participant.participantId] || {}),
+        ...participant,
+        updatedAt: new Date().toISOString()
+      };
+      data.audit.push({ eventType:'PARTICIPANT_UPSERTED', participantId:participant.participantId, at:new Date().toISOString() });
+      return data.participants[participant.participantId];
+    });
   }
 
   async getParticipant(id) {
@@ -57,34 +82,35 @@ export class JsonEsopStore {
   }
 
   async addStewardship(entry) {
-    const data = await this.#read();
-    data.stewardship.push(entry);
-    data.audit.push({ eventType: 'STEWARDSHIP_RECORDED', participantId: entry.participantId, at: new Date().toISOString() });
-    await this.#write(data);
-    return entry;
+    return this.#mutate(async data => {
+      if (data.stewardship.some(row => row.entryId === entry.entryId)) throw new Error('duplicate_stewardship_entry');
+      data.stewardship.push(entry);
+      data.audit.push({ eventType:'STEWARDSHIP_RECORDED', participantId:entry.participantId, entryId:entry.entryId, at:new Date().toISOString() });
+      return entry;
+    });
   }
 
   async saveReconciliation(run) {
-    const data = await this.#read();
-    data.reconciliation = run;
-    data.audit.push({ eventType: 'RECONCILIATION_RUN', status: run.status, at: new Date().toISOString() });
-    await this.#write(data);
-    return run;
+    return this.#mutate(async data => {
+      data.reconciliation = run;
+      data.audit.push({ eventType:'RECONCILIATION_RUN', status:run.status, at:new Date().toISOString() });
+      return run;
+    });
   }
 
   async saveCertificate(certificate) {
-    const data = await this.#read();
-    data.certificates[certificate.certificateId] = certificate;
-    data.audit.push({ eventType: 'CERTIFICATE_ISSUED', participantId: certificate.participantId, at: new Date().toISOString() });
-    await this.#write(data);
-    return certificate;
+    return this.#mutate(async data => {
+      data.certificates[certificate.certificateId] = certificate;
+      data.audit.push({ eventType:'CERTIFICATE_ISSUED', participantId:certificate.participantId, at:new Date().toISOString() });
+      return certificate;
+    });
   }
 
   async saveStatement(statement) {
-    const data = await this.#read();
-    data.statements[statement.statementId] = statement;
-    data.audit.push({ eventType: 'STATEMENT_GENERATED', participantId: statement.participantId, at: new Date().toISOString() });
-    await this.#write(data);
-    return statement;
+    return this.#mutate(async data => {
+      data.statements[statement.statementId] = statement;
+      data.audit.push({ eventType:'STATEMENT_GENERATED', participantId:statement.participantId, at:new Date().toISOString() });
+      return statement;
+    });
   }
 }
