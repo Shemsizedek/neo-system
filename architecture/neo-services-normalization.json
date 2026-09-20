@@ -1,5 +1,5 @@
 {
-  "version": "1.1.2",
+  "version": "1.1.3",
   "standard": "architecture/neo-services-platform.json",
   "scope": "apps-directory",
   "planes": {
@@ -8,31 +8,94 @@
     "serverApi": "discord"
   },
   "apps": [
-    {"id":"gisd"},
-    {"id":"neo-counter"},
-    {"id":"neo-dash"},
-    {"id":"neo-exchange"},
-    {"id":"neo-guardian"},
-    {"id":"neo-pads"},
-    {"id":"neo-prime"},
-    {"id":"neo-realty"},
-    {"id":"neo-relations"},
-    {"id":"neo-telegram"},
-    {"id":"neo-tv"},
-    {"id":"neopay"},
-    {"id":"neoscan"},
-    {"id":"noogle"},
-    {"id":"omnitrix-android"},
-    {"id":"omnitrix"}
+    {
+      "id": "gisd"
+    },
+    {
+      "id": "neo-counter"
+    },
+    {
+      "id": "neo-dash"
+    },
+    {
+      "id": "neo-exchange"
+    },
+    {
+      "id": "neo-guardian"
+    },
+    {
+      "id": "neo-pads"
+    },
+    {
+      "id": "neo-prime"
+    },
+    {
+      "id": "neo-realty"
+    },
+    {
+      "id": "neo-relations"
+    },
+    {
+      "id": "neo-telegram"
+    },
+    {
+      "id": "neo-tv"
+    },
+    {
+      "id": "neopay"
+    },
+    {
+      "id": "neoscan"
+    },
+    {
+      "id": "noogle"
+    },
+    {
+      "id": "omnitrix-android"
+    },
+    {
+      "id": "omnitrix"
+    },
+    {
+      "id": "orange-esop"
+    }
   ],
   "legacyStandaloneDeployments": [
-    {"workflow":".github/workflows/neo-counter-cloudflare.yml","service":"neo-counter","status":"disabled"},
-    {"workflow":".github/workflows/neopay-cloudflare.yml","service":"neopay","status":"disabled"},
-    {"workflow":".github/workflows/neo-enterprise-cloudflare.yml","service":"neo-enterprise","status":"disabled"},
-    {"workflow":".github/workflows/neo-enterprise-federation-cloudflare.yml","service":"neo-enterprise-federation","status":"disabled"},
-    {"workflow":".github/workflows/neo-government-cloudflare.yml","service":"neo-government","status":"disabled"},
-    {"workflow":".github/workflows/neo-pacer-cloudflare.yml","service":"neo-pacer","status":"disabled"},
-    {"workflow":".github/workflows/neoscan-statements-cloudflare.yml","service":"neoscan-statements","status":"disabled"}
+    {
+      "workflow": ".github/workflows/neo-counter-cloudflare.yml",
+      "service": "neo-counter",
+      "status": "disabled"
+    },
+    {
+      "workflow": ".github/workflows/neopay-cloudflare.yml",
+      "service": "neopay",
+      "status": "disabled"
+    },
+    {
+      "workflow": ".github/workflows/neo-enterprise-cloudflare.yml",
+      "service": "neo-enterprise",
+      "status": "disabled"
+    },
+    {
+      "workflow": ".github/workflows/neo-enterprise-federation-cloudflare.yml",
+      "service": "neo-enterprise-federation",
+      "status": "disabled"
+    },
+    {
+      "workflow": ".github/workflows/neo-government-cloudflare.yml",
+      "service": "neo-government",
+      "status": "disabled"
+    },
+    {
+      "workflow": ".github/workflows/neo-pacer-cloudflare.yml",
+      "service": "neo-pacer",
+      "status": "disabled"
+    },
+    {
+      "workflow": ".github/workflows/neoscan-statements-cloudflare.yml",
+      "service": "neoscan-statements",
+      "status": "disabled"
+    }
   ],
   "pages": {
     "deploymentOwner": ".github/workflows/pages.yml",
