@@ -1,0 +1,167 @@
+name: Deploy Orange ESOP to Cloud Run
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/orange-esop/**'
+      - 'modules/orange-esop/**'
+      - 'deploy/cloudrun/orange-esop.yaml'
+      - '.github/workflows/deploy-orange-esop-cloud-run.yml'
+      - 'docs/ORANGE_ESOP_PRODUCTION_WIRING.md'
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: orange-esop-cloud-run
+  cancel-in-progress: false
+
+jobs:
+  test-and-deploy:
+    runs-on: ubuntu-latest
+    environment: holytemples-production
+    timeout-minutes: 30
+    env:
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID || secrets.GCP_PROJECT_ID }}
+      GCP_REGION: ${{ vars.GCP_REGION || secrets.GCP_REGION }}
+      GCP_WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER || secrets.GCP_WIF_PROVIDER }}
+      GCP_CLOUD_RUN_SERVICE_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_SERVICE_ACCOUNT || secrets.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+      GCP_CLOUD_RUN_RUNTIME_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_RUNTIME_ACCOUNT || secrets.GCP_CLOUD_RUN_RUNTIME_ACCOUNT }}
+      GCP_ARTIFACT_REGISTRY: ${{ vars.GCP_ARTIFACT_REGISTRY || secrets.GCP_ARTIFACT_REGISTRY }}
+      SERVICE_NAME: orange-esop
+      DOMAIN: esop.holytemples.org
+      NEG_NAME: orange-esop-neg
+      BACKEND_NAME: orange-esop-backend
+      URL_MAP_NAME: neo-edge-url-map
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Test Orange ESOP
+        run: npm run orange-esop:test
+
+      - name: Validate deployment configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in GCP_PROJECT_ID GCP_REGION GCP_WIF_PROVIDER GCP_CLOUD_RUN_SERVICE_ACCOUNT GCP_CLOUD_RUN_RUNTIME_ACCOUNT GCP_ARTIFACT_REGISTRY; do
+            test -n "${!name:-}" || { echo "::error::Missing $name"; exit 1; }
+          done
+
+      - uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+
+      - uses: google-github-actions/setup-gcloud@v3
+
+      - name: Ensure Orange ESOP role secrets exist
+        shell: bash
+        run: |
+          set -euo pipefail
+          ensure_secret() {
+            local name="$1"
+            if gcloud secrets describe "$name" --project="$GCP_PROJECT_ID" >/dev/null 2>&1; then
+              echo "$name exists"
+              return 0
+            fi
+            value="$(openssl rand -hex 32)"
+            printf '%s' "$value" | gcloud secrets create "$name"               --project="$GCP_PROJECT_ID"               --replication-policy=automatic               --data-file=- >/dev/null
+            unset value
+            echo "$name created"
+          }
+          ensure_secret orange-esop-world-chaplain-token
+          ensure_secret orange-esop-assistant-grand-sheik-token
+          ensure_secret orange-esop-secretary-token
+          ensure_secret orange-esop-treasurer-token
+          ensure_secret orange-esop-plan-administrator-token
+          ensure_secret orange-esop-trustee-token
+          ensure_secret orange-esop-auditor-token
+
+      - name: Grant runtime secret access
+        shell: bash
+        run: |
+          set -euo pipefail
+          for secret in             orange-esop-world-chaplain-token             orange-esop-assistant-grand-sheik-token             orange-esop-secretary-token             orange-esop-treasurer-token             orange-esop-plan-administrator-token             orange-esop-trustee-token             orange-esop-auditor-token; do
+            gcloud secrets add-iam-policy-binding "$secret"               --project="$GCP_PROJECT_ID"               --member="serviceAccount:$GCP_CLOUD_RUN_RUNTIME_ACCOUNT"               --role="roles/secretmanager.secretAccessor"               --quiet >/dev/null
+          done
+
+      - name: Build and push immutable image
+        env:
+          IMAGE: ${{ env.GCP_ARTIFACT_REGISTRY }}/orange-esop:${{ github.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gcloud auth configure-docker "${GCP_REGION}-docker.pkg.dev" --quiet
+          docker build -f apps/orange-esop/Dockerfile -t "$IMAGE" .
+          docker push "$IMAGE"
+
+      - name: Deploy Cloud Run service
+        env:
+          IMAGE: ${{ env.GCP_ARTIFACT_REGISTRY }}/orange-esop:${{ github.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gcloud run deploy "$SERVICE_NAME"             --project="$GCP_PROJECT_ID"             --region="$GCP_REGION"             --image="$IMAGE"             --service-account="$GCP_CLOUD_RUN_RUNTIME_ACCOUNT"             --port=8080             --allow-unauthenticated             --set-env-vars="GCP_PROJECT_ID=$GCP_PROJECT_ID,ORANGE_ESOP_STORE=firestore"             --set-secrets="ORANGE_ESOP_WORLD_CHAPLAIN_TOKEN=orange-esop-world-chaplain-token:latest,ORANGE_ESOP_ASSISTANT_GRAND_SHEIK_TOKEN=orange-esop-assistant-grand-sheik-token:latest,ORANGE_ESOP_SECRETARY_TOKEN=orange-esop-secretary-token:latest,ORANGE_ESOP_TREASURER_TOKEN=orange-esop-treasurer-token:latest,ORANGE_ESOP_PLAN_ADMINISTRATOR_TOKEN=orange-esop-plan-administrator-token:latest,ORANGE_ESOP_TRUSTEE_TOKEN=orange-esop-trustee-token:latest,ORANGE_ESOP_AUDITOR_TOKEN=orange-esop-auditor-token:latest"             --quiet
+
+      - name: Verify Cloud Run origin
+        shell: bash
+        run: |
+          set -euo pipefail
+          SERVICE_URL="$(gcloud run services describe "$SERVICE_NAME"             --project="$GCP_PROJECT_ID"             --region="$GCP_REGION"             --format='value(status.url)')"
+          test -n "$SERVICE_URL"
+          for path in /health /ready /api/esop/public-summary; do
+            code="$(curl --retry 6 --retry-delay 5 --connect-timeout 10 --max-time 30 -sS -o /tmp/orange-esop-response -w '%{http_code}' "$SERVICE_URL$path")"
+            test "$code" = 200 || { cat /tmp/orange-esop-response; echo "::error::$path returned HTTP $code"; exit 1; }
+          done
+          echo "ORANGE_ESOP_SERVICE_URL=$SERVICE_URL" >> "$GITHUB_ENV"
+
+      - name: Route production domain through NEO HTTPS load balancer
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! gcloud compute network-endpoint-groups describe "$NEG_NAME"             --region="$GCP_REGION" --project="$GCP_PROJECT_ID" >/dev/null 2>&1; then
+            gcloud compute network-endpoint-groups create "$NEG_NAME"               --region="$GCP_REGION"               --network-endpoint-type=serverless               --cloud-run-service="$SERVICE_NAME"               --project="$GCP_PROJECT_ID"               --quiet
+          fi
+          if ! gcloud compute backend-services describe "$BACKEND_NAME"             --global --project="$GCP_PROJECT_ID" >/dev/null 2>&1; then
+            gcloud compute backend-services create "$BACKEND_NAME"               --global               --load-balancing-scheme=EXTERNAL_MANAGED               --project="$GCP_PROJECT_ID"               --quiet
+          fi
+          if ! gcloud compute backend-services describe "$BACKEND_NAME"             --global --project="$GCP_PROJECT_ID" --format='json(backends)' | grep -q "$NEG_NAME"; then
+            gcloud compute backend-services add-backend "$BACKEND_NAME"               --global               --network-endpoint-group="$NEG_NAME"               --network-endpoint-group-region="$GCP_REGION"               --project="$GCP_PROJECT_ID"               --quiet
+          fi
+          gcloud compute url-maps describe "$URL_MAP_NAME" --project="$GCP_PROJECT_ID" >/dev/null
+          if ! gcloud compute url-maps describe "$URL_MAP_NAME"             --project="$GCP_PROJECT_ID"             --format='json(hostRules,pathMatchers)' | grep -q 'orange-esop-matcher'; then
+            gcloud compute url-maps add-path-matcher "$URL_MAP_NAME"               --path-matcher-name=orange-esop-matcher               --default-service="$BACKEND_NAME"               --new-hosts="$DOMAIN"               --project="$GCP_PROJECT_ID"               --quiet
+          fi
+
+      - name: Verify production domain
+        shell: bash
+        run: |
+          set -euo pipefail
+          wait_for_200() {
+            local path="$1"
+            local code=""
+            for attempt in $(seq 1 30); do
+              code="$(curl --connect-timeout 10 --max-time 30 -sS -o /tmp/esop-domain-response -w '%{http_code}' "https://$DOMAIN$path" || true)"
+              if [ "$code" = 200 ]; then
+                echo "$path returned HTTP 200 on attempt $attempt"
+                return 0
+              fi
+              echo "Waiting for domain/load-balancer propagation: $path returned HTTP ${code:-000} (attempt $attempt/30)"
+              sleep 10
+            done
+            echo "::error::$path did not return HTTP 200 after 5 minutes"
+            return 1
+          }
+          wait_for_200 /
+          wait_for_200 /health
+          wait_for_200 /ready
+          wait_for_200 /api/esop/public-summary
+          echo "Orange ESOP origin: $ORANGE_ESOP_SERVICE_URL" >> "$GITHUB_STEP_SUMMARY"
+          echo "Orange ESOP production: https://$DOMAIN/" >> "$GITHUB_STEP_SUMMARY"
