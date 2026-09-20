@@ -1,3 +1,4 @@
+export type DecimalString = string;
 export type EmployeeClass = "E1" | "E2" | "E3" | "S" | "V";
 export type EligibilityReason =
   | "NOT_EMPLOYEE"
@@ -19,6 +20,11 @@ export type VestingEvent =
 
 export type ReconciliationStatus = "PASS" | "RECONCILIATION_HOLD";
 
+export interface VestingBand {
+  minimumYears: number;
+  percent: number;
+}
+
 export interface Participant {
   participantId: string;
   legalName?: string;
@@ -36,6 +42,7 @@ export interface Participant {
 
 export interface EligibilityResult {
   participantId: string;
+  planYear: number;
   eligible: boolean;
   eligibilityDate?: string;
   nextEntryDate?: string;
@@ -45,46 +52,38 @@ export interface EligibilityResult {
 export interface AllocationInput {
   participantId: string;
   planYear: number;
-  eligibleCompensation: number;
-  totalEligibleCompensation: number;
-  contributionPool: number;
-  fairMarketValuePerShare: number;
-  tokenRatio: number;
+  eligible: true;
+  eligibleCompensation: DecimalString;
+  totalEligibleCompensation: DecimalString;
+  contributionPool: DecimalString;
+  fairMarketValuePerShare: DecimalString;
+  tokenRatio: DecimalString;
 }
 
 export interface AllocationResult {
-  allocationValue: number;
-  employerShares: number;
-  neotrustUnits: number;
+  allocationValue: DecimalString;
+  employerShares: DecimalString;
+  neotrustUnits: DecimalString;
 }
 
 export interface VestingResult {
   yearsOfService: number;
   vestingPercent: number;
-  allocatedNeotrust: number;
-  vestedNeotrust: number;
-  unvestedNeotrust: number;
+  allocatedNeotrust: DecimalString;
+  vestedNeotrust: DecimalString;
+  unvestedNeotrust: DecimalString;
 }
 
 export interface ReconciliationInput {
-  reserveUnits: number;
-  suspenseUnits: number;
-  participantUnits: number;
-  unusedAuthorizedUnits: number;
-  representedUnderlyingInterest: number;
-  documentedUnderlyingInterest: number;
+  reserveUnits: DecimalString;
+  suspenseUnits: DecimalString;
+  participantUnits: DecimalString;
+  unusedAuthorizedUnits: DecimalString;
+  representedUnderlyingInterest: DecimalString;
+  documentedUnderlyingInterest: DecimalString;
 }
 
 export interface ReconciliationResult {
   status: ReconciliationStatus;
   errors: string[];
 }
-
-export const DEFAULT_VESTING_SCHEDULE = [
-  { minimumYears: 6, percent: 100 },
-  { minimumYears: 5, percent: 80 },
-  { minimumYears: 4, percent: 60 },
-  { minimumYears: 3, percent: 40 },
-  { minimumYears: 2, percent: 20 },
-  { minimumYears: 0, percent: 0 },
-] as const;
