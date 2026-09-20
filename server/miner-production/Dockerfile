@@ -5,7 +5,10 @@ ENV NODE_ENV=production \
     NEO_BUILD_COMMIT_SHA=${NEO_BUILD_COMMIT_SHA}
 LABEL org.opencontainers.image.revision=${NEO_BUILD_COMMIT_SHA}
 COPY package.json package-lock.json ./
-RUN npm ci --omit=dev --ignore-scripts
+# The root application currently carries @openai/agents 0.1.x alongside Zod 4
+# through other production dependencies. npm 11 rejects that legacy peer graph
+# during a clean container install even though the lockfile is authoritative.
+RUN npm ci --omit=dev --ignore-scripts --legacy-peer-deps
 COPY server/miner-production ./server/miner-production
 RUN mkdir -p /var/lib/neo-miner && chown -R node:node /app /var/lib/neo-miner
 USER node
