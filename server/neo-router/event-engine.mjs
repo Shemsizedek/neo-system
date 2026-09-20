@@ -13,7 +13,7 @@ export const DEFAULT_EVENT_RULES=Object.freeze([
   {id:'asana-task-changed',source:'asana',type:'task.changed',priority:'normal',workerRole:'operations',objective:'Reconcile changed Asana work with active NEO Router missions.',actions:[]},
   {id:'gmail-important',source:'gmail',type:'message.important',priority:'high',workerRole:'communications',objective:'Review an important inbound message and determine the appropriate governed follow-up.',actions:[{connector:'gmail-live',type:'gmail.list',capabilities:['gmail.read']}]},
   {id:'airbyte-degraded',source:'airbyte',type:'connector.degraded',priority:'critical',workerRole:'integration',objective:'Diagnose a degraded integration and prepare fallback or remediation steps.',actions:[]},
-  {id:'neo-crawler-ingested',source:'neo-crawler',type:'neo.crawler.ingested',priority:'normal',workerRole:'intelligence',objective:'Evaluate a provenance-preserving NEO Crawler ingestion envelope and route authorized research inputs for downstream review.',actions:[]},
+  {id:'neo-crawler-ingested',source:'neo-crawler',type:'neo.crawler.ingested',priority:'normal',workerRole:'intelligence',objective:'Evaluate a provenance-preserving NEO Crawler ingestion envelope and route authorized research inputs for downstream review.',actions:[{connector:'neo-crawler',type:'crawler.review',workerRole:'intelligence',capabilities:['crawler.read']}]},
 ])
 
 export function createMemoryEventStore(){
