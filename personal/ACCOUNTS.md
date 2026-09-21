@@ -53,6 +53,21 @@ Epistemic key: `[to confirm]` = connection exists but details not yet verified b
 |---|---|---|---|
 | Stripe / banking (Plaid skill exists) | [to confirm] | [to confirm] | UNKNOWN |
 
+### Social publishing (verified 2026-09-21 via connector CLIs)
+| Service | Account | Purpose | Data flow | Status |
+|---|---|---|---|---|
+| Instagram | `@shemsizedek` | Personal brand publishing (reels/feed/stories) | Publish + insights via connector | KNOWN |
+| Instagram | `@worldtemplist` | Professional account | Publish + insights via connector | KNOWN |
+| Instagram | `@trueculturesociety` | Professional account | Publish + insights via connector | KNOWN |
+| Threads | `@shemsizedek` (verified) | Short-form text publishing | Publish + insights via connector | KNOWN |
+| TikTok | — | Content publishing | No Muse connector exists; browser-based route TBD | UNCONNECTED |
+| X | — | Content publishing | No Muse connector exists; browser-based route TBD | UNCONNECTED |
+| YouTube | — | Content publishing | No Muse connector exists; browser-based route TBD | UNCONNECTED |
+
+**Multi-account rule:** Instagram returns 3 linked accounts. Content Publisher must ask Lawiy
+which account each post is for before drafting; never assume `@shemsizedek`. Publishing still
+requires his explicit per-item approval regardless of connection state.
+
 ## Verification checklist (next review)
 - [ ] Enumerate exact connected services at onboarding (the "dozen+").
 - [ ] Confirm casting-alert delivery (manual check vs. automated feed).
