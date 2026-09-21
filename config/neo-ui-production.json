@@ -385,6 +385,14 @@
       "kind": "ai-gateway",
       "source": "server/neo-router",
       "originStatus": "dedicated-cloud-run"
+    },
+    {
+      "id": "neosync-workspace",
+      "host": "neo.holytemples.org",
+      "path": "/neosync/",
+      "kind": "authenticated-ai-workspace",
+      "source": "server/neo-edge/assets/neo-ai.js",
+      "originStatus": "neo-edge-cloud-run"
     }
   ]
 }
