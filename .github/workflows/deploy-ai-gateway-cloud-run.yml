@@ -492,7 +492,18 @@ jobs:
           PROJECT_ID="$(node --input-type=module -e 'import fs from "node:fs";process.stdout.write(JSON.parse(fs.readFileSync("/tmp/project.json","utf8")).project.id)')"
           for spec in 'muse-to-neo|alpha|Inbound from Muse' 'neo-to-muse|beta|Outbound to Muse'; do
             IFS='|' read -r DIR CONTENT SUMMARY <<< "$spec"
-            curl -sS -o /tmp/transfer.json -w '%{http_code}' -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" --data "{"direction":"$DIR","threadId":"smoke-thread","content":"$CONTENT","summary":"$SUMMARY","source":"smoke"}" "$URL/api/ai/projects/$PROJECT_ID/transfers" | grep -qx '201'
+            DIR="$DIR" CONTENT="$CONTENT" SUMMARY="$SUMMARY" node --input-type=module -e '
+              import fs from "node:fs";
+              fs.writeFileSync("/tmp/project-transfer.json",JSON.stringify({
+                direction:process.env.DIR,
+                threadId:"smoke-thread",
+                content:process.env.CONTENT,
+                summary:process.env.SUMMARY,
+                source:"smoke"
+              }));
+            '
+            CODE="$(curl -sS -o /tmp/transfer.json -w '%{http_code}' -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" --data-binary @/tmp/project-transfer.json "$URL/api/ai/projects/$PROJECT_ID/transfers")"
+            test "$CODE" = 201
           done
           H_CODE="$(curl -sS -o /tmp/project-history.json -w '%{http_code}' -H "Authorization: Bearer $TOKEN" "$URL/api/ai/projects/$PROJECT_ID/transfers")"
           test "$H_CODE" = 200
