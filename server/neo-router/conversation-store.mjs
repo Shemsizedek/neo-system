@@ -35,6 +35,7 @@ export function createConversationStore({ projectId, databaseId = '(default)', d
       updatedAt: timestamp,
       pinned: false,
       archived: false,
+      knowledgeAttachments: [],
       messages: [],
     }
     await firestore.collection(COLLECTION).doc(id).set(thread)
@@ -62,7 +63,7 @@ export function createConversationStore({ projectId, databaseId = '(default)', d
       .sort((a,b) => Number(Boolean(b.pinned))-Number(Boolean(a.pinned)) || String(b.updatedAt||'').localeCompare(String(a.updatedAt||'')))
   }
 
-  async function updateThread({ subjectId, threadId, title, pinned, archived }) {
+  async function updateThread({ subjectId, threadId, title, pinned, archived, knowledgeAttachments }) {
     const thread = await getThread({ subjectId, threadId })
     if (!thread) return null
     const updated = {
@@ -70,6 +71,7 @@ export function createConversationStore({ projectId, databaseId = '(default)', d
       ...(title !== undefined ? { title: sanitizeTitle(title) } : {}),
       ...(typeof pinned === 'boolean' ? { pinned } : {}),
       ...(typeof archived === 'boolean' ? { archived } : {}),
+      ...(Array.isArray(knowledgeAttachments) ? { knowledgeAttachments: [...new Set(knowledgeAttachments.map(value => String(value).trim()).filter(Boolean))].slice(0, 8) } : {}),
       updatedAt: nowIso(now),
     }
     await firestore.collection(COLLECTION).doc(threadId).set(updated)

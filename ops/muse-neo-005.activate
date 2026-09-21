@@ -7,3 +7,4 @@ MUSE-NEO-007 front-door and session-continuity activation
 MUSE-NEO-008 persistent NEOsync workspace activation
 MUSE-NEO-008B provider-timeout retry
 MUSE-NEO-009 workspace-v2 activation
+MUSE-NEO-010 knowledge-context activation

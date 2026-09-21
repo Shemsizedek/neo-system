@@ -94,7 +94,8 @@ test('execute forwards perspectiveContext for personalized Muse missions', async
     assert.equal(response.status, 200)
     const body = await response.json()
     assert.equal(body.route, 'meta-muse')
-    assert.equal(body.result.perspectiveContext, 'Use the NEO perspective and preserve provenance.')
+    assert.match(body.result.perspectiveContext, /^Use the NEO perspective and preserve provenance\./)
+    assert.match(body.result.perspectiveContext, /NEO KNOWLEDGE CONTEXT/)
     assert.equal(body.result.previousResponseId, 'resp_previous_neo')
   })
 })
@@ -161,5 +162,21 @@ test('durable telemetry is overlaid on authenticated provider inventory', async 
   await withServer(() => createNeoAiGatewayServer({ router, resolveTrustedIdentity: trusted, providerTelemetryStore }), async server => {
     const response=await request(server,'/api/ai/providers'); assert.equal(response.status,200);
     const body=await response.json(); assert.equal(body.telemetryPersistence,'firestore'); assert.equal(body.providers[0].durableTelemetry.successes,8);
+  })
+})
+
+
+test('returns explicit NEO knowledge provenance for personalized missions', async () => {
+  await withServer(() => createNeoAiGatewayServer({ router, resolveTrustedIdentity: trusted }), async server => {
+    const response = await request(server, '/api/ai/execute', {
+      method: 'POST',
+      headers: { 'content-type':'application/json' },
+      body: JSON.stringify({ objective:'Explain Noology in the NEO context', capability:'personalization' }),
+    })
+    assert.equal(response.status, 200)
+    const body = await response.json()
+    assert.ok(body.knowledge)
+    assert.equal(body.knowledge.algo.missionId, body.missionId)
+    assert.ok(Array.isArray(body.knowledge.provenance))
   })
 })
