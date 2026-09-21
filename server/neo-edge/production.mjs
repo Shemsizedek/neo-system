@@ -1,4 +1,5 @@
 import http from 'node:http';
+import https from 'node:https';
 import { createNeoEdgeServer } from './server.mjs';
 import { isWirePlatformPath, proxyWirePlatform, serveWireApp, wireServiceManifest } from './wire-app.mjs';
 import { serveProductStatic } from './product-static.mjs';
@@ -7,6 +8,7 @@ import { handleNeoTellerRequest } from '../neo-teller-backend/server.mjs';
 
 const PORT=Number(process.env.PORT||8080);
 const LEGACY_HOST='127.0.0.1';
+const AI_GATEWAY_URL=String(process.env.AI_GATEWAY_URL||'').replace(/\/$/,'');
 
 const SERVICE_UI=Object.freeze({
   'neo.holytemples.org':{name:'NEO System',role:'System Gateway',summary:'Unified production gateway for the NEO ecosystem.'},
@@ -53,6 +55,23 @@ function serviceConsole(host){
   </script></body></html>`;
 }
 
+
+function proxyAiGateway(req,res){
+  if(!AI_GATEWAY_URL)return json(res,503,{error:'neo_ai_gateway_unconfigured'});
+  let target;
+  try{target=new URL(req.url||'/',AI_GATEWAY_URL)}catch{return json(res,502,{error:'neo_ai_gateway_invalid_origin'})}
+  const transport=target.protocol==='https:'?https:http;
+  const headers={...req.headers,host:target.host,'x-forwarded-host':req.headers['x-forwarded-host']||req.headers.host||'neo.holytemples.org'};
+  const upstream=transport.request(target,{method:req.method,headers},reply=>{
+    const responseHeaders={...reply.headers};
+    delete responseHeaders['access-control-allow-origin'];
+    res.writeHead(reply.statusCode||502,responseHeaders);
+    reply.pipe(res);
+  });
+  upstream.on('error',error=>json(res,502,{error:'neo_ai_gateway_unavailable',detail:error.message}));
+  req.pipe(upstream);
+}
+
 function proxyLegacy(req,res,port){
   const headers={...req.headers,host:req.headers.host||'neo.holytemples.org','x-forwarded-host':req.headers['x-forwarded-host']||req.headers.host||''};
   const upstream=http.request({host:LEGACY_HOST,port,path:req.url||'/',method:req.method,headers},reply=>{res.writeHead(reply.statusCode||502,reply.headers);reply.pipe(res)});
@@ -75,6 +94,7 @@ export async function startNeoEdgeProduction(){
       const handled=await handleNeoTellerRequest(req,res,{fallthrough:true});
       if(handled!==false)return handled;
     }
+    if(host==='neo.holytemples.org'&&url.pathname.startsWith('/api/ai/'))return proxyAiGateway(req,res);
     const productServed=await serveProductStatic(req,res,url,host);
     if(productServed!==false)return productServed;
     if(host!=='wire.holytemples.org'&&req.method==='GET'&&(url.pathname==='/'||url.pathname==='/ui'))return html(res,200,serviceConsole(host));
