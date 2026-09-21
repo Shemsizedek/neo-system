@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const VERSION = '1.2.0';
+  const VERSION = '1.3.0';
   const DEFAULT_ENDPOINT = 'https://neo.holytemples.org/api/ai/execute';
 
   const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({
@@ -22,8 +22,8 @@
     :host{all:initial;color-scheme:dark;display:block;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
     *{box-sizing:border-box}.shell{background:radial-gradient(circle at 85% 0,rgba(78,255,156,.14),transparent 38%),linear-gradient(145deg,#020704,#07150d);border:1px solid rgba(111,255,166,.22);border-radius:22px;color:#eafff0;overflow:hidden;padding:clamp(18px,3vw,30px);box-shadow:0 24px 70px rgba(0,0,0,.28)}
     .top{display:flex;gap:16px;align-items:flex-start;justify-content:space-between;margin-bottom:18px}.eyebrow{color:#7dffad;font-size:.72rem;font-weight:800;letter-spacing:.16em;text-transform:uppercase}.title{font-size:clamp(1.45rem,3.8vw,2.25rem);font-weight:760;letter-spacing:-.035em;line-height:1.08;margin:.35rem 0 0}.status{display:flex;align-items:center;gap:8px;border:1px solid rgba(91,255,151,.25);background:rgba(38,255,119,.08);border-radius:999px;color:#baffd0;font-size:.76rem;font-weight:750;padding:8px 11px;white-space:nowrap}.dot{width:8px;height:8px;border-radius:50%;background:#51ff91;box-shadow:0 0 14px #51ff91}.dot.off{background:#ffb04a;box-shadow:0 0 14px #ffb04a}
-    form{display:grid;gap:12px}.row{display:grid;gap:12px;grid-template-columns:minmax(0,1fr) 170px}.field{display:grid;gap:7px}.label{color:#8ab398;font-size:.7rem;font-weight:750;letter-spacing:.1em;text-transform:uppercase}.input,.select,.textarea{width:100%;border:1px solid rgba(185,255,208,.13);border-radius:13px;background:rgba(255,255,255,.035);color:#eafff0;font:inherit;padding:12px 13px;outline:none}.textarea{min-height:118px;resize:vertical;line-height:1.45}.input:focus,.select:focus,.textarea:focus{border-color:rgba(86,255,151,.48);box-shadow:0 0 0 3px rgba(62,255,132,.08)}.actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.button{border:0;border-radius:12px;background:#72ff9e;color:#03220d;font:inherit;font-weight:800;padding:11px 15px;cursor:pointer}.button[disabled]{cursor:not-allowed;opacity:.5}.secondary{background:rgba(255,255,255,.06);color:#c8f4d4;border:1px solid rgba(185,255,208,.13)}
-    .notice,.result,.error{margin-top:14px;border-radius:14px;padding:14px 15px;line-height:1.5}.notice{background:rgba(255,176,74,.07);border:1px solid rgba(255,176,74,.22);color:#ffd7aa}.result{background:rgba(71,255,137,.05);border:1px solid rgba(97,255,153,.18);color:#dcffe7;white-space:pre-wrap}.error{background:rgba(255,111,111,.07);border:1px solid rgba(255,117,117,.2);color:#ffc4c4}.meta{color:#7c9f87;font-size:.72rem;margin-top:8px}.foot{display:flex;justify-content:space-between;gap:12px;color:#6e8e78;font-size:.68rem;margin-top:16px}.hidden{display:none!important}@media(max-width:620px){.top{flex-direction:column}.row{grid-template-columns:1fr}.foot{flex-direction:column}}
+    form{display:grid;gap:12px}.row{display:grid;gap:12px;grid-template-columns:minmax(0,1fr) 170px}.workspace{display:grid;grid-template-columns:240px minmax(0,1fr);gap:14px}.threads{border:1px solid rgba(185,255,208,.13);border-radius:14px;padding:10px;background:rgba(255,255,255,.025);min-height:280px}.thread{display:block;width:100%;text-align:left;border:0;border-radius:10px;padding:9px 10px;margin-bottom:6px;background:transparent;color:#c8f4d4;cursor:pointer}.thread.active,.thread:hover{background:rgba(114,255,158,.1)}.thread small{display:block;color:#6e8e78;margin-top:3px}.history{display:grid;gap:9px;max-height:300px;overflow:auto;margin-bottom:12px}.msg{padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.035);white-space:pre-wrap}.msg.user{border-left:3px solid #72ff9e}.msg.assistant{border-left:3px solid #61a7ff}.telemetry{font-size:.72rem;color:#8ab398;margin:8px 0 12px}.field{display:grid;gap:7px}.label{color:#8ab398;font-size:.7rem;font-weight:750;letter-spacing:.1em;text-transform:uppercase}.input,.select,.textarea{width:100%;border:1px solid rgba(185,255,208,.13);border-radius:13px;background:rgba(255,255,255,.035);color:#eafff0;font:inherit;padding:12px 13px;outline:none}.textarea{min-height:118px;resize:vertical;line-height:1.45}.input:focus,.select:focus,.textarea:focus{border-color:rgba(86,255,151,.48);box-shadow:0 0 0 3px rgba(62,255,132,.08)}.actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.button{border:0;border-radius:12px;background:#72ff9e;color:#03220d;font:inherit;font-weight:800;padding:11px 15px;cursor:pointer}.button[disabled]{cursor:not-allowed;opacity:.5}.secondary{background:rgba(255,255,255,.06);color:#c8f4d4;border:1px solid rgba(185,255,208,.13)}
+    .notice,.result,.error{margin-top:14px;border-radius:14px;padding:14px 15px;line-height:1.5}.notice{background:rgba(255,176,74,.07);border:1px solid rgba(255,176,74,.22);color:#ffd7aa}.result{background:rgba(71,255,137,.05);border:1px solid rgba(97,255,153,.18);color:#dcffe7;white-space:pre-wrap}.error{background:rgba(255,111,111,.07);border:1px solid rgba(255,117,117,.2);color:#ffc4c4}.meta{color:#7c9f87;font-size:.72rem;margin-top:8px}.foot{display:flex;justify-content:space-between;gap:12px;color:#6e8e78;font-size:.68rem;margin-top:16px}.hidden{display:none!important}@media(max-width:760px){.top{flex-direction:column}.row,.workspace{grid-template-columns:1fr}.foot{flex-direction:column}.threads{min-height:auto}}
   `;
 
   async function runtimeToken() {
@@ -39,6 +39,8 @@
       this.dataset.neoAiMounted = 'true';
       this.endpoint = safeHttpsEndpoint(this.getAttribute('endpoint'));
       this.previousResponseId = null;
+      this.threadId = null;
+      this.threads = [];
       this.root = this.attachShadow ? this.attachShadow({ mode: 'open' }) : this;
       this.render();
     }
@@ -47,13 +49,14 @@
       const capability = this.getAttribute('capability') || 'reasoning';
       this.root.innerHTML = `<style>${styles}</style><section class="shell">
         <div class="top"><div><div class="eyebrow">NEO AI Gateway</div><div class="title">Temple Intelligence Console</div></div><div class="status"><span class="dot"></span>Router v2</div></div>
+        <div class="workspace"><aside class="threads"><div class="label">NEOsync Threads</div><div class="telemetry" data-telemetry>Loading provider telemetry…</div><button class="button secondary" type="button" data-new-thread>+ New thread</button> <button class="button secondary" type="button" data-rename-thread>Rename</button><div data-threads style="margin-top:10px"></div></aside><div><div class="history" data-history></div>
         <form novalidate>
           <div class="row">
             <label class="field"><span class="label">Mission objective</span><textarea class="textarea" name="objective" maxlength="12000" required placeholder="Ask the NEO Router to analyze, plan, design, review, or explain..."></textarea></label>
             <label class="field"><span class="label">Capability</span><select class="select" name="capability"><option value="reasoning">Reasoning</option><option value="planning">Planning</option><option value="review">Review</option><option value="frontend">Frontend</option><option value="design">Design</option><option value="backend">Backend</option><option value="multimodal">Multimodal</option><option value="media">Media</option><option value="personalization">Personalization (Muse)</option></select></label>
           </div>
           <div class="actions"><button class="button" type="submit">Run mission</button><button class="button secondary" type="button" data-clear>Clear</button></div>
-        </form>
+        </form></div></div>
         <div class="notice hidden" data-auth>NEOpass authentication is required before the Temple can execute an AI mission.</div>
         <div class="result hidden" data-result></div>
         <div class="error hidden" data-error></div>
@@ -66,14 +69,78 @@
       this.authNotice = this.root.querySelector('[data-auth]');
       this.result = this.root.querySelector('[data-result]');
       this.error = this.root.querySelector('[data-error]');
+      this.history = this.root.querySelector('[data-history]');
+      this.threadList = this.root.querySelector('[data-threads]');
+      this.telemetry = this.root.querySelector('[data-telemetry]');
       this.form.addEventListener('submit', event => this.execute(event));
       this.root.querySelector('[data-clear]').addEventListener('click', () => this.clear());
+      this.root.querySelector('[data-new-thread]').addEventListener('click', () => this.newThread());
+      this.root.querySelector('[data-rename-thread]').addEventListener('click', () => this.renameThread());
+      this.refreshWorkspace();
     }
 
     clear() {
       this.form.reset();
-      this.previousResponseId = null;
       this.hideMessages();
+    }
+
+    async api(path, options = {}) {
+      const token = await runtimeToken().catch(() => null);
+      if (!token) throw new Error('neopass_identity_required');
+      const response = await fetch(path, { cache:'no-store', ...options, headers:{ Accept:'application/json', Authorization:`Bearer ${token}`, ...(options.headers||{}) } });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(body.error || `HTTP ${response.status}`);
+      return body;
+    }
+
+    async refreshWorkspace() {
+      try {
+        const [threads, providers] = await Promise.all([this.api('/api/ai/threads'), this.api('/api/ai/providers')]);
+        this.threads = threads.threads || [];
+        const muse = (providers.providers || []).find(p => p.id === 'meta-muse');
+        this.telemetry.textContent = muse ? `Muse · ${muse.configured?'configured':'offline'} · ${muse.telemetry?.successes||0} successes · ${muse.telemetry?.failures||0} failures` : 'Muse telemetry unavailable';
+        this.renderThreads();
+      } catch (error) {
+        this.telemetry.textContent = error.message === 'neopass_identity_required' ? 'Sign in with NEOpass to load workspace.' : 'Workspace unavailable';
+      }
+    }
+
+    renderThreads() {
+      this.threadList.innerHTML = this.threads.map(t => `<button class="thread ${t.id===this.threadId?'active':''}" data-thread="${escapeHtml(t.id)}"><b>${escapeHtml(t.title)}</b><small>${escapeHtml(t.provider||t.capability||'personalization')}</small></button>`).join('') || '<div class="meta">No saved threads yet.</div>';
+      this.threadList.querySelectorAll('[data-thread]').forEach(btn => btn.addEventListener('click', () => this.openThread(btn.dataset.thread)));
+    }
+
+    async newThread() {
+      try {
+        const title = prompt('Thread name', 'NEOsync Muse Thread') || 'NEOsync Muse Thread';
+        const body = await this.api('/api/ai/threads', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ title, capability:'personalization' }) });
+        this.threadId = body.thread.id;
+        this.previousResponseId = body.thread.lastResponseId || null;
+        this.history.innerHTML = '';
+        await this.refreshWorkspace();
+      } catch (error) { this.error.textContent = error.message; this.error.classList.remove('hidden'); }
+    }
+
+    async renameThread() {
+      if (!this.threadId) return this.newThread();
+      try {
+        const current = this.threads.find(t => t.id === this.threadId);
+        const title = prompt('Rename thread', current?.title || 'NEOsync Muse Thread');
+        if (!title) return;
+        await this.api(`/api/ai/threads/${encodeURIComponent(this.threadId)}`, { method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({title}) });
+        await this.refreshWorkspace();
+      } catch (error) { this.error.textContent = error.message; this.error.classList.remove('hidden'); }
+    }
+
+    async openThread(id) {
+      try {
+        const body = await this.api(`/api/ai/threads/${encodeURIComponent(id)}`);
+        const thread = body.thread;
+        this.threadId = thread.id;
+        this.previousResponseId = thread.lastResponseId || null;
+        this.history.innerHTML = (thread.messages||[]).map(m => `<div class="msg ${escapeHtml(m.role)}"><b>${m.role==='user'?'You':'NEOsync / '+(m.provider||'Muse')}</b><br>${escapeHtml(m.text||'')}</div>`).join('');
+        this.renderThreads();
+      } catch (error) { this.error.textContent = error.message; this.error.classList.remove('hidden'); }
     }
 
     hideMessages() {
@@ -87,6 +154,10 @@
       this.hideMessages();
       const objective = this.form.elements.objective.value.trim();
       const capability = this.form.elements.capability.value;
+      if (capability === 'personalization' && !this.threadId) {
+        const created = await this.api('/api/ai/threads', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ title: objective.slice(0,72), capability }) }).catch(() => null);
+        if (created?.thread) { this.threadId = created.thread.id; this.previousResponseId = created.thread.lastResponseId || null; }
+      }
       if (!objective) return;
 
       const token = await runtimeToken().catch(() => null);
@@ -117,6 +188,7 @@
               ? 'Use the NEO / Shemsizedek perspective profile, preserve provenance, distinguish verified facts from interpretation and future plans, and maintain established NEO terminology.'
               : undefined,
             previousResponseId: capability === 'personalization' ? this.previousResponseId : undefined,
+            threadId: capability === 'personalization' ? this.threadId : undefined,
           }),
         });
         const payload = await response.json().catch(() => ({}));
@@ -131,6 +203,8 @@
         const session = capability === 'personalization' && this.previousResponseId ? ' · Session: linked' : '';
         this.result.innerHTML = `${escapeHtml(text)}<div class="meta">Route: ${escapeHtml(payload.route || payload?.result?.provider || 'NEO Router')} · Status: ${escapeHtml(payload.status || 'completed')}${escapeHtml(session)}</div>`;
         this.result.classList.remove('hidden');
+        if (capability === 'personalization' && this.threadId) await this.openThread(this.threadId).catch(()=>{});
+        await this.refreshWorkspace().catch(()=>{});
         this.dispatchEvent(new CustomEvent('neo:ai-result', { detail: payload, bubbles: true }));
       } catch (error) {
         this.error.textContent = error?.message || 'AI mission failed.';
