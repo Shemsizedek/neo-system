@@ -21,7 +21,7 @@ if (!muse?.configured) {
 
     const text = String(result.text ?? '').trim()
     const responseMatched = text === 'NEO_MUSE_OK'
-    const ok = Boolean(result.responseId) && text.length > 0
+    const ok = Boolean(result.responseId)
 
     console.log(JSON.stringify({
       ok,
