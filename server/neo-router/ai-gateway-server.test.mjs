@@ -163,3 +163,19 @@ test('durable telemetry is overlaid on authenticated provider inventory', async 
     const body=await response.json(); assert.equal(body.telemetryPersistence,'firestore'); assert.equal(body.providers[0].durableTelemetry.successes,8);
   })
 })
+
+
+test('returns explicit NEO knowledge provenance for personalized missions', async () => {
+  await withServer(() => createNeoAiGatewayServer({ router, resolveTrustedIdentity: trusted }), async server => {
+    const response = await request(server, '/api/ai/execute', {
+      method: 'POST',
+      headers: { 'content-type':'application/json' },
+      body: JSON.stringify({ objective:'Explain Noology in the NEO context', capability:'personalization' }),
+    })
+    assert.equal(response.status, 200)
+    const body = await response.json()
+    assert.ok(body.knowledge)
+    assert.equal(body.knowledge.algo.missionId, body.missionId)
+    assert.ok(Array.isArray(body.knowledge.provenance))
+  })
+})
