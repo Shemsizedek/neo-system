@@ -2,6 +2,7 @@ import http from 'node:http'
 import { randomUUID } from 'node:crypto'
 import { createNeoRouter } from './router.mjs'
 import { providersFromEnv } from './providers.mjs'
+import { buildKnowledgeContext } from './knowledge-context.mjs'
 
 const MAX_BODY_BYTES = 64 * 1024
 
@@ -56,6 +57,8 @@ function normalizeMission(body, subjectId) {
     preferredProviders: Array.isArray(body.preferredProviders) ? body.preferredProviders.filter((value) => typeof value === 'string') : [],
     excludedProviders: Array.isArray(body.excludedProviders) ? body.excludedProviders.filter((value) => typeof value === 'string') : [],
     threadId: typeof body.threadId === 'string' && body.threadId.trim() ? body.threadId.trim() : undefined,
+    knowledgeAttachments: Array.isArray(body.knowledgeAttachments) ? body.knowledgeAttachments.filter(value => typeof value === 'string').slice(0, 8) : [],
+    autoKnowledge: body.autoKnowledge !== false,
     metadata: { subjectId },
   }
 }
@@ -132,6 +135,7 @@ export function createNeoAiGatewayServer({
           title: body.title,
           pinned: body.pinned,
           archived: body.archived,
+          knowledgeAttachments: body.knowledgeAttachments,
         })
         if (!thread) return respond(res, 404, { error: 'thread_not_found' })
         return respond(res, 200, { subjectId, thread })
@@ -165,11 +169,24 @@ export function createNeoAiGatewayServer({
         const subjectId = trustedSubject(await resolveTrustedIdentity(req))
         const body = await readJson(req)
         const mission = normalizeMission(body, subjectId)
+        let thread = null
         if (mission.threadId) {
           if (!conversationStore) return respond(res, 503, { error: 'conversation_store_unavailable' })
-          const thread = await conversationStore.getThread({ subjectId, threadId: mission.threadId })
+          thread = await conversationStore.getThread({ subjectId, threadId: mission.threadId })
           if (!thread) return respond(res, 404, { error: 'thread_not_found' })
           if (!mission.previousResponseId && thread.lastResponseId) mission.previousResponseId = thread.lastResponseId
+          if (!mission.knowledgeAttachments.length && Array.isArray(thread.knowledgeAttachments)) mission.knowledgeAttachments = thread.knowledgeAttachments
+        }
+        const knowledge = mission.autoKnowledge
+          ? buildKnowledgeContext({
+              objective: mission.objective,
+              attachments: mission.knowledgeAttachments,
+              missionId: mission.missionId,
+              accessClass: 'PUBLIC_WORLD_LIBRARY',
+            })
+          : { context: '', provenance: [], attachedIds: mission.knowledgeAttachments, autoRetrievedIds: [], algo: null }
+        if (knowledge.context) {
+          mission.perspectiveContext = [mission.perspectiveContext, knowledge.context].filter(Boolean).join('\n\n')
         }
         const approved = body.approved === true
         const result = await router.execute(mission, { approved })
@@ -183,7 +200,7 @@ export function createNeoAiGatewayServer({
           })
         }
         const status = result.status === 'awaiting_approval' ? 202 : result.status === 'blocked' ? 503 : 200
-        return respond(res, status, { subjectId, ...result })
+        return respond(res, status, { subjectId, ...result, knowledge: { provenance: knowledge.provenance, attachedIds: knowledge.attachedIds, autoRetrievedIds: knowledge.autoRetrievedIds, algo: knowledge.algo } })
       }
 
       return respond(res, 404, { error: 'not_found' })
