@@ -24,6 +24,7 @@ export function createNeoRouter({
   routes = DEFAULT_ROUTES,
   circuitBreaker = { failureThreshold: 3, cooldownMs: 60_000 },
   now = () => Date.now(),
+  telemetryRecorder = async () => {},
 } = {}) {
   const providerMap = new Map((providers ?? []).map((provider) => [provider.id, provider]))
   const telemetry = new Map([...providerMap.keys()].map((id) => [id, {
@@ -116,6 +117,7 @@ export function createNeoRouter({
         const state = stateFor(providerId)
         const startedAt = now()
         state.attempts += 1
+        await telemetryRecorder({ provider: providerId, event: 'attempt' }).catch(() => {})
         const result = await provider.invoke({
           system: mission.system ?? buildNeoPerspectiveInstructions({ context: mission.perspectiveContext }),
           prompt: mission.objective,
@@ -128,6 +130,7 @@ export function createNeoRouter({
         state.lastSuccessAt = new Date(now()).toISOString()
         state.lastError = null
         state.circuitOpenUntil = null
+        await telemetryRecorder({ provider: providerId, event: 'success', latencyMs: state.lastLatencyMs }).catch(() => {})
         return { status: 'completed', route: providerId, result, failures, ...routePlan }
       } catch (error) {
         const state = stateFor(providerId)
@@ -139,6 +142,7 @@ export function createNeoRouter({
         if (state.consecutiveFailures >= circuitBreaker.failureThreshold) {
           state.circuitOpenUntil = now() + circuitBreaker.cooldownMs
         }
+        await telemetryRecorder({ provider: providerId, event: 'failure', error: message }).catch(() => {})
         failures.push({ provider: providerId, message })
       }
     }
