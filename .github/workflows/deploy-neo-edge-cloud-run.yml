@@ -115,7 +115,7 @@ jobs:
           grep -q 'NEOsync Conversation Workspace' /tmp/neo-sync-workspace.html
           asset_code="$(curl --retry 5 --retry-delay 3 --retry-all-errors -sS -o /tmp/neo-ai.js -w '%{http_code}' -H 'X-Forwarded-Host: neo.holytemples.org' "$SERVICE_URL/assets/neo-ai.js")"
           test "$asset_code" = 200
-          grep -q "AI surface v1.6.0" /tmp/neo-ai.js
+          grep -q "const VERSION = '1.6.0'" /tmp/neo-ai.js
           grep -q "Knowledge Browser" /tmp/neo-ai.js
           knowledge_search_code="$(curl --retry 5 --retry-delay 3 --retry-all-errors -sS -o /tmp/knowledge-search.json -w '%{http_code}' -H 'X-Forwarded-Host: neo.holytemples.org' "$SERVICE_URL/api/noogle/search?q=noology")"
           test "$knowledge_search_code" = 200
