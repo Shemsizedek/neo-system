@@ -21,7 +21,12 @@ const router = {
   },
   async execute(mission, { approved }) {
     if (mission.actions.includes('publish') && !approved) return { status: 'awaiting_approval', missionId: mission.missionId }
-    return { status: 'completed', route: 'gemini', missionId: mission.missionId, result: { text: mission.objective } }
+    return {
+      status: 'completed',
+      route: mission.capability === 'personalization' ? 'meta-muse' : 'gemini',
+      missionId: mission.missionId,
+      result: { text: mission.objective, perspectiveContext: mission.perspectiveContext },
+    }
   },
 }
 
@@ -71,6 +76,24 @@ test('execute normalizes a provider-neutral mission and preserves approval gates
     })
     assert.equal(response.status, 202)
     assert.equal((await response.json()).status, 'awaiting_approval')
+  })
+})
+
+test('execute forwards perspectiveContext for personalized Muse missions', async () => {
+  await withServer(() => createNeoAiGatewayServer({ router, resolveTrustedIdentity: trusted }), async (server) => {
+    const response = await request(server, '/api/ai/execute', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        objective: 'Generate a NEO Society campaign concept',
+        capability: 'personalization',
+        perspectiveContext: 'Use the NEO perspective and preserve provenance.',
+      }),
+    })
+    assert.equal(response.status, 200)
+    const body = await response.json()
+    assert.equal(body.route, 'meta-muse')
+    assert.equal(body.result.perspectiveContext, 'Use the NEO perspective and preserve provenance.')
   })
 })
 
