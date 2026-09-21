@@ -66,6 +66,7 @@ export function createMetaMuseAdapter({
   apiKey,
   model = 'muse-spark-1.3',
   baseUrl = 'https://api.meta.ai/v1',
+  reasoningEffort = 'low',
   fetchImpl,
   timeoutMs,
 } = {}) {
@@ -80,6 +81,7 @@ export function createMetaMuseAdapter({
         instructions: system,
         input: prompt,
         max_output_tokens: maxTokens,
+        reasoning: { effort: reasoningEffort },
       }
       if (previousResponseId) request.previous_response_id = previousResponseId
 
@@ -182,6 +184,7 @@ export function providersFromEnv(env = process.env) {
       apiKey: env.MODEL_API_KEY,
       model: env.META_MUSE_MODEL || undefined,
       baseUrl: env.META_MODEL_BASE_URL || undefined,
+      reasoningEffort: env.META_MUSE_REASONING_EFFORT || undefined,
       timeoutMs,
     }),
     createXAIAdapter({ apiKey: env.XAI_API_KEY, model: env.XAI_MODEL || undefined, timeoutMs }),
