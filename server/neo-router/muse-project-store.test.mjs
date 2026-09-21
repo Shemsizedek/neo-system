@@ -3,20 +3,52 @@ import test from 'node:test'
 import { createMuseProjectStore } from './muse-project-store.mjs'
 
 function memoryDb(){
-  const rows=new Map();
+  const rows=new Map()
   return {
-    collection(name){ return {
-      doc(id){ return {
-        async get(){ const k=name+':'+id; return rows.has(k)?{exists:true,data:()=>structuredClone(rows.get(k))}:{exists:false,data:()=>undefined} },
-        async set(v){ rows.set(name+':'+id,structuredClone(v)) }
-      }},
-      where(field,op,value){ return { orderBy(){ return { limit(){ return { async get(){ return {docs:[...rows.entries()].filter(([k,v])=>k.startsWith(name+':')&&v[field]===value).map(([,v])=>({data:()=>structuredClone(v)}))} } } } } } }
-    }}
+    collection(name){
+      return {
+        doc(id){
+          return {
+            async get(){
+              const key=name+':'+id
+              return rows.has(key)
+                ? {exists:true,data:()=>structuredClone(rows.get(key))}
+                : {exists:false,data:()=>undefined}
+            },
+            async set(value){
+              rows.set(name+':'+id,structuredClone(value))
+            },
+          }
+        },
+        where(field,op,value){
+          return {
+            orderBy(){
+              return {
+                limit(){
+                  return {
+                    async get(){
+                      const docs=[...rows.entries()]
+                        .filter(([key,row])=>key.startsWith(name+':')&&row[field]===value)
+                        .map(([,row])=>({data:()=>structuredClone(row)}))
+                      return {docs}
+                    },
+                  }
+                },
+              }
+            },
+          }
+        },
+      }
+    },
   }
 }
 
 test('records project transfer lineage and detects changes', async()=>{
-  const store=createMuseProjectStore({db:memoryDb(),now:(()=>{let n=0;return()=>new Date(1700000000000+n++*1000)})()})
+  let tick=0
+  const store=createMuseProjectStore({
+    db:memoryDb(),
+    now:()=>new Date(1_700_000_000_000+(tick++*1000)),
+  })
   const p=await store.createProject({subjectId:'u1',name:'Project A'})
   const a=await store.recordTransfer({subjectId:'u1',projectId:p.id,direction:'muse-to-neo',threadId:'t1',content:'alpha',summary:'in'})
   const b=await store.recordTransfer({subjectId:'u1',projectId:p.id,direction:'neo-to-muse',threadId:'t1',content:'beta',summary:'out'})
