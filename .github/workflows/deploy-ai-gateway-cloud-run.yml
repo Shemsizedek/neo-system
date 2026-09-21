@@ -51,7 +51,7 @@ jobs:
           done
 
       - name: Test NEO AI gateway and router
-        run: node --test server/neo-router/ai-gateway-server.test.mjs server/neo-router/router.test.mjs server/neo-router/providers.test.mjs
+        run: node --test server/neo-router/ai-gateway-server.test.mjs server/neo-router/router.test.mjs server/neo-router/providers.test.mjs server/neo-router/conversation-store.test.mjs
 
       - name: Verify live Meta Muse credential before deploy
         env:
@@ -242,6 +242,52 @@ jobs:
             if(!text) throw new Error("missing_followup_visible_output");
             console.log(JSON.stringify({status:body.status,route:body.route,sessionContinuity:true,textPresent:true}));
             fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, "\n### Muse session continuity\n- Turn 2: completed\n- Route: meta-muse\n- Previous response ID: accepted\n- New response ID: present\n- Visible output: present\n");
+          '
+
+      - name: Verify persistent NEOsync conversation workspace
+        env:
+          NEO_PASS_JWT_SECRET: ${{ secrets.NEO_PASS_JWT_SECRET }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL="$(gcloud run services describe "$SERVICE_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format='value(status.url)')"
+          TOKEN="$(node --input-type=module -e '
+            import { createHmac } from "node:crypto";
+            const enc=v=>Buffer.from(JSON.stringify(v)).toString("base64url");
+            const now=Math.floor(Date.now()/1000);
+            const h=enc({alg:"HS256",typ:"JWT"});
+            const p=enc({sub:"neo-muse-thread-smoke",iat:now,exp:now+300});
+            const s=createHmac("sha256",process.env.NEO_PASS_JWT_SECRET).update(h+"."+p).digest("base64url");
+            process.stdout.write(h+"."+p+"."+s);
+          ')"
+          CREATE_CODE="$(curl -sS -o /tmp/thread.json -w '%{http_code}' -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" --data '{"title":"MUSE-NEO-008 Production Thread","capability":"personalization"}' "$URL/api/ai/threads")"
+          test "$CREATE_CODE" = 201
+          THREAD_ID="$(node --input-type=module -e 'import fs from "node:fs";const b=JSON.parse(fs.readFileSync("/tmp/thread.json","utf8"));if(!b.thread?.id)throw new Error("thread_id_missing");process.stdout.write(b.thread.id)')"
+          THREAD_ID="$THREAD_ID" node --input-type=module -e '
+            import fs from "node:fs";
+            fs.writeFileSync("/tmp/thread-mission.json",JSON.stringify({
+              missionId:"MUSE-NEO-008-PERSIST",
+              threadId:process.env.THREAD_ID,
+              objective:"Record that the NEOsync persistent Muse workspace is operational.",
+              capability:"personalization",
+              perspectiveContext:"Keep this production verification concise and factual.",
+              maxTokens:2048
+            }));
+          '
+          EXEC_CODE="$(curl -sS -o /tmp/thread-exec.json -w '%{http_code}' -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" --data-binary @/tmp/thread-mission.json "$URL/api/ai/execute")"
+          test "$EXEC_CODE" = 200
+          GET_CODE="$(curl -sS -o /tmp/thread-loaded.json -w '%{http_code}' -H "Authorization: Bearer $TOKEN" "$URL/api/ai/threads/$THREAD_ID")"
+          test "$GET_CODE" = 200
+          node --input-type=module -e '
+            import fs from "node:fs";
+            const body=JSON.parse(fs.readFileSync("/tmp/thread-loaded.json","utf8"));
+            const t=body.thread;
+            if(!t?.lastResponseId) throw new Error("persistent_response_id_missing");
+            if(!Array.isArray(t.messages)||t.messages.length<2) throw new Error("persistent_history_missing");
+            if(!t.messages.some(m=>m.role==="user")) throw new Error("persistent_user_turn_missing");
+            if(!t.messages.some(m=>m.role==="assistant")) throw new Error("persistent_assistant_turn_missing");
+            console.log(JSON.stringify({threadIdPresent:true,historyPersisted:true,lastResponseIdPresent:true,messageCount:t.messages.length}));
+            fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,"\n### NEOsync persistent conversation workspace\n- Firestore thread: created\n- Muse turn: completed\n- History reload: passed\n- Last Muse response ID: persisted\n");
           '
 
       - name: Map ai.holytemples.org
