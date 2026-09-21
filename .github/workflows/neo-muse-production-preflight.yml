@@ -1,0 +1,46 @@
+name: NEO Muse Production Preflight
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/neo-muse-production-preflight.yml'
+      - '.github/workflows/deploy-ai-gateway-cloud-run.yml'
+      - '.github/workflows/neo-router-muse-live-check.yml'
+      - 'server/neo-router/ai-gateway-start.mjs'
+      - 'server/neo-router/Dockerfile.ai-gateway'
+
+permissions:
+  contents: read
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    environment: holytemples-production
+    env:
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID || secrets.GCP_PROJECT_ID }}
+      GCP_REGION: ${{ vars.GCP_REGION || secrets.GCP_REGION }}
+      GCP_WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER || secrets.GCP_WIF_PROVIDER }}
+      GCP_CLOUD_RUN_SERVICE_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_SERVICE_ACCOUNT || secrets.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+      GCP_CLOUD_RUN_RUNTIME_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_RUNTIME_ACCOUNT || secrets.GCP_CLOUD_RUN_RUNTIME_ACCOUNT }}
+      GCP_ARTIFACT_REGISTRY: ${{ vars.GCP_ARTIFACT_REGISTRY || secrets.GCP_ARTIFACT_REGISTRY }}
+      MODEL_API_KEY: ${{ secrets.MODEL_API_KEY }}
+    steps:
+      - name: Check required production values
+        shell: bash
+        run: |
+          set -euo pipefail
+          missing=0
+          for name in MODEL_API_KEY GCP_PROJECT_ID GCP_REGION GCP_WIF_PROVIDER GCP_CLOUD_RUN_SERVICE_ACCOUNT GCP_CLOUD_RUN_RUNTIME_ACCOUNT GCP_ARTIFACT_REGISTRY; do
+            if [ -n "${!name:-}" ]; then
+              echo "OK: $name is configured"
+            else
+              echo "MISSING: $name"
+              missing=1
+            fi
+          done
+          echo "META_MUSE_MODEL is supplied by workflow default: muse-spark-1.3"
+          echo "META_MODEL_BASE_URL is supplied by workflow default: https://api.meta.ai/v1"
+          echo "Google Secret Manager target is supplied by workflow default: neo-ai-gateway-model-api-key"
+          exit "$missing"
