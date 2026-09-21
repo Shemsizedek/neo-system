@@ -5,3 +5,4 @@ MUSE-NEO-006 authenticated personalization activation
 MUSE-NEO-006B visible-output activation
 MUSE-NEO-007 front-door and session-continuity activation
 MUSE-NEO-008 persistent NEOsync workspace activation
+MUSE-NEO-008B provider-timeout retry
