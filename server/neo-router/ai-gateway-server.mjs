@@ -65,6 +65,7 @@ export function createNeoAiGatewayServer({
   env = process.env,
   router = createNeoRouter({ providers: providersFromEnv(env) }),
   conversationStore,
+  providerTelemetryStore,
 } = {}) {
   return http.createServer(async (req, res) => {
     try {
@@ -82,7 +83,8 @@ export function createNeoAiGatewayServer({
         if (typeof resolveTrustedIdentity !== 'function') return respond(res, 401, { error: 'neopass_identity_required' })
         const subjectId = trustedSubject(await resolveTrustedIdentity(req))
         if (!conversationStore) return respond(res, 503, { error: 'conversation_store_unavailable' })
-        const threads = await conversationStore.listThreads({ subjectId })
+        const includeArchived = url.searchParams.get('includeArchived') !== 'false'
+        const threads = await conversationStore.listThreads({ subjectId, includeArchived })
         return respond(res, 200, { subjectId, threads })
       }
 
@@ -93,6 +95,20 @@ export function createNeoAiGatewayServer({
         const body = await readJson(req)
         const thread = await conversationStore.createThread({ subjectId, title: body.title, capability: body.capability })
         return respond(res, 201, { subjectId, thread })
+      }
+
+      const threadExportMatch = url.pathname.match(/^\/api\/ai\/threads\/([^/]+)\/export$/)
+      if (threadExportMatch && req.method === 'GET') {
+        if (typeof resolveTrustedIdentity !== 'function') return respond(res, 401, { error: 'neopass_identity_required' })
+        const subjectId = trustedSubject(await resolveTrustedIdentity(req))
+        if (!conversationStore) return respond(res, 503, { error: 'conversation_store_unavailable' })
+        const thread = await conversationStore.getThread({ subjectId, threadId: decodeURIComponent(threadExportMatch[1]) })
+        if (!thread) return respond(res, 404, { error: 'thread_not_found' })
+        return respond(res, 200, {
+          exportVersion: 'neo-conversation-v1',
+          exportedAt: new Date().toISOString(),
+          thread,
+        })
       }
 
       const threadMatch = url.pathname.match(/^\/api\/ai\/threads\/([^/]+)$/)
@@ -110,15 +126,38 @@ export function createNeoAiGatewayServer({
         const subjectId = trustedSubject(await resolveTrustedIdentity(req))
         if (!conversationStore) return respond(res, 503, { error: 'conversation_store_unavailable' })
         const body = await readJson(req)
-        const thread = await conversationStore.renameThread({ subjectId, threadId: decodeURIComponent(threadMatch[1]), title: body.title })
+        const thread = await conversationStore.updateThread({
+          subjectId,
+          threadId: decodeURIComponent(threadMatch[1]),
+          title: body.title,
+          pinned: body.pinned,
+          archived: body.archived,
+        })
         if (!thread) return respond(res, 404, { error: 'thread_not_found' })
         return respond(res, 200, { subjectId, thread })
+      }
+
+      if (threadMatch && req.method === 'DELETE') {
+        if (typeof resolveTrustedIdentity !== 'function') return respond(res, 401, { error: 'neopass_identity_required' })
+        const subjectId = trustedSubject(await resolveTrustedIdentity(req))
+        if (!conversationStore) return respond(res, 503, { error: 'conversation_store_unavailable' })
+        const deleted = await conversationStore.deleteThread({ subjectId, threadId: decodeURIComponent(threadMatch[1]) })
+        if (!deleted) return respond(res, 404, { error: 'thread_not_found' })
+        return respond(res, 200, { subjectId, deleted: true })
       }
 
       if (req.method === 'GET' && url.pathname === '/api/ai/providers') {
         if (typeof resolveTrustedIdentity !== 'function') return respond(res, 401, { error: 'neopass_identity_required' })
         const subjectId = trustedSubject(await resolveTrustedIdentity(req))
-        return respond(res, 200, { subjectId, ...router.health() })
+        const health = router.health()
+        const durableTelemetry = providerTelemetryStore
+          ? await providerTelemetryStore.snapshot(health.providers.map(provider => provider.id))
+          : {}
+        const providers = health.providers.map(provider => ({
+          ...provider,
+          durableTelemetry: durableTelemetry[provider.id] ?? null,
+        }))
+        return respond(res, 200, { subjectId, ...health, providers, telemetryPersistence: providerTelemetryStore ? 'firestore' : 'memory' })
       }
 
       if (req.method === 'POST' && url.pathname === '/api/ai/execute') {

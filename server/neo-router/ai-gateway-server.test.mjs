@@ -123,9 +123,11 @@ test('persistent thread APIs create, resume, rename, and append Muse turns', asy
     async getThread({ subjectId, threadId }) {
       const t=rows.get(threadId); if(!t)return null; if(t.subjectId!==subjectId)throw new Error('thread_forbidden'); return structuredClone(t)
     },
-    async renameThread({ subjectId, threadId, title }) {
-      const t=await this.getThread({subjectId,threadId}); if(!t)return null; t.title=title; rows.set(threadId,t); return structuredClone(t)
+    async updateThread({ subjectId, threadId, title, pinned, archived }) {
+      const t=await this.getThread({subjectId,threadId}); if(!t)return null;
+      if(title!==undefined)t.title=title;if(typeof pinned==='boolean')t.pinned=pinned;if(typeof archived==='boolean')t.archived=archived;rows.set(threadId,t);return structuredClone(t)
     },
+    async deleteThread({subjectId,threadId}){const t=await this.getThread({subjectId,threadId});if(!t)return false;rows.delete(threadId);return true},
     async appendTurn({ subjectId, threadId, objective, result }) {
       const t=await this.getThread({subjectId,threadId}); t.lastResponseId=result.responseId||'resp-thread'; t.messages.push({role:'user',text:objective},{role:'assistant',text:result.text,responseId:t.lastResponseId}); rows.set(threadId,t); return structuredClone(t)
     },
@@ -145,9 +147,19 @@ test('persistent thread APIs create, resume, rename, and append Muse turns', asy
     const loaded=await response.json()
     assert.equal(loaded.thread.lastResponseId,'resp-1')
     assert.equal(loaded.thread.messages.length,2)
-    response=await request(server,'/api/ai/threads/thread-1',{method:'PATCH',headers:{'content-type':'application/json'},body:JSON.stringify({title:'Renamed'})})
-    assert.equal((await response.json()).thread.title,'Renamed')
-    response=await request(server,'/api/ai/threads')
-    assert.equal((await response.json()).threads.length,1)
+    response=await request(server,'/api/ai/threads/thread-1',{method:'PATCH',headers:{'content-type':'application/json'},body:JSON.stringify({title:'Renamed',pinned:true,archived:true})})
+    const patched=await response.json(); assert.equal(patched.thread.title,'Renamed'); assert.equal(patched.thread.pinned,true); assert.equal(patched.thread.archived,true)
+    response=await request(server,'/api/ai/threads/thread-1/export'); const exported=await response.json(); assert.equal(exported.exportVersion,'neo-conversation-v1'); assert.equal(exported.thread.messages.length,2)
+    response=await request(server,'/api/ai/threads'); assert.equal((await response.json()).threads.length,1)
+    response=await request(server,'/api/ai/threads/thread-1',{method:'DELETE'}); assert.equal((await response.json()).deleted,true)
+    assert.equal((await request(server,'/api/ai/threads/thread-1')).status,404)
+  })
+})
+
+test('durable telemetry is overlaid on authenticated provider inventory', async () => {
+  const providerTelemetryStore={async snapshot(ids){return Object.fromEntries(ids.map(id=>[id,{id,attempts:9,successes:8,failures:1}]))}}
+  await withServer(() => createNeoAiGatewayServer({ router, resolveTrustedIdentity: trusted, providerTelemetryStore }), async server => {
+    const response=await request(server,'/api/ai/providers'); assert.equal(response.status,200);
+    const body=await response.json(); assert.equal(body.telemetryPersistence,'firestore'); assert.equal(body.providers[0].durableTelemetry.successes,8);
   })
 })

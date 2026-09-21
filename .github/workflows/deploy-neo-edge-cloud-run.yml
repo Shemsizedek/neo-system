@@ -110,6 +110,12 @@ jobs:
           ai_code="$(curl --retry 5 --retry-delay 3 --retry-all-errors -sS -o /tmp/neo-ai-boundary.json -w '%{http_code}' -H 'X-Forwarded-Host: neo.holytemples.org' "$SERVICE_URL/api/ai/providers")"
           test "$ai_code" = 401
           grep -q 'neopass_identity_required' /tmp/neo-ai-boundary.json
+          workspace_code="$(curl --retry 5 --retry-delay 3 --retry-all-errors -sS -o /tmp/neo-sync-workspace.html -w '%{http_code}' -H 'X-Forwarded-Host: neo.holytemples.org' "$SERVICE_URL/neosync/")"
+          test "$workspace_code" = 200
+          grep -q 'NEOsync Conversation Workspace' /tmp/neo-sync-workspace.html
+          asset_code="$(curl --retry 5 --retry-delay 3 --retry-all-errors -sS -o /tmp/neo-ai.js -w '%{http_code}' -H 'X-Forwarded-Host: neo.holytemples.org' "$SERVICE_URL/assets/neo-ai.js")"
+          test "$asset_code" = 200
+          grep -q "AI surface v" /tmp/neo-ai.js
           echo "NEO_EDGE_SERVICE_URL=$SERVICE_URL" >> "$GITHUB_ENV"
           echo "NEO edge + NEO Wire production origin healthy: $SERVICE_URL" >> "$GITHUB_STEP_SUMMARY"
 
@@ -169,6 +175,8 @@ jobs:
             'https://neo.holytemples.org/health'
             'https://neo.holytemples.org/assets/neo-bridge.js'
             'https://neo.holytemples.org/assets/neo-suite.js'
+            'https://neo.holytemples.org/assets/neo-ai.js'
+            'https://neo.holytemples.org/neosync/'
             'https://wire.holytemples.org/'
             'https://wire.holytemples.org/api/wire/status'
             'https://router.holytemples.org/health'

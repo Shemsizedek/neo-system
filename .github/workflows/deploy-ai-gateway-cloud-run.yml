@@ -52,7 +52,7 @@ jobs:
           done
 
       - name: Test NEO AI gateway and router
-        run: node --test server/neo-router/ai-gateway-server.test.mjs server/neo-router/router.test.mjs server/neo-router/providers.test.mjs server/neo-router/conversation-store.test.mjs
+        run: node --test server/neo-router/ai-gateway-server.test.mjs server/neo-router/router.test.mjs server/neo-router/providers.test.mjs server/neo-router/conversation-store.test.mjs server/neo-router/provider-telemetry-store.test.mjs
 
       - name: Verify live Meta Muse credential before deploy
         env:
@@ -289,6 +289,49 @@ jobs:
             if(!t.messages.some(m=>m.role==="assistant")) throw new Error("persistent_assistant_turn_missing");
             console.log(JSON.stringify({threadIdPresent:true,historyPersisted:true,lastResponseIdPresent:true,messageCount:t.messages.length}));
             fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,"\n### NEOsync persistent conversation workspace\n- Firestore thread: created\n- Muse turn: completed\n- History reload: passed\n- Last Muse response ID: persisted\n");
+          '
+
+      - name: Verify NEOsync workspace v2 lifecycle and durable telemetry
+        env:
+          NEO_PASS_JWT_SECRET: ${{ secrets.NEO_PASS_JWT_SECRET }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL="$(gcloud run services describe "$SERVICE_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format='value(status.url)')"
+          TOKEN="$(node --input-type=module -e '
+            import { createHmac } from "node:crypto";
+            const enc=v=>Buffer.from(JSON.stringify(v)).toString("base64url");
+            const now=Math.floor(Date.now()/1000),h=enc({alg:"HS256",typ:"JWT"}),p=enc({sub:"neo-muse-v2-smoke",iat:now,exp:now+300});
+            process.stdout.write(h+"."+p+"."+createHmac("sha256",process.env.NEO_PASS_JWT_SECRET).update(h+"."+p).digest("base64url"));
+          ')"
+          P_CODE="$(curl -sS -o /tmp/providers-v2.json -w '%{http_code}' -H "Authorization: Bearer $TOKEN" "$URL/api/ai/providers")"
+          test "$P_CODE" = 200
+          node --input-type=module -e '
+            import fs from "node:fs";
+            const b=JSON.parse(fs.readFileSync("/tmp/providers-v2.json","utf8"));
+            if(b.telemetryPersistence!=="firestore") throw new Error("telemetry_not_durable");
+            const muse=(b.providers||[]).find(p=>p.id==="meta-muse");
+            if(!muse?.durableTelemetry) throw new Error("durable_muse_telemetry_missing");
+          '
+          C_CODE="$(curl -sS -o /tmp/thread-v2.json -w '%{http_code}' -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" --data '{"title":"MUSE-NEO-009 Disposable Thread","capability":"personalization"}' "$URL/api/ai/threads")"
+          test "$C_CODE" = 201
+          THREAD_ID="$(node --input-type=module -e 'import fs from "node:fs";const b=JSON.parse(fs.readFileSync("/tmp/thread-v2.json","utf8"));process.stdout.write(b.thread.id)')"
+          PATCH_CODE="$(curl -sS -o /tmp/thread-v2-patched.json -w '%{http_code}' -X PATCH -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" --data '{"pinned":true,"archived":true}' "$URL/api/ai/threads/$THREAD_ID")"
+          test "$PATCH_CODE" = 200
+          EXPORT_CODE="$(curl -sS -o /tmp/thread-v2-export.json -w '%{http_code}' -H "Authorization: Bearer $TOKEN" "$URL/api/ai/threads/$THREAD_ID/export")"
+          test "$EXPORT_CODE" = 200
+          DELETE_CODE="$(curl -sS -o /tmp/thread-v2-delete.json -w '%{http_code}' -X DELETE -H "Authorization: Bearer $TOKEN" "$URL/api/ai/threads/$THREAD_ID")"
+          test "$DELETE_CODE" = 200
+          node --input-type=module -e '
+            import fs from "node:fs";
+            const p=JSON.parse(fs.readFileSync("/tmp/thread-v2-patched.json","utf8")).thread;
+            const e=JSON.parse(fs.readFileSync("/tmp/thread-v2-export.json","utf8"));
+            const d=JSON.parse(fs.readFileSync("/tmp/thread-v2-delete.json","utf8"));
+            if(!p?.pinned||!p?.archived) throw new Error("thread_lifecycle_patch_failed");
+            if(e.exportVersion!=="neo-conversation-v1") throw new Error("thread_export_failed");
+            if(d.deleted!==true) throw new Error("thread_delete_failed");
+            console.log(JSON.stringify({durableTelemetry:true,pin:true,archive:true,export:true,delete:true}));
+            fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,"\n### NEOsync Workspace v2\n- Durable provider telemetry: Firestore\n- Pin/archive: passed\n- Export: passed\n- Delete: passed\n");
           '
 
       - name: Map ai.holytemples.org

@@ -159,3 +159,12 @@ test('opens a provider circuit after repeated failures and falls back', async ()
   })
   assert.ok(plan.candidates.includes('meta-muse'))
 })
+
+test('forwards provider events to durable telemetry recorder', async () => {
+  const events=[];
+  const router=createNeoRouter({providers:[provider('meta-muse')],telemetryRecorder:async event=>events.push(event)});
+  const result=await router.execute({missionId:'M-15',objective:'Persist telemetry',capability:'personalization'});
+  assert.equal(result.status,'completed');
+  assert.deepEqual(events.map(e=>e.event),['attempt','success']);
+  assert.equal(events[0].provider,'meta-muse');
+})
