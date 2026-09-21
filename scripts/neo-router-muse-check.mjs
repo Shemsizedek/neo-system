@@ -20,14 +20,15 @@ if (!muse?.configured) {
     })
 
     const text = String(result.text ?? '').trim()
-    const ok = text === 'NEO_MUSE_OK'
+    const responseMatched = text === 'NEO_MUSE_OK'
+    const ok = Boolean(result.responseId) && text.length > 0
 
     console.log(JSON.stringify({
       ok,
       provider: result.provider,
       model: result.model,
       configured: true,
-      responseMatched: ok,
+      responseMatched,
       responseIdPresent: Boolean(result.responseId),
     }, null, 2))
 
