@@ -18,6 +18,7 @@ concurrency:
 env:
   SERVICE_NAME: neo-ai-gateway
   MODEL_API_KEY_SECRET_NAME: neo-ai-gateway-model-api-key
+  NEOPASS_SECRET_NAME: neo-pass-jwt-secret
   META_MUSE_MODEL: muse-spark-1.3
   META_MODEL_BASE_URL: https://api.meta.ai/v1
 
@@ -33,6 +34,7 @@ jobs:
       GCP_CLOUD_RUN_SERVICE_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_SERVICE_ACCOUNT || secrets.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
       GCP_CLOUD_RUN_RUNTIME_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_RUNTIME_ACCOUNT || secrets.GCP_CLOUD_RUN_RUNTIME_ACCOUNT }}
       GCP_ARTIFACT_REGISTRY: ${{ vars.GCP_ARTIFACT_REGISTRY || secrets.GCP_ARTIFACT_REGISTRY }}
+      NEO_PASS_JWT_ISSUER: ${{ vars.NEO_PASS_JWT_ISSUER }}
     steps:
       - uses: actions/checkout@v7.0.1
 
@@ -62,6 +64,15 @@ jobs:
 
       - uses: google-github-actions/setup-gcloud@v3
 
+      - name: Validate pre-provisioned Neopass secret
+        shell: bash
+        run: |
+          set -euo pipefail
+          gcloud secrets describe "$NEOPASS_SECRET_NAME" --project="$GCP_PROJECT_ID" >/dev/null || {
+            echo "::error::Secret $NEOPASS_SECRET_NAME is not provisioned."
+            exit 1
+          }
+
       - name: Sync Muse credential to Google Secret Manager
         env:
           MODEL_API_KEY: ${{ secrets.MODEL_API_KEY }}
@@ -76,12 +87,14 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          gcloud secrets add-iam-policy-binding "$MODEL_API_KEY_SECRET_NAME" \
-            --project="$GCP_PROJECT_ID" \
-            --member="serviceAccount:$GCP_CLOUD_RUN_RUNTIME_ACCOUNT" \
-            --role="roles/secretmanager.secretAccessor" \
-            --condition=None \
-            --quiet 2>/dev/null || true
+          for secret in "$MODEL_API_KEY_SECRET_NAME" "$NEOPASS_SECRET_NAME"; do
+            gcloud secrets add-iam-policy-binding "$secret" \
+              --project="$GCP_PROJECT_ID" \
+              --member="serviceAccount:$GCP_CLOUD_RUN_RUNTIME_ACCOUNT" \
+              --role="roles/secretmanager.secretAccessor" \
+              --condition=None \
+              --quiet 2>/dev/null || true
+          done
 
       - name: Build and push AI gateway image
         env:
@@ -99,13 +112,15 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          ENV_VARS="META_MUSE_MODEL=$META_MUSE_MODEL,META_MODEL_BASE_URL=$META_MODEL_BASE_URL"
+          if [ -n "${NEO_PASS_JWT_ISSUER:-}" ]; then ENV_VARS="$ENV_VARS,NEO_PASS_JWT_ISSUER=$NEO_PASS_JWT_ISSUER"; fi
           gcloud run deploy "$SERVICE_NAME" \
             --project="$GCP_PROJECT_ID" \
             --region="$GCP_REGION" \
             --image="$IMAGE" \
             --service-account="$GCP_CLOUD_RUN_RUNTIME_ACCOUNT" \
-            --set-env-vars="META_MUSE_MODEL=$META_MUSE_MODEL,META_MODEL_BASE_URL=$META_MODEL_BASE_URL" \
-            --set-secrets="MODEL_API_KEY=$MODEL_API_KEY_SECRET_NAME:latest" \
+            --set-env-vars="$ENV_VARS" \
+            --set-secrets="MODEL_API_KEY=$MODEL_API_KEY_SECRET_NAME:latest,NEO_PASS_JWT_SECRET=$NEOPASS_SECRET_NAME:latest" \
             --allow-unauthenticated \
             --quiet
 
@@ -124,3 +139,50 @@ jobs:
           echo "### NEO AI Gateway" >> "$GITHUB_STEP_SUMMARY"
           echo "Cloud Run service: $URL" >> "$GITHUB_STEP_SUMMARY"
           cat /tmp/health.json >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Run first authenticated NEO personalization mission
+        env:
+          NEO_PASS_JWT_SECRET: ${{ secrets.NEO_PASS_JWT_SECRET }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${NEO_PASS_JWT_SECRET:-}" || { echo "::error::Missing NEO_PASS_JWT_SECRET"; exit 1; }
+          URL="$(gcloud run services describe "$SERVICE_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format='value(status.url)')"
+          TOKEN="$(node --input-type=module -e '
+            import { createHmac } from "node:crypto";
+            const enc = value => Buffer.from(JSON.stringify(value)).toString("base64url");
+            const now = Math.floor(Date.now()/1000);
+            const header = enc({alg:"HS256",typ:"JWT"});
+            const payloadObj = {sub:"neo-muse-smoke",iat:now,exp:now+300};
+            if (process.env.NEO_PASS_JWT_ISSUER) payloadObj.iss = process.env.NEO_PASS_JWT_ISSUER;
+            const payload = enc(payloadObj);
+            const sig = createHmac("sha256", process.env.NEO_PASS_JWT_SECRET).update(header+"."+payload).digest("base64url");
+            process.stdout.write(header+"."+payload+"."+sig);
+          ')"
+          cat >/tmp/mission.json <<'JSON'
+          {
+            "missionId":"MUSE-NEO-006-SMOKE",
+            "objective":"Create a concise NEO System readiness statement that distinguishes verified capability from future plans.",
+            "capability":"personalization",
+            "perspectiveContext":"Use the NEO / Shemsizedek perspective profile, preserve provenance, and keep the statement factual.",
+            "maxTokens":512
+          }
+          JSON
+          CODE="$(curl -sS -o /tmp/mission-response.json -w '%{http_code}' \
+            -H "Authorization: Bearer $TOKEN" \
+            -H "Content-Type: application/json" \
+            --data-binary @/tmp/mission.json \
+            "$URL/api/ai/execute")"
+          test "$CODE" = 200
+          node --input-type=module -e '
+            import fs from "node:fs";
+            const body=JSON.parse(fs.readFileSync("/tmp/mission-response.json","utf8"));
+            if(body.status!=="completed") throw new Error("mission_not_completed");
+            if(body.route!=="meta-muse") throw new Error("mission_not_routed_to_muse");
+            if(!body.result?.responseId) throw new Error("missing_muse_response_id");
+            const text=String(body.result?.text||"").trim();
+            console.log(JSON.stringify({status:body.status,route:body.route,responseIdPresent:true,textPresent:Boolean(text)}));
+            fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, "\n### First authenticated NEO personalization mission\n");
+            fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, "- Status: completed\n- Route: meta-muse\n- Muse response ID: present\n");
+            if(text) fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, "- Output: "+text.replace(/\n/g," ")+"\n");
+          '
