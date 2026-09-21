@@ -15,8 +15,9 @@ export function createCrawlerWorker({queue,crawler=neoCrawler,evidenceSink,route
       const event=createCrawlerRouteEvent(envelope,job.meta?.targets);
       event.id=job.meta?.eventId||eventId(job,envelope);
       const routed=await routeEvent(event);
-      await queue.complete(job.id,{evidenceIds:evidence.map(x=>x.id),eventId:event.id,missionId:routed?.mission?.id||null},job.claimToken);
-      return {status:'COMPLETED',jobId:job.id,eventId:event.id,evidenceCount:evidence.length,missionId:routed?.mission?.id||null};
+      const missionId=routed?.mission?.id||routed?.event?.missionId||null;
+      await queue.complete(job.id,{evidenceIds:evidence.map(x=>x.id),eventId:event.id,missionId},job.claimToken);
+      return {status:'COMPLETED',jobId:job.id,eventId:event.id,evidenceCount:evidence.length,missionId};
     }catch(error){
       const failed=await queue.fail(job.id,error,job.claimToken);
       return {status:failed.status,jobId:job.id,error:String(error?.message||error)};
@@ -24,4 +25,4 @@ export function createCrawlerWorker({queue,crawler=neoCrawler,evidenceSink,route
   }
   return Object.freeze({runOnce});
 }
-function eventId(job,envelope){return 'crawler-'+createHash('sha256').update(JSON.stringify({jobId:job.id,adapter:envelope.adapter,generatedAt:envelope.generatedAt})).digest('hex').slice(0,24)}
+function eventId(job,envelope){return 'crawler-'+createHash('sha256').update(JSON.stringify({jobId:job.id,adapter:envelope.adapter})).digest('hex').slice(0,24)}
