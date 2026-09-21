@@ -37,6 +37,6 @@ test('routes NEO Crawler ingestion with scalar provenance into an intelligence m
   const event={id:'crawler-1',source:'neo-crawler',type:'neo.crawler.ingested',sourceMeta:{service:'NEO Crawler',version:'1.1.0',adapter:'public-source'},governance:{legalAuthorityAutomatic:false,doctrineAutomatic:false,lmsPublicationAutomatic:false},targets:['neo-evidence-vault','neo-algo'],payload:{provenanceRequired:true}}
   const result=await ingestRouterEvent({event,store,runtime:rt})
   assert.equal(result.rule?.id,'neo-crawler-ingested')
-  assert.equal(result.mission.workerRole,'intelligence')
+  assert.equal(result.mission.actions?.[0]?.workerRole,'intelligence')
   assert.deepEqual(result.mission.provenance,[`event:neo-crawler:${result.event.id}`])
 })
