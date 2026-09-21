@@ -52,7 +52,7 @@ jobs:
           done
 
       - name: Test NEO AI gateway and router
-        run: node --test server/neo-router/ai-gateway-server.test.mjs server/neo-router/router.test.mjs server/neo-router/providers.test.mjs server/neo-router/conversation-store.test.mjs server/neo-router/provider-telemetry-store.test.mjs
+        run: node --test server/neo-router/ai-gateway-server.test.mjs server/neo-router/router.test.mjs server/neo-router/providers.test.mjs server/neo-router/conversation-store.test.mjs server/neo-router/provider-telemetry-store.test.mjs server/neo-router/knowledge-context.test.mjs
 
       - name: Verify live Meta Muse credential before deploy
         env:
@@ -333,6 +333,58 @@ jobs:
             console.log(JSON.stringify({durableTelemetry:true,pin:true,archive:true,export:true,delete:true}));
             fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,"\n### NEOsync Workspace v2\n- Durable provider telemetry: Firestore\n- Pin/archive: passed\n- Export: passed\n- Delete: passed\n");
           '
+
+      - name: Verify NEOsync knowledge context and provenance
+        env:
+          NEO_PASS_JWT_SECRET: ${{ secrets.NEO_PASS_JWT_SECRET }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL="$(gcloud run services describe "$SERVICE_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format='value(status.url)')"
+          TOKEN="$(node --input-type=module -e '
+            import { createHmac } from "node:crypto";
+            const enc=v=>Buffer.from(JSON.stringify(v)).toString("base64url");
+            const now=Math.floor(Date.now()/1000),h=enc({alg:"HS256",typ:"JWT"}),p=enc({sub:"neo-muse-knowledge-smoke",iat:now,exp:now+300});
+            process.stdout.write(h+"."+p+"."+createHmac("sha256",process.env.NEO_PASS_JWT_SECRET).update(h+"."+p).digest("base64url"));
+          ')"
+          node --input-type=module -e '
+            import fs from "node:fs";
+            import { authorizedLibraryCatalog } from "./server/holytemples-adapter/adapter.mjs";
+            const resource=authorizedLibraryCatalog({accessClass:"PUBLIC_WORLD_LIBRARY"})[0];
+            if(!resource?.id) throw new Error("approved_library_resource_missing");
+            fs.writeFileSync("/tmp/knowledge-resource.json",JSON.stringify(resource));
+            fs.writeFileSync("/tmp/knowledge-thread.json",JSON.stringify({title:"MUSE-NEO-010 Knowledge Thread",capability:"personalization"}));
+          '
+          C_CODE="$(curl -sS -o /tmp/knowledge-thread-created.json -w '%{http_code}' -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" --data-binary @/tmp/knowledge-thread.json "$URL/api/ai/threads")"
+          test "$C_CODE" = 201
+          THREAD_ID="$(node --input-type=module -e 'import fs from "node:fs";process.stdout.write(JSON.parse(fs.readFileSync("/tmp/knowledge-thread-created.json","utf8")).thread.id)')"
+          THREAD_ID="$THREAD_ID" node --input-type=module -e '
+            import fs from "node:fs";
+            const resource=JSON.parse(fs.readFileSync("/tmp/knowledge-resource.json","utf8"));
+            fs.writeFileSync("/tmp/knowledge-mission.json",JSON.stringify({
+              missionId:"MUSE-NEO-010-KNOWLEDGE",
+              threadId:process.env.THREAD_ID,
+              objective:"Summarize the attached approved NEO Library record and identify it as internal context.",
+              capability:"personalization",
+              knowledgeAttachments:[resource.id],
+              autoKnowledge:true,
+              maxTokens:2048
+            }));
+          '
+          M_CODE="$(curl -sS -o /tmp/knowledge-response.json -w '%{http_code}' -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" --data-binary @/tmp/knowledge-mission.json "$URL/api/ai/execute")"
+          test "$M_CODE" = 200
+          node --input-type=module -e '
+            import fs from "node:fs";
+            const resource=JSON.parse(fs.readFileSync("/tmp/knowledge-resource.json","utf8"));
+            const body=JSON.parse(fs.readFileSync("/tmp/knowledge-response.json","utf8"));
+            if(body.status!=="completed") throw new Error("knowledge_mission_not_completed");
+            if(body.route!=="meta-muse") throw new Error("knowledge_mission_not_muse");
+            if(!body.knowledge?.provenance?.some(item=>item.id===resource.id)) throw new Error("attached_resource_provenance_missing");
+            if(!body.knowledge?.algo?.provenance?.includes("NEO-ALGO-001")) throw new Error("neo_algo_provenance_missing");
+            console.log(JSON.stringify({knowledgeContext:true,provenance:true,neoAlgo:true,sourceId:resource.id}));
+            fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,"\n### NEOsync Knowledge Context\n- Approved library attachment: passed\n- Provenance returned: passed\n- NEO Algo grounding: passed\n- Muse route: passed\n");
+          '
+          curl -sS -o /dev/null -X DELETE -H "Authorization: Bearer $TOKEN" "$URL/api/ai/threads/$THREAD_ID"
 
       - name: Map ai.holytemples.org
         shell: bash
