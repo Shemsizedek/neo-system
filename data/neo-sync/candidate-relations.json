@@ -1,37 +1,37 @@
 {
-  "generatedAt": "2026-09-21T04:59:22.731Z",
+  "generatedAt": "2026-09-21T12:52:44.923Z",
   "items": [
     {
-      "fromId": "PAGE:2138275d775895259a2f6cff14319e440fcaa0e993d1a5ec487f48f1d7649a2c",
+      "fromId": "PAGE:ac75672b2fba79d84758cdbddc9bc0ec6f669c16f9eacbaf1202b37f8cbca487",
       "toId": "SRC-HOLY-TABLETS-WEB",
       "kind": "DERIVES_FROM",
       "confidence": 0.99,
       "evidenceRefs": [
-        "https://holytablets.nuwaubianfacts.com/100/051.htm",
-        "2138275d775895259a2f6cff14319e440fcaa0e993d1a5ec487f48f1d7649a2c"
+        "https://holytablets.nuwaubianfacts.com/tableofcontents.htm",
+        "ac75672b2fba79d84758cdbddc9bc0ec6f669c16f9eacbaf1202b37f8cbca487"
       ],
       "decision": "ACCEPTED"
     },
     {
-      "fromId": "PAGE:2138275d775895259a2f6cff14319e440fcaa0e993d1a5ec487f48f1d7649a2c",
+      "fromId": "PAGE:5bc59847043f9e3adfaf0810ebe0831a1ef521315a30779941f2bc8ab7d1b6fc",
       "toId": "SRC-HOLY-TABLETS-WEB",
       "kind": "DERIVES_FROM",
       "confidence": 0.99,
       "evidenceRefs": [
-        "https://holytablets.nuwaubianfacts.com/100/064.htm",
-        "2138275d775895259a2f6cff14319e440fcaa0e993d1a5ec487f48f1d7649a2c"
+        "https://holytablets.nuwaubianfacts.com/prayer%20of%20the%20ansaars.htm",
+        "5bc59847043f9e3adfaf0810ebe0831a1ef521315a30779941f2bc8ab7d1b6fc"
       ],
       "decision": "ACCEPTED"
     },
     {
-      "fromId": "DRAFT:2138275d77589525",
-      "toId": "DRAFT:2138275d77589525",
+      "fromId": "DRAFT:ac75672b2fba79d8",
+      "toId": "DRAFT:5bc59847043f9e3a",
       "kind": "PARALLELS",
       "confidence": 0.89,
       "rationale": "Candidate relation generated from title/heading overlap; semantic similarity alone does not establish derivation.",
       "evidenceRefs": [
-        "https://holytablets.nuwaubianfacts.com/100/051.htm",
-        "https://holytablets.nuwaubianfacts.com/100/064.htm"
+        "https://holytablets.nuwaubianfacts.com/tableofcontents.htm",
+        "https://holytablets.nuwaubianfacts.com/prayer%20of%20the%20ansaars.htm"
       ],
       "decision": "CANDIDATE"
     }

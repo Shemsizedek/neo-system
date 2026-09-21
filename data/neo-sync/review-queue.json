@@ -1,13 +1,13 @@
 {
-  "generatedAt": "2026-09-21T04:59:22.731Z",
+  "generatedAt": "2026-09-21T12:52:44.923Z",
   "items": [
     {
       "type": "NEW_PAGE",
       "sourceId": "SRC-HOLY-TABLETS-WEB",
-      "url": "https://holytablets.nuwaubianfacts.com/100/051.htm",
+      "url": "https://holytablets.nuwaubianfacts.com/tableofcontents.htm",
       "title": "Untitled",
-      "currentHash": "2138275d775895259a2f6cff14319e440fcaa0e993d1a5ec487f48f1d7649a2c",
-      "currentExcerpt": "HOME | Table of Contents | The Seven Thunders | A Personal Note from the Receiver | Prayer of the Ansaars | The Glossary | Figures Back | Next Your browser does not support inline frames or is currently configured not to display inline frames. HOME | Table of Contents | The Seven Thunders | A Personal Note from the Receiver | Prayer of the Ansaars | The Glossary | Figures http://HolyTablets.NuwaubianFacts.com Please ",
+      "currentHash": "ac75672b2fba79d84758cdbddc9bc0ec6f669c16f9eacbaf1202b37f8cbca487",
+      "currentExcerpt": "HOME | Table of Contents | The Seven Thunders | A Personal Note from the Receiver | Prayer of the Ansaars | The Glossary | Figures CHAPTER ONE EL ISTAKHLAAG, \"THE CREATION\" Tablet 1 Epic of Creation And Before Page 1 Tablet 2 The Beginning Page 10 Tablet 3 The Story of Lucifer Page 22 Tablet 4 The War in The Skies Page 23 Tablet 5 The Journey of Nibiru Page 30 Tablet 6 The Origin of the Moon Page 51 Tablet 7 The Crea",
       "quality": {
         "dimensions": {
           "provenance": 9,
@@ -30,10 +30,10 @@
     {
       "type": "NEW_PAGE",
       "sourceId": "SRC-HOLY-TABLETS-WEB",
-      "url": "https://holytablets.nuwaubianfacts.com/100/064.htm",
+      "url": "https://holytablets.nuwaubianfacts.com/prayer%20of%20the%20ansaars.htm",
       "title": "Untitled",
-      "currentHash": "2138275d775895259a2f6cff14319e440fcaa0e993d1a5ec487f48f1d7649a2c",
-      "currentExcerpt": "HOME | Table of Contents | The Seven Thunders | A Personal Note from the Receiver | Prayer of the Ansaars | The Glossary | Figures Back | Next Your browser does not support inline frames or is currently configured not to display inline frames. HOME | Table of Contents | The Seven Thunders | A Personal Note from the Receiver | Prayer of the Ansaars | The Glossary | Figures http://HolyTablets.NuwaubianFacts.com Please ",
+      "currentHash": "5bc59847043f9e3adfaf0810ebe0831a1ef521315a30779941f2bc8ab7d1b6fc",
+      "currentExcerpt": "HOME | Table of Contents | The Seven Thunders | A Personal Note from the Receiver | Prayer of the Ansaars | The Glossary | Figures Your browser does not support inline frames or is currently configured not to display inline frames. HOME | Table of Contents | The Seven Thunders | A Personal Note from the Receiver | Prayer of the Ansaars | The Glossary | Figures http://HolyTablets.NuwaubianFacts.com Please let us know ",
       "quality": {
         "dimensions": {
           "provenance": 9,
@@ -56,17 +56,17 @@
     {
       "type": "REMOVED_OR_UNREACHABLE",
       "sourceId": "SRC-HOLY-TABLETS-WEB",
-      "url": "https://holytablets.nuwaubianfacts.com/tableofcontents.htm",
+      "url": "https://holytablets.nuwaubianfacts.com/100/051.htm",
       "title": "Untitled",
-      "previousHash": "ac75672b2fba79d84758cdbddc9bc0ec6f669c16f9eacbaf1202b37f8cbca487",
+      "previousHash": "2138275d775895259a2f6cff14319e440fcaa0e993d1a5ec487f48f1d7649a2c",
       "decision": "REVIEW_REQUIRED"
     },
     {
       "type": "REMOVED_OR_UNREACHABLE",
       "sourceId": "SRC-HOLY-TABLETS-WEB",
-      "url": "https://holytablets.nuwaubianfacts.com/prayer%20of%20the%20ansaars.htm",
+      "url": "https://holytablets.nuwaubianfacts.com/100/064.htm",
       "title": "Untitled",
-      "previousHash": "5bc59847043f9e3adfaf0810ebe0831a1ef521315a30779941f2bc8ab7d1b6fc",
+      "previousHash": "2138275d775895259a2f6cff14319e440fcaa0e993d1a5ec487f48f1d7649a2c",
       "decision": "REVIEW_REQUIRED"
     }
   ]
