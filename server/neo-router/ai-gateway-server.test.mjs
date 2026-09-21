@@ -110,3 +110,44 @@ test('execute rejects malformed mission requests', async () => {
     assert.equal((await response.json()).error, 'mission_fields_required')
   })
 })
+
+
+test('persistent thread APIs create, resume, rename, and append Muse turns', async () => {
+  const rows = new Map()
+  const store = {
+    async createThread({ subjectId, title, capability }) {
+      const thread = { id:'thread-1', subjectId, title, capability, lastResponseId:null, messages:[] }
+      rows.set(thread.id, thread); return structuredClone(thread)
+    },
+    async listThreads({ subjectId }) { return [...rows.values()].filter(t=>t.subjectId===subjectId).map(structuredClone) },
+    async getThread({ subjectId, threadId }) {
+      const t=rows.get(threadId); if(!t)return null; if(t.subjectId!==subjectId)throw new Error('thread_forbidden'); return structuredClone(t)
+    },
+    async renameThread({ subjectId, threadId, title }) {
+      const t=await this.getThread({subjectId,threadId}); if(!t)return null; t.title=title; rows.set(threadId,t); return structuredClone(t)
+    },
+    async appendTurn({ subjectId, threadId, objective, result }) {
+      const t=await this.getThread({subjectId,threadId}); t.lastResponseId=result.responseId||'resp-thread'; t.messages.push({role:'user',text:objective},{role:'assistant',text:result.text,responseId:t.lastResponseId}); rows.set(threadId,t); return structuredClone(t)
+    },
+  }
+  const threadRouter = {
+    ...router,
+    async execute(mission) {
+      return { status:'completed', route:'meta-muse', missionId:mission.missionId, result:{ provider:'meta-muse', text:'thread answer', responseId:mission.previousResponseId ? 'resp-2' : 'resp-1' } }
+    },
+  }
+  await withServer(() => createNeoAiGatewayServer({ router:threadRouter, resolveTrustedIdentity:trusted, conversationStore:store }), async server => {
+    let response=await request(server,'/api/ai/threads',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({title:'Temple Thread',capability:'personalization'})})
+    assert.equal(response.status,201)
+    response=await request(server,'/api/ai/execute',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({threadId:'thread-1',objective:'First turn',capability:'personalization'})})
+    assert.equal(response.status,200)
+    response=await request(server,'/api/ai/threads/thread-1')
+    const loaded=await response.json()
+    assert.equal(loaded.thread.lastResponseId,'resp-1')
+    assert.equal(loaded.thread.messages.length,2)
+    response=await request(server,'/api/ai/threads/thread-1',{method:'PATCH',headers:{'content-type':'application/json'},body:JSON.stringify({title:'Renamed'})})
+    assert.equal((await response.json()).thread.title,'Renamed')
+    response=await request(server,'/api/ai/threads')
+    assert.equal((await response.json()).threads.length,1)
+  })
+})
