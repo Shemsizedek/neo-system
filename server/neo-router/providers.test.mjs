@@ -57,6 +57,7 @@ test('Meta Muse adapter uses Model API Responses without exposing the key', asyn
   const payload = JSON.parse(request.options.body)
   assert.equal(payload.instructions, 'neo perspective')
   assert.equal(payload.previous_response_id, 'resp_prev')
+  assert.equal(payload.reasoning.effort, 'low')
   assert.ok(!request.url.includes('muse-secret'))
 })
 
@@ -79,7 +80,7 @@ test('environment config supports all seven logical providers', () => {
   const providers = providersFromEnv({
     ANTHROPIC_API_KEY: 'a', ANTHROPIC_MODEL: 'claude-custom',
     OPENAI_API_KEY: 'o', OPENAI_MODEL: 'openai-custom',
-    MODEL_API_KEY: 'm', META_MUSE_MODEL: 'muse-custom', META_MODEL_BASE_URL: 'https://api.meta.ai/v1',
+    MODEL_API_KEY: 'm', META_MUSE_MODEL: 'muse-custom', META_MODEL_BASE_URL: 'https://api.meta.ai/v1', META_MUSE_REASONING_EFFORT: 'minimal',
     XAI_API_KEY: 'x', XAI_MODEL: 'grok-custom',
     LLAMA_API_KEY: 'l', LLAMA_MODEL: 'llama-custom', LLAMA_API_BASE: 'https://api.llama.com/compat/v1',
     GEMINI_API_KEY: 'g', GEMINI_MODEL: 'gemini-custom',
