@@ -1,8 +1,8 @@
 (() => {
   'use strict';
 
-  const VERSION = '1.0.0';
-  const DEFAULT_ENDPOINT = 'https://neo.holytemples.org/api/ai/execute';
+  const VERSION = '1.1.0';
+  const DEFAULT_ENDPOINT = 'https://ai.holytemples.org/api/ai/execute';
 
   const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
@@ -49,7 +49,7 @@
         <form novalidate>
           <div class="row">
             <label class="field"><span class="label">Mission objective</span><textarea class="textarea" name="objective" maxlength="12000" required placeholder="Ask the NEO Router to analyze, plan, design, review, or explain..."></textarea></label>
-            <label class="field"><span class="label">Capability</span><select class="select" name="capability"><option value="reasoning">Reasoning</option><option value="planning">Planning</option><option value="review">Review</option><option value="frontend">Frontend</option><option value="design">Design</option><option value="backend">Backend</option><option value="multimodal">Multimodal</option><option value="media">Media</option></select></label>
+            <label class="field"><span class="label">Capability</span><select class="select" name="capability"><option value="reasoning">Reasoning</option><option value="planning">Planning</option><option value="review">Review</option><option value="frontend">Frontend</option><option value="design">Design</option><option value="backend">Backend</option><option value="multimodal">Multimodal</option><option value="media">Media</option><option value="personalization">Personalization (Muse)</option></select></label>
           </div>
           <div class="actions"><button class="button" type="submit">Run mission</button><button class="button secondary" type="button" data-clear>Clear</button></div>
         </form>
@@ -111,6 +111,9 @@
             capability,
             actions: [],
             maxTokens: 2048,
+            perspectiveContext: capability === 'personalization'
+              ? 'Use the NEO / Shemsizedek perspective profile, preserve provenance, distinguish verified facts from interpretation and future plans, and maintain established NEO terminology.'
+              : undefined,
           }),
         });
         const payload = await response.json().catch(() => ({}));

@@ -2,14 +2,14 @@
 /**
  * Plugin Name: NEO Temple Suite
  * Description: Governed WordPress blocks for NEO telemetry, Noogle, NOMNI, World Library, NEOpass, NEOpay, Google AI Studio visual surfaces, and the authenticated NEO AI Gateway.
- * Version: 4.1.2
+ * Version: 4.2.0
  * Author: NEO System
  */
 if (!defined('ABSPATH')) exit;
 
-const NEO_TEMPLE_SUITE_VERSION = '4.1.2';
+const NEO_TEMPLE_SUITE_VERSION = '4.2.0';
 const NEO_TEMPLE_API = 'https://neo.holytemples.org/api';
-const NEO_TEMPLE_AI_ENDPOINT = 'https://neo.holytemples.org/api/ai/execute';
+const NEO_TEMPLE_AI_ENDPOINT = 'https://ai.holytemples.org/api/ai/execute';
 
 function neo_temple_suite_enqueue() {
     wp_enqueue_script('neo-temple-bridge', 'https://neo.holytemples.org/assets/neo-bridge.js', array(), NEO_TEMPLE_SUITE_VERSION, true);
@@ -34,7 +34,7 @@ function neo_temple_ai_shortcode($atts = array()) {
     $atts = shortcode_atts(array('endpoint' => NEO_TEMPLE_AI_ENDPOINT, 'capability' => 'reasoning'), $atts, 'neo_temple_ai');
     $endpoint = esc_url($atts['endpoint']);
     if (strpos($endpoint, 'https://') !== 0) $endpoint = NEO_TEMPLE_AI_ENDPOINT;
-    $allowed = array('reasoning', 'planning', 'review', 'frontend', 'design', 'backend', 'multimodal', 'media');
+    $allowed = array('reasoning', 'planning', 'review', 'frontend', 'design', 'backend', 'multimodal', 'media', 'personalization');
     $capability = sanitize_key($atts['capability']);
     if (!in_array($capability, $allowed, true)) $capability = 'reasoning';
     return sprintf('<neo-temple-ai endpoint="%s" capability="%s"></neo-temple-ai>', esc_attr($endpoint), esc_attr($capability));
