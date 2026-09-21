@@ -1,0 +1,14 @@
+import assert from "node:assert/strict";
+import {publishFacebookImage} from "../src/social/facebook-image-client.mjs";
+import {createXImagePost} from "../src/social/x-image-client.mjs";
+import {createLinkedInImagePost} from "../src/social/linkedin-image-client.mjs";
+const response=(json,headers=new Map())=>({ok:true,status:200,json:async()=>json,headers:{get:k=>headers.get(k)||null}});
+let seen=[];
+await publishFacebookImage({pageId:"1",pageAccessToken:"t",imageUrl:"https://example.com/a.jpg",caption:"Paper",fetchImpl:async(u,o)=>(seen.push([u,o]),response({id:"fb1"}))});
+await createXImagePost({text:"Paper",mediaId:"m1",bearerToken:"t",fetchImpl:async(u,o)=>(seen.push([u,o]),response({data:{id:"x1"}}))});
+await createLinkedInImagePost({authorUrn:"urn:li:person:1",accessToken:"t",commentary:"Paper",imageUrn:"urn:li:image:1",fetchImpl:async(u,o)=>(seen.push([u,o]),response({},new Map([["x-restli-id","li1"]])))});
+assert.equal(seen.length,3);
+assert.match(seen[0][0],/\/photos$/);
+assert.equal(JSON.parse(seen[1][1].body).media.media_ids[0],"m1");
+assert.equal(JSON.parse(seen[2][1].body).content.media.id,"urn:li:image:1");
+console.log("Cross-platform image adapter contract tests passed");
