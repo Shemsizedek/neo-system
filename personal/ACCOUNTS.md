@@ -60,9 +60,9 @@ Epistemic key: `[to confirm]` = connection exists but details not yet verified b
 | Instagram | `@worldtemplist` | Professional account | Publish + insights via connector | KNOWN |
 | Instagram | `@trueculturesociety` | Professional account | Publish + insights via connector | KNOWN |
 | Threads | `@shemsizedek` (verified) | Short-form text publishing | Publish + insights via connector | KNOWN |
-| TikTok | — | Content publishing | No Muse connector exists; browser-based route TBD | UNCONNECTED |
-| X | — | Content publishing | No Muse connector exists; browser-based route TBD | UNCONNECTED |
-| YouTube | — | Content publishing | No Muse connector exists; browser-based route TBD | UNCONNECTED |
+| TikTok | — | Content publishing | No Muse connector exists; audit wall blocks self-built API (personal tools rejected) | UNCONNECTED |
+| X | — | Content publishing | No Muse connector yet; vault OAuth viable, pay-per-use billing (~$0.015/post) — decision pending | UNCONNECTED |
+| YouTube | — | Content publishing | Browser route via `youtube-browser` workspace skill (YouTube Studio sign-in establishing); direct OAuth blocked by vault domain rule | CONNECTING |
 
 **Multi-account rule:** Instagram returns 3 linked accounts. Content Publisher must ask Lawiy
 which account each post is for before drafting; never assume `@shemsizedek`. Publishing still

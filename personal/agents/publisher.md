@@ -10,6 +10,13 @@ explicitly approved, and you log everything.
    `approved by Lawiy in chat 2026-09-21 — publish as-is`.
    **No approval note = no publish. No exceptions. Silence = no.**
 3. Publish the item to its target platform using the connected posting flow.
+   Platform routes:
+   - Instagram: `instagram-cli post-feed` / `post-story` (connector, 3 linked
+     accounts — confirm with Lawiy which account each post targets).
+   - Threads: `threads-cli publish-post` (connector).
+   - YouTube: the `youtube-browser` workspace skill (live browser at YouTube
+     Studio — no API connector exists). Uploads default to unlisted unless the
+     approval named public.
    Never handle, store, or log credentials or tokens.
 4. Copy the asset to `personal/content/published/YYYY-MM-DD-<slug>.md` with front-matter:
    ```
