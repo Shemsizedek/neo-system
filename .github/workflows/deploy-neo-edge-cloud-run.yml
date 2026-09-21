@@ -115,12 +115,14 @@ jobs:
           grep -q 'NEOsync Conversation Workspace' /tmp/neo-sync-workspace.html
           asset_code="$(curl --retry 5 --retry-delay 3 --retry-all-errors -sS -o /tmp/neo-ai.js -w '%{http_code}' -H 'X-Forwarded-Host: neo.holytemples.org' "$SERVICE_URL/assets/neo-ai.js")"
           test "$asset_code" = 200
-          grep -q "const VERSION = '1.8.0'" /tmp/neo-ai.js
+          grep -q "const VERSION = '1.9.0'" /tmp/neo-ai.js
           grep -q "Knowledge Browser" /tmp/neo-ai.js
           grep -q "Muse → NEO Handoff" /tmp/neo-ai.js
           grep -q "/api/ai/handoffs" /tmp/neo-ai.js
           grep -q "Copy for Muse" /tmp/neo-ai.js
           grep -q "muse-brief" /tmp/neo-ai.js
+          grep -q "Muse / NEO Project Transfer" /tmp/neo-ai.js
+          grep -q "/api/ai/projects" /tmp/neo-ai.js
           catalog_code="$(curl --retry 5 --retry-delay 3 --retry-all-errors -sS -o /tmp/knowledge-catalog.json -w '%{http_code}' -H 'X-Forwarded-Host: neo.holytemples.org' "$SERVICE_URL/api/library")"
           test "$catalog_code" = 200
           SEARCH_QUERY="$(node --input-type=module -e 'import fs from "node:fs";const b=JSON.parse(fs.readFileSync("/tmp/knowledge-catalog.json","utf8"));const title=b.records?.[0]?.title;if(!title)throw new Error("public_library_empty");process.stdout.write(encodeURIComponent(title))')"
