@@ -120,6 +120,7 @@ export function createNeoRouter({
           system: mission.system ?? buildNeoPerspectiveInstructions({ context: mission.perspectiveContext }),
           prompt: mission.objective,
           maxTokens: mission.maxTokens,
+          previousResponseId: mission.previousResponseId,
         })
         state.successes += 1
         state.consecutiveFailures = 0

@@ -2,14 +2,14 @@
 /**
  * Plugin Name: NEO Temple Suite
  * Description: Governed WordPress blocks for NEO telemetry, Noogle, NOMNI, World Library, NEOpass, NEOpay, Google AI Studio visual surfaces, and the authenticated NEO AI Gateway.
- * Version: 4.2.0
+ * Version: 4.3.0
  * Author: NEO System
  */
 if (!defined('ABSPATH')) exit;
 
-const NEO_TEMPLE_SUITE_VERSION = '4.2.0';
+const NEO_TEMPLE_SUITE_VERSION = '4.3.0';
 const NEO_TEMPLE_API = 'https://neo.holytemples.org/api';
-const NEO_TEMPLE_AI_ENDPOINT = 'https://ai.holytemples.org/api/ai/execute';
+const NEO_TEMPLE_AI_ENDPOINT = 'https://neo.holytemples.org/api/ai/execute';
 
 function neo_temple_suite_enqueue() {
     wp_enqueue_script('neo-temple-bridge', 'https://neo.holytemples.org/assets/neo-bridge.js', array(), NEO_TEMPLE_SUITE_VERSION, true);

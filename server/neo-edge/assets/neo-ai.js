@@ -1,8 +1,8 @@
 (() => {
   'use strict';
 
-  const VERSION = '1.1.0';
-  const DEFAULT_ENDPOINT = 'https://ai.holytemples.org/api/ai/execute';
+  const VERSION = '1.2.0';
+  const DEFAULT_ENDPOINT = 'https://neo.holytemples.org/api/ai/execute';
 
   const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
@@ -38,6 +38,7 @@
       if (this.dataset.neoAiMounted) return;
       this.dataset.neoAiMounted = 'true';
       this.endpoint = safeHttpsEndpoint(this.getAttribute('endpoint'));
+      this.previousResponseId = null;
       this.root = this.attachShadow ? this.attachShadow({ mode: 'open' }) : this;
       this.render();
     }
@@ -71,6 +72,7 @@
 
     clear() {
       this.form.reset();
+      this.previousResponseId = null;
       this.hideMessages();
     }
 
@@ -114,6 +116,7 @@
             perspectiveContext: capability === 'personalization'
               ? 'Use the NEO / Shemsizedek perspective profile, preserve provenance, distinguish verified facts from interpretation and future plans, and maintain established NEO terminology.'
               : undefined,
+            previousResponseId: capability === 'personalization' ? this.previousResponseId : undefined,
           }),
         });
         const payload = await response.json().catch(() => ({}));
@@ -123,8 +126,10 @@
           return;
         }
         if (!response.ok) throw new Error(payload?.error || `AI gateway returned ${response.status}`);
+        if (capability === 'personalization' && payload?.result?.responseId) this.previousResponseId = payload.result.responseId;
         const text = payload?.result?.text || payload?.result?.result?.text || payload?.text || payload?.reason || JSON.stringify(payload, null, 2);
-        this.result.innerHTML = `${escapeHtml(text)}<div class="meta">Route: ${escapeHtml(payload.route || payload?.result?.provider || 'NEO Router')} · Status: ${escapeHtml(payload.status || 'completed')}</div>`;
+        const session = capability === 'personalization' && this.previousResponseId ? ' · Session: linked' : '';
+        this.result.innerHTML = `${escapeHtml(text)}<div class="meta">Route: ${escapeHtml(payload.route || payload?.result?.provider || 'NEO Router')} · Status: ${escapeHtml(payload.status || 'completed')}${escapeHtml(session)}</div>`;
         this.result.classList.remove('hidden');
         this.dispatchEvent(new CustomEvent('neo:ai-result', { detail: payload, bubbles: true }));
       } catch (error) {

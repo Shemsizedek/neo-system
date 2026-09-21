@@ -190,6 +190,60 @@ jobs:
             if(text) fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, "- Output: "+text.replace(/\n/g," ")+"\n");
           '
 
+      - name: Run session-continuity follow-up mission
+        env:
+          NEO_PASS_JWT_SECRET: ${{ secrets.NEO_PASS_JWT_SECRET }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL="$(gcloud run services describe "$SERVICE_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format='value(status.url)')"
+          TOKEN="$(node --input-type=module -e '
+            import { createHmac } from "node:crypto";
+            const enc = value => Buffer.from(JSON.stringify(value)).toString("base64url");
+            const now = Math.floor(Date.now()/1000);
+            const header = enc({alg:"HS256",typ:"JWT"});
+            const payloadObj = {sub:"neo-muse-session-smoke",iat:now,exp:now+300};
+            if (process.env.NEO_PASS_JWT_ISSUER) payloadObj.iss = process.env.NEO_PASS_JWT_ISSUER;
+            const payload = enc(payloadObj);
+            const sig = createHmac("sha256", process.env.NEO_PASS_JWT_SECRET).update(header+"."+payload).digest("base64url");
+            process.stdout.write(header+"."+payload+"."+sig);
+          ')"
+          FIRST_ID="$(node --input-type=module -e '
+            import fs from "node:fs";
+            const body=JSON.parse(fs.readFileSync("/tmp/mission-response.json","utf8"));
+            if(!body.result?.responseId) throw new Error("missing_first_response_id");
+            process.stdout.write(body.result.responseId);
+          ')"
+          FIRST_ID="$FIRST_ID" node --input-type=module -e '
+            import fs from "node:fs";
+            fs.writeFileSync("/tmp/followup.json", JSON.stringify({
+              missionId:"MUSE-NEO-007-SESSION",
+              objective:"Continue from the prior response and summarize the same readiness statement in one sentence.",
+              capability:"personalization",
+              perspectiveContext:"Preserve the NEO / Shemsizedek perspective and the prior conversational context.",
+              previousResponseId:process.env.FIRST_ID,
+              maxTokens:2048
+            }));
+          '
+          CODE="$(curl -sS -o /tmp/followup-response.json -w '%{http_code}' \
+            -H "Authorization: Bearer $TOKEN" \
+            -H "Content-Type: application/json" \
+            --data-binary @/tmp/followup.json \
+            "$URL/api/ai/execute")"
+          test "$CODE" = 200
+          FIRST_ID="$FIRST_ID" node --input-type=module -e '
+            import fs from "node:fs";
+            const body=JSON.parse(fs.readFileSync("/tmp/followup-response.json","utf8"));
+            if(body.status!=="completed") throw new Error("followup_not_completed");
+            if(body.route!=="meta-muse") throw new Error("followup_not_routed_to_muse");
+            if(!body.result?.responseId) throw new Error("missing_followup_response_id");
+            if(body.result.responseId===process.env.FIRST_ID) throw new Error("response_id_not_advanced");
+            const text=String(body.result?.text||"").trim();
+            if(!text) throw new Error("missing_followup_visible_output");
+            console.log(JSON.stringify({status:body.status,route:body.route,sessionContinuity:true,textPresent:true}));
+            fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, "\n### Muse session continuity\n- Turn 2: completed\n- Route: meta-muse\n- Previous response ID: accepted\n- New response ID: present\n- Visible output: present\n");
+          '
+
       - name: Map ai.holytemples.org
         shell: bash
         run: |

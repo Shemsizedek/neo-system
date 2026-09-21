@@ -63,6 +63,13 @@ jobs:
       - name: Install gcloud beta component
         run: gcloud components install beta --quiet
 
+      - name: Resolve NEO AI Gateway origin
+        run: |
+          set -euo pipefail
+          AI_GATEWAY_URL="$(gcloud run services describe neo-ai-gateway --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format='value(status.url)')"
+          test -n "$AI_GATEWAY_URL"
+          echo "AI_GATEWAY_URL=$AI_GATEWAY_URL" >> "$GITHUB_ENV"
+
       - name: Build and push NEO edge image
         env:
           IMAGE: ${{ env.GCP_ARTIFACT_REGISTRY }}/neo-edge:${{ github.sha }}
@@ -82,7 +89,7 @@ jobs:
             --region="$GCP_REGION" \
             --image="$IMAGE" \
             --service-account="$GCP_CLOUD_RUN_RUNTIME_ACCOUNT" \
-            --set-env-vars="GCP_PROJECT_ID=$GCP_PROJECT_ID,FIRESTORE_DATABASE_ID=(default),NEO_PLATFORM_API_ORIGIN=https://egov.holytemples.org" \
+            --set-env-vars="GCP_PROJECT_ID=$GCP_PROJECT_ID,FIRESTORE_DATABASE_ID=(default),NEO_PLATFORM_API_ORIGIN=https://egov.holytemples.org,AI_GATEWAY_URL=$AI_GATEWAY_URL" \
             --port=8080 \
             --allow-unauthenticated \
             --quiet
@@ -100,6 +107,9 @@ jobs:
           status_code="$(curl --retry 5 --retry-delay 3 --retry-all-errors -sS -o /tmp/neo-wire-status.json -w '%{http_code}' -H 'X-Forwarded-Host: wire.holytemples.org' "$SERVICE_URL/api/wire/status")"
           test "$status_code" = 200
           grep -q 'live-production' /tmp/neo-wire-status.json
+          ai_code="$(curl --retry 5 --retry-delay 3 --retry-all-errors -sS -o /tmp/neo-ai-boundary.json -w '%{http_code}' -H 'X-Forwarded-Host: neo.holytemples.org' "$SERVICE_URL/api/ai/providers")"
+          test "$ai_code" = 401
+          grep -q 'neopass_identity_required' /tmp/neo-ai-boundary.json
           echo "NEO_EDGE_SERVICE_URL=$SERVICE_URL" >> "$GITHUB_ENV"
           echo "NEO edge + NEO Wire production origin healthy: $SERVICE_URL" >> "$GITHUB_STEP_SUMMARY"
 
