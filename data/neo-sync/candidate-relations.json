@@ -1,39 +1,16 @@
 {
-  "generatedAt": "2026-09-21T12:52:44.923Z",
+  "generatedAt": "2026-09-21T22:00:32.484Z",
   "items": [
     {
-      "fromId": "PAGE:ac75672b2fba79d84758cdbddc9bc0ec6f669c16f9eacbaf1202b37f8cbca487",
-      "toId": "SRC-HOLY-TABLETS-WEB",
+      "fromId": "PAGE:f220a24e60c43ec6a0a910b8af677acbb38361a35fe19611a1453c08fab4f7a9",
+      "toId": "SRC-WORLD-TEMPLE-WEB",
       "kind": "DERIVES_FROM",
       "confidence": 0.99,
       "evidenceRefs": [
-        "https://holytablets.nuwaubianfacts.com/tableofcontents.htm",
-        "ac75672b2fba79d84758cdbddc9bc0ec6f669c16f9eacbaf1202b37f8cbca487"
+        "https://holytemples.org/",
+        "f220a24e60c43ec6a0a910b8af677acbb38361a35fe19611a1453c08fab4f7a9"
       ],
       "decision": "ACCEPTED"
-    },
-    {
-      "fromId": "PAGE:5bc59847043f9e3adfaf0810ebe0831a1ef521315a30779941f2bc8ab7d1b6fc",
-      "toId": "SRC-HOLY-TABLETS-WEB",
-      "kind": "DERIVES_FROM",
-      "confidence": 0.99,
-      "evidenceRefs": [
-        "https://holytablets.nuwaubianfacts.com/prayer%20of%20the%20ansaars.htm",
-        "5bc59847043f9e3adfaf0810ebe0831a1ef521315a30779941f2bc8ab7d1b6fc"
-      ],
-      "decision": "ACCEPTED"
-    },
-    {
-      "fromId": "DRAFT:ac75672b2fba79d8",
-      "toId": "DRAFT:5bc59847043f9e3a",
-      "kind": "PARALLELS",
-      "confidence": 0.89,
-      "rationale": "Candidate relation generated from title/heading overlap; semantic similarity alone does not establish derivation.",
-      "evidenceRefs": [
-        "https://holytablets.nuwaubianfacts.com/tableofcontents.htm",
-        "https://holytablets.nuwaubianfacts.com/prayer%20of%20the%20ansaars.htm"
-      ],
-      "decision": "CANDIDATE"
     }
   ]
 }

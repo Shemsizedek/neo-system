@@ -1,13 +1,15 @@
 {
-  "generatedAt": "2026-09-21T12:52:44.923Z",
+  "generatedAt": "2026-09-21T22:00:32.484Z",
   "items": [
     {
-      "type": "NEW_PAGE",
-      "sourceId": "SRC-HOLY-TABLETS-WEB",
-      "url": "https://holytablets.nuwaubianfacts.com/tableofcontents.htm",
-      "title": "Untitled",
-      "currentHash": "ac75672b2fba79d84758cdbddc9bc0ec6f669c16f9eacbaf1202b37f8cbca487",
-      "currentExcerpt": "HOME | Table of Contents | The Seven Thunders | A Personal Note from the Receiver | Prayer of the Ansaars | The Glossary | Figures CHAPTER ONE EL ISTAKHLAAG, \"THE CREATION\" Tablet 1 Epic of Creation And Before Page 1 Tablet 2 The Beginning Page 10 Tablet 3 The Story of Lucifer Page 22 Tablet 4 The War in The Skies Page 23 Tablet 5 The Journey of Nibiru Page 30 Tablet 6 The Origin of the Moon Page 51 Tablet 7 The Crea",
+      "type": "REVISION",
+      "sourceId": "SRC-WORLD-TEMPLE-WEB",
+      "url": "https://holytemples.org/",
+      "title": "World Temple &#8211; Omniversal Church",
+      "previousHash": "0572f609204f19e7bff6ac8e3ee3b5b4e8d02790ddc016b5807ba22d1ca23ef2",
+      "currentHash": "f220a24e60c43ec6a0a910b8af677acbb38361a35fe19611a1453c08fab4f7a9",
+      "previousExcerpt": "World Temple &#8211; Omniversal Church Skip to content World Temple N.U.T &#8211; Omniversal Church Home Holy Ministries Holy Ordainment Holy Charter Holy Tablets Holy See World Temple City World Library World Mission Statement World Ministries World Leaders World Committees World Chaplain World Parliament World Education World Treasury of Merit World Police World Interfaith Court Global District World Bulletin Templ",
+      "currentExcerpt": "World Temple &#8211; Omniversal Church Skip to content World Temple N.U.T &#8211; Omniversal Church Home Holy Ministries Holy Ordainment Holy Charter Holy Tablets Holy See World Temple City World Library World Mission Statement World Ministries World Leaders World Committees World Chaplain World Parliament World Education World Treasury of Merit World Police World Interfaith Court Global District World Bulletin Templ",
       "quality": {
         "dimensions": {
           "provenance": 9,
@@ -17,56 +19,14 @@
           "ethics": 9,
           "reciprocity": 7,
           "natureAlignment": 6,
-          "craftsmanship": 5,
+          "craftsmanship": 8,
           "consequence": 8
         },
-        "average": 7.333333333333333,
-        "potency": "DYNAMIC_BALANCE",
+        "average": 7.666666666666667,
+        "potency": "9_ETHER_COHERENT",
         "gate": "PASS",
         "note": "Heuristic artifact-quality assessment only; not a score of persons, identities or protected characteristics."
       },
-      "decision": "CANDIDATE"
-    },
-    {
-      "type": "NEW_PAGE",
-      "sourceId": "SRC-HOLY-TABLETS-WEB",
-      "url": "https://holytablets.nuwaubianfacts.com/prayer%20of%20the%20ansaars.htm",
-      "title": "Untitled",
-      "currentHash": "5bc59847043f9e3adfaf0810ebe0831a1ef521315a30779941f2bc8ab7d1b6fc",
-      "currentExcerpt": "HOME | Table of Contents | The Seven Thunders | A Personal Note from the Receiver | Prayer of the Ansaars | The Glossary | Figures Your browser does not support inline frames or is currently configured not to display inline frames. HOME | Table of Contents | The Seven Thunders | A Personal Note from the Receiver | Prayer of the Ansaars | The Glossary | Figures http://HolyTablets.NuwaubianFacts.com Please let us know ",
-      "quality": {
-        "dimensions": {
-          "provenance": 9,
-          "truthfulness": 8,
-          "soundRightReason": 7,
-          "coherence": 7,
-          "ethics": 9,
-          "reciprocity": 7,
-          "natureAlignment": 6,
-          "craftsmanship": 5,
-          "consequence": 8
-        },
-        "average": 7.333333333333333,
-        "potency": "DYNAMIC_BALANCE",
-        "gate": "PASS",
-        "note": "Heuristic artifact-quality assessment only; not a score of persons, identities or protected characteristics."
-      },
-      "decision": "CANDIDATE"
-    },
-    {
-      "type": "REMOVED_OR_UNREACHABLE",
-      "sourceId": "SRC-HOLY-TABLETS-WEB",
-      "url": "https://holytablets.nuwaubianfacts.com/100/051.htm",
-      "title": "Untitled",
-      "previousHash": "2138275d775895259a2f6cff14319e440fcaa0e993d1a5ec487f48f1d7649a2c",
-      "decision": "REVIEW_REQUIRED"
-    },
-    {
-      "type": "REMOVED_OR_UNREACHABLE",
-      "sourceId": "SRC-HOLY-TABLETS-WEB",
-      "url": "https://holytablets.nuwaubianfacts.com/100/064.htm",
-      "title": "Untitled",
-      "previousHash": "2138275d775895259a2f6cff14319e440fcaa0e993d1a5ec487f48f1d7649a2c",
       "decision": "REVIEW_REQUIRED"
     }
   ]

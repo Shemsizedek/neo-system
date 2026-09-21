@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-21T12:52:44.923Z",
+  "generatedAt": "2026-09-21T22:00:32.484Z",
   "architecture": "crawler -> hash -> revision diff -> candidate graph relations -> 9-Ethereal quality gate -> Neopedia draft/review queue",
   "sources": [
     {
@@ -17,9 +17,9 @@
       "errors": []
     }
   ],
-  "changes": 4,
-  "candidateRelations": 3,
-  "neopediaDrafts": 2,
+  "changes": 1,
+  "candidateRelations": 1,
+  "neopediaDrafts": 1,
   "reviewQueuePath": "data/neo-sync/review-queue.json",
   "relationQueuePath": "data/neo-sync/candidate-relations.json",
   "draftsPath": "data/neo-sync/neopedia-drafts.json",
