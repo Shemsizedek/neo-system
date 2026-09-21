@@ -52,10 +52,10 @@ export function createConversationStore({ projectId, databaseId = '(default)', d
     if (!subjectId) throw new Error('subject_required')
     const snapshot = await firestore.collection(COLLECTION)
       .where('subjectId', '==', subjectId)
-      .orderBy('updatedAt', 'desc')
+      .orderBy('subjectId', 'asc')
       .limit(Math.min(Math.max(Number(limit) || 30, 1), 100))
       .get()
-    return snapshot.docs.map(doc => doc.data())
+    return snapshot.docs.map(doc => doc.data()).sort((a,b) => String(b.updatedAt||'').localeCompare(String(a.updatedAt||'')))
   }
 
   async function renameThread({ subjectId, threadId, title }) {
