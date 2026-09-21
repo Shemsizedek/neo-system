@@ -26,7 +26,7 @@ function citationFor(resource){
 export function buildKnowledgeContext({objective, attachments=[], missionId='neo-knowledge', accessClass='PUBLIC_WORLD_LIBRARY'}={}){
   const query=String(objective??'').trim()
   const requested=[...new Set((Array.isArray(attachments)?attachments:[]).map(normalizeAttachment).filter(Boolean))].slice(0,MAX_ATTACHMENTS)
-  const attached=requested.map(id=>libraryAsset(id,{authorized:true})).filter(Boolean)
+  const attached=requested.map(id=>libraryAsset(id,{authorized:false})).filter(Boolean)
   const terms=query
     ? [query, ...query.toLocaleLowerCase().split(/[^\p{L}\p{N}]+/u).filter(term => term.length >= 4)]
     : []

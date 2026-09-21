@@ -1,6 +1,6 @@
 import http from 'node:http';
 import { URL } from 'node:url';
-import { searchPublicLibrary, libraryCatalog, health as libraryHealth } from '../holytemples-adapter/adapter.mjs';
+import { searchPublicLibrary, libraryCatalog, libraryAsset, health as libraryHealth } from '../holytemples-adapter/adapter.mjs';
 import { createFirestoreRestDb } from '../neo-counter-backend/firestore-rest-db.mjs';
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
@@ -331,6 +331,13 @@ export function createNeoEdgeServer() {
 
     if (req.method === 'GET' && (url.pathname === '/library' || url.pathname === '/api/library')) {
       return json(req, res, 200, { records: libraryCatalog(), accessClass: 'PUBLIC_WORLD_LIBRARY' });
+    }
+
+    const libraryRecordMatch = url.pathname.match(/^\/api\/library\/([^/]+)$/);
+    if (req.method === 'GET' && libraryRecordMatch) {
+      const record = libraryAsset(decodeURIComponent(libraryRecordMatch[1]));
+      if (!record) return json(req, res, 404, { error: 'library_record_not_found' });
+      return json(req, res, 200, { record, accessClass: 'PUBLIC_WORLD_LIBRARY', oracleClass: 'internal-record-context' });
     }
 
     if (req.method === 'GET' && (url.pathname === '/noogle/search' || url.pathname === '/api/noogle/search')) {
