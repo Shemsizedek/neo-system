@@ -11,7 +11,7 @@ export function createCrawlerWorkerRuntime({
   vault=createEvidenceVault(process.env.NEO_EVIDENCE_DB_PATH||'data/neo-evidence-vault.sqlite'),
   eventStore=createRedisEventStore(),
   missionRuntime=createPersistentMissionRuntime(),
-  routeLease=createRedisLeaseManager({keyPrefix:'neo:router:event-ingest'})
+  routeLease=createRedisLeaseManager({prefix:'neo:router:event-ingest'})
 }={}){
   const evidenceSink=createEvidenceVaultSink(vault);
   const routeEvent=async event=>{
