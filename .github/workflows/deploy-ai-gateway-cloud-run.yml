@@ -52,7 +52,7 @@ jobs:
           done
 
       - name: Test NEO AI gateway and router
-        run: node --test server/neo-router/ai-gateway-server.test.mjs server/neo-router/router.test.mjs server/neo-router/providers.test.mjs server/neo-router/conversation-store.test.mjs server/neo-router/provider-telemetry-store.test.mjs server/neo-router/knowledge-context.test.mjs server/neo-router/muse-handoff.test.mjs
+        run: node --test server/neo-router/ai-gateway-server.test.mjs server/neo-router/router.test.mjs server/neo-router/providers.test.mjs server/neo-router/conversation-store.test.mjs server/neo-router/provider-telemetry-store.test.mjs server/neo-router/knowledge-context.test.mjs server/neo-router/muse-handoff.test.mjs server/neo-router/muse-brief.test.mjs
 
       - name: Verify live Meta Muse credential before deploy
         env:
@@ -434,6 +434,43 @@ jobs:
             if(t.messages?.[0]?.role!=="external")throw new Error("handoff_external_source_missing");
             console.log(JSON.stringify({handoffImported:true,contentOnlyBoundary:true,firstNeoTurn:true,apiContinuityEstablished:true}));
             fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,"\n### Muse → NEO Handoff\n- Content import: passed\n- Source provenance hash: passed\n- Consumer/API session boundary: preserved\n- First governed Muse turn: passed\n- NEO API continuity established after import: passed\n");
+          '
+          curl -sS -o /dev/null -X DELETE -H "Authorization: Bearer $TOKEN" "$URL/api/ai/threads/$THREAD_ID"
+
+      - name: Verify NEO to Muse reverse handoff brief
+        env:
+          NEO_PASS_JWT_SECRET: ${{ secrets.NEO_PASS_JWT_SECRET }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL="$(gcloud run services describe "$SERVICE_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format='value(status.url)')"
+          TOKEN="$(node --input-type=module -e '
+            import { createHmac } from "node:crypto";
+            const enc=v=>Buffer.from(JSON.stringify(v)).toString("base64url");
+            const now=Math.floor(Date.now()/1000),h=enc({alg:"HS256",typ:"JWT"}),p=enc({sub:"neo-muse-reverse-smoke",iat:now,exp:now+300});
+            process.stdout.write(h+"."+p+"."+createHmac("sha256",process.env.NEO_PASS_JWT_SECRET).update(h+"."+p).digest("base64url"));
+          ')"
+          C_CODE="$(curl -sS -o /tmp/reverse-thread.json -w '%{http_code}' -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" --data '{"title":"MUSE-NEO-012B Reverse Handoff","capability":"personalization"}' "$URL/api/ai/threads")"
+          test "$C_CODE" = 201
+          THREAD_ID="$(node --input-type=module -e 'import fs from "node:fs";process.stdout.write(JSON.parse(fs.readFileSync("/tmp/reverse-thread.json","utf8")).thread.id)')"
+          THREAD_ID="$THREAD_ID" node --input-type=module -e '
+            import fs from "node:fs";
+            fs.writeFileSync("/tmp/reverse-mission.json",JSON.stringify({threadId:process.env.THREAD_ID,objective:"Develop the next NEO Muse workflow phase.",capability:"personalization",maxTokens:512}));
+          '
+          M_CODE="$(curl -sS -o /tmp/reverse-mission-response.json -w '%{http_code}' -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" --data-binary @/tmp/reverse-mission.json "$URL/api/ai/execute")"
+          test "$M_CODE" = 200
+          B_CODE="$(curl -sS -o /tmp/reverse-brief.json -w '%{http_code}' -H "Authorization: Bearer $TOKEN" "$URL/api/ai/threads/$THREAD_ID/muse-brief")"
+          test "$B_CODE" = 200
+          node --input-type=module -e '
+            import fs from "node:fs";
+            const mission=JSON.parse(fs.readFileSync("/tmp/reverse-mission-response.json","utf8"));
+            const brief=JSON.parse(fs.readFileSync("/tmp/reverse-brief.json","utf8"));
+            if(brief.sessionLinkage!=="new-muse-app-conversation")throw new Error("reverse_handoff_linkage_incorrect");
+            if(!brief.brief?.includes("NEO → MUSE HANDOFF BRIEF"))throw new Error("reverse_handoff_header_missing");
+            if(!brief.brief?.includes("Develop the next NEO Muse workflow phase."))throw new Error("reverse_handoff_objective_missing");
+            if(mission.result?.responseId && brief.brief.includes(mission.result.responseId))throw new Error("api_response_id_leaked_into_muse_brief");
+            console.log(JSON.stringify({reverseHandoff:true,newMuseConversation:true,responseIdLeak:false}));
+            fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,"\n### NEO → Muse Handoff\n- Copy-ready brief: passed\n- New Muse conversation boundary: passed\n- API response ID excluded: passed\n");
           '
           curl -sS -o /dev/null -X DELETE -H "Authorization: Bearer $TOKEN" "$URL/api/ai/threads/$THREAD_ID"
 
