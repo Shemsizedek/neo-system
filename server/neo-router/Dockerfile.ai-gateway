@@ -4,6 +4,8 @@ ENV NODE_ENV=production
 COPY server/neo-router ./server/neo-router
 COPY server/neo-platform-api ./server/neo-platform-api
 COPY server/neo-counter-backend/firestore-rest-db.mjs ./server/neo-counter-backend/firestore-rest-db.mjs
+COPY server/holytemples-adapter ./server/holytemples-adapter
+COPY core/neo-algo/runtime.mjs ./core/neo-algo/runtime.mjs
 ENV HOST=0.0.0.0
 ENV PORT=8080
 EXPOSE 8080
