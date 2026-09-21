@@ -11,57 +11,380 @@
     "plannedHostsAreNotAuditedUntilOriginIsBound": true
   },
   "surfaces": [
-    {"id":"neo-system","host":"neo.holytemples.org","kind":"platform","access":"public-entry-authenticated-routes","uiRequired":true,"source":"server/neo-edge"},
-    {"id":"neo-router","host":"router.holytemples.org","kind":"orchestration","access":"authenticated","uiRequired":true,"source":"server/neo-router"},
-    {"id":"neo-algo","host":"algo.holytemples.org","kind":"reasoning","access":"authenticated","uiRequired":true,"source":"core/neo-algo"},
-    {"id":"neo-prime","host":"prime.holytemples.org","kind":"runtime-console","access":"authenticated","uiRequired":true,"source":"apps/neo-prime"},
-    {"id":"neopay","host":"pay.holytemples.org","kind":"wallet-payments","access":"public-entry-authenticated-actions","uiRequired":true,"source":"apps/neopay"},
-    {"id":"neo-bank","host":"neobank.holytemples.org","kind":"community-exchange","access":"authenticated","uiRequired":true,"source":"server/neo-bank"},
-    {"id":"neo-hub","host":"hub.holytemples.org","kind":"portal","access":"public","uiRequired":true,"source":"public/neo-hub"},
-    {"id":"neo-counter","host":"counter.holytemples.org","kind":"checkout-pos","access":"public-entry-authenticated-actions","uiRequired":true,"source":"apps/neo-counter"},
-    {"id":"neo-wire","host":"wire.holytemples.org","kind":"telewire-platform","access":"authenticated","uiRequired":true,"source":"server/neo-edge/wire-app.mjs"},
-    {"id":"neo-telegram","host":"neogram.holytemples.org","kind":"communications","access":"authenticated","uiRequired":true,"source":"apps/neo-telegram"},
-    {"id":"neo-exchange","host":"neofx.holytemples.org","kind":"markets","access":"public","uiRequired":true,"source":"apps/neo-exchange"},
-    {"id":"neoscan","host":"scan.holytemples.org","kind":"explorer","access":"public","uiRequired":true,"source":"apps/neoscan"},
-    {"id":"gisd-neo-cipher","host":"school.holytemples.org","kind":"learning-platform","access":"public-and-role-gated","uiRequired":true,"source":"apps/gisd"},
-    {"id":"neo-library","host":"library.holytemples.org","kind":"knowledge","access":"public","uiRequired":true,"source":"server/holytemples-adapter"},
-    {"id":"neo-books","host":"book.holytemples.org","kind":"accounting-suite","access":"authenticated","uiRequired":true,"source":"modules"},
-    {"id":"neo-pads","host":"neopads.holytemples.org","kind":"marketplace","access":"public-entry-authenticated-actions","uiRequired":true,"source":"apps/neo-pads"},
-    {"id":"neopass","host":"neopass.holytemples.org","kind":"identity","access":"authenticated","uiRequired":true,"source":"server/neo-identity"},
-    {"id":"neo-tv","host":"neovision.holytemples.org","kind":"media","access":"public","uiRequired":true,"source":"apps/neo-tv"},
-    {"id":"noogle","host":"noogle.holytemples.org","kind":"search","access":"public","uiRequired":true,"source":"apps/noogle"},
-    {"id":"omnitrix","host":"omnitrix.holytemples.org","kind":"device-platform","access":"authenticated","uiRequired":true,"source":"apps/omnitrix"},
-    {"id":"neo-dash","host":"neodash.holytemples.org","kind":"dashboard","access":"authenticated","uiRequired":true,"source":"apps/neo-dash"},
-    {"id":"nomni","host":"nomni.holytemples.org","kind":"currency-platform","access":"public","uiRequired":true,"source":"server/neo-edge"},
-    {"id":"neo-treasury-wallet","host":"wallet.holytemples.org","kind":"wallet","access":"authenticated","uiRequired":true,"source":"server/neo-edge"},
-    {"id":"world-treasury","host":"treasury.holytemples.org","kind":"treasury","access":"authenticated","uiRequired":true,"source":"server/neo-edge"},
-    {"id":"world-court","host":"court.holytemples.org","kind":"tribunal-platform","access":"public-intake-authenticated-workspace","uiRequired":true,"source":"deploy/world-court"},
-    {"id":"egov","host":"egov.holytemples.org","kind":"government-platform","access":"public-entry-authenticated-routes","uiRequired":true,"source":"server/neo-platform-api"},
-    {"id":"nu-university","host":"university.holytemples.org","kind":"education","access":"public-and-role-gated","uiRequired":true,"source":"holytemples.org"},
-    {"id":"neo-oracle","host":"oracle.holytemples.org","kind":"synthetic-intelligence","access":"authenticated","uiRequired":true,"source":"core"}
+    {
+      "id": "neo-system",
+      "host": "neo.holytemples.org",
+      "kind": "platform",
+      "access": "public-entry-authenticated-routes",
+      "uiRequired": true,
+      "source": "server/neo-edge"
+    },
+    {
+      "id": "neo-router",
+      "host": "router.holytemples.org",
+      "kind": "orchestration",
+      "access": "authenticated",
+      "uiRequired": true,
+      "source": "server/neo-router"
+    },
+    {
+      "id": "neo-algo",
+      "host": "algo.holytemples.org",
+      "kind": "reasoning",
+      "access": "authenticated",
+      "uiRequired": true,
+      "source": "core/neo-algo"
+    },
+    {
+      "id": "neo-prime",
+      "host": "prime.holytemples.org",
+      "kind": "runtime-console",
+      "access": "authenticated",
+      "uiRequired": true,
+      "source": "apps/neo-prime"
+    },
+    {
+      "id": "neopay",
+      "host": "pay.holytemples.org",
+      "kind": "wallet-payments",
+      "access": "public-entry-authenticated-actions",
+      "uiRequired": true,
+      "source": "apps/neopay"
+    },
+    {
+      "id": "neo-bank",
+      "host": "neobank.holytemples.org",
+      "kind": "community-exchange",
+      "access": "authenticated",
+      "uiRequired": true,
+      "source": "server/neo-bank"
+    },
+    {
+      "id": "neo-hub",
+      "host": "hub.holytemples.org",
+      "kind": "portal",
+      "access": "public",
+      "uiRequired": true,
+      "source": "public/neo-hub"
+    },
+    {
+      "id": "neo-counter",
+      "host": "counter.holytemples.org",
+      "kind": "checkout-pos",
+      "access": "public-entry-authenticated-actions",
+      "uiRequired": true,
+      "source": "apps/neo-counter"
+    },
+    {
+      "id": "neo-wire",
+      "host": "wire.holytemples.org",
+      "kind": "telewire-platform",
+      "access": "authenticated",
+      "uiRequired": true,
+      "source": "server/neo-edge/wire-app.mjs"
+    },
+    {
+      "id": "neo-telegram",
+      "host": "neogram.holytemples.org",
+      "kind": "communications",
+      "access": "authenticated",
+      "uiRequired": true,
+      "source": "apps/neo-telegram"
+    },
+    {
+      "id": "neo-exchange",
+      "host": "neofx.holytemples.org",
+      "kind": "markets",
+      "access": "public",
+      "uiRequired": true,
+      "source": "apps/neo-exchange"
+    },
+    {
+      "id": "neoscan",
+      "host": "scan.holytemples.org",
+      "kind": "explorer",
+      "access": "public",
+      "uiRequired": true,
+      "source": "apps/neoscan"
+    },
+    {
+      "id": "gisd-neo-cipher",
+      "host": "school.holytemples.org",
+      "kind": "learning-platform",
+      "access": "public-and-role-gated",
+      "uiRequired": true,
+      "source": "apps/gisd"
+    },
+    {
+      "id": "neo-library",
+      "host": "library.holytemples.org",
+      "kind": "knowledge",
+      "access": "public",
+      "uiRequired": true,
+      "source": "server/holytemples-adapter"
+    },
+    {
+      "id": "neo-books",
+      "host": "book.holytemples.org",
+      "kind": "accounting-suite",
+      "access": "authenticated",
+      "uiRequired": true,
+      "source": "modules"
+    },
+    {
+      "id": "neo-pads",
+      "host": "neopads.holytemples.org",
+      "kind": "marketplace",
+      "access": "public-entry-authenticated-actions",
+      "uiRequired": true,
+      "source": "apps/neo-pads"
+    },
+    {
+      "id": "neopass",
+      "host": "neopass.holytemples.org",
+      "kind": "identity",
+      "access": "authenticated",
+      "uiRequired": true,
+      "source": "server/neo-identity"
+    },
+    {
+      "id": "neo-tv",
+      "host": "neovision.holytemples.org",
+      "kind": "media",
+      "access": "public",
+      "uiRequired": true,
+      "source": "apps/neo-tv"
+    },
+    {
+      "id": "noogle",
+      "host": "noogle.holytemples.org",
+      "kind": "search",
+      "access": "public",
+      "uiRequired": true,
+      "source": "apps/noogle"
+    },
+    {
+      "id": "omnitrix",
+      "host": "omnitrix.holytemples.org",
+      "kind": "device-platform",
+      "access": "authenticated",
+      "uiRequired": true,
+      "source": "apps/omnitrix"
+    },
+    {
+      "id": "neo-dash",
+      "host": "neodash.holytemples.org",
+      "kind": "dashboard",
+      "access": "authenticated",
+      "uiRequired": true,
+      "source": "apps/neo-dash"
+    },
+    {
+      "id": "nomni",
+      "host": "nomni.holytemples.org",
+      "kind": "currency-platform",
+      "access": "public",
+      "uiRequired": true,
+      "source": "server/neo-edge"
+    },
+    {
+      "id": "neo-treasury-wallet",
+      "host": "wallet.holytemples.org",
+      "kind": "wallet",
+      "access": "authenticated",
+      "uiRequired": true,
+      "source": "server/neo-edge"
+    },
+    {
+      "id": "world-treasury",
+      "host": "treasury.holytemples.org",
+      "kind": "treasury",
+      "access": "authenticated",
+      "uiRequired": true,
+      "source": "server/neo-edge"
+    },
+    {
+      "id": "world-court",
+      "host": "court.holytemples.org",
+      "kind": "tribunal-platform",
+      "access": "public-intake-authenticated-workspace",
+      "uiRequired": true,
+      "source": "deploy/world-court"
+    },
+    {
+      "id": "egov",
+      "host": "egov.holytemples.org",
+      "kind": "government-platform",
+      "access": "public-entry-authenticated-routes",
+      "uiRequired": true,
+      "source": "server/neo-platform-api"
+    },
+    {
+      "id": "nu-university",
+      "host": "university.holytemples.org",
+      "kind": "education",
+      "access": "public-and-role-gated",
+      "uiRequired": true,
+      "source": "holytemples.org"
+    },
+    {
+      "id": "neo-oracle",
+      "host": "oracle.holytemples.org",
+      "kind": "synthetic-intelligence",
+      "access": "authenticated",
+      "uiRequired": true,
+      "source": "core"
+    }
   ],
   "redirectSurfaces": [
-    {"id":"neo-society","host":"society.holytemples.org","kind":"redirect","target":"https://neo.dnnr.io/","source":"server/neo-society-dnnr-proxy"},
-    {"id":"neo-lifestyle","host":"lifestyle.holytemples.org","kind":"redirect","target":"https://neo.dnnr.io/neo/ambassador-application","source":"server/neo-society-dnnr-proxy"}
+    {
+      "id": "neo-society",
+      "host": "society.holytemples.org",
+      "kind": "redirect",
+      "target": "https://neo.dnnr.io/",
+      "source": "server/neo-society-dnnr-proxy"
+    },
+    {
+      "id": "neo-lifestyle",
+      "host": "lifestyle.holytemples.org",
+      "kind": "redirect",
+      "target": "https://neo.dnnr.io/neo/ambassador-application",
+      "source": "server/neo-society-dnnr-proxy"
+    }
   ],
   "plannedSurfaces": [
-    {"id":"neo-teller","host":"teller.holytemples.org","kind":"atm-pos","source":"server/neo-teller-backend","originStatus":"needs-runtime-binding"},
-    {"id":"noogle-finance","host":"finance.holytemples.org","kind":"market-search","source":"apps/noogle/web/finance.html","originStatus":"needs-runtime-binding"},
-    {"id":"neo-relations","host":"relations.holytemples.org","kind":"crm","source":"apps/neo-relations","originStatus":"needs-runtime-binding"},
-    {"id":"neo-tokenworks","host":"tokenworks.holytemples.org","kind":"token-services","source":"server/neo-tokenworks","originStatus":"needs-runtime-binding"},
-    {"id":"nibiru-reserve","host":"reserve.holytemples.org","kind":"reserve-reconciliation","source":"server/nibiru-reserve","originStatus":"needs-runtime-binding"},
-    {"id":"neo-miner","host":"miner.holytemples.org","kind":"mining-console","source":"server/miner-production","originStatus":"needs-runtime-binding"},
-    {"id":"neo-generator","host":"generator.holytemples.org","kind":"miner-products","source":"server/miner-generator","originStatus":"needs-runtime-binding"},
-    {"id":"neo-enterprise","host":"enterprise.holytemples.org","kind":"enterprise-console","source":"server/neo-enterprise","originStatus":"needs-runtime-binding"},
-    {"id":"neo-evidence","host":"evidence.holytemples.org","kind":"evidence-vault","source":"server/neo-evidence-vault","originStatus":"needs-runtime-binding"},
-    {"id":"neo-bots","host":"bots.holytemples.org","kind":"automation-console","source":"server/neo-bots","originStatus":"needs-runtime-binding"},
-    {"id":"neo-guardian","host":"neoguard.holytemples.org","kind":"security-console","source":"apps/neo-guardian","originStatus":"dedicated-cloud-run"},
-    {"id":"neo-gas","host":"gas.holytemples.org","kind":"intelligence-feed","source":"public","originStatus":"needs-runtime-binding"},
-    {"id":"neo-lingo","host":"lingo.holytemples.org","kind":"language-platform","source":"public/neo-lingo","originStatus":"needs-runtime-binding"},
-    {"id":"neo-corpus","host":"corpus.holytemples.org","kind":"records","source":"public/neo-corpus","originStatus":"needs-runtime-binding"},
-    {"id":"neo-realty","host":"realty.holytemples.org","kind":"real-estate","source":"apps/neo-realty","originStatus":"needs-runtime-binding"},
-    {"id":"nvsn","host":"nvsn.holytemples.org","kind":"network-platform","source":"cloudflare/nvsn","originStatus":"cloudflare-worker"},
-    {"id":"neo-social-gateway","host":"gateway.holytemples.org","kind":"api-gateway","source":"server/neo-router","originStatus":"dedicated-cloud-run"},
-    {"id":"neo-platform-api","host":"api.holytemples.org","kind":"api","source":"server/neo-platform-api","originStatus":"needs-runtime-binding"}
+    {
+      "id": "neo-teller",
+      "host": "teller.holytemples.org",
+      "kind": "atm-pos",
+      "source": "server/neo-teller-backend",
+      "originStatus": "needs-runtime-binding"
+    },
+    {
+      "id": "noogle-finance",
+      "host": "finance.holytemples.org",
+      "kind": "market-search",
+      "source": "apps/noogle/web/finance.html",
+      "originStatus": "needs-runtime-binding"
+    },
+    {
+      "id": "neo-relations",
+      "host": "relations.holytemples.org",
+      "kind": "crm",
+      "source": "apps/neo-relations",
+      "originStatus": "needs-runtime-binding"
+    },
+    {
+      "id": "neo-tokenworks",
+      "host": "tokenworks.holytemples.org",
+      "kind": "token-services",
+      "source": "server/neo-tokenworks",
+      "originStatus": "needs-runtime-binding"
+    },
+    {
+      "id": "nibiru-reserve",
+      "host": "reserve.holytemples.org",
+      "kind": "reserve-reconciliation",
+      "source": "server/nibiru-reserve",
+      "originStatus": "needs-runtime-binding"
+    },
+    {
+      "id": "neo-miner",
+      "host": "miner.holytemples.org",
+      "kind": "mining-console",
+      "source": "server/miner-production",
+      "originStatus": "needs-runtime-binding"
+    },
+    {
+      "id": "neo-generator",
+      "host": "generator.holytemples.org",
+      "kind": "miner-products",
+      "source": "server/miner-generator",
+      "originStatus": "needs-runtime-binding"
+    },
+    {
+      "id": "neo-enterprise",
+      "host": "enterprise.holytemples.org",
+      "kind": "enterprise-console",
+      "source": "server/neo-enterprise",
+      "originStatus": "needs-runtime-binding"
+    },
+    {
+      "id": "neo-evidence",
+      "host": "evidence.holytemples.org",
+      "kind": "evidence-vault",
+      "source": "server/neo-evidence-vault",
+      "originStatus": "needs-runtime-binding"
+    },
+    {
+      "id": "neo-bots",
+      "host": "bots.holytemples.org",
+      "kind": "automation-console",
+      "source": "server/neo-bots",
+      "originStatus": "needs-runtime-binding"
+    },
+    {
+      "id": "neo-guardian",
+      "host": "neoguard.holytemples.org",
+      "kind": "security-console",
+      "source": "apps/neo-guardian",
+      "originStatus": "dedicated-cloud-run"
+    },
+    {
+      "id": "neo-gas",
+      "host": "gas.holytemples.org",
+      "kind": "intelligence-feed",
+      "source": "public",
+      "originStatus": "needs-runtime-binding"
+    },
+    {
+      "id": "neo-lingo",
+      "host": "lingo.holytemples.org",
+      "kind": "language-platform",
+      "source": "public/neo-lingo",
+      "originStatus": "needs-runtime-binding"
+    },
+    {
+      "id": "neo-corpus",
+      "host": "corpus.holytemples.org",
+      "kind": "records",
+      "source": "public/neo-corpus",
+      "originStatus": "needs-runtime-binding"
+    },
+    {
+      "id": "neo-realty",
+      "host": "realty.holytemples.org",
+      "kind": "real-estate",
+      "source": "apps/neo-realty",
+      "originStatus": "needs-runtime-binding"
+    },
+    {
+      "id": "nvsn",
+      "host": "nvsn.holytemples.org",
+      "kind": "network-platform",
+      "source": "cloudflare/nvsn",
+      "originStatus": "cloudflare-worker"
+    },
+    {
+      "id": "neo-social-gateway",
+      "host": "gateway.holytemples.org",
+      "kind": "api-gateway",
+      "source": "server/neo-router",
+      "originStatus": "dedicated-cloud-run"
+    },
+    {
+      "id": "neo-platform-api",
+      "host": "api.holytemples.org",
+      "kind": "api",
+      "source": "server/neo-platform-api",
+      "originStatus": "needs-runtime-binding"
+    },
+    {
+      "id": "neo-ai-gateway",
+      "host": "ai.holytemples.org",
+      "kind": "ai-gateway",
+      "source": "server/neo-router",
+      "originStatus": "dedicated-cloud-run"
+    }
   ]
 }
