@@ -1,6 +1,7 @@
 export const PROVIDER_ROLES = Object.freeze({
   anthropic: ['orchestration', 'planning', 'review'],
   openai: ['reasoning', 'backend', 'tool-use'],
+  'meta-muse': ['reasoning', 'tool-use', 'multimodal', 'design', 'media', 'personalization'],
   gemini: ['frontend', 'design', 'multimodal'],
   cloudflare: ['edge', 'internet-of-things', 'resilience', 'low-latency'],
 })
