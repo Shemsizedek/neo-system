@@ -90,10 +90,12 @@ test('routes personalization to Meta Muse first and injects the NEO perspective'
     objective: 'Create personalized NEO material',
     capability: 'personalization',
     perspectiveContext: 'Audience: NEO Society',
+    previousResponseId: 'resp_previous_neo',
   })
   assert.equal(result.route, 'meta-muse')
   assert.match(invocation.system, /NEO \/ Shemsizedek Perspective/)
   assert.match(invocation.system, /Audience: NEO Society/)
+  assert.equal(invocation.previousResponseId, 'resp_previous_neo')
 })
 
 
