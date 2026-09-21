@@ -48,6 +48,8 @@ test('serves the NEOsync AI workspace asset', async () => withServer(async base 
   assert.match(source, /data-thread-search/);
   assert.match(source, /data-pin-thread/);
   assert.match(source, /durableTelemetry/);
+  assert.match(source, /Knowledge attachments/);
+  assert.match(source, /Knowledge provenance/);
 }));
 
 test('serves the full-screen NEOsync workspace with NEOpass runtime', async () => withServer(async base => {
