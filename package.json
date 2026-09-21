@@ -19,6 +19,7 @@
     "router:health": "node scripts/neo-router-health.mjs",
     "router:gemini:check": "node scripts/neo-router-gemini-check.mjs",
     "router:muse:check": "node scripts/neo-router-muse-check.mjs",
+    "router:ai-gateway": "node server/neo-router/ai-gateway-start.mjs",
     "tribunal:server": "node server/tribunal-backend/server.mjs",
     "tribunal:backup": "node server/tribunal-backend/backup.mjs",
     "miner:agent": "node server/miner-agent/agent.mjs",
