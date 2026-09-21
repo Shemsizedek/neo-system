@@ -25,7 +25,7 @@ const router = {
       status: 'completed',
       route: mission.capability === 'personalization' ? 'meta-muse' : 'gemini',
       missionId: mission.missionId,
-      result: { text: mission.objective, perspectiveContext: mission.perspectiveContext },
+      result: { text: mission.objective, perspectiveContext: mission.perspectiveContext, previousResponseId: mission.previousResponseId },
     }
   },
 }
@@ -88,12 +88,14 @@ test('execute forwards perspectiveContext for personalized Muse missions', async
         objective: 'Generate a NEO Society campaign concept',
         capability: 'personalization',
         perspectiveContext: 'Use the NEO perspective and preserve provenance.',
+        previousResponseId: 'resp_previous_neo',
       }),
     })
     assert.equal(response.status, 200)
     const body = await response.json()
     assert.equal(body.route, 'meta-muse')
     assert.equal(body.result.perspectiveContext, 'Use the NEO perspective and preserve provenance.')
+    assert.equal(body.result.previousResponseId, 'resp_previous_neo')
   })
 })
 
