@@ -2,17 +2,14 @@
   "version": 1,
   "storage": "github",
   "missions": [],
-  "updatedAt": "2026-09-21T02:17:25.572Z",
+  "updatedAt": "2026-09-21T06:16:58.159Z",
   "lastRun": {
-    "at": "2026-09-21T02:17:25.572Z",
-    "status": "healthy",
-    "processed": 0,
-    "queued": 0,
-    "backend": "github-actions",
-    "frontend": "github-pages"
+    "workerId": "github-actions-worker-v4",
+    "at": "2026-09-21T06:16:58.159Z",
+    "runId": "35567771846"
   },
   "schemaVersion": 3,
-  "savedAt": "2026-09-21T01:02:41.480Z",
+  "savedAt": "2026-09-21T06:16:58.159Z",
   "approvals": [],
   "connectors": [],
   "events": []
