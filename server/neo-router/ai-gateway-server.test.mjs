@@ -225,3 +225,21 @@ test('returns a safe copy-ready NEO to Muse brief', async () => {
     assert.doesNotMatch(body.brief,/resp-private/)
   })
 })
+
+
+test('project transfer APIs preserve round-trip lineage', async () => {
+  const projects=new Map(), transfers=[]
+  const store={
+    async createProject({subjectId,name}){const p={id:'p1',subjectId,name,transferCount:0};projects.set(p.id,p);return p},
+    async listProjects(){return [...projects.values()]},
+    async listTransfers(){return [...transfers].reverse()},
+    compareTransfers(a,b){return {changed:!!b && a.contentHash!==b.contentHash,summary:b?'Compared':'First recorded transfer in this project.'}},
+    async recordTransfer({subjectId,projectId,direction,threadId,content,summary,source}){const e={id:'e'+(transfers.length+1),subjectId,projectId,direction,threadId,summary,source,contentHash:'h:'+content,createdAt:String(transfers.length+1),previousTransferId:transfers.at(-1)?.id??null};transfers.push(e);return e}
+  }
+  await withServer(() => createNeoAiGatewayServer({ router, resolveTrustedIdentity: trusted, museProjectStore: store }), async server => {
+    let r=await request(server,'/api/ai/projects',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({name:'Round Trip'})}); assert.equal(r.status,201)
+    r=await request(server,'/api/ai/projects/p1/transfers',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({direction:'muse-to-neo',threadId:'t1',content:'alpha',summary:'in',source:'Muse'})}); assert.equal(r.status,201)
+    r=await request(server,'/api/ai/projects/p1/transfers',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({direction:'neo-to-muse',threadId:'t1',content:'beta',summary:'out',source:'NEOsync'})}); const body=await r.json(); assert.equal(body.comparison.changed,true)
+    r=await request(server,'/api/ai/projects/p1/transfers'); const hist=await r.json(); assert.equal(hist.transfers.length,2); assert.equal(hist.transfers[0].previousTransferId,'e1')
+  })
+})

@@ -52,7 +52,7 @@ jobs:
           done
 
       - name: Test NEO AI gateway and router
-        run: node --test server/neo-router/ai-gateway-server.test.mjs server/neo-router/router.test.mjs server/neo-router/providers.test.mjs server/neo-router/conversation-store.test.mjs server/neo-router/provider-telemetry-store.test.mjs server/neo-router/knowledge-context.test.mjs server/neo-router/muse-handoff.test.mjs server/neo-router/muse-brief.test.mjs
+        run: node --test server/neo-router/ai-gateway-server.test.mjs server/neo-router/router.test.mjs server/neo-router/providers.test.mjs server/neo-router/conversation-store.test.mjs server/neo-router/provider-telemetry-store.test.mjs server/neo-router/knowledge-context.test.mjs server/neo-router/muse-handoff.test.mjs server/neo-router/muse-brief.test.mjs server/neo-router/muse-project-store.test.mjs
 
       - name: Verify live Meta Muse credential before deploy
         env:
@@ -473,6 +473,38 @@ jobs:
             fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,"\n### NEO → Muse Handoff\n- Copy-ready brief: passed\n- New Muse conversation boundary: passed\n- API response ID excluded: passed\n");
           '
           curl -sS -o /dev/null -X DELETE -H "Authorization: Bearer $TOKEN" "$URL/api/ai/threads/$THREAD_ID"
+
+      - name: Verify Muse NEO project transfer lineage
+        env:
+          NEO_PASS_JWT_SECRET: ${{ secrets.NEO_PASS_JWT_SECRET }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL="$(gcloud run services describe "$SERVICE_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format='value(status.url)')"
+          TOKEN="$(node --input-type=module -e '
+            import { createHmac } from "node:crypto";
+            const enc=v=>Buffer.from(JSON.stringify(v)).toString("base64url");
+            const now=Math.floor(Date.now()/1000),h=enc({alg:"HS256",typ:"JWT"}),p=enc({sub:"neo-muse-project-smoke",iat:now,exp:now+300});
+            process.stdout.write(h+"."+p+"."+createHmac("sha256",process.env.NEO_PASS_JWT_SECRET).update(h+"."+p).digest("base64url"));
+          ')"
+          P_CODE="$(curl -sS -o /tmp/project.json -w '%{http_code}' -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" --data '{"name":"MUSE-NEO-012C Production Project"}' "$URL/api/ai/projects")"
+          test "$P_CODE" = 201
+          PROJECT_ID="$(node --input-type=module -e 'import fs from "node:fs";process.stdout.write(JSON.parse(fs.readFileSync("/tmp/project.json","utf8")).project.id)')"
+          for spec in 'muse-to-neo|alpha|Inbound from Muse' 'neo-to-muse|beta|Outbound to Muse'; do
+            IFS='|' read -r DIR CONTENT SUMMARY <<< "$spec"
+            curl -sS -o /tmp/transfer.json -w '%{http_code}' -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" --data "{"direction":"$DIR","threadId":"smoke-thread","content":"$CONTENT","summary":"$SUMMARY","source":"smoke"}" "$URL/api/ai/projects/$PROJECT_ID/transfers" | grep -qx '201'
+          done
+          H_CODE="$(curl -sS -o /tmp/project-history.json -w '%{http_code}' -H "Authorization: Bearer $TOKEN" "$URL/api/ai/projects/$PROJECT_ID/transfers")"
+          test "$H_CODE" = 200
+          node --input-type=module -e '
+            import fs from "node:fs";
+            const b=JSON.parse(fs.readFileSync("/tmp/project-history.json","utf8"));
+            if(b.transfers?.length!==2)throw new Error("project_transfer_count_mismatch");
+            if(!b.transfers[0]?.previousTransferId)throw new Error("project_lineage_missing");
+            if(b.comparison?.changed!==true)throw new Error("project_change_detection_failed");
+            console.log(JSON.stringify({projectTransfer:true,lineage:true,changed:true}));
+            fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,"\n### Muse / NEO Project Transfer\n- Named project: passed\n- Round-trip lineage: passed\n- Change detection: passed\n");
+          '
 
       - name: Map ai.holytemples.org
         shell: bash

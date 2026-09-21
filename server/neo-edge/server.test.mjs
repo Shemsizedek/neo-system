@@ -59,6 +59,8 @@ test('serves the NEOsync AI workspace asset', async () => withServer(async base 
   assert.match(source, /muse-code-trajectory/);
   assert.match(source, /Copy for Muse/);
   assert.match(source, /muse-brief/);
+  assert.match(source, /Muse \/ NEO Project Transfer/);
+  assert.match(source, /api\/ai\/projects/);
 }));
 
 test('serves the full-screen NEOsync workspace with NEOpass runtime', async () => withServer(async base => {
