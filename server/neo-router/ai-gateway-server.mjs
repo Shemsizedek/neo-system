@@ -4,6 +4,8 @@ import { createNeoRouter } from './router.mjs'
 import { providersFromEnv } from './providers.mjs'
 import { buildKnowledgeContext } from './knowledge-context.mjs'
 import { parseMuseHandoff } from './muse-handoff.mjs'
+import { buildMuseBrief } from './muse-brief.mjs'
+import { libraryAsset } from '../holytemples-adapter/adapter.mjs'
 
 const MAX_BODY_BYTES = 64 * 1024
 
@@ -130,6 +132,20 @@ export function createNeoAiGatewayServer({
         const body = await readJson(req)
         const thread = await conversationStore.createThread({ subjectId, title: body.title, capability: body.capability })
         return respond(res, 201, { subjectId, thread })
+      }
+
+      const threadMuseBriefMatch = url.pathname.match(/^\/api\/ai\/threads\/([^/]+)\/muse-brief$/)
+      if (threadMuseBriefMatch && req.method === 'GET') {
+        if (typeof resolveTrustedIdentity !== 'function') return respond(res, 401, { error: 'neopass_identity_required' })
+        const subjectId = trustedSubject(await resolveTrustedIdentity(req))
+        if (!conversationStore) return respond(res, 503, { error: 'conversation_store_unavailable' })
+        const thread = await conversationStore.getThread({ subjectId, threadId: decodeURIComponent(threadMuseBriefMatch[1]) })
+        if (!thread) return respond(res, 404, { error: 'thread_not_found' })
+        const knowledge = (Array.isArray(thread.knowledgeAttachments) ? thread.knowledgeAttachments : [])
+          .map(id => libraryAsset(id, { authorized: false }))
+          .filter(Boolean)
+        const handoff = buildMuseBrief({ thread, knowledge })
+        return respond(res, 200, { subjectId, threadId: thread.id, ...handoff })
       }
 
       const threadExportMatch = url.pathname.match(/^\/api\/ai\/threads\/([^/]+)\/export$/)
