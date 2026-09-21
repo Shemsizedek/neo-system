@@ -55,6 +55,7 @@ function normalizeMission(body, subjectId) {
     actions: Array.isArray(body.actions) ? body.actions.filter((value) => typeof value === 'string') : [],
     preferredProviders: Array.isArray(body.preferredProviders) ? body.preferredProviders.filter((value) => typeof value === 'string') : [],
     excludedProviders: Array.isArray(body.excludedProviders) ? body.excludedProviders.filter((value) => typeof value === 'string') : [],
+    threadId: typeof body.threadId === 'string' && body.threadId.trim() ? body.threadId.trim() : undefined,
     metadata: { subjectId },
   }
 }
@@ -63,6 +64,7 @@ export function createNeoAiGatewayServer({
   resolveTrustedIdentity,
   env = process.env,
   router = createNeoRouter({ providers: providersFromEnv(env) }),
+  conversationStore,
 } = {}) {
   return http.createServer(async (req, res) => {
     try {
@@ -76,6 +78,43 @@ export function createNeoAiGatewayServer({
         })
       }
 
+      if (url.pathname === '/api/ai/threads' && req.method === 'GET') {
+        if (typeof resolveTrustedIdentity !== 'function') return respond(res, 401, { error: 'neopass_identity_required' })
+        const subjectId = trustedSubject(await resolveTrustedIdentity(req))
+        if (!conversationStore) return respond(res, 503, { error: 'conversation_store_unavailable' })
+        const threads = await conversationStore.listThreads({ subjectId })
+        return respond(res, 200, { subjectId, threads })
+      }
+
+      if (url.pathname === '/api/ai/threads' && req.method === 'POST') {
+        if (typeof resolveTrustedIdentity !== 'function') return respond(res, 401, { error: 'neopass_identity_required' })
+        const subjectId = trustedSubject(await resolveTrustedIdentity(req))
+        if (!conversationStore) return respond(res, 503, { error: 'conversation_store_unavailable' })
+        const body = await readJson(req)
+        const thread = await conversationStore.createThread({ subjectId, title: body.title, capability: body.capability })
+        return respond(res, 201, { subjectId, thread })
+      }
+
+      const threadMatch = url.pathname.match(/^\/api\/ai\/threads\/([^/]+)$/)
+      if (threadMatch && req.method === 'GET') {
+        if (typeof resolveTrustedIdentity !== 'function') return respond(res, 401, { error: 'neopass_identity_required' })
+        const subjectId = trustedSubject(await resolveTrustedIdentity(req))
+        if (!conversationStore) return respond(res, 503, { error: 'conversation_store_unavailable' })
+        const thread = await conversationStore.getThread({ subjectId, threadId: decodeURIComponent(threadMatch[1]) })
+        if (!thread) return respond(res, 404, { error: 'thread_not_found' })
+        return respond(res, 200, { subjectId, thread })
+      }
+
+      if (threadMatch && req.method === 'PATCH') {
+        if (typeof resolveTrustedIdentity !== 'function') return respond(res, 401, { error: 'neopass_identity_required' })
+        const subjectId = trustedSubject(await resolveTrustedIdentity(req))
+        if (!conversationStore) return respond(res, 503, { error: 'conversation_store_unavailable' })
+        const body = await readJson(req)
+        const thread = await conversationStore.renameThread({ subjectId, threadId: decodeURIComponent(threadMatch[1]), title: body.title })
+        if (!thread) return respond(res, 404, { error: 'thread_not_found' })
+        return respond(res, 200, { subjectId, thread })
+      }
+
       if (req.method === 'GET' && url.pathname === '/api/ai/providers') {
         if (typeof resolveTrustedIdentity !== 'function') return respond(res, 401, { error: 'neopass_identity_required' })
         const subjectId = trustedSubject(await resolveTrustedIdentity(req))
@@ -87,8 +126,23 @@ export function createNeoAiGatewayServer({
         const subjectId = trustedSubject(await resolveTrustedIdentity(req))
         const body = await readJson(req)
         const mission = normalizeMission(body, subjectId)
+        if (mission.threadId) {
+          if (!conversationStore) return respond(res, 503, { error: 'conversation_store_unavailable' })
+          const thread = await conversationStore.getThread({ subjectId, threadId: mission.threadId })
+          if (!thread) return respond(res, 404, { error: 'thread_not_found' })
+          if (!mission.previousResponseId && thread.lastResponseId) mission.previousResponseId = thread.lastResponseId
+        }
         const approved = body.approved === true
         const result = await router.execute(mission, { approved })
+        if (mission.threadId && result.status === 'completed') {
+          await conversationStore.appendTurn({
+            subjectId,
+            threadId: mission.threadId,
+            objective: mission.objective,
+            capability: mission.capability,
+            result: result.result,
+          })
+        }
         const status = result.status === 'awaiting_approval' ? 202 : result.status === 'blocked' ? 503 : 200
         return respond(res, status, { subjectId, ...result })
       }
@@ -98,6 +152,8 @@ export function createNeoAiGatewayServer({
       const message = error instanceof Error ? error.message : String(error)
       if (message === 'neopass_identity_required') return respond(res, 401, { error: message })
       if (message === 'request_too_large') return respond(res, 413, { error: message })
+      if (message === 'thread_forbidden') return respond(res, 403, { error: message })
+      if (message === 'thread_not_found') return respond(res, 404, { error: message })
       if (message === 'invalid_json' || message === 'mission_fields_required') return respond(res, 400, { error: message })
       if (message.includes('required')) return respond(res, 400, { error: 'mission_request_rejected' })
       return respond(res, 500, { error: 'neo_ai_gateway_error' })
