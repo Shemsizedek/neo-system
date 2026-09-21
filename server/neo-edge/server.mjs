@@ -13,6 +13,7 @@ const TOKENSCAN_NOMNI_URL = 'https://tokenscan.io/api/asset/NOMNI';
 const NOMNI_FALLBACK_VALUE = Object.freeze({ usd: '20.72', xcp: '13.03076220', btc: null });
 const BRIDGE_ASSET_PATH = fileURLToPath(new URL('./assets/neo-bridge.js', import.meta.url));
 const SUITE_ASSET_PATH = fileURLToPath(new URL('./assets/neo-suite.js', import.meta.url));
+const AI_ASSET_PATH = fileURLToPath(new URL('./assets/neo-ai.js', import.meta.url));
 let nomniValueCache = null;
 
 const NOMNI = Object.freeze({
@@ -250,6 +251,10 @@ export function createNeoEdgeServer() {
 
     if (req.method === 'GET' && url.pathname === '/assets/neo-suite.js') {
       return javascript(req, res, SUITE_ASSET_PATH);
+    }
+
+    if (req.method === 'GET' && url.pathname === '/assets/neo-ai.js') {
+      return javascript(req, res, AI_ASSET_PATH);
     }
 
     if (req.method === 'GET' && url.pathname === '/health') {
