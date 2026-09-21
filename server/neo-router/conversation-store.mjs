@@ -33,6 +33,8 @@ export function createConversationStore({ projectId, databaseId = '(default)', d
       lastResponseId: null,
       createdAt: timestamp,
       updatedAt: timestamp,
+      pinned: false,
+      archived: false,
       messages: [],
     }
     await firestore.collection(COLLECTION).doc(id).set(thread)
@@ -48,22 +50,41 @@ export function createConversationStore({ projectId, databaseId = '(default)', d
     return thread
   }
 
-  async function listThreads({ subjectId, limit = 30 }) {
+  async function listThreads({ subjectId, limit = 100, includeArchived = true }) {
     if (!subjectId) throw new Error('subject_required')
     const snapshot = await firestore.collection(COLLECTION)
       .where('subjectId', '==', subjectId)
       .orderBy('subjectId', 'asc')
       .limit(Math.min(Math.max(Number(limit) || 30, 1), 100))
       .get()
-    return snapshot.docs.map(doc => doc.data()).sort((a,b) => String(b.updatedAt||'').localeCompare(String(a.updatedAt||'')))
+    return snapshot.docs.map(doc => doc.data())
+      .filter(thread => includeArchived || !thread.archived)
+      .sort((a,b) => Number(Boolean(b.pinned))-Number(Boolean(a.pinned)) || String(b.updatedAt||'').localeCompare(String(a.updatedAt||'')))
+  }
+
+  async function updateThread({ subjectId, threadId, title, pinned, archived }) {
+    const thread = await getThread({ subjectId, threadId })
+    if (!thread) return null
+    const updated = {
+      ...thread,
+      ...(title !== undefined ? { title: sanitizeTitle(title) } : {}),
+      ...(typeof pinned === 'boolean' ? { pinned } : {}),
+      ...(typeof archived === 'boolean' ? { archived } : {}),
+      updatedAt: nowIso(now),
+    }
+    await firestore.collection(COLLECTION).doc(threadId).set(updated)
+    return updated
   }
 
   async function renameThread({ subjectId, threadId, title }) {
+    return updateThread({ subjectId, threadId, title })
+  }
+
+  async function deleteThread({ subjectId, threadId }) {
     const thread = await getThread({ subjectId, threadId })
-    if (!thread) return null
-    const updated = { ...thread, title: sanitizeTitle(title), updatedAt: nowIso(now) }
-    await firestore.collection(COLLECTION).doc(threadId).set(updated)
-    return updated
+    if (!thread) return false
+    await firestore.collection(COLLECTION).doc(threadId).delete()
+    return true
   }
 
   async function appendTurn({ subjectId, threadId, objective, result, capability }) {
@@ -96,5 +117,5 @@ export function createConversationStore({ projectId, databaseId = '(default)', d
     return updated
   }
 
-  return { createThread, getThread, listThreads, renameThread, appendTurn }
+  return { createThread, getThread, listThreads, renameThread, updateThread, deleteThread, appendTurn }
 }
