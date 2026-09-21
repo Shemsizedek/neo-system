@@ -36,3 +36,13 @@ test('serves the modular NEO Temple Suite', async () => withServer(async base =>
   assert.match(source, /class NeoNomniValue/);
   assert.match(source, /window\.NeoTempleSuite/);
 }));
+
+
+test('serves the NEOsync AI workspace asset', async () => withServer(async base => {
+  const response = await fetch(`${base}/assets/neo-ai.js`, { headers: { 'x-forwarded-host': 'neo.holytemples.org' } });
+  assert.equal(response.status, 200);
+  const source = await response.text();
+  assert.match(source, /NEOsync Threads/);
+  assert.match(source, /\/api\/ai\/threads/);
+  assert.match(source, /Personalization \(Muse\)/);
+}));
