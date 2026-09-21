@@ -209,3 +209,19 @@ test('imports Muse handoffs into a fresh governed thread without response-id lin
     assert.equal(body.result.previousResponseId,undefined)
   })
 })
+
+
+test('returns a safe copy-ready NEO to Muse brief', async () => {
+  const store={
+    async getThread(){return {id:'thread-brief',subjectId:'neo-user-1',title:'Project Alpha',lastResponseId:'resp-private',knowledgeAttachments:[],handoffs:[],messages:[{role:'user',text:'Prepare the next phase'},{role:'assistant',provider:'meta-muse',text:'Draft complete'}]}}
+  }
+  await withServer(() => createNeoAiGatewayServer({ router, resolveTrustedIdentity: trusted, conversationStore: store }), async server => {
+    const response=await request(server,'/api/ai/threads/thread-brief/muse-brief')
+    assert.equal(response.status,200)
+    const body=await response.json()
+    assert.match(body.brief,/NEO → MUSE HANDOFF BRIEF/)
+    assert.match(body.brief,/Prepare the next phase/)
+    assert.equal(body.sessionLinkage,'new-muse-app-conversation')
+    assert.doesNotMatch(body.brief,/resp-private/)
+  })
+})

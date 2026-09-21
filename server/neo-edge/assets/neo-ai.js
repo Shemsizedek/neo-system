@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const VERSION = '1.7.0';
+  const VERSION = '1.8.0';
   const DEFAULT_ENDPOINT = 'https://neo.holytemples.org/api/ai/execute';
 
   const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({
@@ -51,7 +51,7 @@
       const capability = this.getAttribute('capability') || 'reasoning';
       this.root.innerHTML = `<style>${styles}</style><section class="shell ${this.hasAttribute('fullscreen')?'fullscreen':''}">
         <div class="top"><div><div class="eyebrow">NEO AI Gateway</div><div class="title">Temple Intelligence Console</div></div><div class="status"><span class="dot"></span>Router v2</div></div>
-        <div class="workspace"><aside class="threads"><div class="label">NEOsync Threads</div><div class="telemetry" data-telemetry>Loading provider telemetry…</div><div class="filters"><input class="input" data-thread-search type="search" placeholder="Search threads…"><select class="select" data-thread-filter><option value="active">Active</option><option value="pinned">Pinned</option><option value="archived">Archived</option><option value="all">All</option></select></div><button class="button secondary" type="button" data-new-thread>+ New thread</button> <button class="button secondary" type="button" data-rename-thread>Rename</button><div data-threads style="margin-top:10px"></div></aside><div><div class="thread-actions"><button class="button secondary" type="button" data-pin-thread>Pin</button><button class="button secondary" type="button" data-archive-thread>Archive</button><button class="button secondary" type="button" data-export-thread>Export</button><button class="button secondary danger" type="button" data-delete-thread>Delete</button></div><div class="history" data-history></div>
+        <div class="workspace"><aside class="threads"><div class="label">NEOsync Threads</div><div class="telemetry" data-telemetry>Loading provider telemetry…</div><div class="filters"><input class="input" data-thread-search type="search" placeholder="Search threads…"><select class="select" data-thread-filter><option value="active">Active</option><option value="pinned">Pinned</option><option value="archived">Archived</option><option value="all">All</option></select></div><button class="button secondary" type="button" data-new-thread>+ New thread</button> <button class="button secondary" type="button" data-rename-thread>Rename</button><div data-threads style="margin-top:10px"></div></aside><div><div class="thread-actions"><button class="button secondary" type="button" data-pin-thread>Pin</button><button class="button secondary" type="button" data-archive-thread>Archive</button><button class="button secondary" type="button" data-export-thread>Export</button><button class="button secondary" type="button" data-muse-brief>Copy for Muse</button><button class="button secondary danger" type="button" data-delete-thread>Delete</button></div><div class="history" data-history></div>
         <form novalidate>
           <div class="row">
             <label class="field"><span class="label">Mission objective</span><textarea class="textarea" name="objective" maxlength="12000" required placeholder="Ask the NEO Router to analyze, plan, design, review, or explain..."></textarea></label>
@@ -110,6 +110,7 @@
       this.root.querySelector('[data-pin-thread]').addEventListener('click', () => this.togglePin());
       this.root.querySelector('[data-archive-thread]').addEventListener('click', () => this.toggleArchive());
       this.root.querySelector('[data-export-thread]').addEventListener('click', () => this.exportThread());
+      this.root.querySelector('[data-muse-brief]').addEventListener('click', () => this.copyMuseBrief());
       this.root.querySelector('[data-delete-thread]').addEventListener('click', () => this.deleteThread());
       this.searchInput.addEventListener('input', () => { this.searchTerm = this.searchInput.value.trim().toLowerCase(); this.renderThreads(); });
       this.filterInput.addEventListener('change', () => { this.threadFilter = this.filterInput.value; this.renderThreads(); });
@@ -284,6 +285,20 @@
         const a = document.createElement('a');
         a.href = href; a.download = `${name}.json`; a.click();
         setTimeout(() => URL.revokeObjectURL(href), 1000);
+      } catch (error) { this.error.textContent = error.message; this.error.classList.remove('hidden'); }
+    }
+
+    async copyMuseBrief() {
+      if (!this.threadId) return;
+      try {
+        const payload = await this.api(`/api/ai/threads/${encodeURIComponent(this.threadId)}/muse-brief`);
+        const text = payload.brief || '';
+        if (navigator.clipboard?.writeText) await navigator.clipboard.writeText(text);
+        else {
+          const area=document.createElement('textarea'); area.value=text; document.body.appendChild(area); area.select(); document.execCommand('copy'); area.remove();
+        }
+        this.result.textContent = 'Muse handoff brief copied. Open the native Muse app and paste it into a new conversation.';
+        this.result.classList.remove('hidden');
       } catch (error) { this.error.textContent = error.message; this.error.classList.remove('hidden'); }
     }
 
