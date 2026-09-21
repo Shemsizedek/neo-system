@@ -49,6 +49,7 @@ function normalizeMission(body, subjectId) {
     objective,
     capability,
     system: typeof body.system === 'string' && body.system.trim() ? body.system.trim() : undefined,
+    perspectiveContext: typeof body.perspectiveContext === 'string' && body.perspectiveContext.trim() ? body.perspectiveContext.trim() : undefined,
     maxTokens: Number.isFinite(body.maxTokens) ? Math.min(Math.max(Math.trunc(body.maxTokens), 1), 8192) : undefined,
     actions: Array.isArray(body.actions) ? body.actions.filter((value) => typeof value === 'string') : [],
     preferredProviders: Array.isArray(body.preferredProviders) ? body.preferredProviders.filter((value) => typeof value === 'string') : [],
