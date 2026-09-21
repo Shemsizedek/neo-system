@@ -108,7 +108,8 @@
         const [threads, providers] = await Promise.all([this.api('/api/ai/threads'), this.api('/api/ai/providers')]);
         this.threads = threads.threads || [];
         const muse = (providers.providers || []).find(p => p.id === 'meta-muse');
-        this.telemetry.textContent = muse ? `Muse · ${muse.configured?'configured':'offline'} · ${muse.telemetry?.successes||0} successes · ${muse.telemetry?.failures||0} failures` : 'Muse telemetry unavailable';
+        const durable = muse?.durableTelemetry || muse?.telemetry || {};
+        this.telemetry.textContent = muse ? `Muse · ${muse.configured?'configured':'offline'} · ${durable.successes||0} successes · ${durable.failures||0} failures · ${providers.telemetryPersistence||'memory'}` : 'Muse telemetry unavailable';
         this.renderThreads();
       } catch (error) {
         this.telemetry.textContent = error.message === 'neopass_identity_required' ? 'Sign in with NEOpass to load workspace.' : 'Workspace unavailable';
@@ -116,7 +117,12 @@
     }
 
     renderThreads() {
-      this.threadList.innerHTML = this.threads.map(t => `<button class="thread ${t.id===this.threadId?'active':''}" data-thread="${escapeHtml(t.id)}"><b>${escapeHtml(t.title)}</b><small>${escapeHtml(t.provider||t.capability||'personalization')}</small></button>`).join('') || '<div class="meta">No saved threads yet.</div>';
+      const visible = this.threads.filter(t => {
+        const matchesSearch = !this.searchTerm || String(t.title||'').toLowerCase().includes(this.searchTerm) || (t.messages||[]).some(m => String(m.text||'').toLowerCase().includes(this.searchTerm));
+        const matchesFilter = this.threadFilter === 'all' || (this.threadFilter === 'active' && !t.archived) || (this.threadFilter === 'archived' && t.archived) || (this.threadFilter === 'pinned' && t.pinned && !t.archived);
+        return matchesSearch && matchesFilter;
+      });
+      this.threadList.innerHTML = visible.map(t => `<button class="thread ${t.id===this.threadId?'active':''} ${t.archived?'archived':''}" data-thread="${escapeHtml(t.id)}"><span class="flags">${t.pinned?'★ ':''}${t.archived?'⌁':''}</span><b>${escapeHtml(t.title)}</b><small>${escapeHtml(t.provider||t.capability||'personalization')}</small></button>`).join('') || '<div class="meta">No matching threads.</div>';
       this.threadList.querySelectorAll('[data-thread]').forEach(btn => btn.addEventListener('click', () => this.openThread(btn.dataset.thread)));
     }
 
@@ -142,12 +148,57 @@
       } catch (error) { this.error.textContent = error.message; this.error.classList.remove('hidden'); }
     }
 
+    async updateCurrentThread(patch) {
+      if (!this.threadId) return;
+      await this.api(`/api/ai/threads/${encodeURIComponent(this.threadId)}`, { method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify(patch) });
+      await this.refreshWorkspace();
+      await this.openThread(this.threadId);
+    }
+
+    async togglePin() {
+      const current = this.threads.find(t => t.id === this.threadId);
+      if (!current) return;
+      try { await this.updateCurrentThread({ pinned: !current.pinned }); }
+      catch (error) { this.error.textContent = error.message; this.error.classList.remove('hidden'); }
+    }
+
+    async toggleArchive() {
+      const current = this.threads.find(t => t.id === this.threadId);
+      if (!current) return;
+      try { await this.updateCurrentThread({ archived: !current.archived }); }
+      catch (error) { this.error.textContent = error.message; this.error.classList.remove('hidden'); }
+    }
+
+    async exportThread() {
+      if (!this.threadId) return;
+      try {
+        const payload = await this.api(`/api/ai/threads/${encodeURIComponent(this.threadId)}/export`);
+        const name = String(payload.thread?.title || 'neosync-thread').replace(/[^a-z0-9_-]+/gi,'-').replace(/^-|-$/g,'').toLowerCase() || 'neosync-thread';
+        const blob = new Blob([JSON.stringify(payload,null,2)], {type:'application/json'});
+        const href = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = href; a.download = `${name}.json`; a.click();
+        setTimeout(() => URL.revokeObjectURL(href), 1000);
+      } catch (error) { this.error.textContent = error.message; this.error.classList.remove('hidden'); }
+    }
+
+    async deleteThread() {
+      if (!this.threadId || !confirm('Delete this NEOsync thread permanently?')) return;
+      try {
+        await this.api(`/api/ai/threads/${encodeURIComponent(this.threadId)}`, { method:'DELETE' });
+        this.threadId = null; this.previousResponseId = null; this.history.innerHTML = '';
+        await this.refreshWorkspace();
+      } catch (error) { this.error.textContent = error.message; this.error.classList.remove('hidden'); }
+    }
+
     async openThread(id) {
       try {
         const body = await this.api(`/api/ai/threads/${encodeURIComponent(id)}`);
         const thread = body.thread;
         this.threadId = thread.id;
         this.previousResponseId = thread.lastResponseId || null;
+        const pinButton=this.root.querySelector('[data-pin-thread]'); if(pinButton) pinButton.textContent=thread.pinned?'Unpin':'Pin';
+        const archiveButton=this.root.querySelector('[data-archive-thread]'); if(archiveButton) archiveButton.textContent=thread.archived?'Restore':'Archive';
         this.history.innerHTML = (thread.messages||[]).map(m => `<div class="msg ${escapeHtml(m.role)}"><b>${m.role==='user'?'You':'NEOsync / '+(m.provider||'Muse')}</b><br>${escapeHtml(m.text||'')}</div>`).join('');
         this.renderThreads();
       } catch (error) { this.error.textContent = error.message; this.error.classList.remove('hidden'); }
