@@ -1,0 +1,9 @@
+FROM node:24-bookworm-slim
+WORKDIR /app
+ENV NODE_ENV=production
+COPY server/neo-router ./server/neo-router
+COPY server/neo-platform-api ./server/neo-platform-api
+ENV HOST=0.0.0.0
+ENV PORT=8080
+EXPOSE 8080
+CMD ["node", "server/neo-router/ai-gateway-start.mjs"]
