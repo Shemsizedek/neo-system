@@ -30,3 +30,16 @@ test('deduplicates thread attachments and preserves explicit provenance metadata
   assert.equal(citation.title, resource.title)
   assert.equal(citation.accessClass, resource.accessClass)
 })
+
+
+test('does not attach protected library records through the public Knowledge Browser path', () => {
+  const protectedRecord = authorizedLibraryCatalog().find(resource => resource.accessClass !== 'PUBLIC_WORLD_LIBRARY')
+  if (!protectedRecord) return
+  const result = buildKnowledgeContext({
+    objective: 'protected record boundary test',
+    attachments: [protectedRecord.id],
+    missionId: 'KNOW-3',
+  })
+  assert.equal(result.attachedIds.includes(protectedRecord.id), false)
+  assert.equal(result.provenance.some(item => item.id === protectedRecord.id), false)
+})
