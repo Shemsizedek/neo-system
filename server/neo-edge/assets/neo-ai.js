@@ -49,7 +49,7 @@
       const capability = this.getAttribute('capability') || 'reasoning';
       this.root.innerHTML = `<style>${styles}</style><section class="shell">
         <div class="top"><div><div class="eyebrow">NEO AI Gateway</div><div class="title">Temple Intelligence Console</div></div><div class="status"><span class="dot"></span>Router v2</div></div>
-        <div class="workspace"><aside class="threads"><div class="label">NEOsync Threads</div><div class="telemetry" data-telemetry>Loading provider telemetry…</div><button class="button secondary" type="button" data-new-thread>+ New thread</button><div data-threads style="margin-top:10px"></div></aside><div><div class="history" data-history></div>
+        <div class="workspace"><aside class="threads"><div class="label">NEOsync Threads</div><div class="telemetry" data-telemetry>Loading provider telemetry…</div><button class="button secondary" type="button" data-new-thread>+ New thread</button> <button class="button secondary" type="button" data-rename-thread>Rename</button><div data-threads style="margin-top:10px"></div></aside><div><div class="history" data-history></div>
         <form novalidate>
           <div class="row">
             <label class="field"><span class="label">Mission objective</span><textarea class="textarea" name="objective" maxlength="12000" required placeholder="Ask the NEO Router to analyze, plan, design, review, or explain..."></textarea></label>
@@ -75,6 +75,7 @@
       this.form.addEventListener('submit', event => this.execute(event));
       this.root.querySelector('[data-clear]').addEventListener('click', () => this.clear());
       this.root.querySelector('[data-new-thread]').addEventListener('click', () => this.newThread());
+      this.root.querySelector('[data-rename-thread]').addEventListener('click', () => this.renameThread());
       this.refreshWorkspace();
     }
 
@@ -116,6 +117,17 @@
         this.threadId = body.thread.id;
         this.previousResponseId = body.thread.lastResponseId || null;
         this.history.innerHTML = '';
+        await this.refreshWorkspace();
+      } catch (error) { this.error.textContent = error.message; this.error.classList.remove('hidden'); }
+    }
+
+    async renameThread() {
+      if (!this.threadId) return this.newThread();
+      try {
+        const current = this.threads.find(t => t.id === this.threadId);
+        const title = prompt('Rename thread', current?.title || 'NEOsync Muse Thread');
+        if (!title) return;
+        await this.api(`/api/ai/threads/${encodeURIComponent(this.threadId)}`, { method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({title}) });
         await this.refreshWorkspace();
       } catch (error) { this.error.textContent = error.message; this.error.classList.remove('hidden'); }
     }
