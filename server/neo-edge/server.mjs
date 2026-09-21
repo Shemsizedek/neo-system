@@ -14,6 +14,7 @@ const NOMNI_FALLBACK_VALUE = Object.freeze({ usd: '20.72', xcp: '13.03076220', b
 const BRIDGE_ASSET_PATH = fileURLToPath(new URL('./assets/neo-bridge.js', import.meta.url));
 const SUITE_ASSET_PATH = fileURLToPath(new URL('./assets/neo-suite.js', import.meta.url));
 const AI_ASSET_PATH = fileURLToPath(new URL('./assets/neo-ai.js', import.meta.url));
+const NEOPASS_RUNTIME_PATH = fileURLToPath(new URL('./assets/neopass-runtime.js', import.meta.url));
 let nomniValueCache = null;
 
 const NOMNI = Object.freeze({
@@ -125,6 +126,17 @@ function cors(req, res) {
     res.setHeader('access-control-allow-methods', 'GET,OPTIONS');
     res.setHeader('access-control-allow-headers', 'Accept,Content-Type,Authorization');
   }
+}
+
+function htmlPage(res, status, body) {
+  res.writeHead(status, {
+    'content-type': 'text/html; charset=utf-8',
+    'cache-control': 'no-store',
+    'x-content-type-options': 'nosniff',
+    'referrer-policy': 'strict-origin-when-cross-origin',
+    'content-security-policy': "default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self' https://egov.holytemples.org; img-src 'self' data: https:"
+  });
+  res.end(body);
 }
 
 function json(req, res, status, body) {
@@ -255,6 +267,19 @@ export function createNeoEdgeServer() {
 
     if (req.method === 'GET' && url.pathname === '/assets/neo-ai.js') {
       return javascript(req, res, AI_ASSET_PATH);
+    }
+
+    if (req.method === 'GET' && url.pathname === '/assets/neopass-runtime.js') {
+      return javascript(req, res, NEOPASS_RUNTIME_PATH);
+    }
+
+    if (host === 'neo.holytemples.org' && req.method === 'GET' && url.pathname === '/neosync') {
+      res.writeHead(308, { location: '/neosync/', 'cache-control': 'no-store' });
+      return res.end();
+    }
+
+    if (host === 'neo.holytemples.org' && req.method === 'GET' && url.pathname === '/neosync/') {
+      return htmlPage(res, 200, `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#020704"><title>NEOsync Conversation Workspace</title><style>html,body{margin:0;min-height:100%;background:#020704}body{padding:16px}neo-temple-ai{display:block;max-width:1500px;margin:auto}</style><script src="/assets/neopass-runtime.js" defer></script><script src="/assets/neo-ai.js" defer></script></head><body><neo-temple-ai capability="personalization" fullscreen></neo-temple-ai></body></html>`);
     }
 
     if (req.method === 'GET' && url.pathname === '/health') {
