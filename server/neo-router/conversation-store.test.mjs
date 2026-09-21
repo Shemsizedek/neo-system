@@ -54,3 +54,20 @@ test('persists, resumes, renames and isolates NEOsync threads', async () => {
   assert.equal(await store.deleteThread({subjectId:'neo-user-1',threadId:thread.id}),true)
   assert.equal(await store.getThread({subjectId:'neo-user-1',threadId:thread.id}),null)
 })
+
+
+test('stores imported Muse handoff context without API session linkage', async () => {
+  const db=memoryDb()
+  const store=createConversationStore({db,now:()=>new Date('2026-09-21T20:00:00Z')})
+  const thread=await store.createThread({
+    subjectId:'neo-user-1',
+    title:'Muse handoff',
+    handoffs:[{sourceApp:'Meta Muse app',contentHash:'sha256:test',sessionLinkage:'content-handoff-only'}],
+    handoffContext:'Copied Muse context',
+  })
+  assert.equal(thread.lastResponseId,null)
+  assert.equal(thread.handoffs[0].sessionLinkage,'content-handoff-only')
+  assert.equal(thread.messages[0].role,'external')
+  assert.equal(thread.messages[0].provider,'Meta Muse')
+  assert.match(thread.handoffContext,/Copied Muse context/)
+})

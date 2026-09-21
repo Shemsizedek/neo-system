@@ -52,7 +52,7 @@ jobs:
           done
 
       - name: Test NEO AI gateway and router
-        run: node --test server/neo-router/ai-gateway-server.test.mjs server/neo-router/router.test.mjs server/neo-router/providers.test.mjs server/neo-router/conversation-store.test.mjs server/neo-router/provider-telemetry-store.test.mjs server/neo-router/knowledge-context.test.mjs
+        run: node --test server/neo-router/ai-gateway-server.test.mjs server/neo-router/router.test.mjs server/neo-router/providers.test.mjs server/neo-router/conversation-store.test.mjs server/neo-router/provider-telemetry-store.test.mjs server/neo-router/knowledge-context.test.mjs server/neo-router/muse-handoff.test.mjs
 
       - name: Verify live Meta Muse credential before deploy
         env:
@@ -383,6 +383,57 @@ jobs:
             if(!body.knowledge?.algo?.provenance?.includes("NEO-ALGO-001")) throw new Error("neo_algo_provenance_missing");
             console.log(JSON.stringify({knowledgeContext:true,provenance:true,neoAlgo:true,sourceId:resource.id}));
             fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,"\n### NEOsync Knowledge Context\n- Approved library attachment: passed\n- Provenance returned: passed\n- NEO Algo grounding: passed\n- Muse route: passed\n");
+          '
+          curl -sS -o /dev/null -X DELETE -H "Authorization: Bearer $TOKEN" "$URL/api/ai/threads/$THREAD_ID"
+
+      - name: Verify Muse app handoff import boundary
+        env:
+          NEO_PASS_JWT_SECRET: ${{ secrets.NEO_PASS_JWT_SECRET }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL="$(gcloud run services describe "$SERVICE_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format='value(status.url)')"
+          TOKEN="$(node --input-type=module -e '
+            import { createHmac } from "node:crypto";
+            const enc=v=>Buffer.from(JSON.stringify(v)).toString("base64url");
+            const now=Math.floor(Date.now()/1000),h=enc({alg:"HS256",typ:"JWT"}),p=enc({sub:"neo-muse-handoff-smoke",iat:now,exp:now+300});
+            process.stdout.write(h+"."+p+"."+createHmac("sha256",process.env.NEO_PASS_JWT_SECRET).update(h+"."+p).digest("base64url"));
+          ')"
+          H_CODE="$(curl -sS -o /tmp/handoff-created.json -w '%{http_code}' -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" --data '{"title":"MUSE-NEO-012A Production Handoff","sourceType":"muse-app-copy","content":"Muse app handoff production context. Project codename: ORBIT."}' "$URL/api/ai/handoffs")"
+          test "$H_CODE" = 201
+          THREAD_ID="$(node --input-type=module -e '
+            import fs from "node:fs";
+            const b=JSON.parse(fs.readFileSync("/tmp/handoff-created.json","utf8"));
+            if(!b.thread?.id)throw new Error("handoff_thread_missing");
+            if(b.thread.lastResponseId!==null)throw new Error("handoff_incorrectly_linked_to_api_session");
+            if(b.provenance?.sessionLinkage!=="content-handoff-only")throw new Error("handoff_linkage_marker_missing");
+            if(!String(b.provenance?.contentHash||"").startsWith("sha256:"))throw new Error("handoff_hash_missing");
+            process.stdout.write(b.thread.id);
+          ')"
+          THREAD_ID="$THREAD_ID" node --input-type=module -e '
+            import fs from "node:fs";
+            fs.writeFileSync("/tmp/handoff-mission.json",JSON.stringify({
+              missionId:"MUSE-NEO-012A-HANDOFF",
+              threadId:process.env.THREAD_ID,
+              objective:"Continue this imported Muse work under NEO governance and acknowledge the imported context.",
+              capability:"personalization",
+              maxTokens:2048
+            }));
+          '
+          M_CODE="$(curl -sS -o /tmp/handoff-response.json -w '%{http_code}' -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" --data-binary @/tmp/handoff-mission.json "$URL/api/ai/execute")"
+          test "$M_CODE" = 200
+          G_CODE="$(curl -sS -o /tmp/handoff-loaded.json -w '%{http_code}' -H "Authorization: Bearer $TOKEN" "$URL/api/ai/threads/$THREAD_ID")"
+          test "$G_CODE" = 200
+          node --input-type=module -e '
+            import fs from "node:fs";
+            const r=JSON.parse(fs.readFileSync("/tmp/handoff-response.json","utf8"));
+            const t=JSON.parse(fs.readFileSync("/tmp/handoff-loaded.json","utf8")).thread;
+            if(r.status!=="completed"||r.route!=="meta-muse")throw new Error("handoff_muse_turn_failed");
+            if(!r.result?.responseId)throw new Error("handoff_first_api_response_id_missing");
+            if(!t.lastResponseId)throw new Error("handoff_thread_not_promoted_to_api_session");
+            if(t.messages?.[0]?.role!=="external")throw new Error("handoff_external_source_missing");
+            console.log(JSON.stringify({handoffImported:true,contentOnlyBoundary:true,firstNeoTurn:true,apiContinuityEstablished:true}));
+            fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,"\n### Muse → NEO Handoff\n- Content import: passed\n- Source provenance hash: passed\n- Consumer/API session boundary: preserved\n- First governed Muse turn: passed\n- NEO API continuity established after import: passed\n");
           '
           curl -sS -o /dev/null -X DELETE -H "Authorization: Bearer $TOKEN" "$URL/api/ai/threads/$THREAD_ID"
 

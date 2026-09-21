@@ -20,7 +20,7 @@ function sanitizeText(value, max = 24000) {
 export function createConversationStore({ projectId, databaseId = '(default)', db, now = () => new Date() } = {}) {
   const firestore = db ?? createFirestoreRestDb({ projectId, databaseId })
 
-  async function createThread({ subjectId, title, capability = 'personalization' }) {
+  async function createThread({ subjectId, title, capability = 'personalization', handoffs = [], handoffContext = '' }) {
     if (!subjectId) throw new Error('subject_required')
     const id = randomUUID()
     const timestamp = nowIso(now)
@@ -36,7 +36,9 @@ export function createConversationStore({ projectId, databaseId = '(default)', d
       pinned: false,
       archived: false,
       knowledgeAttachments: [],
-      messages: [],
+      handoffs: Array.isArray(handoffs) ? handoffs.slice(0, 8) : [],
+      handoffContext: sanitizeText(handoffContext, 48000),
+      messages: handoffContext ? [{ role: 'external', text: sanitizeText(handoffContext, 48000), provider: 'Meta Muse', createdAt: timestamp }] : [],
     }
     await firestore.collection(COLLECTION).doc(id).set(thread)
     return thread

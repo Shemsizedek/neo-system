@@ -180,3 +180,32 @@ test('returns explicit NEO knowledge provenance for personalized missions', asyn
     assert.ok(Array.isArray(body.knowledge.provenance))
   })
 })
+
+
+test('imports Muse handoffs into a fresh governed thread without response-id linkage', async () => {
+  const rows=new Map()
+  const store={
+    async createThread({subjectId,title,capability,handoffs,handoffContext}){
+      const thread={id:'handoff-1',subjectId,title,capability,lastResponseId:null,handoffs,handoffContext,messages:handoffContext?[{role:'external',text:handoffContext,provider:'Meta Muse'}]:[]}
+      rows.set(thread.id,thread); return structuredClone(thread)
+    },
+    async getThread({subjectId,threadId}){const t=rows.get(threadId);if(!t)return null;if(t.subjectId!==subjectId)throw new Error('thread_forbidden');return structuredClone(t)},
+    async listThreads(){return [...rows.values()].map(t=>structuredClone(t))},
+    async appendTurn(){},
+  }
+  await withServer(() => createNeoAiGatewayServer({ router, resolveTrustedIdentity: trusted, conversationStore: store }), async server => {
+    let response=await request(server,'/api/ai/handoffs',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({title:'Muse import',sourceType:'muse-app-copy',content:'Copied Muse result'})})
+    assert.equal(response.status,201)
+    const imported=await response.json()
+    assert.equal(imported.thread.lastResponseId,null)
+    assert.equal(imported.provenance.sessionLinkage,'content-handoff-only')
+    assert.match(imported.provenance.contentHash,/^sha256:/)
+    assert.equal(imported.thread.messages[0].role,'external')
+    response=await request(server,'/api/ai/execute',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({threadId:'handoff-1',objective:'Continue under NEO governance',capability:'personalization'})})
+    assert.equal(response.status,200)
+    const body=await response.json()
+    assert.match(body.result.perspectiveContext,/EXTERNAL MUSE HANDOFF CONTEXT/)
+    assert.match(body.result.perspectiveContext,/Copied Muse result/)
+    assert.equal(body.result.previousResponseId,undefined)
+  })
+})
