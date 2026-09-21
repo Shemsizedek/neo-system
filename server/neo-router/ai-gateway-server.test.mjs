@@ -119,7 +119,7 @@ test('persistent thread APIs create, resume, rename, and append Muse turns', asy
       const thread = { id:'thread-1', subjectId, title, capability, lastResponseId:null, messages:[] }
       rows.set(thread.id, thread); return structuredClone(thread)
     },
-    async listThreads({ subjectId }) { return [...rows.values()].filter(t=>t.subjectId===subjectId).map(structuredClone) },
+    async listThreads({ subjectId }) { return [...rows.values()].filter(t=>t.subjectId===subjectId).map(t=>structuredClone(t)) },
     async getThread({ subjectId, threadId }) {
       const t=rows.get(threadId); if(!t)return null; if(t.subjectId!==subjectId)throw new Error('thread_forbidden'); return structuredClone(t)
     },
