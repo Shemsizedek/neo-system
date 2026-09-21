@@ -62,6 +62,44 @@ export function createOpenAIAdapter({ apiKey, model = 'gpt-5', fetchImpl, timeou
   }
 }
 
+export function createMetaMuseAdapter({
+  apiKey,
+  model = 'muse-spark-1.3',
+  baseUrl = 'https://api.meta.ai/v1',
+  fetchImpl,
+  timeoutMs,
+} = {}) {
+  const normalizedBaseUrl = baseUrl.replace(/\/$/, '')
+  return {
+    id: 'meta-muse',
+    configured: Boolean(apiKey),
+    async invoke({ system, prompt, maxTokens = 2048, previousResponseId } = {}) {
+      if (!apiKey) throw new Error('MODEL_API_KEY is not configured')
+      const request = {
+        model,
+        instructions: system,
+        input: prompt,
+        max_output_tokens: maxTokens,
+      }
+      if (previousResponseId) request.previous_response_id = previousResponseId
+
+      const body = await requestJson(`${normalizedBaseUrl}/responses`, {
+        method: 'POST',
+        headers: jsonHeaders(apiKey),
+        body: JSON.stringify(request),
+      }, fetchImpl, timeoutMs)
+
+      return {
+        provider: 'meta-muse',
+        model,
+        text: responseText(body),
+        responseId: body.id ?? null,
+        raw: body,
+      }
+    },
+  }
+}
+
 export function createXAIAdapter({ apiKey, model = 'grok-4.6', fetchImpl, timeoutMs } = {}) {
   return {
     id: 'xai', configured: Boolean(apiKey),
@@ -140,6 +178,12 @@ export function providersFromEnv(env = process.env) {
   return [
     createAnthropicAdapter({ apiKey: env.ANTHROPIC_API_KEY, model: env.ANTHROPIC_MODEL || undefined, timeoutMs }),
     createOpenAIAdapter({ apiKey: env.OPENAI_API_KEY, model: env.OPENAI_MODEL || undefined, timeoutMs }),
+    createMetaMuseAdapter({
+      apiKey: env.MODEL_API_KEY,
+      model: env.META_MUSE_MODEL || undefined,
+      baseUrl: env.META_MODEL_BASE_URL || undefined,
+      timeoutMs,
+    }),
     createXAIAdapter({ apiKey: env.XAI_API_KEY, model: env.XAI_MODEL || undefined, timeoutMs }),
     createMetaLlamaAdapter({ apiKey: env.LLAMA_API_KEY, model: env.LLAMA_MODEL || undefined, baseUrl: env.LLAMA_API_BASE || undefined, timeoutMs }),
     gemini,
