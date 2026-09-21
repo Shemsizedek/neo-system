@@ -115,7 +115,14 @@ jobs:
           grep -q 'NEOsync Conversation Workspace' /tmp/neo-sync-workspace.html
           asset_code="$(curl --retry 5 --retry-delay 3 --retry-all-errors -sS -o /tmp/neo-ai.js -w '%{http_code}' -H 'X-Forwarded-Host: neo.holytemples.org' "$SERVICE_URL/assets/neo-ai.js")"
           test "$asset_code" = 200
-          grep -q "AI surface v" /tmp/neo-ai.js
+          grep -q "AI surface v1.6.0" /tmp/neo-ai.js
+          grep -q "Knowledge Browser" /tmp/neo-ai.js
+          knowledge_search_code="$(curl --retry 5 --retry-delay 3 --retry-all-errors -sS -o /tmp/knowledge-search.json -w '%{http_code}' -H 'X-Forwarded-Host: neo.holytemples.org' "$SERVICE_URL/api/noogle/search?q=noology")"
+          test "$knowledge_search_code" = 200
+          RECORD_ID="$(node --input-type=module -e 'import fs from "node:fs";const b=JSON.parse(fs.readFileSync("/tmp/knowledge-search.json","utf8"));if(!b.records?.[0]?.id)throw new Error("knowledge_search_empty");process.stdout.write(b.records[0].id)')"
+          preview_code="$(curl --retry 5 --retry-delay 3 --retry-all-errors -sS -o /tmp/knowledge-preview.json -w '%{http_code}' -H 'X-Forwarded-Host: neo.holytemples.org' "$SERVICE_URL/api/library/$RECORD_ID")"
+          test "$preview_code" = 200
+          RECORD_ID="$RECORD_ID" node --input-type=module -e 'import fs from "node:fs";const b=JSON.parse(fs.readFileSync("/tmp/knowledge-preview.json","utf8"));if(b.record?.id!==process.env.RECORD_ID)throw new Error("knowledge_preview_mismatch");if(b.oracleClass!=="internal-record-context")throw new Error("oracle_class_missing");'
           echo "NEO_EDGE_SERVICE_URL=$SERVICE_URL" >> "$GITHUB_ENV"
           echo "NEO edge + NEO Wire production origin healthy: $SERVICE_URL" >> "$GITHUB_STEP_SUMMARY"
 
