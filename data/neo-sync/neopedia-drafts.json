@@ -1,4 +1,63 @@
 {
-  "generatedAt": "2026-09-20T20:51:31.387Z",
-  "items": []
+  "generatedAt": "2026-09-21T04:59:22.731Z",
+  "items": [
+    {
+      "id": "DRAFT:2138275d77589525",
+      "title": "Untitled",
+      "summary": "HOME | Table of Contents | The Seven Thunders | A Personal Note from the Receiver | Prayer of the Ansaars | The Glossary | Figures Back | Next Your browser does not support inline frames or is currently configured not to display inline frames. HOME | Table of Contents | The Seven Thunders | A Personal Note from the Receiver | Prayer of the Ansaars | The Glossary | Figures http://HolyTablets.NuwaubianFacts.com Please ",
+      "sourceId": "SRC-HOLY-TABLETS-WEB",
+      "sourceUrl": "https://holytablets.nuwaubianfacts.com/100/051.htm",
+      "sourceHash": "2138275d775895259a2f6cff14319e440fcaa0e993d1a5ec487f48f1d7649a2c",
+      "sourceMode": "PRIMARY_SACRED",
+      "headings": [],
+      "claimStatus": "SOURCE_STATES",
+      "quality": {
+        "dimensions": {
+          "provenance": 9,
+          "truthfulness": 8,
+          "soundRightReason": 7,
+          "coherence": 7,
+          "ethics": 9,
+          "reciprocity": 7,
+          "natureAlignment": 6,
+          "craftsmanship": 5,
+          "consequence": 8
+        },
+        "average": 7.333333333333333,
+        "potency": "DYNAMIC_BALANCE",
+        "gate": "PASS",
+        "note": "Heuristic artifact-quality assessment only; not a score of persons, identities or protected characteristics."
+      },
+      "publicationStatus": "DRAFT_READY_FOR_REVIEW"
+    },
+    {
+      "id": "DRAFT:2138275d77589525",
+      "title": "Untitled",
+      "summary": "HOME | Table of Contents | The Seven Thunders | A Personal Note from the Receiver | Prayer of the Ansaars | The Glossary | Figures Back | Next Your browser does not support inline frames or is currently configured not to display inline frames. HOME | Table of Contents | The Seven Thunders | A Personal Note from the Receiver | Prayer of the Ansaars | The Glossary | Figures http://HolyTablets.NuwaubianFacts.com Please ",
+      "sourceId": "SRC-HOLY-TABLETS-WEB",
+      "sourceUrl": "https://holytablets.nuwaubianfacts.com/100/064.htm",
+      "sourceHash": "2138275d775895259a2f6cff14319e440fcaa0e993d1a5ec487f48f1d7649a2c",
+      "sourceMode": "PRIMARY_SACRED",
+      "headings": [],
+      "claimStatus": "SOURCE_STATES",
+      "quality": {
+        "dimensions": {
+          "provenance": 9,
+          "truthfulness": 8,
+          "soundRightReason": 7,
+          "coherence": 7,
+          "ethics": 9,
+          "reciprocity": 7,
+          "natureAlignment": 6,
+          "craftsmanship": 5,
+          "consequence": 8
+        },
+        "average": 7.333333333333333,
+        "potency": "DYNAMIC_BALANCE",
+        "gate": "PASS",
+        "note": "Heuristic artifact-quality assessment only; not a score of persons, identities or protected characteristics."
+      },
+      "publicationStatus": "DRAFT_READY_FOR_REVIEW"
+    }
+  ]
 }

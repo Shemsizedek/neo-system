@@ -1,4 +1,73 @@
 {
-  "generatedAt": "2026-09-20T20:51:31.387Z",
-  "items": []
+  "generatedAt": "2026-09-21T04:59:22.731Z",
+  "items": [
+    {
+      "type": "NEW_PAGE",
+      "sourceId": "SRC-HOLY-TABLETS-WEB",
+      "url": "https://holytablets.nuwaubianfacts.com/100/051.htm",
+      "title": "Untitled",
+      "currentHash": "2138275d775895259a2f6cff14319e440fcaa0e993d1a5ec487f48f1d7649a2c",
+      "currentExcerpt": "HOME | Table of Contents | The Seven Thunders | A Personal Note from the Receiver | Prayer of the Ansaars | The Glossary | Figures Back | Next Your browser does not support inline frames or is currently configured not to display inline frames. HOME | Table of Contents | The Seven Thunders | A Personal Note from the Receiver | Prayer of the Ansaars | The Glossary | Figures http://HolyTablets.NuwaubianFacts.com Please ",
+      "quality": {
+        "dimensions": {
+          "provenance": 9,
+          "truthfulness": 8,
+          "soundRightReason": 7,
+          "coherence": 7,
+          "ethics": 9,
+          "reciprocity": 7,
+          "natureAlignment": 6,
+          "craftsmanship": 5,
+          "consequence": 8
+        },
+        "average": 7.333333333333333,
+        "potency": "DYNAMIC_BALANCE",
+        "gate": "PASS",
+        "note": "Heuristic artifact-quality assessment only; not a score of persons, identities or protected characteristics."
+      },
+      "decision": "CANDIDATE"
+    },
+    {
+      "type": "NEW_PAGE",
+      "sourceId": "SRC-HOLY-TABLETS-WEB",
+      "url": "https://holytablets.nuwaubianfacts.com/100/064.htm",
+      "title": "Untitled",
+      "currentHash": "2138275d775895259a2f6cff14319e440fcaa0e993d1a5ec487f48f1d7649a2c",
+      "currentExcerpt": "HOME | Table of Contents | The Seven Thunders | A Personal Note from the Receiver | Prayer of the Ansaars | The Glossary | Figures Back | Next Your browser does not support inline frames or is currently configured not to display inline frames. HOME | Table of Contents | The Seven Thunders | A Personal Note from the Receiver | Prayer of the Ansaars | The Glossary | Figures http://HolyTablets.NuwaubianFacts.com Please ",
+      "quality": {
+        "dimensions": {
+          "provenance": 9,
+          "truthfulness": 8,
+          "soundRightReason": 7,
+          "coherence": 7,
+          "ethics": 9,
+          "reciprocity": 7,
+          "natureAlignment": 6,
+          "craftsmanship": 5,
+          "consequence": 8
+        },
+        "average": 7.333333333333333,
+        "potency": "DYNAMIC_BALANCE",
+        "gate": "PASS",
+        "note": "Heuristic artifact-quality assessment only; not a score of persons, identities or protected characteristics."
+      },
+      "decision": "CANDIDATE"
+    },
+    {
+      "type": "REMOVED_OR_UNREACHABLE",
+      "sourceId": "SRC-HOLY-TABLETS-WEB",
+      "url": "https://holytablets.nuwaubianfacts.com/tableofcontents.htm",
+      "title": "Untitled",
+      "previousHash": "ac75672b2fba79d84758cdbddc9bc0ec6f669c16f9eacbaf1202b37f8cbca487",
+      "decision": "REVIEW_REQUIRED"
+    },
+    {
+      "type": "REMOVED_OR_UNREACHABLE",
+      "sourceId": "SRC-HOLY-TABLETS-WEB",
+      "url": "https://holytablets.nuwaubianfacts.com/prayer%20of%20the%20ansaars.htm",
+      "title": "Untitled",
+      "previousHash": "5bc59847043f9e3adfaf0810ebe0831a1ef521315a30779941f2bc8ab7d1b6fc",
+      "decision": "REVIEW_REQUIRED"
+    }
+  ]
 }

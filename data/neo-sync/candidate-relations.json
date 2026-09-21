@@ -1,4 +1,39 @@
 {
-  "generatedAt": "2026-09-20T20:51:31.387Z",
-  "items": []
+  "generatedAt": "2026-09-21T04:59:22.731Z",
+  "items": [
+    {
+      "fromId": "PAGE:2138275d775895259a2f6cff14319e440fcaa0e993d1a5ec487f48f1d7649a2c",
+      "toId": "SRC-HOLY-TABLETS-WEB",
+      "kind": "DERIVES_FROM",
+      "confidence": 0.99,
+      "evidenceRefs": [
+        "https://holytablets.nuwaubianfacts.com/100/051.htm",
+        "2138275d775895259a2f6cff14319e440fcaa0e993d1a5ec487f48f1d7649a2c"
+      ],
+      "decision": "ACCEPTED"
+    },
+    {
+      "fromId": "PAGE:2138275d775895259a2f6cff14319e440fcaa0e993d1a5ec487f48f1d7649a2c",
+      "toId": "SRC-HOLY-TABLETS-WEB",
+      "kind": "DERIVES_FROM",
+      "confidence": 0.99,
+      "evidenceRefs": [
+        "https://holytablets.nuwaubianfacts.com/100/064.htm",
+        "2138275d775895259a2f6cff14319e440fcaa0e993d1a5ec487f48f1d7649a2c"
+      ],
+      "decision": "ACCEPTED"
+    },
+    {
+      "fromId": "DRAFT:2138275d77589525",
+      "toId": "DRAFT:2138275d77589525",
+      "kind": "PARALLELS",
+      "confidence": 0.89,
+      "rationale": "Candidate relation generated from title/heading overlap; semantic similarity alone does not establish derivation.",
+      "evidenceRefs": [
+        "https://holytablets.nuwaubianfacts.com/100/051.htm",
+        "https://holytablets.nuwaubianfacts.com/100/064.htm"
+      ],
+      "decision": "CANDIDATE"
+    }
+  ]
 }
