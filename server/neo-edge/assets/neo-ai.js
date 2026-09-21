@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const VERSION = '1.4.0';
+  const VERSION = '1.5.0';
   const DEFAULT_ENDPOINT = 'https://neo.holytemples.org/api/ai/execute';
 
   const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({
@@ -57,6 +57,7 @@
             <label class="field"><span class="label">Mission objective</span><textarea class="textarea" name="objective" maxlength="12000" required placeholder="Ask the NEO Router to analyze, plan, design, review, or explain..."></textarea></label>
             <label class="field"><span class="label">Capability</span><select class="select" name="capability"><option value="reasoning">Reasoning</option><option value="planning">Planning</option><option value="review">Review</option><option value="frontend">Frontend</option><option value="design">Design</option><option value="backend">Backend</option><option value="multimodal">Multimodal</option><option value="media">Media</option><option value="personalization">Personalization (Muse)</option></select></label>
           </div>
+          <label class="field"><span class="label">Knowledge attachments</span><input class="input" name="knowledgeAttachments" placeholder="Approved NEO Library record IDs, comma separated"></label>
           <div class="actions"><button class="button" type="submit">Run mission</button><button class="button secondary" type="button" data-clear>Clear</button></div>
         </form></div></div>
         <div class="notice hidden" data-auth>NEOpass authentication is required before the Temple can execute an AI mission.</div>
@@ -199,6 +200,7 @@
         this.previousResponseId = thread.lastResponseId || null;
         const pinButton=this.root.querySelector('[data-pin-thread]'); if(pinButton) pinButton.textContent=thread.pinned?'Unpin':'Pin';
         const archiveButton=this.root.querySelector('[data-archive-thread]'); if(archiveButton) archiveButton.textContent=thread.archived?'Restore':'Archive';
+        if (this.form?.elements?.knowledgeAttachments) this.form.elements.knowledgeAttachments.value = (thread.knowledgeAttachments||[]).join(', ');
         this.history.innerHTML = (thread.messages||[]).map(m => `<div class="msg ${escapeHtml(m.role)}"><b>${m.role==='user'?'You':'NEOsync / '+(m.provider||'Muse')}</b><br>${escapeHtml(m.text||'')}</div>`).join('');
         this.renderThreads();
       } catch (error) { this.error.textContent = error.message; this.error.classList.remove('hidden'); }
@@ -215,9 +217,13 @@
       this.hideMessages();
       const objective = this.form.elements.objective.value.trim();
       const capability = this.form.elements.capability.value;
+      const knowledgeAttachments = String(this.form.elements.knowledgeAttachments?.value || '').split(',').map(v=>v.trim()).filter(Boolean).slice(0,8);
       if (capability === 'personalization' && !this.threadId) {
         const created = await this.api('/api/ai/threads', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ title: objective.slice(0,72), capability }) }).catch(() => null);
         if (created?.thread) { this.threadId = created.thread.id; this.previousResponseId = created.thread.lastResponseId || null; }
+      }
+      if (capability === 'personalization' && this.threadId) {
+        await this.api(`/api/ai/threads/${encodeURIComponent(this.threadId)}`, { method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({knowledgeAttachments}) }).catch(()=>null);
       }
       if (!objective) return;
 
@@ -250,6 +256,8 @@
               : undefined,
             previousResponseId: capability === 'personalization' ? this.previousResponseId : undefined,
             threadId: capability === 'personalization' ? this.threadId : undefined,
+            knowledgeAttachments: capability === 'personalization' ? knowledgeAttachments : [],
+            autoKnowledge: true,
           }),
         });
         const payload = await response.json().catch(() => ({}));
@@ -262,7 +270,9 @@
         if (capability === 'personalization' && payload?.result?.responseId) this.previousResponseId = payload.result.responseId;
         const text = payload?.result?.text || payload?.result?.result?.text || payload?.text || payload?.reason || JSON.stringify(payload, null, 2);
         const session = capability === 'personalization' && this.previousResponseId ? ' · Session: linked' : '';
-        this.result.innerHTML = `${escapeHtml(text)}<div class="meta">Route: ${escapeHtml(payload.route || payload?.result?.provider || 'NEO Router')} · Status: ${escapeHtml(payload.status || 'completed')}${escapeHtml(session)}</div>`;
+        const citations = (payload?.knowledge?.provenance || []).map((source,index) => `[${index+1}] ${escapeHtml(source.title || source.id)}`).join(' · ');
+        const knowledgeMeta = citations ? `<div class="meta">Knowledge provenance: ${citations}</div>` : '';
+        this.result.innerHTML = `${escapeHtml(text)}<div class="meta">Route: ${escapeHtml(payload.route || payload?.result?.provider || 'NEO Router')} · Status: ${escapeHtml(payload.status || 'completed')}${escapeHtml(session)}</div>${knowledgeMeta}`;
         this.result.classList.remove('hidden');
         if (capability === 'personalization' && this.threadId) await this.openThread(this.threadId).catch(()=>{});
         await this.refreshWorkspace().catch(()=>{});
