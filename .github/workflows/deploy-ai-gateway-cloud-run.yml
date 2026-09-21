@@ -20,6 +20,7 @@ env:
   MODEL_API_KEY_SECRET_NAME: neo-ai-gateway-model-api-key
   NEOPASS_SECRET_NAME: neo-pass-jwt-secret
   META_MUSE_MODEL: muse-spark-1.3
+  META_MUSE_REASONING_EFFORT: low
   META_MODEL_BASE_URL: https://api.meta.ai/v1
 
 jobs:
@@ -113,7 +114,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          ENV_VARS="META_MUSE_MODEL=$META_MUSE_MODEL,META_MODEL_BASE_URL=$META_MODEL_BASE_URL"
+          ENV_VARS="META_MUSE_MODEL=$META_MUSE_MODEL,META_MUSE_REASONING_EFFORT=$META_MUSE_REASONING_EFFORT,META_MODEL_BASE_URL=$META_MODEL_BASE_URL"
           if [ -n "${NEO_PASS_JWT_ISSUER:-}" ]; then ENV_VARS="$ENV_VARS,NEO_PASS_JWT_ISSUER=$NEO_PASS_JWT_ISSUER"; fi
           gcloud run deploy "$SERVICE_NAME" \
             --project="$GCP_PROJECT_ID" \
@@ -166,7 +167,7 @@ jobs:
             "objective":"Create a concise NEO System readiness statement that distinguishes verified capability from future plans.",
             "capability":"personalization",
             "perspectiveContext":"Use the NEO / Shemsizedek perspective profile, preserve provenance, and keep the statement factual.",
-            "maxTokens":512
+            "maxTokens":2048
           }
           JSON
           CODE="$(curl -sS -o /tmp/mission-response.json -w '%{http_code}' \
@@ -182,7 +183,8 @@ jobs:
             if(body.route!=="meta-muse") throw new Error("mission_not_routed_to_muse");
             if(!body.result?.responseId) throw new Error("missing_muse_response_id");
             const text=String(body.result?.text||"").trim();
-            console.log(JSON.stringify({status:body.status,route:body.route,responseIdPresent:true,textPresent:Boolean(text)}));
+            if(!text) throw new Error("missing_visible_muse_output");
+            console.log(JSON.stringify({status:body.status,route:body.route,responseIdPresent:true,textPresent:true}));
             fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, "\n### First authenticated NEO personalization mission\n");
             fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, "- Status: completed\n- Route: meta-muse\n- Muse response ID: present\n");
             if(text) fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, "- Output: "+text.replace(/\n/g," ")+"\n");
