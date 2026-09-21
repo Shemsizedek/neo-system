@@ -41,10 +41,11 @@ jobs:
       - name: Validate deployment configuration
         env:
           MODEL_API_KEY: ${{ secrets.MODEL_API_KEY }}
+          NEO_PASS_JWT_SECRET: ${{ secrets.NEO_PASS_JWT_SECRET }}
         shell: bash
         run: |
           set -euo pipefail
-          for name in GCP_PROJECT_ID GCP_REGION GCP_WIF_PROVIDER GCP_CLOUD_RUN_SERVICE_ACCOUNT GCP_CLOUD_RUN_RUNTIME_ACCOUNT GCP_ARTIFACT_REGISTRY MODEL_API_KEY; do
+          for name in GCP_PROJECT_ID GCP_REGION GCP_WIF_PROVIDER GCP_CLOUD_RUN_SERVICE_ACCOUNT GCP_CLOUD_RUN_RUNTIME_ACCOUNT GCP_ARTIFACT_REGISTRY MODEL_API_KEY NEO_PASS_JWT_SECRET; do
             test -n "${!name:-}" || { echo "::error::Missing $name"; exit 1; }
           done
 
@@ -186,3 +187,29 @@ jobs:
             fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, "- Status: completed\n- Route: meta-muse\n- Muse response ID: present\n");
             if(text) fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, "- Output: "+text.replace(/\n/g," ")+"\n");
           '
+
+      - name: Map ai.holytemples.org
+        shell: bash
+        run: |
+          set -euo pipefail
+          DOMAIN_NAME="ai.holytemples.org"
+          VERIFIED="$(gcloud domains list-user-verified --format='value(id)' 2>/dev/null || true)"
+          if ! printf '%s\n' "$VERIFIED" | grep -Fxq 'holytemples.org'; then
+            echo "### AI domain mapping pending ownership verification" >> "$GITHUB_STEP_SUMMARY"
+            echo "Cloud Run remains live at its generated service URL." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          if ! gcloud beta run domain-mappings describe --domain="$DOMAIN_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" >/dev/null 2>&1; then
+            gcloud beta run domain-mappings create \
+              --service="$SERVICE_NAME" \
+              --domain="$DOMAIN_NAME" \
+              --project="$GCP_PROJECT_ID" \
+              --region="$GCP_REGION" \
+              --quiet
+          fi
+          echo "### DNS records for $DOMAIN_NAME" >> "$GITHUB_STEP_SUMMARY"
+          gcloud beta run domain-mappings describe \
+            --domain="$DOMAIN_NAME" \
+            --project="$GCP_PROJECT_ID" \
+            --region="$GCP_REGION" \
+            --format='yaml(status.resourceRecords)' >> "$GITHUB_STEP_SUMMARY"
