@@ -50,6 +50,10 @@ test('serves the NEOsync AI workspace asset', async () => withServer(async base 
   assert.match(source, /durableTelemetry/);
   assert.match(source, /Knowledge attachments/);
   assert.match(source, /Knowledge provenance/);
+  assert.match(source, /Knowledge Browser/);
+  assert.match(source, /data-knowledge-search/);
+  assert.match(source, /api\/noogle\/search/);
+  assert.match(source, /api\/library/);
 }));
 
 test('serves the full-screen NEOsync workspace with NEOpass runtime', async () => withServer(async base => {
@@ -60,4 +64,18 @@ test('serves the full-screen NEOsync workspace with NEOpass runtime', async () =
   assert.match(html,/NEOsync Conversation Workspace/); assert.match(html,/\/assets\/neopass-runtime\.js/); assert.match(html,/neo-temple-ai/);
   const runtime=await fetch(`${base}/assets/neopass-runtime.js`,{headers:{'x-forwarded-host':'neo.holytemples.org'}});
   assert.equal(runtime.status,200); assert.match(await runtime.text(),/window\.NeoPass/);
+}));
+
+
+test('previews public library records for the Knowledge Browser', async () => withServer(async base => {
+  const catalog = await fetch(`${base}/api/library`, { headers: { 'x-forwarded-host': 'neo.holytemples.org' } });
+  assert.equal(catalog.status, 200);
+  const records = (await catalog.json()).records;
+  assert.ok(records.length > 0);
+  const response = await fetch(`${base}/api/library/${encodeURIComponent(records[0].id)}`, { headers: { 'x-forwarded-host': 'neo.holytemples.org' } });
+  assert.equal(response.status, 200);
+  const body = await response.json();
+  assert.equal(body.record.id, records[0].id);
+  assert.equal(body.oracleClass, 'internal-record-context');
+  assert.equal(body.accessClass, 'PUBLIC_WORLD_LIBRARY');
 }));
