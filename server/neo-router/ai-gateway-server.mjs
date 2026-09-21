@@ -72,6 +72,7 @@ export function createNeoAiGatewayServer({
   router = createNeoRouter({ providers: providersFromEnv(env) }),
   conversationStore,
   providerTelemetryStore,
+  museProjectStore,
 } = {}) {
   return http.createServer(async (req, res) => {
     try {
@@ -83,6 +84,47 @@ export function createNeoAiGatewayServer({
           service: 'neo-ai-gateway',
           router: router.health(),
         })
+      }
+
+      if (url.pathname === '/api/ai/projects' && req.method === 'GET') {
+        if (typeof resolveTrustedIdentity !== 'function') return respond(res, 401, { error: 'neopass_identity_required' })
+        const subjectId = trustedSubject(await resolveTrustedIdentity(req))
+        if (!museProjectStore) return respond(res, 503, { error: 'project_store_unavailable' })
+        return respond(res, 200, { subjectId, projects: await museProjectStore.listProjects({ subjectId }) })
+      }
+
+      if (url.pathname === '/api/ai/projects' && req.method === 'POST') {
+        if (typeof resolveTrustedIdentity !== 'function') return respond(res, 401, { error: 'neopass_identity_required' })
+        const subjectId = trustedSubject(await resolveTrustedIdentity(req))
+        if (!museProjectStore) return respond(res, 503, { error: 'project_store_unavailable' })
+        const body = await readJson(req)
+        const project = await museProjectStore.createProject({ subjectId, name: body.name, description: body.description })
+        return respond(res, 201, { subjectId, project })
+      }
+
+      const projectTransfersMatch = url.pathname.match(/^\/api\/ai\/projects\/([^/]+)\/transfers$/)
+      if (projectTransfersMatch && req.method === 'GET') {
+        if (typeof resolveTrustedIdentity !== 'function') return respond(res, 401, { error: 'neopass_identity_required' })
+        const subjectId = trustedSubject(await resolveTrustedIdentity(req))
+        if (!museProjectStore) return respond(res, 503, { error: 'project_store_unavailable' })
+        const projectId = decodeURIComponent(projectTransfersMatch[1])
+        const transfers = await museProjectStore.listTransfers({ subjectId, projectId })
+        const comparison = museProjectStore.compareTransfers(transfers[0], transfers[1])
+        return respond(res, 200, { subjectId, projectId, transfers, comparison })
+      }
+
+      if (projectTransfersMatch && req.method === 'POST') {
+        if (typeof resolveTrustedIdentity !== 'function') return respond(res, 401, { error: 'neopass_identity_required' })
+        const subjectId = trustedSubject(await resolveTrustedIdentity(req))
+        if (!museProjectStore) return respond(res, 503, { error: 'project_store_unavailable' })
+        const projectId = decodeURIComponent(projectTransfersMatch[1])
+        const body = await readJson(req, 512 * 1024)
+        const transfer = await museProjectStore.recordTransfer({
+          subjectId, projectId, direction: body.direction, threadId: body.threadId,
+          content: body.content, summary: body.summary, source: body.source, metadata: body.metadata,
+        })
+        const transfers = await museProjectStore.listTransfers({ subjectId, projectId, limit: 2 })
+        return respond(res, 201, { subjectId, projectId, transfer, comparison: museProjectStore.compareTransfers(transfers[0], transfers[1]) })
       }
 
       if (url.pathname === '/api/ai/handoffs' && req.method === 'POST') {
@@ -259,6 +301,8 @@ export function createNeoAiGatewayServer({
       const message = error instanceof Error ? error.message : String(error)
       if (message === 'neopass_identity_required') return respond(res, 401, { error: message })
       if (message === 'request_too_large') return respond(res, 413, { error: message })
+      if (message === 'project_forbidden') return respond(res, 403, { error: message })
+      if (message === 'project_not_found') return respond(res, 404, { error: message })
       if (message === 'thread_forbidden') return respond(res, 403, { error: message })
       if (message === 'thread_not_found') return respond(res, 404, { error: message })
       if (message === 'invalid_handoff_json' || message === 'handoff_content_required') return respond(res, 400, { error: message })
