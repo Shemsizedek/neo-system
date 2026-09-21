@@ -95,3 +95,65 @@ test('routes personalization to Meta Muse first and injects the NEO perspective'
   assert.match(invocation.system, /NEO \/ Shemsizedek Perspective/)
   assert.match(invocation.system, /Audience: NEO Society/)
 })
+
+
+test('records provider telemetry without exposing credentials', async () => {
+  let clock = 1_000
+  const router = createNeoRouter({
+    providers: [provider('meta-muse')],
+    now: () => clock,
+  })
+  const result = await router.execute({ missionId: 'M-10', objective: 'Personalize content', capability: 'personalization' })
+  assert.equal(result.status, 'completed')
+  clock = 1_010
+  const muse = router.health().providers.find((item) => item.id === 'meta-muse')
+  assert.equal(muse.telemetry.attempts, 1)
+  assert.equal(muse.telemetry.successes, 1)
+  assert.equal(muse.telemetry.failures, 0)
+  assert.equal(muse.circuit.open, false)
+})
+
+test('opens a provider circuit after repeated failures and falls back', async () => {
+  let clock = 10_000
+  const router = createNeoRouter({
+    providers: [provider('meta-muse', { fail: true }), provider('openai')],
+    circuitBreaker: { failureThreshold: 2, cooldownMs: 60_000 },
+    now: () => clock,
+  })
+
+  const first = await router.execute({
+    missionId: 'M-11',
+    objective: 'First personalized request',
+    capability: 'personalization',
+    excludedProviders: ['openai'],
+  })
+  assert.equal(first.status, 'blocked')
+
+  const second = await router.execute({
+    missionId: 'M-12',
+    objective: 'Second personalized request',
+    capability: 'personalization',
+    excludedProviders: ['openai'],
+  })
+  assert.equal(second.status, 'blocked')
+
+  const health = router.health()
+  const muse = health.providers.find((item) => item.id === 'meta-muse')
+  assert.equal(muse.circuit.open, true)
+  assert.equal(muse.telemetry.failures, 2)
+
+  const fallback = await router.execute({
+    missionId: 'M-13',
+    objective: 'Use fallback',
+    capability: 'personalization',
+  })
+  assert.equal(fallback.route, 'openai')
+
+  clock += 60_001
+  const plan = router.plan({
+    missionId: 'M-14',
+    objective: 'Muse can re-enter after cooldown',
+    capability: 'personalization',
+  })
+  assert.ok(plan.candidates.includes('meta-muse'))
+})
