@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { createCloudflareWorkersAIAdapter, createGeminiAdapter, createMetaLlamaAdapter, providersFromEnv } from './providers.mjs'
+import { createCloudflareWorkersAIAdapter, createGeminiAdapter, createMetaLlamaAdapter, createMetaMuseAdapter, providersFromEnv } from './providers.mjs'
 
 test('Gemini adapter sends the API key in the x-goog-api-key header', async () => {
   let request
@@ -34,6 +34,32 @@ test('Meta Llama adapter uses the OpenAI-compatible API without exposing the key
   assert.ok(!request.url.includes('llama-secret'))
 })
 
+test('Meta Muse adapter uses Model API Responses without exposing the key', async () => {
+  let request
+  const adapter = createMetaMuseAdapter({
+    apiKey: 'muse-secret', model: 'muse-spark-test', baseUrl: 'https://api.meta.ai/v1/',
+    fetchImpl: async (url, options) => {
+      request = { url, options }
+      return {
+        ok: true,
+        json: async () => ({
+          id: 'resp_neo_1',
+          output: [{ content: [{ text: 'muse result' }] }],
+        }),
+      }
+    },
+  })
+  const result = await adapter.invoke({ system: 'neo perspective', prompt: 'mission', previousResponseId: 'resp_prev' })
+  assert.equal(result.text, 'muse result')
+  assert.equal(result.responseId, 'resp_neo_1')
+  assert.equal(request.url, 'https://api.meta.ai/v1/responses')
+  assert.equal(request.options.headers.authorization, 'Bearer muse-secret')
+  const payload = JSON.parse(request.options.body)
+  assert.equal(payload.instructions, 'neo perspective')
+  assert.equal(payload.previous_response_id, 'resp_prev')
+  assert.ok(!request.url.includes('muse-secret'))
+})
+
 test('Workers AI adapter uses the authenticated account endpoint', async () => {
   let request
   const adapter = createCloudflareWorkersAIAdapter({
@@ -49,16 +75,17 @@ test('Workers AI adapter uses the authenticated account endpoint', async () => {
   assert.equal(request.options.headers.authorization, 'Bearer secret')
 })
 
-test('environment config supports all six logical providers', () => {
+test('environment config supports all seven logical providers', () => {
   const providers = providersFromEnv({
     ANTHROPIC_API_KEY: 'a', ANTHROPIC_MODEL: 'claude-custom',
     OPENAI_API_KEY: 'o', OPENAI_MODEL: 'openai-custom',
+    MODEL_API_KEY: 'm', META_MUSE_MODEL: 'muse-custom', META_MODEL_BASE_URL: 'https://api.meta.ai/v1',
     XAI_API_KEY: 'x', XAI_MODEL: 'grok-custom',
     LLAMA_API_KEY: 'l', LLAMA_MODEL: 'llama-custom', LLAMA_API_BASE: 'https://api.llama.com/compat/v1',
     GEMINI_API_KEY: 'g', GEMINI_MODEL: 'gemini-custom',
     CLOUDFLARE_ACCOUNT_ID: 'c', CLOUDFLARE_API_TOKEN: 't', CLOUDFLARE_WORKERS_AI_MODEL: '@cf/custom',
   })
-  assert.deepEqual(providers.map((provider) => provider.id), ['anthropic', 'openai', 'xai', 'meta-llama', 'gemini', 'cloudflare'])
+  assert.deepEqual(providers.map((provider) => provider.id), ['anthropic', 'openai', 'meta-muse', 'xai', 'meta-llama', 'gemini', 'cloudflare'])
   assert.ok(providers.every((provider) => provider.configured))
 })
 

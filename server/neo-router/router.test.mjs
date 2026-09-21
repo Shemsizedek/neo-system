@@ -73,3 +73,25 @@ test('reports provider mesh readiness without exposing credentials', () => {
   assert.deepEqual(router.health().configured, ['anthropic'])
   assert.equal(router.health().providers[1].configured, false)
 })
+
+test('routes personalization to Meta Muse first and injects the NEO perspective', async () => {
+  let invocation
+  const muse = {
+    id: 'meta-muse',
+    configured: true,
+    async invoke(input) {
+      invocation = input
+      return { provider: 'meta-muse', text: 'personalized result' }
+    },
+  }
+  const router = createNeoRouter({ providers: [muse, provider('openai')] })
+  const result = await router.execute({
+    missionId: 'M-9',
+    objective: 'Create personalized NEO material',
+    capability: 'personalization',
+    perspectiveContext: 'Audience: NEO Society',
+  })
+  assert.equal(result.route, 'meta-muse')
+  assert.match(invocation.system, /NEO \/ Shemsizedek Perspective/)
+  assert.match(invocation.system, /Audience: NEO Society/)
+})

@@ -1,18 +1,20 @@
 import { DOCTRINE_PROFILE, EMERGING_INTERFACE_PROFILE, HUMAN_APPROVAL_ACTIONS, PROVIDER_ROLES } from './policy.mjs'
+import { buildNeoPerspectiveInstructions } from './neo-perspective.mjs'
 
 const DEFAULT_ROUTES = Object.freeze({
   orchestration: ['anthropic', 'openai', 'gemini', 'cloudflare'],
   planning: ['anthropic', 'openai', 'gemini', 'cloudflare'],
   review: ['anthropic', 'openai', 'gemini', 'cloudflare'],
-  reasoning: ['openai', 'anthropic', 'gemini', 'cloudflare'],
+  reasoning: ['openai', 'meta-muse', 'anthropic', 'gemini', 'cloudflare'],
   backend: ['openai', 'anthropic', 'gemini', 'cloudflare'],
-  'tool-use': ['openai', 'anthropic', 'gemini', 'cloudflare'],
+  'tool-use': ['openai', 'meta-muse', 'anthropic', 'gemini', 'cloudflare'],
   frontend: ['gemini', 'openai', 'anthropic', 'cloudflare'],
-  design: ['gemini', 'anthropic', 'openai', 'cloudflare'],
-  multimodal: ['gemini', 'openai', 'anthropic'],
+  design: ['gemini', 'meta-muse', 'anthropic', 'openai', 'cloudflare'],
+  multimodal: ['gemini', 'meta-muse', 'openai', 'anthropic'],
   edge: ['cloudflare', 'openai', 'anthropic', 'gemini'],
   'internet-of-things': ['cloudflare', 'openai', 'anthropic', 'gemini'],
-  media: ['gemini', 'openai', 'anthropic', 'cloudflare'],
+  media: ['gemini', 'meta-muse', 'openai', 'anthropic', 'cloudflare'],
+  personalization: ['meta-muse', 'openai', 'gemini', 'anthropic'],
   resilience: ['cloudflare', 'openai', 'anthropic', 'gemini'],
 })
 
@@ -65,7 +67,7 @@ export function createNeoRouter({ providers, maxHops = 6, routes = DEFAULT_ROUTE
       try {
         const provider = providerMap.get(providerId)
         const result = await provider.invoke({
-          system: mission.system ?? 'Apply NEO Algo reasoning through the paired human-ascent 777-888-999 and angelic-descent 999-888-777 review cycles. Evaluate security, practicality, logic, principles, morale, and ethics; preserve provenance, label uncertainty, and remain advisory unless human approval is recorded.',
+          system: mission.system ?? buildNeoPerspectiveInstructions({ context: mission.perspectiveContext }),
           prompt: mission.objective,
           maxTokens: mission.maxTokens,
         })
