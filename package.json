@@ -68,7 +68,9 @@
     "pages:enterprise": "node scripts/build-enterprise-pages.mjs",
     "pages:neo-gas": "node scripts/publish-neo-gas-pages.mjs",
     "orange-esop:server": "node apps/orange-esop/server/server.mjs",
-    "orange-esop:test": "node --test apps/orange-esop/server/*.test.mjs modules/orange-esop/*.test.mjs"
+    "orange-esop:test": "node --test apps/orange-esop/server/*.test.mjs modules/orange-esop/*.test.mjs",
+    "crawler:worker": "node scripts/neo-crawler-worker.mjs",
+    "crawler:worker:once": "node scripts/neo-crawler-worker.mjs --once"
   },
   "dependencies": {
     "@composio/core": "^0.18.1",
