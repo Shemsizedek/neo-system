@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const VERSION = '1.5.0';
+  const VERSION = '1.6.0';
   const DEFAULT_ENDPOINT = 'https://neo.holytemples.org/api/ai/execute';
 
   const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({
@@ -22,7 +22,7 @@
     :host{all:initial;color-scheme:dark;display:block;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
     *{box-sizing:border-box}.shell{background:radial-gradient(circle at 85% 0,rgba(78,255,156,.14),transparent 38%),linear-gradient(145deg,#020704,#07150d);border:1px solid rgba(111,255,166,.22);border-radius:22px;color:#eafff0;overflow:hidden;padding:clamp(18px,3vw,30px);box-shadow:0 24px 70px rgba(0,0,0,.28)}
     .top{display:flex;gap:16px;align-items:flex-start;justify-content:space-between;margin-bottom:18px}.eyebrow{color:#7dffad;font-size:.72rem;font-weight:800;letter-spacing:.16em;text-transform:uppercase}.title{font-size:clamp(1.45rem,3.8vw,2.25rem);font-weight:760;letter-spacing:-.035em;line-height:1.08;margin:.35rem 0 0}.status{display:flex;align-items:center;gap:8px;border:1px solid rgba(91,255,151,.25);background:rgba(38,255,119,.08);border-radius:999px;color:#baffd0;font-size:.76rem;font-weight:750;padding:8px 11px;white-space:nowrap}.dot{width:8px;height:8px;border-radius:50%;background:#51ff91;box-shadow:0 0 14px #51ff91}.dot.off{background:#ffb04a;box-shadow:0 0 14px #ffb04a}
-    form{display:grid;gap:12px}.row{display:grid;gap:12px;grid-template-columns:minmax(0,1fr) 170px}.workspace{display:grid;grid-template-columns:240px minmax(0,1fr);gap:14px}.threads{border:1px solid rgba(185,255,208,.13);border-radius:14px;padding:10px;background:rgba(255,255,255,.025);min-height:280px}.thread{display:block;width:100%;text-align:left;border:0;border-radius:10px;padding:9px 10px;margin-bottom:6px;background:transparent;color:#c8f4d4;cursor:pointer}.thread.active,.thread:hover{background:rgba(114,255,158,.1)}.thread small{display:block;color:#6e8e78;margin-top:3px}.thread.archived{opacity:.58}.thread .flags{float:right;font-size:.75rem}.filters{display:grid;gap:7px;margin:10px 0}.thread-actions{display:flex;gap:7px;flex-wrap:wrap;margin:0 0 12px}.danger{border-color:rgba(255,117,117,.25)!important;color:#ffc4c4!important}.shell.fullscreen{min-height:calc(100vh - 32px)}.history{display:grid;gap:9px;max-height:300px;overflow:auto;margin-bottom:12px}.msg{padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.035);white-space:pre-wrap}.msg.user{border-left:3px solid #72ff9e}.msg.assistant{border-left:3px solid #61a7ff}.telemetry{font-size:.72rem;color:#8ab398;margin:8px 0 12px}.field{display:grid;gap:7px}.label{color:#8ab398;font-size:.7rem;font-weight:750;letter-spacing:.1em;text-transform:uppercase}.input,.select,.textarea{width:100%;border:1px solid rgba(185,255,208,.13);border-radius:13px;background:rgba(255,255,255,.035);color:#eafff0;font:inherit;padding:12px 13px;outline:none}.textarea{min-height:118px;resize:vertical;line-height:1.45}.input:focus,.select:focus,.textarea:focus{border-color:rgba(86,255,151,.48);box-shadow:0 0 0 3px rgba(62,255,132,.08)}.actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.button{border:0;border-radius:12px;background:#72ff9e;color:#03220d;font:inherit;font-weight:800;padding:11px 15px;cursor:pointer}.button[disabled]{cursor:not-allowed;opacity:.5}.secondary{background:rgba(255,255,255,.06);color:#c8f4d4;border:1px solid rgba(185,255,208,.13)}
+    form{display:grid;gap:12px}.row{display:grid;gap:12px;grid-template-columns:minmax(0,1fr) 170px}.workspace{display:grid;grid-template-columns:240px minmax(0,1fr);gap:14px}.threads{border:1px solid rgba(185,255,208,.13);border-radius:14px;padding:10px;background:rgba(255,255,255,.025);min-height:280px}.thread{display:block;width:100%;text-align:left;border:0;border-radius:10px;padding:9px 10px;margin-bottom:6px;background:transparent;color:#c8f4d4;cursor:pointer}.thread.active,.thread:hover{background:rgba(114,255,158,.1)}.thread small{display:block;color:#6e8e78;margin-top:3px}.thread.archived{opacity:.58}.thread .flags{float:right;font-size:.75rem}.filters{display:grid;gap:7px;margin:10px 0}.thread-actions{display:flex;gap:7px;flex-wrap:wrap;margin:0 0 12px}.danger{border-color:rgba(255,117,117,.25)!important;color:#ffc4c4!important}.shell.fullscreen{min-height:calc(100vh - 32px)}.history{display:grid;gap:9px;max-height:300px;overflow:auto;margin-bottom:12px}.msg{padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.035);white-space:pre-wrap}.msg.user{border-left:3px solid #72ff9e}.msg.assistant{border-left:3px solid #61a7ff}.telemetry{font-size:.72rem;color:#8ab398;margin:8px 0 12px}.knowledge-browser{border:1px solid rgba(185,255,208,.13);border-radius:14px;padding:12px;background:rgba(255,255,255,.025);margin:0 0 12px}.knowledge-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(240px,.75fr);gap:10px}.knowledge-results{max-height:240px;overflow:auto;display:grid;gap:7px}.knowledge-item{border:1px solid rgba(185,255,208,.12);border-radius:10px;padding:9px;background:rgba(255,255,255,.025);cursor:pointer}.knowledge-item:hover,.knowledge-item.active{background:rgba(114,255,158,.08)}.knowledge-item b{display:block}.knowledge-item small{color:#7c9f87}.knowledge-preview{border:1px solid rgba(185,255,208,.12);border-radius:10px;padding:10px;min-height:120px}.knowledge-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.knowledge-tag{border:1px solid rgba(185,255,208,.12);border-radius:999px;padding:4px 7px;font-size:.7rem;color:#bdebc8}.provenance-list{display:grid;gap:6px;margin-top:8px}.prov{border-top:1px solid rgba(185,255,208,.1);padding-top:6px}.field{display:grid;gap:7px}.label{color:#8ab398;font-size:.7rem;font-weight:750;letter-spacing:.1em;text-transform:uppercase}.input,.select,.textarea{width:100%;border:1px solid rgba(185,255,208,.13);border-radius:13px;background:rgba(255,255,255,.035);color:#eafff0;font:inherit;padding:12px 13px;outline:none}.textarea{min-height:118px;resize:vertical;line-height:1.45}.input:focus,.select:focus,.textarea:focus{border-color:rgba(86,255,151,.48);box-shadow:0 0 0 3px rgba(62,255,132,.08)}.actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.button{border:0;border-radius:12px;background:#72ff9e;color:#03220d;font:inherit;font-weight:800;padding:11px 15px;cursor:pointer}.button[disabled]{cursor:not-allowed;opacity:.5}.secondary{background:rgba(255,255,255,.06);color:#c8f4d4;border:1px solid rgba(185,255,208,.13)}
     .notice,.result,.error{margin-top:14px;border-radius:14px;padding:14px 15px;line-height:1.5}.notice{background:rgba(255,176,74,.07);border:1px solid rgba(255,176,74,.22);color:#ffd7aa}.result{background:rgba(71,255,137,.05);border:1px solid rgba(97,255,153,.18);color:#dcffe7;white-space:pre-wrap}.error{background:rgba(255,111,111,.07);border:1px solid rgba(255,117,117,.2);color:#ffc4c4}.meta{color:#7c9f87;font-size:.72rem;margin-top:8px}.foot{display:flex;justify-content:space-between;gap:12px;color:#6e8e78;font-size:.68rem;margin-top:16px}.hidden{display:none!important}@media(max-width:760px){.top{flex-direction:column}.row,.workspace{grid-template-columns:1fr}.foot{flex-direction:column}.threads{min-height:auto}}
   `;
 
@@ -57,7 +57,16 @@
             <label class="field"><span class="label">Mission objective</span><textarea class="textarea" name="objective" maxlength="12000" required placeholder="Ask the NEO Router to analyze, plan, design, review, or explain..."></textarea></label>
             <label class="field"><span class="label">Capability</span><select class="select" name="capability"><option value="reasoning">Reasoning</option><option value="planning">Planning</option><option value="review">Review</option><option value="frontend">Frontend</option><option value="design">Design</option><option value="backend">Backend</option><option value="multimodal">Multimodal</option><option value="media">Media</option><option value="personalization">Personalization (Muse)</option></select></label>
           </div>
-          <label class="field"><span class="label">Knowledge attachments</span><input class="input" name="knowledgeAttachments" placeholder="Approved NEO Library record IDs, comma separated"></label>
+          <div class="knowledge-browser">
+            <div class="label">Knowledge Browser</div>
+            <div class="row" style="margin:8px 0"><input class="input" data-knowledge-search type="search" placeholder="Search NEO Library / Noogle by title or keyword"><button class="button secondary" type="button" data-knowledge-search-button>Search</button></div>
+            <div class="knowledge-grid">
+              <div class="knowledge-results" data-knowledge-results><div class="meta">Search approved NEO Library records.</div></div>
+              <div class="knowledge-preview" data-knowledge-preview><div class="meta">Select a record to preview Oracle source metadata.</div></div>
+            </div>
+            <div class="knowledge-tags" data-knowledge-tags></div>
+          </div>
+          <label class="field"><span class="label">Knowledge attachments</span><input class="input" name="knowledgeAttachments" placeholder="Attached record IDs" readonly></label>
           <div class="actions"><button class="button" type="submit">Run mission</button><button class="button secondary" type="button" data-clear>Clear</button></div>
         </form></div></div>
         <div class="notice hidden" data-auth>NEOpass authentication is required before the Temple can execute an AI mission.</div>
@@ -77,6 +86,12 @@
       this.telemetry = this.root.querySelector('[data-telemetry]');
       this.searchInput = this.root.querySelector('[data-thread-search]');
       this.filterInput = this.root.querySelector('[data-thread-filter]');
+      this.knowledgeSearchInput = this.root.querySelector('[data-knowledge-search]');
+      this.knowledgeResults = this.root.querySelector('[data-knowledge-results]');
+      this.knowledgePreview = this.root.querySelector('[data-knowledge-preview]');
+      this.knowledgeTags = this.root.querySelector('[data-knowledge-tags]');
+      this.selectedKnowledge = [];
+      this.lastKnowledgeProvenance = [];
       this.form.addEventListener('submit', event => this.execute(event));
       this.root.querySelector('[data-clear]').addEventListener('click', () => this.clear());
       this.root.querySelector('[data-new-thread]').addEventListener('click', () => this.newThread());
@@ -87,6 +102,8 @@
       this.root.querySelector('[data-delete-thread]').addEventListener('click', () => this.deleteThread());
       this.searchInput.addEventListener('input', () => { this.searchTerm = this.searchInput.value.trim().toLowerCase(); this.renderThreads(); });
       this.filterInput.addEventListener('change', () => { this.threadFilter = this.filterInput.value; this.renderThreads(); });
+      this.root.querySelector('[data-knowledge-search-button]').addEventListener('click', () => this.searchKnowledge());
+      this.knowledgeSearchInput.addEventListener('keydown', event => { if (event.key === 'Enter') { event.preventDefault(); this.searchKnowledge(); } });
       this.refreshWorkspace();
     }
 
@@ -125,6 +142,49 @@
       });
       this.threadList.innerHTML = visible.map(t => `<button class="thread ${t.id===this.threadId?'active':''} ${t.archived?'archived':''}" data-thread="${escapeHtml(t.id)}"><span class="flags">${t.pinned?'★ ':''}${t.archived?'⌁':''}</span><b>${escapeHtml(t.title)}</b><small>${escapeHtml(t.provider||t.capability||'personalization')}</small></button>`).join('') || '<div class="meta">No matching threads.</div>';
       this.threadList.querySelectorAll('[data-thread]').forEach(btn => btn.addEventListener('click', () => this.openThread(btn.dataset.thread)));
+    }
+
+    syncKnowledgeField() {
+      if (this.form?.elements?.knowledgeAttachments) this.form.elements.knowledgeAttachments.value = this.selectedKnowledge.map(item=>item.id).join(', ');
+      if (this.knowledgeTags) this.knowledgeTags.innerHTML = this.selectedKnowledge.map(item=>`<button type="button" class="knowledge-tag" data-remove-knowledge="${escapeHtml(item.id)}">${escapeHtml(item.title||item.id)} ×</button>`).join('');
+      this.knowledgeTags?.querySelectorAll('[data-remove-knowledge]').forEach(btn=>btn.addEventListener('click',()=>this.removeKnowledge(btn.dataset.removeKnowledge)));
+    }
+
+    async searchKnowledge() {
+      const q=this.knowledgeSearchInput.value.trim();
+      if(!q){ this.knowledgeResults.innerHTML='<div class="meta">Enter a title or keyword.</div>'; return; }
+      try {
+        const response=await fetch(`/api/noogle/search?q=${encodeURIComponent(q)}`,{cache:'no-store'});
+        const body=await response.json(); if(!response.ok) throw new Error(body.error||`HTTP ${response.status}`);
+        const records=(body.records||[]).slice(0,20);
+        this.knowledgeResults.innerHTML=records.map(r=>`<button type="button" class="knowledge-item" data-knowledge-id="${escapeHtml(r.id)}"><b>${escapeHtml(r.title||r.id)}</b><small>${escapeHtml([r.author,r.resourceType,r.collection].filter(Boolean).join(' · '))}</small></button>`).join('')||'<div class="meta">No approved records matched.</div>';
+        this.knowledgeResults.querySelectorAll('[data-knowledge-id]').forEach(btn=>btn.addEventListener('click',()=>this.previewKnowledge(btn.dataset.knowledgeId)));
+      } catch(error){ this.knowledgeResults.innerHTML=`<div class="error">${escapeHtml(error.message)}</div>`; }
+    }
+
+    async previewKnowledge(id) {
+      try {
+        const response=await fetch(`/api/library/${encodeURIComponent(id)}`,{cache:'no-store'});
+        const body=await response.json(); if(!response.ok) throw new Error(body.error||`HTTP ${response.status}`);
+        const r=body.record;
+        const attached=this.selectedKnowledge.some(item=>item.id===r.id);
+        this.knowledgePreview.innerHTML=`<b>${escapeHtml(r.title||r.id)}</b><div class="meta">${escapeHtml([r.author,r.resourceType,r.collection,r.accessClass].filter(Boolean).join(' · '))}</div><p>${escapeHtml(r.description||'No description available.')}</p><div class="meta">Oracle class: ${escapeHtml(body.oracleClass||'internal-record-context')}</div><div class="actions"><button class="button secondary" type="button" data-attach-preview>${attached?'Attached':'Attach to thread'}</button></div>`;
+        const btn=this.knowledgePreview.querySelector('[data-attach-preview]');
+        if(attached) btn.disabled=true; else btn.addEventListener('click',()=>this.attachKnowledge(r));
+      } catch(error){ this.knowledgePreview.innerHTML=`<div class="error">${escapeHtml(error.message)}</div>`; }
+    }
+
+    attachKnowledge(record) {
+      if(!record?.id||this.selectedKnowledge.some(item=>item.id===record.id)||this.selectedKnowledge.length>=8) return;
+      this.selectedKnowledge.push({id:record.id,title:record.title||record.id});
+      this.syncKnowledgeField();
+      if(this.threadId) this.api(`/api/ai/threads/${encodeURIComponent(this.threadId)}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({knowledgeAttachments:this.selectedKnowledge.map(item=>item.id)})}).catch(()=>{});
+    }
+
+    removeKnowledge(id) {
+      this.selectedKnowledge=this.selectedKnowledge.filter(item=>item.id!==id);
+      this.syncKnowledgeField();
+      if(this.threadId) this.api(`/api/ai/threads/${encodeURIComponent(this.threadId)}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({knowledgeAttachments:this.selectedKnowledge.map(item=>item.id)})}).catch(()=>{});
     }
 
     async newThread() {
@@ -200,7 +260,8 @@
         this.previousResponseId = thread.lastResponseId || null;
         const pinButton=this.root.querySelector('[data-pin-thread]'); if(pinButton) pinButton.textContent=thread.pinned?'Unpin':'Pin';
         const archiveButton=this.root.querySelector('[data-archive-thread]'); if(archiveButton) archiveButton.textContent=thread.archived?'Restore':'Archive';
-        if (this.form?.elements?.knowledgeAttachments) this.form.elements.knowledgeAttachments.value = (thread.knowledgeAttachments||[]).join(', ');
+        this.selectedKnowledge = (thread.knowledgeAttachments||[]).map(id=>({id,title:id}));
+        this.syncKnowledgeField();
         this.history.innerHTML = (thread.messages||[]).map(m => `<div class="msg ${escapeHtml(m.role)}"><b>${m.role==='user'?'You':'NEOsync / '+(m.provider||'Muse')}</b><br>${escapeHtml(m.text||'')}</div>`).join('');
         this.renderThreads();
       } catch (error) { this.error.textContent = error.message; this.error.classList.remove('hidden'); }
@@ -270,8 +331,9 @@
         if (capability === 'personalization' && payload?.result?.responseId) this.previousResponseId = payload.result.responseId;
         const text = payload?.result?.text || payload?.result?.result?.text || payload?.text || payload?.reason || JSON.stringify(payload, null, 2);
         const session = capability === 'personalization' && this.previousResponseId ? ' · Session: linked' : '';
-        const citations = (payload?.knowledge?.provenance || []).map((source,index) => `[${index+1}] ${escapeHtml(source.title || source.id)}`).join(' · ');
-        const knowledgeMeta = citations ? `<div class="meta">Knowledge provenance: ${citations}</div>` : '';
+        this.lastKnowledgeProvenance = payload?.knowledge?.provenance || [];
+        const citations = this.lastKnowledgeProvenance.map((source,index) => `<div class="prov"><b>[${index+1}] ${escapeHtml(source.title || source.id)}</b><div class="meta">${escapeHtml([source.author,source.resourceType,source.accessClass,source.source].filter(Boolean).join(' · '))}</div>${source.sourceUrl?`<div class="meta">Source: ${escapeHtml(source.sourceUrl)}</div>`:''}</div>`).join('');
+        const knowledgeMeta = citations ? `<div class="meta">Knowledge provenance</div><div class="provenance-list">${citations}</div>` : '';
         this.result.innerHTML = `${escapeHtml(text)}<div class="meta">Route: ${escapeHtml(payload.route || payload?.result?.provider || 'NEO Router')} · Status: ${escapeHtml(payload.status || 'completed')}${escapeHtml(session)}</div>${knowledgeMeta}`;
         this.result.classList.remove('hidden');
         if (capability === 'personalization' && this.threadId) await this.openThread(this.threadId).catch(()=>{});
