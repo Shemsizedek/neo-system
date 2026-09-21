@@ -117,12 +117,15 @@ jobs:
           test "$asset_code" = 200
           grep -q "const VERSION = '1.6.0'" /tmp/neo-ai.js
           grep -q "Knowledge Browser" /tmp/neo-ai.js
-          knowledge_search_code="$(curl --retry 5 --retry-delay 3 --retry-all-errors -sS -o /tmp/knowledge-search.json -w '%{http_code}' -H 'X-Forwarded-Host: neo.holytemples.org' "$SERVICE_URL/api/noogle/search?q=noology")"
+          catalog_code="$(curl --retry 5 --retry-delay 3 --retry-all-errors -sS -o /tmp/knowledge-catalog.json -w '%{http_code}' -H 'X-Forwarded-Host: neo.holytemples.org' "$SERVICE_URL/api/library")"
+          test "$catalog_code" = 200
+          SEARCH_QUERY="$(node --input-type=module -e 'import fs from "node:fs";const b=JSON.parse(fs.readFileSync("/tmp/knowledge-catalog.json","utf8"));const title=b.records?.[0]?.title;if(!title)throw new Error("public_library_empty");process.stdout.write(encodeURIComponent(title))')"
+          knowledge_search_code="$(curl --retry 5 --retry-delay 3 --retry-all-errors -sS -o /tmp/knowledge-search.json -w '%{http_code}' -H 'X-Forwarded-Host: neo.holytemples.org' "$SERVICE_URL/api/noogle/search?q=$SEARCH_QUERY")"
           test "$knowledge_search_code" = 200
-          RECORD_ID="$(node --input-type=module -e 'import fs from "node:fs";const b=JSON.parse(fs.readFileSync("/tmp/knowledge-search.json","utf8"));if(!b.records?.[0]?.id)throw new Error("knowledge_search_empty");process.stdout.write(b.records[0].id)')"
+          RECORD_ID="$(node --input-type=module -e 'import fs from "node:fs";const catalog=JSON.parse(fs.readFileSync("/tmp/knowledge-catalog.json","utf8"));const search=JSON.parse(fs.readFileSync("/tmp/knowledge-search.json","utf8"));const id=catalog.records?.[0]?.id;if(!id||!search.records?.some(r=>r.id===id))throw new Error("knowledge_search_catalog_mismatch");process.stdout.write(id)')"
           preview_code="$(curl --retry 5 --retry-delay 3 --retry-all-errors -sS -o /tmp/knowledge-preview.json -w '%{http_code}' -H 'X-Forwarded-Host: neo.holytemples.org' "$SERVICE_URL/api/library/$RECORD_ID")"
           test "$preview_code" = 200
-          node --input-type=module -e 'import fs from "node:fs";const search=JSON.parse(fs.readFileSync("/tmp/knowledge-search.json","utf8"));const preview=JSON.parse(fs.readFileSync("/tmp/knowledge-preview.json","utf8"));if(preview.record?.id!==search.records?.[0]?.id)throw new Error("knowledge_preview_mismatch");if(preview.oracleClass!=="internal-record-context")throw new Error("oracle_class_missing");'
+          node --input-type=module -e 'import fs from "node:fs";const catalog=JSON.parse(fs.readFileSync("/tmp/knowledge-catalog.json","utf8"));const preview=JSON.parse(fs.readFileSync("/tmp/knowledge-preview.json","utf8"));if(preview.record?.id!==catalog.records?.[0]?.id)throw new Error("knowledge_preview_mismatch");if(preview.oracleClass!=="internal-record-context")throw new Error("oracle_class_missing");'
           echo "NEO_EDGE_SERVICE_URL=$SERVICE_URL" >> "$GITHUB_ENV"
           echo "NEO edge + NEO Wire production origin healthy: $SERVICE_URL" >> "$GITHUB_STEP_SUMMARY"
 
