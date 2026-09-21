@@ -2,6 +2,10 @@ name: Deploy NEO AI Gateway to Cloud Run
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'ops/muse-neo-005.activate'
 
 permissions:
   contents: read
@@ -44,6 +48,11 @@ jobs:
 
       - name: Test NEO AI gateway and router
         run: node --test server/neo-router/ai-gateway-server.test.mjs server/neo-router/router.test.mjs server/neo-router/providers.test.mjs
+
+      - name: Verify live Meta Muse credential before deploy
+        env:
+          MODEL_API_KEY: ${{ secrets.MODEL_API_KEY }}
+        run: npm run router:muse:check
 
       - uses: google-github-actions/auth@v3
         with:
