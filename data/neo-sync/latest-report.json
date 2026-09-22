@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-22T05:00:23.384Z",
+  "generatedAt": "2026-09-22T11:42:39.184Z",
   "architecture": "crawler -> hash -> revision diff -> candidate graph relations -> 9-Ethereal quality gate -> Neopedia draft/review queue",
   "sources": [
     {
