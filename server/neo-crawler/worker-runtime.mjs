@@ -11,7 +11,7 @@ export function createCrawlerWorkerRuntime({
   vault=createEvidenceVault(process.env.NEO_EVIDENCE_DB_PATH||'data/neo-evidence-vault.sqlite'),
   eventStore=createRedisEventStore(),
   missionRuntime=createPersistentMissionRuntime({store:(await import('../neo-router/persistent-store.mjs')).createUpstashStateStore()||undefined}),
-  routeLease=createRedisLeaseManager({prefix:'neo:router:state-lock'})
+  routeLease=createRedisLeaseManager()
 }={}){
   const evidenceSink=createEvidenceVaultSink(vault);
   const routeEvent=async event=>{
