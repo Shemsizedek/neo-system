@@ -2,6 +2,12 @@ name: Deploy NEO Realty to Cloud Run
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/neo-realty/**'
+      - 'deploy/neo-realty/**'
+      - '.github/workflows/deploy-neo-realty-cloud-run.yml'
 
 permissions:
   contents: read
