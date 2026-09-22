@@ -8,7 +8,9 @@ export function createCrawlerWorker({queue,crawler=neoCrawler,evidenceSink,route
   if(!evidenceSink?.persist)throw new TypeError('crawler evidence sink required');
   if(typeof routeEvent!=='function')throw new TypeError('crawler routeEvent contract required');
   async function runOnce(){
-    const job=await queue.claim(); if(!job)return {status:'IDLE'};
+    let job;
+    try{job=await queue.claim()}catch(error){return {status:'QUEUE_UNAVAILABLE',error:String(error?.message||error)}}
+    if(!job)return {status:'IDLE'};
     try{
       const envelope=await crawler.crawl(job.input,job.meta?.crawlOptions||{});
       const evidence=await evidenceSink.persist(envelope);
