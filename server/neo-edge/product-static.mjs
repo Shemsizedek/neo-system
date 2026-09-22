@@ -11,6 +11,8 @@ const ENTERPRISE_ROOT = fileURLToPath(new URL('../../docs/neo-enterprise/', impo
 const GUARDIAN_ROOT = fileURLToPath(new URL('../../public/guardian/', import.meta.url));
 const PACER_ROOT = fileURLToPath(new URL('../../docs/neo-pacer/', import.meta.url));
 const PACER_DATA_ROOT = fileURLToPath(new URL('../../data/neo-pacer/', import.meta.url));
+const LINGO_ROOT = fileURLToPath(new URL('../../docs/neo-lingo/', import.meta.url));
+const PUBLIC_WORKSPACE_ROOT = fileURLToPath(new URL('../../docs/public-workspace/', import.meta.url));
 const FOUNDER_IDENTITY_FILE = fileURLToPath(new URL('../../public/api/identity/founder.json', import.meta.url));
 const ENTERPRISE_API_ROOT = fileURLToPath(new URL('../../dist/api/enterprise/', import.meta.url));
 const PLATFORM_SHELL_CSS = fileURLToPath(new URL('../../public/platform-shell.css', import.meta.url));
@@ -390,7 +392,59 @@ async function servePacer(req, res, url, host, prefix = '') {
   return true;
 }
 
+
+function lingoPublicHtml(body, prefix = '/lingo') {
+  return body
+    .split('../public-workspace/styles.css').join(`${prefix}/styles.css`)
+    .split('../neo-hub/').join('https://hub.holytemples.org/')
+    .split('../noogle/?q=').join('https://noogle.holytemples.org/?q=');
+}
+
+async function serveLingo(req, res, url, host, prefix = '/lingo') {
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
+    json(res, 405, { error: 'method_not_allowed', service: 'neo-lingo' });
+    return true;
+  }
+  if (url.pathname === '/health') {
+    json(res, 200, { ok: true, service: 'neo-lingo', mode: 'PUBLIC_READ_ONLY', host, terms: 4 });
+    return true;
+  }
+  if (url.pathname === '/api') {
+    json(res, 200, {
+      service: 'neo-lingo',
+      name: 'NEO Lingo',
+      role: 'public-language-and-terminology',
+      mode: 'PUBLIC_READ_ONLY',
+      ui: `https://neo.holytemples.org${prefix}/`,
+      fallbackResearch: 'https://noogle.holytemples.org/'
+    });
+    return true;
+  }
+  if (url.pathname === '/' || url.pathname === '/ui' || url.pathname === '/index.html') {
+    const served = await serveText(req, res, resolve(LINGO_ROOT, 'index.html'), body => lingoPublicHtml(body, prefix));
+    if (!served) json(res, 500, { error: 'neo_lingo_ui_unavailable' });
+    return true;
+  }
+  if (url.pathname === '/styles.css') {
+    const served = await serveFile(req, res, resolve(PUBLIC_WORKSPACE_ROOT, 'styles.css'), 'text/css; charset=utf-8');
+    if (!served) json(res, 500, { error: 'neo_lingo_styles_unavailable' });
+    return true;
+  }
+  json(res, 404, { error: 'not_found', service: 'neo-lingo', path: url.pathname });
+  return true;
+}
+
 export async function serveProductStatic(req, res, url, host) {
+  if (host === 'neo.holytemples.org' && url.pathname === '/lingo') {
+    res.writeHead(308, { location: '/lingo/', 'cache-control': 'no-store' });
+    res.end();
+    return true;
+  }
+  if (host === 'neo.holytemples.org' && url.pathname.startsWith('/lingo/')) {
+    const inner = new URL(url.toString());
+    inner.pathname = url.pathname.slice('/lingo'.length) || '/';
+    return serveLingo(req, res, inner, host, '/lingo');
+  }
   if (host === 'neo.holytemples.org' && url.pathname === '/pacer') {
     res.writeHead(308, { location: '/pacer/', 'cache-control': 'no-store' });
     res.end();

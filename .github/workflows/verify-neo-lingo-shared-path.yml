@@ -1,0 +1,40 @@
+name: Verify NEO Lingo Shared Front Door
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'server/neo-edge/product-static.mjs'
+      - 'docs/neo-lingo/**'
+      - 'docs/public-workspace/**'
+      - '.github/workflows/verify-neo-lingo-shared-path.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Verify NEO Lingo live path
+        run: |
+          set -euo pipefail
+          base='https://neo.holytemples.org/lingo'
+          code="$(curl -sS -o /tmp/redirect -w '%{http_code}' "$base")"
+          test "$code" = 308
+          for path in / /styles.css /health /api; do
+            code="$(curl --connect-timeout 10 --max-time 30 --retry 2 --retry-delay 2 -sS -o /tmp/lingo-response -w '%{http_code}' "$base$path" || true)"
+            echo "$base$path -> $code" >> "$GITHUB_STEP_SUMMARY"
+            test "$code" = 200
+            test -s /tmp/lingo-response
+          done
+          curl -fsS "$base/" -o /tmp/lingo-index.html
+          grep -q 'NEO LINGO' /tmp/lingo-index.html
+          grep -q 'Term Explorer' /tmp/lingo-index.html
+          grep -q 'https://hub.holytemples.org/' /tmp/lingo-index.html
+          grep -q 'https://noogle.holytemples.org/?q=' /tmp/lingo-index.html
+          curl -fsS "$base/api" -o /tmp/lingo-api.json
+          grep -q '"mode":"PUBLIC_READ_ONLY"' /tmp/lingo-api.json
