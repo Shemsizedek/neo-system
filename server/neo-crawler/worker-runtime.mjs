@@ -4,13 +4,14 @@ import { createCrawlerWorker } from './worker.mjs';
 import { createEvidenceVault } from '../neo-evidence-vault/store.mjs';
 import { createRedisEventStore, ingestRouterEvent } from '../neo-router/event-engine.mjs';
 import { createPersistentMissionRuntime } from '../neo-router/mission-runtime.mjs';
+import { createUpstashStateStore } from '../neo-router/persistent-store.mjs';
 import { createRedisLeaseManager } from '../neo-router/distributed-lease.mjs';
 
 export function createCrawlerWorkerRuntime({
   queue=createRedisCrawlQueue(),
   vault=createEvidenceVault(process.env.NEO_EVIDENCE_DB_PATH||'data/neo-evidence-vault.sqlite'),
   eventStore=createRedisEventStore(),
-  missionRuntime=createPersistentMissionRuntime({store:(await import('../neo-router/persistent-store.mjs')).createUpstashStateStore()||undefined}),
+  missionRuntime=createPersistentMissionRuntime(createUpstashStateStore()?{store:createUpstashStateStore()}:{}),
   routeLease=createRedisLeaseManager()
 }={}){
   const evidenceSink=createEvidenceVaultSink(vault);
