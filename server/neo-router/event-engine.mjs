@@ -44,7 +44,7 @@ export async function ingestRouterEvent({event,store=createRedisEventStore(),run
   if(!event?.source||!event?.type)throw new TypeError('event source and type are required')
   if(!runtime)throw new TypeError('runtime is required')
   const saved=await store.put(event)
-  if(saved.duplicate)return {duplicate:true,event:saved.event,mission:null,rule:null}
+  if(saved.duplicate&&saved.event?.status==='routed')return {duplicate:true,event:saved.event,mission:null,rule:matchEventRule(saved.event,rules)}
   const rule=matchEventRule(saved.event,rules)
   if(!rule){await store.update(saved.event.id,{status:'ignored'});return {duplicate:false,event:{...saved.event,status:'ignored'},mission:null,rule:null}}
   const mission=await runtime.withEngine(engine=>engine.queue({

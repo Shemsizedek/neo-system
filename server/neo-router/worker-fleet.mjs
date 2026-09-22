@@ -5,6 +5,7 @@ export const DEFAULT_WORKER_PROFILES=Object.freeze([
   {id:'neo-asana-worker',role:'operations',capabilities:['asana.read','asana.write'],concurrency:2},
   {id:'neo-gmail-worker',role:'communications',capabilities:['gmail.read','gmail.draft'],concurrency:1},
   {id:'neo-airbyte-worker',role:'integration',capabilities:['airbyte.read','airbyte.execute'],concurrency:2},
+  {id:'neo-intelligence-worker',role:'intelligence',capabilities:['crawler.read'],concurrency:1},
   {id:'neo-general-worker',role:'general',capabilities:[],concurrency:1},
 ])
 

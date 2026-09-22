@@ -56,5 +56,6 @@ export function createAirbyteAgent({env=process.env}={}){
   }
 }
 export function createLiveConnectorAgents(options={}){
-  return {'github-live':createGitHubAgent(options),'asana-live':createAsanaAgent(options),'gmail-live':createGmailAgent(options),'airbyte-live':createAirbyteAgent(options)}
+  const crawlerAgent=async(action,ctx={})=>{if(action.type!=='crawler.review')throw new Error(`Unsupported crawler action: ${action.type}`);return {ok:true,reviewed:false,status:'queued_for_governed_review',missionId:ctx.mission?.id??null,recordedAt:new Date().toISOString()}}
+  return {'github-live':createGitHubAgent(options),'asana-live':createAsanaAgent(options),'gmail-live':createGmailAgent(options),'airbyte-live':createAirbyteAgent(options),'neo-crawler':crawlerAgent}
 }
