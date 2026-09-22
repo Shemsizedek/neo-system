@@ -1,0 +1,82 @@
+name: Deploy NEO Realty to Cloud Run
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: neo-realty-cloud-run
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: holytemples-production
+    timeout-minutes: 30
+    env:
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID || secrets.GCP_PROJECT_ID }}
+      GCP_REGION: ${{ vars.GCP_REGION || secrets.GCP_REGION }}
+      GCP_WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER || secrets.GCP_WIF_PROVIDER }}
+      GCP_CLOUD_RUN_SERVICE_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_SERVICE_ACCOUNT || secrets.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+      GCP_CLOUD_RUN_RUNTIME_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_RUNTIME_ACCOUNT || secrets.GCP_CLOUD_RUN_RUNTIME_ACCOUNT }}
+      GCP_ARTIFACT_REGISTRY: ${{ vars.GCP_ARTIFACT_REGISTRY || secrets.GCP_ARTIFACT_REGISTRY }}
+      SERVICE_NAME: neo-realty
+      DB_SECRET: neo-realty-database-url
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - name: Validate deployment configuration
+        run: |
+          set -euo pipefail
+          for name in GCP_PROJECT_ID GCP_REGION GCP_WIF_PROVIDER GCP_CLOUD_RUN_SERVICE_ACCOUNT GCP_CLOUD_RUN_RUNTIME_ACCOUNT GCP_ARTIFACT_REGISTRY; do
+            test -n "${!name:-}" || { echo "::error::Missing $name"; exit 1; }
+          done
+          test -f deploy/neo-realty/Dockerfile
+          test -f apps/neo-realty/src/server.ts
+
+      - uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+
+      - uses: google-github-actions/setup-gcloud@v3
+
+      - name: Require persistent database secret
+        run: |
+          set -euo pipefail
+          gcloud secrets describe "$DB_SECRET" --project="$GCP_PROJECT_ID" >/dev/null
+          gcloud secrets versions access latest --secret="$DB_SECRET" --project="$GCP_PROJECT_ID" >/dev/null
+          echo "Persistent NEO Realty database secret is available." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Build and push NEO Realty image
+        env:
+          IMAGE: ${{ env.GCP_ARTIFACT_REGISTRY }}/neo-realty:${{ github.sha }}
+        run: |
+          set -euo pipefail
+          gcloud auth configure-docker "${GCP_REGION}-docker.pkg.dev" --quiet
+          docker build -f deploy/neo-realty/Dockerfile -t "$IMAGE" .
+          docker push "$IMAGE"
+
+      - name: Deploy NEO Realty
+        env:
+          IMAGE: ${{ env.GCP_ARTIFACT_REGISTRY }}/neo-realty:${{ github.sha }}
+        run: |
+          set -euo pipefail
+          gcloud run deploy "$SERVICE_NAME"             --project="$GCP_PROJECT_ID"             --region="$GCP_REGION"             --image="$IMAGE"             --service-account="$GCP_CLOUD_RUN_RUNTIME_ACCOUNT"             --set-secrets="DATABASE_URL=$DB_SECRET:latest"             --set-env-vars="NEO_REALTY_REQUIRE_PERSISTENCE=true,NEO_REALTY_FRONTEND_ORIGIN=https://neo.holytemples.org"             --port=8080             --allow-unauthenticated             --quiet
+
+      - name: Verify persistent production origin
+        run: |
+          set -euo pipefail
+          SERVICE_URL="$(gcloud run services describe "$SERVICE_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format='value(status.url)')"
+          test -n "$SERVICE_URL"
+          curl --retry 5 --retry-delay 3 --retry-all-errors -fsS "$SERVICE_URL/health" -o /tmp/health.json
+          curl --retry 5 --retry-delay 3 --retry-all-errors -fsS "$SERVICE_URL/ready" -o /tmp/ready.json
+          grep -q '"ok":true' /tmp/health.json
+          grep -q '"ok":true' /tmp/ready.json
+          grep -q '"persistence":"postgres"' /tmp/ready.json
+          echo "NEO_REALTY_SERVICE_URL=$SERVICE_URL" >> "$GITHUB_ENV"
+          echo "NEO Realty persistent origin healthy: $SERVICE_URL" >> "$GITHUB_STEP_SUMMARY"
