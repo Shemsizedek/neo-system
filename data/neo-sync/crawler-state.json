@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "updatedAt": "2026-09-22T16:59:18.475Z",
+  "updatedAt": "2026-09-22T21:21:46.843Z",
   "sources": {
     "SRC-HOLY-TABLETS-WEB": {
       "title": "The Holy Tablets by Dr. Malachi Z. York",
@@ -113,31 +113,6 @@
           "hash": "f741dc6a2ca6ace83a16707c127dccd7002214b2878f7a197696c5145bcbe26e",
           "bytes": 19888,
           "excerpt": "HOME | Table of Contents | The Seven Thunders | A Personal Note from the Receiver | Prayer of the Ansaars | The Glossary | Figures A Personal Note From The Receiver I call you to accept this truth as bestowed upon me by the masters who guide my pen, for of myself I could not have done the works of it. There were a host of great Nuwaubian leaders, such as Duse Ali, The Honorable Elijah Muhammad, Sheikh Al-Haj Daoud Fa",
-          "headings": [],
-          "quality": {
-            "dimensions": {
-              "provenance": 9,
-              "truthfulness": 8,
-              "soundRightReason": 7,
-              "coherence": 7,
-              "ethics": 9,
-              "reciprocity": 7,
-              "natureAlignment": 6,
-              "craftsmanship": 5,
-              "consequence": 8
-            },
-            "average": 7.333333333333333,
-            "potency": "DYNAMIC_BALANCE",
-            "gate": "PASS",
-            "note": "Heuristic artifact-quality assessment only; not a score of persons, identities or protected characteristics."
-          }
-        },
-        {
-          "url": "https://holytablets.nuwaubianfacts.com/prayer%20of%20the%20ansaars.htm",
-          "title": "Untitled",
-          "hash": "5bc59847043f9e3adfaf0810ebe0831a1ef521315a30779941f2bc8ab7d1b6fc",
-          "bytes": 6182,
-          "excerpt": "HOME | Table of Contents | The Seven Thunders | A Personal Note from the Receiver | Prayer of the Ansaars | The Glossary | Figures Your browser does not support inline frames or is currently configured not to display inline frames. HOME | Table of Contents | The Seven Thunders | A Personal Note from the Receiver | Prayer of the Ansaars | The Glossary | Figures http://HolyTablets.NuwaubianFacts.com Please let us know ",
           "headings": [],
           "quality": {
             "dimensions": {
@@ -738,6 +713,31 @@
           "hash": "4a0c3878187a1830ba399e3401eb148bbaf9c023614afb5d441869b4d98c79f1",
           "bytes": 6001,
           "excerpt": "HOME | Table of Contents | The Seven Thunders | A Personal Note from the Receiver | Prayer of the Ansaars | The Glossary | Figures Back Next Your browser does not support inline frames or is currently configured not to display inline frames. HOME | Table of Contents | The Seven Thunders | A Personal Note from the Receiver | Prayer of the Ansaars | The Glossary | Figures http://HolyTablets.NuwaubianFacts.com Please le",
+          "headings": [],
+          "quality": {
+            "dimensions": {
+              "provenance": 9,
+              "truthfulness": 8,
+              "soundRightReason": 7,
+              "coherence": 7,
+              "ethics": 9,
+              "reciprocity": 7,
+              "natureAlignment": 6,
+              "craftsmanship": 5,
+              "consequence": 8
+            },
+            "average": 7.333333333333333,
+            "potency": "DYNAMIC_BALANCE",
+            "gate": "PASS",
+            "note": "Heuristic artifact-quality assessment only; not a score of persons, identities or protected characteristics."
+          }
+        },
+        {
+          "url": "https://holytablets.nuwaubianfacts.com/100/051.htm",
+          "title": "Untitled",
+          "hash": "2138275d775895259a2f6cff14319e440fcaa0e993d1a5ec487f48f1d7649a2c",
+          "bytes": 6010,
+          "excerpt": "HOME | Table of Contents | The Seven Thunders | A Personal Note from the Receiver | Prayer of the Ansaars | The Glossary | Figures Back | Next Your browser does not support inline frames or is currently configured not to display inline frames. HOME | Table of Contents | The Seven Thunders | A Personal Note from the Receiver | Prayer of the Ansaars | The Glossary | Figures http://HolyTablets.NuwaubianFacts.com Please ",
           "headings": [],
           "quality": {
             "dimensions": {
