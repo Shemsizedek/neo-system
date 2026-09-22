@@ -1,16 +1,9 @@
-import crypto from 'node:crypto'
-const store=globalThis.__tmnlfEvidenceStore??{items:[],audit:[]}
-globalThis.__tmnlfEvidenceStore=store
 const json=(res,status,body)=>res.status(status).setHeader('Cache-Control','no-store').json(body)
+const base=()=>String(process.env.TMNLF_RUNTIME_URL||'').replace(/\/$/,'')
 export default async function handler(req,res){
- if(req.method==='GET') return json(res,200,{ok:true,items:store.items,auditCount:store.audit.length})
- if(req.method==='POST'){
-  const {matterId,label,content,source}=req.body||{}
-  if(!matterId||!label||!content) return json(res,400,{ok:false,error:'matterId_label_content_required'})
-  const digest=crypto.createHash('sha256').update(String(content)).digest('hex')
-  const item={id:`EVD-${String(store.items.length+1).padStart(4,'0')}`,matterId:String(matterId),label:String(label),source:String(source||'direct-intake'),sha256:digest,classification:'UNKNOWN',verificationStatus:'UNVERIFIED',createdAt:new Date().toISOString()}
-  store.items.push(item);store.audit.push({at:item.createdAt,action:'EVIDENCE_REGISTERED',matterId:item.matterId,evidenceId:item.id,sha256:digest})
-  return json(res,201,{ok:true,item})
- }
- res.setHeader('Allow','GET, POST');return json(res,405,{ok:false,error:'method_not_allowed'})
+ const root=base();if(!root)return json(res,503,{ok:false,error:'tmnlf_runtime_unbound',persistent:false})
+ const matterId=String(req.query?.matterId||req.body?.matterId||'');if(!matterId)return json(res,400,{ok:false,error:'matterId_required'})
+ const headers={'Content-Type':'application/json'};if(process.env.TMNLF_API_TOKEN)headers.Authorization=`Bearer ${process.env.TMNLF_API_TOKEN}`;headers['X-Operator']='vercel-adapter'
+ const path=req.method==='GET'&&req.query?.view==='custody'?'/custody':'/evidence';const payload=req.method==='POST'?{label:req.body?.label,title:req.body?.label,sourceType:req.body?.source||'TMNLF_INTAKE',note:req.body?.content}:undefined
+ const upstream=await fetch(`${root}/matters/${encodeURIComponent(matterId)}${path}`,{method:req.method,headers,body:payload?JSON.stringify(payload):undefined});return json(res,upstream.status,await upstream.json())
 }
