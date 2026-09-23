@@ -1,4 +1,4 @@
-version: "0.1"
+version: "0.2"
 id: omnitrix-chronicles
 status: active
 mode: additive
@@ -7,12 +7,7 @@ title: "Omnitrix Chronicles"
 content_class: "current-events-comic-storyline"
 
 editorial:
-  characters:
-    - Shemsizedek
-    - Nik X
-    - Destiny D
-    - Saxmobb Benn X
-    - Doppelganger
+  characters: [Shemsizedek, Nik X, Destiny D, Saxmobb Benn X, Doppelganger]
   workflow:
     - scan_current_trending_topics
     - select_episode_theme
@@ -49,12 +44,13 @@ destinations:
 
 episode_template:
   headline: required
-  date: publication_date
+  episode_date: publication_date
   topic_summary: required
   panels: required
   final_caption: required
   sources: required_for_current_factual_claims
   image: required
+  alt_text: required
   captions:
     facebook: required
     linkedin: required
@@ -64,9 +60,17 @@ episode_template:
     youtube_community: required
 
 automation:
+  automation_id: "neo-social-omnitrix"
   approval_class: "B-with-fixed-template"
   refresh_current_facts_at_publish_time: true
   preserve_source_provenance: true
+  kill_switch:
+    env: "NEO_SOCIAL_OMNITRIX_ENABLED"
+    enabled_value: "true"
+    default: "disabled"
+    check: "immediately-before-routing"
+  audit_destination: "audit/social/omnitrix-publication-receipts.ndjson"
+  receipt_persistence_required_for_success: true
   idempotency_key: "omnitrix + episode_date + destination + account_id"
   audit_fields:
     - episode_date
@@ -75,6 +79,7 @@ automation:
     - destination
     - account_id
     - image_asset
+    - alt_text
     - caption
     - published_at
     - platform_post_id
