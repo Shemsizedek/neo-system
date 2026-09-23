@@ -1,10 +1,10 @@
-import {FileNeotherapyStore} from '../server/neotherapy/file-store.mjs'
-const store=globalThis.__neoTherapyFileStore||(globalThis.__neoTherapyFileStore=new FileNeotherapyStore())
+import {FirestoreNeotherapyStore} from '../server/neotherapy/firestore-store.mjs'
+const store=globalThis.__neoTherapyFirestoreStore||(globalThis.__neoTherapyFirestoreStore=new FirestoreNeotherapyStore())
 const send=(res,status,data)=>res.status(status).json(data)
 const audit=async(action,resourceId,actorId='system')=>store.appendAudit({id:crypto.randomUUID(),actorId,action,resourceType:'NEOTHERAPY',resourceId,timestamp:new Date().toISOString()})
 export default async function handler(req,res){
  res.setHeader('Cache-Control','no-store');const action=String(req.query?.action||'status')
- if(req.method==='GET'&&action==='status') return send(res,200,{service:'neotherapy',version:'1.0',storage:'file-adapter',persistent:true,persistenceDependsOn:'NEOTHERAPY_DATA_PATH must be on a persistent volume',multiInstanceSafe:false,boundary:'participant data is not general NEO intelligence'})
+ if(req.method==='GET'&&action==='status') return send(res,200,{service:'neotherapy',version:'1.0',storage:'firestore',persistent:true,multiInstanceSafe:true,database:process.env.NEOTHERAPY_FIRESTORE_DATABASE||process.env.FIRESTORE_DATABASE_ID||'(default)',boundary:'participant data is not general NEO intelligence'})
  if(req.method!=='POST') return send(res,405,{error:'METHOD_NOT_ALLOWED'});const body=req.body||{}
  if(action==='consent'){if(!body.participantId||!body.modalityId||!body.status)return send(res,400,{error:'INVALID_CONSENT'});const record={id:body.id||crypto.randomUUID(),participantId:body.participantId,modalityId:body.modalityId,version:body.version||'1.0',status:body.status,signedAt:body.status==='ACTIVE'?new Date().toISOString():body.signedAt,withdrawnAt:body.status==='WITHDRAWN'?new Date().toISOString():undefined};await store.saveConsent(record);await audit('CONSENT_'+record.status,record.id,body.actorId);return send(res,200,record)}
  if(action==='credential'){if(!body.practitionerId||!body.status)return send(res,400,{error:'INVALID_CREDENTIAL'});const record={id:body.id||crypto.randomUUID(),practitionerId:body.practitionerId,level:body.level||'C.Neo.',status:body.status,modalities:Array.isArray(body.modalities)?body.modalities:[]};await store.saveCredential(record);await audit('CREDENTIAL_'+record.status,record.id,body.actorId);return send(res,200,record)}
