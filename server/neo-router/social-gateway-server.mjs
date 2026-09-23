@@ -41,11 +41,33 @@ export function socialRuntimeReadiness(env = process.env) {
   }
   tiktok.ready = Object.values(tiktok).every(Boolean)
 
+  const facebook = {
+    pageId: Boolean(env.FACEBOOK_PAGE_ID),
+    pageAccessToken: Boolean(env.FACEBOOK_PAGE_ACCESS_TOKEN),
+  }
+  facebook.ready = Object.values(facebook).every(Boolean)
+
+  const x = {
+    bearerToken: Boolean(env.X_BEARER_TOKEN),
+    oauth1Authorization: Boolean(env.X_OAUTH1_AUTHORIZATION),
+  }
+  x.ready = Object.values(x).every(Boolean)
+
+  const omnitrix = {
+    enabled: env.NEO_SOCIAL_OMNITRIX_ENABLED === 'true',
+    failClosed: true,
+  }
+
   return {
     ready: linkedin.ready && tiktok.ready,
-    publishing: false,
+    publishing: omnitrix.enabled,
     linkedin,
     tiktok,
+    facebook,
+    x,
+    instagram: { ready: false, reason: 'adapter-not-configured' },
+    youtubeCommunity: { ready: true, executionMode: 'browser-ui' },
+    omnitrix,
   }
 }
 
