@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Neotherapy Consent",
+  "type": "object",
+  "required": [
+    "id",
+    "participantId",
+    "modalityId",
+    "version",
+    "status"
+  ],
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "participantId": {
+      "type": "string"
+    },
+    "modalityId": {
+      "type": "string"
+    },
+    "version": {
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "PENDING",
+        "ACTIVE",
+        "WITHDRAWN",
+        "EXPIRED",
+        "SUPERSEDED"
+      ]
+    },
+    "signedAt": {
+      "type": "string"
+    },
+    "withdrawnAt": {
+      "type": "string"
+    }
+  }
+}
