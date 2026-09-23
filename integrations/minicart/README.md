@@ -1,17 +1,19 @@
 # Neoteric Method / Minicart integration
 
-This integration registers the existing Minicart application as the public Neoteric Method surface of the NEO System.
+This integration uses a free split-host architecture:
 
-- Minicart origin: https://neotericmethod.minicart.com
-- Canonical public hostname: https://neoteric.holytemples.org
+- Public NEO portal: https://neoteric.holytemples.org
+- Free Minicart storefront: https://neotericmethod.minicart.com
 - Canonical application/data authority: NEO System Neotherapy service
 
 ## Boundary
 
-Minicart may present services, educational material, public program information, and commerce. It is not the credential, consent, session, evidence, or research system of record.
+The NEO-hosted public portal presents Neoteric / Neotherapy information and links users to the Minicart storefront for commerce.
 
-A later API bridge must use minimum-necessary data and explicit authorization. No participant/session data is exported by this gate.
+Minicart is not the credential, consent, session, evidence, or research system of record. Participant/session data is not exported by this gate.
 
-## Domain
+## Free-domain mode
 
-Minicart's documented subdomain method uses a CNAME from the chosen host to the store's Minicart hostname. DNS activation and Minicart-side domain verification are separate steps.
+The custom-domain feature on Minicart is not required. The `neoteric.holytemples.org` hostname terminates on NEO production infrastructure and links outward to the free Minicart storefront.
+
+This avoids a paid Minicart custom-domain requirement while preserving the branded NEO public hostname.
