@@ -1,4 +1,4 @@
-// NEO Social — LinkedIn image-post adapter v0.1
+// NEO Social — LinkedIn image-post adapter v0.2
 export async function initializeLinkedInImageUpload({ownerUrn,accessToken,fetchImpl=fetch}) {
   if(!ownerUrn||!accessToken) throw new Error("ownerUrn and accessToken are required");
   const res=await fetchImpl("https://api.linkedin.com/rest/images?action=initializeUpload",{
@@ -7,6 +7,22 @@ export async function initializeLinkedInImageUpload({ownerUrn,accessToken,fetchI
   });
   const json=await res.json(); if(!res.ok){const e=new Error(`LinkedIn initialize HTTP ${res.status}`);e.payload=json;throw e;} return json;
 }
+
+export async function uploadLinkedInImageFromUrl({uploadUrl,imageUrl,fetchImpl=fetch}) {
+  if(!uploadUrl||!imageUrl) throw new Error("uploadUrl and imageUrl are required");
+  const source=await fetchImpl(imageUrl);
+  if(!source.ok) throw new Error(`Image fetch HTTP ${source.status}`);
+  const bytes=await source.arrayBuffer();
+  const contentType=source.headers?.get?.("content-type")||"application/octet-stream";
+  const uploaded=await fetchImpl(uploadUrl,{
+    method:"PUT",
+    headers:{"Content-Type":contentType},
+    body:bytes
+  });
+  if(!uploaded.ok) throw new Error(`LinkedIn image upload HTTP ${uploaded.status}`);
+  return {ok:true};
+}
+
 export async function createLinkedInImagePost({authorUrn,accessToken,commentary,imageUrn,altText="",fetchImpl=fetch}) {
   if(!authorUrn||!accessToken||!imageUrn) throw new Error("authorUrn, accessToken and imageUrn are required");
   const res=await fetchImpl("https://api.linkedin.com/rest/posts",{
