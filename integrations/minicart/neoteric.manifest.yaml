@@ -1,0 +1,46 @@
+version: "1.0"
+id: neoteric-minicart
+name: "Neoteric Method — Minicart Surface"
+parent_system: "NEO System"
+canonical_service: "Neotherapy"
+status: INTEGRATING
+mode: additive-external-surface
+
+endpoints:
+  minicart_origin: "https://neotericmethod.minicart.com"
+  canonical_host: "https://neoteric.holytemples.org"
+
+dns:
+  record_type: CNAME
+  host: "neoteric"
+  target: "neotericmethod.minicart.com"
+  ownership: "holytemples.org"
+  ssl_owner: "Minicart"
+
+roles:
+  minicart:
+    - storefront_and_public_presentation
+    - service_catalog
+    - public_neotherapy_entrypoint
+  neo_system:
+    - canonical_policy
+    - practitioner_credentials
+    - participant_consent
+    - session_state
+    - evidence_classification
+    - audit_and_provenance
+  neotherapy_api:
+    - controlled_application_boundary
+
+guardrails:
+  - "Minicart is a presentation/commerce surface, not the source of truth for credentials, consent, clinical status, or evidence."
+  - "NFM-001 remains experimental; no established clinical efficacy claim."
+  - "Participant records must not be copied into Minicart unless a later approved integration defines minimum-necessary fields and consent."
+  - "No payment or purchase event may imply professional licensure, medical treatment, or guaranteed outcome."
+  - "Canonical Neotherapy records remain under NEO System controls."
+
+integration_state:
+  repository_registered: true
+  dns_requested: true
+  minicart_custom_domain_verification: pending
+  api_data_bridge: not_enabled
