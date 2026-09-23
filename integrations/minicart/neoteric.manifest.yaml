@@ -11,17 +11,17 @@ endpoints:
   canonical_host: "https://neoteric.holytemples.org"
 
 dns:
-  record_type: CNAME
+  record_type: A
   host: "neoteric"
-  target: "neotericmethod.minicart.com"
+  target: "NEO edge production ingress"
   ownership: "holytemples.org"
-  ssl_owner: "Minicart"
+  ssl_owner: "NEO infrastructure"
 
 roles:
   minicart:
     - storefront_and_public_presentation
     - service_catalog
-    - public_neotherapy_entrypoint
+    - external_storefront
   neo_system:
     - canonical_policy
     - practitioner_credentials
@@ -42,5 +42,6 @@ guardrails:
 integration_state:
   repository_registered: true
   dns_requested: true
-  minicart_custom_domain_verification: pending
+  free_mode: true
+  minicart_custom_domain_verification: not_required_free_mode
   api_data_bridge: not_enabled
