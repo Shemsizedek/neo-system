@@ -46,10 +46,26 @@ jobs:
 
       - uses: google-github-actions/setup-gcloud@v3
 
-      - name: Require existing Cloud SQL instance
+      - name: Enable Cloud SQL Admin API
+        shell: bash
+        run: gcloud services enable sqladmin.googleapis.com --project "$GCP_PROJECT_ID"
+
+      - name: Create or reuse Cloud SQL instance
         shell: bash
         run: |
           set -euo pipefail
+          if ! gcloud sql instances describe "$INSTANCE" --project "$GCP_PROJECT_ID" >/dev/null 2>&1; then
+            gcloud sql instances create "$INSTANCE" \
+              --project "$GCP_PROJECT_ID" \
+              --database-version POSTGRES_16 \
+              --region "$GCP_REGION" \
+              --edition ENTERPRISE \
+              --tier db-f1-micro \
+              --storage-type SSD \
+              --storage-size 10 \
+              --storage-auto-increase \
+              --availability-type zonal
+          fi
           CONNECTION_NAME="$(gcloud sql instances describe "$INSTANCE" --project "$GCP_PROJECT_ID" --format='value(connectionName)')"
           test -n "$CONNECTION_NAME"
           echo "CLOUD_SQL_CONNECTION_NAME=$CONNECTION_NAME" >> "$GITHUB_ENV"
