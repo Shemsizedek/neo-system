@@ -35,7 +35,8 @@ const SERVICE_UI=Object.freeze({
   'wallet.holytemples.org':{name:'NEO Treasury Wallet',role:'Wallet',summary:'Treasury wallet information and settlement entrypoint.'},
   'treasury.holytemples.org':{name:'World Treasury',role:'Treasury',summary:'Treasury and reserve information surface.'},
   'nvsn.holytemples.org':{name:'NEO Virtual Satellite Network',role:'Communications Fabric',summary:'Software-defined distributed communications fabric connecting authorized terrestrial, Internet, radio, telephone and satellite-capable nodes.'},
-  'neoteric.holytemples.org':{name:'Neoteric Method',role:'Neotherapy Public Portal',summary:'Public Neotherapy information and entrypoint. The NEO System remains the source of truth for consent, credentials, sessions, evidence and audit records.'}
+  'neoteric.holytemples.org':{name:'Neoteric Method',role:'Neotherapy Public Portal',summary:'Public Neotherapy information and entrypoint. The NEO System remains the source of truth for consent, credentials, sessions, evidence and audit records.'},
+  'tabernacle.holytemples.org':{name:'NEO Tabernacle',role:'Storefront Gateway',summary:'Canonical Holy Temples commerce gateway for the Neoteric Method storefront.'}
 });
 
 function hostOf(req){return String(req.headers['x-forwarded-host']||req.headers.host||'').split(',')[0].trim().split(':')[0].toLowerCase()}
@@ -109,6 +110,7 @@ export async function startNeoEdgeProduction(){
     const productServed=await serveProductStatic(req,res,url,host);
     if(productServed!==false)return productServed;
     if(host==='neoteric.holytemples.org'&&req.method==='GET'&&(url.pathname==='/'||url.pathname==='/ui'))return html(res,200,neotericLanding());
+    if(host==='tabernacle.holytemples.org'&&req.method==='GET'&&(url.pathname==='/'||url.pathname==='/ui')){res.writeHead(302,{location:'https://neotericmethod.minicart.com','cache-control':'no-store'});return res.end();}
     if(host!=='wire.holytemples.org'&&req.method==='GET'&&(url.pathname==='/'||url.pathname==='/ui'))return html(res,200,serviceConsole(host));
     if(host!=='wire.holytemples.org')return proxyLegacy(req,res,legacyPort);
     try{
