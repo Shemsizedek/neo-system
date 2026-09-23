@@ -1,16 +1,4 @@
 {
-  "generatedAt": "2026-09-23T04:48:21.713Z",
-  "items": [
-    {
-      "fromId": "PAGE:5bc59847043f9e3adfaf0810ebe0831a1ef521315a30779941f2bc8ab7d1b6fc",
-      "toId": "SRC-HOLY-TABLETS-WEB",
-      "kind": "DERIVES_FROM",
-      "confidence": 0.99,
-      "evidenceRefs": [
-        "https://holytablets.nuwaubianfacts.com/prayer%20of%20the%20ansaars.htm",
-        "5bc59847043f9e3adfaf0810ebe0831a1ef521315a30779941f2bc8ab7d1b6fc"
-      ],
-      "decision": "ACCEPTED"
-    }
-  ]
+  "generatedAt": "2026-09-23T11:41:29.354Z",
+  "items": []
 }

@@ -1,34 +1,4 @@
 {
-  "generatedAt": "2026-09-23T04:48:21.713Z",
-  "items": [
-    {
-      "id": "DRAFT:5bc59847043f9e3a",
-      "title": "Untitled",
-      "summary": "HOME | Table of Contents | The Seven Thunders | A Personal Note from the Receiver | Prayer of the Ansaars | The Glossary | Figures Your browser does not support inline frames or is currently configured not to display inline frames. HOME | Table of Contents | The Seven Thunders | A Personal Note from the Receiver | Prayer of the Ansaars | The Glossary | Figures http://HolyTablets.NuwaubianFacts.com Please let us know ",
-      "sourceId": "SRC-HOLY-TABLETS-WEB",
-      "sourceUrl": "https://holytablets.nuwaubianfacts.com/prayer%20of%20the%20ansaars.htm",
-      "sourceHash": "5bc59847043f9e3adfaf0810ebe0831a1ef521315a30779941f2bc8ab7d1b6fc",
-      "sourceMode": "PRIMARY_SACRED",
-      "headings": [],
-      "claimStatus": "SOURCE_STATES",
-      "quality": {
-        "dimensions": {
-          "provenance": 9,
-          "truthfulness": 8,
-          "soundRightReason": 7,
-          "coherence": 7,
-          "ethics": 9,
-          "reciprocity": 7,
-          "natureAlignment": 6,
-          "craftsmanship": 5,
-          "consequence": 8
-        },
-        "average": 7.333333333333333,
-        "potency": "DYNAMIC_BALANCE",
-        "gate": "PASS",
-        "note": "Heuristic artifact-quality assessment only; not a score of persons, identities or protected characteristics."
-      },
-      "publicationStatus": "DRAFT_READY_FOR_REVIEW"
-    }
-  ]
+  "generatedAt": "2026-09-23T11:41:29.354Z",
+  "items": []
 }
