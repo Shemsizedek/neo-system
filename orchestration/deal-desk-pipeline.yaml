@@ -6,6 +6,8 @@ status: "active-proposed"
 stages:
   - id: discover
     owner: "NIA-003"
+    source_service: "NEO Crawler"
+    crawler_route_target: "neo-deal-desk"
     action: "Find authorized/public organizations and decision-makers matching approved prospect classes."
     output: "prospect_candidate"
   - id: enrich
@@ -28,6 +30,7 @@ stages:
   - id: register
     owner: "NIA-013"
     target: "existing NEO CRM lead/contact/organization records"
+    runtime: "server/neo-deal-desk/prospect-pipeline.mjs#ingestPreparedProspect"
     output: "crm_opportunity"
   - id: draft
     owner: "NIA-005"
