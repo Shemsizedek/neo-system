@@ -7,10 +7,12 @@
   "title": "NOMNI Technical Paper — Bitcoin-Native Monetary Architecture",
   "media": {
     "aspectRatio": "16:9",
-    "assetStatus": "generated-pending-canonical-upload",
-    "altText": "Futuristic NOMNI technical architecture card illustrating Bitcoin as the settlement layer, Counterparty as the asset protocol, and NOMNI as the monetary instrument, with treasury and real-world utility panels."
+    "assetStatus": "canonical-public",
+    "imageUrl": "https://holytemples.org/wp-content/uploads/2026/09/NOMNI-TECH-001-canonical.png",
+    "mediaId": 3167,
+    "altText": "NOMNI Technical Paper architecture card showing Bitcoin as settlement base, Counterparty as the asset protocol, and NOMNI as an issuer-defined monetary framework. Asset-specific identifiers and market claims remain subject to verification."
   },
-  "caption": "NOMNI TECHNICAL PAPER — PART I\n\nNOMNI is being documented as a Bitcoin-native monetary architecture using Bitcoin for settlement and Counterparty for asset issuance and transfer semantics. The NOMNI framework then defines its issuer-designed monetary and treasury functions above that technical base.\n\nThis distinction matters: Bitcoin and Counterparty protocol behavior can be independently verified; NOMNI treasury policy, reserve design, Ausarian Economics, and valuation methodology are issuer-defined components and are documented as such.\n\nArchitecture: Bitcoin settlement → Counterparty asset protocol → NOMNI monetary framework.\n\nThis series will publish the technical paper, monetary doctrine, and treasury framework as separate cornerstone documents.\n\n#NOMNI #Bitcoin #Counterparty #AusarianEconomics #DigitalAssets #TreasuryTechnology",
+  "caption": "NOMNI TECHNICAL PAPER — PART I\n\nThe NOMNI issuer framework describes a Bitcoin-native monetary architecture using Bitcoin as the settlement base and Counterparty as the asset protocol. Above that technical base, NOMNI defines issuer-designed monetary, treasury, and Ausarian Economics policy components.\n\nThis distinction matters: Bitcoin and Counterparty protocol behavior can be independently verified; NOMNI-specific treasury policy, reserve design, monetary doctrine, asset identifiers, and valuation methodology must be documented and verified separately.\n\nArchitecture: Bitcoin settlement base → Counterparty asset protocol → NOMNI issuer framework.\n\nMarket values are intentionally excluded from this campaign until a timestamped source and methodology record is attached.\n\n#NOMNI #Bitcoin #Counterparty #AusarianEconomics #DigitalAssets #TreasuryTechnology",
   "claims": [
     {
       "text": "Counterparty is a protocol built on Bitcoin that supports digital asset issuance and transfer.",
@@ -18,7 +20,7 @@
       "source": "Counterparty protocol documentation"
     },
     {
-      "text": "NOMNI is documented by its issuer as a monetary and treasury instrument.",
+      "text": "The NOMNI issuer framework describes NOMNI as a monetary and treasury instrument.",
       "classification": "issuer-defined",
       "source": "NOMNI Technical Paper v0.1-draft"
     },
@@ -28,7 +30,11 @@
       "source": "NOMNI Monetary Doctrine"
     }
   ],
-  "destinations": ["facebook", "linkedin", "youtube_community"],
+  "destinations": [
+    "facebook",
+    "linkedin",
+    "youtube_community"
+  ],
   "worldBulletin": false,
   "approval": {
     "required": true,
