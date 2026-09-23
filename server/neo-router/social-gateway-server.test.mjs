@@ -161,7 +161,11 @@ test('expired OAuth state is rejected and consumed', async () => {
   assert.equal(await store.consumeState('linkedin', 'expired', { now: 10, maxAgeMs: 5 }), null)
 })
 
-test('Omnitrix publishing flag opens only on exact true', () => {
-  assert.equal(socialRuntimeReadiness({ ...env, NEO_SOCIAL_OMNITRIX_ENABLED: 'true' }).publishing, true)
-  assert.equal(socialRuntimeReadiness({ ...env, NEO_SOCIAL_OMNITRIX_ENABLED: 'TRUE' }).publishing, false)
+test('Omnitrix activation request remains non-publishing until a publisher is wired', () => {
+  const requested = socialRuntimeReadiness({ ...env, NEO_SOCIAL_OMNITRIX_ENABLED: 'true' })
+  assert.equal(requested.activationRequested, true)
+  assert.equal(requested.publishing, false)
+  const notRequested = socialRuntimeReadiness({ ...env, NEO_SOCIAL_OMNITRIX_ENABLED: 'TRUE' })
+  assert.equal(notRequested.activationRequested, false)
+  assert.equal(notRequested.publishing, false)
 })
