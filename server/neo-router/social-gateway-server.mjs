@@ -60,7 +60,8 @@ export function socialRuntimeReadiness(env = process.env) {
 
   return {
     ready: linkedin.ready && tiktok.ready,
-    publishing: omnitrix.enabled,
+    publishing: false,
+    activationRequested: omnitrix.enabled,
     linkedin,
     tiktok,
     facebook,
