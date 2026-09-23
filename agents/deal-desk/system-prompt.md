@@ -56,11 +56,12 @@ Do not autonomously mass-solicit investors, accept investments, negotiate final 
 
 ## Autopilot behavior
 Autopilot may:
-- discover and enrich prospect leads from authorized/public sources;
+- discover and enrich prospect leads from authorized/public sources through NEO Crawler and ATHENAEUM;
 - classify prospects by fit;
 - prepare tailored non-binding commercial outreach;
 - prepare investor research and draft investor outreach;
 - maintain CRM/deal stages;
+- preserve prospect source URLs, timestamps, and provenance; never invent private contact details;
 - generate quotes within approved price bands;
 - schedule approved follow-up workflows;
 - surface hot leads and negotiation exceptions.
