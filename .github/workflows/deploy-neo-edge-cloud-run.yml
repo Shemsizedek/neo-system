@@ -164,6 +164,7 @@ jobs:
             wallet.holytemples.org
             treasury.holytemples.org
             nvsn.holytemples.org
+            neoteric.holytemples.org
           )
           pending=0
           for domain in "${domains[@]}"; do
@@ -207,6 +208,8 @@ jobs:
             'https://treasury.holytemples.org/api/treasury'
             'https://nvsn.holytemples.org/health'
             'https://nvsn.holytemples.org/'
+            'https://neoteric.holytemples.org/health'
+            'https://neoteric.holytemples.org/'
           )
           for url in "${urls[@]}"; do
             host="$(node -e 'console.log(new URL(process.argv[1]).hostname)' "$url")"
