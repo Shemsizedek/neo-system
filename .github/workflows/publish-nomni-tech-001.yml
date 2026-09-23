@@ -1,0 +1,66 @@
+name: Publish NOMNI Technical Campaign 001
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_url:
+        description: Canonical public HTTPS image URL for NOMNI-TECH-001
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: holytemples-production
+    timeout-minutes: 10
+    env:
+      NOMNI_IMAGE_URL: ${{ inputs.image_url }}
+      FACEBOOK_PAGE_ID: ${{ vars.FACEBOOK_PAGE_ID }}
+      FACEBOOK_PAGE_ACCESS_TOKEN: ${{ secrets.FACEBOOK_PAGE_ACCESS_TOKEN }}
+      LINKEDIN_OWNER_URN: ${{ vars.LINKEDIN_OWNER_URN }}
+      LINKEDIN_ACCESS_TOKEN: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
+      YOUTUBE_CHANNEL_URL: ${{ vars.YOUTUBE_CHANNEL_URL }}
+
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - name: Validate canonical media URL
+        shell: bash
+        run: |
+          set -euo pipefail
+          case "$NOMNI_IMAGE_URL" in
+            https://*) ;;
+            *) echo "::error::image_url must be HTTPS"; exit 1 ;;
+          esac
+          code="$(curl -L -sS -o /tmp/nomni-card -w '%{http_code}' "$NOMNI_IMAGE_URL")"
+          test "$code" = "200" || { echo "::error::image_url returned HTTP $code"; exit 1; }
+          test -s /tmp/nomni-card || { echo "::error::image_url returned empty body"; exit 1; }
+
+      - name: Validate publishing credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in FACEBOOK_PAGE_ID FACEBOOK_PAGE_ACCESS_TOKEN LINKEDIN_OWNER_URN LINKEDIN_ACCESS_TOKEN YOUTUBE_CHANNEL_URL; do
+            test -n "${!name:-}" || { echo "::error::Missing $name"; exit 1; }
+          done
+
+      - name: Run NOMNI social publisher
+        run: node src/social/run-nomni-tech-001.mjs
+
+      - name: Upload publication receipt bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: NOMNI-TECH-001-publication
+          path: artifacts/social/NOMNI-TECH-001-publication.json
+          if-no-files-found: error
+
+      - name: Summarize publication
+        shell: bash
+        run: |
+          echo "## NOMNI-TECH-001 publication" >> "$GITHUB_STEP_SUMMARY"
+          echo "Facebook and LinkedIn use API publication paths." >> "$GITHUB_STEP_SUMMARY"
+          echo "YouTube Community is a browser/UI handoff and is not marked published until verified." >> "$GITHUB_STEP_SUMMARY"
+          cat artifacts/social/NOMNI-TECH-001-publication.json >> "$GITHUB_STEP_SUMMARY"
