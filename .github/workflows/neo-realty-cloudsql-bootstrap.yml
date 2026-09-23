@@ -25,7 +25,7 @@ jobs:
       GCP_REGION: ${{ vars.GCP_REGION || secrets.GCP_REGION || 'us-central1' }}
       GCP_WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER || secrets.GCP_WIF_PROVIDER }}
       GCP_SERVICE_ACCOUNT: ${{ vars.GCP_SERVICE_ACCOUNT || vars.GCP_CLOUD_RUN_SERVICE_ACCOUNT || secrets.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
-      INSTANCE: neo-pads-db
+      INSTANCE: the-nous-project
       DB_NAME: neo_realty
       DB_USER: neo_realty
       DB_SECRET: neo-realty-database-url
