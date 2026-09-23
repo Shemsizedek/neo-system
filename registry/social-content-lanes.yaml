@@ -74,6 +74,28 @@ lanes:
       - "This lane is separate from both Noocracy Papers and Noocracy Report."
       - "Do not publish as a World Bulletin article unless separately authorized."
 
+  omnitrix_chronicles:
+    title: "Omnitrix Chronicles"
+    source_class: "current-events-comic-storyline"
+    runtime_contract: "src/social/omnitrix-social-payload.mjs"
+    lane_registry: "registry/omnitrix-chronicles.yaml"
+    destinations:
+      world_bulletin: false
+      facebook: true
+      linkedin: true
+      x: true
+      tiktok: true
+      instagram: true
+      youtube_community: true
+    controls:
+      refresh_current_facts_at_publish_time: true
+      alt_text_required: true
+      kill_switch: "NEO_SOCIAL_OMNITRIX_ENABLED"
+      audit_destination: "audit/social/omnitrix-publication-receipts.ndjson"
+    notes:
+      - "Current factual claims require source provenance and publish-time freshness validation."
+      - "World Bulletin routing is disabled unless separately authorized."
+
 automation:
   approval_class: "B-with-fixed-template"
   image_required: true
