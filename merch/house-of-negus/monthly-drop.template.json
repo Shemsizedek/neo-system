@@ -1,0 +1,28 @@
+{
+  "drop_id": "HN-YYYY-MM-OMNITRIX",
+  "collection": "Omnitrix Gear / Noocrat Streetwear",
+  "designs": [
+    {
+      "sku": "HN-OMNI-001",
+      "title": "Omnitrix Sovereign Emblem",
+      "asset": "artwork/omnitrix-sovereign.png",
+      "status": "draft",
+      "tags": [
+        "House of Negus",
+        "Omnitrix",
+        "Noocrat"
+      ]
+    },
+    {
+      "sku": "HN-NOO-001",
+      "title": "Noocrat Streetwear",
+      "asset": "artwork/noocrat-streetwear.png",
+      "status": "draft",
+      "tags": [
+        "House of Negus",
+        "Noocrat",
+        "Streetwear"
+      ]
+    }
+  ]
+}

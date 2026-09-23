@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "House of Negus Monthly Drop",
+  "type": "object",
+  "required": [
+    "drop_id",
+    "collection",
+    "designs"
+  ],
+  "properties": {
+    "drop_id": {
+      "type": "string",
+      "pattern": "^HN-[0-9]{4}-[0-9]{2}-[A-Z0-9-]+$"
+    },
+    "collection": {
+      "type": "string"
+    },
+    "designs": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "sku",
+          "title",
+          "asset",
+          "status"
+        ],
+        "properties": {
+          "sku": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "asset": {
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "draft",
+              "qc_passed",
+              "approved",
+              "published",
+              "verified"
+            ]
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  }
+}
