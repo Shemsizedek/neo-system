@@ -13,7 +13,7 @@ jobs:
     timeout-minutes: 30
     env:
       GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID || secrets.GCP_PROJECT_ID }}
-      GCP_REGION: ${{ vars.GCP_REGION || secrets.GCP_REGION || 'us-central1' }}
+      GCP_REGION: ${{ vars.GCP_REGION || secrets.GCP_REGION }}
       GCP_WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER || secrets.GCP_WIF_PROVIDER }}
       GCP_CLOUD_RUN_SERVICE_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_SERVICE_ACCOUNT || secrets.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
       GCP_CLOUD_RUN_RUNTIME_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_RUNTIME_ACCOUNT || secrets.GCP_CLOUD_RUN_RUNTIME_ACCOUNT }}
@@ -23,12 +23,16 @@ jobs:
       - uses: actions/checkout@v7.0.1
       - uses: actions/setup-node@v4
         with: {node-version: 24}
-      - run: node --test server/neotherapy/*.test.mjs
+      - name: Test Neotherapy
+        run: node --test server/neotherapy/*.test.mjs
       - name: Validate configuration
         run: |
           for n in GCP_PROJECT_ID GCP_REGION GCP_WIF_PROVIDER GCP_CLOUD_RUN_SERVICE_ACCOUNT GCP_CLOUD_RUN_RUNTIME_ACCOUNT GCP_ARTIFACT_REGISTRY; do test -n "${!n:-}" || exit 1; done
       - uses: google-github-actions/auth@v3
-        with: {project_id: ${{ env.GCP_PROJECT_ID }}, workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}, service_account: ${{ env.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}}
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
       - uses: google-github-actions/setup-gcloud@v3
       - name: Build and push
         env: {IMAGE: "${{ env.GCP_ARTIFACT_REGISTRY }}/neotherapy:${{ github.sha }}"}
