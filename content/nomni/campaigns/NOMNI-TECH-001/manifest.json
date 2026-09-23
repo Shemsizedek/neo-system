@@ -1,0 +1,38 @@
+{
+  "schema": "neo.social.campaign.v0.1",
+  "campaignId": "NOMNI-TECH-001",
+  "contentLane": "nomni_ausarian",
+  "sourceDocument": "NOMNI Technical Paper",
+  "sourceVersion": "0.1-draft",
+  "title": "NOMNI Technical Paper — Bitcoin-Native Monetary Architecture",
+  "media": {
+    "aspectRatio": "16:9",
+    "assetStatus": "generated-pending-canonical-upload",
+    "altText": "Futuristic NOMNI technical architecture card illustrating Bitcoin as the settlement layer, Counterparty as the asset protocol, and NOMNI as the monetary instrument, with treasury and real-world utility panels."
+  },
+  "caption": "NOMNI TECHNICAL PAPER — PART I\n\nNOMNI is being documented as a Bitcoin-native monetary architecture using Bitcoin for settlement and Counterparty for asset issuance and transfer semantics. The NOMNI framework then defines its issuer-designed monetary and treasury functions above that technical base.\n\nThis distinction matters: Bitcoin and Counterparty protocol behavior can be independently verified; NOMNI treasury policy, reserve design, Ausarian Economics, and valuation methodology are issuer-defined components and are documented as such.\n\nArchitecture: Bitcoin settlement → Counterparty asset protocol → NOMNI monetary framework.\n\nThis series will publish the technical paper, monetary doctrine, and treasury framework as separate cornerstone documents.\n\n#NOMNI #Bitcoin #Counterparty #AusarianEconomics #DigitalAssets #TreasuryTechnology",
+  "claims": [
+    {
+      "text": "Counterparty is a protocol built on Bitcoin that supports digital asset issuance and transfer.",
+      "classification": "externally-verifiable",
+      "source": "Counterparty protocol documentation"
+    },
+    {
+      "text": "NOMNI is documented by its issuer as a monetary and treasury instrument.",
+      "classification": "issuer-defined",
+      "source": "NOMNI Technical Paper v0.1-draft"
+    },
+    {
+      "text": "Ausarian Economics supplies the monetary doctrine used by the NOMNI framework.",
+      "classification": "doctrine",
+      "source": "NOMNI Monetary Doctrine"
+    }
+  ],
+  "destinations": ["facebook", "linkedin", "youtube_community"],
+  "worldBulletin": false,
+  "approval": {
+    "required": true,
+    "class": "B-with-fixed-template"
+  },
+  "publicationReceiptRequired": true
+}
