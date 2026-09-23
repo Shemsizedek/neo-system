@@ -21,6 +21,7 @@ import { NeoFxApp } from './neofx/NeoFxApp'
 import { NEOpaySurface } from './neopay/NEOpaySurface'
 import { TellerDashboard } from './teller/TellerDashboard'
 import { CounselConsole } from './tmnlf/CounselConsole'
+import { NeotherapyApp } from './neotherapy/NeotherapyApp'
 import { NeoCheckoutLauncher } from './checkout/NeoCheckoutLauncher'
 import { SettlementResultBanner } from './checkout/SettlementResultBanner'
 import './styles.css'
@@ -73,6 +74,7 @@ function RootRouter(){
   const isNeoFx=normalized==='/neofx'||normalized.startsWith('/neofx/')
   const isNEOpay=normalized==='/neopay'||normalized.startsWith('/neopay/')
   const isTeller=normalized==='/teller'||normalized.startsWith('/teller/')
+  const isNeotherapy=normalized==='/neotherapy'||normalized.startsWith('/neotherapy/')
   const isCounsel=normalized==='/tmnlf'||normalized==='/counsel'||normalized==='/counsel-console'||normalized.startsWith('/tmnlf/')||normalized.startsWith('/counsel/')||normalized.startsWith('/counsel-console/')
   const bankHref=String(import.meta.env.VITE_NEOBANK_URL||'https://neobank.holytemples.org/')
 
@@ -80,6 +82,7 @@ function RootRouter(){
   if(isCommand) return <main style={{padding:24,color:'#d9ffe3',background:'#010503',minHeight:'100vh'}}>Opening NEO Prime — Discord is the server/API control plane…</main>
   if(isPrime) return <CheckoutShell serviceId="neo-prime" serviceName="NEO Prime"><HomeBase onOpen={open}/></CheckoutShell>
   if(isHome) return <HomeBase onOpen={open}/>
+  if(isNeotherapy) return <NeotherapyApp/>
   if(isCounsel) return <CounselConsole/>
   if(isTeller) return <TellerDashboard/>
   if(isNEOpay) return <CheckoutShell serviceId="neopay" serviceName="NEOpay"><NEOpaySurface bankHref={bankHref}/></CheckoutShell>
