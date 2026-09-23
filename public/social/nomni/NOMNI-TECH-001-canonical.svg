@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900">
+<rect width="1600" height="900" fill="#07111f"/>
+<rect x="28" y="28" width="1544" height="844" rx="26" fill="none" stroke="#43c9ff" stroke-width="3"/>
+<text x="70" y="105" font-family="Arial,Helvetica,sans-serif" font-size="58" font-weight="700" fill="#e9c15a">NOMNI TECHNICAL PAPER</text>
+<text x="72" y="150" font-family="Arial,Helvetica,sans-serif" font-size="29" font-weight="700" fill="#8bdcff">BITCOIN-NATIVE MONETARY ARCHITECTURE</text>
+<text x="72" y="186" font-family="Arial,Helvetica,sans-serif" font-size="20" fill="#c7d6e5">Issuer framework • technical facts separated from policy and doctrine</text>
+
+<g font-family="Arial,Helvetica,sans-serif">
+<rect x="70" y="235" width="400" height="205" rx="22" fill="#0d2036" stroke="#43c9ff" stroke-width="3"/>
+<text x="100" y="285" font-size="32" font-weight="700" fill="#e9c15a">BITCOIN</text>
+<text x="100" y="335" font-size="23" fill="#edf4fa">• Settlement base</text>
+<text x="100" y="375" font-size="23" fill="#edf4fa">• Proof-of-work network</text>
+<text x="100" y="415" font-size="23" fill="#edf4fa">• Public ledger</text>
+
+<text x="505" y="350" font-size="58" fill="#43c9ff">→</text>
+
+<rect x="600" y="235" width="400" height="205" rx="22" fill="#0d2036" stroke="#43c9ff" stroke-width="3"/>
+<text x="630" y="285" font-size="32" font-weight="700" fill="#e9c15a">COUNTERPARTY</text>
+<text x="630" y="335" font-size="23" fill="#edf4fa">• Protocol on Bitcoin</text>
+<text x="630" y="375" font-size="23" fill="#edf4fa">• Digital asset issuance</text>
+<text x="630" y="415" font-size="23" fill="#edf4fa">• Asset transfer semantics</text>
+
+<text x="1035" y="350" font-size="58" fill="#43c9ff">→</text>
+
+<rect x="1130" y="235" width="400" height="205" rx="22" fill="#0d2036" stroke="#43c9ff" stroke-width="3"/>
+<text x="1160" y="285" font-size="32" font-weight="700" fill="#e9c15a">NOMNI</text>
+<text x="1160" y="335" font-size="23" fill="#edf4fa">• Issuer-defined framework</text>
+<text x="1160" y="375" font-size="23" fill="#edf4fa">• Treasury design</text>
+<text x="1160" y="415" font-size="23" fill="#edf4fa">• Circulatory instrument</text>
+
+<rect x="70" y="500" width="695" height="255" rx="22" fill="#0d2036" stroke="#43c9ff" stroke-width="3"/>
+<text x="100" y="548" font-size="30" font-weight="700" fill="#e9c15a">CORE ARCHITECTURE &amp; SYSTEM</text>
+<text x="100" y="600" font-size="21" font-weight="700" fill="#8bdcff">BITCOIN</text><text x="320" y="600" font-size="21" fill="#edf4fa">Settlement and security base</text>
+<text x="100" y="647" font-size="21" font-weight="700" fill="#8bdcff">COUNTERPARTY</text><text x="320" y="647" font-size="21" fill="#edf4fa">Asset issuance / transfer protocol</text>
+<text x="100" y="694" font-size="21" font-weight="700" fill="#8bdcff">NOMNI</text><text x="320" y="694" font-size="21" fill="#edf4fa">Issuer-defined monetary framework</text>
+<text x="100" y="741" font-size="21" font-weight="700" fill="#8bdcff">VERIFICATION</text><text x="320" y="741" font-size="21" fill="#edf4fa">Asset-specific identifiers pending</text>
+
+<rect x="835" y="500" width="695" height="255" rx="22" fill="#0d2036" stroke="#43c9ff" stroke-width="3"/>
+<text x="865" y="548" font-size="30" font-weight="700" fill="#e9c15a">TREASURY &amp; POLICY FRAMEWORK</text>
+<text x="865" y="600" font-size="21" font-weight="700" fill="#8bdcff">RESERVE</text><text x="1065" y="600" font-size="21" fill="#edf4fa">Issuer policy framework</text>
+<text x="865" y="647" font-size="21" font-weight="700" fill="#8bdcff">SETTLEMENT</text><text x="1065" y="647" font-size="21" fill="#edf4fa">Bitcoin-centered design</text>
+<text x="865" y="694" font-size="21" font-weight="700" fill="#8bdcff">DOCTRINE</text><text x="1065" y="694" font-size="21" fill="#edf4fa">Ausarian Economics</text>
+<text x="865" y="741" font-size="21" font-weight="700" fill="#8bdcff">MARKET DATA</text><text x="1065" y="741" font-size="21" fill="#edf4fa">Excluded until sourced and timestamped</text>
+
+<rect x="70" y="790" width="1460" height="60" rx="18" fill="#091827" stroke="#e9c15a" stroke-width="2"/>
+<text x="95" y="820" font-size="18" font-weight="700" fill="#f2f6fa">CONCLUSION: The NOMNI issuer framework describes a Bitcoin- and Counterparty-based monetary architecture.</text>
+<text x="95" y="842" font-size="18" font-weight="700" fill="#f2f6fa">Asset-specific identifiers and market claims remain subject to verification.</text>
+</g>
+</svg>
