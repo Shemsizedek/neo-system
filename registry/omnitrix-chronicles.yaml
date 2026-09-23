@@ -1,0 +1,81 @@
+version: "0.1"
+id: omnitrix-chronicles
+status: active
+mode: additive
+
+title: "Omnitrix Chronicles"
+content_class: "current-events-comic-storyline"
+
+editorial:
+  characters:
+    - Shemsizedek
+    - Nik X
+    - Destiny D
+    - Saxmobb Benn X
+    - Doppelganger
+  workflow:
+    - scan_current_trending_topics
+    - select_episode_theme
+    - verify_time_sensitive_facts
+    - distinguish_facts_from_story_elements
+    - generate_comic_storyline
+    - generate_or_attach_episode_art
+    - create_platform_specific_captions
+    - route_to_social_distribution
+    - record_publish_receipts
+  current_events_policy:
+    refresh_before_publish: true
+    stale_numbers_prohibited: true
+    political_content:
+      neutral_factual_context_required: true
+      endorsement_or_opposition: false
+      election_prediction: false
+      source_current_claims: true
+
+visual_profile:
+  format: "comic-panel"
+  image_required: true
+  alt_text_required: true
+  continuity_reference: "Omnitrix Chronicles established visual identity"
+
+destinations:
+  facebook: true
+  linkedin: true
+  x: true
+  tiktok: true
+  instagram: true
+  youtube_community: true
+  world_bulletin: false
+
+episode_template:
+  headline: required
+  date: publication_date
+  topic_summary: required
+  panels: required
+  final_caption: required
+  sources: required_for_current_factual_claims
+  image: required
+  captions:
+    facebook: required
+    linkedin: required
+    x: required
+    tiktok: required
+    instagram: required
+    youtube_community: required
+
+automation:
+  approval_class: "B-with-fixed-template"
+  refresh_current_facts_at_publish_time: true
+  preserve_source_provenance: true
+  idempotency_key: "omnitrix + episode_date + destination + account_id"
+  audit_fields:
+    - episode_date
+    - topic
+    - sources
+    - destination
+    - account_id
+    - image_asset
+    - caption
+    - published_at
+    - platform_post_id
+    - status
