@@ -82,8 +82,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if gcloud secrets describe "$DB_SECRET" --project "$GCP_PROJECT_ID" >/dev/null 2>&1; then
-            echo "Existing $DB_SECRET retained; no password rotation performed." >> "$GITHUB_STEP_SUMMARY"
+          if gcloud secrets describe "$DB_SECRET" --project "$GCP_PROJECT_ID" >/dev/null 2>&1 &&              gcloud secrets versions access latest --secret="$DB_SECRET" --project="$GCP_PROJECT_ID" >/dev/null 2>&1; then
+            echo "Existing $DB_SECRET has a usable version; no password rotation performed." >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
 
@@ -100,9 +100,11 @@ jobs:
           DATABASE_URL="postgresql://$DB_USER:$ENCODED_PASSWORD@/$DB_NAME?host=/cloudsql/$CLOUD_SQL_CONNECTION_NAME"
           echo "::add-mask::$DATABASE_URL"
 
-          gcloud secrets create "$DB_SECRET" --project "$GCP_PROJECT_ID" --replication-policy=automatic
+          if ! gcloud secrets describe "$DB_SECRET" --project "$GCP_PROJECT_ID" >/dev/null 2>&1; then
+            gcloud secrets create "$DB_SECRET" --project "$GCP_PROJECT_ID" --replication-policy=automatic
+          fi
           printf '%s' "$DATABASE_URL" | gcloud secrets versions add "$DB_SECRET" --project "$GCP_PROJECT_ID" --data-file=-
-          echo "Created dedicated NEO Realty database credential secret." >> "$GITHUB_STEP_SUMMARY"
+          echo "Created or repaired the dedicated NEO Realty database credential secret version." >> "$GITHUB_STEP_SUMMARY"
 
       - name: Confirm bootstrap resources
         shell: bash
