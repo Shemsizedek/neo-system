@@ -1,0 +1,74 @@
+version: "1.0"
+id: neoteric-sku-map-009
+name: "Neoteric Method Storefront SKU Map"
+status: PUBLISHING_HANDOFF_READY
+currency: USD
+storefront:
+  gateway: "https://tabernacle.holytemples.org"
+  origin: "https://neotericmethod.minicart.com"
+  provider: minicart
+  publication_state: NOT_YET_CONFIRMED
+  participant_data_export: false
+
+skus:
+  - sku: NEO-NT-SVC-001
+    title: "Noological Dialogue"
+    category: "Neotherapy Services"
+    price_usd: 144.00
+    price_unit: "per_hour"
+    fulfillment: "scheduled_service"
+    public_description: "A structured Noological inquiry session for examining facts, perceptions, hypotheses, assumptions, contradictions and unknowns through disciplined reasoning."
+    claims:
+      diagnostic: false
+      clinical_treatment: false
+
+  - sku: NEO-NT-SVC-002
+    title: "Neotherapy Session"
+    category: "Neotherapy Services"
+    price_usd: 144.00
+    price_unit: "per_hour"
+    fulfillment: "scheduled_service"
+    public_description: "A consent-led Neotherapy session using the canonical cycle of orientation, observation, Noological Dialogue, cognitive alignment, Nous Field practice, reflection and integration."
+    requirements:
+      - informed_consent
+      - practitioner_scope_check
+
+  - sku: NEO-NFM-001
+    title: "True Green Light"
+    category: "Noological Sensory Practice"
+    price_usd: 144.00
+    price_unit: "per_hour"
+    fulfillment: "scheduled_experimental_practice"
+    public_description: "An experimental Noological sensory practice combining a controlled green-light environment with focused attention and structured Noological reflection."
+    evidence_state: EXPERIMENTAL
+    established_clinical_efficacy: false
+    requirements:
+      - informed_consent
+      - safety_screen
+      - authorized_practitioner
+    required_storefront_disclosure: "Experimental Noological sensory practice; not presented as an established clinical treatment."
+
+  - sku: NEO-NT-EDU-101
+    title: "Foundations of Neotherapy & Nous Field Therapy"
+    category: "Neotherapy Academy"
+    price_usd: 144.00
+    price_unit: "each"
+    fulfillment: "education"
+    public_description: "Foundational study of Noology, the Seven Pillars, Four Fields, Noological Dialogue, Neotherapeutic method, ethics, evidence and NFM-001."
+    credential_disclosure: "Course completion alone does not confer state healthcare licensure."
+
+  - sku: NEO-NT-PATH-001
+    title: "Neotherapist Practitioner Pathway"
+    category: "Practitioner Development"
+    price_usd: 144.00
+    price_unit: "each"
+    fulfillment: "education_practicum_entry"
+    public_description: "Entry into the Neotherapist education and practicum pathway, including competency-based study of method, ethics, consent, documentation, evidence and scope."
+    credential_disclosure: "Internal education/practicum pathway; civil clinical scope is not expanded."
+
+publishing_rules:
+  - "Publish only the approved titles, categories, prices, descriptions and disclosures in this map."
+  - "Do not create medical efficacy, diagnosis, treatment, licensure or guaranteed-outcome claims."
+  - "Do not send participant consent, session, credential, safety-screen or research records to Minicart."
+  - "A storefront order may later initiate a separate NEO intake invitation only through an explicitly authorized integration."
+  - "Storefront publication must be verified separately; this file is the publishing handoff and does not assert provider-side publication."
