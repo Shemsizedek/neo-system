@@ -17,6 +17,11 @@ const env = {
   TIKTOK_CLIENT_KEY: 'tiktok-key',
   TIKTOK_CLIENT_SECRET: 'tiktok-secret',
   TIKTOK_REDIRECT_URI: 'https://gateway.holytemples.org/connect/tiktok/callback',
+  FACEBOOK_PAGE_ID: 'page-1',
+  FACEBOOK_PAGE_ACCESS_TOKEN: 'facebook-secret',
+  X_BEARER_TOKEN: 'x-secret',
+  X_OAUTH1_AUTHORIZATION: 'oauth-secret',
+  NEO_SOCIAL_OMNITRIX_ENABLED: 'false',
 }
 
 const trusted = async () => ({ authenticated: true, trustBoundary: 'neo-gateway', subjectId: 'neo-user-1' })
@@ -26,6 +31,11 @@ test('runtime readiness reports booleans only and requires HTTPS callbacks', () 
   assert.equal(ready.ready, true)
   assert.equal(ready.linkedin.ready, true)
   assert.equal(ready.tiktok.ready, true)
+  assert.equal(ready.facebook.ready, true)
+  assert.equal(ready.x.ready, true)
+  assert.equal(ready.instagram.ready, false)
+  assert.equal(ready.youtubeCommunity.executionMode, 'browser-ui')
+  assert.equal(ready.omnitrix.enabled, false)
   assert.ok(!JSON.stringify(ready).includes('linkedin-secret'))
   assert.ok(!JSON.stringify(ready).includes('tiktok-secret'))
 
@@ -42,6 +52,9 @@ test('health endpoint exposes readiness without secret values', async () => {
     const body = await response.json()
     assert.equal(body.ready, true)
     assert.equal(body.publishing, false)
+    assert.equal(body.facebook.ready, true)
+    assert.equal(body.x.ready, true)
+    assert.equal(body.omnitrix.enabled, false)
     assert.ok(!JSON.stringify(body).includes('linkedin-secret'))
     assert.ok(!JSON.stringify(body).includes('tiktok-secret'))
   })
@@ -146,4 +159,9 @@ test('expired OAuth state is rejected and consumed', async () => {
   await store.putState({ providerId: 'linkedin', nonce: 'expired', identityId: 'neo-user-1', createdAt: 1 })
   assert.equal(await store.consumeState('linkedin', 'expired', { now: 10, maxAgeMs: 5 }), null)
   assert.equal(await store.consumeState('linkedin', 'expired', { now: 10, maxAgeMs: 5 }), null)
+})
+
+test('Omnitrix publishing flag opens only on exact true', () => {
+  assert.equal(socialRuntimeReadiness({ ...env, NEO_SOCIAL_OMNITRIX_ENABLED: 'true' }).publishing, true)
+  assert.equal(socialRuntimeReadiness({ ...env, NEO_SOCIAL_OMNITRIX_ENABLED: 'TRUE' }).publishing, false)
 })
