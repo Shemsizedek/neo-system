@@ -1,0 +1,62 @@
+version: "1.0"
+id: neoteric-catalog-007
+name: "Neoteric Method Public Catalog"
+status: ACTIVE_CATALOG_SPEC
+currency: USD
+commerce:
+  gateway: "https://tabernacle.holytemples.org"
+  storefront_origin: "https://neotericmethod.minicart.com"
+  participant_data_export: false
+  purchase_to_intake:
+    enabled: false
+    rule: "Commerce confirmation may trigger a separate NEO intake invitation only after an authorized integration exists. Minicart must not receive consent, session, credential, research, or participant-practice records."
+offerings:
+  - id: NEO-NT-SVC-001
+    name: "Noological Dialogue"
+    type: service
+    category: "Neotherapy Services"
+    pricing:
+      status: TO_BE_PUBLISHED
+    scope: "Structured non-diagnostic inquiry distinguishing fact, perception, hypothesis, and unknown."
+  - id: NEO-NT-SVC-002
+    name: "Neotherapy Session"
+    type: service
+    category: "Neotherapy Services"
+    pricing:
+      status: TO_BE_PUBLISHED
+    requirements:
+      - informed_consent
+      - practitioner_scope_check
+    scope: "Consent-led session using the canonical Neotherapeutic cycle."
+  - id: NEO-NFM-001
+    name: "True Green Light"
+    type: experimental_practice
+    category: "Noological Sensory Practice"
+    pricing:
+      status: TO_BE_PUBLISHED
+    evidence_state: EXPERIMENTAL
+    established_clinical_efficacy: false
+    requirements:
+      - informed_consent
+      - safety_screen
+      - authorized_practitioner
+    claims_rule: "Do not market as clinically established treatment."
+  - id: NEO-NT-EDU-101
+    name: "Foundations of Neotherapy & Nous Field Therapy"
+    type: education
+    category: "Neotherapy Academy"
+    pricing:
+      status: TO_BE_PUBLISHED
+    credential_effect: "Course completion alone does not confer state healthcare licensure."
+  - id: NEO-NT-PATH-001
+    name: "Neotherapist Practitioner Pathway"
+    type: education_practicum
+    category: "Practitioner Development"
+    pricing:
+      status: TO_BE_PUBLISHED
+    credential_effect: "Internal education/practicum pathway; civil clinical scope is not expanded."
+catalog_rules:
+  - "Only offerings with an explicitly approved public price may be published to the storefront."
+  - "Do not invent discounts, clinical outcomes, testimonials, licensure, or efficacy claims."
+  - "Commerce records and Neotherapy participant/practice records remain separate."
+  - "NFM-001 must retain its experimental designation wherever offered."
