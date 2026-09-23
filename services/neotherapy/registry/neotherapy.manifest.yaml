@@ -1,0 +1,10 @@
+id: NEOTHERAPY
+name: Neotherapy
+formal_method: Nous Field Therapy
+version: "1.0"
+parent_discipline: Noology
+status: implementation
+founder_doctrinal_source: "H.I.M. Dr. Lawiy Zodok Shamu-El"
+evidence_states: [D0, H1, O2, P3, R4, V5]
+proposition_classes: [FACT, PERCEPTION, HYPOTHESIS, UNKNOWN]
+clinical_license_conferred: false

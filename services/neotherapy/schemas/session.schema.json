@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Neotherapy Session",
+  "type": "object",
+  "required": [
+    "session_id",
+    "practitioner_id",
+    "consent_status",
+    "protocol_version",
+    "state"
+  ],
+  "properties": {
+    "session_id": {
+      "type": "string"
+    },
+    "practitioner_id": {
+      "type": "string"
+    },
+    "consent_status": {
+      "enum": [
+        "PENDING",
+        "ACTIVE",
+        "WITHDRAWN",
+        "EXPIRED",
+        "SUPERSEDED"
+      ]
+    },
+    "protocol_version": {
+      "type": "string"
+    },
+    "state": {
+      "enum": [
+        "ORIENTATION",
+        "OBSERVATION",
+        "NOOLOGICAL_DIALOGUE",
+        "COGNITIVE_ALIGNMENT",
+        "NOUS_FIELD_PRACTICE",
+        "REFLECTION",
+        "INTEGRATION",
+        "COMPLETE",
+        "STOPPED"
+      ]
+    },
+    "propositions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "statement",
+          "classification",
+          "evidence_state"
+        ],
+        "properties": {
+          "statement": {
+            "type": "string"
+          },
+          "classification": {
+            "enum": [
+              "FACT",
+              "PERCEPTION",
+              "HYPOTHESIS",
+              "UNKNOWN"
+            ]
+          },
+          "evidence_state": {
+            "enum": [
+              "D0",
+              "H1",
+              "O2",
+              "P3",
+              "R4",
+              "V5"
+            ]
+          }
+        }
+      }
+    },
+    "adverse_event": {
+      "type": "boolean",
+      "default": false
+    }
+  }
+}
