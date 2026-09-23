@@ -16,14 +16,18 @@ offerings:
     type: service
     category: "Neotherapy Services"
     pricing:
-      status: TO_BE_PUBLISHED
+      status: APPROVED
+      amount_usd: 144.00
+      unit: "each_or_per_hour"
     scope: "Structured non-diagnostic inquiry distinguishing fact, perception, hypothesis, and unknown."
   - id: NEO-NT-SVC-002
     name: "Neotherapy Session"
     type: service
     category: "Neotherapy Services"
     pricing:
-      status: TO_BE_PUBLISHED
+      status: APPROVED
+      amount_usd: 144.00
+      unit: "each_or_per_hour"
     requirements:
       - informed_consent
       - practitioner_scope_check
@@ -33,7 +37,9 @@ offerings:
     type: experimental_practice
     category: "Noological Sensory Practice"
     pricing:
-      status: TO_BE_PUBLISHED
+      status: APPROVED
+      amount_usd: 144.00
+      unit: "each_or_per_hour"
     evidence_state: EXPERIMENTAL
     established_clinical_efficacy: false
     requirements:
@@ -46,15 +52,23 @@ offerings:
     type: education
     category: "Neotherapy Academy"
     pricing:
-      status: TO_BE_PUBLISHED
+      status: APPROVED
+      amount_usd: 144.00
+      unit: "each_or_per_hour"
     credential_effect: "Course completion alone does not confer state healthcare licensure."
   - id: NEO-NT-PATH-001
     name: "Neotherapist Practitioner Pathway"
     type: education_practicum
     category: "Practitioner Development"
     pricing:
-      status: TO_BE_PUBLISHED
+      status: APPROVED
+      amount_usd: 144.00
+      unit: "each_or_per_hour"
     credential_effect: "Internal education/practicum pathway; civil clinical scope is not expanded."
+pricing_policy:
+  canonical_public_rate_usd: 144.00
+  rule: "Public Neoteric offerings use the founder-approved $144 each or per-hour rate unless a later catalog amendment explicitly sets another price."
+  bundles_and_discounts: "Not authorized by this catalog version."
 catalog_rules:
   - "Only offerings with an explicitly approved public price may be published to the storefront."
   - "Do not invent discounts, clinical outcomes, testimonials, licensure, or efficacy claims."
