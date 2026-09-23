@@ -1,0 +1,24 @@
+version: "1.0"
+roles:
+  - PARTICIPANT
+  - STUDENT
+  - NEOTHERAPIST_CANDIDATE
+  - NEOTHERAPIST
+  - SENIOR_NEOTHERAPIST
+  - MASTER_NEOTHERAPIST
+  - INSTRUCTOR
+  - SUPERVISOR
+  - RESEARCHER
+  - ETHICS_OFFICER
+  - ACADEMY_ADMIN
+  - SYSTEM_ADMIN
+rules:
+  modality_execution:
+    requires: [ACTIVE_CREDENTIAL, MODALITY_AUTHORIZATION, ACTIVE_CONSENT, SAFETY_SCREEN]
+  credential_issue:
+    requires: [HUMAN_AUTHORIZATION]
+  evidence_promotion:
+    requires: [EVIDENCE_REVIEW]
+  participant_data:
+    default: DENY
+    cross_system_export: EXPLICIT_AUTHORIZATION_REQUIRED
