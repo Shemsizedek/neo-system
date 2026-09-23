@@ -18,6 +18,12 @@ env:
   TIKTOK_REDIRECT_URI: https://gateway.holytemples.org/connect/tiktok/callback
   LINKEDIN_CLIENT_ID_SECRET_NAME: neo-social-gateway-linkedin-client-id
   LINKEDIN_CLIENT_SECRET_NAME: neo-social-gateway-linkedin-client-secret
+  TIKTOK_CLIENT_KEY_SECRET_NAME: neo-social-gateway-tiktok-client-key
+  TIKTOK_CLIENT_SECRET_NAME: neo-social-gateway-tiktok-client-secret
+  FACEBOOK_PAGE_ID_SECRET_NAME: neo-social-gateway-facebook-page-id
+  FACEBOOK_PAGE_ACCESS_TOKEN_SECRET_NAME: neo-social-gateway-facebook-page-access-token
+  X_BEARER_TOKEN_SECRET_NAME: neo-social-gateway-x-bearer-token
+  X_OAUTH1_AUTHORIZATION_SECRET_NAME: neo-social-gateway-x-oauth1-authorization
 
 jobs:
   deploy:
@@ -38,10 +44,16 @@ jobs:
         env:
           LINKEDIN_CLIENT_ID: ${{ secrets.LINKEDIN_CLIENT_ID }}
           LINKEDIN_CLIENT_SECRET: ${{ secrets.LINKEDIN_CLIENT_SECRET }}
+          TIKTOK_CLIENT_KEY: ${{ secrets.TIKTOK_CLIENT_KEY }}
+          TIKTOK_CLIENT_SECRET: ${{ secrets.TIKTOK_CLIENT_SECRET }}
+          FACEBOOK_PAGE_ID: ${{ secrets.FACEBOOK_PAGE_ID }}
+          FACEBOOK_PAGE_ACCESS_TOKEN: ${{ secrets.FACEBOOK_PAGE_ACCESS_TOKEN }}
+          X_BEARER_TOKEN: ${{ secrets.X_BEARER_TOKEN }}
+          X_OAUTH1_AUTHORIZATION: ${{ secrets.X_OAUTH1_AUTHORIZATION }}
         shell: bash
         run: |
           set -euo pipefail
-          for name in GCP_PROJECT_ID GCP_REGION GCP_WIF_PROVIDER GCP_CLOUD_RUN_SERVICE_ACCOUNT GCP_CLOUD_RUN_RUNTIME_ACCOUNT GCP_ARTIFACT_REGISTRY LINKEDIN_CLIENT_ID LINKEDIN_CLIENT_SECRET; do
+          for name in GCP_PROJECT_ID GCP_REGION GCP_WIF_PROVIDER GCP_CLOUD_RUN_SERVICE_ACCOUNT GCP_CLOUD_RUN_RUNTIME_ACCOUNT GCP_ARTIFACT_REGISTRY LINKEDIN_CLIENT_ID LINKEDIN_CLIENT_SECRET TIKTOK_CLIENT_KEY TIKTOK_CLIENT_SECRET FACEBOOK_PAGE_ID FACEBOOK_PAGE_ACCESS_TOKEN X_BEARER_TOKEN X_OAUTH1_AUTHORIZATION; do
             test -n "${!name:-}" || { echo "::error::Missing $name"; exit 1; }
           done
 
@@ -56,25 +68,40 @@ jobs:
 
       - uses: google-github-actions/setup-gcloud@v3
 
-      - name: Sync LinkedIn secrets to Google Secret Manager
+      - name: Sync social publishing secrets to Google Secret Manager
         env:
           LINKEDIN_CLIENT_ID: ${{ secrets.LINKEDIN_CLIENT_ID }}
           LINKEDIN_CLIENT_SECRET: ${{ secrets.LINKEDIN_CLIENT_SECRET }}
+          TIKTOK_CLIENT_KEY: ${{ secrets.TIKTOK_CLIENT_KEY }}
+          TIKTOK_CLIENT_SECRET: ${{ secrets.TIKTOK_CLIENT_SECRET }}
+          FACEBOOK_PAGE_ID: ${{ secrets.FACEBOOK_PAGE_ID }}
+          FACEBOOK_PAGE_ACCESS_TOKEN: ${{ secrets.FACEBOOK_PAGE_ACCESS_TOKEN }}
+          X_BEARER_TOKEN: ${{ secrets.X_BEARER_TOKEN }}
+          X_OAUTH1_AUTHORIZATION: ${{ secrets.X_OAUTH1_AUTHORIZATION }}
         shell: bash
         run: |
           set -euo pipefail
-          for secret in "$LINKEDIN_CLIENT_ID_SECRET_NAME" "$LINKEDIN_CLIENT_SECRET_NAME"; do
+          declare -A values=(
+            ["$LINKEDIN_CLIENT_ID_SECRET_NAME"]="$LINKEDIN_CLIENT_ID"
+            ["$LINKEDIN_CLIENT_SECRET_NAME"]="$LINKEDIN_CLIENT_SECRET"
+            ["$TIKTOK_CLIENT_KEY_SECRET_NAME"]="$TIKTOK_CLIENT_KEY"
+            ["$TIKTOK_CLIENT_SECRET_NAME"]="$TIKTOK_CLIENT_SECRET"
+            ["$FACEBOOK_PAGE_ID_SECRET_NAME"]="$FACEBOOK_PAGE_ID"
+            ["$FACEBOOK_PAGE_ACCESS_TOKEN_SECRET_NAME"]="$FACEBOOK_PAGE_ACCESS_TOKEN"
+            ["$X_BEARER_TOKEN_SECRET_NAME"]="$X_BEARER_TOKEN"
+            ["$X_OAUTH1_AUTHORIZATION_SECRET_NAME"]="$X_OAUTH1_AUTHORIZATION"
+          )
+          for secret in "${!values[@]}"; do
             gcloud secrets describe "$secret" --project="$GCP_PROJECT_ID" >/dev/null 2>&1 || \
               gcloud secrets create "$secret" --project="$GCP_PROJECT_ID" --replication-policy="automatic"
+            printf '%s' "${values[$secret]}" | gcloud secrets versions add "$secret" --project="$GCP_PROJECT_ID" --data-file=-
           done
-          printf '%s' "$LINKEDIN_CLIENT_ID" | gcloud secrets versions add "$LINKEDIN_CLIENT_ID_SECRET_NAME" --project="$GCP_PROJECT_ID" --data-file=-
-          printf '%s' "$LINKEDIN_CLIENT_SECRET" | gcloud secrets versions add "$LINKEDIN_CLIENT_SECRET_NAME" --project="$GCP_PROJECT_ID" --data-file=-
 
       - name: Grant runtime service account secret access
         shell: bash
         run: |
           set -euo pipefail
-          for secret in "$LINKEDIN_CLIENT_ID_SECRET_NAME" "$LINKEDIN_CLIENT_SECRET_NAME"; do
+          for secret in "$LINKEDIN_CLIENT_ID_SECRET_NAME" "$LINKEDIN_CLIENT_SECRET_NAME" "$TIKTOK_CLIENT_KEY_SECRET_NAME" "$TIKTOK_CLIENT_SECRET_NAME" "$FACEBOOK_PAGE_ID_SECRET_NAME" "$FACEBOOK_PAGE_ACCESS_TOKEN_SECRET_NAME" "$X_BEARER_TOKEN_SECRET_NAME" "$X_OAUTH1_AUTHORIZATION_SECRET_NAME"; do
             gcloud secrets add-iam-policy-binding "$secret" \
               --project="$GCP_PROJECT_ID" \
               --member="serviceAccount:$GCP_CLOUD_RUN_RUNTIME_ACCOUNT" \
@@ -104,8 +131,8 @@ jobs:
             --region="$GCP_REGION" \
             --image="$IMAGE" \
             --service-account="$GCP_CLOUD_RUN_RUNTIME_ACCOUNT" \
-            --set-env-vars="LINKEDIN_REDIRECT_URI=$LINKEDIN_REDIRECT_URI,TIKTOK_REDIRECT_URI=$TIKTOK_REDIRECT_URI" \
-            --set-secrets="LINKEDIN_CLIENT_ID=$LINKEDIN_CLIENT_ID_SECRET_NAME:latest,LINKEDIN_CLIENT_SECRET=$LINKEDIN_CLIENT_SECRET_NAME:latest" \
+            --set-env-vars="LINKEDIN_REDIRECT_URI=$LINKEDIN_REDIRECT_URI,TIKTOK_REDIRECT_URI=$TIKTOK_REDIRECT_URI,NEO_SOCIAL_OMNITRIX_ENABLED=false" \
+            --set-secrets="LINKEDIN_CLIENT_ID=$LINKEDIN_CLIENT_ID_SECRET_NAME:latest,LINKEDIN_CLIENT_SECRET=$LINKEDIN_CLIENT_SECRET_NAME:latest,TIKTOK_CLIENT_KEY=$TIKTOK_CLIENT_KEY_SECRET_NAME:latest,TIKTOK_CLIENT_SECRET=$TIKTOK_CLIENT_SECRET_NAME:latest,FACEBOOK_PAGE_ID=$FACEBOOK_PAGE_ID_SECRET_NAME:latest,FACEBOOK_PAGE_ACCESS_TOKEN=$FACEBOOK_PAGE_ACCESS_TOKEN_SECRET_NAME:latest,X_BEARER_TOKEN=$X_BEARER_TOKEN_SECRET_NAME:latest,X_OAUTH1_AUTHORIZATION=$X_OAUTH1_AUTHORIZATION_SECRET_NAME:latest" \
             --allow-unauthenticated \
             --quiet
 
