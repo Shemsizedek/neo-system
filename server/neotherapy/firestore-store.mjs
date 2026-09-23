@@ -11,4 +11,5 @@ export class FirestoreNeotherapyStore{
  async getSession(id){const s=await this.db.collection(this.prefix+'sessions').doc(key(id)).get();return s.exists?s.data():undefined}
  async saveSession(r){await this.db.collection(this.prefix+'sessions').doc(key(r.id)).set({...r,updatedAt:new Date().toISOString()})}
  async appendAudit(e){await this.db.collection(this.prefix+'audit').doc(key(e.id)).set({...e,createdAt:e.timestamp||new Date().toISOString()})}
+ async canary(id='runtime'){const ref=this.db.collection(this.prefix+'system').doc(key('canary',id));const record={kind:'persistence-canary',createdAt:new Date().toISOString()};await ref.set(record);const snap=await ref.get();const ok=snap.exists&&snap.data()?.kind===record.kind;await ref.delete();return {ok,cleaned:true}}
 }

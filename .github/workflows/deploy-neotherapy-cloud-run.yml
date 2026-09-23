@@ -48,5 +48,8 @@ jobs:
           URL="$(gcloud run services describe "$SERVICE_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format='value(status.url)')"
           test "$(curl --retry 5 --retry-delay 5 -sS -o /dev/null -w '%{http_code}' "$URL/health")" = 200
           curl -fsS "$URL/api/neotherapy/status"
+          TOKEN="$(gcloud auth print-identity-token)"
+          CANARY="$(curl -fsS -H "Authorization: Bearer $TOKEN" -X POST "$URL/api/neotherapy/canary")"
+          echo "$CANARY" | grep -q '"ok":true'
           echo "NEOTHERAPY_SERVICE_URL=$URL" >> "$GITHUB_ENV"
           echo "Neotherapy Cloud Run: $URL" >> "$GITHUB_STEP_SUMMARY"
