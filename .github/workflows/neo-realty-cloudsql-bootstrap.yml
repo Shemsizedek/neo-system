@@ -1,0 +1,98 @@
+name: NEO Realty Cloud SQL Bootstrap
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/neo-realty-cloudsql-bootstrap.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: neo-realty-cloudsql-bootstrap
+  cancel-in-progress: false
+
+jobs:
+  bootstrap:
+    runs-on: ubuntu-latest
+    environment: holytemples-production
+    timeout-minutes: 30
+    env:
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID || secrets.GCP_PROJECT_ID }}
+      GCP_REGION: ${{ vars.GCP_REGION || secrets.GCP_REGION || 'us-central1' }}
+      GCP_WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER || secrets.GCP_WIF_PROVIDER }}
+      GCP_SERVICE_ACCOUNT: ${{ vars.GCP_SERVICE_ACCOUNT || vars.GCP_CLOUD_RUN_SERVICE_ACCOUNT || secrets.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+      INSTANCE: neo-pads-db
+      DB_NAME: neo_realty
+      DB_USER: neo_realty
+      DB_SECRET: neo-realty-database-url
+    steps:
+      - name: Validate configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in GCP_PROJECT_ID GCP_WIF_PROVIDER GCP_SERVICE_ACCOUNT; do
+            test -n "${!name:-}" || { echo "::error::Missing $name"; exit 1; }
+          done
+
+      - uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+
+      - uses: google-github-actions/setup-gcloud@v3
+
+      - name: Require existing Cloud SQL instance
+        shell: bash
+        run: |
+          set -euo pipefail
+          CONNECTION_NAME="$(gcloud sql instances describe "$INSTANCE" --project "$GCP_PROJECT_ID" --format='value(connectionName)')"
+          test -n "$CONNECTION_NAME"
+          echo "CLOUD_SQL_CONNECTION_NAME=$CONNECTION_NAME" >> "$GITHUB_ENV"
+
+      - name: Create or reuse Realty database
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! gcloud sql databases describe "$DB_NAME" --instance "$INSTANCE" --project "$GCP_PROJECT_ID" >/dev/null 2>&1; then
+            gcloud sql databases create "$DB_NAME" --instance "$INSTANCE" --project "$GCP_PROJECT_ID"
+          fi
+
+      - name: Create dedicated Realty credentials and secret
+        shell: bash
+        run: |
+          set -euo pipefail
+          if gcloud secrets describe "$DB_SECRET" --project "$GCP_PROJECT_ID" >/dev/null 2>&1; then
+            echo "Existing $DB_SECRET retained; no password rotation performed." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          DB_PASSWORD="$(openssl rand -base64 36 | tr -d '\n' | tr '/+' '_-')"
+          echo "::add-mask::$DB_PASSWORD"
+
+          if gcloud sql users list --instance "$INSTANCE" --project "$GCP_PROJECT_ID" --format='value(name)' | grep -Fxq "$DB_USER"; then
+            gcloud sql users set-password "$DB_USER" --instance "$INSTANCE" --project "$GCP_PROJECT_ID" --password "$DB_PASSWORD"
+          else
+            gcloud sql users create "$DB_USER" --instance "$INSTANCE" --project "$GCP_PROJECT_ID" --password "$DB_PASSWORD"
+          fi
+
+          ENCODED_PASSWORD="$(DB_PASSWORD="$DB_PASSWORD" node -e 'process.stdout.write(encodeURIComponent(process.env.DB_PASSWORD))')"
+          DATABASE_URL="postgresql://$DB_USER:$ENCODED_PASSWORD@/$DB_NAME?host=/cloudsql/$CLOUD_SQL_CONNECTION_NAME"
+          echo "::add-mask::$DATABASE_URL"
+
+          gcloud secrets create "$DB_SECRET" --project "$GCP_PROJECT_ID" --replication-policy=automatic
+          printf '%s' "$DATABASE_URL" | gcloud secrets versions add "$DB_SECRET" --project "$GCP_PROJECT_ID" --data-file=-
+          echo "Created dedicated NEO Realty database credential secret." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Confirm bootstrap resources
+        shell: bash
+        run: |
+          set -euo pipefail
+          gcloud sql databases describe "$DB_NAME" --instance "$INSTANCE" --project "$GCP_PROJECT_ID" >/dev/null
+          gcloud sql users list --instance "$INSTANCE" --project "$GCP_PROJECT_ID" --format='value(name)' | grep -Fxq "$DB_USER"
+          gcloud secrets versions access latest --secret="$DB_SECRET" --project="$GCP_PROJECT_ID" >/dev/null
+          echo "NEO Realty Cloud SQL bootstrap is complete." >> "$GITHUB_STEP_SUMMARY"

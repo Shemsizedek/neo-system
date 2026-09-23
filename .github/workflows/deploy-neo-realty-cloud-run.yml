@@ -31,6 +31,7 @@ jobs:
       GCP_ARTIFACT_REGISTRY: ${{ vars.GCP_ARTIFACT_REGISTRY || secrets.GCP_ARTIFACT_REGISTRY }}
       SERVICE_NAME: neo-realty
       DB_SECRET: neo-realty-database-url
+      CLOUD_SQL_INSTANCE: neo-pads-db
     steps:
       - uses: actions/checkout@v7.0.1
 
@@ -51,12 +52,15 @@ jobs:
 
       - uses: google-github-actions/setup-gcloud@v3
 
-      - name: Require persistent database secret
+      - name: Require persistent database secret and Cloud SQL instance
         run: |
           set -euo pipefail
           gcloud secrets describe "$DB_SECRET" --project="$GCP_PROJECT_ID" >/dev/null
           gcloud secrets versions access latest --secret="$DB_SECRET" --project="$GCP_PROJECT_ID" >/dev/null
-          echo "Persistent NEO Realty database secret is available." >> "$GITHUB_STEP_SUMMARY"
+          CONNECTION_NAME="$(gcloud sql instances describe "$CLOUD_SQL_INSTANCE" --project="$GCP_PROJECT_ID" --format='value(connectionName)')"
+          test -n "$CONNECTION_NAME"
+          echo "CLOUD_SQL_CONNECTION_NAME=$CONNECTION_NAME" >> "$GITHUB_ENV"
+          echo "Persistent NEO Realty database secret and Cloud SQL instance are available." >> "$GITHUB_STEP_SUMMARY"
 
       - name: Build and push NEO Realty image
         env:
