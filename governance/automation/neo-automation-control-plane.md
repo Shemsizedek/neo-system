@@ -97,3 +97,19 @@ Every automation should record:
 - Polsia activity digest
 
 No candidate becomes active merely by appearing in this document. A concrete schedule/trigger and destination must be configured before activation.
+
+
+## Registered automation — Omnitrix Chronicles
+- automation_id: neo-social-omnitrix
+- name: Omnitrix Chronicles social distribution
+- owner: NEOsync / Project 144
+- purpose: sourced current-events comic episodes and social distribution
+- trigger/schedule: episode-driven; publication requires an approved episode payload
+- execution system: NEO Social Gateway
+- source of truth: registry/omnitrix-chronicles.yaml
+- destinations: Facebook, LinkedIn, X, TikTok, Instagram, YouTube Community
+- approval class: B-with-fixed-template
+- spend cap: none configured; external paid promotion is out of scope
+- kill switch: NEO_SOCIAL_OMNITRIX_ENABLED; fail closed unless exactly true and re-check immediately before routing
+- audit destination: audit/social/omnitrix-publication-receipts.ndjson
+- status: active after merge and runtime enablement
