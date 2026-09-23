@@ -1,0 +1,92 @@
+schema_version: "1.0"
+queue_id: "NEO-DEALDESK-004-OUTREACH"
+status: "draft_ready"
+live_send_enabled: false
+created_at: "2026-09-23"
+owner_agent: "NIA-013"
+
+rules:
+  - "Use only sourced public facts from the prospect book."
+  - "Do not state or imply the prospect has expressed interest."
+  - "Do not state an inferred budget as fact."
+  - "All pricing is non-binding."
+  - "Commercial drafts require configured external-execution permission before sending."
+  - "Securities/investor outreach requires separate human/compliance approval."
+
+items:
+  - prospect_id: "prospect-edot-001"
+    priority: 1
+    channel: "public_work_email"
+    recipient_role: "Director of Information Technology"
+    subject: "A white-label AI operating layer for diocesan administration"
+    opening: "Your existing centralized records model across churches, clergy, vestries, lay leaders, reporting, and Annual Council is exactly the kind of distributed institutional environment the NEO System is designed to orchestrate."
+    offer: "White-label NEO Foundation"
+    non_binding_ask: "$250,000 implementation + $5,000–$15,000/month"
+    cta: "Architecture discovery conversation"
+    send_state: "draft_ready"
+
+  - prospect_id: "prospect-weil-001"
+    priority: 1
+    channel: "public_work_email"
+    recipient_role: "Chief AI & Innovation Officer"
+    subject: "A governed multi-agent operating layer for Weil’s AI workflows"
+    opening: "Weil’s LASER and operational-transformation work already combines lawyers, consultants, engineering, workflow design, and AI governance; NEO is designed as the orchestration layer above that kind of environment."
+    offer: "Shemsizedek Systems Architecture — Enterprise Operating Platform"
+    non_binding_ask: "$1.58M implementation opening position"
+    cta: "Technical architecture review"
+    send_state: "draft_ready"
+
+  - prospect_id: "prospect-uconn-001"
+    priority: 2
+    channel: "public_work_email"
+    recipient_role: "Interim Vice President and CIO"
+    subject: "Operating infrastructure for UConn’s university-wide AI coordination"
+    opening: "AI for ImpaCT is explicitly coordinating AI across academic, research, operational, and public-service missions; NEO can be positioned as a governed orchestration and institutional-knowledge layer across those domains."
+    offer: "NEO Institutional"
+    non_binding_ask: "$100,000/month opening position"
+    cta: "University AI architecture briefing"
+    send_state: "draft_ready"
+
+  - prospect_id: "prospect-uiowa-001"
+    priority: 2
+    channel: "public_work_email"
+    recipient_role: "Associate Vice President and CIO"
+    subject: "A OneIT-compatible orchestration layer for Iowa’s campus AI strategy"
+    opening: "Iowa’s campuswide AI strategy and OneIT structure create a strong fit for a governed orchestration layer that connects institutional knowledge, workflow routing, education, research support, and executive visibility."
+    offer: "NEO Institutional"
+    non_binding_ask: "$100,000/month opening position"
+    cta: "Institutional architecture discussion"
+    send_state: "draft_ready"
+
+  - prospect_id: "prospect-klgates-001"
+    priority: 3
+    channel: "public_work_email"
+    recipient_role: "Global AI and Innovation Partner"
+    subject: "Agentic AI orchestration beyond individual legal tools"
+    opening: "K&L Gates has publicly placed AI platform selection, workflow development, data, knowledge management, governance, and agentic deployment under one global innovation mandate; NEO is built around that same cross-system orchestration problem."
+    offer: "Shemsizedek Systems Architecture — Enterprise Operating Platform"
+    non_binding_ask: "$1.58M implementation opening position"
+    cta: "Agentic architecture review"
+    send_state: "draft_ready"
+
+  - prospect_id: "prospect-mintz-001"
+    priority: 3
+    channel: "public_business_contact_route"
+    recipient_role: "Chief Innovation and AI Officer"
+    subject: "Composable AI/data infrastructure for legal operations and client delivery"
+    opening: "Mintz’s enterprise AI, data, governance, and E-Data work suggests an opportunity for a reusable operating layer that coordinates models, evidence, knowledge, workflows, automation, and client-facing innovation."
+    offer: "Shemsizedek Systems Architecture — Enterprise Operating Platform"
+    non_binding_ask: "$1.44M implementation opening position"
+    cta: "Platform architecture discussion"
+    send_state: "draft_ready"
+
+  - prospect_id: "prospect-trowe-001"
+    priority: 4
+    channel: "public_business_contact_route"
+    recipient_role: "AI / Technology, Data and Operations leadership"
+    subject: "Orchestrating proprietary investment research across the AI stack"
+    opening: "T. Rowe Price is already scaling AI across portfolio research, development, governance, and risk; the NEO proposition is not another model, but an orchestration and provenance layer that can coordinate models, research evidence, internal workflows, and governed agent activity."
+    offer: "Shemsizedek Systems Architecture — Multi-platform Ecosystem"
+    non_binding_ask: "$4.33M implementation opening position"
+    cta: "Research-infrastructure architecture briefing"
+    send_state: "draft_ready"
