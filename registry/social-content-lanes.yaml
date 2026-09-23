@@ -1,0 +1,92 @@
+version: "0.1"
+id: neo-social-content-lanes
+status: proposed
+mode: additive
+
+principles:
+  - keep_distinct_series_separate
+  - preserve_source_provenance
+  - do_not_publish_outside_allowlisted_destinations
+  - do_not_promote_issuer_claims_to_independent_facts
+  - keep_images_and_captions_source_aligned
+
+lanes:
+  noocracy_papers:
+    title: "Noocracy Papers"
+    source_class: "canonical-series"
+    canonical_home: "World Bulletin / HolyTemples.org"
+    destinations:
+      world_bulletin: true
+      facebook: true
+      linkedin: true
+      youtube_community: true
+    notes:
+      - "This is the continuing World Bulletin publication series."
+      - "Do not relabel these posts as Noocracy Report."
+
+  noocracy_report:
+    title: "Daily Noocracy Report"
+    source_class: "social-report"
+    canonical_home: null
+    destinations:
+      world_bulletin: false
+      facebook: true
+      linkedin: true
+      youtube_community: true
+    bulletin_gate:
+      status: "locked"
+      unlock_condition: "Noocracy Papers cycle completed and explicit user authorization is given."
+    visual_profile:
+      aspect_ratio: "16:9"
+      style: "dark futuristic sci-fi trading-card interface"
+      steward_label: "THE NOOCRATIC STEWARD"
+    notes:
+      - "Social-media-only for now."
+      - "Never route to World Bulletin before the bulletin_gate is explicitly unlocked."
+
+  nomni_ausarian:
+    title: "NOMNI / Ausarian Economics"
+    source_class: "financial-education-and-system-documentation"
+    destinations:
+      world_bulletin: false
+      facebook: true
+      linkedin: true
+      youtube_community: true
+    source_documents:
+      - "NOMNI Technical Paper"
+      - "NOMNI Monetary Doctrine"
+      - "NOMNI Treasury Framework"
+    visual_profile:
+      aspect_ratio: "16:9"
+      style: "dark futuristic sci-fi trading-card interface"
+    claim_policy:
+      independently_verifiable:
+        - "Bitcoin settlement-layer facts"
+        - "Counterparty protocol facts"
+        - "On-chain NOMNI asset metadata when sourced from an authoritative explorer"
+      issuer_defined_or_user_supplied:
+        - "market-cap calculations"
+        - "reserve and redemption framework"
+        - "World Treasury / House of Crowns institutional design"
+        - "Ausarian monetary doctrine"
+      rule: "Label issuer-defined, doctrinal, or user-supplied claims accordingly unless independently corroborated."
+    notes:
+      - "This lane is separate from both Noocracy Papers and Noocracy Report."
+      - "Do not publish as a World Bulletin article unless separately authorized."
+
+automation:
+  approval_class: "B-with-fixed-template"
+  image_required: true
+  alt_text_required: true
+  audit_fields:
+    - content_lane
+    - source_document
+    - source_version
+    - destination
+    - account_id
+    - image_asset
+    - caption
+    - published_at
+    - platform_post_id
+    - status
+  idempotency_key: "content_lane + source_version + destination + account_id"
