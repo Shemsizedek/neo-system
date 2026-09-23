@@ -1,0 +1,72 @@
+version: "0.1"
+id: neo-social-publish-providers
+status: proposed
+mode: additive
+
+principles:
+  - prefer_authenticated_connected_provider_when_available
+  - never_claim_publication_without_provider_success
+  - require_platform_post_id_for_published_receipts_when_returned
+  - allow_submitted_status_when_provider_accepts_write_but_omits_post_id
+  - preserve_existing_direct_api_paths_as_fallback
+  - keep_youtube_community_as_ui_handoff_until_a_supported_write_api_exists
+
+providers:
+  windsor_organic:
+    class: connected-provider
+    runtime: chatgpt-connector
+    primary_for:
+      facebook: true
+      linkedin: true
+      x: true
+    supported_actions:
+      facebook:
+        connector: facebook_organic
+        action: create_photo_post
+      linkedin:
+        connector: linkedin_organic
+        action: create_image_post
+      x:
+        connector: x_organic
+        action: provider-dependent
+    receipt_policy:
+      provider_success_without_post_id: submitted
+      provider_success_with_post_id: published
+      readback_required_when_post_id_missing: true
+    notes:
+      - "This route uses the user's already-authorized connected provider session."
+      - "It does not require GitHub repository secrets for execution from ChatGPT."
+      - "It is not callable by GitHub Actions unless a separate Windsor runtime credential is provisioned."
+
+  direct_platform_api:
+    class: repository-runtime
+    runtime: github-actions-or-server
+    fallback_for:
+      facebook: true
+      linkedin: true
+    implementations:
+      facebook: src/social/facebook-image-client.mjs
+      linkedin: src/social/linkedin-image-client.mjs
+    requirements:
+      - platform_account_identifier
+      - platform_access_token
+    notes:
+      - "Preserved as a fallback and server-side automation route."
+
+  youtube_community_ui:
+    class: interactive-ui
+    runtime: browser-ui
+    primary_for:
+      youtube_community: true
+    receipt_policy:
+      do_not_mark_published_before_verified_post: true
+
+routing:
+  facebook:
+    order: [windsor_organic, direct_platform_api]
+  linkedin:
+    order: [windsor_organic, direct_platform_api]
+  x:
+    order: [windsor_organic]
+  youtube_community:
+    order: [youtube_community_ui]

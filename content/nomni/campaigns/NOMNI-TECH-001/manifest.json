@@ -40,5 +40,25 @@
     "required": true,
     "class": "B-with-fixed-template"
   },
-  "publicationReceiptRequired": true
+  "publicationReceiptRequired": true,
+  "publication": {
+    "providerRoute": "windsor_organic",
+    "status": "partial",
+    "receiptLedger": "audit/social/nomni/NOMNI-TECH-001-windsor-receipts.ndjson",
+    "facebook": {
+      "requested": 4,
+      "submitted": 4,
+      "publishedVerified": 0,
+      "verification": "pending-readback"
+    },
+    "linkedin": {
+      "requested": 2,
+      "published": 2,
+      "verification": "provider-receipt"
+    },
+    "youtubeCommunity": {
+      "status": "not-executed",
+      "executionMode": "browser-ui"
+    }
+  }
 }
