@@ -1,0 +1,15 @@
+id: NFM-001
+name: True Green Light
+system: Neotherapy
+method: Nous Field Therapy
+version: "0.1"
+status: experimental
+primary_field: sensory
+secondary_fields: [cognitive, philosophical]
+clinical_claims:
+  established: false
+requires:
+  informed_consent: true
+  modality_authorization: true
+  safety_screen: true
+  adverse_event_monitoring: true
