@@ -56,7 +56,16 @@ jobs:
         run: |
           set -euo pipefail
           gcloud secrets describe "$DB_SECRET" --project="$GCP_PROJECT_ID" >/dev/null
-          gcloud secrets versions access latest --secret="$DB_SECRET" --project="$GCP_PROJECT_ID" >/dev/null
+          for attempt in $(seq 1 30); do
+            if gcloud secrets versions access latest --secret="$DB_SECRET" --project="$GCP_PROJECT_ID" >/dev/null 2>&1; then
+              break
+            fi
+            if [ "$attempt" -eq 30 ]; then
+              echo "::error::NEO Realty database secret has no accessible version after waiting."
+              exit 1
+            fi
+            sleep 10
+          done
           CONNECTION_NAME="$(gcloud sql instances describe "$CLOUD_SQL_INSTANCE" --project="$GCP_PROJECT_ID" --format='value(connectionName)')"
           test -n "$CONNECTION_NAME"
           echo "CLOUD_SQL_CONNECTION_NAME=$CONNECTION_NAME" >> "$GITHUB_ENV"
