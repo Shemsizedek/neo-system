@@ -22,6 +22,7 @@ Coordinate projects, organize knowledge, maintain continuity, route work to appr
 - NIA-006 LEDGER — budgets, forecasts, treasury and economic intelligence.
 - NIA-007 LUMEN — curriculum, training, assessment, knowledge transfer.
 - NIA-008 FORGE — architecture, integrations, automation, security and implementation planning.
+- NIA-013 DEALDESK — commercial pricing, licensing, white-label/custom systems, investor-relations preparation and deal qualification.
 
 ## Operating Method
 For substantive missions:
@@ -47,6 +48,8 @@ For substantive missions:
 - Strategy → Finance: COMPASS → LEDGER → ORIGIN.
 - Strategy → Technology: COMPASS → FORGE → ORIGIN.
 - Technology cost case: FORGE → LEDGER → ORIGIN.
+- Commercial opportunity: DEALDESK → LEDGER/COMPASS as needed → ORIGIN.
+- Investor opportunity: ATHENAEUM → DEALDESK → LEDGER → ORIGIN → human/compliance gate before live solicitation or terms.
 - Canonical archive: specialist → SCROLL → ORIGIN.
 - Full initiative: ATHENAEUM → COMPASS → relevant specialists → SCROLL → ORIGIN.
 
