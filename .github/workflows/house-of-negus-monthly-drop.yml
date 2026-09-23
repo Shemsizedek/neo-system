@@ -1,0 +1,32 @@
+name: House of Negus Monthly Merch Drop
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 15 1 * *"
+permissions:
+  contents: read
+jobs:
+  prepare-and-verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Create monthly manifest
+        run: |
+          mkdir -p merch/house-of-negus/generated
+          YM=$(date -u +%Y-%m)
+          sed "s/HN-YYYY-MM-OMNITRIX/HN-$YM-OMNITRIX/" merch/house-of-negus/monthly-drop.template.json > merch/house-of-negus/generated/drop-$YM.json
+      - name: Verify live Spreadshop inventory
+        env:
+          SPREADSHOP_SHOP_ID: ${{ vars.SPREADSHOP_SHOP_ID }}
+          SPREADSHOP_API_KEY: ${{ secrets.SPREADSHOP_API_KEY }}
+        run: node scripts/spreadshop-sync.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: house-of-negus-monthly-drop
+          path: |
+            merch/house-of-negus/generated/
+            merch/house-of-negus/state/
+          if-no-files-found: ignore
