@@ -1,6 +1,14 @@
 name: Neoteric Storefront Verification
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "integrations/minicart/**"
+      - "scripts/neoteric/**"
+      - ".github/workflows/neoteric-storefront-verify.yml"
+      - "ops/neoteric/**"
   schedule:
     - cron: "17 */6 * * *"
 permissions:
