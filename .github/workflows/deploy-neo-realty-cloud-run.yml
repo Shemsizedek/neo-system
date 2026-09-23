@@ -31,7 +31,7 @@ jobs:
       GCP_ARTIFACT_REGISTRY: ${{ vars.GCP_ARTIFACT_REGISTRY || secrets.GCP_ARTIFACT_REGISTRY }}
       SERVICE_NAME: neo-realty
       DB_SECRET: neo-realty-database-url
-      CLOUD_SQL_INSTANCE: neo-pads-db
+      CLOUD_SQL_INSTANCE: the-nous-project
     steps:
       - uses: actions/checkout@v7.0.1
 
