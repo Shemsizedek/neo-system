@@ -7,6 +7,7 @@ on:
     paths:
       - 'server/neo-edge/**'
       - 'apps/neo-realty/web/**'
+      - 'public/neo-generator/**'
       - 'server/holytemples-adapter/**'
       - 'server/neo-counter-backend/firestore-rest-db.mjs'
       - 'deploy/neo-edge/**'
@@ -78,6 +79,13 @@ jobs:
           test -n "$REALTY_URL"
           echo "NEO_REALTY_ORIGIN=$REALTY_URL" >> "$GITHUB_ENV"
 
+      - name: Resolve NEO Generator origin
+        run: |
+          set -euo pipefail
+          GENERATOR_URL="$(gcloud run services describe neo-generator --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format='value(status.url)')"
+          test -n "$GENERATOR_URL"
+          echo "NEO_GENERATOR_ORIGIN=$GENERATOR_URL" >> "$GITHUB_ENV"
+
       - name: Build and push NEO edge image
         env:
           IMAGE: ${{ env.GCP_ARTIFACT_REGISTRY }}/neo-edge:${{ github.sha }}
@@ -97,7 +105,7 @@ jobs:
             --region="$GCP_REGION" \
             --image="$IMAGE" \
             --service-account="$GCP_CLOUD_RUN_RUNTIME_ACCOUNT" \
-            --set-env-vars="GCP_PROJECT_ID=$GCP_PROJECT_ID,FIRESTORE_DATABASE_ID=(default),NEO_PLATFORM_API_ORIGIN=https://egov.holytemples.org,AI_GATEWAY_URL=$AI_GATEWAY_URL,NEO_REALTY_ORIGIN=$NEO_REALTY_ORIGIN" \
+            --set-env-vars="GCP_PROJECT_ID=$GCP_PROJECT_ID,FIRESTORE_DATABASE_ID=(default),NEO_PLATFORM_API_ORIGIN=https://egov.holytemples.org,AI_GATEWAY_URL=$AI_GATEWAY_URL,NEO_REALTY_ORIGIN=$NEO_REALTY_ORIGIN,NEO_GENERATOR_ORIGIN=$NEO_GENERATOR_ORIGIN" \
             --port=8080 \
             --allow-unauthenticated \
             --quiet
