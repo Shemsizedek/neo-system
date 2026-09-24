@@ -165,7 +165,7 @@ export function createSocialGatewayServer({
 
           const claimed=await automationStore.claim(key,job.destination)
           if (!claimed) {
-            receipts.push({destination:job.destination,contentId:job.contentId,status:'uncertain-inflight',published:false,replayed:true})
+            receipts.push({destination:job.destination,contentId:job.contentId,status:'uncertain-inflight',published:false,replayed:true,recordedAt:new Date().toISOString()})
             continue
           }
 
