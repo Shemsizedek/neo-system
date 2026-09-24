@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { once } from 'node:events'
-import { createMemorySocialOAuthStore, createSocialGatewayServer, socialRuntimeReadiness } from './social-gateway-server.mjs'\nimport { createMemorySocialAutomationStore } from './social-automation-store.mjs'
+import { createMemorySocialOAuthStore, createSocialGatewayServer, socialRuntimeReadiness } from './social-gateway-server.mjs'
+import { createMemorySocialAutomationStore } from './social-automation-store.mjs'
 
 async function withServer(server, fn) {
   server.listen(0, '127.0.0.1')
