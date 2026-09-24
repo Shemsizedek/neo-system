@@ -38,7 +38,15 @@ jobs:
     steps:
       - uses: actions/checkout@v7.0.1
 
-      - name: Validate GCP deployment configuration
+      - name: Validate core GCP deployment configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in GCP_PROJECT_ID GCP_REGION GCP_WIF_PROVIDER GCP_CLOUD_RUN_SERVICE_ACCOUNT GCP_CLOUD_RUN_RUNTIME_ACCOUNT GCP_ARTIFACT_REGISTRY; do
+            test -n "${!name:-}" || { echo "::error::Missing core deployment setting $name"; exit 1; }
+          done
+
+      - name: Report provider configuration
         env:
           LINKEDIN_CLIENT_ID: ${{ secrets.LINKEDIN_CLIENT_ID }}
           LINKEDIN_CLIENT_SECRET: ${{ secrets.LINKEDIN_CLIENT_SECRET }}
@@ -49,10 +57,24 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for name in GCP_PROJECT_ID GCP_REGION GCP_WIF_PROVIDER GCP_CLOUD_RUN_SERVICE_ACCOUNT GCP_CLOUD_RUN_RUNTIME_ACCOUNT GCP_ARTIFACT_REGISTRY LINKEDIN_CLIENT_ID LINKEDIN_CLIENT_SECRET TIKTOK_CLIENT_KEY TIKTOK_CLIENT_SECRET X_BEARER_TOKEN X_OAUTH1_AUTHORIZATION; do
-            test -n "${!name:-}" || { echo "::error::Missing $name"; exit 1; }
-          done
-          echo "Facebook: existing authenticated organic provider (no duplicate GitHub Page ID/token required)" >> "$GITHUB_STEP_SUMMARY"
+          pair_state() {
+            local label="$1" a="$2" b="$3"
+            if [[ -n "$a" && -n "$b" ]]; then
+              echo "$label: configured" >> "$GITHUB_STEP_SUMMARY"
+            elif [[ -z "$a" && -z "$b" ]]; then
+              echo "$label: unavailable (credentials not configured); gateway deployment continues" >> "$GITHUB_STEP_SUMMARY"
+            else
+              echo "::warning::$label credentials are incomplete; provider disabled for this deployment"
+              echo "$label: unavailable (incomplete credential pair)" >> "$GITHUB_STEP_SUMMARY"
+            fi
+          }
+          echo "### Social provider preflight" >> "$GITHUB_STEP_SUMMARY"
+          echo "Facebook: existing authenticated organic provider" >> "$GITHUB_STEP_SUMMARY"
+          pair_state "LinkedIn" "$LINKEDIN_CLIENT_ID" "$LINKEDIN_CLIENT_SECRET"
+          pair_state "TikTok" "$TIKTOK_CLIENT_KEY" "$TIKTOK_CLIENT_SECRET"
+          pair_state "X" "$X_BEARER_TOKEN" "$X_OAUTH1_AUTHORIZATION"
+          echo "Instagram: unavailable (adapter not configured)" >> "$GITHUB_STEP_SUMMARY"
+          echo "YouTube Community: browser/UI-assisted" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Test social gateway
         run: node --test server/neo-router/social-gateway-server.test.mjs server/neo-router/social-oauth.test.mjs
@@ -65,7 +87,7 @@ jobs:
 
       - uses: google-github-actions/setup-gcloud@v3
 
-      - name: Sync gateway-owned social secrets to Google Secret Manager
+      - name: Sync configured provider secrets to Google Secret Manager
         env:
           LINKEDIN_CLIENT_ID: ${{ secrets.LINKEDIN_CLIENT_ID }}
           LINKEDIN_CLIENT_SECRET: ${{ secrets.LINKEDIN_CLIENT_SECRET }}
@@ -76,32 +98,29 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          declare -A values=(
-            ["$LINKEDIN_CLIENT_ID_SECRET_NAME"]="$LINKEDIN_CLIENT_ID"
-            ["$LINKEDIN_CLIENT_SECRET_NAME"]="$LINKEDIN_CLIENT_SECRET"
-            ["$TIKTOK_CLIENT_KEY_SECRET_NAME"]="$TIKTOK_CLIENT_KEY"
-            ["$TIKTOK_CLIENT_SECRET_NAME"]="$TIKTOK_CLIENT_SECRET"
-            ["$X_BEARER_TOKEN_SECRET_NAME"]="$X_BEARER_TOKEN"
-            ["$X_OAUTH1_AUTHORIZATION_SECRET_NAME"]="$X_OAUTH1_AUTHORIZATION"
-          )
-          for secret in "${!values[@]}"; do
+          sync_secret() {
+            local secret="$1" value="$2"
             gcloud secrets describe "$secret" --project="$GCP_PROJECT_ID" >/dev/null 2>&1 || \
               gcloud secrets create "$secret" --project="$GCP_PROJECT_ID" --replication-policy="automatic"
-            printf '%s' "${values[$secret]}" | gcloud secrets versions add "$secret" --project="$GCP_PROJECT_ID" --data-file=-
-          done
-
-      - name: Grant runtime service account secret access
-        shell: bash
-        run: |
-          set -euo pipefail
-          for secret in "$LINKEDIN_CLIENT_ID_SECRET_NAME" "$LINKEDIN_CLIENT_SECRET_NAME" "$TIKTOK_CLIENT_KEY_SECRET_NAME" "$TIKTOK_CLIENT_SECRET_NAME" "$X_BEARER_TOKEN_SECRET_NAME" "$X_OAUTH1_AUTHORIZATION_SECRET_NAME"; do
+            printf '%s' "$value" | gcloud secrets versions add "$secret" --project="$GCP_PROJECT_ID" --data-file=-
             gcloud secrets add-iam-policy-binding "$secret" \
               --project="$GCP_PROJECT_ID" \
               --member="serviceAccount:$GCP_CLOUD_RUN_RUNTIME_ACCOUNT" \
               --role="roles/secretmanager.secretAccessor" \
-              --condition=None \
-              --quiet 2>/dev/null || true
-          done
+              --condition=None --quiet >/dev/null
+          }
+          if [[ -n "$LINKEDIN_CLIENT_ID" && -n "$LINKEDIN_CLIENT_SECRET" ]]; then
+            sync_secret "$LINKEDIN_CLIENT_ID_SECRET_NAME" "$LINKEDIN_CLIENT_ID"
+            sync_secret "$LINKEDIN_CLIENT_SECRET_NAME" "$LINKEDIN_CLIENT_SECRET"
+          fi
+          if [[ -n "$TIKTOK_CLIENT_KEY" && -n "$TIKTOK_CLIENT_SECRET" ]]; then
+            sync_secret "$TIKTOK_CLIENT_KEY_SECRET_NAME" "$TIKTOK_CLIENT_KEY"
+            sync_secret "$TIKTOK_CLIENT_SECRET_NAME" "$TIKTOK_CLIENT_SECRET"
+          fi
+          if [[ -n "$X_BEARER_TOKEN" && -n "$X_OAUTH1_AUTHORIZATION" ]]; then
+            sync_secret "$X_BEARER_TOKEN_SECRET_NAME" "$X_BEARER_TOKEN"
+            sync_secret "$X_OAUTH1_AUTHORIZATION_SECRET_NAME" "$X_OAUTH1_AUTHORIZATION"
+          fi
 
       - name: Build and push social gateway image
         env:
@@ -116,18 +135,40 @@ jobs:
       - name: Deploy Cloud Run service
         env:
           IMAGE: ${{ env.GCP_ARTIFACT_REGISTRY }}/neo-social-gateway:${{ github.sha }}
+          LINKEDIN_CLIENT_ID: ${{ secrets.LINKEDIN_CLIENT_ID }}
+          LINKEDIN_CLIENT_SECRET: ${{ secrets.LINKEDIN_CLIENT_SECRET }}
+          TIKTOK_CLIENT_KEY: ${{ secrets.TIKTOK_CLIENT_KEY }}
+          TIKTOK_CLIENT_SECRET: ${{ secrets.TIKTOK_CLIENT_SECRET }}
+          X_BEARER_TOKEN: ${{ secrets.X_BEARER_TOKEN }}
+          X_OAUTH1_AUTHORIZATION: ${{ secrets.X_OAUTH1_AUTHORIZATION }}
         shell: bash
         run: |
           set -euo pipefail
-          gcloud run deploy "$SERVICE_NAME" \
-            --project="$GCP_PROJECT_ID" \
-            --region="$GCP_REGION" \
-            --image="$IMAGE" \
-            --service-account="$GCP_CLOUD_RUN_RUNTIME_ACCOUNT" \
-            --set-env-vars="LINKEDIN_REDIRECT_URI=$LINKEDIN_REDIRECT_URI,TIKTOK_REDIRECT_URI=$TIKTOK_REDIRECT_URI,NEO_SOCIAL_OMNITRIX_ENABLED=false,FACEBOOK_PROVIDER=existing-organic" \
-            --set-secrets="LINKEDIN_CLIENT_ID=$LINKEDIN_CLIENT_ID_SECRET_NAME:latest,LINKEDIN_CLIENT_SECRET=$LINKEDIN_CLIENT_SECRET_NAME:latest,TIKTOK_CLIENT_KEY=$TIKTOK_CLIENT_KEY_SECRET_NAME:latest,TIKTOK_CLIENT_SECRET=$TIKTOK_CLIENT_SECRET_NAME:latest,X_BEARER_TOKEN=$X_BEARER_TOKEN_SECRET_NAME:latest,X_OAUTH1_AUTHORIZATION=$X_OAUTH1_AUTHORIZATION_SECRET_NAME:latest" \
-            --allow-unauthenticated \
+          secret_bindings=()
+          if [[ -n "$LINKEDIN_CLIENT_ID" && -n "$LINKEDIN_CLIENT_SECRET" ]]; then
+            secret_bindings+=("LINKEDIN_CLIENT_ID=$LINKEDIN_CLIENT_ID_SECRET_NAME:latest" "LINKEDIN_CLIENT_SECRET=$LINKEDIN_CLIENT_SECRET_NAME:latest")
+          fi
+          if [[ -n "$TIKTOK_CLIENT_KEY" && -n "$TIKTOK_CLIENT_SECRET" ]]; then
+            secret_bindings+=("TIKTOK_CLIENT_KEY=$TIKTOK_CLIENT_KEY_SECRET_NAME:latest" "TIKTOK_CLIENT_SECRET=$TIKTOK_CLIENT_SECRET_NAME:latest")
+          fi
+          if [[ -n "$X_BEARER_TOKEN" && -n "$X_OAUTH1_AUTHORIZATION" ]]; then
+            secret_bindings+=("X_BEARER_TOKEN=$X_BEARER_TOKEN_SECRET_NAME:latest" "X_OAUTH1_AUTHORIZATION=$X_OAUTH1_AUTHORIZATION_SECRET_NAME:latest")
+          fi
+          args=(
+            run deploy "$SERVICE_NAME"
+            --project="$GCP_PROJECT_ID"
+            --region="$GCP_REGION"
+            --image="$IMAGE"
+            --service-account="$GCP_CLOUD_RUN_RUNTIME_ACCOUNT"
+            --set-env-vars="LINKEDIN_REDIRECT_URI=$LINKEDIN_REDIRECT_URI,TIKTOK_REDIRECT_URI=$TIKTOK_REDIRECT_URI,NEO_SOCIAL_OMNITRIX_ENABLED=false,FACEBOOK_PROVIDER=existing-organic"
+            --allow-unauthenticated
             --quiet
+          )
+          if (( ${#secret_bindings[@]} )); then
+            IFS=,; joined="${secret_bindings[*]}"; unset IFS
+            args+=(--set-secrets="$joined")
+          fi
+          gcloud "${args[@]}"
 
       - name: Verify generated Cloud Run URL
         id: service
@@ -156,23 +197,12 @@ jobs:
             echo "https://search.google.com/search-console/welcome" >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
-
           if ! gcloud beta run domain-mappings describe --domain="$DOMAIN_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" >/dev/null 2>&1; then
-            gcloud beta run domain-mappings create \
-              --service="$SERVICE_NAME" \
-              --domain="$DOMAIN_NAME" \
-              --project="$GCP_PROJECT_ID" \
-              --region="$GCP_REGION" \
-              --quiet
+            gcloud beta run domain-mappings create --service="$SERVICE_NAME" --domain="$DOMAIN_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --quiet
           fi
-
           echo "### DNS records for $DOMAIN_NAME" >> "$GITHUB_STEP_SUMMARY"
           echo '```yaml' >> "$GITHUB_STEP_SUMMARY"
-          gcloud beta run domain-mappings describe \
-            --domain="$DOMAIN_NAME" \
-            --project="$GCP_PROJECT_ID" \
-            --region="$GCP_REGION" \
-            --format='yaml(status.resourceRecords)' >> "$GITHUB_STEP_SUMMARY"
+          gcloud beta run domain-mappings describe --domain="$DOMAIN_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format='yaml(status.resourceRecords)' >> "$GITHUB_STEP_SUMMARY"
           echo '```' >> "$GITHUB_STEP_SUMMARY"
           echo "LinkedIn callback: $LINKEDIN_REDIRECT_URI" >> "$GITHUB_STEP_SUMMARY"
           echo "TikTok callback: $TIKTOK_REDIRECT_URI" >> "$GITHUB_STEP_SUMMARY"
