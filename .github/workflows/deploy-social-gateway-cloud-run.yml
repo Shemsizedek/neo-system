@@ -9,7 +9,10 @@ on:
       - 'server/neo-router/social-gateway-server.test.mjs'
       - 'server/neo-router/social-oauth.mjs'
       - 'server/neo-router/social-oauth.test.mjs'
+      - 'server/neo-router/social-automation-store.mjs'
+      - 'server/neo-router/social-gateway-start.mjs'
       - 'server/neo-router/Dockerfile.social-gateway'
+      - 'src/social/**'
       - '.github/workflows/deploy-social-gateway-cloud-run.yml'
 
 permissions:
@@ -31,6 +34,7 @@ env:
   TIKTOK_CLIENT_SECRET_NAME: neo-social-gateway-tiktok-client-secret
   X_BEARER_TOKEN_SECRET_NAME: neo-social-gateway-x-bearer-token
   X_OAUTH1_AUTHORIZATION_SECRET_NAME: neo-social-gateway-x-oauth1-authorization
+  AUTOMATION_TOKEN_SECRET_NAME: neo-social-gateway-automation-token
 
 jobs:
   deploy:
@@ -44,6 +48,7 @@ jobs:
       GCP_CLOUD_RUN_SERVICE_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_SERVICE_ACCOUNT || secrets.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
       GCP_CLOUD_RUN_RUNTIME_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_RUNTIME_ACCOUNT || secrets.GCP_CLOUD_RUN_RUNTIME_ACCOUNT }}
       GCP_ARTIFACT_REGISTRY: ${{ vars.GCP_ARTIFACT_REGISTRY || secrets.GCP_ARTIFACT_REGISTRY }}
+      NEO_SOCIAL_AUTOMATION_BUCKET: ${{ vars.NEO_SOCIAL_AUTOMATION_BUCKET }}
     steps:
       - uses: actions/checkout@v7.0.1
 
@@ -54,6 +59,7 @@ jobs:
           for name in GCP_PROJECT_ID GCP_REGION GCP_WIF_PROVIDER GCP_CLOUD_RUN_SERVICE_ACCOUNT GCP_CLOUD_RUN_RUNTIME_ACCOUNT GCP_ARTIFACT_REGISTRY; do
             test -n "${!name:-}" || { echo "::error::Missing core deployment setting $name"; exit 1; }
           done
+          echo "NEO_SOCIAL_AUTOMATION_BUCKET=${NEO_SOCIAL_AUTOMATION_BUCKET:-neo-social-automation-${GCP_PROJECT_ID}}" >> "$GITHUB_ENV"
 
       - name: Report provider configuration
         env:
@@ -74,6 +80,7 @@ jobs:
           }
           echo "### Social provider preflight" >> "$GITHUB_STEP_SUMMARY"
           echo "Automatic Omnitrix publication: ENABLED" >> "$GITHUB_STEP_SUMMARY"
+          echo "Durable automation store: gs://$NEO_SOCIAL_AUTOMATION_BUCKET" >> "$GITHUB_STEP_SUMMARY"
           echo "Facebook: existing authenticated organic provider" >> "$GITHUB_STEP_SUMMARY"
           pair_state "LinkedIn" "$LINKEDIN_CLIENT_ID" "$LINKEDIN_CLIENT_SECRET"
           pair_state "TikTok" "$TIKTOK_CLIENT_KEY" "$TIKTOK_CLIENT_SECRET"
@@ -82,7 +89,7 @@ jobs:
           echo "YouTube Community: browser/UI-assisted" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Test social gateway
-        run: node --test server/neo-router/social-gateway-server.test.mjs server/neo-router/social-oauth.test.mjs
+        run: node --test server/neo-router/social-gateway-server.test.mjs server/neo-router/social-oauth.test.mjs src/social/omnitrix-social-publisher.test.mjs src/social/omnitrix-social-payload.test.mjs
 
       - uses: google-github-actions/auth@v3
         with:
@@ -90,6 +97,19 @@ jobs:
           workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
           service_account: ${{ env.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
       - uses: google-github-actions/setup-gcloud@v3
+
+      - name: Provision durable automation storage and token
+        shell: bash
+        run: |
+          set -euo pipefail
+          BUCKET="gs://$NEO_SOCIAL_AUTOMATION_BUCKET"
+          gcloud storage buckets describe "$BUCKET" --project="$GCP_PROJECT_ID" >/dev/null 2>&1 ||             gcloud storage buckets create "$BUCKET" --project="$GCP_PROJECT_ID" --location="$GCP_REGION" --uniform-bucket-level-access
+          gcloud storage buckets add-iam-policy-binding "$BUCKET"             --member="serviceAccount:$GCP_CLOUD_RUN_RUNTIME_ACCOUNT"             --role="roles/storage.objectUser" --quiet >/dev/null
+          if ! gcloud secrets describe "$AUTOMATION_TOKEN_SECRET_NAME" --project="$GCP_PROJECT_ID" >/dev/null 2>&1; then
+            gcloud secrets create "$AUTOMATION_TOKEN_SECRET_NAME" --project="$GCP_PROJECT_ID" --replication-policy="automatic"
+            openssl rand -hex 32 | tr -d '\n' | gcloud secrets versions add "$AUTOMATION_TOKEN_SECRET_NAME" --project="$GCP_PROJECT_ID" --data-file=-
+          fi
+          gcloud secrets add-iam-policy-binding "$AUTOMATION_TOKEN_SECRET_NAME"             --project="$GCP_PROJECT_ID"             --member="serviceAccount:$GCP_CLOUD_RUN_RUNTIME_ACCOUNT"             --role="roles/secretmanager.secretAccessor" --condition=None --quiet >/dev/null
 
       - name: Sync configured provider secrets to Google Secret Manager
         env:
@@ -134,13 +154,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          secret_bindings=()
+          secret_bindings=("NEO_SOCIAL_AUTOMATION_TOKEN=$AUTOMATION_TOKEN_SECRET_NAME:latest")
           if [[ -n "$LINKEDIN_CLIENT_ID" && -n "$LINKEDIN_CLIENT_SECRET" ]]; then secret_bindings+=("LINKEDIN_CLIENT_ID=$LINKEDIN_CLIENT_ID_SECRET_NAME:latest" "LINKEDIN_CLIENT_SECRET=$LINKEDIN_CLIENT_SECRET_NAME:latest"); fi
           if [[ -n "$TIKTOK_CLIENT_KEY" && -n "$TIKTOK_CLIENT_SECRET" ]]; then secret_bindings+=("TIKTOK_CLIENT_KEY=$TIKTOK_CLIENT_KEY_SECRET_NAME:latest" "TIKTOK_CLIENT_SECRET=$TIKTOK_CLIENT_SECRET_NAME:latest"); fi
           if [[ -n "$X_BEARER_TOKEN" && -n "$X_OAUTH1_AUTHORIZATION" ]]; then secret_bindings+=("X_BEARER_TOKEN=$X_BEARER_TOKEN_SECRET_NAME:latest" "X_OAUTH1_AUTHORIZATION=$X_OAUTH1_AUTHORIZATION_SECRET_NAME:latest"); fi
-          args=(run deploy "$SERVICE_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --image="$IMAGE" --service-account="$GCP_CLOUD_RUN_RUNTIME_ACCOUNT" --set-env-vars="LINKEDIN_REDIRECT_URI=$LINKEDIN_REDIRECT_URI,TIKTOK_REDIRECT_URI=$TIKTOK_REDIRECT_URI,NEO_SOCIAL_OMNITRIX_ENABLED=true,FACEBOOK_PROVIDER=existing-organic" --allow-unauthenticated --quiet)
-          if (( ${#secret_bindings[@]} )); then IFS=,; joined="${secret_bindings[*]}"; unset IFS; args+=(--set-secrets="$joined"); fi
-          gcloud "${args[@]}"
+          IFS=,; joined="${secret_bindings[*]}"; unset IFS
+          gcloud run deploy "$SERVICE_NAME"             --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --image="$IMAGE"             --service-account="$GCP_CLOUD_RUN_RUNTIME_ACCOUNT"             --set-env-vars="LINKEDIN_REDIRECT_URI=$LINKEDIN_REDIRECT_URI,TIKTOK_REDIRECT_URI=$TIKTOK_REDIRECT_URI,NEO_SOCIAL_OMNITRIX_ENABLED=true,FACEBOOK_PROVIDER=existing-organic,NEO_SOCIAL_AUTOMATION_BUCKET=$NEO_SOCIAL_AUTOMATION_BUCKET"             --set-secrets="$joined" --allow-unauthenticated --quiet
 
       - name: Verify generated Cloud Run URL
         id: service
@@ -153,15 +172,12 @@ jobs:
           echo "url=$URL" >> "$GITHUB_OUTPUT"
           echo "### NEO Social Gateway" >> "$GITHUB_STEP_SUMMARY"
           echo "Cloud Run service: $URL" >> "$GITHUB_STEP_SUMMARY"
-          echo '```json' >> "$GITHUB_STEP_SUMMARY"; cat /tmp/health.json >> "$GITHUB_STEP_SUMMARY"; echo >> "$GITHUB_STEP_SUMMARY"; echo '```' >> "$GITHUB_STEP_SUMMARY"
+          echo '~~~json' >> "$GITHUB_STEP_SUMMARY"; cat /tmp/health.json >> "$GITHUB_STEP_SUMMARY"; echo >> "$GITHUB_STEP_SUMMARY"; echo '~~~' >> "$GITHUB_STEP_SUMMARY"
 
       - name: Create or inspect gateway.holytemples.org domain mapping
         shell: bash
         run: |
           set -euo pipefail
           VERIFIED="$(gcloud domains list-user-verified --format='value(id)' 2>/dev/null || true)"
-          if ! printf '%s\n' "$VERIFIED" | grep -Fxq 'holytemples.org'; then echo "### Domain mapping pending ownership verification" >> "$GITHUB_STEP_SUMMARY"; echo "Verify holytemples.org in Google Search Console, then rerun this workflow." >> "$GITHUB_STEP_SUMMARY"; echo "https://search.google.com/search-console/welcome" >> "$GITHUB_STEP_SUMMARY"; exit 0; fi
+          if ! printf '%s\n' "$VERIFIED" | grep -Fxq 'holytemples.org'; then echo "### Domain mapping pending ownership verification" >> "$GITHUB_STEP_SUMMARY"; exit 0; fi
           if ! gcloud beta run domain-mappings describe --domain="$DOMAIN_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" >/dev/null 2>&1; then gcloud beta run domain-mappings create --service="$SERVICE_NAME" --domain="$DOMAIN_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --quiet; fi
-          echo "### DNS records for $DOMAIN_NAME" >> "$GITHUB_STEP_SUMMARY"; echo '```yaml' >> "$GITHUB_STEP_SUMMARY"
-          gcloud beta run domain-mappings describe --domain="$DOMAIN_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format='yaml(status.resourceRecords)' >> "$GITHUB_STEP_SUMMARY"
-          echo '```' >> "$GITHUB_STEP_SUMMARY"; echo "LinkedIn callback: $LINKEDIN_REDIRECT_URI" >> "$GITHUB_STEP_SUMMARY"; echo "TikTok callback: $TIKTOK_REDIRECT_URI" >> "$GITHUB_STEP_SUMMARY"
