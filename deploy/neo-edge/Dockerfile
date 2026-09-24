@@ -29,6 +29,7 @@ COPY docs/neo-enterprise ./docs/neo-enterprise
 COPY docs/neo-pacer ./docs/neo-pacer
 COPY docs/neo-lingo ./docs/neo-lingo
 COPY docs/public-workspace ./docs/public-workspace
+COPY apps/neo-realty/web ./apps/neo-realty/web
 COPY data/neo-pacer ./data/neo-pacer
 COPY public/platform-shell.css ./public/platform-shell.css
 COPY public/platform-shell.js ./public/platform-shell.js
