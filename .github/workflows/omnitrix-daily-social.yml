@@ -62,9 +62,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          DAY="$(date -u +%F)"
-          echo "value=omnitrix:$DAY" >> "$GITHUB_OUTPUT"
-          echo "Daily idempotency key: omnitrix:$DAY" >> "$GITHUB_STEP_SUMMARY"
+          KEY="omnitrix:run:$GITHUB_RUN_ID"
+          echo "value=$KEY" >> "$GITHUB_OUTPUT"
+          echo "Stable idempotency key: $KEY (run attempt $GITHUB_RUN_ATTEMPT)" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Trigger Omnitrix automatic distribution
         env:
@@ -82,6 +82,16 @@ jobs:
             echo "No approved Omnitrix payload staged; nothing published." >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
+          [[ "$code" =~ ^2 ]] || { cat /tmp/receipt.json; echo "::error::Gateway returned HTTP $code"; exit 1; }
+          node - <<'NODE'
+          const fs=require('fs')
+          const body=JSON.parse(fs.readFileSync('/tmp/receipt.json','utf8'))
+          const expected=process.env.IDEMPOTENCY_KEY
+          if(body?.idempotencyKey!==expected) throw new Error('receipt_idempotency_key_mismatch')
+          if(!Array.isArray(body?.receipts)||body.receipts.length===0) throw new Error('durable_receipts_required')
+          for(const r of body.receipts){
+            if(!r?.destination||!r?.contentId||!r?.status||!r?.recordedAt) throw new Error('invalid_durable_receipt')
+          }
+          NODE
           cat /tmp/receipt.json >> "$GITHUB_STEP_SUMMARY"
           echo >> "$GITHUB_STEP_SUMMARY"
-          [[ "$code" =~ ^2 ]] || { echo "::error::Gateway returned HTTP $code"; exit 1; }
