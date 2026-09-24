@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { once } from 'node:events'
-import { createMemorySocialOAuthStore, createSocialGatewayServer, socialRuntimeReadiness } from './social-gateway-server.mjs'
+import { createMemorySocialOAuthStore, createSocialGatewayServer, socialRuntimeReadiness } from './social-gateway-server.mjs'\nimport { createMemorySocialAutomationStore } from './social-automation-store.mjs'
 
 async function withServer(server, fn) {
   server.listen(0, '127.0.0.1')
@@ -21,7 +21,7 @@ const env = {
   FACEBOOK_PAGE_ACCESS_TOKEN: 'facebook-secret',
   X_BEARER_TOKEN: 'x-secret',
   X_OAUTH1_AUTHORIZATION: 'oauth-secret',
-  NEO_SOCIAL_OMNITRIX_ENABLED: 'false',
+  NEO_SOCIAL_OMNITRIX_ENABLED: 'false',\n  NEO_SOCIAL_AUTOMATION_TOKEN: 'automation-secret',
 }
 
 const trusted = async () => ({ authenticated: true, trustBoundary: 'neo-gateway', subjectId: 'neo-user-1' })
