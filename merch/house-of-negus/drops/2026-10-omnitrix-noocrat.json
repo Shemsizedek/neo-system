@@ -2,47 +2,59 @@
   "drop_id": "HN-2026-10-OMNITRIX-NOOCRAT",
   "brand": "House of Negus",
   "collection": "Omnitrix Gear / Noocrat Streetwear",
-  "status": "artwork_pending",
+  "status": "qc_blocked_missing_isolated_print_masters",
   "baseline": {
     "shop_id": "1590954",
     "captured_at": "2026-09-24T04:20:23.610Z",
     "total_sellables": 2185,
-    "total_design_families": 14,
-    "verified_families": {
-      "Masonic Handshake": {"idea_id":"65d438480755770cea962b73","main_design_id":"1054015448","sellables":195},
-      "Holy Keys": [
-        {"name":"Crest of the Holy See Keys of Nun","idea_id":"65d4384c0755770cea962bf7","main_design_id":"1054015487","sellables":189},
-        {"name":"Crest of the Holy See Keys","idea_id":"68a631f46b1fca39c3ab852e","main_design_id":"1054015488","sellables":17}
-      ],
-      "The Negus": {"idea_id":"65d426590755770cea8b5b56","main_design_id":"1054015008","sellables":200}
-    }
+    "total_design_families": 14
+  },
+  "production_spec": {
+    "format": "PNG",
+    "background": "transparent",
+    "pixel_target": "<=4000x4000",
+    "color_mode": "sRGB",
+    "safe_area": "centered; no clipped artwork",
+    "spreadshop_printability_review": "required after Partner Area upload"
   },
   "designs": [
     {
       "sku": "HN-OMNI-001",
       "title": "Omnitrix Sovereign Emblem",
       "asset": "artwork/omnitrix-sovereign.png",
-      "status": "artwork_pending",
+      "status": "qc_blocked_missing_isolated_master",
       "products": ["tee", "hoodie"],
-      "tags": ["House of Negus", "Omnitrix", "Sovereign", "Noocrat"]
+      "tags": ["House of Negus", "Omnitrix", "Sovereign", "Noocrat"],
+      "qc": {"transparent_isolated_master": false, "dimensions_verified": false, "safe_area_verified": false, "spelling_verified": false, "print_master_approved": false}
     },
     {
       "sku": "HN-NOO-001",
       "title": "Noocrat Perspective",
       "asset": "artwork/noocrat-perspective.png",
-      "status": "artwork_pending",
+      "status": "qc_blocked_missing_isolated_master",
       "products": ["tee", "hoodie"],
-      "tags": ["House of Negus", "Noocrat", "Noology", "Streetwear"]
+      "tags": ["House of Negus", "Noocrat", "Noology", "Streetwear"],
+      "qc": {"transparent_isolated_master": false, "dimensions_verified": false, "safe_area_verified": false, "spelling_verified": false, "print_master_approved": false}
     },
     {
       "sku": "HN-UNI-001",
       "title": "Universal Citizen Crest",
       "asset": "artwork/universal-citizen-crest.png",
-      "status": "artwork_pending",
+      "status": "qc_blocked_missing_isolated_master",
       "products": ["tee", "hoodie", "cap"],
-      "tags": ["House of Negus", "Omnitrix", "Universal Citizen"]
+      "tags": ["House of Negus", "Omnitrix", "Universal Citizen"],
+      "qc": {"transparent_isolated_master": false, "dimensions_verified": false, "safe_area_verified": false, "spelling_verified": false, "print_master_approved": false}
     }
   ],
+  "qc_run": {
+    "gate": "HN-MERCH-AUTO-014",
+    "result": "blocked",
+    "reason": "Available generated files are composite design/specification boards rather than three independent transparent print masters. They must not be represented as Spreadshop-ready artwork.",
+    "source_assets_inspected": [
+      {"name":"october-2026-composite-source.png","dimensions":"2172x724","mode":"RGBA","result":"fail_print_master"},
+      {"name":"october-2026-spec-sheet.png","dimensions":"2172x724","mode":"RGBA","result":"fail_print_master"}
+    ]
+  },
   "pipeline": ["ARTWORK", "QC", "APPROVE", "PARTNER_AREA_PUBLISH", "VERIFY", "PROMOTE", "MEASURE"],
   "publish_boundary": "Spreadshop Partner Area publishing remains approval-gated; live inventory verification is automated through the connected API."
 }
