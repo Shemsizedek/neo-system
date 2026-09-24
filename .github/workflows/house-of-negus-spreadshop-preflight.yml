@@ -1,4 +1,5 @@
 name: House of Negus Spreadshop Live Preflight
+# HN-MERCH-AUTO-010 trigger
 on:
   workflow_dispatch:
   push:
