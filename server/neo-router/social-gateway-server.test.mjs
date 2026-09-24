@@ -22,7 +22,8 @@ const env = {
   FACEBOOK_PAGE_ACCESS_TOKEN: 'facebook-secret',
   X_BEARER_TOKEN: 'x-secret',
   X_OAUTH1_AUTHORIZATION: 'oauth-secret',
-  NEO_SOCIAL_OMNITRIX_ENABLED: 'false',\n  NEO_SOCIAL_AUTOMATION_TOKEN: 'automation-secret',
+  NEO_SOCIAL_OMNITRIX_ENABLED: 'false',
+  NEO_SOCIAL_AUTOMATION_TOKEN: 'automation-secret',
 }
 
 const trusted = async () => ({ authenticated: true, trustBoundary: 'neo-gateway', subjectId: 'neo-user-1' })
