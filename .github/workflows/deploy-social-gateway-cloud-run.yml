@@ -103,13 +103,15 @@ jobs:
         run: |
           set -euo pipefail
           BUCKET="gs://$NEO_SOCIAL_AUTOMATION_BUCKET"
-          gcloud storage buckets describe "$BUCKET" --project="$GCP_PROJECT_ID" >/dev/null 2>&1 ||             gcloud storage buckets create "$BUCKET" --project="$GCP_PROJECT_ID" --location="$GCP_REGION" --uniform-bucket-level-access
-          gcloud storage buckets add-iam-policy-binding "$BUCKET"             --member="serviceAccount:$GCP_CLOUD_RUN_RUNTIME_ACCOUNT"             --role="roles/storage.objectUser" --quiet >/dev/null
+          if ! gcloud storage buckets describe "$BUCKET" --project="$GCP_PROJECT_ID" >/dev/null 2>&1; then
+            gcloud storage buckets create "$BUCKET" --project="$GCP_PROJECT_ID" --location="$GCP_REGION" --uniform-bucket-level-access
+          fi
+          echo "Durable bucket exists: $BUCKET" >> "$GITHUB_STEP_SUMMARY"
           if ! gcloud secrets describe "$AUTOMATION_TOKEN_SECRET_NAME" --project="$GCP_PROJECT_ID" >/dev/null 2>&1; then
             gcloud secrets create "$AUTOMATION_TOKEN_SECRET_NAME" --project="$GCP_PROJECT_ID" --replication-policy="automatic"
             openssl rand -hex 32 | tr -d '\n' | gcloud secrets versions add "$AUTOMATION_TOKEN_SECRET_NAME" --project="$GCP_PROJECT_ID" --data-file=-
           fi
-          gcloud secrets add-iam-policy-binding "$AUTOMATION_TOKEN_SECRET_NAME"             --project="$GCP_PROJECT_ID"             --member="serviceAccount:$GCP_CLOUD_RUN_RUNTIME_ACCOUNT"             --role="roles/secretmanager.secretAccessor" --condition=None --quiet >/dev/null
+          gcloud secrets add-iam-policy-binding "$AUTOMATION_TOKEN_SECRET_NAME" --project="$GCP_PROJECT_ID" --member="serviceAccount:$GCP_CLOUD_RUN_RUNTIME_ACCOUNT" --role="roles/secretmanager.secretAccessor" --condition=None --quiet >/dev/null
 
       - name: Sync configured provider secrets to Google Secret Manager
         env:
@@ -146,7 +148,7 @@ jobs:
         env:
           IMAGE: ${{ env.GCP_ARTIFACT_REGISTRY }}/neo-social-gateway:${{ github.sha }}
           LINKEDIN_CLIENT_ID: ${{ secrets.LINKEDIN_CLIENT_ID }}
-          LINKEDIN_CLIENT_SECRET: ${{ secrets.LINKEDIN_CLIENT_SECRET }}
+          LINKEDIN_CLIENT_SECRET: ${{ secrets.LINKIN_CLIENT_SECRET }}
           TIKTOK_CLIENT_KEY: ${{ secrets.TIKTOK_CLIENT_KEY }}
           TIKTOK_CLIENT_SECRET: ${{ secrets.TIKTOK_CLIENT_SECRET }}
           X_BEARER_TOKEN: ${{ secrets.X_BEARER_TOKEN }}
@@ -159,7 +161,7 @@ jobs:
           if [[ -n "$TIKTOK_CLIENT_KEY" && -n "$TIKTOK_CLIENT_SECRET" ]]; then secret_bindings+=("TIKTOK_CLIENT_KEY=$TIKTOK_CLIENT_KEY_SECRET_NAME:latest" "TIKTOK_CLIENT_SECRET=$TIKTOK_CLIENT_SECRET_NAME:latest"); fi
           if [[ -n "$X_BEARER_TOKEN" && -n "$X_OAUTH1_AUTHORIZATION" ]]; then secret_bindings+=("X_BEARER_TOKEN=$X_BEARER_TOKEN_SECRET_NAME:latest" "X_OAUTH1_AUTHORIZATION=$X_OAUTH1_AUTHORIZATION_SECRET_NAME:latest"); fi
           IFS=,; joined="${secret_bindings[*]}"; unset IFS
-          gcloud run deploy "$SERVICE_NAME"             --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --image="$IMAGE"             --service-account="$GCP_CLOUD_RUN_RUNTIME_ACCOUNT"             --set-env-vars="LINKEDIN_REDIRECT_URI=$LINKEDIN_REDIRECT_URI,TIKTOK_REDIRECT_URI=$TIKTOK_REDIRECT_URI,NEO_SOCIAL_OMNITRIX_ENABLED=true,FACEBOOK_PROVIDER=existing-organic,NEO_SOCIAL_AUTOMATION_BUCKET=$NEO_SOCIAL_AUTOMATION_BUCKET"             --set-secrets="$joined" --allow-unauthenticated --quiet
+          gcloud run deploy "$SERVICE_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --image="$IMAGE" --service-account="$GCP_CLOUD_RUN_RUNTIME_ACCOUNT" --set-env-vars="LINKEDIN_REDIRECT_URI=$LINKEDIN_REDIRECT_URI,TIKTOK_REDIRECT_URI=$TIKTOK_REDIRECT_URI,NEO_SOCIAL_OMNITRIX_ENABLED=true,FACEBOOK_PROVIDER=existing-organic,NEO_SOCIAL_AUTOMATION_BUCKET=$NEO_SOCIAL_AUTOMATION_BUCKET" --set-secrets="$joined" --allow-unauthenticated --quiet
 
       - name: Verify generated Cloud Run URL
         id: service
