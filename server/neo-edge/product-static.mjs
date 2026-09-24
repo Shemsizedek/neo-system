@@ -15,6 +15,8 @@ const LINGO_ROOT = fileURLToPath(new URL('../../docs/neo-lingo/', import.meta.ur
 const PUBLIC_WORKSPACE_ROOT = fileURLToPath(new URL('../../docs/public-workspace/', import.meta.url));
 const REALTY_ROOT = fileURLToPath(new URL('../../apps/neo-realty/web/', import.meta.url));
 const REALTY_ORIGIN = String(process.env.NEO_REALTY_ORIGIN || '').replace(/\/$/, '');
+const GENERATOR_ROOT = fileURLToPath(new URL('../../public/neo-generator/', import.meta.url));
+const GENERATOR_ORIGIN = String(process.env.NEO_GENERATOR_ORIGIN || '').replace(/\/$/, '');
 const FOUNDER_IDENTITY_FILE = fileURLToPath(new URL('../../public/api/identity/founder.json', import.meta.url));
 const ENTERPRISE_API_ROOT = fileURLToPath(new URL('../../dist/api/enterprise/', import.meta.url));
 const PLATFORM_SHELL_CSS = fileURLToPath(new URL('../../public/platform-shell.css', import.meta.url));
@@ -436,6 +438,109 @@ async function serveLingo(req, res, url, host, prefix = '/lingo') {
   return true;
 }
 
+function generatorPublicHtml(body, prefix = '/generator') {
+  return body
+    .split('../platform-shell.css').join(`${prefix}/platform-shell.css`)
+    .split('../platform-shell.js').join(`${prefix}/platform-shell.js`)
+    .split('../api/platforms/neo-generator.json').join(`${prefix}/api`)
+    .split('href="../"').join('href="/"');
+}
+
+async function proxyGeneratorPublic(req, res, url) {
+  if (req.method !== 'GET') {
+    json(res, 405, { error: 'method_not_allowed', service: 'neo-generator' });
+    return true;
+  }
+  if (!GENERATOR_ORIGIN) {
+    json(res, 503, { error: 'neo_generator_origin_unconfigured' });
+    return true;
+  }
+  const routes = new Map([
+    ['/api/health','/health'],
+    ['/api/ready','/ready'],
+    ['/api/products','/products'],
+    ['/api/contracts','/contracts'],
+    ['/api/capacity','/capacity'],
+    ['/api/hashpower-quotes','/hashpower-quotes'],
+    ['/api/sources','/sources']
+  ]);
+  const upstreamPath=routes.get(url.pathname);
+  if (!upstreamPath) {
+    json(res, 404, { error: 'not_found', service: 'neo-generator', path: url.pathname });
+    return true;
+  }
+  try {
+    const response=await fetch(new URL(upstreamPath + url.search, GENERATOR_ORIGIN), {
+      method:'GET',
+      headers:{accept:'application/json'},
+      signal:AbortSignal.timeout(8000)
+    });
+    const body=await response.text();
+    res.writeHead(response.status,{
+      'content-type':response.headers.get('content-type') || 'application/json; charset=utf-8',
+      'cache-control':'no-store',
+      'x-content-type-options':'nosniff'
+    });
+    res.end(body);
+  } catch (error) {
+    json(res, 502, { error:'neo_generator_upstream_unavailable', detail:String(error?.message || error) });
+  }
+  return true;
+}
+
+async function serveGenerator(req, res, url, host, prefix = '/generator') {
+  if (url.pathname.startsWith('/api/')) return proxyGeneratorPublic(req,res,url);
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
+    json(res,405,{error:'method_not_allowed',service:'neo-generator'});
+    return true;
+  }
+  if (url.pathname === '/health') {
+    json(res,200,{ok:true,service:'neo-generator-front-door',mode:'PUBLIC_READ_ONLY',host,upstream:`${prefix}/api/ready`});
+    return true;
+  }
+  if (url.pathname === '/api') {
+    json(res,200,{
+      status:'ready',
+      service:'neo-generator',
+      name:'NEO Generator',
+      category:'mining-contract-orchestration',
+      mode:'PUBLIC_READ_ONLY',
+      generatedAt:new Date().toISOString(),
+      capabilities:[
+        {name:'Generator product catalog',mode:'read-only / no public products published'},
+        {name:'Hashpower contract orchestration',mode:'server-backed / activation gated'},
+        {name:'Capacity and quote telemetry',mode:'authoritative-input required'},
+        {name:'Payment/settlement adapter',mode:'authenticated execution required'}
+      ],
+      purchasesEnabled:false,
+      settlementEnabled:false,
+      ui:`https://neo.holytemples.org${prefix}/`
+    });
+    return true;
+  }
+  if (url.pathname === '/platform-shell.css') return serveFile(req,res,PLATFORM_SHELL_CSS,'text/css; charset=utf-8');
+  if (url.pathname === '/platform-shell.js') {
+    try {
+      let body=await readFile(PLATFORM_SHELL_JS,'utf8');
+      body=body.replace("const apiPath = `/neo-system/api/platforms/${platform}.json`;", `const apiPath = '${prefix}/api';`);
+      res.writeHead(200,{'content-type':'text/javascript; charset=utf-8','cache-control':'no-store','x-content-type-options':'nosniff'});
+      if(req.method==='HEAD') return res.end();
+      res.end(body);
+      return true;
+    } catch(error) {
+      json(res,500,{error:'neo_generator_shell_unavailable',detail:String(error?.message||error)});
+      return true;
+    }
+  }
+  if (url.pathname === '/' || url.pathname === '/ui' || url.pathname === '/index.html') {
+    const served=await serveText(req,res,resolve(GENERATOR_ROOT,'index.html'),body=>generatorPublicHtml(body,prefix));
+    if(!served) json(res,500,{error:'neo_generator_ui_unavailable'});
+    return true;
+  }
+  json(res,404,{error:'not_found',service:'neo-generator',path:url.pathname});
+  return true;
+}
+
 function realtyPublicHtml(body, prefix = '/realty') {
   return body.replace('<script>const API=', `<script>window.NEO_REALTY_API='${prefix}/api';const API=`);
 }
@@ -513,6 +618,16 @@ async function serveRealty(req, res, url, host, prefix = '/realty') {
 }
 
 export async function serveProductStatic(req, res, url, host) {
+  if (host === 'neo.holytemples.org' && url.pathname === '/generator') {
+    res.writeHead(308, { location: '/generator/', 'cache-control': 'no-store' });
+    res.end();
+    return true;
+  }
+  if (host === 'neo.holytemples.org' && url.pathname.startsWith('/generator/')) {
+    const inner = new URL(url.toString());
+    inner.pathname = url.pathname.slice('/generator'.length) || '/';
+    return serveGenerator(req, res, inner, host, '/generator');
+  }
   if (host === 'neo.holytemples.org' && url.pathname === '/realty') {
     res.writeHead(308, { location: '/realty/', 'cache-control': 'no-store' });
     res.end();
