@@ -2,8 +2,8 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { OMNITRIX_022_ROUTING, publishOmnitrixSocialJob } from './omnitrix-social-publisher.mjs'
 
-test('keeps automatic daily distribution disabled', () => {
-  assert.equal(OMNITRIX_022_ROUTING.automaticDailyDistribution, false)
+test('automatic daily distribution is enabled', () => {
+  assert.equal(OMNITRIX_022_ROUTING.automaticDailyDistribution, true)
   assert.deepEqual(OMNITRIX_022_ROUTING.isolated, ['x', 'instagram'])
 })
 

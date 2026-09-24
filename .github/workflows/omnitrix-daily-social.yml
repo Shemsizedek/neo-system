@@ -1,0 +1,98 @@
+name: Omnitrix Daily Social Distribution
+
+on:
+  schedule:
+    # 18:00 UTC = noon CST / 1 PM CDT.
+    - cron: '0 18 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: omnitrix-daily-social
+  cancel-in-progress: false
+
+env:
+  AUTOMATION_TOKEN_SECRET_NAME: neo-social-gateway-automation-token
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    environment: holytemples-production
+    timeout-minutes: 10
+    env:
+      NEO_SOCIAL_OMNITRIX_ENABLED: 'true'
+      NEO_SOCIAL_GATEWAY_URL: ${{ vars.NEO_SOCIAL_GATEWAY_URL || 'https://gateway.holytemples.org' }}
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID || secrets.GCP_PROJECT_ID }}
+      GCP_WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER || secrets.GCP_WIF_PROVIDER }}
+      GCP_CLOUD_RUN_SERVICE_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_SERVICE_ACCOUNT || secrets.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - name: Validate automatic distribution configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$NEO_SOCIAL_OMNITRIX_ENABLED" = true
+          for name in NEO_SOCIAL_GATEWAY_URL GCP_PROJECT_ID GCP_WIF_PROVIDER GCP_CLOUD_RUN_SERVICE_ACCOUNT; do
+            test -n "${!name:-}" || { echo "::error::Missing $name"; exit 1; }
+          done
+          [[ "$NEO_SOCIAL_GATEWAY_URL" == https://* ]] || { echo "::error::NEO_SOCIAL_GATEWAY_URL must use https://"; exit 1; }
+
+      - uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+
+      - uses: google-github-actions/setup-gcloud@v3
+
+      - name: Load automation credential from Secret Manager
+        shell: bash
+        run: |
+          set -euo pipefail
+          token="$(gcloud secrets versions access latest --secret="$AUTOMATION_TOKEN_SECRET_NAME" --project="$GCP_PROJECT_ID")"
+          test -n "$token"
+          echo "::add-mask::$token"
+          echo "NEO_SOCIAL_AUTOMATION_TOKEN=$token" >> "$GITHUB_ENV"
+
+      - name: Build idempotent daily key
+        id: key
+        shell: bash
+        run: |
+          set -euo pipefail
+          KEY="omnitrix:run:$GITHUB_RUN_ID"
+          echo "value=$KEY" >> "$GITHUB_OUTPUT"
+          echo "Stable idempotency key: $KEY (run attempt $GITHUB_RUN_ATTEMPT)" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Trigger Omnitrix automatic distribution
+        env:
+          IDEMPOTENCY_KEY: ${{ steps.key.outputs.value }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          code="$(curl --proto '=https' --tlsv1.2 -sS -o /tmp/receipt.json -w '%{http_code}' \
+            -X POST "${NEO_SOCIAL_GATEWAY_URL%/}/automation/omnitrix/daily" \
+            -H "Authorization: Bearer $NEO_SOCIAL_AUTOMATION_TOKEN" \
+            -H 'Content-Type: application/json' \
+            -H "Idempotency-Key: $IDEMPOTENCY_KEY" \
+            --data "{\"idempotencyKey\":\"$IDEMPOTENCY_KEY\",\"automatic\":true}")"
+          if [[ "$code" = 204 ]]; then
+            echo "No approved Omnitrix payload staged; nothing published." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          [[ "$code" =~ ^2 ]] || { cat /tmp/receipt.json; echo "::error::Gateway returned HTTP $code"; exit 1; }
+          node - <<'NODE'
+          const fs=require('fs')
+          const body=JSON.parse(fs.readFileSync('/tmp/receipt.json','utf8'))
+          const expected=process.env.IDEMPOTENCY_KEY
+          if(body?.idempotencyKey!==expected) throw new Error('receipt_idempotency_key_mismatch')
+          if(!Array.isArray(body?.receipts)||body.receipts.length===0) throw new Error('durable_receipts_required')
+          for(const r of body.receipts){
+            if(!r?.destination||!r?.contentId||!r?.status||!r?.recordedAt) throw new Error('invalid_durable_receipt')
+          }
+          NODE
+          cat /tmp/receipt.json >> "$GITHUB_STEP_SUMMARY"
+          echo >> "$GITHUB_STEP_SUMMARY"

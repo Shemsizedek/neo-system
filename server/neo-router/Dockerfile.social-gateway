@@ -3,6 +3,7 @@ WORKDIR /app
 ENV NODE_ENV=production
 COPY server/neo-router ./server/neo-router
 COPY server/neo-platform-api ./server/neo-platform-api
+COPY src/social ./src/social
 ENV HOST=0.0.0.0
 ENV PORT=8080
 EXPOSE 8080
