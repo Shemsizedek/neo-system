@@ -3,24 +3,31 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>NEO-PACER</title>
+  <meta name="robots" content="index,follow" />
+  <title>NEO-PACER — Public Access to Noocratic Ecclesiastical Records</title>
   <link rel="stylesheet" href="./style.css" />
 </head>
 <body>
   <aside>
     <div class="brand">NEO-PACER</div>
     <div class="sub">Public Access to Noocratic Ecclesiastical Records</div>
-    <button data-view="cases">Case Registry</button>
-    <button data-view="evidence">Evidence Vault</button>
-    <button data-view="title">NEO Title Auditor</button>
-    <div class="rule">Immutable Record Doctrine: originals remain preserved; later findings are additive.</div>
+    <button data-view="records">Public Court Records</button>
+    <button data-view="legacy">Legacy Research Registry</button>
+    <a class="navlink" href="/efile">E-File Intake</a>
+    <a class="navlink" href="https://holytemples.org/world-interfaith-court/">World Interfaith Court</a>
+    <div class="rule">Only records affirmatively approved for public disclosure appear here. Private Tribunal envelopes and intake submissions are not exposed.</div>
   </aside>
   <main>
     <header>
-      <div><h1>NEO-PACER</h1><p>GitHub-backed tribunal, title-audit, evidence, and investigation registry.</p></div>
-      <input id="search" placeholder="Search cases or evidence" />
+      <div>
+        <div class="eyebrow">World Interfaith Court</div>
+        <h1>NEO-PACER</h1>
+        <p>Public Access to Noocratic Ecclesiastical Records — the World Interfaith Court public-record interface.</p>
+      </div>
+      <input id="search" placeholder="Search public records" autocomplete="off" />
     </header>
-    <section id="content"><div class="loading">Loading registry…</div></section>
+    <div class="boundary">NEO-PACER is an institutional World Interfaith Court records system and is not the U.S. federal Judiciary PACER service. Published records do not by themselves establish governmental status, external jurisdiction, or legal effect.</div>
+    <section id="content"><div class="loading">Loading public records…</div></section>
   </main>
   <script type="module" src="./app.js"></script>
 </body>
