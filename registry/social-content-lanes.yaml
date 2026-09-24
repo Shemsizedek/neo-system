@@ -96,6 +96,16 @@ lanes:
       - "Current factual claims require source provenance and publish-time freshness validation."
       - "World Bulletin routing is disabled unless separately authorized."
 
+common_pipeline:
+  runtime_contract: "src/social/neo-social-campaign-pipeline.mjs"
+  dispatcher: "src/social/neo-social-dispatcher.mjs"
+  execution_model: "connected-provider-first-with-fallback"
+  approval_required: true
+  receipt_normalization: true
+  notes:
+    - "Editorial lanes remain separate; only distribution execution is shared."
+    - "World Bulletin publication remains outside the social dispatcher."
+
 automation:
   approval_class: "B-with-fixed-template"
   image_required: true
