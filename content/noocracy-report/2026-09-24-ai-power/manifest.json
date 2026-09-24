@@ -1,0 +1,50 @@
+{
+  "schema": "neo.social.noocracy-report.v0.1",
+  "contentLane": "noocracy_report",
+  "contentId": "NOOCRACY-REPORT-2026-09-24-AI-POWER",
+  "sourceVersion": "2026-09-24.1",
+  "title": "Daily Noocracy Report — AI Infrastructure Is Becoming an Electricity Story",
+  "caption": "DAILY NOOCRACY REPORT — SEPTEMBER 24, 2026\n\nAI infrastructure is increasingly constrained by power, grid capacity, and financing—not just chips.\n\nThe International Energy Agency projects global data-centre electricity use to rise from about 485 TWh in 2025 to roughly 950 TWh in 2030, while electricity consumption from AI-focused data centres grows even faster. That means the economics of AI increasingly depend on generation capacity, transmission, interconnection queues, cooling, and capital discipline.\n\nAt the same time, bond investors are becoming more selective about the large volume of debt needed to fund AI infrastructure. The signal is straightforward: compute demand may keep rising, but infrastructure returns still have to justify the capital required to build and power it.\n\nNOOCRATIC VIEW:\n• Compute needs electricity.\n• Electricity needs infrastructure.\n• Infrastructure needs disciplined capital.\n• Scale without efficiency becomes fragility.\n\nWATCH NEXT:\nPower contracts, interconnection delays, utilization rates, financing costs, and whether AI efficiency gains offset higher usage.\n\n#NoocracyReport #AI #DataCenters #Energy #Infrastructure #CapitalMarkets",
+  "media": {
+    "type": "image",
+    "aspectRatio": "16:9",
+    "imageUrl": "pending-generation",
+    "altText": "Dark futuristic Noocracy Report card showing AI data centers, electrical grid infrastructure, capital flows, and system bottlenecks."
+  },
+  "provenance": {
+    "generatedAt": "2026-09-24",
+    "sources": [
+      {
+        "title": "IEA — Key Questions on Energy and AI",
+        "url": "https://www.iea.org/reports/key-questions-on-energy-and-ai/executive-summary",
+        "claim": "Data-centre electricity demand projected to rise from about 485 TWh in 2025 to about 950 TWh in 2030; AI-focused data-centre electricity use grows faster."
+      },
+      {
+        "title": "IEA — Electricity Mid-Year Update 2026",
+        "url": "https://www.iea.org/reports/electricity-mid-year-update-2026/executive-summary",
+        "claim": "Global electricity demand growth remains elevated, with data centres among structural demand drivers."
+      },
+      {
+        "title": "Reuters — Corporate bond buyers get picky with flood of AI debt",
+        "url": "https://www.reuters.com/legal/transactional/corporate-bond-buyers-get-picky-with-flood-ai-debt-2026-09-22/",
+        "claim": "Investors are demanding more compensation for AI-linked debt as infrastructure borrowing expands."
+      }
+    ]
+  },
+  "destinations": [
+    "facebook",
+    "linkedin",
+    "youtube_community"
+  ],
+  "worldBulletin": false,
+  "approval": {
+    "required": true,
+    "class": "B-with-fixed-template",
+    "status": "approved-for-smoke-test"
+  },
+  "controls": {
+    "currentFactsRefreshedAt": "2026-09-24",
+    "politicalContent": false,
+    "receiptPersistenceRequiredForSuccess": true
+  }
+}
