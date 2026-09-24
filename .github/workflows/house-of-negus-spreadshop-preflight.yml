@@ -15,9 +15,9 @@ jobs:
   preflight:
     runs-on: ubuntu-latest
     env:
-      SPREADSHOP_SHOP_ID: ${{ vars.SPREADSHOP_SHOP_ID }}
+      SPREADSHOP_SHOP_ID: ${{ secrets.SPREADSHOP_SHOP_ID }}
       SPREADSHOP_API_KEY: ${{ secrets.SPREADSHOP_API_KEY }}
-      SPREADSHOP_PLATFORM: ${{ vars.SPREADSHOP_PLATFORM }}
+      SPREADSHOP_PLATFORM: ${{ secrets.SPREADSHOP_PLATFORM }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
