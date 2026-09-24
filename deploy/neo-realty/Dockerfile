@@ -7,4 +7,4 @@ ENV NODE_ENV=production
 ENV PORT=8080
 ENV NEO_REALTY_REQUIRE_PERSISTENCE=true
 EXPOSE 8080
-CMD ["npm","start"]
+CMD ["sh","-c","npm run db:migrate && npm start"]
