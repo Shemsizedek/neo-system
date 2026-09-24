@@ -45,7 +45,7 @@ jobs:
         run: gcloud run deploy "$SERVICE_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --image="$IMAGE" --service-account="$GCP_CLOUD_RUN_RUNTIME_ACCOUNT" --port=8080 --allow-unauthenticated --set-env-vars="NEOTHERAPY_FIRESTORE_DATABASE=${{ vars.NEOTHERAPY_FIRESTORE_DATABASE || '(default)' }}" --quiet
       - name: Verify
         run: |
-          # Production gate: health + Firestore write/read/delete canary must all pass.
+          # NEOTHERAPY-CANARY-RUN-004: isolated production persistence gate.
           URL="$(gcloud run services describe "$SERVICE_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format='value(status.url)')"
           test "$(curl --retry 5 --retry-delay 5 -sS -o /dev/null -w '%{http_code}' "$URL/health")" = 200
           curl -fsS "$URL/api/neotherapy/status"
