@@ -2,6 +2,15 @@ name: Deploy NEO Social Gateway to Cloud Run
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'server/neo-router/social-gateway-server.mjs'
+      - 'server/neo-router/social-gateway-server.test.mjs'
+      - 'server/neo-router/social-oauth.mjs'
+      - 'server/neo-router/social-oauth.test.mjs'
+      - 'server/neo-router/Dockerfile.social-gateway'
+      - '.github/workflows/deploy-social-gateway-cloud-run.yml'
 
 permissions:
   contents: read
@@ -194,7 +203,6 @@ jobs:
           if ! printf '%s\n' "$VERIFIED" | grep -Fxq 'holytemples.org'; then
             echo "### Domain mapping pending ownership verification" >> "$GITHUB_STEP_SUMMARY"
             echo "Verify holytemples.org in Google Search Console, then rerun this workflow." >> "$GITHUB_STEP_SUMMARY"
-            echo "https://search.google.com/search-console/welcome" >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
           if ! gcloud beta run domain-mappings describe --domain="$DOMAIN_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" >/dev/null 2>&1; then
