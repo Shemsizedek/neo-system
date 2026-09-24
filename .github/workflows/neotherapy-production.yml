@@ -1,0 +1,72 @@
+name: Neotherapy Production
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'server/neotherapy/**'
+      - 'deploy/neotherapy/**'
+      - '.github/workflows/neotherapy-production.yml'
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: neotherapy-production
+  cancel-in-progress: false
+jobs:
+  test-and-deploy:
+    runs-on: ubuntu-latest
+    environment: holytemples-production
+    timeout-minutes: 30
+    env:
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID || secrets.GCP_PROJECT_ID }}
+      GCP_REGION: ${{ vars.GCP_REGION || secrets.GCP_REGION }}
+      GCP_WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER || secrets.GCP_WIF_PROVIDER }}
+      GCP_CLOUD_RUN_SERVICE_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_SERVICE_ACCOUNT || secrets.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+      GCP_CLOUD_RUN_RUNTIME_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_RUNTIME_ACCOUNT || secrets.GCP_CLOUD_RUN_RUNTIME_ACCOUNT }}
+      GCP_ARTIFACT_REGISTRY: ${{ vars.GCP_ARTIFACT_REGISTRY || secrets.GCP_ARTIFACT_REGISTRY }}
+      SERVICE_NAME: neotherapy
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Test Neotherapy
+        run: node --test server/neotherapy/*.test.mjs
+      - name: Validate deployment configuration
+        run: |
+          set -euo pipefail
+          for name in GCP_PROJECT_ID GCP_REGION GCP_WIF_PROVIDER GCP_CLOUD_RUN_SERVICE_ACCOUNT GCP_CLOUD_RUN_RUNTIME_ACCOUNT GCP_ARTIFACT_REGISTRY; do
+            test -n "${!name:-}" || { echo "::error::Missing $name"; exit 1; }
+          done
+      - uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@v3
+      - name: Build and push image
+        env:
+          IMAGE: "${{ env.GCP_ARTIFACT_REGISTRY }}/neotherapy:${{ github.sha }}"
+        run: |
+          set -euo pipefail
+          gcloud auth configure-docker "${GCP_REGION}-docker.pkg.dev" --quiet
+          docker build -f deploy/neotherapy/Dockerfile -t "$IMAGE" .
+          docker push "$IMAGE"
+      - name: Deploy service
+        env:
+          IMAGE: "${{ env.GCP_ARTIFACT_REGISTRY }}/neotherapy:${{ github.sha }}"
+        run: |
+          set -euo pipefail
+          gcloud run deploy "$SERVICE_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --image="$IMAGE" --service-account="$GCP_CLOUD_RUN_RUNTIME_ACCOUNT" --port=8080 --allow-unauthenticated --set-env-vars="NEOTHERAPY_FIRESTORE_DATABASE=${{ vars.NEOTHERAPY_FIRESTORE_DATABASE || '(default)' }}" --quiet
+      - name: Verify production persistence
+        run: |
+          set -euo pipefail
+          URL="$(gcloud run services describe "$SERVICE_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format='value(status.url)')"
+          test "$(curl --retry 5 --retry-delay 5 -sS -o /dev/null -w '%{http_code}' "$URL/health")" = 200
+          curl -fsS "$URL/api/neotherapy/status"
+          CANARY="$(curl -fsS -X POST "$URL/api/neotherapy/canary")"
+          echo "$CANARY" | grep -q '"ok":true'
+          echo "$CANARY" | grep -q '"cleaned":true'
+          echo "Neotherapy persistence canary passed." >> "$GITHUB_STEP_SUMMARY"
+          echo "Neotherapy Cloud Run: $URL" >> "$GITHUB_STEP_SUMMARY"
