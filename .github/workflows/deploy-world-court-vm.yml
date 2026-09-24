@@ -9,6 +9,7 @@ on:
       - 'server/tribunal-backend/**'
       - 'src/tribunal/**'
       - 'public/efile.html'
+      - 'public/neo-pacer/**'
   workflow_dispatch:
 
 permissions:
@@ -170,6 +171,7 @@ jobs:
             if [[ "${{ steps.dns.outputs.ready }}" == "true" ]]; then
               echo "- HTTPS health: VERIFIED"
               echo "- E-File: https://$DOMAIN/efile"
+              echo "- NEO-PACER: https://$DOMAIN/records"
             else
               echo "- HTTPS health: PENDING EXTERNAL DNS CUTOVER"
             fi
