@@ -2,12 +2,22 @@
   "drop_id": "HN-2026-10-OMNITRIX-NOOCRAT",
   "brand": "House of Negus",
   "collection": "Omnitrix Gear / Noocrat Streetwear",
-  "status": "qc_passed_conditional_partner_area_review",
+  "status": "partially_production_verified",
   "baseline": {
     "shop_id": "1590954",
     "captured_at": "2026-09-24T04:20:23.610Z",
     "total_sellables": 2185,
     "total_design_families": 14
+  },
+  "post_publish_verification": {
+    "gate": "HN-MERCH-AUTO-018",
+    "workflow_run_id": 36060970533,
+    "verified_at": "2026-09-24T21:21:55Z",
+    "total_sellables": 2597,
+    "total_design_families": 16,
+    "delta_sellables": 412,
+    "delta_design_families": 2,
+    "result": "two_new_families_verified"
   },
   "production_spec": {
     "format": "PNG",
@@ -23,17 +33,9 @@
       "sku": "HN-OMNI-001",
       "title": "Omnitrix Sovereign Emblem",
       "asset": "artwork/omnitrix-sovereign.png",
-      "status": "qc_passed_conditional_partner_area_review",
-      "products": [
-        "tee",
-        "hoodie"
-      ],
-      "tags": [
-        "House of Negus",
-        "Omnitrix",
-        "Sovereign",
-        "Noocrat"
-      ],
+      "status": "pending_spreadshop_review",
+      "products": ["tee", "hoodie"],
+      "tags": ["House of Negus", "Omnitrix", "Sovereign", "Noocrat"],
       "qc": {
         "transparent_isolated_master": true,
         "dimensions_verified": true,
@@ -44,38 +46,28 @@
         "spreadshop_printability_review_pending": true
       },
       "production": {
-        "dimensions": [
-          4000,
-          4000
-        ],
+        "dimensions": [4000, 4000],
         "dpi": 300,
         "mode": "RGBA",
         "transparent_background": true,
-        "safe_margin_px": {
-          "left": 320,
-          "top": 514,
-          "right": 320,
-          "bottom": 515
-        },
+        "safe_margin_px": {"left": 320, "top": 514, "right": 320, "bottom": 515},
         "sha256": "5278afac98f8b28281bf22fa549d8e50c0e9982cc684b58ff76a5795ddf9adac",
         "file_size_bytes": 7827959
+      },
+      "spreadshop": {
+        "deployment_status": "pending_review",
+        "idea_id": null,
+        "main_design_id": null,
+        "verified_sellables": 0
       }
     },
     {
       "sku": "HN-NOO-001",
       "title": "Noocrat Perspective",
       "asset": "artwork/noocrat-perspective.png",
-      "status": "qc_passed_conditional_partner_area_review",
-      "products": [
-        "tee",
-        "hoodie"
-      ],
-      "tags": [
-        "House of Negus",
-        "Noocrat",
-        "Noology",
-        "Streetwear"
-      ],
+      "status": "production_verified",
+      "products": ["tee", "hoodie"],
+      "tags": ["House of Negus", "Noocrat", "Noology", "Streetwear"],
       "qc": {
         "transparent_isolated_master": true,
         "dimensions_verified": true,
@@ -83,41 +75,32 @@
         "spelling_verified": true,
         "internal_qc_approved": true,
         "native_vector_master": false,
-        "spreadshop_printability_review_pending": true
+        "spreadshop_printability_review_pending": false
       },
       "production": {
-        "dimensions": [
-          4000,
-          4000
-        ],
+        "dimensions": [4000, 4000],
         "dpi": 300,
         "mode": "RGBA",
         "transparent_background": true,
-        "safe_margin_px": {
-          "left": 320,
-          "top": 418,
-          "right": 320,
-          "bottom": 418
-        },
+        "safe_margin_px": {"left": 320, "top": 418, "right": 320, "bottom": 418},
         "sha256": "39158b35899b2040b4852c8e2309fefb808c87d0bf1dbf68cdee00f8b051c477",
         "file_size_bytes": 7508913
+      },
+      "spreadshop": {
+        "deployment_status": "production_verified",
+        "idea_id": "6ab5936c82764714cf191e97",
+        "main_design_id": "1059056906",
+        "verified_sellables": 206,
+        "verification_run_id": 36060970533
       }
     },
     {
       "sku": "HN-UNI-001",
       "title": "Universal Citizen Crest",
       "asset": "artwork/universal-citizen-crest.png",
-      "status": "qc_passed_conditional_partner_area_review",
-      "products": [
-        "tee",
-        "hoodie",
-        "cap"
-      ],
-      "tags": [
-        "House of Negus",
-        "Omnitrix",
-        "Universal Citizen"
-      ],
+      "status": "production_verified",
+      "products": ["tee", "hoodie", "cap"],
+      "tags": ["House of Negus", "Omnitrix", "Universal Citizen"],
       "qc": {
         "transparent_isolated_master": true,
         "dimensions_verified": true,
@@ -125,24 +108,23 @@
         "spelling_verified": true,
         "internal_qc_approved": true,
         "native_vector_master": false,
-        "spreadshop_printability_review_pending": true
+        "spreadshop_printability_review_pending": false
       },
       "production": {
-        "dimensions": [
-          4000,
-          4000
-        ],
+        "dimensions": [4000, 4000],
         "dpi": 300,
         "mode": "RGBA",
         "transparent_background": true,
-        "safe_margin_px": {
-          "left": 366,
-          "top": 320,
-          "right": 366,
-          "bottom": 320
-        },
+        "safe_margin_px": {"left": 366, "top": 320, "right": 366, "bottom": 320},
         "sha256": "b7177a71a4ea4b6af358761dfd8b768cf81b4658e1184e87af46a729d08ee9ee",
         "file_size_bytes": 7498577
+      },
+      "spreadshop": {
+        "deployment_status": "production_verified",
+        "idea_id": "6ab5936cdefbe8201d573a03",
+        "main_design_id": "1059056845",
+        "verified_sellables": 206,
+        "verification_run_id": 36060970533
       }
     }
   ],
@@ -158,18 +140,21 @@
       "spelling_visual_review": "PASS",
       "dpi_metadata_300": "PASS",
       "native_vector_master": "NO",
-      "spreadshop_partner_area_printability": "PENDING"
+      "spreadshop_partner_area_printability": "PARTIAL: 2 VERIFIED, 1 PENDING REVIEW"
     },
     "package": "house-of-negus-2026-10-spreadshop-ready.zip"
   },
-  "pipeline": [
-    "ARTWORK",
-    "QC",
-    "APPROVE",
-    "PARTNER_AREA_PUBLISH",
-    "VERIFY",
-    "PROMOTE",
-    "MEASURE"
-  ],
+  "automation_policy": {
+    "post_publish_verification": {
+      "enabled": true,
+      "baseline_fields": ["total_sellables", "total_design_families"],
+      "match_fields": ["name", "idea_id", "main_design_id"],
+      "success_condition": "new expected design family is present in live Spreadshop inventory with one or more sellables",
+      "verified_status": "production_verified",
+      "pending_status": "pending_spreadshop_review",
+      "never_mark_verified_from_partner_area_screenshot_alone": true
+    }
+  },
+  "pipeline": ["ARTWORK", "QC", "APPROVE", "PARTNER_AREA_PUBLISH", "VERIFY", "PROMOTE", "MEASURE"],
   "publish_boundary": "Spreadshop Partner Area publishing remains approval-gated; live inventory verification is automated through the connected API."
 }
