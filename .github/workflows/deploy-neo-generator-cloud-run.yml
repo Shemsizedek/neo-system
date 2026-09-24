@@ -1,0 +1,95 @@
+name: Deploy NEO Generator to Cloud Run
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'server/miner-generator/**'
+      - 'deploy/neo-generator/**'
+      - '.github/workflows/deploy-neo-generator-cloud-run.yml'
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: neo-generator-cloud-run
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: holytemples-production
+    timeout-minutes: 30
+    env:
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID || secrets.GCP_PROJECT_ID }}
+      GCP_REGION: ${{ vars.GCP_REGION || secrets.GCP_REGION }}
+      GCP_WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER || secrets.GCP_WIF_PROVIDER }}
+      GCP_CLOUD_RUN_SERVICE_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_SERVICE_ACCOUNT || secrets.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+      GCP_CLOUD_RUN_RUNTIME_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_RUNTIME_ACCOUNT || secrets.GCP_CLOUD_RUN_RUNTIME_ACCOUNT }}
+      GCP_ARTIFACT_REGISTRY: ${{ vars.GCP_ARTIFACT_REGISTRY || secrets.GCP_ARTIFACT_REGISTRY }}
+      SERVICE_NAME: neo-generator
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - name: Validate Generator runtime
+        run: |
+          set -euo pipefail
+          for name in GCP_PROJECT_ID GCP_REGION GCP_WIF_PROVIDER GCP_CLOUD_RUN_SERVICE_ACCOUNT GCP_CLOUD_RUN_RUNTIME_ACCOUNT GCP_ARTIFACT_REGISTRY; do
+            test -n "${!name:-}" || { echo "::error::Missing $name"; exit 1; }
+          done
+          node --check server/miner-generator/server.mjs
+          node --test server/miner-generator/*.test.mjs
+          test -f deploy/neo-generator/Dockerfile
+
+      - uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+
+      - uses: google-github-actions/setup-gcloud@v3
+
+      - name: Build and push Generator image
+        env:
+          IMAGE: ${{ env.GCP_ARTIFACT_REGISTRY }}/neo-generator:${{ github.sha }}
+        run: |
+          set -euo pipefail
+          gcloud auth configure-docker "${GCP_REGION}-docker.pkg.dev" --quiet
+          docker build -f deploy/neo-generator/Dockerfile -t "$IMAGE" .
+          docker push "$IMAGE"
+
+      - name: Deploy Generator
+        env:
+          IMAGE: ${{ env.GCP_ARTIFACT_REGISTRY }}/neo-generator:${{ github.sha }}
+        run: |
+          set -euo pipefail
+          gcloud run deploy "$SERVICE_NAME" \
+            --project="$GCP_PROJECT_ID" \
+            --region="$GCP_REGION" \
+            --image="$IMAGE" \
+            --service-account="$GCP_CLOUD_RUN_RUNTIME_ACCOUNT" \
+            --port=8080 \
+            --allow-unauthenticated \
+            --quiet
+
+      - name: Verify Generator origin
+        run: |
+          set -euo pipefail
+          SERVICE_URL="$(gcloud run services describe "$SERVICE_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format='value(status.url)')"
+          test -n "$SERVICE_URL"
+          for path in /health /ready /api /products /contracts /capacity /hashpower-quotes /sources; do
+            code="$(curl --retry 5 --retry-delay 3 --retry-all-errors -sS -o /tmp/generator.json -w '%{http_code}' "$SERVICE_URL$path")"
+            test "$code" = 200
+            test -s /tmp/generator.json
+          done
+          curl -fsS "$SERVICE_URL/ready" -o /tmp/generator-ready.json
+          grep -q '"ok":true' /tmp/generator-ready.json
+          grep -q '"mode":"PUBLIC_READ_ONLY"' /tmp/generator-ready.json
+          curl -fsS "$SERVICE_URL/capacity" -o /tmp/generator-capacity.json
+          grep -q '"available":false' /tmp/generator-capacity.json
+          grep -q '"totalHashrateTh":null' /tmp/generator-capacity.json
+          curl -fsS "$SERVICE_URL/hashpower-quotes" -o /tmp/generator-quotes.json
+          grep -q '"available":false' /tmp/generator-quotes.json
+          echo "NEO Generator origin healthy: $SERVICE_URL" >> "$GITHUB_STEP_SUMMARY"
