@@ -85,7 +85,7 @@ jobs:
           IMAGE: ${{ env.GCP_ARTIFACT_REGISTRY }}/neo-realty:${{ github.sha }}
         run: |
           set -euo pipefail
-          gcloud run deploy "$SERVICE_NAME"             --project="$GCP_PROJECT_ID"             --region="$GCP_REGION"             --image="$IMAGE"             --service-account="$GCP_CLOUD_RUN_RUNTIME_ACCOUNT"             --set-secrets="DATABASE_URL=$DB_SECRET:latest"             --set-env-vars="NEO_REALTY_REQUIRE_PERSISTENCE=true,NEO_REALTY_FRONTEND_ORIGIN=https://neo.holytemples.org"             --port=8080             --allow-unauthenticated             --quiet
+          gcloud run deploy "$SERVICE_NAME"             --project="$GCP_PROJECT_ID"             --region="$GCP_REGION"             --image="$IMAGE"             --service-account="$GCP_CLOUD_RUN_RUNTIME_ACCOUNT"             --set-secrets="DATABASE_URL=$DB_SECRET:latest"             --add-cloudsql-instances="$CLOUD_SQL_CONNECTION_NAME"             --set-env-vars="NEO_REALTY_REQUIRE_PERSISTENCE=true,NEO_REALTY_FRONTEND_ORIGIN=https://neo.holytemples.org"             --port=8080             --allow-unauthenticated             --quiet
 
       - name: Verify persistent production origin
         run: |
