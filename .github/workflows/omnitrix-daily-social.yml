@@ -2,16 +2,20 @@ name: Omnitrix Daily Social Distribution
 
 on:
   schedule:
-    # 17:00 UTC = 12:00 CST / 13:00 CDT. GitHub cron is UTC.
+    # 17:00 UTC = noon CST / 1 PM CDT.
     - cron: '0 17 * * *'
   workflow_dispatch:
 
 permissions:
   contents: read
+  id-token: write
 
 concurrency:
-  group: omnitrix-daily-social-${{ github.ref }}
+  group: omnitrix-daily-social
   cancel-in-progress: false
+
+env:
+  AUTOMATION_TOKEN_SECRET_NAME: neo-social-gateway-automation-token
 
 jobs:
   dispatch:
@@ -20,8 +24,10 @@ jobs:
     timeout-minutes: 10
     env:
       NEO_SOCIAL_OMNITRIX_ENABLED: 'true'
-      NEO_SOCIAL_GATEWAY_URL: ${{ vars.NEO_SOCIAL_GATEWAY_URL }}
-      NEO_SOCIAL_AUTOMATION_TOKEN: ${{ secrets.NEO_SOCIAL_AUTOMATION_TOKEN }}
+      NEO_SOCIAL_GATEWAY_URL: ${{ vars.NEO_SOCIAL_GATEWAY_URL || 'https://gateway.holytemples.org' }}
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID || secrets.GCP_PROJECT_ID }}
+      GCP_WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER || secrets.GCP_WIF_PROVIDER }}
+      GCP_CLOUD_RUN_SERVICE_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_SERVICE_ACCOUNT || secrets.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
     steps:
       - uses: actions/checkout@v7.0.1
 
@@ -30,8 +36,26 @@ jobs:
         run: |
           set -euo pipefail
           test "$NEO_SOCIAL_OMNITRIX_ENABLED" = true
-          test -n "${NEO_SOCIAL_GATEWAY_URL:-}" || { echo '::error::Missing NEO_SOCIAL_GATEWAY_URL'; exit 1; }
-          test -n "${NEO_SOCIAL_AUTOMATION_TOKEN:-}" || { echo '::error::Missing NEO_SOCIAL_AUTOMATION_TOKEN'; exit 1; }
+          for name in NEO_SOCIAL_GATEWAY_URL GCP_PROJECT_ID GCP_WIF_PROVIDER GCP_CLOUD_RUN_SERVICE_ACCOUNT; do
+            test -n "${!name:-}" || { echo "::error::Missing $name"; exit 1; }
+          done
+
+      - uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+
+      - uses: google-github-actions/setup-gcloud@v3
+
+      - name: Load automation credential from Secret Manager
+        shell: bash
+        run: |
+          set -euo pipefail
+          token="$(gcloud secrets versions access latest --secret="$AUTOMATION_TOKEN_SECRET_NAME" --project="$GCP_PROJECT_ID")"
+          test -n "$token"
+          echo "::add-mask::$token"
+          echo "NEO_SOCIAL_AUTOMATION_TOKEN=$token" >> "$GITHUB_ENV"
 
       - name: Build idempotent daily key
         id: key
@@ -39,8 +63,8 @@ jobs:
         run: |
           set -euo pipefail
           DAY="$(date -u +%F)"
-          echo "value=omnitrix:${DAY}" >> "$GITHUB_OUTPUT"
-          echo "Daily idempotency key: omnitrix:${DAY}" >> "$GITHUB_STEP_SUMMARY"
+          echo "value=omnitrix:$DAY" >> "$GITHUB_OUTPUT"
+          echo "Daily idempotency key: omnitrix:$DAY" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Trigger Omnitrix automatic distribution
         env:
@@ -54,6 +78,10 @@ jobs:
             -H 'Content-Type: application/json' \
             -H "Idempotency-Key: $IDEMPOTENCY_KEY" \
             --data "{\"idempotencyKey\":\"$IDEMPOTENCY_KEY\",\"automatic\":true}")"
+          if [[ "$code" = 204 ]]; then
+            echo "No approved Omnitrix payload staged; nothing published." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
           cat /tmp/receipt.json >> "$GITHUB_STEP_SUMMARY"
           echo >> "$GITHUB_STEP_SUMMARY"
           [[ "$code" =~ ^2 ]] || { echo "::error::Gateway returned HTTP $code"; exit 1; }
