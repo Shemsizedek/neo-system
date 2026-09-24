@@ -12,6 +12,7 @@
  * present but loaded dynamically after the initial document response.
  */
 const origin = process.env.NEOTERIC_STOREFRONT_URL || "https://neotericmethod.minicart.com";
+const reportPath = process.env.NEOTERIC_VERIFY_REPORT_PATH || "artifacts/neoteric/storefront-verification.json";
 const expected = [
   ["NEO-NT-SVC-001","Noological Dialogue","144"],
   ["NEO-NT-SVC-002","Neotherapy Session","144"],
@@ -91,5 +92,16 @@ const report={
   diagnosis,
   live_verified:allProductsFound&&disclosureFound
 };
-console.log(JSON.stringify(report,null,2));
-if (!report.live_verified) process.exitCode=2;
+const reportJson=JSON.stringify(report,null,2);
+console.log(reportJson);
+try {
+  const {mkdir,writeFile}=await import("node:fs/promises");
+  const {dirname}=await import("node:path");
+  await mkdir(dirname(reportPath),{recursive:true});
+  await writeFile(reportPath,reportJson+"\n","utf8");
+  console.log(`verification_report=${reportPath}`);
+} catch (error) {
+  console.error("Unable to persist verification report:",error?.message||error);
+  process.exitCode=3;
+}
+if (!report.live_verified && !process.exitCode) process.exitCode=2;
