@@ -54,5 +54,5 @@ export async function publishOmnitrixSocialJob(job, credentials = {}, options = 
 
 export const OMNITRIX_022_ROUTING = Object.freeze({
   controlled: ['facebook', 'linkedin', 'tiktok'], isolated: ['x', 'instagram'],
-  assisted: ['youtube_community'], automaticDailyDistribution: false,
+  assisted: ['youtube_community'], automaticDailyDistribution: true,
 })
