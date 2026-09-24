@@ -23,4 +23,17 @@ jobs:
         with:
           node-version: "22"
       - name: Verify public Neoteric storefront
+        id: verify
+        continue-on-error: true
         run: node scripts/neoteric/verify-storefront.mjs
+      - name: Upload storefront verification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: neoteric-storefront-verification
+          path: artifacts/neoteric/storefront-verification.json
+          if-no-files-found: error
+          retention-days: 30
+      - name: Enforce storefront verification result
+        if: steps.verify.outcome != 'success'
+        run: exit 2
