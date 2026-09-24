@@ -1,0 +1,59 @@
+name: Omnitrix Daily Social Distribution
+
+on:
+  schedule:
+    # 17:00 UTC = 12:00 CST / 13:00 CDT. GitHub cron is UTC.
+    - cron: '0 17 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: omnitrix-daily-social-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    environment: holytemples-production
+    timeout-minutes: 10
+    env:
+      NEO_SOCIAL_OMNITRIX_ENABLED: 'true'
+      NEO_SOCIAL_GATEWAY_URL: ${{ vars.NEO_SOCIAL_GATEWAY_URL }}
+      NEO_SOCIAL_AUTOMATION_TOKEN: ${{ secrets.NEO_SOCIAL_AUTOMATION_TOKEN }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - name: Validate automatic distribution configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$NEO_SOCIAL_OMNITRIX_ENABLED" = true
+          test -n "${NEO_SOCIAL_GATEWAY_URL:-}" || { echo '::error::Missing NEO_SOCIAL_GATEWAY_URL'; exit 1; }
+          test -n "${NEO_SOCIAL_AUTOMATION_TOKEN:-}" || { echo '::error::Missing NEO_SOCIAL_AUTOMATION_TOKEN'; exit 1; }
+
+      - name: Build idempotent daily key
+        id: key
+        shell: bash
+        run: |
+          set -euo pipefail
+          DAY="$(date -u +%F)"
+          echo "value=omnitrix:${DAY}" >> "$GITHUB_OUTPUT"
+          echo "Daily idempotency key: omnitrix:${DAY}" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Trigger Omnitrix automatic distribution
+        env:
+          IDEMPOTENCY_KEY: ${{ steps.key.outputs.value }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          code="$(curl -sS -o /tmp/receipt.json -w '%{http_code}' \
+            -X POST "${NEO_SOCIAL_GATEWAY_URL%/}/automation/omnitrix/daily" \
+            -H "Authorization: Bearer $NEO_SOCIAL_AUTOMATION_TOKEN" \
+            -H 'Content-Type: application/json' \
+            -H "Idempotency-Key: $IDEMPOTENCY_KEY" \
+            --data "{\"idempotencyKey\":\"$IDEMPOTENCY_KEY\",\"automatic\":true}")"
+          cat /tmp/receipt.json >> "$GITHUB_STEP_SUMMARY"
+          echo >> "$GITHUB_STEP_SUMMARY"
+          [[ "$code" =~ ^2 ]] || { echo "::error::Gateway returned HTTP $code"; exit 1; }
