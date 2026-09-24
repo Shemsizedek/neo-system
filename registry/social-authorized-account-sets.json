@@ -1,0 +1,38 @@
+{
+  "schema": "neo.social.authorized-account-sets.v0.1",
+  "provider": "windsor_organic",
+  "verifiedAt": "2026-09-24",
+  "sets": {
+    "nomni_ausarian": {
+      "facebook": [
+        {"accountId":"238253009704158","accountName":"World Temple"},
+        {"accountId":"1441034039481634","accountName":"Dr. Lawiy Zodok Shamu-El"},
+        {"accountId":"549563528486257","accountName":"New Ethiopian Order"},
+        {"accountId":"1968413126746843","accountName":"The World Leaders Forum TWLF - World HQ"}
+      ],
+      "linkedin": [
+        {"accountId":"29364903","accountName":"World Temple"},
+        {"accountId":"90451027","accountName":"Shelton Estate & Co."}
+      ],
+      "youtube_community": []
+    },
+    "noocracy_report": {
+      "facebook": [
+        {"accountId":"238253009704158","accountName":"World Temple"},
+        {"accountId":"1441034039481634","accountName":"Dr. Lawiy Zodok Shamu-El"},
+        {"accountId":"549563528486257","accountName":"New Ethiopian Order"},
+        {"accountId":"1968413126746843","accountName":"The World Leaders Forum TWLF - World HQ"}
+      ],
+      "linkedin": [
+        {"accountId":"29364903","accountName":"World Temple"},
+        {"accountId":"90451027","accountName":"Shelton Estate & Co."}
+      ],
+      "youtube_community": []
+    }
+  },
+  "notes": [
+    "Account IDs are connector account identifiers, not credentials.",
+    "YouTube Community remains UI-handoff only until a supported write route is verified.",
+    "World Bulletin is not a social destination and is not represented here."
+  ]
+}
