@@ -13,6 +13,8 @@ const PACER_ROOT = fileURLToPath(new URL('../../docs/neo-pacer/', import.meta.ur
 const PACER_DATA_ROOT = fileURLToPath(new URL('../../data/neo-pacer/', import.meta.url));
 const LINGO_ROOT = fileURLToPath(new URL('../../docs/neo-lingo/', import.meta.url));
 const PUBLIC_WORKSPACE_ROOT = fileURLToPath(new URL('../../docs/public-workspace/', import.meta.url));
+const REALTY_ROOT = fileURLToPath(new URL('../../apps/neo-realty/web/', import.meta.url));
+const REALTY_ORIGIN = String(process.env.NEO_REALTY_ORIGIN || '').replace(/\/$/, '');
 const FOUNDER_IDENTITY_FILE = fileURLToPath(new URL('../../public/api/identity/founder.json', import.meta.url));
 const ENTERPRISE_API_ROOT = fileURLToPath(new URL('../../dist/api/enterprise/', import.meta.url));
 const PLATFORM_SHELL_CSS = fileURLToPath(new URL('../../public/platform-shell.css', import.meta.url));
@@ -434,7 +436,93 @@ async function serveLingo(req, res, url, host, prefix = '/lingo') {
   return true;
 }
 
+function realtyPublicHtml(body, prefix = '/realty') {
+  return body.replace('<script>const API=', `<script>window.NEO_REALTY_API='${prefix}/api';const API=`);
+}
+
+async function proxyRealtyPublic(req, res, url) {
+  if (req.method !== 'GET') {
+    json(res, 405, { error: 'method_not_allowed', service: 'neo-realty' });
+    return true;
+  }
+  if (!REALTY_ORIGIN) {
+    json(res, 503, { error: 'neo_realty_origin_unconfigured' });
+    return true;
+  }
+  let upstreamPath = null;
+  if (url.pathname === '/api/health') upstreamPath = '/health';
+  else if (url.pathname === '/api/ready') upstreamPath = '/ready';
+  else if (url.pathname === '/api/properties') upstreamPath = '/properties';
+  else {
+    const match = url.pathname.match(/^\/api\/properties\/([^/]+)(\/neo-eligibility)?$/);
+    if (match) upstreamPath = `/properties/${encodeURIComponent(decodeURIComponent(match[1]))}${match[2] || ''}`;
+  }
+  if (!upstreamPath) {
+    json(res, 404, { error: 'not_found', service: 'neo-realty', path: url.pathname });
+    return true;
+  }
+  try {
+    const target = new URL(upstreamPath + url.search, REALTY_ORIGIN);
+    const response = await fetch(target, {
+      method: 'GET',
+      headers: { accept: 'application/json' },
+      signal: AbortSignal.timeout(8000)
+    });
+    const body = await response.text();
+    res.writeHead(response.status, {
+      'content-type': response.headers.get('content-type') || 'application/json; charset=utf-8',
+      'cache-control': 'no-store',
+      'x-content-type-options': 'nosniff'
+    });
+    res.end(body);
+  } catch (error) {
+    json(res, 502, { error: 'neo_realty_upstream_unavailable', detail: String(error?.message || error) });
+  }
+  return true;
+}
+
+async function serveRealty(req, res, url, host, prefix = '/realty') {
+  if (url.pathname.startsWith('/api/')) return proxyRealtyPublic(req, res, url);
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
+    json(res, 405, { error: 'method_not_allowed', service: 'neo-realty' });
+    return true;
+  }
+  if (url.pathname === '/health') {
+    json(res, 200, { ok: true, service: 'neo-realty-front-door', mode: 'PUBLIC_READ_ONLY', host, upstream: `${prefix}/api/ready` });
+    return true;
+  }
+  if (url.pathname === '/api') {
+    json(res, 200, {
+      service: 'neo-realty',
+      name: 'NEO Realty',
+      role: 'verified-real-estate-discovery',
+      mode: 'PUBLIC_READ_ONLY',
+      ui: `https://neo.holytemples.org${prefix}/`,
+      publicApi: `${prefix}/api/properties`,
+      propertyTitleEstablishedByToken: false
+    });
+    return true;
+  }
+  if (url.pathname === '/' || url.pathname === '/ui' || url.pathname === '/index.html') {
+    const served = await serveText(req, res, resolve(REALTY_ROOT, 'index.html'), body => realtyPublicHtml(body, prefix));
+    if (!served) json(res, 500, { error: 'neo_realty_ui_unavailable' });
+    return true;
+  }
+  json(res, 404, { error: 'not_found', service: 'neo-realty', path: url.pathname });
+  return true;
+}
+
 export async function serveProductStatic(req, res, url, host) {
+  if (host === 'neo.holytemples.org' && url.pathname === '/realty') {
+    res.writeHead(308, { location: '/realty/', 'cache-control': 'no-store' });
+    res.end();
+    return true;
+  }
+  if (host === 'neo.holytemples.org' && url.pathname.startsWith('/realty/')) {
+    const inner = new URL(url.toString());
+    inner.pathname = url.pathname.slice('/realty'.length) || '/';
+    return serveRealty(req, res, inner, host, '/realty');
+  }
   if (host === 'neo.holytemples.org' && url.pathname === '/lingo') {
     res.writeHead(308, { location: '/lingo/', 'cache-control': 'no-store' });
     res.end();
