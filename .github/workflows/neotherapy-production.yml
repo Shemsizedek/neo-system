@@ -1,6 +1,12 @@
 name: Neotherapy Production
 on:
   workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'server/neotherapy/**'
+      - 'deploy/neotherapy/**'
+      - '.github/workflows/neotherapy-production.yml'
   push:
     branches: [main]
     paths:
@@ -11,10 +17,21 @@ permissions:
   contents: read
   id-token: write
 concurrency:
-  group: neotherapy-production
+  group: neotherapy-production-${{ github.ref }}
   cancel-in-progress: false
 jobs:
+  validate:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Test Neotherapy
+        run: node --test server/neotherapy/*.test.mjs
   test-and-deploy:
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     environment: holytemples-production
     timeout-minutes: 30
