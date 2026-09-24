@@ -1,0 +1,62 @@
+schema_version: "1.0"
+policy_id: "NEO-COMMERCIAL-001"
+status: "active-proposed"
+currency: "USD"
+
+retail:
+  individual:
+    monthly: 49
+  professional:
+    monthly: 144
+    flagship: true
+  creator_business:
+    monthly: 333
+  enterprise_seat:
+    monthly: 999
+  organization:
+    monthly_range: [5000, 15000]
+  institutional:
+    monthly_range: [25000, 100000]
+  private_deployment:
+    annual_minimum: 144000
+
+white_label:
+  foundation:
+    implementation_minimum: 250000
+    monthly_license_range: [5000, 15000]
+  enterprise:
+    implementation_range: [500000, 1250000]
+    monthly_license_range: [15000, 50000]
+  sovereign_institutional:
+    implementation_range: [1500000, 5000000]
+    annual_support_range: [250000, 1000000]
+
+shemsizedek_systems_architecture:
+  strategic_architecture_range: [75000, 144000]
+  ai_application_mvp_range: [144000, 300000]
+  production_ai_platform_range: [300000, 750000]
+  enterprise_operating_platform_range: [750000, 2000000]
+  multi_platform_ecosystem_range: [2000000, 5000000]
+  sovereign_institutional_infrastructure_range: [5000000, 25000000]
+
+investor_positioning:
+  development_replacement_value_range: [5000000, 15000000]
+  strategic_ip_acquisition_opening_ask: 50000000
+  strategic_ip_acquisition_discussion_floor: 25000000
+  indicative_seed_pre_money_range: [20000000, 35000000]
+  indicative_raise_range: [2000000, 5000000]
+
+negotiation:
+  default_posture: "premium"
+  autonomous_discounting: false
+  autonomous_equity_offer: false
+  autonomous_term_sheet: false
+  autonomous_binding_commitment: false
+  pricing_below_published_minimum_requires: "human_approval"
+  equity_terms_require: "human_approval_and_legal_review"
+  securities_outreach_requires: "approved_compliance_lane"
+
+notes:
+  - "All values are internal asking-price guidance, not independent valuations or guarantees."
+  - "Replacement value, acquisition ask, and financing valuation are distinct concepts."
+  - "Usage, compute, blockchain fees, custom integrations, travel, legal/compliance, and third-party licenses may be priced separately."

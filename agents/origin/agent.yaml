@@ -32,6 +32,8 @@ agent:
       - docs/source-foundation/NEOsync-Source-Foundation-Codex-v1.0.md
       - docs/source-foundation/NIA-Foundation-Charter-v1.0.md
       - docs/source-foundation/NIA-AI-Agent-Constitution-v1.0.md
+      - docs/commercial/NEO-COMMERCIAL-INVESTOR-DEAL-POLICY-v1.0.md
+      - registry/neo-commercial-pricing.yaml
   orchestration:
     routing_policy: "orchestration/routing-policy.yaml"
     mission_schema: "orchestration/mission-envelope.schema.yaml"
@@ -46,4 +48,5 @@ agent:
       - "NIA-006"
       - "NIA-007"
       - "NIA-008"
+      - "NIA-013"
   prompt: "agents/origin/system-prompt.md"

@@ -1,0 +1,132 @@
+schema_version: "1.0"
+registry_id: "NEO-PROSPECT-TARGETS-001"
+status: "active-proposed"
+
+principles:
+  source_scope: "authorized/public business intelligence only"
+  require_source_provenance: true
+  do_not_infer_private_contact_data: true
+  do_not_bypass_authentication: true
+  do_not_bypass_paywalls: true
+  do_not_bypass_robots_or_access_controls: true
+  do_not_scrape_personal_sensitive_data: true
+
+priority_segments:
+  - id: family_office
+    priority: 1
+    typical_deal_classes: [systems_architecture, private_deployment, strategic_license]
+    asking_range_usd: [500000, 2000000]
+    public_signals:
+      - digital transformation
+      - portfolio intelligence
+      - private AI infrastructure
+      - fragmented reporting
+      - multi-entity administration
+    decision_roles:
+      - managing partner
+      - chief investment officer
+      - chief operating officer
+      - chief technology officer
+  - id: university
+    priority: 1
+    typical_deal_classes: [institutional_saas, white_label_enterprise]
+    asking_range_usd: [500000, 2000000]
+    public_signals:
+      - AI modernization
+      - LMS replacement
+      - student service automation
+      - research knowledge systems
+    decision_roles:
+      - president
+      - provost
+      - chief information officer
+      - chief digital officer
+  - id: religious_network
+    priority: 1
+    typical_deal_classes: [institutional_saas, white_label_foundation, white_label_enterprise]
+    asking_range_usd: [250000, 3000000]
+    public_signals:
+      - member administration
+      - education network
+      - publishing
+      - distributed governance
+      - donor or program operations
+    decision_roles:
+      - executive director
+      - chief operating officer
+      - chief information officer
+      - denominational administrator
+  - id: investment_firm
+    priority: 1
+    typical_deal_classes: [systems_architecture, institutional_saas, strategic_license]
+    asking_range_usd: [500000, 3000000]
+    public_signals:
+      - deal intelligence
+      - research automation
+      - portfolio operations
+      - proprietary data workflows
+    decision_roles:
+      - managing partner
+      - chief investment officer
+      - head of research
+      - chief technology officer
+  - id: law_firm
+    priority: 2
+    typical_deal_classes: [institutional_saas, systems_architecture]
+    asking_range_usd: [300000, 1500000]
+    public_signals:
+      - knowledge management
+      - legal research automation
+      - matter intelligence
+      - document operations
+    decision_roles:
+      - managing partner
+      - chief innovation officer
+      - chief information officer
+  - id: media_company
+    priority: 2
+    typical_deal_classes: [institutional_saas, systems_architecture]
+    asking_range_usd: [250000, 1500000]
+    public_signals:
+      - publishing automation
+      - research intelligence
+      - creator operations
+      - distribution workflow
+    decision_roles:
+      - chief executive officer
+      - chief operating officer
+      - chief digital officer
+  - id: tribal_government
+    priority: 2
+    typical_deal_classes: [sovereign_institutional, private_deployment]
+    asking_range_usd: [1000000, 5000000]
+    public_signals:
+      - sovereign data
+      - citizen services
+      - economic development
+      - education and records modernization
+    decision_roles:
+      - administrator
+      - chief information officer
+      - economic development director
+  - id: municipality
+    priority: 3
+    typical_deal_classes: [sovereign_institutional, institutional_saas]
+    asking_range_usd: [1000000, 5000000]
+    public_signals:
+      - digital services
+      - resident service routing
+      - internal knowledge modernization
+      - procurement modernization
+    decision_roles:
+      - city manager
+      - chief information officer
+      - chief innovation officer
+
+investor_segments:
+  - id: ai_infrastructure_investor
+    use: "research_and_qualification_only_until_approved_compliance_lane"
+  - id: strategic_software_investor
+    use: "research_and_qualification_only_until_approved_compliance_lane"
+  - id: family_office_investor
+    use: "research_and_qualification_only_until_approved_compliance_lane"

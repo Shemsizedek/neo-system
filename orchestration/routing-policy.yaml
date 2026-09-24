@@ -80,6 +80,17 @@ capabilities:
       - implementation_plan
       - security_review
       - reliability_review
+  NIA-013:
+    codename: "DEALDESK"
+    handles:
+      - commercial_pricing
+      - lead_qualification
+      - white_label_quotes
+      - custom_system_quotes
+      - licensing_strategy
+      - investor_relations_preparation
+      - acquisition_inquiries
+      - deal_pipeline
 routing_rules:
   - when: "external factual uncertainty is material"
     route_to: ["NIA-003"]
@@ -93,6 +104,8 @@ routing_rules:
     route_to: ["NIA-007"]
   - when: "mission requires public-facing communications"
     route_to: ["NIA-005"]
+  - when: "mission involves commercial pricing, licensing, white-label scope, investor relations, acquisition inquiry, or deal qualification"
+    route_to: ["NIA-013"]
   - when: "approved output should become a versioned institutional record"
     route_to: ["NIA-002"]
 conflict_resolution:

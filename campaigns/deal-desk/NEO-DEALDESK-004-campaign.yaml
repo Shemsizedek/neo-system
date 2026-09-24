@@ -1,0 +1,62 @@
+schema_version: "1.0"
+campaign_id: "NEO-DEALDESK-004"
+name: "First Real Prospecting Campaign"
+status: "prepared"
+owner_agent: "NIA-013"
+prospect_book: "campaigns/deal-desk/2026-09-23-initial-prospect-book.yaml"
+target_registry: "registry/neo-prospect-targets.yaml"
+pricing_registry: "registry/neo-commercial-pricing.yaml"
+pipeline: "orchestration/deal-desk-pipeline.yaml"
+
+objectives:
+  - "Convert public AI/digital modernization signals into qualified NEO commercial opportunities."
+  - "Establish a repeatable sourced target-book format for NEO Crawler ingestion."
+  - "Prepare non-binding outreach briefs and proposals without inventing buying intent or budgets."
+
+campaign_controls:
+  live_send_enabled: false
+  investor_send_enabled: false
+  automatic_crm_ingestion: "ready_after_merge_and_runtime_wiring"
+  source_provenance_required: true
+  public_business_contacts_only: true
+  personalized_pitch_generation: true
+  quote_generation: true
+  human_gate_for:
+    - securities_solicitation
+    - discount_below_minimum
+    - binding_commitment
+    - equity_terms
+    - token_or_revenue_share
+    - ip_transfer
+    - exclusivity
+    - perpetual_rights
+    - accepting_funds
+
+waves:
+  - wave: 1
+    segment: "Texas / relationship-proximate"
+    prospects:
+      - prospect-edot-001
+      - prospect-weil-001
+  - wave: 2
+    segment: "Higher education"
+    prospects:
+      - prospect-uconn-001
+      - prospect-uiowa-001
+  - wave: 3
+    segment: "Legal innovation"
+    prospects:
+      - prospect-klgates-001
+      - prospect-mintz-001
+  - wave: 4
+    segment: "Investment intelligence"
+    prospects:
+      - prospect-trowe-001
+
+success_metrics:
+  sourced_prospects: 7
+  target_hot_leads_after_discovery_validation: 3
+  target_qualified_conversations: 2
+  target_custom_scope_requests: 1
+  target_initial_pipeline_value_usd: 10000000
+  note: "Targets are campaign objectives, not forecasts or guarantees."
