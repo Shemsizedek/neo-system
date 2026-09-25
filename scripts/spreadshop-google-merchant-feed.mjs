@@ -5,7 +5,8 @@ const inputPath = process.env.SPREADSHOP_SELLABLES_PATH || "merch/house-of-negus
 const outputDir = process.env.GOOGLE_MERCHANT_OUTPUT_DIR || "merch/house-of-negus/generated";
 const feedPath = path.join(outputDir, "google-merchant.xml");
 const reportPath = path.join(outputDir, "google-merchant-report.json");
-const storeUrl = (process.env.SPREADSHOP_STORE_URL || "").replace(/\/$/, "");
+const platformRaw = String(process.env.SPREADSHOP_PLATFORM || "").trim();
+const storeUrl = (process.env.SPREADSHOP_STORE_URL || (/^https?:\/\//i.test(platformRaw) ? platformRaw : "")).replace(/\/$/, "");
 
 const pick = (obj, paths) => {
   for (const p of paths) {
@@ -30,9 +31,46 @@ const normalizeUrl = (v) => {
   return null;
 };
 
+const walk = (value, path = "", out = []) => {
+  if (value == null) return out;
+  if (Array.isArray(value)) {
+    value.slice(0, 5).forEach((v, i) => walk(v, `${path}[${i}]`, out));
+    return out;
+  }
+  if (typeof value === "object") {
+    for (const [k, v] of Object.entries(value)) walk(v, path ? `${path}.${k}` : k, out);
+    return out;
+  }
+  out.push({ path, key: path.split(".").pop()?.replace(/\[\d+\]/g, "") || path, value });
+  return out;
+};
+
+const scalarEntries = (row) => walk(row);
+
+const findByKey = (row, keyPattern, valuePredicate = () => true) => {
+  for (const e of scalarEntries(row)) {
+    if (keyPattern.test(e.key) && valuePredicate(e.value, e.path)) return e.value;
+  }
+  return null;
+};
+
+const firstHttpByPath = (row, pathPattern) => {
+  for (const e of scalarEntries(row)) {
+    const s = String(e.value ?? "").trim();
+    if (pathPattern.test(e.path) && /^https?:\/\//i.test(s)) return s;
+  }
+  return null;
+};
+
 const normalizePrice = (row) => {
-  const amount = pick(row, ["price.amount", "price.value", "price", "retailPrice.amount", "retailPrice.value"]);
-  const currency = pick(row, ["price.currency", "price.currencyId", "currency", "retailPrice.currency", "retailPrice.currencyId"]) || "USD";
+  let amount = pick(row, ["price.amount", "price.value", "price", "retailPrice.amount", "retailPrice.value"]);
+  if (typeof amount === "object") amount = null;
+  if (amount == null) {
+    amount = findByKey(row, /^(amount|price|value)$/i, v => Number.isFinite(Number(v)) && Number(v) > 0);
+  }
+  let currency = pick(row, ["price.currency", "price.currencyId", "currency", "retailPrice.currency", "retailPrice.currencyId"]);
+  if (currency == null) currency = findByKey(row, /currency(Id)?$/i, v => /^[A-Za-z]{3}$/.test(String(v)));
+  currency ||= "USD";
   const n = Number(amount);
   return Number.isFinite(n) && n > 0 ? `${n.toFixed(2)} ${String(currency).toUpperCase()}` : null;
 };
@@ -48,21 +86,23 @@ const normalizeImage = (row) => {
       if (cand) return cand;
     }
   }
-  return null;
+  return firstHttpByPath(row, /(image|preview|picture|media|resource)/i);
 };
 
 const normalizeLink = (row) => {
   const direct = pick(row, ["shopUrl", "url", "productUrl", "detailUrl", "href"]);
   const u = normalizeUrl(direct);
   if (u) return u;
-  const id = pick(row, ["sellableId", "id"]);
-  return storeUrl && id ? `${storeUrl}/${encodeURIComponent(String(id))}` : null;
+  const discovered = firstHttpByPath(row, /(shop|product|sellable|detail|link|href|url)/i);
+  if (discovered && !/(image|preview|picture|media)/i.test(discovered)) return discovered;
+  const id = pick(row, ["sellableId", "id"]) || findByKey(row, /^(sellableId|id)$/i);
+  return storeUrl && id ? `${storeUrl}/shop/product/${encodeURIComponent(String(id))}` : null;
 };
 
 const normalizeItem = (row) => {
-  const id = String(pick(row, ["sellableId", "id", "ideaId"]) || "").trim();
-  const title = String(pick(row, ["name", "title"]) || "").trim();
-  const description = String(pick(row, ["description", "name", "title"]) || "").trim();
+  const id = String(pick(row, ["sellableId", "id", "ideaId"]) || findByKey(row, /^(sellableId|id|ideaId)$/i) || "").trim();
+  const title = String(pick(row, ["name", "title"]) || findByKey(row, /^(name|title)$/i) || "").trim();
+  const description = String(pick(row, ["description", "name", "title"]) || findByKey(row, /^(description|name|title)$/i) || "").trim();
   const link = normalizeLink(row);
   const image = normalizeImage(row);
   const price = normalizePrice(row);
@@ -125,6 +165,7 @@ fs.writeFileSync(reportPath, JSON.stringify({
   accepted_count: valid.length,
   rejected_count: invalid.length,
   rejected: invalid.slice(0, 100).map(x => ({ id: x.id || null, title: x.title || null, missing: x.missing })),
+  sample_schema_paths: rows[0] ? scalarEntries(rows[0]).map(e => e.path).slice(0, 250) : [],
   feed_path: feedPath
 }, null, 2));
 
@@ -134,4 +175,8 @@ console.log(JSON.stringify({
   rejected_count: invalid.length
 }, null, 2));
 
-if (rows.length > 0 && valid.length === 0) process.exitCode = 2;
+if (rows.length > 0 && valid.length === 0) {
+  console.error("No Merchant-valid rows. Sample Spreadshop schema paths:");
+  console.error(JSON.stringify(rows[0] ? scalarEntries(rows[0]).map(e => e.path).slice(0, 250) : [], null, 2));
+  process.exitCode = 2;
+}
