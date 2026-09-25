@@ -259,7 +259,7 @@ async function proxyWorldLeaders(req, res) {
   let upstream;
   try {
     upstream = await fetch(target, {
-      redirect: 'manual',
+      redirect: 'follow',
       headers: {
         'user-agent': 'World-Temple-Leaders-Gateway/1.0 (+https://holytemples.org)',
         'accept': req.headers.accept || '*/*',
@@ -302,7 +302,8 @@ async function proxyWorldLeaders(req, res) {
       'content-type': type,
       'cache-control': cacheControl,
       'x-content-type-options': 'nosniff',
-      'referrer-policy': 'strict-origin-when-cross-origin'
+      'referrer-policy': 'strict-origin-when-cross-origin',
+      'x-neo-surface': 'world-leaders-forum'
     });
     return res.end(html);
   }
