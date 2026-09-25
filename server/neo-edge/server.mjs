@@ -3,6 +3,7 @@ import { URL } from 'node:url';
 import { searchPublicLibrary, libraryCatalog, libraryAsset, health as libraryHealth } from '../holytemples-adapter/adapter.mjs';
 import { createFirestoreRestDb } from '../neo-counter-backend/firestore-rest-db.mjs';
 import { readFile } from 'node:fs/promises';
+import { renderWorldLeaders } from './leaders-app.mjs';
 import { fileURLToPath } from 'node:url';
 
 const PORT = Number(process.env.PORT || 8080);
