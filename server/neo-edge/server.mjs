@@ -101,7 +101,8 @@ const SERVICES = Object.freeze({
   'nomni.holytemples.org': { id: 'nomni', name: 'N.O.M.N.I.', role: 'currency', api: true },
   'wallet.holytemples.org': { id: 'neo-treasury-wallet', name: 'NEO Treasury Wallet', role: 'wallet', api: true },
   'treasury.holytemples.org': { id: 'world-treasury', name: 'World Treasury', role: 'treasury', api: true },
-  'nvsn.holytemples.org': { id: 'nvsn', name: 'NEO Virtual Satellite Network', role: 'communications-fabric', api: true }
+  'nvsn.holytemples.org': { id: 'nvsn', name: 'NEO Virtual Satellite Network', role: 'communications-fabric', api: true },
+  'leaders.holytemples.org': { id: 'world-leaders-forum', name: 'World Leaders Forum — TWLF HQ', role: 'institutional-redirect', api: false }
 });
 
 const PUBLIC_ORIGINS = new Set([
@@ -256,6 +257,14 @@ export function createNeoEdgeServer() {
     const url = new URL(req.url || '/', `https://${host || 'neo.holytemples.org'}`);
 
     if (!service) return json(req, res, 421, { error: 'unknown_neo_host', host });
+
+    if (host === 'leaders.holytemples.org') {
+      res.writeHead(308, {
+        location: 'https://twlfworldhq.wordpress.com/',
+        'cache-control': 'public, max-age=300'
+      });
+      return res.end();
+    }
 
     if (req.method === 'GET' && url.pathname === '/assets/neo-bridge.js') {
       return javascript(req, res, BRIDGE_ASSET_PATH);
