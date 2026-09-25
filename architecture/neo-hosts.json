@@ -34,8 +34,7 @@
     {"host":"neodash.holytemples.org","service":"neo-dash","role":"site-api"},
     {"host":"nomni.holytemples.org","service":"nomni","role":"currency-site-api"},
     {"host":"wallet.holytemples.org","service":"neo-treasury-wallet","role":"wallet-api"},
-    {"host":"treasury.holytemples.org","service":"world-treasury","role":"treasury-site-api"},
-    {"host":"leaders.holytemples.org","service":"world-leaders-forum","role":"institutional-redirect","target":"https://twlfworldhq.wordpress.com/","official":true}
+    {"host":"treasury.holytemples.org","service":"world-treasury","role":"treasury-site-api"}
   ],
   "treasury": {
     "network": "bitcoin-counterparty",
