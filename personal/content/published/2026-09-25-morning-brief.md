@@ -1,6 +1,7 @@
 ---
 date: 2026-09-25
 batch: friday-morning-brief
+series: Middle Path Social Letter
 status: published
 approved_in_chat: 2026-09-25 ~07:49 CT ("Post them" / "Post to all")
 ---
