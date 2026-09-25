@@ -261,14 +261,20 @@ async function proxyWorldLeaders(req, res) {
     upstream = await fetch(target, {
       redirect: 'follow',
       headers: {
-        'user-agent': 'World-Temple-Leaders-Gateway/1.0 (+https://holytemples.org)',
-        'accept': req.headers.accept || '*/*',
-        'accept-language': req.headers['accept-language'] || 'en-US,en;q=0.9'
+        'user-agent': 'Mozilla/5.0 (Linux; Android 16; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Mobile Safari/537.36',
+        'accept': req.headers.accept || 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+        'accept-language': req.headers['accept-language'] || 'en-US,en;q=0.9',
+        'cache-control': 'no-cache'
       }
     });
   } catch (error) {
     console.error('World Leaders upstream fetch failed', error?.message || error);
-    return htmlPage(res, 502, '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>World Leaders Forum</title></head><body><main style="max-width:760px;margin:10vh auto;padding:24px;font-family:system-ui,sans-serif"><h1>World Leaders Forum</h1><p>The forum is temporarily unavailable. Please try again shortly.</p><p><a href="https://holytemples.org/holy-palace/">Return to Holy Palace</a></p></main></body></html>');
+    res.writeHead(302, {
+      location: WORLD_LEADERS_SOURCE_ORIGIN + incoming.pathname + incoming.search,
+      'cache-control': 'no-store',
+      'x-neo-surface': 'world-leaders-forum-fallback'
+    });
+    return res.end();
   }
 
   if (upstream.status >= 300 && upstream.status < 400) {
@@ -282,6 +288,16 @@ async function proxyWorldLeaders(req, res) {
       ? `${WORLD_LEADERS_PUBLIC_ORIGIN}${next.pathname}${next.search}${next.hash}`
       : next.toString();
     res.writeHead(upstream.status, { location: publicLocation, 'cache-control': 'no-store' });
+    return res.end();
+  }
+
+  if (upstream.status >= 400) {
+    console.error('World Leaders upstream returned', upstream.status);
+    res.writeHead(302, {
+      location: WORLD_LEADERS_SOURCE_ORIGIN + incoming.pathname + incoming.search,
+      'cache-control': 'no-store',
+      'x-neo-surface': 'world-leaders-forum-upstream-fallback'
+    });
     return res.end();
   }
 
