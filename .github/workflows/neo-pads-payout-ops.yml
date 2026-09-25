@@ -119,13 +119,39 @@ jobs:
           test -n "$CONNECTION_NAME"
           echo "CLOUD_SQL_CONNECTION_NAME=$CONNECTION_NAME" >> "$GITHUB_ENV"
 
+      - name: Download Cloud SQL Auth Proxy
+        if: steps.config.outputs.configured == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          PROXY_VERSION="v2.18.2"
+          PROXY_ARCH="linux.amd64"
+          PROXY_BASE_URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/${PROXY_VERSION}"
+          
+          # Download the binary and its SHA256 checksum
+          curl -fsSL -o "$RUNNER_TEMP/cloud-sql-proxy" "${PROXY_BASE_URL}/cloud-sql-proxy.${PROXY_ARCH}"
+          curl -fsSL -o "$RUNNER_TEMP/cloud-sql-proxy.sha256" "${PROXY_BASE_URL}/cloud-sql-proxy.${PROXY_ARCH}.sha256"
+          
+          # Verify the checksum
+          cd "$RUNNER_TEMP"
+          if ! sha256sum -c cloud-sql-proxy.sha256 2>&1 | grep -q 'cloud-sql-proxy: OK'; then
+            echo "ERROR: Cloud SQL Auth Proxy checksum verification failed"
+            echo "Expected checksum:"
+            cat cloud-sql-proxy.sha256
+            echo "Actual checksum:"
+            sha256sum cloud-sql-proxy
+            exit 1
+          fi
+          echo "Cloud SQL Auth Proxy checksum verified successfully"
+          
+          # Make executable only after verification
+          chmod +x "$RUNNER_TEMP/cloud-sql-proxy"
+
       - name: Start Cloud SQL Auth Proxy
         if: steps.config.outputs.configured == 'true'
         shell: bash
         run: |
           set -euo pipefail
-          curl -fsSL -o "$RUNNER_TEMP/cloud-sql-proxy" https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.18.2/cloud-sql-proxy.linux.amd64
-          chmod +x "$RUNNER_TEMP/cloud-sql-proxy"
           "$RUNNER_TEMP/cloud-sql-proxy" --address 127.0.0.1 --port 5432 "$CLOUD_SQL_CONNECTION_NAME" >"$RUNNER_TEMP/cloud-sql-proxy.log" 2>&1 &
           echo $! > "$RUNNER_TEMP/cloud-sql-proxy.pid"
           for i in {1..30}; do
