@@ -206,7 +206,10 @@ jobs:
           direct_code="$(curl --retry 5 --retry-delay 3 --retry-all-errors -sS -o /dev/null -w '%{http_code}' -H 'X-Forwarded-Host: neo.holytemples.org' "$NEO_EDGE_SERVICE_URL/health")"
           test "$direct_code" = 200
 
-          leaders_code="$(curl --retry 5 --retry-delay 3 --retry-all-errors -sS -o /tmp/leaders-origin.html -w '%{http_code}' -H 'X-Forwarded-Host: leaders.holytemples.org' "$NEO_EDGE_SERVICE_URL/")"
+          leaders_code="$(curl --retry 5 --retry-delay 3 --retry-all-errors -sS -L -D /tmp/leaders-origin.headers -o /tmp/leaders-origin.html -w '%{http_code}' -H 'X-Forwarded-Host: leaders.holytemples.org' "$NEO_EDGE_SERVICE_URL/")"
+          echo "leaders origin final status: $leaders_code" >> "$GITHUB_STEP_SUMMARY"
+          head -c 400 /tmp/leaders-origin.html | tr '\n' ' ' >> "$GITHUB_STEP_SUMMARY" || true
+          echo >> "$GITHUB_STEP_SUMMARY"
           test "$leaders_code" = 200
           grep -Eiq 'World Leaders|TWLF' /tmp/leaders-origin.html
           if grep -q 'NEO Service' /tmp/leaders-origin.html; then
