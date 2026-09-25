@@ -1,5 +1,11 @@
 name: House of Negus Merchant Cutover Readiness
 on:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/google-merchant-cutover-check.mjs"
+      - "merch/house-of-negus/google-merchant-cutover.json"
+      - ".github/workflows/house-of-negus-google-merchant-cutover-readiness.yml"
   workflow_dispatch:
   schedule:
     - cron: "25 16 * * *"
