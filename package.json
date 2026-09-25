@@ -71,7 +71,9 @@
     "orange-esop:test": "node --test apps/orange-esop/server/*.test.mjs modules/orange-esop/*.test.mjs",
     "crawler:worker": "node scripts/neo-crawler-worker.mjs",
     "crawler:worker:once": "node scripts/neo-crawler-worker.mjs --once",
-    "neotherapy:test": "node --test server/neotherapy/*.test.mjs"
+    "neotherapy:test": "node --test server/neotherapy/*.test.mjs",
+    "merch:spreadshop:merchant-feed": "node scripts/spreadshop-google-merchant-feed.mjs",
+    "merch:spreadshop:merchant-feed:test": "node --test scripts/spreadshop-google-merchant-feed.test.mjs"
   },
   "dependencies": {
     "@composio/core": "^0.18.1",
