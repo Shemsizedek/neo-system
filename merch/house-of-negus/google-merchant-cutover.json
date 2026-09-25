@@ -1,0 +1,22 @@
+{
+  "gate": "HN-MERCH-AUTO-023",
+  "merchant_center_account_id": "5429352076",
+  "merchant_center_account_name": "The House",
+  "replacement_feed_url": "https://shemsizedek.github.io/neo-system/api/merchant/google-merchant.xml",
+  "source_system": "Spreadshop via NEO System",
+  "live_spreadshop_store": "https://shemsizedek.myspreadshop.com",
+  "expected_product_count": 2803,
+  "legacy_source_to_retire": {
+    "type": "Shopify product source/feed",
+    "domain": "thehouseofnegus.myshopify.com"
+  },
+  "cutover_sequence": [
+    "Verify replacement feed is publicly reachable and contains Merchant-valid items.",
+    "Add the NEO Spreadshop feed as a new Merchant Center data source.",
+    "Wait for Google Merchant Center to ingest and process the replacement source.",
+    "Confirm the replacement source is healthy and product diagnostics are acceptable.",
+    "Disable or remove the legacy Shopify source only after replacement ingestion is confirmed."
+  ],
+  "rollback": "If the replacement source fails ingestion, re-enable the legacy Shopify source and investigate the NEO feed without leaving Merchant Center empty.",
+  "generated_at": "2026-09-25T22:00:00Z"
+}

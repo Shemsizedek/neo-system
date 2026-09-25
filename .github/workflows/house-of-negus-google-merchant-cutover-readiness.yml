@@ -1,0 +1,22 @@
+name: House of Negus Merchant Cutover Readiness
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "25 16 * * *"
+
+permissions:
+  contents: read
+
+jobs:
+  verify-feed:
+    runs-on: ubuntu-latest
+    env:
+      GOOGLE_MERCHANT_FEED_URL: https://shemsizedek.github.io/neo-system/api/merchant/google-merchant.xml
+      GOOGLE_MERCHANT_MIN_ITEMS: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Verify live Merchant feed
+        run: node scripts/google-merchant-cutover-check.mjs
