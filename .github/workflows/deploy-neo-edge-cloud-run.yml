@@ -180,8 +180,9 @@ jobs:
             wallet.holytemples.org
             treasury.holytemples.org
             nvsn.holytemples.org
+            leaders.holytemples.org
             neoteric.holytemples.org
-          tabernacle.holytemples.org
+            tabernacle.holytemples.org
           )
           pending=0
           for domain in "${domains[@]}"; do
@@ -205,6 +206,14 @@ jobs:
           direct_code="$(curl --retry 5 --retry-delay 3 --retry-all-errors -sS -o /dev/null -w '%{http_code}' -H 'X-Forwarded-Host: neo.holytemples.org' "$NEO_EDGE_SERVICE_URL/health")"
           test "$direct_code" = 200
 
+          leaders_code="$(curl --retry 5 --retry-delay 3 --retry-all-errors -sS -o /tmp/leaders-origin.html -w '%{http_code}' -H 'X-Forwarded-Host: leaders.holytemples.org' "$NEO_EDGE_SERVICE_URL/")"
+          test "$leaders_code" = 200
+          grep -Eiq 'World Leaders|TWLF' /tmp/leaders-origin.html
+          if grep -q 'NEO Service' /tmp/leaders-origin.html; then
+            echo "::error::leaders.holytemples.org fell back to the generic NEO Service shell"
+            exit 1
+          fi
+
           urls=(
             'https://neo.holytemples.org/health'
             'https://neo.holytemples.org/assets/neo-bridge.js'
@@ -225,10 +234,11 @@ jobs:
             'https://treasury.holytemples.org/api/treasury'
             'https://nvsn.holytemples.org/health'
             'https://nvsn.holytemples.org/'
-            'https://neoteric.holytemples.org
-          tabernacle.holytemples.org/health'
-            'https://neoteric.holytemples.org
-          tabernacle.holytemples.org/'
+            'https://leaders.holytemples.org/'
+            'https://neoteric.holytemples.org/health'
+            'https://neoteric.holytemples.org/'
+            'https://tabernacle.holytemples.org/health'
+            'https://tabernacle.holytemples.org/'
           )
           for url in "${urls[@]}"; do
             host="$(node -e 'console.log(new URL(process.argv[1]).hostname)' "$url")"
