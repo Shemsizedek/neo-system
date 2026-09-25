@@ -6,6 +6,8 @@ import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 
 const PORT = Number(process.env.PORT || 8080);
+const WORLD_LEADERS_SOURCE_ORIGIN = 'https://twlfworldhq.wordpress.com';
+const WORLD_LEADERS_PUBLIC_ORIGIN = 'https://leaders.holytemples.org';
 const TREASURY_WALLET = '18FyntJG9hdXYvanm67mGgbyo1P7adckvg';
 const FIRESTORE_PROJECT_ID = process.env.GOOGLE_CLOUD_PROJECT || process.env.GCP_PROJECT_ID || process.env.GCLOUD_PROJECT || '';
 const FIRESTORE_DATABASE_ID = process.env.FIRESTORE_DATABASE_ID || '(default)';
@@ -244,6 +246,81 @@ function systemManifest() {
   };
 }
 
+
+async function proxyWorldLeaders(req, res) {
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
+    res.writeHead(405, { allow: 'GET, HEAD', 'content-type': 'text/plain; charset=utf-8' });
+    return res.end('Method Not Allowed');
+  }
+
+  const incoming = new URL(req.url || '/', WORLD_LEADERS_PUBLIC_ORIGIN);
+  const target = new URL(incoming.pathname + incoming.search, WORLD_LEADERS_SOURCE_ORIGIN);
+
+  let upstream;
+  try {
+    upstream = await fetch(target, {
+      redirect: 'manual',
+      headers: {
+        'user-agent': 'World-Temple-Leaders-Gateway/1.0 (+https://holytemples.org)',
+        'accept': req.headers.accept || '*/*',
+        'accept-language': req.headers['accept-language'] || 'en-US,en;q=0.9'
+      }
+    });
+  } catch (error) {
+    console.error('World Leaders upstream fetch failed', error?.message || error);
+    return htmlPage(res, 502, '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>World Leaders Forum</title></head><body><main style="max-width:760px;margin:10vh auto;padding:24px;font-family:system-ui,sans-serif"><h1>World Leaders Forum</h1><p>The forum is temporarily unavailable. Please try again shortly.</p><p><a href="https://holytemples.org/holy-palace/">Return to Holy Palace</a></p></main></body></html>');
+  }
+
+  if (upstream.status >= 300 && upstream.status < 400) {
+    const location = upstream.headers.get('location');
+    if (!location) {
+      res.writeHead(502, { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'no-store' });
+      return res.end('Upstream redirect missing location');
+    }
+    const next = new URL(location, target);
+    const publicLocation = next.origin === WORLD_LEADERS_SOURCE_ORIGIN
+      ? `${WORLD_LEADERS_PUBLIC_ORIGIN}${next.pathname}${next.search}${next.hash}`
+      : next.toString();
+    res.writeHead(upstream.status, { location: publicLocation, 'cache-control': 'no-store' });
+    return res.end();
+  }
+
+  const type = upstream.headers.get('content-type') || 'application/octet-stream';
+  const cacheControl = type.includes('text/html') ? 'public, max-age=120' : (upstream.headers.get('cache-control') || 'public, max-age=300');
+
+  if (type.includes('text/html')) {
+    let html = await upstream.text();
+    html = html
+      .replaceAll(WORLD_LEADERS_SOURCE_ORIGIN, WORLD_LEADERS_PUBLIC_ORIGIN)
+      .replaceAll('//twlfworldhq.wordpress.com', '//leaders.holytemples.org')
+      .replace(/<link([^>]+)rel=["']canonical["']([^>]+)href=["'][^"']+["']([^>]*)>/i, '<link$1rel="canonical"$2href="https://leaders.holytemples.org/"$3>');
+    if (req.method === 'HEAD') {
+      res.writeHead(upstream.status, { 'content-type': type, 'cache-control': cacheControl, 'x-content-type-options': 'nosniff' });
+      return res.end();
+    }
+    res.writeHead(upstream.status, {
+      'content-type': type,
+      'cache-control': cacheControl,
+      'x-content-type-options': 'nosniff',
+      'referrer-policy': 'strict-origin-when-cross-origin'
+    });
+    return res.end(html);
+  }
+
+  const data = Buffer.from(await upstream.arrayBuffer());
+  const headers = {
+    'content-type': type,
+    'cache-control': cacheControl,
+    'x-content-type-options': 'nosniff'
+  };
+  if (req.method === 'HEAD') {
+    res.writeHead(upstream.status, headers);
+    return res.end();
+  }
+  res.writeHead(upstream.status, { 'content-length': data.length, ...headers });
+  return res.end(data);
+}
+
 export function createNeoEdgeServer() {
   return http.createServer(async (req, res) => {
     if (req.method === 'OPTIONS') {
@@ -259,11 +336,7 @@ export function createNeoEdgeServer() {
     if (!service) return json(req, res, 421, { error: 'unknown_neo_host', host });
 
     if (host === 'leaders.holytemples.org') {
-      res.writeHead(308, {
-        location: 'https://twlfworldhq.wordpress.com/',
-        'cache-control': 'public, max-age=300'
-      });
-      return res.end();
+      return proxyWorldLeaders(req, res);
     }
 
     if (req.method === 'GET' && url.pathname === '/assets/neo-bridge.js') {
