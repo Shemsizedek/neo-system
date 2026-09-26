@@ -33,7 +33,7 @@ jobs:
           done
           curl -fsS "$base/" -o /tmp/pacer-index.html
           grep -q 'NEO-PACER' /tmp/pacer-index.html
-          grep -q 'Public Records & Research' /tmp/pacer-index.html
+          grep -q 'Public Records & Case Research' /tmp/pacer-index.html
           grep -q 'Find the public record' /tmp/pacer-index.html
           grep -q 'Evidence Library' /tmp/pacer-index.html
           grep -q 'Research is not adjudication\|Public-record boundary' /tmp/pacer-index.html
