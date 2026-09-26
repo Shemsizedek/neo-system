@@ -206,6 +206,47 @@ export function createSocialGatewayServer({
 
 
 
+
+      if (req.method === 'POST' && url.pathname === '/automation/shemsi/sync') {
+        if (!automationAuthorized(req,env)) return respond(res,401,{error:'automation_unauthorized'})
+        if(!shemsiStore||!shemsiIngestion)return respond(res,503,{error:'shemsi_automation_not_ready'})
+        const subjectId=String(env.SHEMSI_AUTOMATION_SUBJECT_ID||'').trim()
+        if(!subjectId)return respond(res,503,{error:'shemsi_automation_subject_required'})
+        const linkedInTargets=String(env.SHEMSI_LINKEDIN_ACTIVITY_URNS||'').split(',').map(x=>x.trim()).filter(Boolean)
+        const youtubeTargets=String(env.SHEMSI_YOUTUBE_VIDEO_IDS||'').split(',').map(x=>x.trim()).filter(Boolean)
+        const results=[]
+        const saveItems=async(result,key)=>{
+          let added=0
+          for(const source of result.items||[]){
+            const item={...makeInboxItem(source),triage:source.triage||null,authorExternalId:source.authorExternalId||null}
+            const created=typeof shemsiStore.putInboxIfNew==='function'?await shemsiStore.putInboxIfNew(subjectId,item):(await shemsiStore.putInbox(subjectId,item),true)
+            if(!created)continue
+            added++
+            if(typeof shemsiStore.saveApprovalNotice==='function')await shemsiStore.saveApprovalNotice(subjectId,{schema:'neo.social.shemsi.approval-notice.v0.1',id:`notice:${item.id}`,inboxId:item.id,platform:item.platform,priority:item.triage?.priority||'normal',disposition:item.triage?.disposition||'review',status:'pending',createdAt:new Date().toISOString()})
+          }
+          if(typeof shemsiStore.saveSyncState==='function')await shemsiStore.saveSyncState(subjectId,key,{lastRunAt:new Date().toISOString(),nextPageToken:result.nextPageToken||null,added})
+          return added
+        }
+        for(const activityUrn of linkedInTargets){
+          const result=await shemsiIngestion.ingestLinkedIn({activityUrn,subjectId})
+          results.push({platform:'linkedin',target:activityUrn,status:result.status,added:await saveItems(result,`linkedin:${activityUrn}`)})
+        }
+        for(const videoId of youtubeTargets){
+          const key=`youtube:${videoId}`
+          const state=typeof shemsiStore.getSyncState==='function'?await shemsiStore.getSyncState(subjectId,key):null
+          const result=await shemsiIngestion.ingestYouTube({videoId,pageToken:state?.nextPageToken||undefined,subjectId})
+          results.push({platform:'youtube',target:videoId,status:result.status,added:await saveItems(result,key)})
+        }
+        return respond(res,200,{ok:true,subjectId,results})
+      }
+
+      if (url.pathname === '/api/shemsi/approvals' && req.method === 'GET') {
+        if (typeof resolveTrustedIdentity !== 'function') return respond(res,401,{error:'neopass_identity_required'})
+        const subjectId=trustedSubject(await resolveTrustedIdentity(req))
+        if(!shemsiStore||typeof shemsiStore.listApprovalNotices!=='function')return respond(res,503,{error:'shemsi_store_unavailable'})
+        return respond(res,200,{subjectId,notices:await shemsiStore.listApprovalNotices(subjectId)})
+      }
+
       if (url.pathname === '/api/shemsi/sync' && req.method === 'POST') {
         if (typeof resolveTrustedIdentity !== 'function') return respond(res,401,{error:'neopass_identity_required'})
         const subjectId=trustedSubject(await resolveTrustedIdentity(req))
@@ -213,14 +254,17 @@ export function createSocialGatewayServer({
         if(!shemsiIngestion) return respond(res,503,{error:'shemsi_ingestion_unavailable'})
         const body=await readJson(req)
         let result
-        if(body.platform==='linkedin') result=await shemsiIngestion.ingestLinkedIn({activityUrn:body.activityUrn})
-        else if(body.platform==='youtube') result=await shemsiIngestion.ingestYouTube({videoId:body.videoId,channelId:body.channelId,pageToken:body.pageToken})
+        if(body.platform==='linkedin') result=await shemsiIngestion.ingestLinkedIn({activityUrn:body.activityUrn,subjectId})
+        else if(body.platform==='youtube') result=await shemsiIngestion.ingestYouTube({videoId:body.videoId,channelId:body.channelId,pageToken:body.pageToken,subjectId})
         else return respond(res,400,{error:'shemsi_ingestion_platform_not_supported'})
         const saved=[]
         for(const source of result.items||[]){
           const item={...makeInboxItem(source),triage:source.triage||null,authorExternalId:source.authorExternalId||null}
-          await shemsiStore.putInbox(subjectId,item)
-          saved.push(item)
+          const created=typeof shemsiStore.putInboxIfNew==='function'?await shemsiStore.putInboxIfNew(subjectId,item):(await shemsiStore.putInbox(subjectId,item),true)
+          if(created){
+            saved.push(item)
+            if(typeof shemsiStore.saveApprovalNotice==='function')await shemsiStore.saveApprovalNotice(subjectId,{schema:'neo.social.shemsi.approval-notice.v0.1',id:`notice:${item.id}`,inboxId:item.id,platform:item.platform,priority:item.triage?.priority||'normal',disposition:item.triage?.disposition||'review',status:'pending',createdAt:new Date().toISOString()})
+          }
         }
         return respond(res,200,{subjectId,platform:result.platform,status:result.status,items:saved,nextPageToken:result.nextPageToken||null})
       }
@@ -236,7 +280,7 @@ export function createSocialGatewayServer({
         if(!draft) return respond(res,404,{error:'shemsi_draft_not_found'})
         const receipt=await shemsiStore.getReceipt(subjectId,id)
         if(!receipt) return respond(res,404,{error:'shemsi_receipt_not_found'})
-        const verification=await shemsiIngestion.verify(receipt,{parentContentId:draft.parentContentId})
+        const verification=await shemsiIngestion.verify(receipt,{parentContentId:draft.parentContentId,subjectId})
         const verifiedReceipt={...receipt,verification,verifiedAt:new Date().toISOString()}
         await shemsiStore.saveReceipt(subjectId,id,verifiedReceipt)
         return respond(res,200,{subjectId,receipt:verifiedReceipt})
@@ -352,7 +396,7 @@ export function createSocialGatewayServer({
         const token = await exchangeSocialAuthorizationCode({ providerId, code, expectedState, returnedState, env, fetchImpl, oauthStateMaxAgeMs })
         await store.saveConnection({
           identityId: token.identityId, providerId: token.providerId, accessToken: token.accessToken,
-          refreshToken: token.refreshToken, expiresIn: token.expiresIn, scope: token.scope, connectedAt: Date.now(),
+          refreshToken: token.refreshToken, expiresIn: token.expiresIn, expiresAt: Number.isFinite(token.expiresIn)?Date.now()+token.expiresIn*1000:null, scope: token.scope, connectedAt: Date.now(),
         })
         return respond(res, 200, { status: 'connected', providerId: token.providerId, identityId: token.identityId, publishing: 'approval-required' })
       }
