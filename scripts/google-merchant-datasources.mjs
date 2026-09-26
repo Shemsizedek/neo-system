@@ -134,6 +134,56 @@ if (action === "provision") {
   process.exit(0);
 }
 
+if (action === "retire-legacy") {
+  const replacementId = process.env.GOOGLE_MERCHANT_REPLACEMENT_SOURCE_ID || "10748120384";
+  const legacyId = process.env.GOOGLE_MERCHANT_LEGACY_SOURCE_ID || "10432070529";
+  const expected = `CONFIRM_RETIRE_${legacyId}`;
+  if (process.env.GOOGLE_MERCHANT_APPLY !== expected) {
+    throw new Error(`Refusing retirement. Set GOOGLE_MERCHANT_APPLY=${expected}.`);
+  }
+
+  const replacement = await api(`/accounts/${accountId}/dataSources/${replacementId}`);
+  const replacementUpload = await api(`/accounts/${accountId}/dataSources/${replacementId}/fileUploads/latest`);
+  const legacy = await api(`/accounts/${accountId}/dataSources/${legacyId}`);
+
+  const checks = {
+    replacement_name_ok: replacement?.displayName === "House of Negus — Spreadshop (NEO)",
+    replacement_processing_succeeded: replacementUpload?.processingState === "SUCCEEDED",
+    replacement_item_count_ok: Number(replacementUpload?.itemsTotal || 0) >= 2803,
+    legacy_name_ok: legacy?.displayName === "Products source - The House",
+    legacy_input_is_file: legacy?.input === "FILE"
+  };
+  if (!Object.values(checks).every(Boolean)) {
+    throw new Error(`Retirement preflight failed: ${JSON.stringify(checks)}`);
+  }
+
+  await api(`/accounts/${accountId}/dataSources/${legacyId}`, { method: "DELETE" });
+
+  let legacyGone = false;
+  try {
+    await api(`/accounts/${accountId}/dataSources/${legacyId}`);
+  } catch (err) {
+    if (/404|NOT_FOUND/i.test(String(err))) legacyGone = true;
+    else throw err;
+  }
+
+  const replacementAfter = await api(`/accounts/${accountId}/dataSources/${replacementId}`);
+  const replacementUploadAfter = await api(`/accounts/${accountId}/dataSources/${replacementId}/fileUploads/latest`);
+
+  console.log(JSON.stringify({
+    retired: legacyGone,
+    retired_source_id: legacyId,
+    retired_source_name: legacy?.displayName,
+    replacement_source_id: replacementId,
+    replacement_source_name: replacementAfter?.displayName,
+    replacement_processing_state: replacementUploadAfter?.processingState,
+    replacement_items_total: replacementUploadAfter?.itemsTotal
+  }, null, 2));
+
+  if (!legacyGone || replacementUploadAfter?.processingState !== "SUCCEEDED") process.exit(2);
+  process.exit(0);
+}
+
 if (action === "retirement-preflight") {
   const replacementId = process.env.GOOGLE_MERCHANT_REPLACEMENT_SOURCE_ID || "10748120384";
   const legacyId = process.env.GOOGLE_MERCHANT_LEGACY_SOURCE_ID || "10432070529";
@@ -147,7 +197,7 @@ if (action === "retirement-preflight") {
     replacement_processing_succeeded: replacementUpload?.processingState === "SUCCEEDED",
     replacement_item_count_ok: Number(replacementUpload?.itemsTotal || 0) >= 2803,
     legacy_name_ok: legacy?.displayName === "Products source - The House",
-    legacy_input_is_api: legacy?.input === "API"
+    legacy_input_is_file: legacy?.input === "FILE"
   };
 
   const ok = Object.values(checks).every(Boolean);
