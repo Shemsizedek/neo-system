@@ -38,7 +38,7 @@ if (!/<g:price>[0-9]+\.[0-9]{2} USD<\/g:price>/.test(feed)) {
 if (/<g:price>[0-9]+\.[0-9]{2} [0-9]+<\/g:price>/.test(feed)) {
   throw new Error("Replacement feed still contains numeric currency IDs.");
 }
-if (!feed.includes("shemsizedek.myspreadshop.com")) {
+if (!feed.toLowerCase().includes("shemsizedek.myspreadshop.com")) {
   throw new Error("Replacement feed does not point to the Spreadshop storefront.");
 }
 
