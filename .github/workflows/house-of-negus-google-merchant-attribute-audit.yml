@@ -1,0 +1,38 @@
+name: House of Negus Merchant Attribute Audit
+on:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/spreadshop-google-merchant-feed.mjs"
+      - "scripts/spreadshop-merchant-attribute-audit.mjs"
+      - ".github/workflows/house-of-negus-google-merchant-attribute-audit.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    environment: holytemples-production
+    env:
+      SPREADSHOP_SHOP_ID: ${{ secrets.SPREADSHOP_SHOP_ID }}
+      SPREADSHOP_API_KEY: ${{ secrets.SPREADSHOP_API_KEY }}
+      SPREADSHOP_PLATFORM: ${{ secrets.SPREADSHOP_PLATFORM }}
+      SPREADSHOP_STORE_URL: ${{ secrets.SPREADSHOP_STORE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Sync Spreadshop
+        run: node scripts/spreadshop-sync-v2.mjs
+      - name: Verify corrected Merchant feed generation
+        run: |
+          node scripts/spreadshop-google-merchant-feed.mjs
+          if grep -Eq '<g:price>[0-9]+\.[0-9]{2} [0-9]+</g:price>' merch/house-of-negus/generated/google-merchant.xml; then
+            echo "::error::Numeric currencyId leaked into Merchant price"
+            exit 1
+          fi
+          grep -m 3 '<g:price>' merch/house-of-negus/generated/google-merchant.xml
+      - name: Audit apparel metadata available from Spreadshop
+        run: node scripts/spreadshop-merchant-attribute-audit.mjs
