@@ -97,12 +97,14 @@ export function createShemsiIngestionRuntime({env=process.env,fetchImpl=fetch}={
     async ingestLinkedIn({activityUrn}={}){
       if(!env.LINKEDIN_ACCESS_TOKEN)return {platform:'linkedin,status:'credentials-required',items:[]};
       const items=await fetchLinkedInComments({activityUrn,accessToken:env.LINKEDIN_ACCESS_TOKEN,linkedinVersion:env.LINKEDIN_VERSION,fetchImpl});
-      return {platform:'linkedin',status:'ok',items:filterOwnComments(items,{ownActorUrn:env.LINKEDIN_OWNER_URN}).map(triageComment)};
+      const external=filterOwnComments(items,{ownActorUrn:env.LINKEDIN_OWNER_URN}).map(item=>({...item,authorExternalId:item.accountId,accountId:clean(env.LINKEDIN_OWNER_URN)||'linkedin-authorized-account'}));
+      return {platform:'linkedin',status:'ok',items:external.map(triageComment)};
     },
     async ingestYouTube({videoId,channelId=env.YOUTUBE_CHANNEL_ID,pageToken}={}){
       if(!env.YOUTUBE_ACCESS_TOKEN)return {platform:'youtube',status:'credentials-required',items:[]};
       const result=await fetchYouTubeCommentThreads({accessToken:env.YOUTUBE_ACCESS_TOKEN,channelId,videoId,pageToken,fetchImpl});
-      return {platform:'youtube',status:'ok',items:filterOwnComments(result.comments,{ownYouTubeChannelId:env.YOUTUBE_CHANNEL_ID}).map(triageComment),nextPageToken:result.nextPageToken};
+      const external=filterOwnComments(result.comments,{ownYouTubeChannelId:env.YOUTUBE_CHANNEL_ID}).map(item=>({...item,authorExternalId:item.accountId,accountId:clean(env.YOUTUBE_CHANNEL_ID)||clean(channelId)||'youtube-authorized-account'}));
+      return {platform:'youtube',status:'ok',items:external.map(triageComment),nextPageToken:result.nextPageToken};
     },
     async verify(receipt,{parentContentId}={}){
       if(!receipt?.platformPostId)return {verified:false,status:'no-platform-id'};
