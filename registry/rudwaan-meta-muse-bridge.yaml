@@ -1,0 +1,72 @@
+version: "0.1"
+id: "rudwaan-meta-muse-bridge"
+status: "active-planning"
+agent_id: "NIA-013"
+strategy: "meta-compute-nous-governance"
+
+planes:
+  meta:
+    role: "managed_agentic_compute_and_instagram_business_context"
+    products:
+      - meta_ai
+      - muse
+      - muse_spark
+      - instagram_professional_account
+    verified_capabilities:
+      - connected_apps
+      - background_tasks
+      - web_browsing
+      - document_generation
+      - image_generation
+      - instagram_business_context
+      - ad_performance_analysis
+    api_status:
+      muse_spark: "private_preview_select_partners"
+      public_general_api: "not_verified"
+  nous:
+    role: "canonical_knowledge_governance_and_orchestration"
+    systems:
+      - NEOsync
+      - NEO_Algo
+      - NEO_Oracle
+      - NEO_Knowledge
+    controls:
+      - canonical_source_of_truth
+      - approval_gates
+      - provenance
+      - audit_receipts
+      - privileged_action_routing
+
+integration_policy:
+  do_not_duplicate_meta_infrastructure: true
+  prefer_meta_for:
+    - multimodal_generation
+    - instagram_native_context
+    - managed_background_agent_tasks
+    - business_performance_analysis
+  prefer_nous_for:
+    - doctrine
+    - private_knowledge
+    - governance
+    - cross_system_routing
+    - approvals
+    - audit
+  fail_closed_if_meta_api_unavailable: true
+  never_treat_native_rudwaan_response_as_nous_verified_without_receipt: true
+
+activation_gates:
+  - id: "MUSE-001"
+    name: "Connect Instagram professional account to Meta AI business context"
+    status: "user-side-connection-required"
+  - id: "MUSE-002"
+    name: "Verify Muse connector visibility and permissions"
+    status: "pending"
+  - id: "MUSE-003"
+    name: "Request or detect Muse Spark API private preview access"
+    status: "pending"
+  - id: "MUSE-004"
+    name: "Map supported Meta actions into Nous approval classes"
+    status: "pending"
+  - id: "MUSE-005"
+    name: "Create receipt and provenance adapter"
+    status: "pending"
