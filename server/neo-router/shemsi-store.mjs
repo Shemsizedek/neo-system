@@ -8,10 +8,13 @@ export function createMemoryShemsiStore(){
   const inbox=new Map();
   const drafts=new Map();
   const receipts=new Map();
+  const syncState=new Map();
+  const approvals=new Map();
   const subjectMap=(root,subject)=>{const key=safe(subject);if(!root.has(key))root.set(key,new Map());return root.get(key);};
   return {
     mode:'memory',durable:false,
     async putInbox(subject,item){const map=subjectMap(inbox,subject);map.set(item.id,clone(item));return clone(item);},
+    async putInboxIfNew(subject,item){const map=subjectMap(inbox,subject);if(map.has(item.id))return false;map.set(item.id,clone(item));return true;},
     async listInbox(subject){return [...subjectMap(inbox,subject).values()].map(clone).sort((a,b)=>String(b.receivedAt).localeCompare(String(a.receivedAt)));},
     async getInbox(subject,id){return clone(subjectMap(inbox,subject).get(id)||null);},
     async putDraft(subject,draft){const map=subjectMap(drafts,subject);map.set(draft.id,clone(draft));return clone(draft);},
@@ -19,6 +22,10 @@ export function createMemoryShemsiStore(){
     async getDraft(subject,id){return clone(subjectMap(drafts,subject).get(id)||null);},
     async saveReceipt(subject,id,receipt){subjectMap(receipts,subject).set(id,clone(receipt));return clone(receipt);},
     async getReceipt(subject,id){return clone(subjectMap(receipts,subject).get(id)||null);},
+    async getSyncState(subject,key){return clone(subjectMap(syncState,subject).get(key)||null);},
+    async saveSyncState(subject,key,value){subjectMap(syncState,subject).set(key,clone(value));return clone(value);},
+    async saveApprovalNotice(subject,notice){subjectMap(approvals,subject).set(notice.id,clone(notice));return clone(notice);},
+    async listApprovalNotices(subject){return [...subjectMap(approvals,subject).values()].map(clone).sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt)));},
   };
 }
 
@@ -45,13 +52,15 @@ export function createGcsShemsiStore({
     if(!res.ok)throw new Error(`gcs_read_failed:${res.status}`);
     return res.json();
   }
-  async function write(name,value){
+  async function write(name,value,{createOnly=false}={}){
     const q=new URLSearchParams({uploadType:'media',name});
+    if(createOnly)q.set('ifGenerationMatch','0');
     const res=await fetchImpl(`${api}/upload/storage/v1/b/${encodeURIComponent(bucket)}/o?${q}`,{
       method:'POST',headers:{...(await auth()),'content-type':'application/json'},body:JSON.stringify(value),
     });
+    if(createOnly&&res.status===412)return false;
     if(!res.ok)throw new Error(`gcs_write_failed:${res.status}`);
-    return value;
+    return createOnly?true:value;
   }
   async function listPrefix(prefix){
     const q=new URLSearchParams({prefix});
@@ -64,6 +73,7 @@ export function createGcsShemsiStore({
   return {
     mode:'gcs',durable:true,
     async putInbox(subject,item){return write(`${root(subject)}/inbox/${safe(item.id)}.json`,item);},
+    async putInboxIfNew(subject,item){return write(`${root(subject)}/inbox/${safe(item.id)}.json`,item,{createOnly:true});},
     async listInbox(subject){const values=await listPrefix(`${root(subject)}/inbox/`);return values.filter(Boolean).sort((a,b)=>String(b.receivedAt).localeCompare(String(a.receivedAt)));},
     async getInbox(subject,id){return read(`${root(subject)}/inbox/${safe(id)}.json`);},
     async putDraft(subject,draft){return write(`${root(subject)}/drafts/${safe(draft.id)}.json`,draft);},
@@ -71,6 +81,10 @@ export function createGcsShemsiStore({
     async getDraft(subject,id){return read(`${root(subject)}/drafts/${safe(id)}.json`);},
     async saveReceipt(subject,id,receipt){return write(`${root(subject)}/receipts/${safe(id)}.json`,receipt);},
     async getReceipt(subject,id){return read(`${root(subject)}/receipts/${safe(id)}.json`);},
+    async getSyncState(subject,key){return read(`${root(subject)}/sync/${safe(key)}.json`);},
+    async saveSyncState(subject,key,value){return write(`${root(subject)}/sync/${safe(key)}.json`,value);},
+    async saveApprovalNotice(subject,notice){return write(`${root(subject)}/approvals/${safe(notice.id)}.json`,notice);},
+    async listApprovalNotices(subject){const values=await listPrefix(`${root(subject)}/approvals/`);return values.filter(Boolean).sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt)));},
   };
 }
 
