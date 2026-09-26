@@ -1,10 +1,6 @@
 name: House of Negus Merchant Cutover Activate
 on:
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/house-of-negus-google-merchant-cutover-activate.yml"
-      - "scripts/google-merchant-datasources.mjs"
+  workflow_dispatch:
 
 permissions:
   contents: read
