@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-26T16:26:14.555Z",
+  "generatedAt": "2026-09-26T21:13:00.413Z",
   "architecture": "crawler -> hash -> revision diff -> candidate graph relations -> 9-Ethereal quality gate -> Neopedia draft/review queue",
   "sources": [
     {
@@ -7,7 +7,12 @@
       "title": "The Holy Tablets by Dr. Malachi Z. York",
       "rootUrl": "https://holytablets.nuwaubianfacts.com/",
       "pages": 30,
-      "errors": []
+      "errors": [
+        {
+          "url": "https://holytablets.nuwaubianfacts.com/chapter08.htm",
+          "error": "fetch failed"
+        }
+      ]
     },
     {
       "sourceId": "SRC-WORLD-TEMPLE-WEB",
@@ -17,9 +22,9 @@
       "errors": []
     }
   ],
-  "changes": 0,
-  "candidateRelations": 0,
-  "neopediaDrafts": 0,
+  "changes": 2,
+  "candidateRelations": 1,
+  "neopediaDrafts": 1,
   "reviewQueuePath": "data/neo-sync/review-queue.json",
   "relationQueuePath": "data/neo-sync/candidate-relations.json",
   "draftsPath": "data/neo-sync/neopedia-drafts.json",

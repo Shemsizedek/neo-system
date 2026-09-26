@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "updatedAt": "2026-09-26T16:26:05.987Z",
+  "updatedAt": "2026-09-26T21:12:52.025Z",
   "sources": {
     "SRC-HOLY-TABLETS-WEB": {
       "title": "The Holy Tablets by Dr. Malachi Z. York",
@@ -313,31 +313,6 @@
           "hash": "c19563477f70b3a15d02bf21105d7ff0de4e2d2a2937f0c459593f8057ad3598",
           "bytes": 18696,
           "excerpt": "Chapter Seven of the Holy Tablets HOME | Table of Contents | The Seven Thunders | A Personal Note from the Receiver | Prayer of the Ansaars | The Glossary | Figures Scrolls Authored By Dr. Malachi Z York Click To Add To Cart CHAPTER SEVEN EL HAAYUH RAWUH, THE LIVING SOUL Tablet 1: The Living Soul - Page 685 Tablet 2: The Seed of Kadmon - Page 698 Tablet 3: The Spiritual Form - Page 699 Tablet 4: Ether - page 702 Tabl",
-          "headings": [],
-          "quality": {
-            "dimensions": {
-              "provenance": 9,
-              "truthfulness": 8,
-              "soundRightReason": 7,
-              "coherence": 7,
-              "ethics": 9,
-              "reciprocity": 7,
-              "natureAlignment": 6,
-              "craftsmanship": 8,
-              "consequence": 8
-            },
-            "average": 7.666666666666667,
-            "potency": "9_ETHER_COHERENT",
-            "gate": "PASS",
-            "note": "Heuristic artifact-quality assessment only; not a score of persons, identities or protected characteristics."
-          }
-        },
-        {
-          "url": "https://holytablets.nuwaubianfacts.com/chapter08.htm",
-          "title": "Chapter Eight of the Holy Tablets",
-          "hash": "22fb5f15ee33f915f8b58ba676a454c5f7cb37a27300ce5d430fb26549d79f0a",
-          "bytes": 14078,
-          "excerpt": "Chapter Eight of the Holy Tablets HOME | Table of Contents | The Seven Thunders | A Personal Note from the Receiver | Prayer of the Ansaars | The Glossary | Figures Scrolls Authored By Dr. Malachi Z York Click To Add To Cart CHAPTER EIGHT EL ZERU SHIL NAKHASH Tablet 1 The Birth of Haylal Page 778 Tablet 2 The Anointer of the Cherub Page 780 Tablet 3 Stay on the Right Path Page 784 Tablet 4 Mixing Their Wicked Seed Pa",
           "headings": [],
           "quality": {
             "dimensions": {
@@ -756,6 +731,31 @@
             "gate": "PASS",
             "note": "Heuristic artifact-quality assessment only; not a score of persons, identities or protected characteristics."
           }
+        },
+        {
+          "url": "https://holytablets.nuwaubianfacts.com/100/051.htm",
+          "title": "Untitled",
+          "hash": "2138275d775895259a2f6cff14319e440fcaa0e993d1a5ec487f48f1d7649a2c",
+          "bytes": 6010,
+          "excerpt": "HOME | Table of Contents | The Seven Thunders | A Personal Note from the Receiver | Prayer of the Ansaars | The Glossary | Figures Back | Next Your browser does not support inline frames or is currently configured not to display inline frames. HOME | Table of Contents | The Seven Thunders | A Personal Note from the Receiver | Prayer of the Ansaars | The Glossary | Figures http://HolyTablets.NuwaubianFacts.com Please ",
+          "headings": [],
+          "quality": {
+            "dimensions": {
+              "provenance": 9,
+              "truthfulness": 8,
+              "soundRightReason": 7,
+              "coherence": 7,
+              "ethics": 9,
+              "reciprocity": 7,
+              "natureAlignment": 6,
+              "craftsmanship": 5,
+              "consequence": 8
+            },
+            "average": 7.333333333333333,
+            "potency": "DYNAMIC_BALANCE",
+            "gate": "PASS",
+            "note": "Heuristic artifact-quality assessment only; not a score of persons, identities or protected characteristics."
+          }
         }
       ]
     },
@@ -768,7 +768,7 @@
           "url": "https://holytemples.org/",
           "title": "World Temple &#8211; Omniversal Church",
           "hash": "dfcfd27470d81044abaebf555bdfabcd41f07b554f9f3365fe273d6b9de26579",
-          "bytes": 179485,
+          "bytes": 179562,
           "excerpt": "World Temple &#8211; Omniversal Church Skip to content World Temple N.U.T &#8211; Omniversal Church Home Holy Ministries Holy Ordainment Holy Charter Holy Palace Holy Tablets Holy See World Temple City World Library World Mission Statement World Ministries World Committees World Parliament World Education World Treasury of Merit World Police World Interfaith Court World Bulletin Global District Templist Portal Contac",
           "headings": [
             "World Temple Network",

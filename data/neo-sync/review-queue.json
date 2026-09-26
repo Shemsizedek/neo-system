@@ -1,4 +1,39 @@
 {
-  "generatedAt": "2026-09-26T16:26:14.555Z",
-  "items": []
+  "generatedAt": "2026-09-26T21:13:00.413Z",
+  "items": [
+    {
+      "type": "NEW_PAGE",
+      "sourceId": "SRC-HOLY-TABLETS-WEB",
+      "url": "https://holytablets.nuwaubianfacts.com/100/051.htm",
+      "title": "Untitled",
+      "currentHash": "2138275d775895259a2f6cff14319e440fcaa0e993d1a5ec487f48f1d7649a2c",
+      "currentExcerpt": "HOME | Table of Contents | The Seven Thunders | A Personal Note from the Receiver | Prayer of the Ansaars | The Glossary | Figures Back | Next Your browser does not support inline frames or is currently configured not to display inline frames. HOME | Table of Contents | The Seven Thunders | A Personal Note from the Receiver | Prayer of the Ansaars | The Glossary | Figures http://HolyTablets.NuwaubianFacts.com Please ",
+      "quality": {
+        "dimensions": {
+          "provenance": 9,
+          "truthfulness": 8,
+          "soundRightReason": 7,
+          "coherence": 7,
+          "ethics": 9,
+          "reciprocity": 7,
+          "natureAlignment": 6,
+          "craftsmanship": 5,
+          "consequence": 8
+        },
+        "average": 7.333333333333333,
+        "potency": "DYNAMIC_BALANCE",
+        "gate": "PASS",
+        "note": "Heuristic artifact-quality assessment only; not a score of persons, identities or protected characteristics."
+      },
+      "decision": "CANDIDATE"
+    },
+    {
+      "type": "REMOVED_OR_UNREACHABLE",
+      "sourceId": "SRC-HOLY-TABLETS-WEB",
+      "url": "https://holytablets.nuwaubianfacts.com/chapter08.htm",
+      "title": "Chapter Eight of the Holy Tablets",
+      "previousHash": "22fb5f15ee33f915f8b58ba676a454c5f7cb37a27300ce5d430fb26549d79f0a",
+      "decision": "REVIEW_REQUIRED"
+    }
+  ]
 }
