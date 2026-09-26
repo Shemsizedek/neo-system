@@ -102,9 +102,13 @@ export function createCommentDraft({
   generatedAt = new Date().toISOString(),
   tone = 'professional',
   safety = {},
+  maxLength = 600,
 } = {}) {
-  if (!intake?.commentId) throw new Error('comment_intake_required');
+  if (!intake?.schema?.startsWith('neo.social.shemsi.comment-intake.')) throw new Error('valid_comment_intake_required');
+  for (const [field,value] of Object.entries({platform:intake.platform,accountId:intake.accountId,commentId:intake.commentId,parentContentId:intake.parentContentId})) requiredString(field,value);
+  if (!Number.isInteger(maxLength) || maxLength < 40 || maxLength > 5000) throw new Error('max_length_out_of_range');
   const text = requiredString('responseText', responseText);
+  if (text.length > maxLength) throw new Error('response_text_exceeds_max_length');
 
   return {
     schema: 'neo.social.shemsi.comment-draft.v0.1',
@@ -117,10 +121,12 @@ export function createCommentDraft({
     tone,
     model,
     generatedAt,
+    maxLength,
     approval: {
       status: 'pending',
       approvedBy: null,
       approvedAt: null,
+      approvedResponseText: null,
     },
     safety: {
       reviewed: Boolean(safety.reviewed),
@@ -134,6 +140,8 @@ export function approveCommentDraft(draft, {
   approvedAt = new Date().toISOString(),
 } = {}) {
   if (!draft?.draftId) throw new Error('comment_draft_required');
+  if (draft?.approval?.status === 'approved') return draft;
+  const approvedResponseText = requiredString('responseText', draft.responseText);
 
   return {
     ...draft,
@@ -141,6 +149,7 @@ export function approveCommentDraft(draft, {
       status: 'approved',
       approvedBy: requiredString('approvedBy', approvedBy),
       approvedAt,
+      approvedResponseText,
     },
   };
 }
@@ -148,6 +157,10 @@ export function approveCommentDraft(draft, {
 export function buildCommentReplyJob(draft) {
   if (!draft?.draftId) throw new Error('comment_draft_required');
   if (draft?.approval?.status !== 'approved') throw new Error('explicit_approval_required');
+  for (const [field,value] of Object.entries({platform:draft.platform,accountId:draft.accountId,commentId:draft.commentId,parentContentId:draft.parentContentId,responseText:draft.responseText})) requiredString(field,value);
+  if (draft.approval.approvedResponseText !== draft.responseText) throw new Error('approved_content_mismatch');
+  if (Number.isInteger(draft.maxLength) && draft.responseText.length > draft.maxLength) throw new Error('response_text_exceeds_max_length');
+  const keyPart=value=>encodeURIComponent(requiredString('idempotency_part',value));
 
   return {
     schema: 'neo.social.shemsi.reply-job.v0.1',
@@ -160,7 +173,7 @@ export function buildCommentReplyJob(draft) {
     sourceVersion: 'shemsi-comment-assistant-v0.1',
     text: draft.responseText,
     approval: {...draft.approval},
-    idempotencyKey: `shemsi:${draft.platform}:${draft.accountId}:${draft.commentId}`,
+    idempotencyKey: `shemsi:${keyPart(draft.platform)}:${keyPart(draft.accountId)}:${keyPart(draft.commentId)}`,
   };
 }
 
