@@ -54,6 +54,7 @@ if (action === "provision") {
   if (!source) {
     const body = {
       displayName: "House of Negus — Spreadshop (NEO)",
+      input: "FILE",
       primaryProductDataSource: {
         feedLabel: "US",
         contentLanguage: "en",
