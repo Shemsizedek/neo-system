@@ -134,6 +134,75 @@ if (action === "provision") {
   process.exit(0);
 }
 
+if (action === "reconcile-retirement") {
+  const replacementId = process.env.GOOGLE_MERCHANT_REPLACEMENT_SOURCE_ID || "10748120384";
+  const legacyId = process.env.GOOGLE_MERCHANT_LEGACY_SOURCE_ID || "10432070529";
+  const expected = `CONFIRM_RETIRE_${legacyId}`;
+  if (process.env.GOOGLE_MERCHANT_APPLY !== expected) {
+    throw new Error(`Refusing retirement reconciliation. Set GOOGLE_MERCHANT_APPLY=${expected}.`);
+  }
+
+  let replacementUpload = null;
+  for (let i = 0; i < 30; i++) {
+    replacementUpload = await api(`/accounts/${accountId}/dataSources/${replacementId}/fileUploads/latest`);
+    if (replacementUpload?.processingState === "SUCCEEDED" && Number(replacementUpload?.itemsTotal || 0) >= 2803) break;
+    if (replacementUpload?.processingState === "FAILED") {
+      throw new Error(`Replacement source failed processing: ${JSON.stringify(replacementUpload)}`);
+    }
+    await new Promise(resolve => setTimeout(resolve, 10000));
+  }
+  if (replacementUpload?.processingState !== "SUCCEEDED" || Number(replacementUpload?.itemsTotal || 0) < 2803) {
+    throw new Error("Replacement source did not return to SUCCEEDED with at least 2803 items.");
+  }
+
+  let legacy = null;
+  let legacyExists = true;
+  try {
+    legacy = await api(`/accounts/${accountId}/dataSources/${legacyId}`);
+  } catch (err) {
+    if (/404|NOT_FOUND/i.test(String(err))) legacyExists = false;
+    else throw err;
+  }
+
+  if (legacyExists) {
+    if (legacy?.displayName !== "Products source - The House") {
+      throw new Error(`Legacy source identity mismatch: ${JSON.stringify(legacy)}`);
+    }
+    await api(`/accounts/${accountId}/dataSources/${legacyId}`, { method: "DELETE" });
+  }
+
+  let legacyGone = false;
+  for (let i = 0; i < 30; i++) {
+    try {
+      await api(`/accounts/${accountId}/dataSources/${legacyId}`);
+    } catch (err) {
+      if (/404|NOT_FOUND/i.test(String(err))) {
+        legacyGone = true;
+        break;
+      }
+      throw err;
+    }
+    await new Promise(resolve => setTimeout(resolve, 5000));
+  }
+
+  const replacementAfter = await api(`/accounts/${accountId}/dataSources/${replacementId}`);
+  const replacementUploadAfter = await api(`/accounts/${accountId}/dataSources/${replacementId}/fileUploads/latest`);
+
+  console.log(JSON.stringify({
+    retired: legacyGone,
+    retirement_reused_prior_delete: !legacyExists,
+    retired_source_id: legacyId,
+    replacement_source_id: replacementId,
+    replacement_source_name: replacementAfter?.displayName,
+    replacement_processing_state: replacementUploadAfter?.processingState,
+    replacement_items_total: replacementUploadAfter?.itemsTotal
+  }, null, 2));
+
+  if (!legacyGone) process.exit(2);
+  if (replacementUploadAfter?.processingState !== "SUCCEEDED" || Number(replacementUploadAfter?.itemsTotal || 0) < 2803) process.exit(3);
+  process.exit(0);
+}
+
 if (action === "retire-legacy") {
   const replacementId = process.env.GOOGLE_MERCHANT_REPLACEMENT_SOURCE_ID || "10748120384";
   const legacyId = process.env.GOOGLE_MERCHANT_LEGACY_SOURCE_ID || "10432070529";
