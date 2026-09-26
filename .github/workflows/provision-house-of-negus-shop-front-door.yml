@@ -1,0 +1,148 @@
+name: Provision House of Negus Shop Front Door
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/provision-house-of-negus-shop-front-door.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: house-of-negus-shop-front-door
+  cancel-in-progress: false
+
+env:
+  SERVICE_NAME: house-of-negus-shop
+  SHOP_DOMAIN: shop.holytemples.org
+  SHOP_NEG: house-of-negus-shop-neg
+  SHOP_BACKEND: house-of-negus-shop-backend
+  SHOP_CERT: house-of-negus-shop-cert
+  URL_MAP_NAME: neo-edge-url-map
+  HTTPS_PROXY_NAME: neo-edge-https-proxy
+
+jobs:
+  provision:
+    runs-on: ubuntu-latest
+    environment: holytemples-production
+    timeout-minutes: 20
+    env:
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID || secrets.GCP_PROJECT_ID }}
+      GCP_REGION: ${{ vars.GCP_REGION || secrets.GCP_REGION }}
+      GCP_WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER || secrets.GCP_WIF_PROVIDER }}
+      GCP_CLOUD_RUN_SERVICE_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_SERVICE_ACCOUNT || secrets.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - name: Validate configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in GCP_PROJECT_ID GCP_REGION GCP_WIF_PROVIDER GCP_CLOUD_RUN_SERVICE_ACCOUNT; do
+            test -n "${!name:-}" || { echo "::error::Missing $name"; exit 1; }
+          done
+
+      - uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+
+      - uses: google-github-actions/setup-gcloud@v3
+
+      - name: Verify shop Cloud Run service exists
+        shell: bash
+        run: |
+          set -euo pipefail
+          gcloud run services describe "$SERVICE_NAME"             --project="$GCP_PROJECT_ID"             --region="$GCP_REGION"             --format='value(status.url)'
+
+      - name: Ensure serverless NEG
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! gcloud compute network-endpoint-groups describe "$SHOP_NEG"             --region="$GCP_REGION" --project="$GCP_PROJECT_ID" >/dev/null 2>&1; then
+            gcloud compute network-endpoint-groups create "$SHOP_NEG"               --region="$GCP_REGION"               --network-endpoint-type=serverless               --cloud-run-service="$SERVICE_NAME"               --project="$GCP_PROJECT_ID" --quiet
+          fi
+
+      - name: Ensure backend service
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! gcloud compute backend-services describe "$SHOP_BACKEND"             --global --project="$GCP_PROJECT_ID" >/dev/null 2>&1; then
+            gcloud compute backend-services create "$SHOP_BACKEND"               --global               --load-balancing-scheme=EXTERNAL_MANAGED               --project="$GCP_PROJECT_ID" --quiet
+          fi
+          if ! gcloud compute backend-services describe "$SHOP_BACKEND"             --global --project="$GCP_PROJECT_ID" --format='json(backends)' | grep -q "$SHOP_NEG"; then
+            gcloud compute backend-services add-backend "$SHOP_BACKEND"               --global               --network-endpoint-group="$SHOP_NEG"               --network-endpoint-group-region="$GCP_REGION"               --project="$GCP_PROJECT_ID" --quiet
+          fi
+
+      - name: Route shop host on existing NEO edge
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! gcloud compute url-maps describe "$URL_MAP_NAME"             --project="$GCP_PROJECT_ID" --format=json | grep -q '"shop.holytemples.org"'; then
+            gcloud compute url-maps add-path-matcher "$URL_MAP_NAME"               --path-matcher-name=house-of-negus-shop               --default-service="$SHOP_BACKEND"               --new-hosts="$SHOP_DOMAIN"               --project="$GCP_PROJECT_ID" --quiet
+          fi
+
+      - name: Ensure managed certificate
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! gcloud compute ssl-certificates describe "$SHOP_CERT"             --global --project="$GCP_PROJECT_ID" >/dev/null 2>&1; then
+            gcloud compute ssl-certificates create "$SHOP_CERT"               --domains="$SHOP_DOMAIN"               --global               --project="$GCP_PROJECT_ID" --quiet
+          fi
+
+          mapfile -t EXISTING < <(
+            gcloud compute target-https-proxies describe "$HTTPS_PROXY_NAME"               --project="$GCP_PROJECT_ID"               --format='value(sslCertificates)' | tr ';' '\n' | sed 's#.*/##' | sed '/^$/d'
+          )
+
+          CERTS=()
+          found=0
+          for cert in "${EXISTING[@]}"; do
+            CERTS+=("$cert")
+            [ "$cert" = "$SHOP_CERT" ] && found=1
+          done
+          [ "$found" = 1 ] || CERTS+=("$SHOP_CERT")
+
+          CSV="$(IFS=,; echo "${CERTS[*]}")"
+          gcloud compute target-https-proxies update "$HTTPS_PROXY_NAME"             --ssl-certificates="$CSV"             --project="$GCP_PROJECT_ID" --quiet
+
+      - name: Report edge and DNS state
+        shell: bash
+        run: |
+          set -euo pipefail
+          LB_IP="$(gcloud compute forwarding-rules list             --global             --project="$GCP_PROJECT_ID"             --filter='target~neo-edge-https-proxy'             --format='value(IPAddress)' | head -n1)"
+          DNS="$(getent ahostsv4 "$SHOP_DOMAIN" 2>/dev/null | awk 'NR==1{print $1}' || true)"
+          CERT_STATUS="$(gcloud compute ssl-certificates describe "$SHOP_CERT"             --global --project="$GCP_PROJECT_ID"             --format='value(managed.status)')"
+          {
+            echo '### House of Negus shop front door'
+            echo "- Host: https://$SHOP_DOMAIN"
+            echo "- Cloud Run service: $SERVICE_NAME"
+            echo "- Edge LB IP: ${LB_IP:-unknown}"
+            echo "- Public DNS IPv4: ${DNS:-not-resolved}"
+            echo "- Certificate status: ${CERT_STATUS:-unknown}"
+            if [ -n "$LB_IP" ] && [ "$DNS" = "$LB_IP" ]; then
+              echo '- DNS alignment: READY'
+            else
+              echo "- DNS alignment: ACTION_REQUIRED — shop.holytemples.org must resolve to ${LB_IP:-the NEO edge IP}"
+            fi
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Verify routing when DNS and certificate are ready
+        shell: bash
+        run: |
+          set -euo pipefail
+          LB_IP="$(gcloud compute forwarding-rules list             --global             --project="$GCP_PROJECT_ID"             --filter='target~neo-edge-https-proxy'             --format='value(IPAddress)' | head -n1)"
+          DNS="$(getent ahostsv4 "$SHOP_DOMAIN" 2>/dev/null | awk 'NR==1{print $1}' || true)"
+          CERT_STATUS="$(gcloud compute ssl-certificates describe "$SHOP_CERT"             --global --project="$GCP_PROJECT_ID"             --format='value(managed.status)')"
+          if [ -n "$LB_IP" ] && [ "$DNS" = "$LB_IP" ] && [ "$CERT_STATUS" = "ACTIVE" ]; then
+            code="$(curl -sS -o /tmp/shop.html -w '%{http_code}' "https://$SHOP_DOMAIN/")"
+            test "$code" = 200
+            grep -q 'google-site-verification' /tmp/shop.html
+            grep -q 'spread_shop_config' /tmp/shop.html
+            echo 'HTTPS storefront verification: READY' >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo 'HTTPS storefront verification: pending DNS/certificate propagation' >> "$GITHUB_STEP_SUMMARY"
+          fi
