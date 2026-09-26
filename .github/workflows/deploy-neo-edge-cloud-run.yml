@@ -206,6 +206,19 @@ jobs:
           direct_code="$(curl --retry 5 --retry-delay 3 --retry-all-errors -sS -o /dev/null -w '%{http_code}' -H 'X-Forwarded-Host: neo.holytemples.org' "$NEO_EDGE_SERVICE_URL/health")"
           test "$direct_code" = 200
 
+          leaders_routes=( "/" "/about/" "/world-parliament/" "/leadership/" "/contact/" )
+          for route in "${leaders_routes[@]}"; do
+            route_file="/tmp/leaders$(echo "$route" | tr '/-' '__').html"
+            route_code="$(curl --retry 5 --retry-delay 3 --retry-all-errors -sS -o "$route_file" -w '%{http_code}' -H 'X-Forwarded-Host: leaders.holytemples.org' "$NEO_EDGE_SERVICE_URL$route")"
+            test "$route_code" = 200
+            grep -Eiq 'World Leaders Forum|World Parliament|Leadership|Contact the Forum|Official Forum for World Leaders' "$route_file"
+            if grep -q 'NEO Service' "$route_file"; then
+              echo "::error::leaders route $route fell back to generic NEO Service shell"
+              exit 1
+            fi
+          done
+          echo "leaders-routes: / /about/ /world-parliament/ /leadership/ /contact/ verified" >> "$GITHUB_STEP_SUMMARY"
+
           urls=(
             'https://neo.holytemples.org/health'
             'https://neo.holytemples.org/assets/neo-bridge.js'
