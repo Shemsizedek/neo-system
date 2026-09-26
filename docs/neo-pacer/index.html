@@ -1,73 +1,93 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <meta name="description" content="NEO-PACER — Public Access to Noocratic Ecclesiastical Records" />
-  <title>NEO-PACER</title>
-  <link rel="stylesheet" href="./styles.css" />
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a0d0b">
+<meta name="description" content="NEO-PACER — Public Access to Noocratic Ecclesiastical Records">
+<title>NEO-PACER | Public Records & Case Research</title>
+<link rel="stylesheet" href="./styles.css">
 </head>
 <body>
-  <div class="shell">
-    <aside class="sidebar">
-      <div class="brand">NEO-PACER</div>
-      <div class="sub">Public Access to Noocratic Ecclesiastical Records</div>
-      <nav>
-        <button class="nav active" data-view="dashboard">Dashboard</button>
-        <button class="nav" data-view="cases">Case Registry</button>
-        <button class="nav" data-view="evidence">Evidence Vault</button>
-        <button class="nav" data-view="title">NEO Title Auditor</button>
-      </nav>
-      <div class="doctrine">Immutable Record Doctrine<br><span>Original records remain preserved; corrections and findings are additive.</span></div>
-    </aside>
-    <main>
-      <header class="topbar">
-        <div>
-          <div class="eyebrow">NEO SYSTEM · TRIBUNAL RECORDS</div>
-          <h1 id="page-title">Command Dashboard</h1>
-        </div>
-        <div class="status"><span class="dot"></span> GitHub source of truth</div>
-      </header>
-
-      <section id="dashboard" class="view active">
-        <div class="hero">
-          <div>
-            <h2>Evidence-first tribunal intelligence.</h2>
-            <p>Search cases, inspect evidence status, and audit title chains directly from the NEO-System GitHub record.</p>
-          </div>
-          <a class="cta" href="https://github.com/Shemsizedek/neo-system" target="_blank" rel="noreferrer">Open Repository</a>
-        </div>
-        <div class="stats" id="stats"></div>
-        <h3>Active Matters</h3>
-        <div class="grid" id="case-cards"></div>
-      </section>
-
-      <section id="cases" class="view">
-        <div class="toolbar"><input id="case-search" placeholder="Search cases, captions, classifications…" /></div>
-        <div class="table-wrap"><table><thead><tr><th>Case No.</th><th>Caption</th><th>Class</th><th>Status</th></tr></thead><tbody id="case-table"></tbody></table></div>
-      </section>
-
-      <section id="evidence" class="view">
-        <div class="toolbar"><input id="evidence-search" placeholder="Search evidence, source, notes…" /></div>
-        <div class="table-wrap"><table><thead><tr><th>ID</th><th>Title</th><th>Class</th><th>Authentication</th><th>Score</th></tr></thead><tbody id="evidence-table"></tbody></table></div>
-      </section>
-
-      <section id="title" class="view">
-        <div class="toolbar"><select id="title-case"></select></div>
-        <div class="timeline" id="title-chain"></div>
-      </section>
-
-      <section id="case-detail" class="view">
-        <button id="back-cases" class="ghost">← Back to cases</button>
-        <div id="case-detail-content"></div>
-      </section>
-
-      <footer>
-        <span>NEO-PACER v1.2 · GitHub-backed public registry</span>
-        <span>Public presentation does not itself create external civil, criminal, or sovereign jurisdiction.</span>
-      </footer>
-    </main>
+<div class="site">
+<header class="mast">
+  <div class="mast-in">
+    <a class="brand-lockup" href="/pacer/">
+      <div class="seal">§</div>
+      <div><strong>NEO-PACER</strong><span>Public Access to Noocratic Ecclesiastical Records</span></div>
+    </a>
+    <nav class="topnav" aria-label="Primary">
+      <button class="nav active" data-view="dashboard">Overview</button>
+      <button class="nav" data-view="cases">Cases</button>
+      <button class="nav" data-view="evidence">Evidence</button>
+      <button class="nav" data-view="title">Title Research</button>
+      <a href="/corpus/">Legal Corpus</a>
+    </nav>
+    <a class="hub-link" href="https://hub.holytemples.org/">NEO Hub</a>
   </div>
-  <script src="./app.js" defer></script>
+</header>
+
+<main class="wrap">
+<section class="intro">
+  <div>
+    <div class="eyebrow">World Interfaith Court · Public research</div>
+    <h1 id="page-title">Public Records</h1>
+    <p>Search published case records, inspect public evidence metadata, and review title-chain research from the NEO-PACER public registry.</p>
+  </div>
+  <aside class="boundary">
+    <strong>Public-record boundary</strong>
+    <span>NEO-PACER is an institutional World Interfaith Court records system and is not the U.S. federal Judiciary PACER service. Public presentation does not itself create external civil, criminal, governmental, or sovereign jurisdiction.</span>
+  </aside>
+</section>
+
+<section id="dashboard" class="view active">
+  <div class="search-hero">
+    <div class="search-copy"><span>Case & record research</span><h2>Find the public record.</h2><p>Browse active matters or move directly into the case registry, evidence library, and title research tools.</p></div>
+    <button class="primary jump-cases" type="button">Search Cases</button>
+  </div>
+  <div class="stats" id="stats"></div>
+  <div class="section-heading"><div><span class="eyebrow">Published registry</span><h2>Current matters</h2></div><button class="text-button jump-cases" type="button">View all cases →</button></div>
+  <div class="grid" id="case-cards"></div>
+</section>
+
+<section id="cases" class="view">
+  <div class="tool-head"><div><span class="eyebrow">Case registry</span><h2>Search public cases</h2><p>Search by claim number, caption, classification, status, or summary.</p></div></div>
+  <div class="searchbar"><span>⌕</span><input id="case-search" placeholder="Search cases, captions, classifications…" autocomplete="off"></div>
+  <div class="table-wrap"><table><thead><tr><th>Case No.</th><th>Caption</th><th>Classification</th><th>Status</th></tr></thead><tbody id="case-table"></tbody></table></div>
+</section>
+
+<section id="evidence" class="view">
+  <div class="tool-head"><div><span class="eyebrow">Evidence library</span><h2>Review public evidence metadata</h2><p>Search published evidence records by title, class, source, authentication state, or notes.</p></div></div>
+  <div class="searchbar"><span>⌕</span><input id="evidence-search" placeholder="Search evidence, source, authentication, notes…" autocomplete="off"></div>
+  <div class="table-wrap"><table><thead><tr><th>ID</th><th>Record</th><th>Class</th><th>Authentication</th><th>Score</th></tr></thead><tbody id="evidence-table"></tbody></table></div>
+</section>
+
+<section id="title" class="view">
+  <div class="tool-head"><div><span class="eyebrow">Title research</span><h2>Review title-chain records</h2><p>Select a public case to inspect the published sequence of title-related instruments and research notes.</p></div></div>
+  <div class="selectbar"><label for="title-case">Case</label><select id="title-case"></select></div>
+  <div class="timeline" id="title-chain"></div>
+</section>
+
+<section id="case-detail" class="view">
+  <button id="back-cases" class="back" type="button">← Back to case registry</button>
+  <div id="case-detail-content"></div>
+</section>
+
+<section class="trust-row">
+  <article><span class="eyebrow">Immutable Record Doctrine</span><h3>Corrections are additive.</h3><p>Original public research records remain preserved. Later corrections, findings, authentication updates, or contradictory material should be added to the record rather than silently rewriting prior entries.</p></article>
+  <article><span class="eyebrow">Research discipline</span><h3>Evidence states remain distinct.</h3><p>Allegations, leads, authenticated artifacts, corroborated facts, internal findings, and external adjudications are not treated as interchangeable states.</p></article>
+</section>
+
+<footer><span>NEO-PACER · PUBLIC RECORDS & RESEARCH</span><span>VERIFY EXTERNAL LAW AND OFFICIAL RECORDS WITH THE COMPETENT JURISDICTION</span></footer>
+</main>
+
+<nav class="mobile-tabs" aria-label="Mobile navigation">
+  <button class="nav active" data-view="dashboard"><b>⌂</b>Overview</button>
+  <button class="nav" data-view="cases"><b>⌕</b>Cases</button>
+  <button class="nav" data-view="evidence"><b>◇</b>Evidence</button>
+  <button class="nav" data-view="title"><b>§</b>Title</button>
+</nav>
+</div>
+<script src="./app.js" defer></script>
 </body>
 </html>

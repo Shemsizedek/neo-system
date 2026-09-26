@@ -9,6 +9,7 @@ on:
       - 'apps/neo-realty/web/**'
       - 'public/neo-generator/**'
       - 'docs/neo-corpus/**'
+      - 'docs/neo-hub/**'
       - 'server/holytemples-adapter/**'
       - 'server/neo-counter-backend/firestore-rest-db.mjs'
       - 'deploy/neo-edge/**'
