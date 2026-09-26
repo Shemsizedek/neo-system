@@ -24,6 +24,7 @@ import { CounselConsole } from './tmnlf/CounselConsole'
 import { NeotherapyApp } from './neotherapy/NeotherapyApp'
 import { NeoCheckoutLauncher } from './checkout/NeoCheckoutLauncher'
 import { SettlementResultBanner } from './checkout/SettlementResultBanner'
+import { ShemsiCommentAssistantApp } from './social/ShemsiCommentAssistantApp'
 import './styles.css'
 import './home/home.css'
 import './explorer/explorer.css'
@@ -75,6 +76,7 @@ function RootRouter(){
   const isNEOpay=normalized==='/neopay'||normalized.startsWith('/neopay/')
   const isTeller=normalized==='/teller'||normalized.startsWith('/teller/')
   const isNeotherapy=normalized==='/neotherapy'||normalized.startsWith('/neotherapy/')
+  const isShemsi=normalized==='/shemsi-comments'||normalized==='/comment-assistant'||normalized==='/neo-social/shemsi'||normalized.startsWith('/neo-social/shemsi/')
   const isCounsel=normalized==='/tmnlf'||normalized==='/counsel'||normalized==='/counsel-console'||normalized.startsWith('/tmnlf/')||normalized.startsWith('/counsel/')||normalized.startsWith('/counsel-console/')
   const bankHref=String(import.meta.env.VITE_NEOBANK_URL||'https://neobank.holytemples.org/')
 
@@ -83,6 +85,7 @@ function RootRouter(){
   if(isPrime) return <CheckoutShell serviceId="neo-prime" serviceName="NEO Prime"><HomeBase onOpen={open}/></CheckoutShell>
   if(isHome) return <HomeBase onOpen={open}/>
   if(isNeotherapy) return <NeotherapyApp/>
+  if(isShemsi) return <ShemsiCommentAssistantApp/>
   if(isCounsel) return <CounselConsole/>
   if(isTeller) return <TellerDashboard/>
   if(isNEOpay) return <CheckoutShell serviceId="neopay" serviceName="NEOpay"><NEOpaySurface bankHref={bankHref}/></CheckoutShell>

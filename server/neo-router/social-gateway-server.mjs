@@ -2,6 +2,7 @@ import http from 'node:http'
 import { timingSafeEqual } from 'node:crypto'
 import { buildSocialAuthorizationUrl, exchangeSocialAuthorizationCode } from './social-oauth.mjs'
 import { buildOmnitrixPlatformJobs } from '../../src/social/omnitrix-social-payload.mjs'
+import { makeInboxItem, makeDraft, approveDraft } from './shemsi-store.mjs'
 
 function respond(res, status, body) {
   const payload = JSON.stringify(body)
@@ -123,6 +124,8 @@ export function createSocialGatewayServer({
   store = createMemorySocialOAuthStore(),
   automationStore,
   publishOmnitrixJob,
+  shemsiStore,
+  publishShemsiReply,
   env = process.env,
   fetchImpl = fetch,
   oauthStateMaxAgeMs = 10 * 60 * 1000,
@@ -200,6 +203,91 @@ export function createSocialGatewayServer({
         return respond(res,failed.length?207:200,{ok:failed.length===0,idempotencyKey:key,contentId:payload.contentId,receipts})
       }
 
+
+      if (url.pathname === '/api/shemsi/inbox' && req.method === 'GET') {
+        if (typeof resolveTrustedIdentity !== 'function') return respond(res,401,{error:'neopass_identity_required'})
+        const subjectId=trustedSubject(await resolveTrustedIdentity(req))
+        if(!shemsiStore) return respond(res,503,{error:'shemsi_store_unavailable'})
+        return respond(res,200,{subjectId,items:await shemsiStore.listInbox(subjectId)})
+      }
+
+      if (url.pathname === '/api/shemsi/inbox' && req.method === 'POST') {
+        if (typeof resolveTrustedIdentity !== 'function') return respond(res,401,{error:'neopass_identity_required'})
+        const subjectId=trustedSubject(await resolveTrustedIdentity(req))
+        if(!shemsiStore) return respond(res,503,{error:'shemsi_store_unavailable'})
+        const body=await readJson(req)
+        const item=makeInboxItem(body)
+        await shemsiStore.putInbox(subjectId,item)
+        return respond(res,201,{subjectId,item})
+      }
+
+      if (url.pathname === '/api/shemsi/drafts' && req.method === 'GET') {
+        if (typeof resolveTrustedIdentity !== 'function') return respond(res,401,{error:'neopass_identity_required'})
+        const subjectId=trustedSubject(await resolveTrustedIdentity(req))
+        if(!shemsiStore) return respond(res,503,{error:'shemsi_store_unavailable'})
+        return respond(res,200,{subjectId,drafts:await shemsiStore.listDrafts(subjectId)})
+      }
+
+      if (url.pathname === '/api/shemsi/drafts' && req.method === 'POST') {
+        if (typeof resolveTrustedIdentity !== 'function') return respond(res,401,{error:'neopass_identity_required'})
+        const subjectId=trustedSubject(await resolveTrustedIdentity(req))
+        if(!shemsiStore) return respond(res,503,{error:'shemsi_store_unavailable'})
+        const body=await readJson(req)
+        const inboxItem=await shemsiStore.getInbox(subjectId,body.inboxId)
+        if(!inboxItem) return respond(res,404,{error:'shemsi_inbox_item_not_found'})
+        const draft=makeDraft({inboxItem,responseText:body.responseText,tone:body.tone})
+        await shemsiStore.putDraft(subjectId,draft)
+        return respond(res,201,{subjectId,draft})
+      }
+
+      const shemsiApprove=url.pathname.match(/^\/api\/shemsi\/drafts\/([^/]+)\/approve$/)
+      if (shemsiApprove && req.method === 'POST') {
+        if (typeof resolveTrustedIdentity !== 'function') return respond(res,401,{error:'neopass_identity_required'})
+        const subjectId=trustedSubject(await resolveTrustedIdentity(req))
+        if(!shemsiStore) return respond(res,503,{error:'shemsi_store_unavailable'})
+        const id=decodeURIComponent(shemsiApprove[1])
+        const current=await shemsiStore.getDraft(subjectId,id)
+        if(!current) return respond(res,404,{error:'shemsi_draft_not_found'})
+        const draft=approveDraft(current,{approvedBy:subjectId})
+        await shemsiStore.putDraft(subjectId,draft)
+        return respond(res,200,{subjectId,draft})
+      }
+
+      const shemsiPublish=url.pathname.match(/^\/api\/shemsi\/drafts\/([^/]+)\/publish$/)
+      if (shemsiPublish && req.method === 'POST') {
+        if (typeof resolveTrustedIdentity !== 'function') return respond(res,401,{error:'neopass_identity_required'})
+        const subjectId=trustedSubject(await resolveTrustedIdentity(req))
+        if(!shemsiStore) return respond(res,503,{error:'shemsi_store_unavailable'})
+        if(typeof publishShemsiReply!=='function') return respond(res,503,{error:'shemsi_publisher_unavailable'})
+        const id=decodeURIComponent(shemsiPublish[1])
+        const draft=await shemsiStore.getDraft(subjectId,id)
+        if(!draft) return respond(res,404,{error:'shemsi_draft_not_found'})
+        if(draft.status!=='approved') return respond(res,409,{error:'explicit_approval_required'})
+        if(draft.approvedResponseText!==draft.responseText) return respond(res,409,{error:'approved_content_mismatch'})
+        const existing=await shemsiStore.getReceipt(subjectId,id)
+        if(existing) return respond(res,200,{subjectId,receipt:{...existing,replayed:true}})
+        const job={
+          schema:'neo.social.shemsi.reply-job.v0.1',
+          destination:draft.platform,
+          accountId:draft.accountId,
+          targetCommentId:draft.commentId,
+          parentContentId:draft.parentContentId,
+          text:draft.responseText,
+          contentId:draft.id,
+          sourceVersion:'shemsi-comment-assistant-v0.1',
+          approval:{status:'approved',approvedBy:draft.approvedBy,approvedAt:draft.approvedAt},
+        }
+        const result=await publishShemsiReply(job)
+        const receipt={
+          schema:'neo.social.shemsi.reply-receipt.v0.1',
+          draftId:draft.id,destination:draft.platform,accountId:draft.accountId,
+          status:result?.status||'unknown',published:result?.published===true,
+          platformPostId:result?.platformPostId||null,recordedAt:new Date().toISOString(),
+        }
+        await shemsiStore.saveReceipt(subjectId,id,receipt)
+        return respond(res,receipt.published?200:202,{subjectId,receipt})
+      }
+
       if (req.method === 'GET' && (connectMatch || apiLinkedInConnect)) {
         if (typeof resolveTrustedIdentity !== 'function') return respond(res, 401, { error: 'neopass_identity_required' })
         const identityId = trustedSubject(await resolveTrustedIdentity(req))
@@ -247,6 +335,8 @@ export function startSocialGatewayServer({
   env = process.env,
   automationStore,
   publishOmnitrixJob,
+  shemsiStore,
+  publishShemsiReply,
 } = {}) {
-  return createSocialGatewayServer({ resolveTrustedIdentity, env, automationStore, publishOmnitrixJob }).listen(port, host)
+  return createSocialGatewayServer({ resolveTrustedIdentity, env, automationStore, publishOmnitrixJob, shemsiStore, publishShemsiReply }).listen(port, host)
 }
