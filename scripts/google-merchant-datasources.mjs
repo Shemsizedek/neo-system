@@ -134,6 +134,48 @@ if (action === "provision") {
   process.exit(0);
 }
 
+if (action === "retirement-preflight") {
+  const replacementId = process.env.GOOGLE_MERCHANT_REPLACEMENT_SOURCE_ID || "10748120384";
+  const legacyId = process.env.GOOGLE_MERCHANT_LEGACY_SOURCE_ID || "10432070529";
+
+  const replacement = await api(`/accounts/${accountId}/dataSources/${replacementId}`);
+  const replacementUpload = await api(`/accounts/${accountId}/dataSources/${replacementId}/fileUploads/latest`);
+  const legacy = await api(`/accounts/${accountId}/dataSources/${legacyId}`);
+
+  const checks = {
+    replacement_name_ok: replacement?.displayName === "House of Negus — Spreadshop (NEO)",
+    replacement_processing_succeeded: replacementUpload?.processingState === "SUCCEEDED",
+    replacement_item_count_ok: Number(replacementUpload?.itemsTotal || 0) >= 2803,
+    legacy_name_ok: legacy?.displayName === "Products source - The House",
+    legacy_input_is_api: legacy?.input === "API"
+  };
+
+  const ok = Object.values(checks).every(Boolean);
+  console.log(JSON.stringify({
+    ok,
+    account_id: accountId,
+    replacement_source_id: replacementId,
+    replacement: {
+      displayName: replacement?.displayName,
+      input: replacement?.input,
+      processingState: replacementUpload?.processingState,
+      itemsTotal: replacementUpload?.itemsTotal,
+      itemsCreated: replacementUpload?.itemsCreated
+    },
+    legacy_source_id: legacyId,
+    legacy: {
+      displayName: legacy?.displayName,
+      input: legacy?.input,
+      feedLabel: legacy?.primaryProductDataSource?.feedLabel,
+      contentLanguage: legacy?.primaryProductDataSource?.contentLanguage
+    },
+    checks
+  }, null, 2));
+
+  if (!ok) process.exit(2);
+  process.exit(0);
+}
+
 if (action === "wait-status") {
   const id = process.env.GOOGLE_MERCHANT_DATASOURCE_ID || "10748120384";
   let latest = null;

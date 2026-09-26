@@ -1,0 +1,24 @@
+{
+  "gate": "HN-MERCH-AUTO-032",
+  "account_id": "5429352076",
+  "replacement_source": {
+    "id": "10748120384",
+    "display_name": "House of Negus — Spreadshop (NEO)",
+    "expected_processing_state": "SUCCEEDED",
+    "expected_items_total": 2803
+  },
+  "legacy_source": {
+    "id": "10432070529",
+    "display_name": "Products source - The House",
+    "input": "API",
+    "shopify_rows_observed": 218,
+    "shopify_domain": "thehouseofnegus.myshopify.com"
+  },
+  "evidence": [
+    "Google Merchant latest file upload for replacement source reached SUCCEEDED with itemsTotal=2803 and itemsCreated=2803.",
+    "Windsor Google Merchant query returned 218 Shopify-linked rows and all 218 mapped to data source accounts/5429352076/dataSources/10432070529.",
+    "Merchant API describes legacy source 10432070529 as Products source - The House with input API."
+  ],
+  "deletion_policy": "Do not delete legacy source unless retirement-preflight passes immediately before deletion.",
+  "rollback": "If legacy source is retired and replacement later fails, recreate or reconnect the legacy Shopify source only if needed."
+}
