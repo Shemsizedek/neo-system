@@ -10,6 +10,7 @@ const MINER_ROOT = fileURLToPath(new URL('../../public/neo-miner/', import.meta.
 const ENTERPRISE_ROOT = fileURLToPath(new URL('../../docs/neo-enterprise/', import.meta.url));
 const GUARDIAN_ROOT = fileURLToPath(new URL('../../public/guardian/', import.meta.url));
 const PACER_ROOT = fileURLToPath(new URL('../../docs/neo-pacer/', import.meta.url));
+const HUB_ROOT = fileURLToPath(new URL('../../docs/neo-hub/', import.meta.url));
 const PACER_DATA_ROOT = fileURLToPath(new URL('../../data/neo-pacer/', import.meta.url));
 const LINGO_ROOT = fileURLToPath(new URL('../../docs/neo-lingo/', import.meta.url));
 const PUBLIC_WORKSPACE_ROOT = fileURLToPath(new URL('../../docs/public-workspace/', import.meta.url));
@@ -329,6 +330,52 @@ async function serveGuardian(req, res, url, host) {
   return true;
 }
 
+
+function hubPublicHtml(body){
+  const replacements=[
+    ['../omnitrix/','https://omnitrix.holytemples.org/'],
+    ['../noogle/','https://noogle.holytemples.org/'],
+    ['../neo-oracle/','https://oracle.holytemples.org/'],
+    ['../neopay/ces.html','https://pay.holytemples.org/ces.html'],
+    ['../neopay/','https://pay.holytemples.org/'],
+    ['../neo-prime/','https://prime.holytemples.org/'],
+    ['../neo-tv/','https://neovision.holytemples.org/'],
+    ['../neo-wire/','https://wire.holytemples.org/'],
+    ['../neo-miner/','https://miner.holytemples.org/'],
+    ['../neo-lingo/','https://neo.holytemples.org/lingo/'],
+    ['../neo-algo/','https://algo.holytemples.org/'],
+    ['../neo-books/','https://book.holytemples.org/'],
+    ['../neo-corpus/','https://neo.holytemples.org/corpus/'],
+    ['../neo-enterprise/','https://enterprise.holytemples.org/'],
+    ["fetch('../api/identity/founder.json'","fetch('/api/identity/founder.json'"]
+  ];
+  return replacements.reduce((html,[from,to])=>html.split(from).join(to),body);
+}
+
+async function serveHub(req,res,url,host){
+  if(req.method!=='GET'&&req.method!=='HEAD'){
+    json(res,405,{error:'method_not_allowed',service:'neo-hub'});
+    return true;
+  }
+  if(url.pathname==='/health'){
+    json(res,200,{ok:true,service:'neo-hub',mode:'PUBLIC_PORTAL',host});
+    return true;
+  }
+  if(url.pathname==='/api'){
+    json(res,200,{service:'neo-hub',name:'NEO Hub',role:'canonical-public-hub',mode:'PUBLIC_PORTAL',ui:'https://hub.holytemples.org/'});
+    return true;
+  }
+  if(url.pathname==='/api/identity/founder.json'){
+    return serveFile(req,res,FOUNDER_IDENTITY_FILE,'application/json; charset=utf-8');
+  }
+  if(url.pathname==='/'||url.pathname==='/ui'||url.pathname==='/index.html'){
+    const served=await serveText(req,res,resolve(HUB_ROOT,'index.html'),hubPublicHtml);
+    if(!served)json(res,500,{error:'neo_hub_ui_unavailable'});
+    return true;
+  }
+  json(res,404,{error:'not_found',service:'neo-hub',path:url.pathname});
+  return true;
+}
 
 async function servePacer(req, res, url, host, prefix = '') {
   if (req.method !== 'GET' && req.method !== 'HEAD') {
@@ -707,6 +754,7 @@ export async function serveProductStatic(req, res, url, host) {
     inner.pathname = url.pathname.slice('/pacer'.length) || '/';
     return servePacer(req, res, inner, host, '/pacer');
   }
+  if (host === 'hub.holytemples.org') return serveHub(req, res, url, host);
   if (host === 'relations.holytemples.org') return serveRelations(req, res, url, host);
   if (host === 'neofx.holytemples.org') return serveExchange(req, res, url, host);
   if (host === 'finance.holytemples.org') return serveFinance(req, res, url, host);
