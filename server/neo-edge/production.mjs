@@ -110,8 +110,8 @@ export async function startNeoEdgeProduction(){
     if(host==='neo.holytemples.org'&&url.pathname.startsWith('/api/ai/'))return proxyAiGateway(req,res);
     const productServed=await serveProductStatic(req,res,url,host);
     if(productServed!==false)return productServed;
-    if(host==='leaders.holytemples.org'&&req.method==='GET'&&(url.pathname==='/'||url.pathname==='/ui'))return renderWorldLeaders(res, url.pathname);
     if(host==='leaders.holytemples.org'&&req.method==='GET'&&url.pathname==='/health')return json(res,200,{ok:true,service:'world-leaders-forum',surface:'static-mirror'});
+    if(host==='leaders.holytemples.org'&&req.method==='GET')return renderWorldLeaders(res, url.pathname);
     if(host==='neoteric.holytemples.org'&&req.method==='GET'&&(url.pathname==='/'||url.pathname==='/ui'))return html(res,200,neotericLanding());
     if(host==='neoteric.holytemples.org'&&req.method==='GET'&&url.pathname==='/health')return json(res,200,{ok:true,service:'neoteric-method',surface:'public-production'});
     if(host==='tabernacle.holytemples.org'&&req.method==='GET'&&(url.pathname==='/'||url.pathname==='/ui')){res.writeHead(302,{location:'https://neotericmethod.minicart.com','cache-control':'no-store'});return res.end();}
