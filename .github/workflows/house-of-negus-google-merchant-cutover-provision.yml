@@ -1,0 +1,42 @@
+name: House of Negus Merchant Cutover Provision
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: "Enter CONFIRM_PROVISION_SPREADSHOP_SOURCE"
+        required: true
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  provision:
+    runs-on: ubuntu-latest
+    environment: holytemples-production
+    env:
+      GOOGLE_MERCHANT_ACCOUNT_ID: "5429352076"
+      GOOGLE_MERCHANT_FEED_URL: "https://shemsizedek.github.io/neo-system/api/merchant/google-merchant.xml"
+      GOOGLE_MERCHANT_APPLY: ${{ inputs.confirmation }}
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID || secrets.GCP_PROJECT_ID }}
+      GCP_WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER || secrets.GCP_WIF_PROVIDER }}
+      GCP_CLOUD_RUN_SERVICE_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_SERVICE_ACCOUNT || secrets.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - id: merchant-auth
+        uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/content
+      - name: Verify live replacement feed
+        run: node scripts/google-merchant-cutover-check.mjs
+      - name: Provision and fetch NEO Spreadshop source
+        env:
+          GOOGLE_MERCHANT_ACCESS_TOKEN: ${{ steps.merchant-auth.outputs.access_token }}
+        run: node scripts/google-merchant-datasources.mjs provision
