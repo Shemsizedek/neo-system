@@ -19,3 +19,19 @@ test('Shemsi clients keep AI generation non-actioning and social writes explicit
   assert.match(source,/\/approve/)
   assert.match(source,/\/publish/)
 })
+
+
+test('original Shemsi voice engine is preserved inside the production UI',async()=>{
+  const app=await fs.readFile(new URL('./ShemsiCommentAssistantApp.tsx',import.meta.url),'utf8')
+  const engine=await fs.readFile(new URL('./shemsiVoiceEngine.ts',import.meta.url),'utf8')
+  assert.match(app,/ORIGINAL VOICE ENGINE/)
+  assert.match(app,/Generate original 3 drafts/)
+  assert.match(engine,/Insightful/)
+  assert.match(engine,/Houston Local/)
+  assert.match(engine,/Short & Punchy/)
+  assert.match(engine,/Value-add/)
+  assert.match(engine,/Curiosity question/)
+  assert.match(engine,/Short punchy/)
+  assert.match(engine,/No spam, no link drops, no DM bait/)
+  assert.match(engine,/if\(value\.length>90\)/)
+})

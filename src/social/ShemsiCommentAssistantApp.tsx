@@ -1,6 +1,7 @@
 import React,{useMemo,useState} from 'react'
 import {ArrowLeft,CheckCircle2,Copy,MessageSquareText,RefreshCw,Send,ShieldCheck,Sparkles} from 'lucide-react'
 import {approveShemsiDraft,generateShemsiReply,publishShemsiDraft,saveShemsiDraft,stageShemsiInbox,syncShemsiComments,verifyShemsiDraft,type ShemsiTone} from './shemsiClient'
+import {generateOriginalShemsiDrafts,SHEMSI_BRAND_VOICE,SHEMSI_SAFETY_CHECKLIST,SHEMSI_VIBES,type ShemsiVibe,type ShemsiVoiceDraft} from './shemsiVoiceEngine'
 import './shemsi.css'
 
 const tones:ShemsiTone[]=['professional','warm','concise','educational','witty','measured']
@@ -15,6 +16,10 @@ export function ShemsiCommentAssistantApp(){
   const[parentContentText,setParentContentText]=useState('')
   const[commentText,setCommentText]=useState('')
   const[tone,setTone]=useState<ShemsiTone>('professional')
+  const[vibe,setVibe]=useState<ShemsiVibe>('Insightful')
+  const[nicheTags,setNicheTags]=useState('spirituality, Houston wellness, temple')
+  const[voiceDrafts,setVoiceDrafts]=useState<ShemsiVoiceDraft[]>([])
+  const[voiceHistory,setVoiceHistory]=useState<Array<ShemsiVoiceDraft&{timeStr:string}>>([])
   const[draft,setDraft]=useState('')
   const[draftId,setDraftId]=useState('')
   const[approved,setApproved]=useState(false)
@@ -45,6 +50,33 @@ export function ShemsiCommentAssistantApp(){
       setInbox(items)
       if(items[0])useInboxItem(items[0])
     }catch(err){setError(err instanceof Error?err.message:'sync_failed')}
+    finally{setLoading(false)}
+  }
+
+  function generateOriginalVoice(){
+    const context=(parentContentText||commentText).trim()
+    const tags=nicheTags.split(',').map(x=>x.trim()).filter(Boolean)
+    if(!context&&tags.length===0){setError('caption_or_niche_required');return}
+    const options=generateOriginalShemsiDrafts(vibe,context,tags)
+    setVoiceDrafts(options)
+    const timeStr=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})
+    setVoiceHistory(current=>[...options.map(option=>({...option,timeStr})),...current].slice(0,10))
+    setError('')
+  }
+
+  async function useOriginalVoiceDraft(option:ShemsiVoiceDraft){
+    setDraft(option.text);setApproved(false);setPublishStatus('');setVerificationStatus('');setError('')
+    if(!accountId.trim()||!commentId.trim()||!parentContentId.trim()){
+      setDraftId('')
+      setError('Add the authorized account ID, comment ID, and parent content ID before queueing this draft.')
+      return
+    }
+    setLoading(true)
+    try{
+      const staged=await stageShemsiInbox({platform,accountId,commentId,parentContentId,authorName,commentText,parentContentText})
+      const saved=await saveShemsiDraft({inboxId:staged.item.id,responseText:option.text,tone})
+      setDraftId(saved.draft.id)
+    }catch(err){setError(err instanceof Error?err.message:'voice_draft_queue_failed')}
     finally{setLoading(false)}
   }
 
@@ -118,8 +150,20 @@ export function ShemsiCommentAssistantApp(){
         </div>
         <button className="shemsi-secondary shemsi-sync" disabled={!canSync} onClick={()=>void sync()}><RefreshCw size={16}/>Sync recent {platform==='linkedin'?'LinkedIn':platform==='youtube'?'YouTube':''} comments</button>
         {inbox.length>0&&<div className="shemsi-inbox-list">{inbox.slice(0,8).map(item=><button key={item.id} onClick={()=>useInboxItem(item)}><span>{item.authorName||'Commenter'} · {item.triage?.priority||'review'}</span><b>{item.commentText}</b></button>)}</div>}
+
+        <div className="shemsi-original-engine">
+          <div className="shemsi-original-head"><div><span className="shemsi-label">ORIGINAL VOICE ENGINE</span><h3>{SHEMSI_BRAND_VOICE.name}</h3><p>{SHEMSI_BRAND_VOICE.description}</p></div><span className="shemsi-pill approved">Locked voice</span></div>
+          <label className="shemsi-original-tags">Niche tags<input value={nicheTags} onChange={e=>setNicheTags(e.target.value)} placeholder="spirituality, Houston wellness, temple"/></label>
+          <div className="shemsi-vibe-grid">{SHEMSI_VIBES.map(item=><button key={item.id} className={vibe===item.id?'active':''} onClick={()=>setVibe(item.id)}><b>{item.id}</b><span>{item.desc}</span></button>)}</div>
+          <button className="shemsi-secondary shemsi-original-generate" onClick={generateOriginalVoice}><Sparkles size={16}/>Generate original 3 drafts</button>
+          {voiceDrafts.length>0&&<div className="shemsi-original-drafts">{voiceDrafts.map(option=><div key={option.id}><div><span>{option.label}</span><small>{option.text.length} chars</small></div><p>{option.text}</p><button onClick={()=>void useOriginalVoiceDraft(option)}>Use + queue</button></div>)}</div>}
+          <div className="shemsi-safety">{SHEMSI_SAFETY_CHECKLIST.map(item=><span key={item}>✓ {item}</span>)}</div>
+          {voiceHistory.length>0&&<div className="shemsi-history"><div><b>History — last 10</b><button onClick={()=>setVoiceHistory([])}>Clear</button></div>{voiceHistory.map(item=><button key={item.id} onClick={()=>void navigator.clipboard.writeText(item.text)}><span>{item.type} · {item.vibe} · {item.timeStr}</span><b>{item.text}</b></button>)}</div>}
+        </div>
+
+        <div className="shemsi-ai-label">NEO AI tone</div>
         <div className="shemsi-tone-row">{tones.map(x=><button key={x} className={tone===x?'active':''} onClick={()=>setTone(x)}>{x}</button>)}</div>
-        <button className="shemsi-primary" disabled={!canGenerate} onClick={()=>void generate()}>{loading?<><RefreshCw className="spin" size={17}/>Working…</>:<><Sparkles size={17}/>Generate + queue draft</>}</button>
+        <button className="shemsi-primary" disabled={!canGenerate} onClick={()=>void generate()}>{loading?<><RefreshCw className="spin" size={17}/>Working…</>:<><Sparkles size={17}/>Generate NEO AI + queue</>}</button>
         {error&&<div className="shemsi-error">{error}</div>}
       </div>
 
