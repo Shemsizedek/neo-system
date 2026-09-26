@@ -1,6 +1,6 @@
 version: "0.1"
 id: "rudwaan-meta-muse-bridge"
-status: "active-planning"
+status: "active-runtime"
 agent_id: "NIA-013"
 strategy: "meta-compute-nous-governance"
 
@@ -22,6 +22,7 @@ planes:
       - ad_performance_analysis
     api_status:
       muse_spark: "private_preview_select_partners"
+      muse_operator_access: "user-confirmed-active"
       public_general_api: "not_verified"
   nous:
     role: "canonical_knowledge_governance_and_orchestration"
@@ -60,7 +61,7 @@ activation_gates:
     status: "user-side-connection-required"
   - id: "MUSE-002"
     name: "Verify Muse connector visibility and permissions"
-    status: "pending"
+    status: "user-confirmed-muse-active"
   - id: "MUSE-003"
     name: "Request or detect Muse Spark API private preview access"
     status: "pending"
