@@ -57,6 +57,41 @@ export function buildSocialAuthorizationUrl({ providerId, identityId, scopes, en
   return { url: url.toString(), state }
 }
 
+export async function refreshSocialAccessToken({ providerId, refreshToken, env = process.env, fetchImpl = fetch } = {}) {
+  const provider = getSocialOAuthProvider(providerId)
+  if (!refreshToken) throw new Error('OAuth refresh token is required')
+  const clientId = env[provider.clientIdEnv]
+  const clientSecret = env[provider.clientSecretEnv]
+  if (!clientId || !clientSecret) throw new Error(`${providerId} OAuth is not configured`)
+
+  const body = new URLSearchParams({
+    grant_type: 'refresh_token',
+    refresh_token: refreshToken,
+    client_secret: clientSecret,
+  })
+  body.set(providerId === 'tiktok' ? 'client_key' : 'client_id', clientId)
+
+  const response = await fetchImpl(provider.tokenUrl, {
+    method: 'POST',
+    headers: { 'content-type': 'application/x-www-form-urlencoded' },
+    body,
+  })
+  const payload = await response.json().catch(() => ({}))
+  if (!response.ok || !payload.access_token) {
+    const error = new Error(`${providerId} token refresh failed (${response.status})`)
+    error.providerBody = payload
+    throw error
+  }
+  return {
+    providerId,
+    accessToken: payload.access_token,
+    refreshToken: payload.refresh_token ?? refreshToken,
+    expiresIn: payload.expires_in ?? null,
+    scope: payload.scope ?? payload.scopes ?? null,
+    raw: payload,
+  }
+}
+
 export async function exchangeSocialAuthorizationCode({ providerId, code, expectedState, returnedState, env = process.env, fetchImpl = fetch, oauthStateMaxAgeMs = 10 * 60 * 1000 } = {}) {
   const provider = getSocialOAuthProvider(providerId)
   if (!validateOAuthState(expectedState, returnedState, { maxAgeMs: oauthStateMaxAgeMs })) throw new Error('OAuth state validation failed')
