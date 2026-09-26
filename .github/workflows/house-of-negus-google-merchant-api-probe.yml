@@ -34,6 +34,22 @@ jobs:
           token_format: access_token
           access_token_scopes: https://www.googleapis.com/auth/content
       - uses: google-github-actions/setup-gcloud@v3
+      - name: Enable Merchant API
+        run: |
+          gcloud services enable merchantapi.googleapis.com --project="$GCP_PROJECT_ID" --quiet
+          for i in {1..12}; do
+            if gcloud services list --enabled --project="$GCP_PROJECT_ID" --filter='config.name:merchantapi.googleapis.com' --format='value(config.name)' | grep -q '^merchantapi.googleapis.com
+      - name: List Merchant Center data sources
+        env:
+          GOOGLE_MERCHANT_ACCESS_TOKEN: ${{ steps.merchant-auth.outputs.access_token }}
+        run: node scripts/google-merchant-datasources-list.mjs
+; then
+              echo "Merchant API enabled"
+              break
+            fi
+            sleep 5
+          done
+
       - name: Verify live replacement feed
         run: node scripts/google-merchant-cutover-check.mjs
       - name: List Merchant Center data sources
