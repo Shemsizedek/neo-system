@@ -1,6 +1,6 @@
 version: "0.1"
 id: "rudwaan-meta-muse-bridge"
-status: "active-runtime"
+status: "active-browser-operator"
 agent_id: "NIA-013"
 strategy: "meta-compute-nous-governance"
 
@@ -23,6 +23,8 @@ planes:
     api_status:
       muse_spark: "private_preview_select_partners"
       muse_operator_access: "user-confirmed-active"
+      muse_operator_mode: "personal-computer-browser"
+      direct_api_access: "not-assumed"
       public_general_api: "not_verified"
   nous:
     role: "canonical_knowledge_governance_and_orchestration"
