@@ -212,8 +212,8 @@ export function createSocialGatewayServer({
         if(!shemsiStore||!shemsiIngestion)return respond(res,503,{error:'shemsi_automation_not_ready'})
         const subjectId=String(env.SHEMSI_AUTOMATION_SUBJECT_ID||'').trim()
         if(!subjectId)return respond(res,503,{error:'shemsi_automation_subject_required'})
-        const linkedInTargets=String(env.SHEMSI_LINKEDIN_ACTIVITY_URNS||'').split(',').map(x=>x.trim()).filter(Boolean)
-        const youtubeTargets=String(env.SHEMSI_YOUTUBE_VIDEO_IDS||'').split(',').map(x=>x.trim()).filter(Boolean)
+        const linkedInTargets=String(env.SHEMSI_LINKEDIN_ACTIVITY_URNS||'').split(';').map(x=>x.trim()).filter(Boolean)
+        const youtubeTargets=String(env.SHEMSI_YOUTUBE_VIDEO_IDS||'').split(';').map(x=>x.trim()).filter(Boolean)
         const results=[]
         const saveItems=async(result,key)=>{
           let added=0
