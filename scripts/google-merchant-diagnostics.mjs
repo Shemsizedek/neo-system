@@ -20,7 +20,7 @@ async function api(url, { method = "GET", body } = {}) {
   return payload;
 }
 
-const aggregateUrl = `https://merchantapi.googleapis.com/accounts/v1/accounts/${accountId}/aggregateProductStatuses?pageSize=1000`;
+const aggregateUrl = `https://merchantapi.googleapis.com/issueresolution/v1/accounts/${accountId}/aggregateProductStatuses?pageSize=1000`;
 const aggregate = await api(aggregateUrl);
 
 async function runReport(query) {
