@@ -261,7 +261,7 @@ export function createNeoEdgeServer() {
     if (!service) return json(req, res, 421, { error: 'unknown_neo_host', host });
 
     if (host === 'leaders.holytemples.org' && req.method === 'GET') {
-      return renderWorldLeaders(res);
+      return renderWorldLeaders(res, url.pathname);
     }
 
 
