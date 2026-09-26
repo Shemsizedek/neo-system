@@ -22,6 +22,8 @@ agent:
     transport_adapter: "src/social/rudwaan-instagram-transport.mjs"
     dm_ingress: "unavailable-current-provider"
     ai_studio_backend_hook: "unavailable-public-interface"
+    runtime_activation: "src/social/rudwaan-instagram-runtime.mjs"
+    account_binding: "oauth-required"
   permissions:
     default_mode: "public_advisory"
     public_knowledge_read: "allowed"
