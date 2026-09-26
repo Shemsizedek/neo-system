@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/house-of-negus-google-merchant-homepage-migrate.yml"
+      - "scripts/google-merchant-homepage-migrate.mjs"
   workflow_dispatch:
 
 permissions:
