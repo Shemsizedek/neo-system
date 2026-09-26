@@ -5,6 +5,7 @@ const DEFAULT_PROVIDER_ORDER = Object.freeze({
   facebook: ['windsor_organic', 'direct_platform_api'],
   linkedin: ['windsor_organic', 'direct_platform_api'],
   x: ['windsor_organic'],
+  instagram: ['windsor_organic'],
   youtube_community: ['youtube_community_ui'],
 });
 
