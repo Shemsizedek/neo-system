@@ -92,29 +92,41 @@ export async function readBackYouTubeReply({commentId,accessToken,fetchImpl=fetc
   return {verified:found,status:found?'verified':'not-found',platformPostId:found?String(commentId):null,providerResult:body};
 }
 
-export function createShemsiIngestionRuntime({env=process.env,fetchImpl=fetch}={}){
+export function createShemsiIngestionRuntime({env=process.env,fetchImpl=fetch,tokenResolver}={}){
+  async function accessToken(subjectId,providerId,fallback){
+    if(subjectId&&typeof tokenResolver==='function'){
+      const resolved=await tokenResolver(subjectId,providerId);
+      if(resolved?.accessToken)return resolved.accessToken;
+      if(resolved?.status==='reauthorization-required')return null;
+    }
+    return fallback||null;
+  }
   return {
-    async ingestLinkedIn({activityUrn}={}){
-      if(!env.LINKEDIN_ACCESS_TOKEN)return {platform:'linkedin',status:'credentials-required',items:[]};
-      const items=await fetchLinkedInComments({activityUrn,accessToken:env.LINKEDIN_ACCESS_TOKEN,linkedinVersion:env.LINKEDIN_VERSION,fetchImpl});
+    async ingestLinkedIn({activityUrn,subjectId}={}){
+      const token=await accessToken(subjectId,'linkedin',env.LINKEDIN_ACCESS_TOKEN);
+      if(!token)return {platform:'linkedin',status:'credentials-required',items:[]};
+      const items=await fetchLinkedInComments({activityUrn,accessToken:token,linkedinVersion:env.LINKEDIN_VERSION,fetchImpl});
       const external=filterOwnComments(items,{ownActorUrn:env.LINKEDIN_OWNER_URN}).map(item=>({...item,authorExternalId:item.accountId,accountId:clean(env.LINKEDIN_OWNER_URN)||'linkedin-authorized-account'}));
       return {platform:'linkedin',status:'ok',items:external.map(triageComment)};
     },
-    async ingestYouTube({videoId,channelId=env.YOUTUBE_CHANNEL_ID,pageToken}={}){
-      if(!env.YOUTUBE_ACCESS_TOKEN)return {platform:'youtube',status:'credentials-required',items:[]};
-      const result=await fetchYouTubeCommentThreads({accessToken:env.YOUTUBE_ACCESS_TOKEN,channelId,videoId,pageToken,fetchImpl});
+    async ingestYouTube({videoId,channelId=env.YOUTUBE_CHANNEL_ID,pageToken,subjectId}={}){
+      const token=await accessToken(subjectId,'youtube',env.YOUTUBE_ACCESS_TOKEN);
+      if(!token)return {platform:'youtube',status:'credentials-required',items:[]};
+      const result=await fetchYouTubeCommentThreads({accessToken:token,channelId,videoId,pageToken,fetchImpl});
       const external=filterOwnComments(result.comments,{ownYouTubeChannelId:env.YOUTUBE_CHANNEL_ID}).map(item=>({...item,authorExternalId:item.accountId,accountId:clean(env.YOUTUBE_CHANNEL_ID)||clean(channelId)||'youtube-authorized-account'}));
       return {platform:'youtube',status:'ok',items:external.map(triageComment),nextPageToken:result.nextPageToken};
     },
-    async verify(receipt,{parentContentId}={}){
+    async verify(receipt,{parentContentId,subjectId}={}){
       if(!receipt?.platformPostId)return {verified:false,status:'no-platform-id'};
       if(receipt.destination==='linkedin'){
-        if(!env.LINKEDIN_ACCESS_TOKEN)return {verified:false,status:'credentials-required'};
-        return readBackLinkedInReply({activityUrn:parentContentId,commentId:receipt.platformPostId,accessToken:env.LINKEDIN_ACCESS_TOKEN,linkedinVersion:env.LINKEDIN_VERSION,fetchImpl});
+        const token=await accessToken(subjectId,'linkedin',env.LINKEDIN_ACCESS_TOKEN);
+        if(!token)return {verified:false,status:'credentials-required'};
+        return readBackLinkedInReply({activityUrn:parentContentId,commentId:receipt.platformPostId,accessToken:token,linkedinVersion:env.LINKEDIN_VERSION,fetchImpl});
       }
       if(receipt.destination==='youtube'){
-        if(!env.YOUTUBE_ACCESS_TOKEN)return {verified:false,status:'credentials-required'};
-        return readBackYouTubeReply({commentId:receipt.platformPostId,accessToken:env.YOUTUBE_ACCESS_TOKEN,fetchImpl});
+        const token=await accessToken(subjectId,'youtube',env.YOUTUBE_ACCESS_TOKEN);
+        if(!token)return {verified:false,status:'credentials-required'};
+        return readBackYouTubeReply({commentId:receipt.platformPostId,accessToken:token,fetchImpl});
       }
       return {verified:false,status:'verification-adapter-not-configured'};
     },
