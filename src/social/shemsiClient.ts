@@ -69,3 +69,27 @@ export async function generateShemsiReply(input:ShemsiGenerationInput,fetchImpl:
   if(!response.ok) throw new Error(body?.error||`gateway_http_${response.status}`)
   return {text:extractText(body),raw:body}
 }
+
+
+function socialBase(){
+  const configured=String(import.meta.env.VITE_NEO_SOCIAL_GATEWAY_URL||'').trim()
+  return configured.replace(/\/$/,'')
+}
+async function socialJson(path:string,init?:RequestInit){
+  const response=await fetch(`${socialBase()}${path}`,{credentials:'include',...init,headers:{'content-type':'application/json',...(init?.headers||{})}})
+  const body=await response.json().catch(()=>({}))
+  if(!response.ok) throw new Error(body?.error||`social_gateway_http_${response.status}`)
+  return body
+}
+export async function stageShemsiInbox(input:{platform:string;accountId:string;commentId:string;parentContentId:string;authorName?:string;commentText:string;parentContentText?:string}){
+  return socialJson('/api/shemsi/inbox',{method:'POST',body:JSON.stringify(input)})
+}
+export async function saveShemsiDraft(input:{inboxId:string;responseText:string;tone:ShemsiTone}){
+  return socialJson('/api/shemsi/drafts',{method:'POST',body:JSON.stringify(input)})
+}
+export async function approveShemsiDraft(id:string){
+  return socialJson(`/api/shemsi/drafts/${encodeURIComponent(id)}/approve`,{method:'POST',body:'{}'})
+}
+export async function publishShemsiDraft(id:string){
+  return socialJson(`/api/shemsi/drafts/${encodeURIComponent(id)}/publish`,{method:'POST',body:'{}'})
+}
