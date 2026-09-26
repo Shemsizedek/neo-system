@@ -37,3 +37,14 @@ test('unsupported provider fails closed without pretending publication',async()=
   assert.equal(result.published,false);
   assert.equal(result.status,'adapter-not-configured');
 });
+
+
+test('approval is immutable and snapshots the reviewed response',()=>{
+  const item=makeInboxItem({platform:'linkedin',accountId:'a1',commentId:'c2',parentContentId:'urn:li:activity:2',commentText:'Hi'});
+  const pending=makeDraft({inboxItem:item,responseText:'Reviewed text'});
+  const approved=approveDraft(pending,{approvedBy:'user-1',approvedAt:'2026-09-26T19:00:00.000Z'});
+  const retry=approveDraft(approved,{approvedBy:'user-2',approvedAt:'2026-09-26T20:00:00.000Z'});
+  assert.equal(approved.approvedResponseText,'Reviewed text');
+  assert.equal(retry.approvedBy,'user-1');
+  assert.equal(retry.approvedAt,'2026-09-26T19:00:00.000Z');
+});
