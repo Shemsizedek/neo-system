@@ -40,6 +40,62 @@ if (action === "list") {
   process.exit(0);
 }
 
+if (action === "provision") {
+  if (process.env.GOOGLE_MERCHANT_APPLY !== "CONFIRM_PROVISION_SPREADSHOP_SOURCE") {
+    throw new Error("Refusing provision. Set GOOGLE_MERCHANT_APPLY=CONFIRM_PROVISION_SPREADSHOP_SOURCE.");
+  }
+
+  const current = await api(`/accounts/${accountId}/dataSources?pageSize=100`);
+  const existing = (current?.dataSources || []).find(
+    x => x.displayName === "House of Negus — Spreadshop (NEO)"
+  );
+
+  let source = existing;
+  if (!source) {
+    const body = {
+      displayName: "House of Negus — Spreadshop (NEO)",
+      primaryProductDataSource: {
+        feedLabel: "US",
+        contentLanguage: "en",
+        countries: ["US"]
+      },
+      fileInput: {
+        fetchSettings: {
+          enabled: true,
+          frequency: "FREQUENCY_DAILY",
+          timeOfDay: { hours: 9 },
+          timeZone: "America/Chicago",
+          fetchUri: feedUrl
+        }
+      }
+    };
+    source = await api(`/accounts/${accountId}/dataSources`, { method: "POST", body });
+  }
+
+  const sourceId = source?.dataSourceId || source?.name?.split("/").pop();
+  if (!sourceId) throw new Error("Created/found Merchant data source but could not determine its ID.");
+
+  await api(`/accounts/${accountId}/dataSources/${sourceId}:fetch`, { method: "POST" });
+
+  let latest = null;
+  for (let i = 0; i < 12; i++) {
+    await new Promise(resolve => setTimeout(resolve, 5000));
+    try {
+      latest = await api(`/accounts/${accountId}/dataSources/${sourceId}/fileUploads/latest`);
+      if (latest) break;
+    } catch {}
+  }
+
+  console.log(JSON.stringify({
+    provisioned: true,
+    reused_existing_source: Boolean(existing),
+    data_source_id: sourceId,
+    data_source: source,
+    latest_file_upload: latest
+  }, null, 2));
+  process.exit(0);
+}
+
 if (action === "create") {
   if (process.env.GOOGLE_MERCHANT_APPLY !== "CONFIRM_CREATE_SPREADSHOP_SOURCE") {
     throw new Error("Refusing create. Set GOOGLE_MERCHANT_APPLY=CONFIRM_CREATE_SPREADSHOP_SOURCE.");
