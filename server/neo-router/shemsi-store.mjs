@@ -82,11 +82,14 @@ export function makeInboxItem({platform,accountId,commentId,parentContentId,auth
 export function makeDraft({inboxItem,responseText,tone='professional',createdAt=now()}={}){
   if(!inboxItem?.id)throw new Error('inbox_item_required');
   if(typeof responseText!=='string'||!responseText.trim())throw new Error('responseText_required');
-  return {schema:'neo.social.shemsi.draft.v0.1',id:`draft:${inboxItem.id}`,inboxId:inboxItem.id,platform:inboxItem.platform,accountId:inboxItem.accountId,commentId:inboxItem.commentId,parentContentId:inboxItem.parentContentId,responseText:responseText.trim(),tone,status:'pending',approvedBy:null,approvedAt:null,createdAt,updatedAt:createdAt};
+  for(const [k,v] of Object.entries({platform:inboxItem.platform,accountId:inboxItem.accountId,commentId:inboxItem.commentId,parentContentId:inboxItem.parentContentId}))if(typeof v!=='string'||!v.trim())throw new Error(`inbox_${k}_required`);
+  return {schema:'neo.social.shemsi.draft.v0.1',id:`draft:${inboxItem.id}`,inboxId:inboxItem.id,platform:inboxItem.platform,accountId:inboxItem.accountId,commentId:inboxItem.commentId,parentContentId:inboxItem.parentContentId,responseText:responseText.trim(),tone,status:'pending',approvedBy:null,approvedAt:null,approvedResponseText:null,createdAt,updatedAt:createdAt};
 }
 
 export function approveDraft(draft,{approvedBy,approvedAt=now()}={}){
   if(!draft?.id)throw new Error('draft_required');
   if(typeof approvedBy!=='string'||!approvedBy.trim())throw new Error('approvedBy_required');
-  return {...draft,status:'approved',approvedBy:approvedBy.trim(),approvedAt,updatedAt:approvedAt};
+  if(draft.status==='approved')return clone(draft);
+  if(draft.status!=='pending')throw new Error('draft_not_pending');
+  return {...draft,status:'approved',approvedBy:approvedBy.trim(),approvedAt,approvedResponseText:draft.responseText,updatedAt:approvedAt};
 }
