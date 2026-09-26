@@ -1,0 +1,43 @@
+name: House of Negus Merchant Diagnostics
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/house-of-negus-google-merchant-diagnostics.yml"
+      - "scripts/google-merchant-diagnostics.mjs"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  diagnostics:
+    runs-on: ubuntu-latest
+    environment: holytemples-production
+    env:
+      GOOGLE_MERCHANT_ACCOUNT_ID: "5429352076"
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID || secrets.GCP_PROJECT_ID }}
+      GCP_WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER || secrets.GCP_WIF_PROVIDER }}
+      GCP_CLOUD_RUN_SERVICE_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_SERVICE_ACCOUNT || secrets.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - id: merchant-auth
+        uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/content
+      - name: Collect Merchant diagnostics
+        env:
+          GOOGLE_MERCHANT_ACCESS_TOKEN: ${{ steps.merchant-auth.outputs.access_token }}
+        run: node scripts/google-merchant-diagnostics.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: house-of-negus-merchant-diagnostics
+          path: merchant-diagnostics.json
