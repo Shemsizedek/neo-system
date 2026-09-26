@@ -1,5 +1,9 @@
 name: House of Negus Merchant Verification Probe
 on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/house-of-negus-google-merchant-verification-probe.yml"
   workflow_dispatch:
   schedule:
     - cron: "23 * * * *"
