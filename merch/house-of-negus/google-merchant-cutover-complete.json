@@ -1,0 +1,12 @@
+{
+  "gate": "HN-MERCH-AUTO-035",
+  "account_id": "5429352076",
+  "cutover_state": "completed",
+  "retired_legacy_source_id": "10432070529",
+  "replacement_source_id": "10748120384",
+  "replacement_name": "House of Negus — Spreadshop (NEO)",
+  "replacement_items_total": 2803,
+  "replacement_processing_state": "SUCCEEDED",
+  "note": "Merchant API confirmed the legacy source is absent and the replacement source is healthy. Windsor may continue to show historical Shopify rows temporarily due connector/reporting lag.",
+  "health_check": "Daily GitHub Actions post-cutover verification"
+}
