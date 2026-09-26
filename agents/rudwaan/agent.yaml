@@ -23,7 +23,7 @@ agent:
     dm_ingress: "unavailable-current-provider"
     ai_studio_backend_hook: "unavailable-public-interface"
     runtime_activation: "src/social/rudwaan-instagram-runtime.mjs"
-    account_binding: "oauth-required"
+    account_binding: "registry/rudwaan-instagram-binding.yaml"
   permissions:
     default_mode: "public_advisory"
     public_knowledge_read: "allowed"
