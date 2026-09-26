@@ -34,9 +34,22 @@ async function api(path, { method = "GET", body } = {}) {
 
 const action = process.argv[2] || "list";
 
+async function listAllDataSources() {
+  const all = [];
+  let pageToken = "";
+  do {
+    const qs = new URLSearchParams({ pageSize: "100" });
+    if (pageToken) qs.set("pageToken", pageToken);
+    const data = await api(`/accounts/${accountId}/dataSources?${qs.toString()}`);
+    all.push(...(data?.dataSources || []));
+    pageToken = data?.nextPageToken || "";
+  } while (pageToken);
+  return all;
+}
+
 if (action === "list") {
-  const data = await api(`/accounts/${accountId}/dataSources?pageSize=100`);
-  console.log(JSON.stringify(data, null, 2));
+  const dataSources = await listAllDataSources();
+  console.log(JSON.stringify({ dataSources, count: dataSources.length }, null, 2));
   process.exit(0);
 }
 
@@ -45,8 +58,8 @@ if (action === "provision") {
     throw new Error("Refusing provision. Set GOOGLE_MERCHANT_APPLY=CONFIRM_PROVISION_SPREADSHOP_SOURCE.");
   }
 
-  const current = await api(`/accounts/${accountId}/dataSources?pageSize=100`);
-  const existing = (current?.dataSources || []).find(
+  const current = await listAllDataSources();
+  const existing = current.find(
     x => x.displayName === "House of Negus — Spreadshop (NEO)"
   );
 
@@ -54,7 +67,6 @@ if (action === "provision") {
   if (!source) {
     const body = {
       displayName: "House of Negus — Spreadshop (NEO)",
-      input: "FILE",
       primaryProductDataSource: {
         feedLabel: "US",
         contentLanguage: "en",
@@ -76,22 +88,47 @@ if (action === "provision") {
   const sourceId = source?.dataSourceId || source?.name?.split("/").pop();
   if (!sourceId) throw new Error("Created/found Merchant data source but could not determine its ID.");
 
-  await api(`/accounts/${accountId}/dataSources/${sourceId}:fetch`, { method: "POST" });
+  let visible = null;
+  for (let i = 0; i < 18; i++) {
+    try {
+      visible = await api(`/accounts/${accountId}/dataSources/${sourceId}`);
+      if (visible) break;
+    } catch (err) {
+      if (!/404|NOT_FOUND/i.test(String(err))) throw err;
+    }
+    await new Promise(resolve => setTimeout(resolve, 5000));
+  }
+  if (!visible) throw new Error(`Data source ${sourceId} did not become readable within 90 seconds.`);
+
+  let fetched = false;
+  for (let i = 0; i < 12; i++) {
+    try {
+      await api(`/accounts/${accountId}/dataSources/${sourceId}:fetch`, { method: "POST" });
+      fetched = true;
+      break;
+    } catch (err) {
+      if (!/404|NOT_FOUND/i.test(String(err))) throw err;
+      await new Promise(resolve => setTimeout(resolve, 5000));
+    }
+  }
+  if (!fetched) throw new Error(`Data source ${sourceId} was visible but fetch endpoint was not ready within 60 seconds.`);
 
   let latest = null;
-  for (let i = 0; i < 12; i++) {
+  for (let i = 0; i < 24; i++) {
     await new Promise(resolve => setTimeout(resolve, 5000));
     try {
       latest = await api(`/accounts/${accountId}/dataSources/${sourceId}/fileUploads/latest`);
       if (latest) break;
-    } catch {}
+    } catch (err) {
+      if (!/404|NOT_FOUND/i.test(String(err))) throw err;
+    }
   }
 
   console.log(JSON.stringify({
     provisioned: true,
     reused_existing_source: Boolean(existing),
     data_source_id: sourceId,
-    data_source: source,
+    data_source: visible || source,
     latest_file_upload: latest
   }, null, 2));
   process.exit(0);
