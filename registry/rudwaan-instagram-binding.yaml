@@ -1,0 +1,26 @@
+version: "0.1"
+id: "rudwaan-instagram-binding"
+status: "active"
+agent_id: "NIA-013"
+channel: "instagram"
+connector: "instagram"
+account:
+  id: "17841404189884314"
+  name: "shemsizedek"
+capabilities:
+  - public_comment_reply
+  - create_comment
+  - create_image_post
+  - create_video_post
+  - create_story
+  - create_carousel_post
+controls:
+  privileged_execution: false
+  external_publication: approval_required
+  account_changes: denied
+  private_records: denied
+  financial_execution: denied
+runtime:
+  health_gate: "src/social/rudwaan-instagram-runtime.mjs"
+  transport_adapter: "src/social/rudwaan-instagram-transport.mjs"
+  status: "ready_for_smoke_test"
