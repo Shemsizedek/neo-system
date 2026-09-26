@@ -38,3 +38,4 @@ jobs:
         env:
           GOOGLE_MERCHANT_ACCESS_TOKEN: ${{ steps.merchant-auth.outputs.access_token }}
         run: node scripts/google-merchant-remediation-audit.mjs
+
