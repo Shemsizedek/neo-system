@@ -48,3 +48,16 @@ test('approval is immutable and snapshots the reviewed response',()=>{
   assert.equal(retry.approvedBy,'user-1');
   assert.equal(retry.approvedAt,'2026-09-26T19:00:00.000Z');
 });
+
+
+test('scheduled inbox sync deduplicates and creates subject-scoped approval notices',async()=>{
+  const store=createMemoryShemsiStore();
+  const item=makeInboxItem({platform:'linkedin',accountId:'owner',commentId:'dedupe-1',parentContentId:'urn:li:activity:5',commentText:'Can you explain this?'});
+  assert.equal(await store.putInboxIfNew('user-1',item),true);
+  assert.equal(await store.putInboxIfNew('user-1',item),false);
+  await store.saveSyncState('user-1','linkedin:urn:li:activity:5',{lastRunAt:'2026-09-26T21:00:00Z',added:1});
+  await store.saveApprovalNotice('user-1',{id:'notice:'+item.id,inboxId:item.id,status:'pending',createdAt:'2026-09-26T21:00:00Z'});
+  assert.equal((await store.getSyncState('user-1','linkedin:urn:li:activity:5')).added,1);
+  assert.equal((await store.listApprovalNotices('user-1')).length,1);
+  assert.equal((await store.listApprovalNotices('user-2')).length,0);
+});
