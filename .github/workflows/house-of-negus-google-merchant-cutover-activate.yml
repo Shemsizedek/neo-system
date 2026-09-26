@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/house-of-negus-google-merchant-cutover-activate.yml"
+      - "scripts/google-merchant-datasources.mjs"
 
 permissions:
   contents: read
