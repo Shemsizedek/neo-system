@@ -19,6 +19,7 @@ providers:
       facebook: true
       linkedin: true
       x: true
+      instagram: true
     supported_actions:
       facebook:
         connector: facebook_organic
@@ -29,6 +30,9 @@ providers:
       x:
         connector: x_organic
         action: provider-dependent
+      instagram:
+        connector: instagram
+        action: create_image_post
     receipt_policy:
       provider_success_without_post_id: submitted
       provider_success_with_post_id: published
@@ -67,6 +71,8 @@ routing:
   linkedin:
     order: [windsor_organic, direct_platform_api]
   x:
+    order: [windsor_organic]
+  instagram:
     order: [windsor_organic]
   youtube_community:
     order: [youtube_community_ui]

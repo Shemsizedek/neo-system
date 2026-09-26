@@ -5,6 +5,7 @@ import {dispatchSocialJob, normalizeProviderResult, resolveProviderOrder} from '
 test('connected organic provider is first for Facebook and LinkedIn', () => {
   assert.deepEqual(resolveProviderOrder('facebook'), ['windsor_organic', 'direct_platform_api']);
   assert.deepEqual(resolveProviderOrder('linkedin'), ['windsor_organic', 'direct_platform_api']);
+  assert.deepEqual(resolveProviderOrder('instagram'), ['windsor_organic']);
 });
 
 test('provider success without post id is submitted, not published', () => {
