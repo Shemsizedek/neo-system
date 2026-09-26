@@ -263,6 +263,7 @@ export function createSocialGatewayServer({
         const draft=await shemsiStore.getDraft(subjectId,id)
         if(!draft) return respond(res,404,{error:'shemsi_draft_not_found'})
         if(draft.status!=='approved') return respond(res,409,{error:'explicit_approval_required'})
+        if(draft.approvedResponseText!==draft.responseText) return respond(res,409,{error:'approved_content_mismatch'})
         const existing=await shemsiStore.getReceipt(subjectId,id)
         if(existing) return respond(res,200,{subjectId,receipt:{...existing,replayed:true}})
         const job={
