@@ -93,3 +93,14 @@ export async function approveShemsiDraft(id:string){
 export async function publishShemsiDraft(id:string){
   return socialJson(`/api/shemsi/drafts/${encodeURIComponent(id)}/publish`,{method:'POST',body:'{}'})
 }
+
+
+export async function syncShemsiComments(input:{platform:'linkedin'|'youtube';activityUrn?:string;videoId?:string;channelId?:string;pageToken?:string}){
+  return socialJson('/api/shemsi/sync',{method:'POST',body:JSON.stringify(input)})
+}
+export async function listShemsiInbox(){
+  return socialJson('/api/shemsi/inbox')
+}
+export async function verifyShemsiDraft(id:string){
+  return socialJson(`/api/shemsi/drafts/${encodeURIComponent(id)}/verify`,{method:'POST',body:'{}'})
+}

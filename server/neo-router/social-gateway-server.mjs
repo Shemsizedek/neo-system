@@ -126,6 +126,7 @@ export function createSocialGatewayServer({
   publishOmnitrixJob,
   shemsiStore,
   publishShemsiReply,
+  shemsiIngestion,
   env = process.env,
   fetchImpl = fetch,
   oauthStateMaxAgeMs = 10 * 60 * 1000,
@@ -203,6 +204,43 @@ export function createSocialGatewayServer({
         return respond(res,failed.length?207:200,{ok:failed.length===0,idempotencyKey:key,contentId:payload.contentId,receipts})
       }
 
+
+
+      if (url.pathname === '/api/shemsi/sync' && req.method === 'POST') {
+        if (typeof resolveTrustedIdentity !== 'function') return respond(res,401,{error:'neopass_identity_required'})
+        const subjectId=trustedSubject(await resolveTrustedIdentity(req))
+        if(!shemsiStore) return respond(res,503,{error:'shemsi_store_unavailable'})
+        if(!shemsiIngestion) return respond(res,503,{error:'shemsi_ingestion_unavailable'})
+        const body=await readJson(req)
+        let result
+        if(body.platform==='linkedin') result=await shemsiIngestion.ingestLinkedIn({activityUrn:body.activityUrn})
+        else if(body.platform==='youtube') result=await shemsiIngestion.ingestYouTube({videoId:body.videoId,channelId:body.channelId,pageToken:body.pageToken})
+        else return respond(res,400,{error:'shemsi_ingestion_platform_not_supported'})
+        const saved=[]
+        for(const source of result.items||[]){
+          const item={...makeInboxItem(source),triage:source.triage||null,authorExternalId:source.authorExternalId||null}
+          await shemsiStore.putInbox(subjectId,item)
+          saved.push(item)
+        }
+        return respond(res,200,{subjectId,platform:result.platform,status:result.status,items:saved,nextPageToken:result.nextPageToken||null})
+      }
+
+      const shemsiVerify=url.pathname.match(/^\/api\/shemsi\/drafts\/([^/]+)\/verify$/)
+      if (shemsiVerify && req.method === 'POST') {
+        if (typeof resolveTrustedIdentity !== 'function') return respond(res,401,{error:'neopass_identity_required'})
+        const subjectId=trustedSubject(await resolveTrustedIdentity(req))
+        if(!shemsiStore) return respond(res,503,{error:'shemsi_store_unavailable'})
+        if(!shemsiIngestion) return respond(res,503,{error:'shemsi_ingestion_unavailable'})
+        const id=decodeURIComponent(shemsiVerify[1])
+        const draft=await shemsiStore.getDraft(subjectId,id)
+        if(!draft) return respond(res,404,{error:'shemsi_draft_not_found'})
+        const receipt=await shemsiStore.getReceipt(subjectId,id)
+        if(!receipt) return respond(res,404,{error:'shemsi_receipt_not_found'})
+        const verification=await shemsiIngestion.verify(receipt,{parentContentId:draft.parentContentId})
+        const verifiedReceipt={...receipt,verification,verifiedAt:new Date().toISOString()}
+        await shemsiStore.saveReceipt(subjectId,id,verifiedReceipt)
+        return respond(res,200,{subjectId,receipt:verifiedReceipt})
+      }
 
       if (url.pathname === '/api/shemsi/inbox' && req.method === 'GET') {
         if (typeof resolveTrustedIdentity !== 'function') return respond(res,401,{error:'neopass_identity_required'})
@@ -337,6 +375,7 @@ export function startSocialGatewayServer({
   publishOmnitrixJob,
   shemsiStore,
   publishShemsiReply,
+  shemsiIngestion,
 } = {}) {
-  return createSocialGatewayServer({ resolveTrustedIdentity, env, automationStore, publishOmnitrixJob, shemsiStore, publishShemsiReply }).listen(port, host)
+  return createSocialGatewayServer({ resolveTrustedIdentity, env, automationStore, publishOmnitrixJob, shemsiStore, publishShemsiReply, shemsiIngestion }).listen(port, host)
 }
