@@ -1,0 +1,83 @@
+name: Deploy House of Negus Shop
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "server/house-of-negus-shop/**"
+      - ".github/workflows/deploy-house-of-negus-shop.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: house-of-negus-shop-deploy
+  cancel-in-progress: false
+
+env:
+  SERVICE_NAME: house-of-negus-shop
+  SHOP_DOMAIN: shop.holytemples.org
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: holytemples-production
+    timeout-minutes: 20
+    env:
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID || secrets.GCP_PROJECT_ID }}
+      GCP_REGION: ${{ vars.GCP_REGION || secrets.GCP_REGION }}
+      GCP_WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER || secrets.GCP_WIF_PROVIDER }}
+      GCP_CLOUD_RUN_SERVICE_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_SERVICE_ACCOUNT || secrets.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+      GCP_CLOUD_RUN_RUNTIME_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_RUNTIME_ACCOUNT || secrets.GCP_CLOUD_RUN_RUNTIME_ACCOUNT }}
+      GCP_ARTIFACT_REGISTRY: ${{ vars.GCP_ARTIFACT_REGISTRY || secrets.GCP_ARTIFACT_REGISTRY }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Validate configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in GCP_PROJECT_ID GCP_REGION GCP_WIF_PROVIDER GCP_CLOUD_RUN_SERVICE_ACCOUNT GCP_CLOUD_RUN_RUNTIME_ACCOUNT GCP_ARTIFACT_REGISTRY; do
+            test -n "${!name:-}" || { echo "::error::Missing $name"; exit 1; }
+          done
+      - uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@v3
+      - name: Build and push shop image
+        env:
+          IMAGE: ${{ env.GCP_ARTIFACT_REGISTRY }}/house-of-negus-shop:${{ github.sha }}
+        run: |
+          gcloud auth configure-docker "${GCP_REGION}-docker.pkg.dev" --quiet
+          docker build -f server/house-of-negus-shop/Dockerfile -t "$IMAGE" .
+          docker push "$IMAGE"
+      - name: Deploy public shop service
+        env:
+          IMAGE: ${{ env.GCP_ARTIFACT_REGISTRY }}/house-of-negus-shop:${{ github.sha }}
+        run: |
+          gcloud run deploy "$SERVICE_NAME"             --project="$GCP_PROJECT_ID"             --region="$GCP_REGION"             --image="$IMAGE"             --service-account="$GCP_CLOUD_RUN_RUNTIME_ACCOUNT"             --allow-unauthenticated             --quiet
+      - name: Verify Cloud Run origin
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL="$(gcloud run services describe "$SERVICE_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format='value(status.url)')"
+          test -n "$URL"
+          test "$(curl -sS -o /tmp/shop.html -w '%{http_code}' "$URL/")" = 200
+          grep -q 'google-site-verification' /tmp/shop.html
+          grep -q 'spread_shop_config' /tmp/shop.html
+          echo "Origin: $URL" >> "$GITHUB_STEP_SUMMARY"
+      - name: Ensure custom-domain mapping
+        shell: bash
+        run: |
+          set -euo pipefail
+          gcloud components install beta --quiet
+          if gcloud beta run domain-mappings describe             --domain="$SHOP_DOMAIN"             --project="$GCP_PROJECT_ID"             --region="$GCP_REGION" >/dev/null 2>&1; then
+            echo "Domain mapping already exists."
+          else
+            gcloud beta run domain-mappings create               --service="$SERVICE_NAME"               --domain="$SHOP_DOMAIN"               --project="$GCP_PROJECT_ID"               --region="$GCP_REGION"               --quiet
+          fi
+          echo "### shop.holytemples.org mapping" >> "$GITHUB_STEP_SUMMARY"
+          gcloud beta run domain-mappings describe             --domain="$SHOP_DOMAIN"             --project="$GCP_PROJECT_ID"             --region="$GCP_REGION"             --format='yaml(status.conditions,status.resourceRecords)' | tee -a "$GITHUB_STEP_SUMMARY"
