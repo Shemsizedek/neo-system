@@ -1,0 +1,32 @@
+name: Shemsi Comment Sync
+
+on:
+  schedule:
+    - cron: '17 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate automation configuration
+        env:
+          NEO_SOCIAL_GATEWAY_URL: ${{ secrets.NEO_SOCIAL_GATEWAY_URL }}
+          NEO_SOCIAL_AUTOMATION_TOKEN: ${{ secrets.NEO_SOCIAL_AUTOMATION_TOKEN }}
+        run: |
+          set -euo pipefail
+          test -n "$NEO_SOCIAL_GATEWAY_URL"
+          test -n "$NEO_SOCIAL_AUTOMATION_TOKEN"
+
+      - name: Sync authorized comments
+        env:
+          NEO_SOCIAL_GATEWAY_URL: ${{ secrets.NEO_SOCIAL_GATEWAY_URL }}
+          NEO_SOCIAL_AUTOMATION_TOKEN: ${{ secrets.NEO_SOCIAL_AUTOMATION_TOKEN }}
+        run: |
+          set -euo pipefail
+          code="$(curl --proto '=https' --tlsv1.2 -sS -o /tmp/shemsi-sync.json -w '%{http_code}'             -X POST "${NEO_SOCIAL_GATEWAY_URL%/}/automation/shemsi/sync"             -H "Authorization: Bearer $NEO_SOCIAL_AUTOMATION_TOKEN"             -H 'Content-Type: application/json'             --data '{}')"
+          cat /tmp/shemsi-sync.json
+          test "$code" = 200
