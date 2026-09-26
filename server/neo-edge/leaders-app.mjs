@@ -1,86 +1,69 @@
-export const WORLD_LEADERS_PAGE = `<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#111111">
-<meta name="description" content="The World Leaders Forum — World HQ. International cooperation, public diplomacy, global peace, and equal rights.">
-<title>World Leaders Forum — World HQ</title>
-<style>
+const SITE = Object.freeze({
+  forumLogin: 'https://world-temple.mn.co/',
+  patronLogin: 'https://www.patreon.com/',
+  leaderRegister: 'https://www.patreon.com/',
+  original: 'https://twlfworldhq.wordpress.com/',
+  palace: 'https://holytemples.org/holy-palace/'
+});
+
+function shell(title, active, body){
+  const nav=(label,path,key)=>`<a class="navlink ${active===key?'active':''}" href="${path}">${label}</a>`;
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#111111"><meta name="description" content="The World Leaders Forum — World HQ. International cooperation, public diplomacy, peace, equal rights and global service."><title>${title} · World Leaders Forum</title><style>
 :root{--bg:#f7f5ef;--ink:#171717;--muted:#6f6a61;--gold:#c2a990;--dark:#111;--card:#fff;--line:#ded8ce}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;line-height:1.6}
-a{color:inherit}.wrap{width:min(1100px,calc(100% - 32px));margin:auto}.hero{background:linear-gradient(135deg,#111,#24211d);color:#fff;padding:88px 0 76px;text-align:center}
-.kicker{font-size:.78rem;letter-spacing:.16em;text-transform:uppercase;color:#d7c29f;font-weight:800}.hero h1{font-family:Georgia,serif;font-size:clamp(2.6rem,7vw,5.2rem);line-height:1.02;margin:.35rem 0 .75rem}.hero p{max-width:760px;margin:0 auto 24px;color:#ddd6ca;font-size:1.06rem}
-.actions{display:flex;justify-content:center;gap:12px;flex-wrap:wrap}.btn{display:inline-block;text-decoration:none;padding:11px 18px;border-radius:999px;background:var(--gold);color:#16120d;font-weight:800;font-size:.92rem}.btn.alt{background:transparent;color:#fff;border:1px solid #777}
-main{padding:56px 0 72px}.intro{text-align:center;max-width:820px;margin:0 auto 48px}.intro h2,.section h2{font-family:Georgia,serif;font-size:clamp(2rem,4vw,3.1rem);line-height:1.1;margin:0 0 14px}.intro p{color:var(--muted)}
-.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;margin-top:28px}.card{background:var(--card);border:1px solid var(--line);padding:28px;border-radius:18px}.card h3{font-family:Georgia,serif;font-size:1.5rem;margin:0 0 8px}.card p{margin:.35rem 0;color:#3f3a34}.leader-list{display:grid;gap:12px;margin-top:18px}.leader{padding:14px 0;border-bottom:1px solid var(--line)}.leader:last-child{border-bottom:0}.leader strong{display:block}.contact{background:#111;color:#fff;margin-top:48px;padding:42px;border-radius:22px}.contact h2{font-family:Georgia,serif;margin-top:0}.contact p{color:#d2cdc4}.footer{padding:28px 0 44px;text-align:center;color:var(--muted);font-size:.9rem}
-@media(max-width:760px){.hero{padding:64px 0 56px}.grid{grid-template-columns:1fr}.card,.contact{padding:22px}.wrap{width:min(100% - 24px,1100px)}}
-</style>
-</head>
-<body>
-<header class="hero">
-  <div class="wrap">
-    <div class="kicker">THE WORLD LEADERS FORUM • WORLD HQ</div>
-    <h1>Official Forum for World Leaders</h1>
-    <p>A public forum supporting international cooperation, constructive dialogue, global peace, equal rights, and service to humanity.</p>
-    <div class="actions">
-      <a class="btn" href="https://world-temple.mn.co/" rel="noopener">Forum Login</a>
-      <a class="btn alt" href="https://world-temple.mn.co/" rel="noopener">Register</a>
-    </div>
-  </div>
-</header>
-<main>
-  <div class="wrap">
-    <section class="intro">
-      <h2>Open Intergovernmental Forum</h2>
-      <p>The World Leaders Forum brings leaders, institutions, and citizens together around cooperation, diplomacy, peacebuilding, equal rights, and initiatives intended to improve conditions across the Global Village.</p>
-    </section>
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;line-height:1.62}a{color:inherit}.wrap{width:min(1120px,calc(100% - 32px));margin:auto}
+.sitehead{position:sticky;top:0;z-index:20;background:rgba(247,245,239,.96);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}.headrow{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:14px 0}.brand{text-decoration:none;font-weight:900;letter-spacing:.09em}.nav{display:flex;gap:16px;align-items:center;flex-wrap:wrap}.navlink{text-decoration:none;font-size:.9rem;color:#5b554d}.navlink.active,.navlink:hover{color:#111;font-weight:800}.navcta{text-decoration:none;background:var(--dark);color:#fff;padding:9px 13px;border-radius:999px;font-weight:800;font-size:.86rem}
+.hero{background:linear-gradient(135deg,#111,#24211d);color:#fff;padding:76px 0 64px}.kicker{font-size:.76rem;letter-spacing:.16em;text-transform:uppercase;color:#d7c29f;font-weight:800}.hero h1,.pagehero h1{font-family:Georgia,serif;font-size:clamp(2.5rem,7vw,5rem);line-height:1.02;margin:.4rem 0 .8rem}.hero p{max-width:760px;color:#ddd6ca;font-size:1.05rem}.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px}.btn{display:inline-block;text-decoration:none;padding:10px 16px;border-radius:999px;background:var(--gold);color:#16120d;font-weight:800;font-size:.9rem}.btn.alt{background:transparent;color:inherit;border:1px solid #8f877a}
+main{padding:50px 0 72px}.pagehero{padding:18px 0 34px;border-bottom:1px solid var(--line);margin-bottom:36px}.pagehero p{max-width:800px;color:var(--muted)}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}.card{background:var(--card);border:1px solid var(--line);padding:28px;border-radius:18px}.card h2,.card h3,.section h2{font-family:Georgia,serif;line-height:1.1}.card h3{font-size:1.45rem;margin:0 0 8px}.section{margin-top:42px}.section h2{font-size:clamp(1.8rem,4vw,2.8rem);margin:0 0 12px}.section p,.card p{color:#423d37}.leader-list,.ministry-list{display:grid;gap:0;margin-top:14px}.leader,.ministry{padding:14px 0;border-bottom:1px solid var(--line)}.leader:last-child,.ministry:last-child{border-bottom:0}.leader strong,.ministry strong{display:block}.pill{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:6px 10px;margin:4px 5px 0 0;background:#fff;font-size:.84rem}
+.contact{background:#111;color:#fff;margin-top:44px;padding:36px;border-radius:22px}.contact p{color:#d2cdc4}.footer{border-top:1px solid var(--line);padding:28px 0 42px;color:var(--muted);font-size:.88rem}
+@media(max-width:800px){.headrow{align-items:flex-start;flex-direction:column}.nav{gap:12px}.grid{grid-template-columns:1fr}.wrap{width:min(100% - 24px,1120px)}.hero{padding:58px 0 50px}.card,.contact{padding:22px}}
+</style></head><body>
+<header class="sitehead"><div class="wrap headrow"><a class="brand" href="/">WORLD LEADERS FORUM</a><nav class="nav" aria-label="World Leaders Forum">${nav('Home','/','home')}${nav('About','/about/','about')}${nav('World Parliament','/world-parliament/','parliament')}${nav('Leadership','/leadership/','leadership')}${nav('Contact','/contact/','contact')}<a class="navcta" href="${SITE.forumLogin}" rel="noopener">Forum Login</a></nav></div></header>
+${body}
+<footer class="footer"><div class="wrap">The World Leaders Forum — World HQ · <a href="${SITE.original}" rel="noopener">Original Archive</a> · <a href="${SITE.palace}">Holy Palace</a></div></footer>
+</body></html>`;
+}
 
-    <section class="grid" aria-label="World Leaders Forum">
-      <article class="card">
-        <h3>Global Peace Mission</h3>
-        <p>TWLF encourages dialogue and cooperation among nations, institutions, and communities while advancing a shared commitment to peace and equal rights for humanity.</p>
-        <p><a href="https://world-temple.mn.co/" rel="noopener"><strong>Join the World Forum →</strong></a></p>
-      </article>
-      <article class="card">
-        <h3>World Leaders Network</h3>
-        <p>Leadership participation is organized by nation and region, creating a network for representation, communication, diplomacy, and public-service initiatives.</p>
-        <p><a href="https://www.patreon.com/" rel="noopener"><strong>World Leader Registration →</strong></a></p>
-      </article>
-    </section>
+function home(){
+  return shell('Official Forum for World Leaders','home',`
+<section class="hero"><div class="wrap"><div class="kicker">THE WORLD LEADERS FORUM · WORLD HQ</div><h1>Official Forum for World Leaders</h1><p>A public forum for international cooperation, constructive dialogue, global peace, equal rights and service to humanity.</p><div class="actions"><a class="btn" href="${SITE.forumLogin}" rel="noopener">Forum Login</a><a class="btn alt" href="/leadership/">Meet the Leadership</a></div></div></section>
+<main><div class="wrap">
+<section class="grid"><article class="card"><h3>Global Peace Mission</h3><p>TWLF brings leaders, institutions and citizens together around dialogue, diplomacy and practical cooperation across the Global Village.</p><p><a href="/about/"><strong>About the Forum →</strong></a></p></article><article class="card"><h3>World Parliament</h3><p>The parliamentary section presents the Forum’s deliberative, ministerial and international-cooperation framework.</p><p><a href="/world-parliament/"><strong>Enter World Parliament →</strong></a></p></article></section>
+<section class="section"><h2>World Leadership Network</h2><p>The public site identifies leadership roles for the World HQ and participating regions while inviting additional nation-level participation.</p><div class="leader-list"><div class="leader"><strong>Founder / World Chairperson</strong><span>Dr. Ch Shahid Iqbal</span></div><div class="leader"><strong>World Leader for United States</strong><span>Hon. Larry Shelton (H.E. Dr. Lawiy Zodok Shamu-El)</span></div><div class="leader"><strong>World Leader for Africa</strong><span>H.E. Sir Wildanie Cupidon</span></div><div class="leader"><strong>United Kingdom</strong><span>Open / TBD</span></div><div class="leader"><strong>Russia</strong><span>Open / TBD</span></div></div><div class="actions"><a class="btn" href="${SITE.leaderRegister}" rel="noopener">World Leader Register</a></div></section>
+<section class="contact"><h2>World Headquarters</h2><p>Amarepura, Rawalpindi #62/54, Pakistan</p><p><a href="mailto:theworldleadersforum1@gmail.com">theworldleadersforum1@gmail.com</a><br><a href="tel:+923225047498">+92 322 5047498</a></p></section>
+</div></main>`);
+}
 
-    <section class="card" style="margin-top:20px">
-      <h3>World Leadership</h3>
-      <div class="leader-list">
-        <div class="leader"><strong>Founder / World Chairperson</strong><span>Dr. Ch Shahid Iqbal</span></div>
-        <div class="leader"><strong>World Leader for United States</strong><span>Hon. Larry Shelton (H.E. Dr. Lawiy Zodok Shamu-El)</span></div>
-        <div class="leader"><strong>World Leader for Africa</strong><span>H.E. Sir Wildanie Cupidon</span></div>
-      </div>
-    </section>
+function about(){
+  return shell('About','about',`<main><div class="wrap"><section class="pagehero"><div class="kicker">OUR STORY</div><h1>The World Leaders Forum</h1><p>TWLF was established as an international forum centered on human rights, diplomatic relations, peacebuilding and cooperation among leaders and communities.</p></section><section class="grid"><article class="card"><h3>Mission</h3><p>Encourage dialogue across nations and communities, strengthen peaceful relations, and promote equal dignity and rights throughout the Global Village.</p></article><article class="card"><h3>International Cooperation</h3><p>The Forum’s historical program describes multiple departments and international ministries intended to coordinate diplomacy, public service and conflict-resolution initiatives.</p></article></section><section class="section"><h2>A Global Village</h2><p>The Forum approaches international relations through the idea that humanity is increasingly interdependent. Its public work therefore emphasizes networking, diplomacy, rights, peace and cooperative institutions rather than isolation.</p><p>This mirror preserves the public-facing TWLF mission while keeping historical institutional claims distinguishable from independently verified legal or governmental status.</p></section><section class="contact"><h2>Join the Global Peace Mission</h2><p>Participation and community discussion continue through the Forum network.</p><div class="actions"><a class="btn" href="${SITE.forumLogin}" rel="noopener">Enter Forum</a><a class="btn alt" href="${SITE.original}" rel="noopener">Original Archive</a></div></section></div></main>`);
+}
 
-    <section class="contact">
-      <h2>World Headquarters</h2>
-      <p>The World Leaders Forum — World HQ</p>
-      <p>Amarepura, Rawalpindi #62/54, Pakistan</p>
-      <p><a href="mailto:theworldleadersforum1@gmail.com">theworldleadersforum1@gmail.com</a><br><a href="tel:+923225047498">+92 322 5047498</a></p>
-      <div class="actions" style="justify-content:flex-start">
-        <a class="btn" href="https://holytemples.org/holy-palace/">Holy Palace</a>
-        <a class="btn alt" href="https://twlfworldhq.wordpress.com/" rel="noopener">Original TWLF Site</a>
-      </div>
-    </section>
-  </div>
-</main>
-<footer class="footer"><div class="wrap">The World Leaders Forum — World HQ • All Rights Reserved</div></footer>
-</body>
-</html>`;
+function parliament(){
+  const ministries=['Human Rights','Higher Education','International Cooperation & Development','Commerce','International Diplomacy for Youth','Education','Telecommunications','Media & Communication','Peace & Development','International Affairs & Politics','Justice & Women’s Rights','Tourism','Foreign Affairs','Industry & Research','Arts & Creativity','Environment','Health & Human Services','Economics','Agriculture','Indigenous Affairs','Mediation & Conciliation'];
+  return shell('World Parliament','parliament',`<main><div class="wrap"><section class="pagehero"><div class="kicker">WORLD PARLIAMENT</div><h1>Deliberation, Representation & Service</h1><p>The World Parliament section organizes the Forum’s parliamentary, ministerial and international-cooperation concepts into a clearer public structure.</p></section><section class="grid"><article class="card"><h3>House of Crowns</h3><p>A ceremonial and advisory chamber described in the historical TWLF Parliament material as part of its leadership and council structure.</p></article><article class="card"><h3>House of Pentate</h3><p>The service and ministry framework covering public administration, finance, foreign affairs, education, health, infrastructure, culture and related portfolios.</p></article></section><section class="section"><h2>International Ministry Areas</h2><p>The historical Parliament page lists a broad international ministry network. This mirror groups those portfolios for easier navigation.</p><div class="ministry-list">${ministries.map(x=>`<div class="ministry"><strong>${x}</strong></div>`).join('')}</div></section><section class="section"><h2>Political & Civic Participation</h2><p>The original Parliament material also preserves a wide range of political, civic, ecological, peace and independent-party labels as part of its proposed parliamentary model.</p><div><span class="pill">Peace</span><span class="pill">Human Rights</span><span class="pill">Independent</span><span class="pill">Green</span><span class="pill">Democratic</span><span class="pill">Republican</span><span class="pill">Libertarian</span><span class="pill">Socialist</span><span class="pill">Earth Federation</span><span class="pill">Noocratic Committee</span></div></section></div></main>`);
+}
 
-export function renderWorldLeaders(res){
-  res.writeHead(200,{
-    'content-type':'text/html; charset=utf-8',
-    'cache-control':'public, max-age=300, stale-while-revalidate=3600',
-    'x-content-type-options':'nosniff',
-    'referrer-policy':'strict-origin-when-cross-origin',
-    'x-neo-surface':'world-leaders-forum-static-mirror'
-  });
-  res.end(WORLD_LEADERS_PAGE);
+function leadership(){
+  return shell('Leadership','leadership',`<main><div class="wrap"><section class="pagehero"><div class="kicker">WORLD LEADERS NETWORK</div><h1>Leadership</h1><p>Public leadership roles currently identified by the World Leaders Forum.</p></section><section class="card"><div class="leader-list"><div class="leader"><strong>Founder / World Chairperson</strong><span>Dr. Ch Shahid Iqbal</span></div><div class="leader"><strong>World Leader for United States</strong><span>Hon. Larry Shelton (H.E. Dr. Lawiy Zodok Shamu-El)</span></div><div class="leader"><strong>World Leader for Africa</strong><span>H.E. Sir Wildanie Cupidon</span></div><div class="leader"><strong>World Leader for United Kingdom</strong><span>TBD</span></div><div class="leader"><strong>World Leader for Russia</strong><span>TBD</span></div></div></section><section class="contact"><h2>Represent Your Nation</h2><p>The Forum invites qualified participants to engage its world-leader network and global-peace mission.</p><div class="actions"><a class="btn" href="${SITE.leaderRegister}" rel="noopener">World Leader Register</a><a class="btn alt" href="${SITE.forumLogin}" rel="noopener">Forum Network</a></div></section></div></main>`);
+}
+
+function contact(){
+  return shell('Contact','contact',`<main><div class="wrap"><section class="pagehero"><div class="kicker">WORLD HQ</div><h1>Contact the Forum</h1><p>Public contact information for the World Leaders Forum — World HQ.</p></section><section class="grid"><article class="card"><h3>Email</h3><p><a href="mailto:theworldleadersforum1@gmail.com">theworldleadersforum1@gmail.com</a></p></article><article class="card"><h3>Telephone</h3><p><a href="tel:+923225047498">+92 322 5047498</a></p></article><article class="card"><h3>World Headquarters</h3><p>Amarepura, Rawalpindi #62/54<br>Pakistan</p></article><article class="card"><h3>Community Network</h3><p><a href="${SITE.forumLogin}" rel="noopener">Open the World Forum Network →</a></p></article></section></div></main>`);
+}
+
+function notFound(){
+  return shell('Page Not Found','',`<main><div class="wrap"><section class="pagehero"><div class="kicker">WORLD LEADERS FORUM</div><h1>Page not found</h1><p>The requested World Leaders Forum page is not available in this mirror.</p><div class="actions"><a class="btn" href="/">Return Home</a></div></section></div></main>`);
+}
+
+export function renderWorldLeaders(res, pathname='/'){
+  let page;
+  if(pathname==='/'||pathname==='/ui') page=home();
+  else if(pathname==='/about/'||pathname==='/about') page=about();
+  else if(pathname==='/world-parliament/'||pathname==='/world-parliament') page=parliament();
+  else if(pathname==='/leadership/'||pathname==='/leadership') page=leadership();
+  else if(pathname==='/contact/'||pathname==='/contact') page=contact();
+  else if(pathname==='/2018/02/28/world-leaders-hq/'||pathname==='/world-leaders-hq/'||pathname==='/world-leaders-hq') page=about();
+  else page=notFound();
+  res.writeHead(page.includes('Page not found')?404:200,{'content-type':'text/html; charset=utf-8','cache-control':'public, max-age=300, stale-while-revalidate=3600','x-content-type-options':'nosniff','referrer-policy':'strict-origin-when-cross-origin','x-neo-surface':'world-leaders-forum-static-mirror'});
+  res.end(page);
 }
