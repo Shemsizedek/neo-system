@@ -4,6 +4,7 @@ import { createGcsSocialAutomationStore } from './social-automation-store.mjs'
 import { publishOmnitrixSocialJob } from '../../src/social/omnitrix-social-publisher.mjs'
 import { createGcsShemsiStore } from './shemsi-store.mjs'
 import { createShemsiReplyPublisher } from '../../src/social/shemsi-reply-publisher.mjs'
+import { createShemsiIngestionRuntime } from './shemsi-ingestion.mjs'
 
 const resolveSubject = createNeopassSubjectResolver()
 
@@ -16,6 +17,7 @@ async function resolveTrustedIdentity(req) {
 const automationStore = createGcsSocialAutomationStore()
 const shemsiStore = createGcsShemsiStore()
 const publishShemsiReply = createShemsiReplyPublisher()
+const shemsiIngestion = createShemsiIngestionRuntime()
 
 async function publishOmnitrixJob(job) {
   if (job.destination === 'facebook' && process.env.FACEBOOK_PROVIDER === 'existing-organic' && !process.env.FACEBOOK_PAGE_ACCESS_TOKEN) {
@@ -41,6 +43,6 @@ async function publishOmnitrixJob(job) {
 const port = Number(process.env.PORT || 8080)
 const host = process.env.HOST || '0.0.0.0'
 
-createSocialGatewayServer({ resolveTrustedIdentity, automationStore, publishOmnitrixJob, shemsiStore, publishShemsiReply }).listen(port, host, () => {
+createSocialGatewayServer({ resolveTrustedIdentity, automationStore, publishOmnitrixJob, shemsiStore, publishShemsiReply, shemsiIngestion }).listen(port, host, () => {
   console.log(`neo-social-gateway listening on ${host}:${port}`)
 })
