@@ -134,6 +134,24 @@ if (action === "provision") {
   process.exit(0);
 }
 
+if (action === "wait-status") {
+  const id = process.env.GOOGLE_MERCHANT_DATASOURCE_ID || "10748120384";
+  let latest = null;
+  for (let i = 0; i < 30; i++) {
+    try {
+      latest = await api(`/accounts/${accountId}/dataSources/${id}/fileUploads/latest`);
+      const state = latest?.processingState || "";
+      console.log(JSON.stringify({ attempt: i + 1, state, latest }, null, 2));
+      if (state === "SUCCEEDED") process.exit(0);
+      if (state === "FAILED") process.exit(2);
+    } catch (err) {
+      if (!/404|NOT_FOUND/i.test(String(err))) throw err;
+    }
+    await new Promise(resolve => setTimeout(resolve, 10000));
+  }
+  throw new Error("Merchant file upload did not reach a terminal state within 5 minutes.");
+}
+
 if (action === "create") {
   if (process.env.GOOGLE_MERCHANT_APPLY !== "CONFIRM_CREATE_SPREADSHOP_SOURCE") {
     throw new Error("Refusing create. Set GOOGLE_MERCHANT_APPLY=CONFIRM_CREATE_SPREADSHOP_SOURCE.");
