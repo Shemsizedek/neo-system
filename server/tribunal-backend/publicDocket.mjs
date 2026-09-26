@@ -7,6 +7,22 @@ const kinds=new Set(['CASE_OPENED','FILING','NOTICE','HEARING','ORDER','OPINION'
 const iso=v=>{const raw=text(v,80);const ms=Date.parse(raw);if(!raw||!Number.isFinite(ms))throw new Error('Event date must be a valid date/time.');return new Date(ms).toISOString()}
 const optionalIso=v=>{const raw=text(v,80);return raw?iso(raw):''}
 
+function atomic(db,fn){
+  if(typeof db.transaction==='function'){
+    const tx=db.transaction(fn)
+    return tx()
+  }
+  db.exec('BEGIN IMMEDIATE')
+  try{
+    const result=fn()
+    db.exec('COMMIT')
+    return result
+  }catch(error){
+    try{db.exec('ROLLBACK')}catch{}
+    throw error
+  }
+}
+
 export function ensurePublicDocketSchema(db){
   db.exec(`
     CREATE TABLE IF NOT EXISTS public_docket_events(
@@ -44,8 +60,7 @@ export function publishDocketEvent(db,service,principal,workspaceId,input={}){
   if(existingCase&&existingCase.workspace_id!==workspaceId)throw new Error('Claim number belongs to another workspace.')
   if(publicRecordId){const record=db.prepare("SELECT * FROM public_record_entries WHERE id=? AND workspace_id=? AND status='PUBLISHED'").get(publicRecordId,workspaceId);if(!record)throw new Error('Linked public record must be published in this workspace.');if(record.claim_no!==claimNo)throw new Error('Linked public record claim number mismatch.')}
   const id=randomUUID(),stamp=now(),fingerprint=sha256(JSON.stringify({id,workspaceId,claimNo,eventKind,eventDate,title,summary,publicRecordId,publishedAt:stamp}))
-  const tx=db.transaction(()=>{db.prepare(`INSERT INTO public_docket_events(id,workspace_id,claim_no,event_kind,event_date,title,summary,public_record_id,status,fingerprint,published_by,published_at,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(id,workspaceId,claimNo,eventKind,eventDate,title,summary,publicRecordId||null,'PUBLISHED',fingerprint,principal.userId,stamp,stamp,stamp);service.audit(principal,workspaceId,'PUBLIC_DOCKET_EVENT_PUBLISHED',id,{claimNo,eventKind,fingerprint})})
-  tx()
+  atomic(db,()=>{db.prepare(`INSERT INTO public_docket_events(id,workspace_id,claim_no,event_kind,event_date,title,summary,public_record_id,status,fingerprint,published_by,published_at,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(id,workspaceId,claimNo,eventKind,eventDate,title,summary,publicRecordId||null,'PUBLISHED',fingerprint,principal.userId,stamp,stamp,stamp);service.audit(principal,workspaceId,'PUBLIC_DOCKET_EVENT_PUBLISHED',id,{claimNo,eventKind,fingerprint})})
   return projection(db,db.prepare('SELECT * FROM public_docket_events WHERE id=?').get(id))
 }
 
@@ -67,5 +82,5 @@ export function listWorkspaceDocket(db,service,principal,workspaceId,status=''){
 }
 
 export function withdrawDocketEvent(db,service,principal,workspaceId,eventId){
-  service.authorize(principal,workspaceId,'JUDGE');ensurePublicDocketSchema(db);const row=db.prepare('SELECT * FROM public_docket_events WHERE id=? AND workspace_id=?').get(eventId,workspaceId);if(!row)throw new Error('Docket event not found.');if(row.status==='WITHDRAWN')return {eventId,status:'WITHDRAWN',idempotent:true};const stamp=now();const tx=db.transaction(()=>{db.prepare("UPDATE public_docket_events SET status='WITHDRAWN',withdrawn_at=?,updated_at=? WHERE id=?").run(stamp,stamp,eventId);service.audit(principal,workspaceId,'PUBLIC_DOCKET_EVENT_WITHDRAWN',eventId,{claimNo:row.claim_no,fingerprint:row.fingerprint})});tx();return {eventId,status:'WITHDRAWN',withdrawnAt:stamp,idempotent:false}
+  service.authorize(principal,workspaceId,'JUDGE');ensurePublicDocketSchema(db);const row=db.prepare('SELECT * FROM public_docket_events WHERE id=? AND workspace_id=?').get(eventId,workspaceId);if(!row)throw new Error('Docket event not found.');if(row.status==='WITHDRAWN')return {eventId,status:'WITHDRAWN',idempotent:true};const stamp=now();atomic(db,()=>{db.prepare("UPDATE public_docket_events SET status='WITHDRAWN',withdrawn_at=?,updated_at=? WHERE id=?").run(stamp,stamp,eventId);service.audit(principal,workspaceId,'PUBLIC_DOCKET_EVENT_WITHDRAWN',eventId,{claimNo:row.claim_no,fingerprint:row.fingerprint})});return {eventId,status:'WITHDRAWN',withdrawnAt:stamp,idempotent:false}
 }

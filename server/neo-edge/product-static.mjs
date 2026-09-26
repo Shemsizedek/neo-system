@@ -13,6 +13,7 @@ const PACER_ROOT = fileURLToPath(new URL('../../docs/neo-pacer/', import.meta.ur
 const PACER_DATA_ROOT = fileURLToPath(new URL('../../data/neo-pacer/', import.meta.url));
 const LINGO_ROOT = fileURLToPath(new URL('../../docs/neo-lingo/', import.meta.url));
 const PUBLIC_WORKSPACE_ROOT = fileURLToPath(new URL('../../docs/public-workspace/', import.meta.url));
+const CORPUS_ROOT = fileURLToPath(new URL('../../docs/neo-corpus/', import.meta.url));
 const REALTY_ROOT = fileURLToPath(new URL('../../apps/neo-realty/web/', import.meta.url));
 const REALTY_ORIGIN = String(process.env.NEO_REALTY_ORIGIN || '').replace(/\/$/, '');
 const GENERATOR_ROOT = fileURLToPath(new URL('../../public/neo-generator/', import.meta.url));
@@ -438,6 +439,44 @@ async function serveLingo(req, res, url, host, prefix = '/lingo') {
   return true;
 }
 
+function corpusPublicHtml(body, prefix = '/corpus') {
+  return body
+    .split('../public-workspace/styles.css').join(`${prefix}/styles.css`)
+    .split("fetch('./index.json'").join(`fetch('${prefix}/index.json'`);
+}
+
+async function serveCorpus(req,res,url,host,prefix='/corpus'){
+  if(req.method!=='GET'&&req.method!=='HEAD'){
+    json(res,405,{error:'method_not_allowed',service:'neo-corpus'});
+    return true;
+  }
+  if(url.pathname==='/health'){
+    json(res,200,{ok:true,service:'neo-corpus',mode:'PUBLIC_READ_ONLY',host,index:`${prefix}/index.json`});
+    return true;
+  }
+  if(url.pathname==='/api'){
+    json(res,200,{
+      service:'neo-corpus',
+      name:'Noocratic Legal Corpus',
+      role:'public-research-source-library',
+      mode:'PUBLIC_READ_ONLY',
+      ui:`https://neo.holytemples.org${prefix}/`,
+      index:`${prefix}/index.json`,
+      externalLegalEffect:false
+    });
+    return true;
+  }
+  if(url.pathname==='/'||url.pathname==='/ui'||url.pathname==='/index.html'){
+    const served=await serveText(req,res,resolve(CORPUS_ROOT,'index.html'),body=>corpusPublicHtml(body,prefix));
+    if(!served)json(res,500,{error:'neo_corpus_ui_unavailable'});
+    return true;
+  }
+  if(url.pathname==='/styles.css')return serveFile(req,res,resolve(PUBLIC_WORKSPACE_ROOT,'styles.css'),'text/css; charset=utf-8');
+  if(url.pathname==='/index.json')return serveFile(req,res,resolve(CORPUS_ROOT,'index.json'),'application/json; charset=utf-8');
+  json(res,404,{error:'not_found',service:'neo-corpus',path:url.pathname});
+  return true;
+}
+
 function generatorPublicHtml(body, prefix = '/generator') {
   return body
     .split('../platform-shell.css').join(`${prefix}/platform-shell.css`)
@@ -618,6 +657,16 @@ async function serveRealty(req, res, url, host, prefix = '/realty') {
 }
 
 export async function serveProductStatic(req, res, url, host) {
+  if (host === 'neo.holytemples.org' && url.pathname === '/corpus') {
+    res.writeHead(308, { location: '/corpus/', 'cache-control': 'no-store' });
+    res.end();
+    return true;
+  }
+  if (host === 'neo.holytemples.org' && url.pathname.startsWith('/corpus/')) {
+    const inner = new URL(url.toString());
+    inner.pathname = url.pathname.slice('/corpus'.length) || '/';
+    return serveCorpus(req, res, inner, host, '/corpus');
+  }
   if (host === 'neo.holytemples.org' && url.pathname === '/generator') {
     res.writeHead(308, { location: '/generator/', 'cache-control': 'no-store' });
     res.end();

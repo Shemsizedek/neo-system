@@ -1,0 +1,144 @@
+{
+  "version": "1.0.0",
+  "generatedFrom": "neo-system repository",
+  "records": [
+    {
+      "id": "fin-031",
+      "title": "FIN-031 — Notice, Service, Due Process & Opportunity-to-Respond Protocol",
+      "sourceClass": "internal-procedural-standard",
+      "legalEffect": "internal-decision-support",
+      "currentLawCheck": true,
+      "href": "https://github.com/Shemsizedek/neo-system/blob/main/docs/NEO-PACER-FIN-031-NOTICE-SERVICE-DUE-PROCESS-OPPORTUNITY-TO-RESPOND-PROTOCOL.md",
+      "tags": [
+        "due process",
+        "notice",
+        "service",
+        "tribunal",
+        "pacer"
+      ],
+      "summary": "Internal procedural-maturity standard for notice, response, and contested adverse findings. It expressly does not create external jurisdiction."
+    },
+    {
+      "id": "fin-032",
+      "title": "FIN-032 — Burden of Proof, Evidentiary Weight & Standard-of-Review Engine",
+      "sourceClass": "internal-evidentiary-standard",
+      "legalEffect": "internal-decision-support",
+      "currentLawCheck": true,
+      "href": "https://github.com/Shemsizedek/neo-system/blob/main/docs/NEO-PACER-FIN-032-BURDEN-OF-PROOF-EVIDENTIARY-WEIGHT-STANDARD-OF-REVIEW-ENGINE.md",
+      "tags": [
+        "evidence",
+        "burden of proof",
+        "review",
+        "authentication",
+        "corroboration"
+      ],
+      "summary": "Defines proposition states and evidentiary thresholds so allegations, leads, authenticated artifacts, findings, and external adjudications remain distinct."
+    },
+    {
+      "id": "fin-033",
+      "title": "FIN-033 — Findings of Fact, Conclusions of Law & Tribunal Decision Engine",
+      "sourceClass": "internal-adjudication-standard",
+      "legalEffect": "internal-decision-support",
+      "currentLawCheck": true,
+      "href": "https://github.com/Shemsizedek/neo-system/blob/main/docs/NEO-PACER-FIN-033-FINDINGS-OF-FACT-CONCLUSIONS-OF-LAW-TRIBUNAL-DECISION-ENGINE.md",
+      "tags": [
+        "findings",
+        "conclusions of law",
+        "tribunal",
+        "decision record"
+      ],
+      "summary": "Structures auditable internal findings while preserving the difference between internal determinations and externally enforceable judgments."
+    },
+    {
+      "id": "tribunal-public-records",
+      "title": "Tribunal v1.12 — NEO-PACER Public Records Publication",
+      "sourceClass": "publication-protocol",
+      "legalEffect": "public-record-publication-policy",
+      "currentLawCheck": false,
+      "href": "https://github.com/Shemsizedek/neo-system/blob/main/docs/TRIBUNAL_V1_12_PUBLIC_RECORDS.md",
+      "tags": [
+        "public records",
+        "publication",
+        "sanitization",
+        "audit",
+        "court"
+      ],
+      "summary": "Documents opt-in publication of sanitized tribunal records, public endpoints, fingerprinting, and audited withdrawal."
+    },
+    {
+      "id": "pacer-cases",
+      "title": "NEO-PACER Public Case Registry",
+      "sourceClass": "public-dataset",
+      "legalEffect": "research-record",
+      "currentLawCheck": true,
+      "href": "/pacer/data/neo-pacer/cases.json",
+      "tags": [
+        "cases",
+        "registry",
+        "pacer"
+      ],
+      "summary": "Published case-registry dataset used by the NEO-PACER public interface. Entries remain research records rather than independent proof of external legal effect."
+    },
+    {
+      "id": "pacer-evidence",
+      "title": "NEO-PACER Public Evidence Index",
+      "sourceClass": "public-dataset",
+      "legalEffect": "research-record",
+      "currentLawCheck": true,
+      "href": "/pacer/data/neo-pacer/evidence.json",
+      "tags": [
+        "evidence",
+        "index",
+        "pacer"
+      ],
+      "summary": "Public evidence metadata used by NEO-PACER. Source provenance and authentication status should be reviewed before relying on any item."
+    },
+    {
+      "id": "pacer-title-chain",
+      "title": "NEO-PACER Title-Chain Dataset",
+      "sourceClass": "public-dataset",
+      "legalEffect": "research-record",
+      "currentLawCheck": true,
+      "href": "/pacer/data/neo-pacer/title-chain.json",
+      "tags": [
+        "title",
+        "chain of title",
+        "property",
+        "pacer"
+      ],
+      "summary": "Public title-chain research dataset. It does not itself constitute a deed, title opinion, registry entry, or adjudication."
+    },
+    {
+      "id": "nibiru-reserve",
+      "title": "Nibiru Reserve System — Origin Architecture",
+      "sourceClass": "financial-architecture",
+      "legalEffect": "technical-design",
+      "currentLawCheck": true,
+      "href": "https://github.com/Shemsizedek/neo-system/blob/main/docs/NIBIRU_RESERVE.md",
+      "tags": [
+        "reserve",
+        "iso 20022",
+        "reconciliation",
+        "bitcoin",
+        "counterparty"
+      ],
+      "summary": "Technical architecture for translation and reconciliation. It expressly distinguishes message-schema conformance from banking authority or rail membership."
+    },
+    {
+      "id": "neo-counter-gateway",
+      "title": "NEO Counter Ecosystem Checkout Gateway",
+      "sourceClass": "technical-protocol",
+      "legalEffect": "application-contract",
+      "currentLawCheck": false,
+      "href": "https://github.com/Shemsizedek/neo-system/blob/main/docs/NEO_COUNTER_CHECKOUT_GATEWAY.md",
+      "tags": [
+        "checkout",
+        "btc",
+        "xcp",
+        "nomni",
+        "settlement"
+      ],
+      "summary": "Documents the shared NEO checkout interface and supported payment-rail hints, including the boundary between display/manual modes and cryptographic settlement proof."
+    }
+  ]
+}

@@ -28,6 +28,7 @@ COPY public/api/identity/founder.json ./public/api/identity/founder.json
 COPY docs/neo-enterprise ./docs/neo-enterprise
 COPY docs/neo-pacer ./docs/neo-pacer
 COPY docs/neo-lingo ./docs/neo-lingo
+COPY docs/neo-corpus ./docs/neo-corpus
 COPY docs/public-workspace ./docs/public-workspace
 COPY apps/neo-realty/web ./apps/neo-realty/web
 COPY public/neo-generator ./public/neo-generator

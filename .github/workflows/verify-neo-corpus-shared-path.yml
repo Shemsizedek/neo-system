@@ -1,0 +1,41 @@
+name: Verify NEO Corpus Shared Front Door
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'server/neo-edge/product-static.mjs'
+      - 'docs/neo-corpus/**'
+      - '.github/workflows/verify-neo-corpus-shared-path.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Verify NEO Corpus live path
+        run: |
+          set -euo pipefail
+          base='https://neo.holytemples.org/corpus'
+          code="$(curl -sS -o /tmp/redirect -w '%{http_code}' "$base")"
+          test "$code" = 308
+          for path in / /styles.css /index.json /health /api; do
+            code="$(curl --connect-timeout 10 --max-time 30 --retry 4 --retry-delay 5 -sS -o /tmp/corpus-response -w '%{http_code}' "$base$path" || true)"
+            echo "$base$path -> $code" >> "$GITHUB_STEP_SUMMARY"
+            test "$code" = 200
+            test -s /tmp/corpus-response
+          done
+          curl -fsS "$base/" -o /tmp/corpus-index.html
+          grep -q 'NOOCRATIC LEGAL CORPUS' /tmp/corpus-index.html
+          grep -q 'SOURCE CLASSIFICATION REQUIRED' /tmp/corpus-index.html
+          grep -q 'does not by itself establish current law' /tmp/corpus-index.html
+          curl -fsS "$base/index.json" -o /tmp/corpus.json
+          node --input-type=module -e 'import fs from "node:fs";const b=JSON.parse(fs.readFileSync("/tmp/corpus.json","utf8"));if(!Array.isArray(b.records)||b.records.length<8)throw new Error("corpus_index_too_small");if(!b.records.some(r=>r.id==="fin-031"))throw new Error("fin031_missing");if(!b.records.some(r=>r.id==="tribunal-public-records"))throw new Error("tribunal_public_records_missing");if(!b.records.every(r=>r.sourceClass&&r.legalEffect&&typeof r.currentLawCheck==="boolean"))throw new Error("classification_missing")'
+          curl -fsS "$base/api" -o /tmp/corpus-api.json
+          grep -q '"mode":"PUBLIC_READ_ONLY"' /tmp/corpus-api.json
+          grep -q '"externalLegalEffect":false' /tmp/corpus-api.json
