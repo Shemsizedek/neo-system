@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - "scripts/google-merchant-datasources-list.mjs"
+      - "scripts/google-merchant-register-gcp.mjs"
       - ".github/workflows/house-of-negus-google-merchant-api-probe.yml"
   workflow_dispatch:
 
@@ -17,6 +18,7 @@ jobs:
     environment: holytemples-production
     env:
       GOOGLE_MERCHANT_ACCOUNT_ID: "5429352076"
+      GOOGLE_MERCHANT_DEVELOPER_EMAIL: "NooneUniversity@gmail.com"
       GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID || secrets.GCP_PROJECT_ID }}
       GCP_WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER || secrets.GCP_WIF_PROVIDER }}
       GCP_CLOUD_RUN_SERVICE_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_SERVICE_ACCOUNT || secrets.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
@@ -51,10 +53,25 @@ jobs:
           echo "::error::Merchant API enablement did not propagate in time"
           exit 1
 
+      - name: Register NEO GCP project with Merchant Center
+        env:
+          GOOGLE_MERCHANT_ACCESS_TOKEN: ${{ steps.merchant-auth.outputs.access_token }}
+        run: node scripts/google-merchant-register-gcp.mjs
+
       - name: Verify live replacement feed
         run: node scripts/google-merchant-cutover-check.mjs
 
-      - name: List Merchant Center data sources
+      - name: Wait for Merchant registration and list data sources
         env:
           GOOGLE_MERCHANT_ACCESS_TOKEN: ${{ steps.merchant-auth.outputs.access_token }}
-        run: node scripts/google-merchant-datasources-list.mjs
+        run: |
+          set -euo pipefail
+          for i in {1..10}; do
+            if node scripts/google-merchant-datasources-list.mjs; then
+              exit 0
+            fi
+            echo "Merchant registration not propagated yet; retrying in 30s..."
+            sleep 30
+          done
+          echo "::error::Merchant registration did not propagate within 5 minutes"
+          exit 1
