@@ -68,9 +68,11 @@ const normalizePrice = (row) => {
   if (amount == null) {
     amount = findByKey(row, /^(amount|price|value)$/i, v => Number.isFinite(Number(v)) && Number(v) > 0);
   }
-  let currency = pick(row, ["price.currency", "price.currencyId", "currency", "retailPrice.currency", "retailPrice.currencyId"]);
-  if (currency == null) currency = findByKey(row, /currency(Id)?$/i, v => /^[A-Za-z]{3}$/.test(String(v)));
-  currency ||= "USD";
+  let currency = pick(row, ["price.currency", "currency", "retailPrice.currency"]);
+  if (!currency || !/^[A-Za-z]{3}$/.test(String(currency))) {
+    currency = findByKey(row, /currency$/i, v => /^[A-Za-z]{3}$/.test(String(v)));
+  }
+  if (!currency || !/^[A-Za-z]{3}$/.test(String(currency))) currency = "USD";
   const n = Number(amount);
   return Number.isFinite(n) && n > 0 ? `${n.toFixed(2)} ${String(currency).toUpperCase()}` : null;
 };
