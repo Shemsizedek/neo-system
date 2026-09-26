@@ -95,7 +95,7 @@ export async function readBackYouTubeReply({commentId,accessToken,fetchImpl=fetc
 export function createShemsiIngestionRuntime({env=process.env,fetchImpl=fetch}={}){
   return {
     async ingestLinkedIn({activityUrn}={}){
-      if(!env.LINKEDIN_ACCESS_TOKEN)return {platform:'linkedin,status:'credentials-required',items:[]};
+      if(!env.LINKEDIN_ACCESS_TOKEN)return {platform:'linkedin',status:'credentials-required',items:[]};
       const items=await fetchLinkedInComments({activityUrn,accessToken:env.LINKEDIN_ACCESS_TOKEN,linkedinVersion:env.LINKEDIN_VERSION,fetchImpl});
       const external=filterOwnComments(items,{ownActorUrn:env.LINKEDIN_OWNER_URN}).map(item=>({...item,authorExternalId:item.accountId,accountId:clean(env.LINKEDIN_OWNER_URN)||'linkedin-authorized-account'}));
       return {platform:'linkedin',status:'ok',items:external.map(triageComment)};
