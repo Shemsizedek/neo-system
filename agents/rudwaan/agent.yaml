@@ -17,8 +17,11 @@ agent:
   runtime:
     brain: "NOUS"
     orchestrator: "NEOsync"
-    transport: "existing-meta-instagram-connection"
+    transport: "instagram-public-interaction"
     bridge: "src/social/rudwaan-nous-bridge.mjs"
+    transport_adapter: "src/social/rudwaan-instagram-transport.mjs"
+    dm_ingress: "unavailable-current-provider"
+    ai_studio_backend_hook: "unavailable-public-interface"
   permissions:
     default_mode: "public_advisory"
     public_knowledge_read: "allowed"
