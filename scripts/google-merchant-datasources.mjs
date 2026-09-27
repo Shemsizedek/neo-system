@@ -134,6 +134,55 @@ if (action === "provision") {
   process.exit(0);
 }
 
+if (action === "refresh-wait") {
+  const id = process.env.GOOGLE_MERCHANT_DATASOURCE_ID || "10748120384";
+  if (process.env.GOOGLE_MERCHANT_APPLY !== "CONFIRM_FETCH") {
+    throw new Error("Refusing fetch. Set GOOGLE_MERCHANT_APPLY=CONFIRM_FETCH.");
+  }
+
+  let before = null;
+  try {
+    before = await api(`/accounts/${accountId}/dataSources/${id}/fileUploads/latest`);
+  } catch (err) {
+    if (!/404|NOT_FOUND/i.test(String(err))) throw err;
+  }
+
+  await api(`/accounts/${accountId}/dataSources/${id}:fetch`, { method: "POST" });
+
+  let latest = null;
+  let sawNewUpload = false;
+  for (let i = 0; i < 60; i++) {
+    await new Promise(resolve => setTimeout(resolve, 10000));
+    try {
+      latest = await api(`/accounts/${accountId}/dataSources/${id}/fileUploads/latest`);
+      const changed = !before?.name || latest?.name !== before?.name || latest?.uploadTime !== before?.uploadTime;
+      if (changed) sawNewUpload = true;
+      console.log(JSON.stringify({
+        attempt: i + 1,
+        baseline_upload: before?.name || null,
+        latest_upload: latest?.name || null,
+        latest_upload_time: latest?.uploadTime || null,
+        saw_new_upload: sawNewUpload,
+        state: latest?.processingState || null,
+        itemsTotal: latest?.itemsTotal || null,
+        itemsCreated: latest?.itemsCreated || null
+      }, null, 2));
+
+      if (sawNewUpload && latest?.processingState === "SUCCEEDED") {
+        if (Number(latest?.itemsTotal || 0) < 2803) {
+          throw new Error(`Fresh upload succeeded with only ${latest?.itemsTotal || 0} items; expected at least 2803.`);
+        }
+        console.log(JSON.stringify({refresh_complete:true,before,latest},null,2));
+        process.exit(0);
+      }
+      if (sawNewUpload && latest?.processingState === "FAILED") process.exit(2);
+    } catch (err) {
+      if (!/404|NOT_FOUND/i.test(String(err))) throw err;
+    }
+  }
+  throw new Error("A new Merchant file upload did not reach SUCCEEDED within 10 minutes.");
+}
+
 if (action === "post-cutover-verify") {
   const replacementId = process.env.GOOGLE_MERCHANT_REPLACEMENT_SOURCE_ID || "10748120384";
   const legacyId = process.env.GOOGLE_MERCHANT_LEGACY_SOURCE_ID || "10432070529";

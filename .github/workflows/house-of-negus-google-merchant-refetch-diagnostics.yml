@@ -37,14 +37,10 @@ jobs:
           service_account: ${{ env.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
           token_format: access_token
           access_token_scopes: https://www.googleapis.com/auth/content
-      - name: Refetch existing replacement source
+      - name: Refetch and wait for a genuinely new replacement upload
         env:
           GOOGLE_MERCHANT_ACCESS_TOKEN: ${{ steps.merchant-auth.outputs.access_token }}
-        run: node scripts/google-merchant-datasources.mjs fetch
-      - name: Wait for replacement source processing
-        env:
-          GOOGLE_MERCHANT_ACCESS_TOKEN: ${{ steps.merchant-auth.outputs.access_token }}
-        run: node scripts/google-merchant-datasources.mjs wait-status
+        run: node scripts/google-merchant-datasources.mjs refresh-wait
       - name: Run Merchant eligibility diagnostics
         env:
           GOOGLE_MERCHANT_ACCESS_TOKEN: ${{ steps.merchant-auth.outputs.access_token }}
