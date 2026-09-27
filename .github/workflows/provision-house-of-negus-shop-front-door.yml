@@ -1,4 +1,5 @@
 name: Provision House of Negus Shop Front Door
+# HN-MERCH-AUTO-046: propagation recheck
 
 on:
   push:
