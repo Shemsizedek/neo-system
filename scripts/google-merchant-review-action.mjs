@@ -2,14 +2,14 @@ const accountId = process.env.GOOGLE_MERCHANT_ACCOUNT_ID || "5429352076";
 const token = (process.env.GOOGLE_MERCHANT_ACCESS_TOKEN || "").trim();
 if (!token) throw new Error("GOOGLE_MERCHANT_ACCESS_TOKEN is required.");
 
-const url=`https://merchantapi.googleapis.com/issueresolution/v1/accounts/${accountId}:renderaccountissues?timeZone=America%2FChicago&languageCode=en-US&userInputActionOption=REDIRECT_TO_MERCHANT_CENTER`;
+const url=`https://merchantapi.googleapis.com/issueresolution/v1/accounts/${accountId}:renderaccountissues?timeZone=America%2FChicago&languageCode=en-US`;
 const res=await fetch(url,{
   method:"POST",
   headers:{
     Authorization:`Bearer ${token}`,
     "Content-Type":"application/json"
   },
-  body:"{}"
+  body:JSON.stringify({})
 });
 const text=await res.text();
 let payload=null;
