@@ -1,0 +1,56 @@
+{
+  "module_id": "NEO-HOUSES-001",
+  "name": "NEO Houses",
+  "status": "canonical_planning_framework",
+  "version": "1.0",
+  "public_page": "https://holytemples.org/neo-houses/",
+  "sponsor": "Shelton Estate & Co.",
+  "operating_cycle": [
+    "Learn",
+    "Create",
+    "Publish",
+    "Collaborate",
+    "Build",
+    "Serve",
+    "Lead"
+  ],
+  "asset_classes": [
+    "Acquisition + Retrofit NEO House",
+    "Purpose-Built NEO House",
+    "Business / Warehouse Acquisition"
+  ],
+  "planning_budgets_usd": {
+    "retrofit_house": 625000,
+    "purpose_built_house": 1416000,
+    "business_warehouse": 2770000
+  },
+  "mining_policy": {
+    "default": "mining_ready",
+    "activation": "site_specific_economic_gate",
+    "preferred_power_usd_per_kwh_max": 0.06,
+    "conditional_power_usd_per_kwh_max": 0.08,
+    "hold_above_usd_per_kwh": 0.08,
+    "guaranteed_returns": false
+  },
+  "participant_lanes": [
+    "creators",
+    "students",
+    "apprentices",
+    "investors",
+    "partners",
+    "NEO Villagers"
+  ],
+  "integrations": [
+    "NEO Houses",
+    "NEO Villages",
+    "NEO Society",
+    "NEO Lifestyle",
+    "GISS",
+    "Nu University",
+    "Project 144",
+    "NEO Media",
+    "NEOsync",
+    "Shelton Estate & Co."
+  ],
+  "source_of_truth": "content/neo-houses/investment-package.md"
+}
