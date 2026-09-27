@@ -1,16 +1,4 @@
 {
-  "generatedAt": "2026-09-27T05:21:39.543Z",
-  "items": [
-    {
-      "fromId": "PAGE:22fb5f15ee33f915f8b58ba676a454c5f7cb37a27300ce5d430fb26549d79f0a",
-      "toId": "SRC-HOLY-TABLETS-WEB",
-      "kind": "DERIVES_FROM",
-      "confidence": 0.99,
-      "evidenceRefs": [
-        "https://holytablets.nuwaubianfacts.com/chapter08.htm",
-        "22fb5f15ee33f915f8b58ba676a454c5f7cb37a27300ce5d430fb26549d79f0a"
-      ],
-      "decision": "ACCEPTED"
-    }
-  ]
+  "generatedAt": "2026-09-27T12:06:21.628Z",
+  "items": []
 }
