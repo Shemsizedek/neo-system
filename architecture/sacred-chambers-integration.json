@@ -1,0 +1,105 @@
+{
+  "module_id": "NEO-SACRED-CHAMBERS-001",
+  "name": "Sacred Chambers of Nun",
+  "status": "canonical",
+  "audience": "adults_only",
+  "genre": "Noological Erotic Culture",
+  "public_identity": "Sacred Chambers of Nun",
+  "extended_concept": "Sacred Chambers of Nunet",
+  "chambers": {
+    "inner": {
+      "name": "Sacred Chambers of Het-Haru",
+      "association": "wives"
+    },
+    "middle": {
+      "name": "Sacred Chambers of Ninsat",
+      "association": "consenting adult secondary partners",
+      "historical_term": false
+    },
+    "outer": {
+      "name": "MSTA Adept Chamber",
+      "function": [
+        "education",
+        "initiation",
+        "noological study",
+        "administration",
+        "creator development",
+        "apprenticeship"
+      ]
+    }
+  },
+  "launch_model": {
+    "type": "apprenticeship_lineage",
+    "description": "Begin with one adult apprentice; later apprentices may nominate or recommend the next candidate.",
+    "safeguards": [
+      "nomination creates no sexual or admission obligation",
+      "independent adult consent required",
+      "no retaliation for refusal or withdrawal",
+      "religious, financial, housing, employment, mentorship, or creator authority cannot be exchanged for sexual access",
+      "lineage records mentorship and development, not sexual activity"
+    ]
+  },
+  "consent_power_firewall": {
+    "consent": [
+      "specific",
+      "voluntary",
+      "informed",
+      "revocable",
+      "individual"
+    ],
+    "prohibited_leverage": [
+      "religious rank",
+      "initiation",
+      "financial support",
+      "token allocation",
+      "marriage promise",
+      "housing",
+      "employment",
+      "creator opportunity",
+      "mentorship",
+      "spiritual authority"
+    ],
+    "privacy_rule": "Discretion is permitted; coercive secrecy is not."
+  },
+  "economic_symbols": {
+    "SEBABOND": {
+      "association": "wives",
+      "maturity": "perpetual/eternal",
+      "legal_status": "project-defined symbolic/tokenized representation unless independently established otherwise"
+    },
+    "DOWRYNOTE": {
+      "association": "Ninsat relationships",
+      "conceptual_terms_years": [
+        3,
+        5,
+        7
+      ],
+      "legal_status": "project-defined symbolic/tokenized representation unless independently established otherwise"
+    }
+  },
+  "media_pillars": [
+    "Sacred Chambers",
+    "Ninsat Diaries",
+    "Het-Haru",
+    "Temple Dirty Talk",
+    "Noological After Dark",
+    "Divine Feminine Economy",
+    "Sacred Chamber Stories",
+    "Behind the Chambers"
+  ],
+  "integrations": [
+    "NEO Houses",
+    "NEO Society",
+    "NEO Lifestyle",
+    "Noology",
+    "Neotherapy",
+    "GISS",
+    "Nu University",
+    "NEO Media",
+    "NEO Oracle",
+    "NEO Algo",
+    "NEOsync",
+    "Project 144"
+  ],
+  "source_of_truth": "content/sacred-chambers/master-architecture.md"
+}
