@@ -40,7 +40,7 @@ const pages = [
 const account = await merchant(`/accounts/v1/accounts/${accountId}`);
 const businessInfo = await merchant(`/accounts/v1/accounts/${accountId}/businessInfo`);
 const homepage = await merchant(`/accounts/v1/accounts/${accountId}/homepage`);
-const issues = await merchant(`/accounts/v1/accounts/${accountId}/issues?language_code=en-US&time_zone.id=America%2FChicago&page_size=1000`);
+const issues = await merchant(`/accounts/v1/accounts/${accountId}/issues?languageCode=en-US&timeZone=America%2FChicago&pageSize=100`);
 
 const pageChecks = pages.map(p=>({
   path:p.path,
