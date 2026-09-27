@@ -1,9 +1,9 @@
 const accountId = process.env.GOOGLE_MERCHANT_ACCOUNT_ID || "5429352076";
-const replacementUri = process.env.GOOGLE_MERCHANT_HOMEPAGE_URI || "https://shemsizedek.myspreadshop.com";
+const replacementUri = process.env.GOOGLE_MERCHANT_HOMEPAGE_URI || "https://shop.holytemples.org";
 const feedUrl = process.env.GOOGLE_MERCHANT_FEED_URL || "https://shemsizedek.github.io/neo-system/api/merchant/google-merchant.xml";
 const token = (process.env.GOOGLE_MERCHANT_ACCESS_TOKEN || "").trim();
 const apply = process.env.GOOGLE_MERCHANT_APPLY || "";
-const expected = "CONFIRM_MIGRATE_HOMEPAGE_TO_SPREADSHOP";
+const expected = "CONFIRM_MIGRATE_HOMEPAGE_TO_CONTROLLED_SHOP";
 
 if (!token) throw new Error("GOOGLE_MERCHANT_ACCESS_TOKEN is required.");
 if (apply !== expected) throw new Error(`Refusing homepage migration. Set GOOGLE_MERCHANT_APPLY=${expected}`);
@@ -38,9 +38,14 @@ if (!/<g:price>[0-9]+\.[0-9]{2} USD<\/g:price>/.test(feed)) {
 if (/<g:price>[0-9]+\.[0-9]{2} [0-9]+<\/g:price>/.test(feed)) {
   throw new Error("Replacement feed still contains numeric currency IDs.");
 }
-if (!feed.toLowerCase().includes("shemsizedek.myspreadshop.com")) {
-  throw new Error("Replacement feed does not point to the Spreadshop storefront.");
+if (!feed.toLowerCase().includes("shop.holytemples.org")) {
+  throw new Error("Replacement feed does not yet point to the controlled storefront.");
 }
+const shopRes = await fetch(replacementUri, {redirect:"follow"});
+const shopHtml = await shopRes.text();
+if (!shopRes.ok) throw new Error(`Controlled storefront unavailable: ${shopRes.status} ${shopRes.statusText}`);
+if (!shopHtml.includes("google-site-verification")) throw new Error("Controlled storefront is missing Google verification metadata.");
+if (!shopHtml.includes("spread_shop_config")) throw new Error("Controlled storefront is missing the Spreadshop embed.");
 
 const base = `https://merchantapi.googleapis.com/accounts/v1/accounts/${accountId}/homepage`;
 const before = await api(base);
@@ -93,6 +98,6 @@ console.log(JSON.stringify({
   after,
   feed_url:feedUrl,
   feed_currency_verified:true,
-  feed_spreadshop_links_verified:true
+  feed_controlled_shop_links_verified:true
 }, null, 2));
 if (after?.uri !== replacementUri || after?.claimed !== true) process.exit(3);

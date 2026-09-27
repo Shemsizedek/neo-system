@@ -91,12 +91,26 @@ const normalizeImage = (row) => {
   return firstHttpByPath(row, /(image|preview|picture|media|resource)/i);
 };
 
+const canonicalizeShopLink = (value) => {
+  const u = normalizeUrl(value);
+  if (!u) return null;
+  if (!storeUrl) return u;
+  try {
+    const parsed = new URL(u);
+    const canonical = new URL(storeUrl);
+    if (/\.myspreadshop\.com$/i.test(parsed.hostname) || parsed.hostname.toLowerCase() === canonical.hostname.toLowerCase()) {
+      return canonical.origin + parsed.pathname + parsed.search + parsed.hash;
+    }
+  } catch {}
+  return u;
+};
+
 const normalizeLink = (row) => {
   const direct = pick(row, ["shopUrl", "url", "productUrl", "detailUrl", "href"]);
-  const u = normalizeUrl(direct);
+  const u = canonicalizeShopLink(direct);
   if (u) return u;
   const discovered = firstHttpByPath(row, /(shop|product|sellable|detail|link|href|url)/i);
-  if (discovered && !/(image|preview|picture|media)/i.test(discovered)) return discovered;
+  if (discovered && !/(image|preview|picture|media)/i.test(discovered)) return canonicalizeShopLink(discovered);
   const id = pick(row, ["sellableId", "id"]) || findByKey(row, /^(sellableId|id)$/i);
   return storeUrl && id ? `${storeUrl}/shop/product/${encodeURIComponent(String(id))}` : null;
 };
