@@ -1,4 +1,5 @@
 name: House of Negus Merchant Trust Audit
+# HN-MERCH-AUTO-054: final pre-review audit after customer-service remediation
 
 on:
   push:
