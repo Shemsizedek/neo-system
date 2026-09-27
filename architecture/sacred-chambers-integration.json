@@ -37,7 +37,17 @@
       "no retaliation for refusal or withdrawal",
       "religious, financial, housing, employment, mentorship, or creator authority cannot be exchanged for sexual access",
       "lineage records mentorship and development, not sexual activity"
-    ]
+    ],
+    "protocol": "content/sacred-chambers/chosen-apprentice-protocol.md",
+    "progression": [
+      "Threshold Apprentice",
+      "Chamber Creator",
+      "Chamber Steward",
+      "Chamber Adept",
+      "Lineage Mentor"
+    ],
+    "succession_rule": "Qualified Lineage Mentors may nominate future adult candidates; every nominee requires independent review and consent.",
+    "intimacy_separation": true
   },
   "consent_power_firewall": {
     "consent": [
@@ -99,7 +109,8 @@
     "NEO Oracle",
     "NEO Algo",
     "NEOsync",
-    "Project 144"
+    "Project 144",
+    "NEO Houses Creator Residences"
   ],
   "source_of_truth": "content/sacred-chambers/master-architecture.md"
 }
