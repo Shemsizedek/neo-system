@@ -20,10 +20,13 @@ const issues=payload?.renderedIssues||[];
 const simplified=issues.map(issue=>({
   title:issue.title,
   impact:issue.impact,
+  prerenderedContent: issue.prerenderedContent,
   actions:(issue.actions||[]).map(a=>({
-    title:a.title,
-    description:a.description,
-    action:a.action
+    buttonLabel:a.buttonLabel,
+    isAvailable:a.isAvailable,
+    externalAction:a.externalAction,
+    builtInSimpleAction:a.builtInSimpleAction,
+    builtInUserInputAction:a.builtInUserInputAction
   }))
 }));
 
