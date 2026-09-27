@@ -47,7 +47,19 @@
       "Lineage Mentor"
     ],
     "succession_rule": "Qualified Lineage Mentors may nominate future adult candidates; every nominee requires independent review and consent.",
-    "intimacy_separation": true
+    "intimacy_separation": true,
+    "launch_package": "content/sacred-chambers/first-chosen-apprentice-launch-package.md",
+    "initial_cycle": [
+      "Orientation",
+      "Noology Formation",
+      "Canon Study",
+      "First Creator Project",
+      "First Publication",
+      "Service Contribution",
+      "Stewardship Assignment",
+      "Reflective Review",
+      "Succession Eligibility"
+    ]
   },
   "consent_power_firewall": {
     "consent": [
