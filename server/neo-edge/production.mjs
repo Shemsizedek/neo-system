@@ -10,6 +10,7 @@ import { renderWorldLeaders } from './leaders-app.mjs';
 const PORT=Number(process.env.PORT||8080);
 const LEGACY_HOST='127.0.0.1';
 const AI_GATEWAY_URL=String(process.env.AI_GATEWAY_URL||'').replace(/\/$/,'');
+const FAMILY_OFFICE_ORIGIN='sheltonestate.family.blog';
 
 const SERVICE_UI=Object.freeze({
   'neo.holytemples.org':{name:'NEO System',role:'System Gateway',summary:'Unified production gateway for the NEO ecosystem.'},
@@ -37,7 +38,8 @@ const SERVICE_UI=Object.freeze({
   'treasury.holytemples.org':{name:'World Treasury',role:'Treasury',summary:'Treasury and reserve information surface.'},
   'nvsn.holytemples.org':{name:'NEO Virtual Satellite Network',role:'Communications Fabric',summary:'Software-defined distributed communications fabric connecting authorized terrestrial, Internet, radio, telephone and satellite-capable nodes.'},
   'neoteric.holytemples.org':{name:'Neoteric Method',role:'Neotherapy Public Portal',summary:'Public Neotherapy information and entrypoint. The NEO System remains the source of truth for consent, credentials, sessions, evidence and audit records.'},
-  'tabernacle.holytemples.org':{name:'NEO Tabernacle',role:'Storefront Gateway',summary:'Canonical Holy Temples commerce gateway for the Neoteric Method storefront.'}
+  'tabernacle.holytemples.org':{name:'NEO Tabernacle',role:'Storefront Gateway',summary:'Canonical Holy Temples commerce gateway for the Neoteric Method storefront.'},
+  'office.holytemples.org':{name:'Shelton Estate & Co.',role:'Global Religious Family Office',summary:'Public Family Office portal and legacy-site mirror for Shelton Estate & Co.'}
 });
 
 function hostOf(req){return String(req.headers['x-forwarded-host']||req.headers.host||'').split(',')[0].trim().split(':')[0].toLowerCase()}
@@ -92,6 +94,44 @@ function proxyLegacy(req,res,port){
   req.pipe(upstream);
 }
 
+function proxyFamilyOffice(req,res,url){
+  const path=`${url.pathname}${url.search}`;
+  const headers={...req.headers,host:FAMILY_OFFICE_ORIGIN,'accept-encoding':'identity'};
+  delete headers['x-forwarded-host'];
+  const upstream=https.request({hostname:FAMILY_OFFICE_ORIGIN,port:443,path,method:req.method,headers},reply=>{
+    const responseHeaders={...reply.headers};
+    delete responseHeaders['content-length'];
+    delete responseHeaders['content-security-policy'];
+    delete responseHeaders['content-security-policy-report-only'];
+    delete responseHeaders['x-frame-options'];
+    if(responseHeaders.location){
+      responseHeaders.location=String(responseHeaders.location)
+        .replaceAll('https://sheltonestate.family.blog','https://office.holytemples.org')
+        .replaceAll('http://sheltonestate.family.blog','https://office.holytemples.org');
+    }
+    const contentType=String(responseHeaders['content-type']||'').toLowerCase();
+    if(contentType.includes('text/html')){
+      const chunks=[];
+      reply.on('data',chunk=>chunks.push(Buffer.from(chunk)));
+      reply.on('end',()=>{
+        let body=Buffer.concat(chunks).toString('utf8');
+        body=body
+          .replaceAll('https://sheltonestate.family.blog','https://office.holytemples.org')
+          .replaceAll('http://sheltonestate.family.blog','https://office.holytemples.org')
+          .replaceAll('//sheltonestate.family.blog','//office.holytemples.org');
+        responseHeaders['cache-control']='no-store';
+        res.writeHead(reply.statusCode||200,responseHeaders);
+        res.end(body);
+      });
+      return;
+    }
+    res.writeHead(reply.statusCode||502,responseHeaders);
+    reply.pipe(res);
+  });
+  upstream.on('error',error=>json(res,502,{error:'family_office_upstream_unavailable',detail:error.message}));
+  req.pipe(upstream);
+}
+
 export async function startNeoEdgeProduction(){
   const legacy=createNeoEdgeServer();
   await new Promise((resolve,reject)=>{legacy.once('error',reject);legacy.listen(0,LEGACY_HOST,resolve)});
@@ -108,6 +148,8 @@ export async function startNeoEdgeProduction(){
       if(handled!==false)return handled;
     }
     if(host==='neo.holytemples.org'&&url.pathname.startsWith('/api/ai/'))return proxyAiGateway(req,res);
+    if(host==='office.holytemples.org'&&req.method==='GET'&&url.pathname==='/health')return json(res,200,{ok:true,service:'shelton-estate-family-office',surface:'legacy-mirror',origin:FAMILY_OFFICE_ORIGIN});
+    if(host==='office.holytemples.org')return proxyFamilyOffice(req,res,url);
     const productServed=await serveProductStatic(req,res,url,host);
     if(productServed!==false)return productServed;
     if(host==='leaders.holytemples.org'&&req.method==='GET'&&url.pathname==='/health')return json(res,200,{ok:true,service:'world-leaders-forum',surface:'static-mirror'});
