@@ -33,7 +33,7 @@ jobs:
           workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
           service_account: ${{ env.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
           token_format: access_token
-          access_token_scopes: >-
+          access_token_scopes: |
             https://www.googleapis.com/auth/siteverification
             https://www.googleapis.com/auth/content
       - uses: google-github-actions/setup-gcloud@v3
