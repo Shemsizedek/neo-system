@@ -48,7 +48,7 @@ jobs:
           SPREADSHOP_SHOP_ID: ${{ secrets.SPREADSHOP_SHOP_ID }}
           SPREADSHOP_API_KEY: ${{ secrets.SPREADSHOP_API_KEY }}
           SPREADSHOP_PLATFORM: ${{ secrets.SPREADSHOP_PLATFORM }}
-          SPREADSHOP_STORE_URL: ${{ vars.SPREADSHOP_STORE_URL || secrets.SPREADSHOP_STORE_URL }}
+          SPREADSHOP_STORE_URL: https://shop.holytemples.org
         run: |
           node scripts/spreadshop-sync-v2.mjs
           node scripts/spreadshop-google-merchant-feed.mjs
