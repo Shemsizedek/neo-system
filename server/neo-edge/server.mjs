@@ -11,6 +11,7 @@ const TREASURY_WALLET = '18FyntJG9hdXYvanm67mGgbyo1P7adckvg';
 const FIRESTORE_PROJECT_ID = process.env.GOOGLE_CLOUD_PROJECT || process.env.GCP_PROJECT_ID || process.env.GCLOUD_PROJECT || '';
 const FIRESTORE_DATABASE_ID = process.env.FIRESTORE_DATABASE_ID || '(default)';
 const TOKENSCAN_NOMNI_URL = 'https://tokenscan.io/api/asset/NOMNI';
+const HOLY_KEYS_FAVICON_URL = 'https://holytemples.org/wp-content/uploads/2026/09/holy-keys-final-transparent.png';
 const NOMNI_FALLBACK_VALUE = Object.freeze({ usd: '20.72', xcp: '13.03076220', btc: null });
 const BRIDGE_ASSET_PATH = fileURLToPath(new URL('./assets/neo-bridge.js', import.meta.url));
 const SUITE_ASSET_PATH = fileURLToPath(new URL('./assets/neo-suite.js', import.meta.url));
@@ -260,6 +261,15 @@ export function createNeoEdgeServer() {
 
     if (!service) return json(req, res, 421, { error: 'unknown_neo_host', host });
 
+    if (req.method === 'GET' && ['/favicon.ico','/favicon.png','/apple-touch-icon.png'].includes(url.pathname)) {
+      res.writeHead(302, {
+        location: HOLY_KEYS_FAVICON_URL,
+        'cache-control': 'public, max-age=3600',
+        'x-content-type-options': 'nosniff'
+      });
+      return res.end();
+    }
+
     if (host === 'leaders.holytemples.org' && req.method === 'GET') {
       return renderWorldLeaders(res, url.pathname);
     }
@@ -287,7 +297,7 @@ export function createNeoEdgeServer() {
     }
 
     if (host === 'neo.holytemples.org' && req.method === 'GET' && url.pathname === '/neosync/') {
-      return htmlPage(res, 200, `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#020704"><title>NEOsync Conversation Workspace</title><style>html,body{margin:0;min-height:100%;background:#020704}body{padding:16px}neo-temple-ai{display:block;max-width:1500px;margin:auto}</style><script src="/assets/neopass-runtime.js" defer></script><script src="/assets/neo-ai.js" defer></script></head><body><neo-temple-ai capability="personalization" fullscreen></neo-temple-ai></body></html>`);
+      return htmlPage(res, 200, `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#020704"><link rel="icon" type="image/png" href="/favicon.png"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><title>NEOsync Conversation Workspace</title><style>html,body{margin:0;min-height:100%;background:#020704}body{padding:16px}neo-temple-ai{display:block;max-width:1500px;margin:auto}</style><script src="/assets/neopass-runtime.js" defer></script><script src="/assets/neo-ai.js" defer></script></head><body><neo-temple-ai capability="personalization" fullscreen></neo-temple-ai></body></html>`);
     }
 
     if (req.method === 'GET' && url.pathname === '/health') {
