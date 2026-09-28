@@ -107,6 +107,59 @@ const SERVICES = Object.freeze({
   'leaders.holytemples.org': { id: 'world-leaders-forum', name: 'World Leaders Forum — World HQ', role: 'public-site', api: false }
 });
 
+
+const SEO = Object.freeze({
+  'neo-system': ['NEO System — Digital Infrastructure for the Global Village','Explore the NEO System: integrated digital infrastructure for governance, finance, education, media, commerce, identity, research and community operations.'],
+  'neo-router': ['NEO Router — Unified Access Across the NEO Ecosystem','Route securely across NEO services, public interfaces and connected digital infrastructure from one unified NEO gateway.'],
+  'neo-algo': ['NEO Algo — Noological Intelligence & Decision Systems','NEO Algo brings structured reasoning, research, analysis and decision-support workflows into the wider NEO System.'],
+  'neo-prime': ['NEO Prime — NEO System Orchestration','NEO Prime coordinates core services, automation and operational orchestration across the NEO digital ecosystem.'],
+  'neopay': ['NEOpay — Bitcoin & Counterparty Wallet Infrastructure','NEOpay provides the NEO ecosystem entry point for Bitcoin, Counterparty and digital asset wallet services.'],
+  'neo-bank': ['NEO Bank — Community Exchange & Digital Finance','NEO Bank connects community exchange, ledger and digital-finance services across the NEO ecosystem.'],
+  'neo-hub': ['NEO Hub — Your Gateway to the NEO Ecosystem','Discover NEO services, tools, dashboards and public infrastructure from one central digital hub.'],
+  'neo-counter': ['NEO Counter — Commerce, Checkout & Merchant Infrastructure','NEO Counter powers commerce, checkout, merchant tools and transaction workflows across the NEO ecosystem.'],
+  'neo-wire': ['NEO Wire — Digital Settlement & Transfer Infrastructure','NEO Wire supports transfer, settlement and connected financial workflows across the NEO ecosystem.'],
+  'neogram': ['NEOgram — Communications for the NEO Ecosystem','NEOgram is the communications layer for connected communities, projects and services across the NEO ecosystem.'],
+  'neofx': ['NEOfx — Digital Asset Market & Exchange Tools','Explore NEO digital-asset exchange, market and settlement tools across the Bitcoin and Counterparty ecosystem.'],
+  'neoscan': ['NEO Scan — Bitcoin & Counterparty Explorer','Explore NEO ecosystem assets, public network data and Counterparty-aware blockchain information.'],
+  'gisd': ['Global Interdependent School System — GISS','Explore the Global Interdependent School System, NEO LMS and the education pathway connecting foundational learning with Nu University.'],
+  'neo-library': ['NEO Library — World Knowledge & Research Archive','Search public knowledge, research, educational resources and institutional records across the NEO ecosystem.'],
+  'neo-books': ['NEO Books — Accounting, Treasury & Ledger Platform','NEO Books provides accounting, treasury, ledger and reporting infrastructure for the NEO ecosystem.'],
+  'neo-pads': ['NEO Pads — Hospitality & Lodging Infrastructure','NEO Pads supports hospitality, lodging and property workflows across the NEO ecosystem.'],
+  'neopass': ['NEO Pass — Identity & Access Infrastructure','NEO Pass provides identity, access and authentication infrastructure across the NEO ecosystem.'],
+  'neo-tv': ['NEO Vision — Media, Broadcasting & Digital Culture','NEO Vision brings media, broadcasting, educational programming and digital culture into the NEO ecosystem.'],
+  'noogle': ['Noogle — Search the NEO Knowledge Ecosystem','Search public NEO knowledge, services, research, archives and digital resources from one discovery engine.'],
+  'omnitrix': ['Omnitrix — NEO Browser & Discovery Layer','Browse and discover NEO services and connected digital resources through the Omnitrix interface.'],
+  'neo-dash': ['NEO Dash — Unified NEO System Dashboard','Monitor and access NEO platforms, services and operational surfaces from a unified dashboard.'],
+  'nomni': ['NOMNI — Digital World Currency on Counterparty','Explore NOMNI, the NEO ecosystem digital world-currency asset issued on Counterparty and settled on Bitcoin.'],
+  'neo-treasury-wallet': ['NEO Treasury Wallet — Digital Asset Treasury Access','Access the public treasury wallet surface for Bitcoin, Counterparty and NEO ecosystem digital assets.'],
+  'world-treasury': ['World Treasury — NEO Ecosystem Treasury Infrastructure','Explore the World Treasury infrastructure supporting digital assets, settlement and treasury operations across the NEO ecosystem.'],
+  'nvsn': ['NVSN — NEO Virtual Satellite Network','Explore the NEO Virtual Satellite Network, a communications-fabric project within the wider NEO ecosystem.'],
+  'world-leaders-forum': ['World Leaders Forum — International Cooperation & Global Peace','The World Leaders Forum connects leaders and communities around diplomacy, peacebuilding, human rights and international cooperation.']
+});
+
+function seoFor(service, host) {
+  const pair = SEO[service.id] || [service.name + ' — NEO System', service.name + ' is part of the NEO digital ecosystem serving the Global Village.'];
+  return {
+    title: pair[0],
+    description: pair[1],
+    canonical: 'https://' + host + '/',
+    image: HOLY_KEYS_FAVICON_URL
+  };
+}
+
+function seoLanding(service, host) {
+  const seo = seoFor(service, host);
+  const data = JSON.stringify({
+    '@context':'https://schema.org',
+    '@type':'WebSite',
+    name:service.name,
+    url:seo.canonical,
+    description:seo.description,
+    isPartOf:{'@type':'WebSite',name:'World Temple / NEO System',url:'https://holytemples.org/'}
+  }).replace(/</g,'\\u003c');
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${seo.title}</title><meta name="description" content="${seo.description}"><link rel="canonical" href="${seo.canonical}"><link rel="icon" type="image/png" href="/favicon.png"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><meta property="og:type" content="website"><meta property="og:site_name" content="NEO System"><meta property="og:title" content="${seo.title}"><meta property="og:description" content="${seo.description}"><meta property="og:url" content="${seo.canonical}"><meta property="og:image" content="${seo.image}"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${seo.title}"><meta name="twitter:description" content="${seo.description}"><meta name="twitter:image" content="${seo.image}"><meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1"><script type="application/ld+json">${data}</script><style>body{margin:0;background:#080a0d;color:#f5f1e8;font-family:Inter,system-ui,sans-serif}main{max-width:900px;margin:auto;padding:72px 24px}.eyebrow{letter-spacing:.16em;text-transform:uppercase;color:#c9a55b;font-weight:800;font-size:.78rem}h1{font-size:clamp(2.8rem,8vw,6rem);line-height:.95;margin:.4rem 0 1rem}p{font-size:1.1rem;line-height:1.7;color:#c9c4bb;max-width:760px}.cta{display:inline-block;margin-top:18px;padding:12px 16px;border-radius:999px;background:#c9a55b;color:#111;text-decoration:none;font-weight:800}</style></head><body><main><div class="eyebrow">NEO SYSTEM · HOLYTEMPLES.ORG</div><h1>${service.name}</h1><p>${seo.description}</p><a class="cta" href="/api">Open Public API</a></main></body></html>`;
+}
+
 const PUBLIC_ORIGINS = new Set([
   'https://holytemples.org',
   'https://www.holytemples.org',
@@ -270,6 +323,19 @@ export function createNeoEdgeServer() {
       return res.end();
     }
 
+
+    if (req.method === 'GET' && url.pathname === '/robots.txt') {
+      res.writeHead(200, {'content-type':'text/plain; charset=utf-8','cache-control':'public, max-age=3600'});
+      return res.end(`User-agent: *\nAllow: /\nSitemap: https://${host}/sitemap.xml\n`);
+    }
+
+    if (req.method === 'GET' && url.pathname === '/sitemap.xml') {
+      const lastmod = new Date().toISOString();
+      const xml = `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>https://${host}/</loc><lastmod>${lastmod}</lastmod><changefreq>weekly</changefreq><priority>1.0</priority></url><url><loc>https://${host}/api</loc><lastmod>${lastmod}</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url></urlset>`;
+      res.writeHead(200, {'content-type':'application/xml; charset=utf-8','cache-control':'public, max-age=3600'});
+      return res.end(xml);
+    }
+
     if (host === 'leaders.holytemples.org' && req.method === 'GET') {
       return renderWorldLeaders(res, url.pathname);
     }
@@ -372,6 +438,8 @@ export function createNeoEdgeServer() {
     }
 
     if (req.method === 'GET' && url.pathname === '/') {
+      const accept = String(req.headers.accept || '');
+      if (accept.includes('text/html')) return htmlPage(res, 200, seoLanding(service, host));
       const hostSpecific = host === 'nomni.holytemples.org' ? { asset: { ...NOMNI, valuation: await getNomniValuation() } }
         : host === 'wallet.holytemples.org' ? { treasuryWallet: TREASURY_WALLET }
         : host === 'treasury.holytemples.org' ? { treasury: TREASURY }
