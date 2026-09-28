@@ -126,37 +126,19 @@ jobs:
           [[ -z "$SET_SECRETS" ]] || args+=(--set-secrets="$SET_SECRETS")
           "${args[@]}"
 
-      - name: Ensure Oracle custom-domain mapping
+      - name: Verify Oracle public route
         shell: bash
         run: |
           set -euo pipefail
-          if gcloud beta run domain-mappings describe \
-            --domain="$ORACLE_DOMAIN" \
-            --project="$GCP_PROJECT_ID" \
-            --region="$GCP_REGION" >/tmp/oracle-domain.json 2>/dev/null; then
-            echo "Oracle domain mapping already exists."
-          else
-            gcloud beta run domain-mappings create \
-              --service="$SERVICE_NAME" \
-              --domain="$ORACLE_DOMAIN" \
-              --project="$GCP_PROJECT_ID" \
-              --region="$GCP_REGION" \
-              --quiet
-          fi
-          gcloud beta run domain-mappings describe \
-            --domain="$ORACLE_DOMAIN" \
-            --project="$GCP_PROJECT_ID" \
-            --region="$GCP_REGION" \
-            --format='yaml(status.conditions,status.resourceRecords)'
+          echo "Oracle is fronted by the existing Google load balancer and WordPress DNS A record."
+          echo "Cloud Run domain-mapping mutation is intentionally skipped to avoid conflicting DNS targets."
 
       - name: Verify production runtime and Vertex execution
         shell: bash
         run: |
           set -euo pipefail
-          URL="$(gcloud run services describe "$SERVICE_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format='value(status.url)')"
-          test -n "$URL"
-
-          health_code="$(curl -sS -o /tmp/health.json -w '%{http_code}' "$URL/healthz")"
+          URL="https://$ORACLE_DOMAIN"
+          health_code="$(curl --retry 8 --retry-delay 10 --retry-all-errors --connect-timeout 10 --max-time 45 -sS -o /tmp/health.json -w '%{http_code}' "$URL/healthz")"
           echo "health HTTP $health_code"
           cat /tmp/health.json || true
           echo
