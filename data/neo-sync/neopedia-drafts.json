@@ -1,4 +1,57 @@
 {
-  "generatedAt": "2026-09-28T05:27:55.484Z",
-  "items": []
+  "generatedAt": "2026-09-28T14:00:08.716Z",
+  "items": [
+    {
+      "id": "DRAFT:5497f15bc403c886",
+      "title": "World Temple - Omniversal Church",
+      "summary": "World Temple - Omniversal Church Skip to content World Temple N.U.T &#8211; Omniversal Church Home Holy Ministries Holy Ordainment Holy Charter Holy Palace Holy Tablets Holy See World Temple City World Library World Mission Statement World Ministries World Committees World Parliament World Education World Treasury of Merit World Police World Interfaith Court World Bulletin Global District Templist Portal Contact The ",
+      "sourceId": "SRC-WORLD-TEMPLE-WEB",
+      "sourceUrl": "https://holytemples.org/",
+      "sourceHash": "5497f15bc403c88619f4787be210413d3e8f63d5d1587d1fbeb9cf32fd3d3425",
+      "sourceMode": "PRIMARY_INSTITUTIONAL",
+      "headings": [
+        "World Temple Network",
+        "World Interfaith Court",
+        "CLUBHOUSE",
+        "World Temple Guide",
+        "World Temple Network",
+        "World Temple Donations",
+        "TEMPLE BULLETIN",
+        "&#8211; Watch, Read, Listen",
+        "Noocracy Papers No. 30: The Treasury of the Global Village and the Architecture of Public Credit",
+        "Noocracy Papers No. 29: The Distributed Defense of the Global Village",
+        "Noocracy Papers No. 28: Constitutional Energy and the Architecture of Public Defense",
+        "Noocracy Papers No. 27: The Architecture of Legitimate Execution — Public Confidence, Civil Administration, and the Authority of Law",
+        "Noocracy Papers No. 26: The Architecture of Governable Power — Liberty, Legislative Trust, and the Recurring Consent of the People",
+        "Noocracy Papers No. 25: The Architecture of Constitutional Realism — Common Defense, Distributed Burdens, and the Discipline of Lawful Necessity",
+        "Noocracy Papers No. 24: The Architecture of Civilian Security — Preparedness, Appropriation, and the Constitutional Custody of Force",
+        "Noocracy Papers No. 23: The Architecture of Constitutional Capacity — Purpose, Power, Security, and the Limits of Delegated Authority",
+        "Noocracy Papers No. 22: The Architecture of Coordinated Sovereignty — Commerce, Representation, Judicial Authority, and Constitutional Consent",
+        "Noocracy Papers No. 21: The Architecture of Constitutional Accountability — Sanctions, Revenue, and the Measure of Public Obligation",
+        "Join 900+ subscribers",
+        "About",
+        "Privacy",
+        "Social"
+      ],
+      "claimStatus": "SOURCE_STATES",
+      "quality": {
+        "dimensions": {
+          "provenance": 9,
+          "truthfulness": 8,
+          "soundRightReason": 7,
+          "coherence": 7,
+          "ethics": 9,
+          "reciprocity": 7,
+          "natureAlignment": 6,
+          "craftsmanship": 8,
+          "consequence": 8
+        },
+        "average": 7.666666666666667,
+        "potency": "9_ETHER_COHERENT",
+        "gate": "PASS",
+        "note": "Heuristic artifact-quality assessment only; not a score of persons, identities or protected characteristics."
+      },
+      "publicationStatus": "DRAFT_READY_FOR_REVIEW"
+    }
+  ]
 }
