@@ -104,6 +104,8 @@ const SERVICES = Object.freeze({
   'wallet.holytemples.org': { id: 'neo-treasury-wallet', name: 'NEO Treasury Wallet', role: 'wallet', api: true },
   'treasury.holytemples.org': { id: 'world-treasury', name: 'World Treasury', role: 'treasury', api: true },
   'nvsn.holytemples.org': { id: 'nvsn', name: 'NEO Virtual Satellite Network', role: 'communications-fabric', api: true },
+  'neoteric.holytemples.org': { id: 'neoteric-method', name: 'Neoteric Method', role: 'neotherapy', api: true },
+  'tabernacle.holytemples.org': { id: 'neo-tabernacle', name: 'NEO Tabernacle', role: 'storefront', api: true },
   'leaders.holytemples.org': { id: 'world-leaders-forum', name: 'World Leaders Forum — World HQ', role: 'public-site', api: false }
 });
 
@@ -134,6 +136,8 @@ const SEO = Object.freeze({
   'neo-treasury-wallet': ['NEO Treasury Wallet — Digital Asset Treasury Access','Access the public treasury wallet surface for Bitcoin, Counterparty and NEO ecosystem digital assets.'],
   'world-treasury': ['World Treasury — NEO Ecosystem Treasury Infrastructure','Explore the World Treasury infrastructure supporting digital assets, settlement and treasury operations across the NEO ecosystem.'],
   'nvsn': ['NVSN — NEO Virtual Satellite Network','Explore the NEO Virtual Satellite Network, a communications-fabric project within the wider NEO ecosystem.'],
+  'neoteric-method': ['Neoteric Method — Applied Noology & Neotherapy','Explore the Neoteric Method, an applied Noology and Neotherapy framework for disciplined reasoning, self-development and educational practice.'],
+  'neo-tabernacle': ['NEO Tabernacle — World Temple Storefront','Explore the World Temple storefront for official educational, cultural and NEO ecosystem merchandise.'],
   'world-leaders-forum': ['World Leaders Forum — International Cooperation & Global Peace','The World Leaders Forum connects leaders and communities around diplomacy, peacebuilding, human rights and international cooperation.']
 });
 
