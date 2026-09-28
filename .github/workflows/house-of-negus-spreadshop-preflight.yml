@@ -1,4 +1,5 @@
 name: House of Negus Spreadshop Live Verification
+# HN-MERCH-AUTO-021 live verification trigger
 on:
   workflow_dispatch:
   schedule:
