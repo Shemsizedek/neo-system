@@ -21,15 +21,15 @@
       const c=document.createElement('link'); c.rel='canonical'; c.href=location.origin+location.pathname; document.head.appendChild(c);
     }
     if (!document.querySelector('link[rel="icon"]')) {
-      const f=document.createElement('link'); f.rel='icon'; f.type='image/png'; f.href='https://holytemples.org/wp-content/uploads/2026/09/holy-keys-final-transparent.png'; document.head.appendChild(f);
+      const f=document.createElement('link'); f.rel='icon'; f.type='image/png'; f.href='https://holytemples.org/wp-content/uploads/2026/09/holy-keys-transparent-master.png'; document.head.appendChild(f);
     }
     const metas = {
       'og:type':'website','og:title':pair[0],'og:description':pair[1],
       'og:url':location.origin+location.pathname,
-      'og:image':'https://holytemples.org/wp-content/uploads/2026/09/holy-keys-final-transparent.png',
+      'og:image':'https://holytemples.org/wp-content/uploads/2026/09/holy-keys-transparent-master.png',
       'twitter:card':'summary_large_image','twitter:title':pair[0],
       'twitter:description':pair[1],
-      'twitter:image':'https://holytemples.org/wp-content/uploads/2026/09/holy-keys-final-transparent.png'
+      'twitter:image':'https://holytemples.org/wp-content/uploads/2026/09/holy-keys-transparent-master.png'
     };
     for (const [key,val] of Object.entries(metas)) {
       const isTwitter=key.startsWith('twitter:');
