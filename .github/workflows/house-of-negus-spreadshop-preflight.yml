@@ -1,19 +1,22 @@
-name: House of Negus Spreadshop Live Preflight
-# HN-MERCH-AUTO-017 post-publication inventory verification trigger
+name: House of Negus Spreadshop Live Verification
 on:
   workflow_dispatch:
+  schedule:
+    - cron: "17 14 * * *"
   push:
     branches: [ main ]
     paths:
       - "scripts/spreadshop-preflight.mjs"
       - "scripts/spreadshop-sync-v2.mjs"
       - "scripts/spreadshop-reconcile.mjs"
+      - "scripts/spreadshop-verify-drop.mjs"
+      - "merch/house-of-negus/drops/**"
       - ".github/workflows/house-of-negus-spreadshop-preflight.yml"
 permissions:
   contents: read
 
 jobs:
-  preflight:
+  verify:
     runs-on: ubuntu-latest
     env:
       SPREADSHOP_SHOP_ID: ${{ secrets.SPREADSHOP_SHOP_ID }}
@@ -31,13 +34,16 @@ jobs:
       - name: Sync live inventory
         if: steps.preflight.outcome == 'success'
         run: node scripts/spreadshop-sync-v2.mjs
-      - name: Reconcile baseline products
+      - name: Reconcile catalog baseline
         if: steps.preflight.outcome == 'success'
         run: node scripts/spreadshop-reconcile.mjs
+      - name: Verify current monthly drop
+        if: steps.preflight.outcome == 'success'
+        run: node scripts/spreadshop-verify-drop.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: house-of-negus-spreadshop-preflight
+          name: house-of-negus-spreadshop-verification
           path: merch/house-of-negus/state/
           if-no-files-found: ignore
       - name: Mark configuration blocked
