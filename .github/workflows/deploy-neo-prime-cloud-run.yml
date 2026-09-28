@@ -62,6 +62,9 @@ jobs:
 
       - uses: google-github-actions/setup-gcloud@v3
 
+      - name: Install gcloud beta component
+        run: gcloud components install beta --quiet
+
       - name: Use preconfigured Vertex AI project access
         shell: bash
         run: |
