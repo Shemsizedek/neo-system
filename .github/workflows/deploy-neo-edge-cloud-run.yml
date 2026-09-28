@@ -122,6 +122,12 @@ jobs:
           wire_code="$(curl --retry 5 --retry-delay 3 --retry-all-errors -sS -o /tmp/neo-wire.html -w '%{http_code}' -H 'X-Forwarded-Host: wire.holytemples.org' "$SERVICE_URL/")"
           test "$wire_code" = 200
           grep -q 'NEO Wire' /tmp/neo-wire.html
+          office_code="$(curl --retry 5 --retry-delay 3 --retry-all-errors -sS -o /tmp/neo-office.html -w '%{http_code}' -H 'X-Forwarded-Host: office.holytemples.org' "$SERVICE_URL/")"
+          test "$office_code" = 200
+          if grep -q 'NEO Service' /tmp/neo-office.html; then
+            echo "::error::office.holytemples.org fell back to generic NEO Service shell"
+            exit 1
+          fi
           status_code="$(curl --retry 5 --retry-delay 3 --retry-all-errors -sS -o /tmp/neo-wire-status.json -w '%{http_code}' -H 'X-Forwarded-Host: wire.holytemples.org' "$SERVICE_URL/api/wire/status")"
           test "$status_code" = 200
           grep -q 'live-production' /tmp/neo-wire-status.json
@@ -184,6 +190,7 @@ jobs:
             nvsn.holytemples.org
             neoteric.holytemples.org
             tabernacle.holytemples.org
+            office.holytemples.org
           )
           pending=0
           for domain in "${domains[@]}"; do
@@ -244,6 +251,7 @@ jobs:
             'https://neoteric.holytemples.org/'
             'https://tabernacle.holytemples.org/health'
             'https://tabernacle.holytemples.org/'
+            'https://office.holytemples.org/'
           )
           for url in "${urls[@]}"; do
             host="$(node -e 'console.log(new URL(process.argv[1]).hostname)' "$url")"
