@@ -76,6 +76,13 @@
         </div>
         <button class="primary" type="submit">Create property</button>
       </form>
+
+      <div class="panel form-grid">
+        <h3>Property review status</h3>
+        <label>Property ID <input id="hostPropertyId" placeholder="Property ID" /></label>
+        <button id="refreshPropertyStatus" class="primary" type="button">Refresh property status</button>
+        <p id="hostPropertyStatus" class="muted" aria-live="polite">Create a property or enter its ID to read the current server-controlled authority state.</p>
+      </div>
     </section>
   </main>
 

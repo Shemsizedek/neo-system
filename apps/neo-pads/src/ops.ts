@@ -1,4 +1,5 @@
 import type { Express, Request, Response } from "express";
+import { attachHostStatusRoutes } from "./host-status.js";
 import type { Repository } from "./repository.js";
 
 function bearer(req: Request) {
@@ -7,6 +8,8 @@ function bearer(req: Request) {
 }
 
 export function attachOpsRoutes(app: Express, repository: Repository) {
+  attachHostStatusRoutes(app, repository);
+
   app.get("/ready", async (_req: Request, res: Response) => {
     const ready = await repository.ping();
     return res.status(ready ? 200 : 503).json({
