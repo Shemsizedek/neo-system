@@ -11,6 +11,7 @@ on:
         options:
           - status
           - api-readonly
+          - session-readonly
   push:
     branches: [main]
     paths:
@@ -38,15 +39,17 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-      - name: Validate CES adapter
+      - name: Validate CES adapters and runtime bridge
         run: node --test apps/neoscan/adapters/ces/*.test.mjs
       - name: Run CES bridge gate
         env:
           NEO_CES_MODE: ${{ inputs.mode || 'status' }}
           CES_ENDPOINT: ${{ secrets.CES_ENDPOINT }}
+          CES_SESSION_READ_URL: ${{ secrets.CES_SESSION_READ_URL }}
           CES_NETWORK: ${{ secrets.CES_NETWORK }}
           CES_ACCOUNT: ${{ secrets.CES_ACCOUNT }}
           CES_API_TOKEN: ${{ secrets.CES_API_TOKEN }}
+          CES_SESSION_COOKIE: ${{ secrets.CES_SESSION_COOKIE }}
         run: node scripts/neo-ces-bridge.mjs
 
   discord:
