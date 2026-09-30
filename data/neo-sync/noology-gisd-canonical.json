@@ -1,9 +1,9 @@
 {
   "id": "noology-gisd-canonical",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "status": "ACTIVE",
   "classification": "SOURCE_SUPPLIED_DOCTRINE",
-  "systems": ["NEO System", "GISD LMS", "GISS", "NEO Algo"],
+  "systems": ["NEO System", "GISD LMS", "GISS", "NEO Algo", "NEO Oracle", "NEOsync", "NEO Law", "NEO Society"],
   "degreeModel": {
     "totalDegrees": 144,
     "universalEntry": "All initiates begin at Degree 1 regardless of age or prior education.",
@@ -12,7 +12,7 @@
       {"range": "1-5", "name": "True Light Elementary"},
       {"range": "6-8", "name": "Nun Middle"},
       {"range": "9-12", "name": "Noone High"},
-      {"range": "13-21", "name": "Nu University"},
+      {"range": "13-21", "name": "Nu University / doctrinal contribution pathway"},
       {"eligibility": "9+", "name": "Nu Omni Academy / Amen Institute"},
       {"range": "22-144", "name": "Advanced GISS / Temple Degree Portfolio"}
     ]
@@ -26,17 +26,83 @@
     "age14Plus": "Mobile/location-based assignments may include travel, interviews, research, service, documentation, and content curation.",
     "fundingModel": "Temple Pledge System and approved Nous Project / GISS endeavors."
   },
+  "noologistPatronProgram": {
+    "priceMonthlyUSD": 288,
+    "purpose": "Professional spiritual/coaching and complementary-wellness patronage program within the Noological framework.",
+    "levels": [
+      {"title": "Sage Level 1", "majorLessons": "1-2"},
+      {"title": "Magi Level 2", "majorLessons": "3"},
+      {"title": "Mystic Level 3", "majorLessons": "4-5"},
+      {"title": "Sorcerer Level 3", "majorLessons": "6-9"}
+    ],
+    "trueLightProgramDays": 30
+  },
+  "dhikr": {
+    "purpose": "Remembrance and divine-attribute study within the Temple curriculum.",
+    "progression": [
+      {"level": "Sage", "corpus": "English 99 Names of God"},
+      {"level": "Magi", "corpus": "Hebrew 99 Names of Elohim"},
+      {"level": "Mystic", "corpus": "Arabic 99 Names of Allah"},
+      {"level": "Sorcerer", "corpus": "Egyptian 99 Names of Neteru"}
+    ],
+    "hundredthName": "Restricted doctrinal teaching received in advanced Major Lesson training; preserve source wording and access rules rather than fabricate the name."
+  },
+  "nuwaubianRunes": {
+    "count": 25,
+    "reversalRule": "Unless expressly non-reversible, reversed meaning is the semantic opposite of the upright attribute.",
+    "nonReversible": ["Hayuh", "Blank Stone"],
+    "sequence": [
+      {"name":"Nasuf","meaning":"Self"},{"name":"Sharukuf","meaning":"Unity"},{"name":"Rawuh","meaning":"Messenger"},{"name":"Hen","meaning":"Inherited pathways"},{"name":"Gawu","meaning":"Change and growth"},{"name":"Sarun","meaning":"Secret"},{"name":"Ka'Wuh","meaning":"Difficulty"},{"name":"Batul","meaning":"Hero","reverse":"Villain"},{"name":"Dafu","meaning":"Power","sameOnBothSides":true},{"name":"Istahraas","meaning":"Emotion control / emotional intelligence"},{"name":"Mamluk","meaning":"Successful fulfillment"},{"name":"Faruh","meaning":"Light, joy and happiness"},{"name":"Hasud","meaning":"Harvest"},{"name":"Faatuh","meaning":"Opening, clarity and fire"},{"name":"Mujahud","meaning":"Spirit, battles and wars"},{"name":"Zaru","meaning":"Fertility, birth and developing"},{"name":"Harukhant","meaning":"Transition and movement"},{"name":"Sabub","meaning":"Conducting powers and water"},{"name":"Matur","meaning":"Elemental powers, fire and the Creator"},{"name":"Safur","meaning":"Journey, union and communication"},{"name":"Bab","meaning":"Gateway to higher realms"},{"name":"Najuh","meaning":"Results, breakthroughs and transformation"},{"name":"Bagum","meaning":"Winter, stillness and powerless"},{"name":"Hayuh","meaning":"Life force and wholeness","reverse":null},{"name":"Blank Stone","meaning":"Unknown, destiny, beginning and end","reverse":null}
+    ],
+    "oracle": {
+      "casts": [1,3,5],
+      "oneRune": "Direct message concerning one issue or question.",
+      "threeRuneSpreads": ["Future / Present / Past", "New Situation / Action / Situation", "Best Outcome / Challenge / Present Now"],
+      "fiveRuneSpreads": ["Past / Present Now / Future / Foundation / Challenge", "Birth & Childhood / Present / Present Future / Past Incarnation / Future Incarnation"],
+      "journalRecommended": true,
+      "digitalMode": "AI-assisted interactive interpretation may collect basic seeker context while preserving the canonical rune meanings."
+    },
+    "productLayer": ["individual oracle/tarot cards", "rune talk board with wide central Nous Field circle", "card box", "digital oracle"]
+  },
+  "rekai": {
+    "threshold": "36° of Major Lesson 1",
+    "level1": {"title": "Initiate", "symbols": ["Sekhem Fork / Sekhem Power"], "practices": ["Wazufa", "Smai", "Huwa"]},
+    "level2": {"title": "Adept", "symbols": ["Shen / Shen Force", "Behdet Wing / Djeneh Wave"]},
+    "level3": {"title": "Mystic Master / Sourcer Path", "symbols": ["Sa / Sa Shield"]},
+    "advanced": {"title": "Heka / Hah-Ka Power Glyphs", "symbols": ["Ankh", "Waas", "Khu"]}
+  },
+  "trueLightTherapies": {
+    "priceUSD": 144,
+    "pricingBasis": "each service or per hour according to service format",
+    "domains": ["Noological Rekai", "Nous Field Therapy", "meditation", "symbolic rune work", "crystal-grid practice", "sound and contemplative practice"],
+    "scopeBoundary": "Spiritual, educational, meditative and complementary-wellness practices are not represented as licensed medical or mental-health treatment."
+  },
+  "humanDesignDoctrine": {
+    "name": "Noological Human Design System",
+    "status": "DOCTRINAL_SYNTHESIS",
+    "components": ["Nous Field", "Dhikr divine attributes", "Nuwaubian Runes", "Neteru archetypes", "Enochic Watcher shadow-study"],
+    "epistemicRule": "Present spiritual correspondences as Noological doctrine/symbolic interpretation rather than established scientific causation."
+  },
   "academicArts": {
     "trivium": ["Grammar", "Logic", "Rhetoric"],
     "quadrivium": ["Arithmetic", "Geometry", "Harmonics / Music", "Astronomy"],
     "quintivium": ["Dialectics", "Harmonics", "Physics", "Optics", "Noology"]
   },
-  "rekai": {
-    "threshold": "36° of Major Lesson 1",
-    "level1": {"title": "Initiate", "symbols": ["Sekhem Fork"], "practices": ["Wazufa", "Smai", "Huwa"]},
-    "level2": {"title": "Adept", "symbols": ["Shen Force", "Behdet Wing / Djeneh Wave"]},
-    "level3": {"title": "Mystic Master", "symbols": ["Sa Shield"]},
-    "advanced": {"title": "Heka / Hah-Ka Power Glyphs", "symbols": ["Ankh", "Waas", "Khu"]}
+  "socialNorms": {
+    "canonicalTerminology": true,
+    "respectSourceAttribution": true,
+    "doNotInventMissingRunesOrRestrictedNames": true,
+    "distinguishDoctrineFromExternallyVerifiedFact": true,
+    "preserveHistoricalRecords": true,
+    "requireConsentAndAgeAppropriateSafeguardsForInstruction": true
+  },
+  "routing": {
+    "NEO Algo": ["reasoning", "semantic retrieval", "canonical terminology", "provenance classification"],
+    "NEO Oracle": ["rune oracle", "symbolic interpretation", "seeker-context interaction"],
+    "GISD LMS": ["degree curriculum", "assignments", "portfolio evidence", "practitioner development"],
+    "NEOsync": ["cross-service synchronization", "registry propagation"],
+    "NEO Law": ["doctrine/canon classification", "historical record integrity", "scope boundaries"],
+    "NEO Society": ["internal cultural vocabulary", "ethical social norms", "approved public-facing education/marketing"]
   },
   "sourceIntegrity": {
     "preserveSourceTerminology": true,
