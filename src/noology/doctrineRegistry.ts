@@ -164,6 +164,56 @@ export const neoDoctrineRegistry: NeoDoctrineRecord[] = [
     evidenceClass: 'NEO_SYNTHESIS',
     source: { title: 'The Luciferian Conspiracy', pageOrSection: 'Tehuti/Thoth discussion identifies alchemy within the source tradition' },
     tags: ['alchemy', 'transmutation', 'governance', 'process']
+  },
+  {
+    id: 'NDR-014',
+    category: 'NEO_PHILOSOPHY',
+    title: 'Sacred Quadrivium of Family Order',
+    teaching: 'The Sacred Chambers model Wife as Solar Order, Concubine as Lunar Order, Holy Mother as Earth Order, and Daughter as Stellar Order within the Ninth Major Lesson.',
+    operationalization: 'Use these correspondences as internal doctrinal and pedagogical metadata, not as scientific or civil-law classifications.',
+    evidenceClass: 'NEO_SYNTHESIS',
+    source: { title: 'Sacred Chambers — Noological Doctrine Integration', pageOrSection: 'Sacred Chambers / Sacred Quadrivium' },
+    tags: ['sacred-chambers', 'family-order', 'ninth-major-lesson', 'quadrivium']
+  },
+  {
+    id: 'NDR-015',
+    category: 'SOCIAL_NORM',
+    title: 'Holy Mother Safeguarding Authority',
+    teaching: 'The Holy Mother function preserves lineage, education, welfare and continuity while maintaining a safeguarding role within the Sacred Chambers.',
+    operationalization: 'Provide grievance, anti-retaliation and conflict-of-interest review; no chamber authority may override an adult member’s consent or civil rights.',
+    evidenceClass: 'OPERATIONAL_CONTROL',
+    source: { title: 'Sacred Chambers — Noological Doctrine Integration', pageOrSection: 'Holy Mother Chamber' },
+    tags: ['holy-mother', 'safeguarding', 'lineage', 'welfare', 'governance']
+  },
+  {
+    id: 'NDR-016',
+    category: 'ETHIC',
+    title: 'Consent Cannot Be Inferred From Status',
+    teaching: 'Covenant status, prior consent, tokens, pledges, marriage, chamber membership or economic support do not constitute present consent to intimacy.',
+    operationalization: 'Require affirmative and revocable consent for adult intimate activity and prohibit retaliation for refusal or withdrawal.',
+    evidenceClass: 'OPERATIONAL_CONTROL',
+    source: { title: 'Sacred Chambers — Noological Doctrine Integration', pageOrSection: 'Consent and safeguarding baseline' },
+    tags: ['consent', 'sacred-chambers', 'anti-coercion', 'adult-only']
+  },
+  {
+    id: 'NDR-017',
+    category: 'SOCIAL_NORM',
+    title: 'Daughter Chamber Is Educational, Not Intimate',
+    teaching: 'The Daughter Chamber exists for lineage, education, succession and renewal and is not an intimate or sexual chamber.',
+    operationalization: 'Exclude minors from adult intimate, concubinage, employment-for-intimacy, sexual rites and sexual agreements; keep curriculum age-appropriate.',
+    evidenceClass: 'OPERATIONAL_CONTROL',
+    source: { title: 'Sacred Chambers — Noological Doctrine Integration', pageOrSection: 'Daughter Chamber' },
+    tags: ['daughter-chamber', 'education', 'succession', 'minors', 'safeguarding']
+  },
+  {
+    id: 'NDR-018',
+    category: 'PRINCIPLE',
+    title: 'Temple Pledge Accounting Boundary',
+    teaching: 'The Temple Pledge System records internal equitable contributions, pledges, service and stewardship but does not automatically create public-law property, employment, inheritance or payment rights.',
+    operationalization: 'Record provenance, valuation method, purpose, restrictions and approval authority, and separately identify any legally operative instrument.',
+    evidenceClass: 'OPERATIONAL_CONTROL',
+    source: { title: 'Sacred Chambers — Noological Doctrine Integration', pageOrSection: 'NEO Treasury / Temple Pledge System' },
+    tags: ['temple-pledge', 'accounting', 'equity', 'trust', 'provenance']
   }
 ]
 
