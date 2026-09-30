@@ -1,4 +1,5 @@
 import { neoDoctrineRegistry } from './doctrineRegistry'
+import { sacredChambersDoctrine } from './sacredChambersDoctrine'
 import { smatFourPhaseDoctrine, smatFourPhases } from './smatFourPhaseDoctrine'
 
 /**
@@ -29,7 +30,7 @@ export const masterNoologicalDoctrine = {
     cycleRule: 'EVOLUTION_RETURNS_TOWARD_REVOLUTION'
   },
   sourceDoctrine: smatFourPhaseDoctrine,
-  registeredDoctrine: neoDoctrineRegistry,
+  registeredDoctrine: [...neoDoctrineRegistry, ...sacredChambersDoctrine],
   preservationPolicy: {
     appendOnlyConceptHistory: true,
     preserveSourceTerminology: true,
