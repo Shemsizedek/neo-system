@@ -1,0 +1,74 @@
+name: Notify Slack of production deployments
+
+on:
+  workflow_run:
+    workflows:
+      - Deploy Temple GISS to Cloud Run
+      - Deploy Nu City to Cloud Run
+      - Deploy NEO Edge to Cloud Run
+      - Deploy NEO Bank to Cloud Run
+      - Deploy NEO Prime Runtime to Cloud Run
+      - Deploy Nu University to Cloud Run
+      - Deploy NEO Social Gateway to Cloud Run
+    types: [completed]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: slack-deployment-${{ github.event.workflow_run.id }}
+  cancel-in-progress: false
+
+jobs:
+  notify:
+    if: github.event.workflow_run.head_branch == 'main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      SLACK_WEBHOOK_URL: ${{ secrets.NEO_SLACK_WEBHOOK_URL }}
+      WORKFLOW_NAME: ${{ github.event.workflow_run.name }}
+      WORKFLOW_STATUS: ${{ github.event.workflow_run.conclusion }}
+      WORKFLOW_URL: ${{ github.event.workflow_run.html_url }}
+      COMMIT_SHA: ${{ github.event.workflow_run.head_sha }}
+      TRIGGERED_BY: ${{ github.event.workflow_run.actor.login }}
+      REPOSITORY: ${{ github.repository }}
+    steps:
+      - name: Require rotated Slack webhook
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "${SLACK_WEBHOOK_URL}" ]]; then
+            echo "::error::Add the rotated webhook as repository secret NEO_SLACK_WEBHOOK_URL."
+            exit 1
+          fi
+          if [[ "${SLACK_WEBHOOK_URL}" != https://hooks.slack.com/services/* ]]; then
+            echo "::error::NEO_SLACK_WEBHOOK_URL is not a Slack incoming-webhook URL."
+            exit 1
+          fi
+
+      - name: Post deployment result to Slack
+        shell: bash
+        run: |
+          set -euo pipefail
+          case "${WORKFLOW_STATUS}" in
+            success) icon="✅"; label="SUCCEEDED" ;;
+            failure) icon="🚨"; label="FAILED" ;;
+            cancelled) icon="⚠️"; label="CANCELLED" ;;
+            *) icon="ℹ️"; label="${WORKFLOW_STATUS^^}" ;;
+          esac
+
+          short_sha="${COMMIT_SHA:0:7}"
+          payload="$(jq -n             --arg text "${icon} NEO deployment ${label}"             --arg workflow "${WORKFLOW_NAME}"             --arg repository "${REPOSITORY}"             --arg sha "${short_sha}"             --arg actor "${TRIGGERED_BY}"             --arg url "${WORKFLOW_URL}"             '{text: $text, blocks: [
+              {type: "header", text: {type: "plain_text", text: $text}},
+              {type: "section", fields: [
+                {type: "mrkdwn", text: ("*Workflow:*\n" + $workflow)},
+                {type: "mrkdwn", text: ("*Repository:*\n" + $repository)},
+                {type: "mrkdwn", text: ("*Commit:*\n`" + $sha + "`")},
+                {type: "mrkdwn", text: ("*Triggered by:*\n@" + $actor)}
+              ]},
+              {type: "actions", elements: [
+                {type: "button", text: {type: "plain_text", text: "View workflow"}, url: $url}
+              ]}
+            ]}')"
+
+          curl --fail-with-body --silent --show-error             --retry 3             --retry-all-errors             --header 'Content-Type: application/json'             --data "${payload}"             "${SLACK_WEBHOOK_URL}"
