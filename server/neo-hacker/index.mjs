@@ -13,3 +13,4 @@ export { createIncidentLedger, SEVERITY, EVENT_STATE } from './incidentLedger.mj
 export { validateGuardianEnvelope, classifyNeoOutage } from './guardianEnvelope.mjs';
 export { createGuardianSecurityPipeline } from './guardianPipeline.mjs';
 export { analyzeSecurityIncident, analyzeIncidentLedger } from './securityAnalysis.mjs';
+export { correlateSecuritySignals, correlateNeoSecurityContext } from './securityCorrelation.mjs';
