@@ -127,6 +127,7 @@ export function createSocialGatewayServer({
   shemsiStore,
   publishShemsiReply,
   shemsiIngestion,
+  ingestInstagramEvent,
   env = process.env,
   fetchImpl = fetch,
   oauthStateMaxAgeMs = 10 * 60 * 1000,
@@ -206,6 +207,19 @@ export function createSocialGatewayServer({
 
 
 
+
+
+      if (req.method === 'POST' && url.pathname === '/automation/shemsi/instagram-event') {
+        if (!automationAuthorized(req,env)) return respond(res,401,{error:'automation_unauthorized'})
+        if(typeof ingestInstagramEvent!=='function')return respond(res,503,{error:'instagram_bridge_unavailable'})
+        const subjectId=String(env.SHEMSI_AUTOMATION_SUBJECT_ID||'').trim()
+        const accountId=String(env.SHEMSI_INSTAGRAM_ACCOUNT_ID||'').trim()
+        if(!subjectId)return respond(res,503,{error:'shemsi_automation_subject_required'})
+        if(!accountId)return respond(res,503,{error:'shemsi_instagram_account_required'})
+        const body=await readJson(req)
+        const result=await ingestInstagramEvent({event:body,subjectId,accountId})
+        return respond(res,result.status==='queued'?201:200,result)
+      }
 
       if (req.method === 'POST' && url.pathname === '/automation/shemsi/sync') {
         if (!automationAuthorized(req,env)) return respond(res,401,{error:'automation_unauthorized'})
@@ -420,6 +434,7 @@ export function startSocialGatewayServer({
   shemsiStore,
   publishShemsiReply,
   shemsiIngestion,
+  ingestInstagramEvent,
 } = {}) {
-  return createSocialGatewayServer({ resolveTrustedIdentity, env, automationStore, publishOmnitrixJob, shemsiStore, publishShemsiReply, shemsiIngestion }).listen(port, host)
+  return createSocialGatewayServer({ resolveTrustedIdentity, env, automationStore, publishOmnitrixJob, shemsiStore, publishShemsiReply, shemsiIngestion, ingestInstagramEvent }).listen(port, host)
 }
