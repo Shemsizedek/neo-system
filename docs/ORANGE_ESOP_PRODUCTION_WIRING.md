@@ -33,3 +33,21 @@ Expected runtime secret names:
 - ORANGE_ESOP_AUDITOR_TOKEN
 
 RCF-013 and RCF-015 HTTP issuance remains fail-closed until NEO Books/plan-record adapters supply authoritative allocation, vesting, valuation, reconciliation, and approval data.
+
+
+## ORANGE-ESOP-012 Deployment Gate
+Deployment automation is owned by `.github/workflows/deploy-orange-esop-cloud-run.yml`.
+
+The workflow:
+- runs the Orange ESOP contract and application tests;
+- authenticates to Google Cloud through Workload Identity Federation;
+- ensures role-specific Orange ESOP secrets exist in Google Secret Manager without printing their values;
+- grants the Cloud Run runtime identity secret-access permission;
+- builds and pushes an immutable Artifact Registry image;
+- deploys the `orange-esop` Cloud Run service with Firestore and runtime-only secrets;
+- verifies `/health`, `/ready`, and `/api/esop/public-summary` at the Cloud Run origin;
+- attaches a serverless NEG/backend to the canonical `neo-edge-url-map`;
+- routes `esop.holytemples.org`; and
+- verifies the public UI and readiness endpoints before declaring the gate complete.
+
+A deployment is not considered production-verified unless both Cloud Run readiness and the public domain return HTTP 200.
