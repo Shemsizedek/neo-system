@@ -41,7 +41,7 @@ jobs:
       NEO_TEMPLE_FIRESTORE_LOCATION: ${{ vars.NEO_TEMPLE_FIRESTORE_LOCATION || 'nam5' }}
       NEO_PASS_JWT_ISSUER: ${{ vars.NEO_PASS_JWT_ISSUER }}
     steps:
-      - uses: actions/checkout@v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Validate configuration
         env:
           NEO_PASS_JWT_SECRET: ${{ secrets.NEO_PASS_JWT_SECRET }}
@@ -52,12 +52,12 @@ jobs:
           done
       - name: Test GISS runtime
         run: node --test server/neo-platform-api/*.test.mjs
-      - uses: google-github-actions/auth@v3
+      - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
         with:
           project_id: ${{ env.GCP_PROJECT_ID }}
           workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
           service_account: ${{ env.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
-      - uses: google-github-actions/setup-gcloud@v3
+      - uses: google-github-actions/setup-gcloud@f0990588f1e5b5af6827153b93673613abdc6ec7 # v3.0.0
       - name: Ensure Firestore production database
         run: |
           set -euo pipefail
