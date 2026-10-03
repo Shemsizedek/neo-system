@@ -13,6 +13,7 @@ function authorized(source,req,raw){
 }
 export default async function handler(req,res){
   if(req.method==='GET'){
+    if(!verifyBearer(header(req,'authorization'),process.env.NEO_ROUTER_EVENT_TOKEN))return res.status(401).json({error:'unauthorized'})
     res.setHeader('Cache-Control','no-store')
     return res.status(200).json({events:await store.list(100),eventStore:{mode:store.mode,durable:store.durable}})
   }
