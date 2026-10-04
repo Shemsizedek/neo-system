@@ -1,4 +1,5 @@
 name: Deploy Temple GISS to Cloud Run
+# Operations redeploy marker: 2026-10-04 — revalidate eGov/NEOpass production boundary.
 
 on:
   workflow_dispatch:
