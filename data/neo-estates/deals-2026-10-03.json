@@ -1,0 +1,116 @@
+{
+  "as_of": "2026-10-03",
+  "status": "provisional_public_listing_screen",
+  "method": "NEO Estates 100-point site-fit matrix using currently public listing data; unknown diligence items scored conservatively and must be verified before LOI.",
+  "deals": [
+    {
+      "deal_id": "NEO-EST-001",
+      "asset": "10910 Keese Dr",
+      "market": "Houston, TX 77089",
+      "asset_type": "Single-family residence",
+      "asking_price_usd": 380000,
+      "prototype": "B — NEO House Creator",
+      "style_tags": [
+        "conventional-high-performance retrofit"
+      ],
+      "site_fit_score": 78,
+      "decision_band": "Strong Candidate",
+      "pipeline_stage": "SITE-FIT SCORED",
+      "financing_note": "Listing terms include Owner Will Carry, plus cash/conventional/FHA/VA.",
+      "public_facts": "8 beds, 4 baths, 3,959 sq ft, 8,672 sq ft lot, built 1964, public water/sewer.",
+      "mining_status": "HOLD pending electrical/tariff/noise review",
+      "primary_upside": "Low acquisition basis per square foot, 8-bedroom layout, large common area, seller-finance signal.",
+      "primary_risk": "Small residential lot and unknown use/occupancy, flood, insurance, electrical and renovation requirements.",
+      "recommended_next_action": "Request seller-finance terms, seller disclosure, survey, insurance history, electrical service details, and confirm occupancy/use constraints."
+    },
+    {
+      "deal_id": "NEO-EST-002",
+      "asset": "14006 Duncum St",
+      "market": "Houston, TX 77015",
+      "asset_type": "Industrial warehouse investment",
+      "asking_price_usd": 893529,
+      "prototype": "E — NEO Enterprise / Warehouse",
+      "style_tags": [
+        "warehouse conversion"
+      ],
+      "site_fit_score": 77,
+      "decision_band": "Strong Candidate",
+      "pipeline_stage": "SITE-FIT SCORED",
+      "public_facts": "7,500 SF, 0.37 acres, 8.50% in-place cap rate, 18 ft clear height, 2 grade-level doors, fenced yard, no zoning listed.",
+      "mining_status": "CONDITIONAL pending tariff/service/cooling review",
+      "primary_upside": "Existing cash-flow signal, industrial use, loading, separation potential, access to I-10.",
+      "primary_risk": "Power capacity/tariff, tenant lease terms, roof/HVAC/environmental/insurance and limited expansion acreage require diligence.",
+      "recommended_next_action": "Request rent roll, lease, T-12, utility bills, electrical one-line/service capacity, environmental history and property-condition report."
+    },
+    {
+      "deal_id": "NEO-EST-003",
+      "asset": "00 Brodt Road",
+      "market": "Crosby, TX 77532",
+      "asset_type": "Undeveloped land",
+      "asking_price_usd": 350000,
+      "prototype": "D — NEO Estate Compound",
+      "style_tags": [
+        "eco-village",
+        "dome",
+        "earth",
+        "tiny",
+        "treehouse",
+        "container",
+        "yurt",
+        "mixed-compound"
+      ],
+      "site_fit_score": 74,
+      "decision_band": "Strong Candidate",
+      "pipeline_stage": "SITE-FIT SCORED",
+      "public_facts": "10 acres, cleared/fenced, gated entrance, electrical poles installed, few restrictions reported, access to Hwy 90.",
+      "mining_status": "NOT EVALUATED",
+      "primary_upside": "Clean-slate compound/ecovillage potential and expansion room.",
+      "primary_risk": "No building income, unknown water/septic/flood/drainage/soil/entitlement costs, full development capex required.",
+      "recommended_next_action": "Obtain restrictions, survey, floodplain, soil/drainage, utility availability/cost, access, septic/well feasibility and preliminary site plan."
+    },
+    {
+      "deal_id": "NEO-EST-004",
+      "asset": "4914 Harvey Road",
+      "market": "Crosby, TX 77532",
+      "asset_type": "Residential acreage / estate",
+      "asking_price_usd": 1499990,
+      "prototype": "D — NEO Estate Compound",
+      "style_tags": [
+        "eco-village",
+        "mixed-compound"
+      ],
+      "site_fit_score": 71,
+      "decision_band": "Strong Candidate",
+      "pipeline_stage": "SITE-FIT SCORED",
+      "public_facts": "10 unrestricted acres, 4 beds, 3 baths, 3,100 sq ft home built 2022, office, pool, oversized garage, barn, storage shed, pond, automation/security.",
+      "mining_status": "NOT EVALUATED",
+      "primary_upside": "Existing flagship house plus unrestricted acreage and outbuildings reduce time-to-activation.",
+      "primary_risk": "Higher acquisition basis; unknown utilities, insurance, flood, carrying cost and revenue plan.",
+      "recommended_next_action": "Request survey, restrictions/title, utility/electrical details, insurance/flood history, tax data and seller financing/terms."
+    },
+    {
+      "deal_id": "NEO-EST-005",
+      "asset": "6 Epernay Pl",
+      "market": "Houston, TX 77040",
+      "asset_type": "Large single-family estate",
+      "asking_price_usd": 1050000,
+      "prototype": "B — NEO House Creator",
+      "style_tags": [
+        "conventional-high-performance retrofit"
+      ],
+      "site_fit_score": 74,
+      "decision_band": "Strong Candidate",
+      "pipeline_stage": "SITE-FIT SCORED",
+      "public_facts": "5 beds, 7 baths, 6,864 sq ft, 0.41 acres, built 1994, mother-in-law suite with separate exterior entrance, large garage capacity, cul-de-sac.",
+      "mining_status": "HOLD pending electrical/tariff/noise review",
+      "primary_upside": "Excellent creator-house scale, multigenerational layout, separate-entry suite, strong garage/space flexibility.",
+      "primary_risk": "Higher carrying cost and residential-site limits on compute/expansion.",
+      "recommended_next_action": "Request disclosures, floor plan, electrical service, HOA/deed restrictions, insurance/flood history and seller flexibility."
+    }
+  ],
+  "priority_for_first_contact": [
+    "NEO-EST-001",
+    "NEO-EST-002",
+    "NEO-EST-003"
+  ]
+}
