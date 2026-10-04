@@ -252,6 +252,7 @@ jobs:
           done
           echo "leaders-routes: / /about/ /world-parliament/ /leadership/ /contact/ verified" >> "$GITHUB_STEP_SUMMARY"
 
+          mapped_failures=0
           urls=(
             'https://neo.holytemples.org/health'
             'https://neo.holytemples.org/assets/neo-bridge.js'
@@ -264,7 +265,7 @@ jobs:
             'https://algo.holytemples.org/health'
             'https://pay.holytemples.org/health'
             'https://neobank.holytemples.org/health'
-            'https://neobank.holytemples.org/api/database/health'
+            'https://neobank.holytemples.org/api/v1/community/status'
             'https://noogle.holytemples.org/noogle/search?q=noology'
             'https://nomni.holytemples.org/nomni.json'
             'https://nomni.holytemples.org/api/nomni/value'
@@ -281,12 +282,24 @@ jobs:
           for url in "${urls[@]}"; do
             host="$(node -e 'console.log(new URL(process.argv[1]).hostname)' "$url")"
             if gcloud beta run domain-mappings describe --domain="$host" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" >/dev/null 2>&1; then
-              code="$(curl --retry 8 --retry-delay 10 --retry-all-errors -sS -o /dev/null -w '%{http_code}' "$url" || true)"
+              code="$(curl --connect-timeout 10 --max-time 30 --retry 3 --retry-delay 5 --retry-all-errors -sS -D /tmp/neo-public-headers -o /tmp/neo-public-response -w '%{http_code}' "$url" || true)"
               echo "$url -> $code"
-            echo "$url -> $code" >> "$GITHUB_STEP_SUMMARY"
-              test "$code" = 200
+              echo "$url -> $code" >> "$GITHUB_STEP_SUMMARY"
+              if [[ "$url" == 'https://tabernacle.holytemples.org/' ]]; then
+                if [[ "$code" != 302 ]] || ! grep -Eiq '^location: https://neotericmethod\.minicart\.com\r?$' /tmp/neo-public-headers; then
+                  echo "::error::Tabernacle storefront redirect is missing or incorrect"
+                  mapped_failures=$((mapped_failures + 1))
+                fi
+              elif [[ "$code" != 200 ]]; then
+                echo "::error::$url returned $code, expected 200"
+                mapped_failures=$((mapped_failures + 1))
+              elif [[ "$url" == 'https://neobank.holytemples.org/api/v1/community/status' ]]; then
+                if ! node --input-type=module -e 'import fs from "node:fs";const status=JSON.parse(fs.readFileSync("/tmp/neo-public-response","utf8"));if(status.database!=="connected")throw new Error("neo_bank_database_unavailable");'; then
+                  mapped_failures=$((mapped_failures + 1))
+                fi
+              fi
             else
               echo "$url -> mapping pending (origin healthy)" >> "$GITHUB_STEP_SUMMARY"
             fi
           done
-
+          test "$mapped_failures" -eq 0
