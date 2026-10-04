@@ -1,4 +1,5 @@
 import http from 'node:http';
+import { renderSystemHome } from './system-home.mjs';
 import https from 'node:https';
 import { createNeoEdgeServer } from './server.mjs';
 import { isWirePlatformPath, proxyWirePlatform, serveWireApp, wireServiceManifest } from './wire-app.mjs';
@@ -158,6 +159,8 @@ export async function startNeoEdgeProduction(){
     if(host==='neoteric.holytemples.org'&&req.method==='GET'&&url.pathname==='/health')return json(res,200,{ok:true,service:'neoteric-method',surface:'public-production'});
     if(host==='tabernacle.holytemples.org'&&req.method==='GET'&&(url.pathname==='/'||url.pathname==='/ui')){res.writeHead(302,{location:'https://neotericmethod.minicart.com','cache-control':'no-store'});return res.end();}
     if(host==='neoteric.holytemples.org')return html(res,404,neotericLanding());
+    if(host==='neo.holytemples.org'&&req.method==='GET'&&url.pathname==='/ui/console')return html(res,200,serviceConsole(host));
+    if(host==='neo.holytemples.org'&&req.method==='GET'&&(url.pathname==='/'||url.pathname==='/ui'))return html(res,200,renderSystemHome());
     if(host!=='wire.holytemples.org'&&req.method==='GET'&&(url.pathname==='/'||url.pathname==='/ui'))return html(res,200,serviceConsole(host));
     if(host!=='wire.holytemples.org')return proxyLegacy(req,res,legacyPort);
     try{

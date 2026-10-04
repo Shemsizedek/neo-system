@@ -54,6 +54,8 @@ jobs:
           test -f server/neo-counter-backend/firestore-rest-db.mjs
           node --check server/neo-edge/server.mjs
           node --check server/neo-edge/production.mjs
+          node --check server/neo-edge/system-home.mjs
+          node --test server/neo-edge/system-home.test.mjs
           node --check server/neo-edge/wire-app.mjs
 
       - uses: google-github-actions/auth@v3
@@ -119,6 +121,14 @@ jobs:
           test -n "$SERVICE_URL"
           code="$(curl --retry 5 --retry-delay 3 --retry-all-errors -sS -o /tmp/neo-edge-health.json -w '%{http_code}' -H 'X-Forwarded-Host: neo.holytemples.org' "$SERVICE_URL/health")"
           test "$code" = 200
+          home_code="$(curl --retry 5 --retry-delay 3 --retry-all-errors -sS -o /tmp/neo-system-home.html -w '%{http_code}' -H 'X-Forwarded-Host: neo.holytemples.org' "$SERVICE_URL/")"
+          test "$home_code" = 200
+          grep -q 'Welcome to NEO.' /tmp/neo-system-home.html
+          grep -q 'library-form' /tmp/neo-system-home.html
+          grep -q 'data-category="Finance"' /tmp/neo-system-home.html
+          console_code="$(curl --retry 5 --retry-delay 3 --retry-all-errors -sS -o /tmp/neo-system-console.html -w '%{http_code}' -H 'X-Forwarded-Host: neo.holytemples.org' "$SERVICE_URL/ui/console")"
+          test "$console_code" = 200
+          grep -q 'Checking production' /tmp/neo-system-console.html
           wire_code="$(curl --retry 5 --retry-delay 3 --retry-all-errors -sS -o /tmp/neo-wire.html -w '%{http_code}' -H 'X-Forwarded-Host: wire.holytemples.org' "$SERVICE_URL/")"
           test "$wire_code" = 200
           grep -q 'NEO Wire' /tmp/neo-wire.html
@@ -263,3 +273,15 @@ jobs:
               echo "$url -> mapping pending (origin healthy)" >> "$GITHUB_STEP_SUMMARY"
             fi
           done
+
+      - name: Verify public NEO System workspace
+        run: |
+          set -euo pipefail
+          curl --connect-timeout 10 --max-time 30 --retry 3 --retry-delay 5 --retry-all-errors -fsS \
+            'https://neo.holytemples.org/' -o /tmp/neo-system-public-home.html
+          grep -q 'Welcome to NEO.' /tmp/neo-system-public-home.html
+          grep -q 'library-form' /tmp/neo-system-public-home.html
+          curl --connect-timeout 10 --max-time 30 --retry 3 --retry-delay 5 --retry-all-errors -fsS \
+            'https://neo.holytemples.org/health' -o /tmp/neo-system-public-health.json
+          node --input-type=module -e 'import fs from "node:fs";const health=JSON.parse(fs.readFileSync("/tmp/neo-system-public-health.json","utf8"));if(health.ok!==true)throw new Error("public_gateway_not_healthy");'
+          echo "NEO System workspace verified: https://neo.holytemples.org/" >> "$GITHUB_STEP_SUMMARY"
