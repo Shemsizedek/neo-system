@@ -286,7 +286,24 @@ jobs:
               echo "$url -> $code"
               echo "$url -> $code" >> "$GITHUB_STEP_SUMMARY"
               if [[ "$url" == 'https://tabernacle.holytemples.org/' ]]; then
-                if [[ "$code" != 302 ]] || ! grep -Eiq '^location: https://neotericmethod\.minicart\.com\r?$' /tmp/neo-public-headers; then
+                if [[ "$code" != 302 ]] || ! grep -Eiq '^location: https://neotericmethod\.minicart\.com[[:space:]]* /tmp/neo-public-headers; then
+                  echo "::error::Tabernacle storefront redirect is missing or incorrect"
+                  mapped_failures=$((mapped_failures + 1))
+                fi
+              elif [[ "$code" != 200 ]]; then
+                echo "::error::$url returned $code, expected 200"
+                mapped_failures=$((mapped_failures + 1))
+              elif [[ "$url" == 'https://neobank.holytemples.org/api/v1/community/status' ]]; then
+                if ! node --input-type=module -e 'import fs from "node:fs";const status=JSON.parse(fs.readFileSync("/tmp/neo-public-response","utf8"));if(status.database!=="connected")throw new Error("neo_bank_database_unavailable");'; then
+                  mapped_failures=$((mapped_failures + 1))
+                fi
+              fi
+            else
+              echo "$url -> mapping pending (origin healthy)" >> "$GITHUB_STEP_SUMMARY"
+            fi
+          done
+          test "$mapped_failures" -eq 0
+ /tmp/neo-public-headers; then
                   echo "::error::Tabernacle storefront redirect is missing or incorrect"
                   mapped_failures=$((mapped_failures + 1))
                 fi
