@@ -358,6 +358,9 @@ Mining / compute:
 - temperature monitoring;
 - service shutoff.
 
+## 9. Alternative NEO House Styles
+Prototype letters define functional program rather than a mandatory exterior form. NEO Estates may express the program through eco-village homes, dome homes, earth homes, tiny homes, treehouse homes, container homes, yurt homes or conventional high-performance residences where site, climate, code, engineering and financing support the choice.
+
 ## 9. Prototype Property Configurations
 
 ### Prototype A — NEO House Compact
