@@ -2,7 +2,7 @@
   "module_id": "NEO-HOUSES-001",
   "name": "NEO Houses",
   "status": "canonical_planning_framework",
-  "version": "1.6",
+  "version": "1.7",
   "public_page": "https://holytemples.org/neo-houses/",
   "sponsor": "Shelton Estate & Co.",
   "operating_cycle": [
@@ -135,6 +135,24 @@
       "NEO-EST-001",
       "NEO-EST-002",
       "NEO-EST-003"
+    ]
+  },
+  "holy_stewards_build_to_own": {
+    "public_page": "https://holytemples.org/holy-stewards-build-to-own/",
+    "source": "content/neo-houses/holy-stewards-build-to-own.md",
+    "sponsor": "World Temple of Karast — Branch Temple No. 24",
+    "program_brand": "The Science Temple™",
+    "chamber": "A.C. Chamber — 3rd Heaven",
+    "formula": [
+      "Learn",
+      "Build",
+      "Maintain",
+      "Produce",
+      "Save",
+      "Acquire",
+      "Own",
+      "Steward",
+      "Teach"
     ]
   }
 }
