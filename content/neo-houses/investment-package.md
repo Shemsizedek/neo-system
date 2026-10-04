@@ -1,7 +1,7 @@
 # NEO Houses - Shelton Estate & Co. Investment Package
 
 Status: Canonical planning framework
-Version: 1.0
+Version: 1.1
 Public page: https://holytemples.org/neo-houses/
 
 ## Thesis
@@ -9,6 +9,16 @@ NEO Houses combine residential real estate, creator development, education, entr
 
 ## Operating Cycle
 Learn -> Create -> Publish -> Collaborate -> Build -> Serve -> Lead
+
+## Shelton Estate & Co. — NEO Estates
+
+NEO Estates is the built-environment layer for NEO Houses and related Shelton Estate & Co. developments. It integrates Neotherapy Temple Healing aesthetics through intentional lighting, acoustic calm, natural materials, sacred geometry, gardens, Neotherapy rooms, clean-air design and strict separation between heavy compute and human-centered zones.
+
+Core formula: **clean air + controlled sound + intentional light + natural texture + contemplative space + productive technology + dignified beauty.**
+
+Neotherapy environments support education, reflection, relaxation and wellness programming and are not represented as substitutes for licensed medical or mental-health treatment.
+
+Canonical design standard: `content/neo-houses/neo-estates-design-standard.md`.
 
 ## Universal Acquisition Sequence
 1. Scout.
@@ -38,6 +48,7 @@ No mining yield or Bitcoin price is guaranteed.
 - Closing/inspection/due diligence: $20,000
 - Renovation/life safety: $60,000
 - Creator/study/media buildout: $35,000
+- NEO Estates Neotherapy / Temple environment buildout: $30,000
 - Mining-ready electrical: $25,000
 - ASIC allowance (4): $24,000
 - Cooling/acoustics/network/fire: $16,000
@@ -45,13 +56,13 @@ No mining yield or Bitcoin price is guaranteed.
 - Legal/accounting/insurance: $15,000
 - Six-month reserve: $35,000
 - Contingency: $25,000
-- Total: $625,000
+- Total: $655,000
 
 ### Model B - Purpose-Built NEO House
-Planning envelope: $1.416 million.
+Planning envelope: $1.476 million, including a $60,000 NEO Estates Neotherapy / Temple environment allowance.
 
 ### Model C - Business / Warehouse Acquisition
-Planning envelope: $2.77 million, including a $1.5 million acquisition allowance and a 20-unit ASIC equipment allowance.
+Planning envelope: $2.82 million, including a $1.5 million acquisition allowance, a $50,000 NEO Estates wellness / Temple-environment allowance and a 20-unit ASIC equipment allowance.
 
 ## Shelton Estate & Co. Fee Schedule
 - Scouting and initial underwriting: $5,000 minimum.
