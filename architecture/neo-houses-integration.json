@@ -2,7 +2,7 @@
   "module_id": "NEO-HOUSES-001",
   "name": "NEO Houses",
   "status": "canonical_planning_framework",
-  "version": "1.5",
+  "version": "1.6",
   "public_page": "https://holytemples.org/neo-houses/",
   "sponsor": "Shelton Estate & Co.",
   "operating_cycle": [
@@ -129,6 +129,12 @@
       "DEVELOPMENT / ACTIVATION",
       "OPERATING",
       "HOLD / ARCHIVE / REJECT"
+    ],
+    "seed_registry": "data/neo-estates/deals-2026-10-03.json",
+    "initial_priority": [
+      "NEO-EST-001",
+      "NEO-EST-002",
+      "NEO-EST-003"
     ]
   }
 }
