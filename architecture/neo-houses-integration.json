@@ -2,7 +2,7 @@
   "module_id": "NEO-HOUSES-001",
   "name": "NEO Houses",
   "status": "canonical_planning_framework",
-  "version": "1.1",
+  "version": "1.2",
   "public_page": "https://holytemples.org/neo-houses/",
   "sponsor": "Shelton Estate & Co.",
   "operating_cycle": [
@@ -74,5 +74,16 @@
     "retrofit_house": 30000,
     "purpose_built_house": 60000,
     "business_warehouse": 50000
+  },
+  "design_catalog": {
+    "public_page": "https://holytemples.org/neo-estates-design-catalog/",
+    "source": "content/neo-houses/architectural-design-catalog.md",
+    "prototypes": [
+      "NEO House Compact",
+      "NEO House Creator",
+      "Scholar / Neotherapy House",
+      "NEO Estate Compound",
+      "NEO Enterprise / Warehouse"
+    ]
   }
 }
