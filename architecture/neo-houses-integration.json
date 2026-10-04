@@ -2,7 +2,7 @@
   "module_id": "NEO-HOUSES-001",
   "name": "NEO Houses",
   "status": "canonical_planning_framework",
-  "version": "1.0",
+  "version": "1.1",
   "public_page": "https://holytemples.org/neo-houses/",
   "sponsor": "Shelton Estate & Co.",
   "operating_cycle": [
@@ -20,9 +20,9 @@
     "Business / Warehouse Acquisition"
   ],
   "planning_budgets_usd": {
-    "retrofit_house": 625000,
-    "purpose_built_house": 1416000,
-    "business_warehouse": 2770000
+    "retrofit_house": 655000,
+    "purpose_built_house": 1476000,
+    "business_warehouse": 2820000
   },
   "mining_policy": {
     "default": "mining_ready",
@@ -50,7 +50,29 @@
     "Project 144",
     "NEO Media",
     "NEOsync",
-    "Shelton Estate & Co."
+    "Shelton Estate & Co.",
+    "Neotherapy",
+    "NEO Estates"
   ],
-  "source_of_truth": "content/neo-houses/investment-package.md"
+  "source_of_truth": "content/neo-houses/investment-package.md",
+  "development_identity": "Shelton Estate & Co. NEO Estates",
+  "design_standard": {
+    "name": "Neotherapy Temple Healing Aesthetics",
+    "source": "content/neo-houses/neo-estates-design-standard.md",
+    "core_formula": [
+      "clean air",
+      "controlled sound",
+      "intentional light",
+      "natural texture",
+      "contemplative space",
+      "productive technology",
+      "dignified beauty"
+    ],
+    "medical_claims": false
+  },
+  "neo_estates_allowances_usd": {
+    "retrofit_house": 30000,
+    "purpose_built_house": 60000,
+    "business_warehouse": 50000
+  }
 }
