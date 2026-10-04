@@ -217,19 +217,34 @@ jobs:
           done
           echo "NEO edge domain mappings pending: $pending" >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Verify public NEO System workspace
+        if: ${{ !cancelled() && env.NEO_EDGE_SERVICE_URL != '' }}
+        run: |
+          set -euo pipefail
+          curl --connect-timeout 10 --max-time 30 --retry 3 --retry-delay 5 --retry-all-errors -fsS \
+            'https://neo.holytemples.org/' -o /tmp/neo-system-public-home.html
+          grep -q 'Welcome to NEO.' /tmp/neo-system-public-home.html
+          grep -q 'library-form' /tmp/neo-system-public-home.html
+          curl --connect-timeout 10 --max-time 30 --retry 3 --retry-delay 5 --retry-all-errors -fsS \
+            'https://neo.holytemples.org/health' -o /tmp/neo-system-public-health.json
+          node --input-type=module -e 'import fs from "node:fs";const health=JSON.parse(fs.readFileSync("/tmp/neo-system-public-health.json","utf8"));if(health.ok!==true)throw new Error("public_gateway_not_healthy");'
+          echo "NEO System workspace verified: https://neo.holytemples.org/" >> "$GITHUB_STEP_SUMMARY"
+
       - name: Verify NEO edge service and mapped public hosts
         run: |
           set -euo pipefail
           test -n "${NEO_EDGE_SERVICE_URL:-}"
           direct_code="$(curl --retry 5 --retry-delay 3 --retry-all-errors -sS -o /dev/null -w '%{http_code}' -H 'X-Forwarded-Host: neo.holytemples.org' "$NEO_EDGE_SERVICE_URL/health")"
+          echo "NEO origin health -> $direct_code"
           test "$direct_code" = 200
 
           leaders_routes=( "/" "/about/" "/world-parliament/" "/leadership/" "/contact/" )
           for route in "${leaders_routes[@]}"; do
             route_file="/tmp/leaders$(echo "$route" | tr '/-' '__').html"
             route_code="$(curl --retry 5 --retry-delay 3 --retry-all-errors -sS -o "$route_file" -w '%{http_code}' -H 'X-Forwarded-Host: leaders.holytemples.org' "$NEO_EDGE_SERVICE_URL$route")"
+            echo "leaders.holytemples.org$route -> $route_code"
             test "$route_code" = 200
-            grep -Eiq 'World Leaders Forum|World Parliament|Leadership|Contact the Forum|Official Forum for World Leaders' "$route_file"
+            grep -Eiq 'World Leaders Forum|World Parliament|Leadership|Contact the Forum|Official Forum for World Leaders' "$route_file" || { echo "::error::Expected forum content missing on $route"; exit 1; }
             if grep -q 'NEO Service' "$route_file"; then
               echo "::error::leaders route $route fell back to generic NEO Service shell"
               exit 1
@@ -267,21 +282,11 @@ jobs:
             host="$(node -e 'console.log(new URL(process.argv[1]).hostname)' "$url")"
             if gcloud beta run domain-mappings describe --domain="$host" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" >/dev/null 2>&1; then
               code="$(curl --retry 8 --retry-delay 10 --retry-all-errors -sS -o /dev/null -w '%{http_code}' "$url" || true)"
-              echo "$url -> $code" >> "$GITHUB_STEP_SUMMARY"
+              echo "$url -> $code"
+            echo "$url -> $code" >> "$GITHUB_STEP_SUMMARY"
               test "$code" = 200
             else
               echo "$url -> mapping pending (origin healthy)" >> "$GITHUB_STEP_SUMMARY"
             fi
           done
 
-      - name: Verify public NEO System workspace
-        run: |
-          set -euo pipefail
-          curl --connect-timeout 10 --max-time 30 --retry 3 --retry-delay 5 --retry-all-errors -fsS \
-            'https://neo.holytemples.org/' -o /tmp/neo-system-public-home.html
-          grep -q 'Welcome to NEO.' /tmp/neo-system-public-home.html
-          grep -q 'library-form' /tmp/neo-system-public-home.html
-          curl --connect-timeout 10 --max-time 30 --retry 3 --retry-delay 5 --retry-all-errors -fsS \
-            'https://neo.holytemples.org/health' -o /tmp/neo-system-public-health.json
-          node --input-type=module -e 'import fs from "node:fs";const health=JSON.parse(fs.readFileSync("/tmp/neo-system-public-health.json","utf8"));if(health.ok!==true)throw new Error("public_gateway_not_healthy");'
-          echo "NEO System workspace verified: https://neo.holytemples.org/" >> "$GITHUB_STEP_SUMMARY"
