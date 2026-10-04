@@ -2,7 +2,7 @@
   "module_id": "NEO-HOUSES-001",
   "name": "NEO Houses",
   "status": "canonical_planning_framework",
-  "version": "1.3",
+  "version": "1.4",
   "public_page": "https://holytemples.org/neo-houses/",
   "sponsor": "Shelton Estate & Co.",
   "operating_cycle": [
@@ -97,5 +97,17 @@
       "NEO Enterprise / Warehouse"
     ],
     "status": "schematic_concept_only"
+  },
+  "property_scouting": {
+    "public_page": "https://holytemples.org/neo-estates-site-fit-matrix/",
+    "source": "content/neo-houses/property-scouting-site-fit-matrix.md",
+    "scoring_total": 100,
+    "decision_bands": {
+      "priority_acquisition": "85-100",
+      "strong_candidate": "70-84",
+      "conditional_renegotiate": "55-69",
+      "watch_special_situation": "40-54",
+      "reject": "below 40"
+    }
   }
 }
