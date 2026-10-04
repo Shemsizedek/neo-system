@@ -17,9 +17,23 @@ This package converts the NEO Estates Architectural Design Catalog into schemati
 7. Landscape should connect to fellowship and Neotherapy zones first.
 8. A clear egress and life-safety path governs all layouts.
 
+## NEO House Construction & Eco-Village Styles
+Each prototype defines program and function rather than one required exterior form. Approved NEO House styles may include:
+- eco-village homes;
+- dome homes;
+- earth homes;
+- tiny homes;
+- treehouse homes;
+- container homes;
+- yurt homes;
+- conventional high-performance residences.
+
+Selection depends on land, climate, building code, financing, engineering, operations and intended use.
+
 ## Prototype A — NEO House Compact
 Target: 3–5 residents
 Approximate gross area: 1,800–2,800 sq ft
+Best-fit styles: tiny home, yurt home, earth home, treehouse home, container home, compact eco-village cottage.
 
 ### Program
 - Entry / Threshold
@@ -49,6 +63,7 @@ Use the house as a human-first residence. Productive compute is physically secon
 ## Prototype B — NEO House Creator
 Target: 6–10 residents
 Approximate gross area: 3,500–6,000 sq ft
+Best-fit styles: eco-village home, dome home, container home, modern creator residence, clustered tiny-home compound.
 
 ### Program
 - Formal Entry
@@ -79,6 +94,7 @@ Creator activity forms one wing; residential and Neotherapy form another. The Gr
 
 ## Prototype C — Scholar / Neotherapy House
 Target: 6–12 residents or mixed residential/day-program use
+Best-fit styles: earth home, dome home, yurt cluster, healing-retreat residence, courtyard eco-village home.
 
 ### Program
 - Entry / Reception
@@ -107,6 +123,7 @@ This prototype prioritizes quiet learning, contemplative use, and Neotherapy ins
 
 ## Prototype D — NEO Estate Compound
 Target: multi-building flagship site
+Best-fit styles: mixed eco-village cluster using cottages, domes, yurts, treehouses, earth homes, container studios and tiny homes.
 
 ### Site Components
 1. Main House — fellowship, dining, family/leadership residence
@@ -134,6 +151,7 @@ Human, ceremonial, educational, and creator movement occurs around the central g
 
 ## Prototype E — NEO Enterprise / Warehouse
 Target: acquired operating business, light-industrial or warehouse asset
+Best-fit styles: warehouse conversion, container-based annexes, live-work enterprise campus, modular staff or creator housing.
 
 ### Program
 - Reception / business entry
