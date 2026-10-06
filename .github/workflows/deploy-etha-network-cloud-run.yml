@@ -1,0 +1,69 @@
+name: Deploy ETHA Network to Cloud Run
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['server/etha-network/**','deploy/etha-network/**','.github/workflows/deploy-etha-network-cloud-run.yml']
+permissions: {contents: read, id-token: write}
+concurrency: {group: etha-network-cloud-run, cancel-in-progress: false}
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: holytemples-production
+    timeout-minutes: 30
+    env:
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID || secrets.GCP_PROJECT_ID }}
+      GCP_REGION: ${{ vars.GCP_REGION || secrets.GCP_REGION }}
+      GCP_WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER || secrets.GCP_WIF_PROVIDER }}
+      GCP_CLOUD_RUN_SERVICE_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_SERVICE_ACCOUNT || secrets.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+      GCP_CLOUD_RUN_RUNTIME_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_RUNTIME_ACCOUNT || secrets.GCP_CLOUD_RUN_RUNTIME_ACCOUNT }}
+      GCP_ARTIFACT_REGISTRY: ${{ vars.GCP_ARTIFACT_REGISTRY || secrets.GCP_ARTIFACT_REGISTRY }}
+      SERVICE_NAME: etha-network
+      KEY_SECRET: etha-crown-workload-key
+      OPERATOR_SECRET: etha-crown-operator-token
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v4
+        with: {node-version: 24}
+      - name: Test ETHA workload identity
+        run: node --test server/etha-network/*.test.mjs
+      - name: Validate deployment configuration
+        run: |
+          set -euo pipefail
+          for name in GCP_PROJECT_ID GCP_REGION GCP_WIF_PROVIDER GCP_CLOUD_RUN_SERVICE_ACCOUNT GCP_CLOUD_RUN_RUNTIME_ACCOUNT GCP_ARTIFACT_REGISTRY; do test -n "${!name:-}" || exit 1; done
+      - uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@v3
+      - name: Provision ETHA workload secrets once
+        run: |
+          set -euo pipefail
+          if ! gcloud secrets versions access latest --secret="$KEY_SECRET" --project="$GCP_PROJECT_ID" >/dev/null 2>&1; then
+            openssl genpkey -algorithm ED25519 -out /tmp/etha-workload.pem
+            gcloud secrets describe "$KEY_SECRET" --project="$GCP_PROJECT_ID" >/dev/null 2>&1 || gcloud secrets create "$KEY_SECRET" --project="$GCP_PROJECT_ID" --replication-policy=automatic
+            gcloud secrets versions add "$KEY_SECRET" --project="$GCP_PROJECT_ID" --data-file=/tmp/etha-workload.pem >/dev/null
+          fi
+          if ! gcloud secrets versions access latest --secret="$OPERATOR_SECRET" --project="$GCP_PROJECT_ID" >/dev/null 2>&1; then
+            openssl rand -hex 32 > /tmp/etha-operator.txt
+            gcloud secrets describe "$OPERATOR_SECRET" --project="$GCP_PROJECT_ID" >/dev/null 2>&1 || gcloud secrets create "$OPERATOR_SECRET" --project="$GCP_PROJECT_ID" --replication-policy=automatic
+            gcloud secrets versions add "$OPERATOR_SECRET" --project="$GCP_PROJECT_ID" --data-file=/tmp/etha-operator.txt >/dev/null
+          fi
+      - name: Build and deploy ETHA
+        env: {IMAGE: "${{ env.GCP_ARTIFACT_REGISTRY }}/etha-network:${{ github.sha }}"}
+        run: |
+          set -euo pipefail
+          gcloud auth configure-docker "${GCP_REGION}-docker.pkg.dev" --quiet
+          docker build -f deploy/etha-network/Dockerfile -t "$IMAGE" .
+          docker push "$IMAGE"
+          gcloud run deploy "$SERVICE_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --image="$IMAGE" --service-account="$GCP_CLOUD_RUN_RUNTIME_ACCOUNT" --port=8080 --allow-unauthenticated --set-env-vars="CROWN_ORIGIN=https://crown.holytemples.org" --set-secrets="ETHA_CROWN_PRIVATE_KEY=$KEY_SECRET:latest,ETHA_OPERATOR_TOKEN=$OPERATOR_SECRET:latest" --quiet
+      - name: Verify and request Crown enrollment
+        run: |
+          set -euo pipefail
+          URL="$(gcloud run services describe "$SERVICE_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format='value(status.url)')"
+          test "$(curl --retry 6 --retry-delay 5 -sS -o /dev/null -w '%{http_code}' "$URL/health")" = 200
+          curl -fsS "$URL/crown/identity" >/tmp/etha-identity.json
+          TOKEN="$(gcloud secrets versions access latest --secret="$OPERATOR_SECRET" --project="$GCP_PROJECT_ID")"
+          curl -fsS -X POST -H "Authorization: Bearer $TOKEN" "$URL/crown/enroll-request" >/tmp/crown-enrollment.json
+          echo "ETHA production workload deployed; Crown enrollment is pending Grand Sheik biometric approval." >> "$GITHUB_STEP_SUMMARY"
