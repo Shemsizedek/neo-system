@@ -11,10 +11,26 @@ const body=async req=>{let raw='';for await(const chunk of req){raw+=chunk;if(ra
 const authorized=req=>req.headers.authorization===`Bearer ${operatorToken}`
 const post=async(path,payload)=>{const r=await fetch(`${crown}${path}`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)});const j=await r.json();if(!r.ok)throw new Error(j.error||`Crown HTTP ${r.status}`);return j}
 
+let proofCache={at:0,result:null}
+async function crownProof(scopes=['crown.api.read']){
+  const challenge=await post('/api/v1/trust/challenge',{service_id:SERVICE_ID,key_id:KEY_ID,scopes})
+  const signature=signCrownInput(privatePem,challenge.signing_input)
+  const issued=await post('/api/v1/trust/token',{ceremony:challenge.ceremony,signature})
+  const verified=await post('/api/v1/trust/verify',{authorization:issued.authorization,required_scope:scopes[0]||''})
+  return {gate:'CROWN-028',service_id:SERVICE_ID,key_id:KEY_ID,verified:verified.valid===true,scopes:issued.scopes,expires_in:issued.expires_in,token_exposed:false,private_key_exposed:false}
+}
+
 const server=http.createServer(async(req,res)=>{try{
   const url=new URL(req.url,'http://localhost')
   if(req.method==='GET'&&url.pathname==='/health')return json(res,200,{service:'etha-network',status:'UP',crownWorkloadIdentity:'READY',bitcoinCustody:false})
   if(req.method==='GET'&&url.pathname==='/crown/identity')return json(res,200,identity)
+  if(req.method==='GET'&&url.pathname==='/crown/proof'){
+    const now=Date.now()
+    if(!proofCache.result||now-proofCache.at>60000){
+      proofCache={at:now,result:await crownProof(['crown.api.read'])}
+    }
+    return json(res,proofCache.result.verified?200:503,proofCache.result)
+  }
   if(req.method==='POST'&&url.pathname==='/crown/enroll-request'){
     if(!authorized(req))return json(res,401,{error:'UNAUTHORIZED'})
     return json(res,200,await post('/api/v1/trust/service-key/request',{service_id:SERVICE_ID,key_id:KEY_ID,public_key:identity.public_key}))
@@ -22,11 +38,7 @@ const server=http.createServer(async(req,res)=>{try{
   if(req.method==='POST'&&url.pathname==='/crown/prove'){
     if(!authorized(req))return json(res,401,{error:'UNAUTHORIZED'})
     const input=await body(req),scopes=Array.isArray(input.scopes)?input.scopes:['crown.api.read']
-    const challenge=await post('/api/v1/trust/challenge',{service_id:SERVICE_ID,key_id:KEY_ID,scopes})
-    const signature=signCrownInput(privatePem,challenge.signing_input)
-    const issued=await post('/api/v1/trust/token',{ceremony:challenge.ceremony,signature})
-    const verified=await post('/api/v1/trust/verify',{authorization:issued.authorization,required_scope:scopes[0]||''})
-    return json(res,200,{gate:'CROWN-027',service_id:SERVICE_ID,verified:verified.valid===true,scopes:issued.scopes,expires_in:issued.expires_in})
+    return json(res,200,await crownProof(scopes))
   }
   return json(res,404,{error:'NOT_FOUND'})
 }catch(error){return json(res,502,{error:'CROWN_WORKLOAD_FLOW_FAILED',message:error.message})}})
