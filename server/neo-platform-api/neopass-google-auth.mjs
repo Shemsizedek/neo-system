@@ -3,6 +3,7 @@ import { promisify } from 'node:util';
 
 const SESSION_COOKIE = 'neo_pass_session';
 const BROWSER_TOKEN_TTL_SECONDS = 5 * 60;
+const CROWN_ATTESTATION_TTL_SECONDS = 5 * 60;
 const scrypt = promisify(scryptCallback);
 
 function encode(value) { return Buffer.from(JSON.stringify(value)).toString('base64url'); }
@@ -15,6 +16,24 @@ export function issueNeopassToken({ subject, secret, issuer = 'neo-pass', now = 
   const payload = encode({ ...claims, sub: subject, iss: issuer, iat: issuedAt, exp: issuedAt + ttlSeconds });
   const signature = createHmac('sha256', secret).update(`${header}.${payload}`).digest('base64url');
   return `${header}.${payload}.${signature}`;
+}
+
+export function verifyNeopassToken(token, { secret, issuer = 'neo-pass', now = () => Date.now() } = {}) {
+  if (!secret || !token) return null;
+  const parts = String(token).split('.');
+  if (parts.length !== 3) return null;
+  try {
+    const header = JSON.parse(Buffer.from(parts[0], 'base64url').toString('utf8'));
+    const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8'));
+    const value = now();
+    const nowSeconds = Math.floor((typeof value === 'number' ? value : Date.parse(value)) / 1000);
+    if (header.alg !== 'HS256' || header.typ !== 'JWT' || !payload.sub ||
+        (payload.exp && Number(payload.exp) <= nowSeconds) || (issuer && payload.iss !== issuer)) return null;
+    const expected = createHmac('sha256', secret).update(`${parts[0]}.${parts[1]}`).digest();
+    const actual = Buffer.from(parts[2], 'base64url');
+    if (actual.length !== expected.length || !timingSafeEqual(actual, expected)) return null;
+    return payload;
+  } catch { return null; }
 }
 
 export function sessionCookie(token, { maxAge = 60 * 60 * 8 } = {}) {
@@ -42,7 +61,7 @@ async function verifyPassword(password, encoded) {
 
 export function createGoogleNeopassAuth({ clientId, jwtSecret, jwtIssuer = 'neo-pass', registry, verifyGoogleCredential, executiveAdminEmail = process.env.NEO_EXECUTIVE_ADMIN_EMAIL, executiveAdminUsername = process.env.NEO_EXECUTIVE_ADMIN_USERNAME || 'Shemsizedek', now = () => Date.now() } = {}) {
   if (!clientId || !jwtSecret || !registry || !verifyGoogleCredential) return null;
-  const executiveMember = subject => ({ subject, email: executiveAdminEmail, username: executiveAdminUsername, displayName: 'H.I.M Dr. Lawiy Zodok', neopassStatus: 'active', role: 'executive-admin', hasPassword: false, storageStatus: 'activation-pending' });
+  const executiveMember = subject => ({ subject, email: executiveAdminEmail, username: executiveAdminUsername, displayName: 'H.I.M Dr. Lawiy Zodok', neopassStatus: 'active', role: 'executive-admin', crownOfficeSlot: 'CROWN-ROOT-A', hasPassword: false, storageStatus: 'activation-pending' });
   return {
     clientId,
     async session(subject, sessionClaims = {}) {
@@ -51,7 +70,27 @@ export function createGoogleNeopassAuth({ clientId, jwtSecret, jwtIssuer = 'neo-
       try { record = await registry.getNEOpassCredential(subject); }
       catch { return { subject, displayName: 'NEOpass Member', neopassStatus: 'pending', storageStatus: 'unavailable' }; }
       if (!record) return { subject, displayName: 'NEOpass Member', neopassStatus: 'pending' };
-      return { subject, email: record.email, username: record.username, displayName: record.displayName, picture: record.picture, neopassStatus: record.status, role: record.role || 'member', hasPassword: Boolean(record.passwordHash) };
+      if (record.role === 'executive-admin' && record.email?.toLowerCase() === executiveAdminEmail?.toLowerCase()) return { ...executiveMember(subject), hasPassword: Boolean(record.passwordHash), storageStatus: undefined };
+      return { subject, email: record.email, username: record.username, displayName: record.displayName, picture: record.picture, neopassStatus: record.status, role: record.role || 'member', crownOfficeSlot: record.crownOfficeSlot || null, hasPassword: Boolean(record.passwordHash) };
+    },
+    async crownAttestation(subject, requestedSlot, sessionClaims = {}) {
+      if (!subject) throw new Error('neopass_identity_required');
+      const member = await this.session(subject, sessionClaims);
+      if (member.neopassStatus !== 'active' && member.role !== 'executive-admin') throw new Error('neopass_active_membership_required');
+      const slot = String(requestedSlot || '').trim();
+      if (!member.crownOfficeSlot || slot !== member.crownOfficeSlot) throw new Error('crown_office_authorization_required');
+      const personId = `neopass:${createHmac('sha256', jwtSecret).update(subject).digest('hex').slice(0, 24)}`;
+      const jti = randomBytes(18).toString('base64url');
+      const token = issueNeopassToken({ subject, secret: jwtSecret, issuer: jwtIssuer, now,
+        ttlSeconds: CROWN_ATTESTATION_TTL_SECONDS,
+        claims: { scope: 'crown:root-enroll', token_use: 'crown-office-attestation', slot, person_id: personId, jti } });
+      return { token, expiresIn: CROWN_ATTESTATION_TTL_SECONDS, slot, personId };
+    },
+    verifyCrownAttestation(token) {
+      const claims = verifyNeopassToken(token, { secret: jwtSecret, issuer: jwtIssuer, now });
+      if (!claims || claims.scope !== 'crown:root-enroll' || claims.token_use !== 'crown-office-attestation' ||
+          !/^CROWN-ROOT-[ABC]$/.test(String(claims.slot || '')) || !claims.person_id || !claims.jti) return null;
+      return { subject: claims.sub, slot: claims.slot, personId: claims.person_id, jti: claims.jti, expiresAt: claims.exp };
     },
     async browserToken(subject, sessionClaims = {}) {
       if (!subject) throw new Error('neopass_identity_required');
@@ -143,4 +182,4 @@ export function createGoogleNeopassAuth({ clientId, jwtSecret, jwtIssuer = 'neo-
   };
 }
 
-export { SESSION_COOKIE, BROWSER_TOKEN_TTL_SECONDS };
+export { SESSION_COOKIE, BROWSER_TOKEN_TTL_SECONDS, CROWN_ATTESTATION_TTL_SECONDS };
