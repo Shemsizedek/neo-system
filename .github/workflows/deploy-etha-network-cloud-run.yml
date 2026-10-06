@@ -46,7 +46,7 @@ jobs:
             gcloud secrets versions add "$KEY_SECRET" --project="$GCP_PROJECT_ID" --data-file=/tmp/etha-workload.pem >/dev/null
           fi
           if ! gcloud secrets versions access latest --secret="$OPERATOR_SECRET" --project="$GCP_PROJECT_ID" >/dev/null 2>&1; then
-            openssl rand -hex 32 > /tmp/etha-operator.txt
+            openssl rand -hex 32 | tr -d '\n' > /tmp/etha-operator.txt
             gcloud secrets describe "$OPERATOR_SECRET" --project="$GCP_PROJECT_ID" >/dev/null 2>&1 || gcloud secrets create "$OPERATOR_SECRET" --project="$GCP_PROJECT_ID" --replication-policy=automatic
             gcloud secrets versions add "$OPERATOR_SECRET" --project="$GCP_PROJECT_ID" --data-file=/tmp/etha-operator.txt >/dev/null
           fi
@@ -64,6 +64,7 @@ jobs:
           URL="$(gcloud run services describe "$SERVICE_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format='value(status.url)')"
           test "$(curl --retry 6 --retry-delay 5 -sS -o /dev/null -w '%{http_code}' "$URL/health")" = 200
           curl -fsS "$URL/crown/identity" >/tmp/etha-identity.json
-          TOKEN="$(gcloud secrets versions access latest --secret="$OPERATOR_SECRET" --project="$GCP_PROJECT_ID")"
+          TOKEN="$(gcloud secrets versions access latest --secret="$OPERATOR_SECRET" --project="$GCP_PROJECT_ID" | tr -d '\r\n')"
+          test -n "$TOKEN"
           curl -fsS -X POST -H "Authorization: Bearer $TOKEN" "$URL/crown/enroll-request" >/tmp/crown-enrollment.json
           echo "ETHA production workload deployed; Crown enrollment is pending Grand Sheik biometric approval." >> "$GITHUB_STEP_SUMMARY"

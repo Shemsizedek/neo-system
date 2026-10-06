@@ -2,12 +2,13 @@ import http from 'node:http'
 import {SERVICE_ID,KEY_ID,workloadIdentity,signCrownInput} from './identity.mjs'
 
 const port=Number(process.env.PORT||8080),crown=(process.env.CROWN_ORIGIN||'https://crown.holytemples.org').replace(/\/$/,'')
-const privatePem=process.env.ETHA_CROWN_PRIVATE_KEY||'',operatorToken=process.env.ETHA_OPERATOR_TOKEN||''
+const privatePem=process.env.ETHA_CROWN_PRIVATE_KEY||'',operatorToken=(process.env.ETHA_OPERATOR_TOKEN||'').trim()
 if(!privatePem)throw new Error('ETHA_CROWN_PRIVATE_KEY is required')
+if(!operatorToken)throw new Error('ETHA_OPERATOR_TOKEN is required')
 const identity=workloadIdentity(privatePem)
 const json=(res,status,body)=>{const data=Buffer.from(JSON.stringify(body));res.writeHead(status,{'content-type':'application/json','content-length':data.length,'cache-control':'no-store'});res.end(data)}
 const body=async req=>{let raw='';for await(const chunk of req){raw+=chunk;if(raw.length>65536)throw new Error('request too large')}return raw?JSON.parse(raw):{}}
-const authorized=req=>operatorToken&&req.headers.authorization===`Bearer ${operatorToken}`
+const authorized=req=>req.headers.authorization===`Bearer ${operatorToken}`
 const post=async(path,payload)=>{const r=await fetch(`${crown}${path}`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)});const j=await r.json();if(!r.ok)throw new Error(j.error||`Crown HTTP ${r.status}`);return j}
 
 const server=http.createServer(async(req,res)=>{try{
