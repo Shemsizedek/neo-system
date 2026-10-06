@@ -1,0 +1,3 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {generateKeyPairSync,verify} from 'node:crypto'
+import {SERVICE_ID,workloadIdentity,signCrownInput} from './identity.mjs'
+test('ETHA identity exposes only Ed25519 public workload identity',()=>{const {privateKey,publicKey}=generateKeyPairSync('ed25519'),pem=privateKey.export({format:'pem',type:'pkcs8'}).toString(),id=workloadIdentity(pem);assert.equal(id.service_id,SERVICE_ID);assert.equal(id.private_key_exposed,false);assert.ok(id.public_key);const input=Buffer.from('crown-proof'),encoded=input.toString('base64url'),sig=Buffer.from(signCrownInput(pem,encoded),'base64url');assert.equal(verify(null,input,publicKey,sig),true)})
