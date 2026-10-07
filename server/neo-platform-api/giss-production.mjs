@@ -9,6 +9,7 @@ import { createFirestoreCrmStore } from './firestore-crm-store.mjs';
 import { createFirestoreSchoolStore } from './firestore-school-store.mjs';
 import { createSchoolActionHandler } from './giss-school-actions.mjs';
 import { attachNeopassBrowserTokenExchange } from './browser-token-exchange.mjs';
+import { createCrownServiceAuthorizer } from './crown-service-authorizer.mjs';
 
 export function createGissProductionServer({
   projectId = process.env.GOOGLE_CLOUD_PROJECT || process.env.GCP_PROJECT_ID,
@@ -18,6 +19,7 @@ export function createGissProductionServer({
   googleClientId = process.env.GOOGLE_OAUTH_CLIENT_ID,
   executiveAdminEmail = process.env.NEO_EXECUTIVE_ADMIN_EMAIL,
   executiveAdminUsername = process.env.NEO_EXECUTIVE_ADMIN_USERNAME || 'Shemsizedek',
+  crownServiceAuthorizer = null,
   now = () => new Date().toISOString()
 } = {}) {
   if (!projectId) throw new Error('gcp_project_required');
@@ -35,8 +37,14 @@ export function createGissProductionServer({
     return ticket.getPayload();
   };
   const authService = createGoogleNeopassAuth({ clientId: googleClientId, jwtSecret, jwtIssuer, registry, verifyGoogleCredential, executiveAdminEmail, executiveAdminUsername });
+  const serviceAuthorizer = crownServiceAuthorizer || createCrownServiceAuthorizer({agents:{
+    neopass:{url:process.env.NEOPASS_CROWN_AGENT_URL,operatorToken:process.env.NEOPASS_CROWN_OPERATOR_TOKEN},
+    'neo-pay':{url:process.env.NEO_PAY_CROWN_AGENT_URL,operatorToken:process.env.NEO_PAY_CROWN_OPERATOR_TOKEN},
+    'nomni-treasury':{url:process.env.NOMNI_TREASURY_CROWN_AGENT_URL,operatorToken:process.env.NOMNI_TREASURY_CROWN_OPERATOR_TOKEN},
+    'nous-os':{url:process.env.NOUS_OS_CROWN_AGENT_URL,operatorToken:process.env.NOUS_OS_CROWN_OPERATOR_TOKEN}
+  }});
 
-  const server = createNeoPlatformApi({ templeGissRuntime, subjectResolver, authService, crmStore, schoolStore, now });
+  const server = createNeoPlatformApi({ templeGissRuntime, subjectResolver, authService, crmStore, schoolStore, crownServiceAuthorizer:serviceAuthorizer, now });
   const coreHandler = server.listeners('request')[0];
   const schoolActions = createSchoolActionHandler({ schoolStore, subjectResolver });
   server.removeAllListeners('request');
