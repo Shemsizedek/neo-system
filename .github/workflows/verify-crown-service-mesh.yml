@@ -103,14 +103,8 @@ jobs:
             --data "$payload" \
             "$URL/crown/prove" > /tmp/allowed.json
 
-          python3 - <<'PY'
-import json
-d=json.load(open('/tmp/allowed.json'))
-assert d.get('verified') is True, d
-assert d.get('token_exposed') is False, d
-assert d.get('private_key_exposed') is False, d
-print('allowed-scope proof PASS')
-PY
+          jq -e '.verified == true and .token_exposed == false and .private_key_exposed == false' /tmp/allowed.json >/dev/null
+          echo "allowed-scope proof PASS"
 
           code="$(curl -sS -o /tmp/denied.json -w '%{http_code}' -X POST             -H "Authorization: Bearer $TOKEN"             -H "Content-Type: application/json"             --data '{"scopes":["crown.root.sign"]}'             "$URL/crown/prove")"
           test "$code" != "200"
