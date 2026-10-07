@@ -1,0 +1,114 @@
+name: Deploy Crown Tier-2 Workload Agents
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'server/crown-workload-agent/**'
+      - '.github/workflows/deploy-crown-tier2-agents.yml'
+permissions: {contents: read, id-token: write}
+concurrency: {group: crown-tier2-agents, cancel-in-progress: false}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: holytemples-production
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - slug: neo-counter
+            service_name: neo-counter-crown-agent
+            service_id: crown:btc:app:neo-counter
+            key_id: neo-counter-prod-1
+          - slug: neo-dex
+            service_name: neo-dex-crown-agent
+            service_id: crown:btc:app:neo-dex
+            key_id: neo-dex-prod-1
+          - slug: neo-explorer
+            service_name: neo-explorer-crown-agent
+            service_id: crown:btc:app:neo-explorer
+            key_id: neo-explorer-prod-1
+          - slug: neo-teller
+            service_name: neo-teller-crown-agent
+            service_id: crown:btc:app:neo-teller
+            key_id: neo-teller-prod-1
+          - slug: neo-tokenworks
+            service_name: neo-tokenworks-crown-agent
+            service_id: crown:btc:app:neo-tokenworks
+            key_id: neo-tokenworks-prod-1
+          - slug: neo-wire
+            service_name: neo-wire-crown-agent
+            service_id: crown:btc:app:neo-wire
+            key_id: neo-wire-prod-1
+          - slug: tokenpass
+            service_name: tokenpass-crown-agent
+            service_id: crown:btc:app:tokenpass
+            key_id: tokenpass-prod-1
+    env:
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID || secrets.GCP_PROJECT_ID }}
+      GCP_REGION: ${{ vars.GCP_REGION || secrets.GCP_REGION }}
+      GCP_WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER || secrets.GCP_WIF_PROVIDER }}
+      GCP_CLOUD_RUN_SERVICE_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_SERVICE_ACCOUNT || secrets.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+      GCP_CLOUD_RUN_RUNTIME_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_RUNTIME_ACCOUNT || secrets.GCP_CLOUD_RUN_RUNTIME_ACCOUNT }}
+      GCP_ARTIFACT_REGISTRY: ${{ vars.GCP_ARTIFACT_REGISTRY || secrets.GCP_ARTIFACT_REGISTRY }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v4
+        with: {node-version: 24}
+      - name: Test Crown workload agent
+        run: node --test server/crown-workload-agent/*.test.mjs
+      - name: Validate deployment configuration
+        run: |
+          set -euo pipefail
+          for name in GCP_PROJECT_ID GCP_REGION GCP_WIF_PROVIDER GCP_CLOUD_RUN_SERVICE_ACCOUNT GCP_CLOUD_RUN_RUNTIME_ACCOUNT GCP_ARTIFACT_REGISTRY; do
+            test -n "${!name:-}" || exit 1
+          done
+      - uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@v3
+      - name: Provision isolated workload secrets
+        env:
+          KEY_SECRET: ${{ matrix.slug }}-crown-workload-key
+          OPERATOR_SECRET: ${{ matrix.slug }}-crown-operator-token
+        run: |
+          set -euo pipefail
+          if ! gcloud secrets versions access latest --secret="$KEY_SECRET" --project="$GCP_PROJECT_ID" >/dev/null 2>&1; then
+            openssl genpkey -algorithm ED25519 -out /tmp/workload.pem
+            gcloud secrets describe "$KEY_SECRET" --project="$GCP_PROJECT_ID" >/dev/null 2>&1 || gcloud secrets create "$KEY_SECRET" --project="$GCP_PROJECT_ID" --replication-policy=automatic
+            gcloud secrets versions add "$KEY_SECRET" --project="$GCP_PROJECT_ID" --data-file=/tmp/workload.pem >/dev/null
+          fi
+          if ! gcloud secrets versions access latest --secret="$OPERATOR_SECRET" --project="$GCP_PROJECT_ID" >/dev/null 2>&1; then
+            openssl rand -hex 32 | tr -d '\n' >/tmp/operator.txt
+            gcloud secrets describe "$OPERATOR_SECRET" --project="$GCP_PROJECT_ID" >/dev/null 2>&1 || gcloud secrets create "$OPERATOR_SECRET" --project="$GCP_PROJECT_ID" --replication-policy=automatic
+            gcloud secrets versions add "$OPERATOR_SECRET" --project="$GCP_PROJECT_ID" --data-file=/tmp/operator.txt >/dev/null
+          fi
+      - name: Build and deploy Crown workload agent
+        env:
+          IMAGE: "${{ env.GCP_ARTIFACT_REGISTRY }}/crown-workload-agent:${{ github.sha }}"
+          KEY_SECRET: ${{ matrix.slug }}-crown-workload-key
+          OPERATOR_SECRET: ${{ matrix.slug }}-crown-operator-token
+          SERVICE_NAME: ${{ matrix.service_name }}
+          SERVICE_ID: ${{ matrix.service_id }}
+          KEY_ID: ${{ matrix.key_id }}
+        run: |
+          set -euo pipefail
+          gcloud auth configure-docker "${GCP_REGION}-docker.pkg.dev" --quiet
+          docker build -f server/crown-workload-agent/Dockerfile -t "$IMAGE" server/crown-workload-agent
+          docker push "$IMAGE"
+          gcloud run deploy "$SERVICE_NAME"             --project="$GCP_PROJECT_ID"             --region="$GCP_REGION"             --image="$IMAGE"             --service-account="$GCP_CLOUD_RUN_RUNTIME_ACCOUNT"             --port=8080             --allow-unauthenticated             --set-env-vars="CROWN_ORIGIN=https://crown.holytemples.org,CROWN_SERVICE_ID=$SERVICE_ID,CROWN_KEY_ID=$KEY_ID"             --set-secrets="CROWN_WORKLOAD_PRIVATE_KEY=$KEY_SECRET:latest,CROWN_WORKLOAD_OPERATOR_TOKEN=$OPERATOR_SECRET:latest"             --quiet
+      - name: Submit public Crown enrollment request
+        env:
+          SERVICE_NAME: ${{ matrix.service_name }}
+          OPERATOR_SECRET: ${{ matrix.slug }}-crown-operator-token
+        run: |
+          set -euo pipefail
+          URL="$(gcloud run services describe "$SERVICE_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format='value(status.url)')"
+          test "$(curl --retry 8 --retry-delay 5 -sS -o /dev/null -w '%{http_code}' "$URL/health")" = 200
+          TOKEN="$(gcloud secrets versions access latest --secret="$OPERATOR_SECRET" --project="$GCP_PROJECT_ID" | tr -d '\r\n')"
+          curl -fsS -X POST -H "Authorization: Bearer $TOKEN" "$URL/crown/enroll-request" >/tmp/enrollment.json
+          echo "${{ matrix.service_id }} submitted a public Crown enrollment request." >> "$GITHUB_STEP_SUMMARY"
