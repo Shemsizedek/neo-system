@@ -393,8 +393,280 @@ The geometry serves the city; the city does not serve the geometry.
 
 ---
 
-# Next Gate — Chapter 9
+# Chapter 9 — Neo Smart Home Product Platform & Residential Development Program
 
-**Neo Smart Home Product Platform & Residential Development Program**
+## 9.1 Product Mission
 
-Next work package: establish the actual housing product line—prototype tiers, floor-plan families, modular/prefab qualification, all-in delivered-cost model, smart-home baseline, energy/water package, accessibility, ownership/rental/lease-to-own strategies, construction QC, vendor qualification, digital building passport and first demonstration-home deployment sequence.
+The Neo Smart Home is Project144's repeatable residential product platform. It must be affordable enough to scale, durable enough to finance and insure, adaptable enough for multiple sites, and technically structured to participate in the wider Nu City energy, water, digital and economic systems.
+
+A Neo Smart Home is therefore not defined by a futuristic appearance. It is defined by measurable performance and interoperability.
+
+## 9.2 Product Families
+
+The initial platform should support four product families rather than one universal house.
+
+### NEO Home A — Compact
+
+Target use: individuals, couples, starter households, guest/staff housing and small-footprint infill.
+
+Conceptual size band: **400–800 sq ft**, subject to local code and market feasibility.
+
+### NEO Home B — Standard
+
+Target use: small families and the principal attainable-home product.
+
+Conceptual size band: **800–1,400 sq ft**.
+
+### NEO Home C — Family / Live-Work
+
+Target use: larger households, multigenerational configurations and approved home-enterprise/live-work layouts.
+
+Conceptual size band: **1,400–2,200 sq ft**.
+
+### NEO Home D — Accessible / Adaptive
+
+A configuration standard rather than merely a size class. It incorporates step-free access, adaptable circulation and other universal-design features where appropriate. Accessibility should also be available as an option across other product families.
+
+These are planning envelopes, not promises of final floor area or price.
+
+## 9.3 Construction-System Qualification
+
+Project144 may source conventional site-built, modular, panelized, prefabricated, manufactured or other alternative systems where lawful.
+
+Every candidate system must pass a qualification matrix covering:
+- code pathway and certification;
+- structural/wind/seismic suitability for the target jurisdiction;
+- fire performance;
+- moisture and thermal performance;
+- insurance and lender acceptance;
+- transport limitations;
+- foundation requirements;
+- local labor requirements;
+- warranty;
+- replacement-part availability;
+- lifecycle maintenance;
+- production capacity;
+- delivered schedule;
+- all-in delivered cost.
+
+A low factory price alone does not qualify a house.
+
+## 9.4 All-In Delivered Cost Model
+
+Every Neo Smart Home pro forma must separate:
+
+**Factory / Building Cost**  
++ freight and logistics  
++ site preparation  
++ foundation  
++ installation / crane where required  
++ utility connections  
++ permits and impact fees  
++ architecture / engineering  
++ inspections  
++ roads and common-infrastructure allocation  
++ landscaping / exterior work  
++ financing and carrying cost  
++ development / project management  
++ contingency  
+= **All-In Delivered Cost**
+
+The previously discussed $17,000–$20,000 alternative-home range may be retained as a sourcing target for qualifying structures, but it must never be presented as the expected finished-home cost without a complete delivered-cost analysis.
+
+## 9.5 Smart-Home Baseline
+
+The production baseline should prioritize systems that improve operations rather than gadgets.
+
+Minimum target capabilities:
+- broadband-ready structured wiring;
+- secure local network;
+- energy monitoring;
+- smart thermostat / climate control where applicable;
+- leak detection and shutoff readiness;
+- smart electrical-load management readiness;
+- solar-ready electrical design;
+- battery / backup-power readiness;
+- EV or micromobility charging readiness where appropriate;
+- interoperable sensors;
+- manual/local fallback for essential functions.
+
+Vendor-specific cloud services should not become a single point of failure for basic habitability.
+
+## 9.6 Energy Package
+
+Neo Smart Homes should follow the hierarchy:
+
+**Reduce Load → Efficient Equipment → Generate → Store → Coordinate**
+
+The base building envelope and efficient equipment come before generation sizing.
+
+Three conceptual packages may be offered:
+- **Energy Ready:** efficient home, solar/battery-ready infrastructure.
+- **Energy Plus:** installed solar and energy-management package where economics support it.
+- **Resilience Plus:** solar/storage and critical-load backup or neighborhood-microgrid integration where lawful and feasible.
+
+Actual equipment is selected by climate, tariff, utility rules, insurance, lifecycle cost and site conditions.
+
+## 9.7 Water Package
+
+The residential water standard should include efficient fixtures, leak detection, accessible shutoffs and landscape-water discipline.
+
+Optional site-specific systems may include rainwater capture, gray-water reuse, irrigation storage and other conservation measures where permitted and supported by public-health requirements.
+
+## 9.8 Materials Standard
+
+Material selection should score:
+- durability;
+- moisture resistance;
+- fire performance;
+- indoor-air implications;
+- repairability;
+- availability;
+- lifecycle cost;
+- embodied impact where practical;
+- recyclability / recovery;
+- compatibility with local trades.
+
+Experimental materials, including novel plastic-derived systems, remain PILOT or RESEARCH until health, fire, structural and lifecycle performance are independently validated.
+
+## 9.9 Healthy Interior Standard
+
+The baseline should prioritize ventilation, moisture control, daylight, thermal comfort, acoustic privacy, low-emission materials where practical and sufficient storage.
+
+Wellness technologies such as sound-based systems may be offered as optional research/wellness features, but medical claims require appropriate evidence and regulatory treatment.
+
+## 9.10 Digital Building Passport
+
+Each completed home should receive a **NEO Building Passport** containing a durable digital record of:
+- unique home ID;
+- parcel/site reference;
+- model and revision;
+- builder/manufacturer;
+- permits and inspections;
+- plans/specifications;
+- installed equipment;
+- serial numbers and warranties;
+- maintenance schedule;
+- energy/water configuration;
+- major repairs/upgrades;
+- PROVEN/PILOT/RESEARCH technology flags;
+- ownership/operator references where appropriate.
+
+Sensitive resident information must not be placed on a public immutable ledger.
+
+NEO Explorer may expose authorized non-sensitive records; NEOsync coordinates lifecycle workflows.
+
+## 9.11 Quality-Control Gates
+
+No Neo Smart Home moves directly from purchase order to occupancy.
+
+Required gates:
+
+**Design Freeze → Vendor Qualification → Permit Approval → Foundation/Site QC → Factory/Framing QC → Rough Systems Inspection → Envelope/Weatherproofing Review → Final Systems Test → Code/Occupancy Approval → Owner/Operator Handover**
+
+Defects are documented against the building passport and vendor scorecard.
+
+## 9.12 Vendor Scorecard
+
+Project144 should maintain a vendor performance score based on:
+- delivered cost variance;
+- schedule variance;
+- defect rate;
+- warranty response;
+- inspection failures;
+- documentation quality;
+- resident/operator feedback;
+- energy performance where measurable;
+- repeatability/capacity.
+
+This allows NEO Algo to replace marketing claims with actual Project144 operating data.
+
+## 9.13 Residential Business Models
+
+The product platform should support multiple lawful tenure models:
+
+### Build-to-Sell
+Generate liquidity and recycle development capital.
+
+### Build-to-Rent
+Retain productive assets and recurring NOI.
+
+### Mixed Portfolio
+Sell selected units while retaining strategic rental inventory.
+
+### Lease-to-Own
+Use only with transparent consumer terms, clear allocation of payments, default/exit rules and applicable legal review.
+
+### Institutional / Workforce / Student Housing
+Support Nu University, staff, apprentices and other programmatic needs where appropriate.
+
+The tenure model does not alter the resident's baseline rights under applicable law and contract.
+
+## 9.14 Pre-Sale / Reservation Discipline
+
+Project144 may test demand before construction through clearly documented expressions of interest or reservations.
+
+The system must distinguish:
+- nonbinding interest;
+- refundable reservation;
+- binding home purchase contract;
+- investment/security interest.
+
+Marketing must state which relationship exists. Pre-sale proceeds cannot be treated as unrestricted project capital unless the governing contract and law permit that use.
+
+## 9.15 First Demonstration Home
+
+The first demonstration unit should be selected to maximize learning rather than symbolism.
+
+Preferred sequence:
+
+1. Select target jurisdiction and controlled/qualified site.
+2. Define one buyer/renter persona and product family.
+3. Solicit at least several comparable construction-system proposals where feasible.
+4. Underwrite all-in delivered cost.
+5. Confirm zoning, code, utility, insurance and financing pathway.
+6. Freeze specification.
+7. Build/install one demonstration home.
+8. Commission energy, water, digital and safety systems.
+9. Record actual cost, schedule and defects.
+10. Operate/occupy long enough to gather useful performance data.
+11. Revise the standard before ordering a larger batch.
+
+The first house is a **measurement instrument** as much as a dwelling.
+
+## 9.16 Scale Gate
+
+A home model becomes a Project144 production standard only after it satisfies defined thresholds for:
+- code compliance;
+- delivered cost;
+- schedule;
+- quality;
+- insurability/financeability where relevant;
+- maintenance;
+- resident/operator usability;
+- energy/water performance;
+- vendor capacity.
+
+Passing one attractive rendering is not a scale gate.
+
+## 9.17 Residential Data Feedback Loop
+
+The operating loop becomes:
+
+**Design → Build → Commission → Occupy → Measure → Maintain → Learn → Revise → Replicate**
+
+NEO Algo evaluates cost/performance. NEOsync manages workflows. NEO Law tracks compliance and contractual requirements. GISS/NEO LMS converts lessons into training. Nu University can use anonymized performance data for research.
+
+## 9.18 Product Doctrine
+
+> **Affordable does not mean disposable. Smart does not mean complicated. Alternative does not mean untested. Sustainable does not mean financially irrational.**
+
+The Neo Smart Home succeeds when ordinary residents can live in it comfortably, operators can maintain it, lenders and insurers can understand it, and Project144 can reproduce it without reinventing the building every time.
+
+---
+
+# Next Gate — Chapter 10
+
+**Project144 Development Execution System — Pilot Deal to Neo Neighborhood Cell 01**
+
+Next work package: turn Chapters 1–9 into an executable first-project pipeline: acquisition mandate, target-market screen, site/control strategy, demonstration-home budget, vendor RFP, predevelopment milestones, financing gates, pre-sale/demand validation, construction draw controls, NEOsync project states, go/no-go thresholds and the transition from one demonstration home to the first complete Neo Neighborhood cell.
