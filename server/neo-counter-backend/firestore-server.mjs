@@ -1,5 +1,6 @@
 import http from 'node:http';
 import { createFirestoreContext, FirestoreVersionConflictError } from './firestore-context.mjs';
+import { createCounterCrownAuthorizer } from './crown-authorizer.mjs';
 
 const PORT=Number(process.env.PORT||process.env.NEO_COUNTER_PORT||8080);
 const ALLOWED_ORIGIN=process.env.NEO_COUNTER_ALLOWED_ORIGIN||'https://shemsizedek.github.io';
@@ -8,8 +9,9 @@ function applyCors(res){res.setHeader('Access-Control-Allow-Origin',ALLOWED_ORIG
 function send(res,status,body){applyCors(res);res.writeHead(status,{'content-type':'application/json','cache-control':'no-store'});res.end(JSON.stringify(body));}
 async function readJson(req){const chunks=[];for await(const chunk of req)chunks.push(chunk);return chunks.length?JSON.parse(Buffer.concat(chunks).toString('utf8')):{};}
 
-export function createFirestoreHandler(ctx){
+export function createFirestoreHandler(ctx,{crownAuthorizer=createCounterCrownAuthorizer()}={}){
   if(!ctx)throw new Error('neo_counter_firestore_context_required');
+  const requireCrown=async(res,scope)=>{const proof=await crownAuthorizer(scope);if(proof?.verified===true)return true;const unavailable=['crown_service_authorizer_unconfigured','crown_service_authorizer_unavailable'].includes(proof?.error);send(res,unavailable?503:403,{error:proof?.error||'crown_capability_denied',required_scope:scope});return false};
   return async(req,res)=>{
     try{
       if(req.method==='OPTIONS'){applyCors(res);res.writeHead(204);return res.end();}
@@ -30,6 +32,7 @@ export function createFirestoreHandler(ctx){
         return send(res,200,{merchantOps,cursor:String(merchantOps.version)});
       }
       if(url.pathname==='/sync'&&req.method==='POST'){
+        if(!await requireCrown(res,'neo-counter.checkout'))return;
         const envelope=await readJson(req);
         if(!envelope?.merchantId||!envelope?.entity||!envelope?.terminalId||typeof envelope.version!=='number')return send(res,400,{error:'invalid_envelope'});
         if(principal.kind!=='admin'&&principal.terminalId!==envelope.terminalId)return send(res,403,{error:'terminal_mismatch'});
@@ -42,16 +45,16 @@ export function createFirestoreHandler(ctx){
       if(events){
         const merchantId=decodeURIComponent(events[1]);
         if(req.method==='GET'){if(!ctx.can(principal,'reports',merchantId)&&!ctx.can(principal,'settings',merchantId))return send(res,403,{error:'forbidden'});return send(res,200,{events:await ctx.listEvents(merchantId,Number(url.searchParams.get('limit')||100))});}
-        if(req.method==='POST'){if(!ctx.can(principal,'register',merchantId))return send(res,403,{error:'forbidden'});const body=await readJson(req);if(!body.type)return send(res,400,{error:'event_type_required'});const terminalId=principal.kind==='admin'?(body.terminalId||'admin'):principal.terminalId;return send(res,201,await ctx.appendEvent({...body,merchantId,terminalId}));}
+        if(req.method==='POST'){if(!ctx.can(principal,'register',merchantId))return send(res,403,{error:'forbidden'});if(!await requireCrown(res,'neo-counter.checkout'))return;const body=await readJson(req);if(!body.type)return send(res,400,{error:'event_type_required'});const terminalId=principal.kind==='admin'?(body.terminalId||'admin'):principal.terminalId;return send(res,201,await ctx.appendEvent({...body,merchantId,terminalId}));}
       }
       return send(res,404,{error:'not_found'});
     }catch(error){return send(res,500,{error:'internal_error',message:error instanceof Error?error.message:'unknown'});}
   };
 }
 
-export function startFirestoreServer({db,port=PORT,contextOptions={}}={}){
+export function startFirestoreServer({db,port=PORT,contextOptions={},crownAuthorizer}={}){
   const ctx=createFirestoreContext({db,...contextOptions});
-  const server=http.createServer(createFirestoreHandler(ctx));
+  const server=http.createServer(createFirestoreHandler(ctx,{crownAuthorizer}));
   server.listen(port,()=>console.log(`NEO Counter Firestore backend listening on :${port}`));
   return {server,context:ctx};
 }
