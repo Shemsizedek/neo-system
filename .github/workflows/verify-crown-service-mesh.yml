@@ -1,0 +1,112 @@
+name: Verify Crown Service Mesh
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/verify-crown-service-mesh.yml'
+permissions: {contents: read, id-token: write}
+concurrency: {group: crown-service-mesh-proof, cancel-in-progress: false}
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    environment: holytemples-production
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - slug: etha
+            service_name: etha-network
+            operator_secret: etha-crown-operator-token
+            allowed_scope: etha.payment.authorize
+          - slug: neo-counter
+            service_name: neo-counter-crown-agent
+            operator_secret: neo-counter-crown-operator-token
+            allowed_scope: neo-counter.quote
+          - slug: neo-dex
+            service_name: neo-dex-crown-agent
+            operator_secret: neo-dex-crown-operator-token
+            allowed_scope: neo-dex.quote
+          - slug: neo-explorer
+            service_name: neo-explorer-crown-agent
+            operator_secret: neo-explorer-crown-operator-token
+            allowed_scope: crown.audit.read
+          - slug: neo-pay
+            service_name: neo-pay-crown-agent
+            operator_secret: neo-pay-crown-operator-token
+            allowed_scope: neo-pay.wallet.request
+          - slug: neo-teller
+            service_name: neo-teller-crown-agent
+            operator_secret: neo-teller-crown-operator-token
+            allowed_scope: neo-teller.session
+          - slug: neo-tokenworks
+            service_name: neo-tokenworks-crown-agent
+            operator_secret: neo-tokenworks-crown-operator-token
+            allowed_scope: tokenworks.asset.prepare
+          - slug: neo-wire
+            service_name: neo-wire-crown-agent
+            operator_secret: neo-wire-crown-operator-token
+            allowed_scope: neo-wire.transfer.request
+          - slug: neopass
+            service_name: neopass-crown-agent
+            operator_secret: neopass-crown-operator-token
+            allowed_scope: neopass.identity.verify
+          - slug: nomni-treasury
+            service_name: nomni-treasury-crown-agent
+            operator_secret: nomni-treasury-crown-operator-token
+            allowed_scope: nomni.treasury.propose
+          - slug: nous-os
+            service_name: nous-os-crown-agent
+            operator_secret: nous-os-crown-operator-token
+            allowed_scope: crown.governance.propose
+          - slug: tokenpass
+            service_name: tokenpass-crown-agent
+            operator_secret: tokenpass-crown-operator-token
+            allowed_scope: tokenpass.activate
+    env:
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID || secrets.GCP_PROJECT_ID }}
+      GCP_REGION: ${{ vars.GCP_REGION || secrets.GCP_REGION }}
+      GCP_WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER || secrets.GCP_WIF_PROVIDER }}
+      GCP_CLOUD_RUN_SERVICE_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_SERVICE_ACCOUNT || secrets.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Validate configuration
+        run: |
+          set -euo pipefail
+          for name in GCP_PROJECT_ID GCP_REGION GCP_WIF_PROVIDER GCP_CLOUD_RUN_SERVICE_ACCOUNT; do
+            test -n "${!name:-}" || exit 1
+          done
+      - uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@v3
+      - name: Prove allowed scope and deny Crown root scope
+        env:
+          SERVICE_NAME: ${{ matrix.service_name }}
+          OPERATOR_SECRET: ${{ matrix.operator_secret }}
+          ALLOWED_SCOPE: ${{ matrix.allowed_scope }}
+        run: |
+          set -euo pipefail
+          URL="$(gcloud run services describe "$SERVICE_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format='value(status.url)')"
+          TOKEN="$(gcloud secrets versions access latest --secret="$OPERATOR_SECRET" --project="$GCP_PROJECT_ID" | tr -d '\r\n')"
+          test -n "$URL"
+          test -n "$TOKEN"
+
+          curl -fsS -X POST             -H "Authorization: Bearer $TOKEN"             -H "Content-Type: application/json"             --data "{"scopes":["$ALLOWED_SCOPE"]}"             "$URL/crown/prove" > /tmp/allowed.json
+
+          python3 - <<'PY'
+import json
+d=json.load(open('/tmp/allowed.json'))
+assert d.get('verified') is True, d
+assert d.get('token_exposed') is False, d
+assert d.get('private_key_exposed') is False, d
+print('allowed-scope proof PASS')
+PY
+
+          code="$(curl -sS -o /tmp/denied.json -w '%{http_code}' -X POST             -H "Authorization: Bearer $TOKEN"             -H "Content-Type: application/json"             --data '{"scopes":["crown.root.sign"]}'             "$URL/crown/prove")"
+          test "$code" != "200"
+          echo "${{ matrix.slug }} PASS: allowed scope verified; crown.root.sign denied." >> "$GITHUB_STEP_SUMMARY"
