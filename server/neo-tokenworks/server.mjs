@@ -1,6 +1,7 @@
 import http from 'node:http';
 import { pathToFileURL } from 'node:url';
 import { createTokenworks } from './tokenworks.mjs';
+import { createTokenworksCrownAuthorizer } from './crown-authorizer.mjs';
 
 const json = (res, status, body) => {
   const payload = JSON.stringify(body);
@@ -13,7 +14,8 @@ const readBody = async req => {
   return JSON.parse(Buffer.concat(chunks).toString() || '{}');
 };
 
-export function createTokenworksServer({ tokenworks = createTokenworks() } = {}) {
+export function createTokenworksServer({ tokenworks = createTokenworks(), crownAuthorizer = createTokenworksCrownAuthorizer() } = {}) {
+  const requireCrown=async(res,service,scope)=>{const proof=await crownAuthorizer(service,scope);if(proof?.verified===true)return true;const unavailable=['crown_service_authorizer_unconfigured','crown_service_authorizer_unavailable'].includes(proof?.error);json(res,unavailable?503:403,{error:proof?.error||'crown_capability_denied',required_scope:scope});return false};
   return http.createServer(async (req,res) => {
     try {
       if (req.method === 'OPTIONS') { res.writeHead(204, {'access-control-allow-origin':'*','access-control-allow-methods':'GET,POST,OPTIONS','access-control-allow-headers':'content-type,authorization'}); return res.end(); }
@@ -21,10 +23,10 @@ export function createTokenworksServer({ tokenworks = createTokenworks() } = {})
       if (req.method === 'GET' && url.pathname === '/health') return json(res,200,{ok:true,service:'neo-tokenworks',mode:'ORIGIN_SANDBOX'});
       if (req.method === 'GET' && url.pathname === '/api/v1/tokenworks/capabilities') return json(res,200,tokenworks.capabilities());
       if (req.method === 'POST' && url.pathname === '/api/v1/neopass/challenges') return json(res,201,tokenworks.issueAddressChallenge(await readBody(req)));
-      if (req.method === 'POST' && url.pathname === '/api/v1/neopass/leases') return json(res,201,tokenworks.grantSharedAccess(await readBody(req)));
+      if (req.method === 'POST' && url.pathname === '/api/v1/neopass/leases') { if(!await requireCrown(res,'tokenpass','tokenpass.activate'))return; return json(res,201,tokenworks.grantSharedAccess(await readBody(req))); }
       const revoke = url.pathname.match(/^\/api\/v1\/neopass\/leases\/([^/]+)\/revoke$/);
-      if (req.method === 'POST' && revoke) { const row=tokenworks.revokeSharedAccess(revoke[1]); return row?json(res,200,row):json(res,404,{error:'lease_not_found'}); }
-      if (req.method === 'POST' && url.pathname === '/api/v1/tokenworks/escrow-plans') return json(res,201,tokenworks.composeEscrowPlan(await readBody(req)));
+      if (req.method === 'POST' && revoke) { if(!await requireCrown(res,'tokenpass','tokenpass.revoke.request'))return; const row=tokenworks.revokeSharedAccess(revoke[1]); return row?json(res,200,row):json(res,404,{error:'lease_not_found'}); }
+      if (req.method === 'POST' && url.pathname === '/api/v1/tokenworks/escrow-plans') { if(!await requireCrown(res,'neo-tokenworks','tokenworks.asset.prepare'))return; return json(res,201,tokenworks.composeEscrowPlan(await readBody(req))); }
       return json(res,404,{error:'not_found'});
     } catch (error) { return json(res,error.message==='request_too_large'?413:400,{error:error.message}); }
   });

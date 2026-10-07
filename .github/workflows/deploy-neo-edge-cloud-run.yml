@@ -6,6 +6,7 @@ on:
     branches: [main]
     paths:
       - 'server/neo-edge/**'
+      - 'api/neo-exchange/**'
       - 'apps/neo-realty/web/**'
       - 'public/neo-generator/**'
       - 'docs/neo-corpus/**'
@@ -38,6 +39,7 @@ jobs:
       GCP_CLOUD_RUN_RUNTIME_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_RUNTIME_ACCOUNT || secrets.GCP_CLOUD_RUN_RUNTIME_ACCOUNT }}
       GCP_ARTIFACT_REGISTRY: ${{ vars.GCP_ARTIFACT_REGISTRY || secrets.GCP_ARTIFACT_REGISTRY }}
       SERVICE_NAME: neo-edge
+      NEO_DEX_CROWN_OPERATOR_SECRET: neo-dex-crown-operator-token
     steps:
       - uses: actions/checkout@v7.0.1
 
@@ -57,6 +59,7 @@ jobs:
           node --check server/neo-edge/system-home.mjs
           node --test server/neo-edge/system-home.test.mjs
           node --check server/neo-edge/wire-app.mjs
+          node --test api/neo-exchange/crown-enforcement.test.mjs
 
       - uses: google-github-actions/auth@v3
         with:
@@ -90,6 +93,20 @@ jobs:
           test -n "$GENERATOR_URL"
           echo "NEO_GENERATOR_ORIGIN=$GENERATOR_URL" >> "$GITHUB_ENV"
 
+      - name: Resolve NEO DEX Crown authority
+        run: |
+          set -euo pipefail
+          DEX_AGENT_URL="$(gcloud run services describe neo-dex-crown-agent --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format='value(status.url)')"
+          test -n "$DEX_AGENT_URL"
+          gcloud secrets describe "$NEO_DEX_CROWN_OPERATOR_SECRET" --project="$GCP_PROJECT_ID" >/dev/null
+          gcloud secrets add-iam-policy-binding "$NEO_DEX_CROWN_OPERATOR_SECRET" \
+            --project="$GCP_PROJECT_ID" \
+            --member="serviceAccount:$GCP_CLOUD_RUN_RUNTIME_ACCOUNT" \
+            --role="roles/secretmanager.secretAccessor" \
+            --condition=None \
+            --quiet >/dev/null
+          echo "NEO_DEX_CROWN_AGENT_URL=$DEX_AGENT_URL" >> "$GITHUB_ENV"
+
       - name: Build and push NEO edge image
         env:
           IMAGE: ${{ env.GCP_ARTIFACT_REGISTRY }}/neo-edge:${{ github.sha }}
@@ -109,7 +126,8 @@ jobs:
             --region="$GCP_REGION" \
             --image="$IMAGE" \
             --service-account="$GCP_CLOUD_RUN_RUNTIME_ACCOUNT" \
-            --set-env-vars="GCP_PROJECT_ID=$GCP_PROJECT_ID,FIRESTORE_DATABASE_ID=(default),NEO_PLATFORM_API_ORIGIN=https://egov.holytemples.org,AI_GATEWAY_URL=$AI_GATEWAY_URL,NEO_REALTY_ORIGIN=$NEO_REALTY_ORIGIN,NEO_GENERATOR_ORIGIN=$NEO_GENERATOR_ORIGIN" \
+            --set-env-vars="GCP_PROJECT_ID=$GCP_PROJECT_ID,FIRESTORE_DATABASE_ID=(default),NEO_PLATFORM_API_ORIGIN=https://egov.holytemples.org,AI_GATEWAY_URL=$AI_GATEWAY_URL,NEO_REALTY_ORIGIN=$NEO_REALTY_ORIGIN,NEO_GENERATOR_ORIGIN=$NEO_GENERATOR_ORIGIN,NEO_DEX_CROWN_AGENT_URL=$NEO_DEX_CROWN_AGENT_URL" \
+            --set-secrets="NEO_DEX_CROWN_OPERATOR_TOKEN=$NEO_DEX_CROWN_OPERATOR_SECRET:latest" \
             --port=8080 \
             --allow-unauthenticated \
             --quiet
@@ -132,6 +150,13 @@ jobs:
           wire_code="$(curl --retry 5 --retry-delay 3 --retry-all-errors -sS -o /tmp/neo-wire.html -w '%{http_code}' -H 'X-Forwarded-Host: wire.holytemples.org' "$SERVICE_URL/")"
           test "$wire_code" = 200
           grep -q 'NEO Wire' /tmp/neo-wire.html
+          DEX_AGENT_URL="$(gcloud run services describe neo-dex-crown-agent --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format='value(status.url)')"
+          DEX_TOKEN="$(gcloud secrets versions access latest --secret="$NEO_DEX_CROWN_OPERATOR_SECRET" --project="$GCP_PROJECT_ID" | tr -d '\r\n')"
+          curl -fsS -X POST -H "Authorization: Bearer $DEX_TOKEN" -H 'content-type: application/json' --data '{"scopes":["neo-dex.order.request"]}' "$DEX_AGENT_URL/crown/prove" >/tmp/neo-dex-crown-proof.json
+          jq -e '.verified == true and (.scopes | index("neo-dex.order.request") != null) and .private_key_exposed == false' /tmp/neo-dex-crown-proof.json >/dev/null
+          dex_compose_code="$(curl -sS -o /tmp/neo-dex-compose.json -w '%{http_code}' -X POST -H 'X-Forwarded-Host: neofx.holytemples.org' "$SERVICE_URL/api/neo-exchange/orders/compose")"
+          test "$dex_compose_code" = 501
+          jq -e '.crown_capability_verified == true and .broadcast == false and .code == "SIGNING_GATE_NOT_ENABLED"' /tmp/neo-dex-compose.json >/dev/null
           office_code="$(curl --retry 5 --retry-delay 3 --retry-all-errors -sS -o /tmp/neo-office.html -w '%{http_code}' -H 'X-Forwarded-Host: office.holytemples.org' "$SERVICE_URL/")"
           test "$office_code" = 200
           if grep -q 'NEO Service' /tmp/neo-office.html; then

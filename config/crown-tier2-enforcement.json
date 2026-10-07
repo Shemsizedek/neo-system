@@ -1,0 +1,82 @@
+{
+  "protocol": "CROWN/1",
+  "gate": "CROWN-037",
+  "default": "DENY",
+  "bitcoin_broadcast_enabled": false,
+  "services": [
+    {
+      "service_id": "crown:btc:app:neo-counter",
+      "scope": "neo-counter.checkout",
+      "surface": "NEO Counter Firestore",
+      "routes": [
+        "POST /sync",
+        "POST /merchant/:id/events"
+      ],
+      "runtime": "production",
+      "enforcement": "CROWN_AND_EXISTING_SESSION_AUTH"
+    },
+    {
+      "service_id": "crown:btc:app:neo-dex",
+      "scope": "neo-dex.order.request",
+      "surface": "NEO Exchange",
+      "routes": [
+        "POST /api/neo-exchange/orders/compose"
+      ],
+      "runtime": "production",
+      "enforcement": "CROWN_THEN_SIGNING_GATE_DISABLED"
+    },
+    {
+      "service_id": "crown:btc:app:neo-tokenworks",
+      "scope": "tokenworks.asset.prepare",
+      "surface": "NEO TokenWorks",
+      "routes": [
+        "POST /api/v1/tokenworks/escrow-plans"
+      ],
+      "runtime": "origin-sandbox",
+      "enforcement": "CROWN_FAIL_CLOSED_SOURCE_BOUND"
+    },
+    {
+      "service_id": "crown:btc:app:tokenpass",
+      "scopes": [
+        "tokenpass.activate",
+        "tokenpass.revoke.request"
+      ],
+      "surface": "TokenPass via TokenWorks",
+      "routes": [
+        "POST /api/v1/neopass/leases",
+        "POST /api/v1/neopass/leases/:id/revoke"
+      ],
+      "runtime": "origin-sandbox",
+      "enforcement": "CROWN_FAIL_CLOSED_SOURCE_BOUND"
+    },
+    {
+      "service_id": "crown:btc:app:neo-teller",
+      "scope": "neo-teller.cash.request",
+      "surface": "NEO Teller",
+      "routes": [],
+      "runtime": "production-read-only",
+      "enforcement": "NO_MUTATION_ROUTE",
+      "capabilities": {
+        "compose": false,
+        "sign": false,
+        "broadcast": false
+      }
+    },
+    {
+      "service_id": "crown:btc:app:neo-wire",
+      "scope": "neo-wire.transfer.request",
+      "surface": "NEO Wire",
+      "routes": [],
+      "runtime": "production-review-only",
+      "enforcement": "NO_SERVER_TRANSFER_EXECUTION_ROUTE"
+    },
+    {
+      "service_id": "crown:btc:app:neo-explorer",
+      "scope": "crown.checkpoint.verify",
+      "surface": "NEO Explorer",
+      "routes": [],
+      "runtime": "public-read-only",
+      "enforcement": "PUBLIC_READS_UNGATED_NO_PRIVILEGED_CHECKPOINT_ROUTE_YET"
+    }
+  ]
+}

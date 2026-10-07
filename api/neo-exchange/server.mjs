@@ -1,5 +1,6 @@
 import http from 'node:http';
 import { fileURLToPath } from 'node:url';
+import { createDexCrownAuthorizer } from './crown-authorizer.mjs';
 
 const PORT = Number(process.env.PORT || 8787);
 const COUNTERPARTY_API_BASE = (process.env.COUNTERPARTY_API_BASE || 'https://api.counterparty.io:4000').replace(/\/$/, '');
@@ -132,7 +133,7 @@ async function addressBalances(address) {
 }
 
 export async function handleNeoExchangeRequest(req, res, options = {}) {
-  const { fallthrough = false } = options;
+  const { fallthrough = false, crownAuthorizer = createDexCrownAuthorizer() } = options;
   if (req.method === 'OPTIONS') return send(res, 204, {});
   const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
 
@@ -204,8 +205,15 @@ export async function handleNeoExchangeRequest(req, res, options = {}) {
     }
 
     if (req.method === 'POST' && url.pathname === '/api/neo-exchange/orders/compose') {
+      const proof=await crownAuthorizer('neo-dex.order.request');
+      if(proof?.verified!==true){
+        const unavailable=['crown_service_authorizer_unconfigured','crown_service_authorizer_unavailable'].includes(proof?.error);
+        return send(res,unavailable?503:403,{ok:false,code:proof?.error||'crown_capability_denied',required_scope:'neo-dex.order.request'});
+      }
       return send(res, 501, {
         ok: false,
+        crown_capability_verified: true,
+        broadcast: false,
         code: 'SIGNING_GATE_NOT_ENABLED',
         message: 'Order composition and broadcast remain intentionally disabled until secure user-controlled signing, validation, fee review, broadcast, recovery, and audit gates are separately approved.'
       });
