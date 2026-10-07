@@ -80,3 +80,64 @@ test('HTTP control plane routes return normalized responses and auth failures',a
 test('World Temple adapter exposes read-only application health, capabilities, and normalized reads',async()=>{const composio=fakeComposio();const audits=[];const controlPlane=createControlPlane({commandRouter:createCommandRouter({integrationHub:createIntegrationHub({composio})}),now:()=> '2026-08-25T00:00:00.000Z',audit:event=>audits.push(event)});const temple=createTempleAdapter({controlPlane,now:()=> '2026-08-25T00:00:00.000Z',requestId:()=> 'temple-req',audit:event=>audits.push(event)});assert.equal(temple.applicationId,TEMPLE_APPLICATION_ID);const health=await temple.health('subject-a');assert.equal(health.registered,true);assert.equal(health.readOnly,true);const capabilities=await temple.capabilities('subject-a');assert.ok(Array.isArray(capabilities.capabilities));const response=await temple.read('subject-a',{capability:'library.catalog.discovery',parameters:{}});assert.equal(response.ok,true);assert.equal(response.application,'world-temple');assert.equal(response.requestId,'temple-req');assert.equal(response.capability,'library.catalog.discovery');assert.equal(JSON.stringify(audits).includes('token'),false)});
 test('World Temple adapter enforces identity, subject isolation, and mutation boundaries',async()=>{const composio=fakeComposio();const controlPlane=createControlPlane({commandRouter:createCommandRouter({integrationHub:createIntegrationHub({composio})})});const temple=createTempleAdapter({controlPlane});await assert.rejects(()=>temple.health(null),error=>error.code==='neopass_identity_required');await assert.rejects(()=>temple.read('subject-a',{capability:'store.checkout.execute'}),error=>error.code==='temple_capability_forbidden');await temple.capabilities('subject-a');await temple.capabilities('subject-b');assert.deepEqual(composio.sessions.map(session=>session.subject),['subject-a','subject-b'])});
 test('HTTP World Temple routes require NEOpass and preserve read-only boundaries',async()=>{const composio=fakeComposio();await withServer(async base=>{assert.equal((await fetch(`${base}/api/v1/temple/health`)).status,401);const health=await fetch(`${base}/api/v1/temple/health`,{headers:authHeaders()});assert.equal(health.status,200);const read=await fetch(`${base}/api/v1/temple/read`,{method:'POST',headers:authHeaders(),body:JSON.stringify({capability:'store.checkout.execute'})});assert.equal(read.status,403);assert.equal((await read.json()).error,'temple_capability_forbidden')},{integrationHub:createIntegrationHub({composio})})});
+
+
+test('CROWN-036 fails closed when Nous OS Crown orchestration capability is denied',async()=>{
+  let executed=false
+  const commandRouter={execute:async()=>{executed=true;return{ok:true}}}
+  await withServer(async base=>{
+    const response=await fetch(`${base}/api/v1/commands/execute`,{method:'POST',headers:authHeaders(),body:JSON.stringify({capability:'development.repositories.list'})})
+    assert.equal(response.status,403)
+    assert.equal((await response.json()).error,'crown_capability_denied')
+    assert.equal(executed,false)
+  },{commandRouter,crownServiceAuthorizer:async(service,scope)=>{
+    assert.equal(service,'nous-os');assert.equal(scope,'crown.workflow.orchestrate')
+    return{verified:false,error:'crown_capability_denied'}
+  }})
+})
+
+test('CROWN-036 accepts a Crown-authorized NOMNI Treasury proposal as review-only',async()=>{
+  const calls=[]
+  await withServer(async base=>{
+    const response=await fetch(`${base}/api/v1/nomni/treasury/proposals`,{method:'POST',headers:authHeaders(),body:JSON.stringify({action:'rebalance-review',asset:'NOMNI',amount:'144'})})
+    const body=await response.json()
+    assert.equal(response.status,202)
+    assert.equal(body.status,'REVIEW_REQUIRED')
+    assert.equal(body.execution,false)
+    assert.equal(body.broadcast,false)
+    assert.match(body.proposal_id,/^[0-9a-f-]{36}$/)
+  },{crownServiceAuthorizer:async(service,scope)=>{calls.push([service,scope]);return{verified:true}}})
+  assert.deepEqual(calls,[['nomni-treasury','nomni.treasury.propose']])
+})
+
+test('CROWN-036 keeps NEOpay broadcast disabled even after Crown capability verification',async()=>{
+  let broadcastCalled=false
+  await withServer(async base=>{
+    const response=await fetch(`${base}/api/v1/neopay/broadcast`,{method:'POST',headers:authHeaders(),body:JSON.stringify({signed_tx_hex:'00'.repeat(60)})})
+    const body=await response.json()
+    assert.equal(response.status,503)
+    assert.equal(body.error,'neopay_broadcast_disabled')
+    assert.equal(body.crown_capability_verified,true)
+    assert.equal(body.broadcast,false)
+    assert.equal(broadcastCalled,false)
+  },{
+    crownServiceAuthorizer:async(service,scope)=>{assert.equal(service,'neo-pay');assert.equal(scope,'neo-pay.payment.request');return{verified:true}},
+    neoPayBroadcastEnabled:false,
+    neoPayBroadcast:async()=>{broadcastCalled=true;return{txid:'must-not-run'}}
+  })
+})
+
+test('CROWN-036 blocks NEOpass Crown upstream calls when workload capability is denied',async()=>{
+  let upstreamCalled=false
+  const authService={crownAttestation:async()=>({token:'attestation'})}
+  await withServer(async base=>{
+    const response=await fetch(`${base}/api/v1/crown/challenge`,{method:'POST',headers:{authorization:'Bearer admin','content-type':'application/json'},body:JSON.stringify({slot:'CROWN-ROOT-A'})})
+    assert.equal(response.status,403)
+    assert.equal(upstreamCalled,false)
+  },{
+    authService,
+    subjectResolver:req=>req.headers.authorization?'admin':null,
+    crownServiceAuthorizer:async()=>({verified:false,error:'crown_capability_denied'}),
+    fetchImpl:async()=>{upstreamCalled=true;throw new Error('must not call')}
+  })
+})
