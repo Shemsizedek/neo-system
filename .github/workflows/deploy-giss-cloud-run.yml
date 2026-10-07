@@ -25,6 +25,10 @@ env:
   GOOGLE_OAUTH_CLIENT_ID: 61704167834-leu32ev71q1oge7hqufqg5cjgfslm7ts.apps.googleusercontent.com
   NEO_EXECUTIVE_ADMIN_EMAIL: NooneUniversity@gmail.com
   NEO_EXECUTIVE_ADMIN_USERNAME: Shemsizedek
+  NEOPASS_CROWN_OPERATOR_SECRET: neopass-crown-operator-token
+  NEO_PAY_CROWN_OPERATOR_SECRET: neo-pay-crown-operator-token
+  NOMNI_TREASURY_CROWN_OPERATOR_SECRET: nomni-treasury-crown-operator-token
+  NOUS_OS_CROWN_OPERATOR_SECRET: nous-os-crown-operator-token
 
 jobs:
   deploy:
@@ -82,16 +86,25 @@ jobs:
       - name: Validate pre-provisioned runtime access
         run: |
           set -euo pipefail
-          gcloud secrets describe "$NEOPASS_SECRET_NAME" --project="$GCP_PROJECT_ID" >/dev/null || {
-            echo "::error::Secret $NEOPASS_SECRET_NAME is not provisioned. Runtime IAM and secrets are infrastructure prerequisites, not deployment-time mutations."
-            exit 1
-          }
+          for secret in "$NEOPASS_SECRET_NAME" "$NEOPASS_CROWN_OPERATOR_SECRET" "$NEO_PAY_CROWN_OPERATOR_SECRET" "$NOMNI_TREASURY_CROWN_OPERATOR_SECRET" "$NOUS_OS_CROWN_OPERATOR_SECRET"; do
+            gcloud secrets describe "$secret" --project="$GCP_PROJECT_ID" >/dev/null || {
+              echo "::error::Secret $secret is not provisioned. Runtime IAM and secrets are infrastructure prerequisites, not deployment-time mutations."
+              exit 1
+            }
+          done
+          for service in neopass-crown-agent neo-pay-crown-agent nomni-treasury-crown-agent nous-os-crown-agent; do
+            gcloud run services describe "$service" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format='value(status.url)' | grep -q '^https://'
+          done
       - name: Deploy
         env:
           IMAGE: ${{ env.GCP_ARTIFACT_REGISTRY }}/neo-temple-giss:${{ github.sha }}
         run: |
           set -euo pipefail
-          ENV_VARS="GOOGLE_CLOUD_PROJECT=$GCP_PROJECT_ID,NEO_TEMPLE_FIRESTORE_DATABASE=$NEO_TEMPLE_FIRESTORE_DATABASE,GOOGLE_OAUTH_CLIENT_ID=$GOOGLE_OAUTH_CLIENT_ID,NEO_EXECUTIVE_ADMIN_EMAIL=$NEO_EXECUTIVE_ADMIN_EMAIL,NEO_EXECUTIVE_ADMIN_USERNAME=$NEO_EXECUTIVE_ADMIN_USERNAME"
+          NEOPASS_AGENT_URL="$(gcloud run services describe neopass-crown-agent --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format='value(status.url)')"
+          NEO_PAY_AGENT_URL="$(gcloud run services describe neo-pay-crown-agent --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format='value(status.url)')"
+          NOMNI_TREASURY_AGENT_URL="$(gcloud run services describe nomni-treasury-crown-agent --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format='value(status.url)')"
+          NOUS_OS_AGENT_URL="$(gcloud run services describe nous-os-crown-agent --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format='value(status.url)')"
+          ENV_VARS="GOOGLE_CLOUD_PROJECT=$GCP_PROJECT_ID,NEO_TEMPLE_FIRESTORE_DATABASE=$NEO_TEMPLE_FIRESTORE_DATABASE,GOOGLE_OAUTH_CLIENT_ID=$GOOGLE_OAUTH_CLIENT_ID,NEO_EXECUTIVE_ADMIN_EMAIL=$NEO_EXECUTIVE_ADMIN_EMAIL,NEO_EXECUTIVE_ADMIN_USERNAME=$NEO_EXECUTIVE_ADMIN_USERNAME,NEOPASS_CROWN_AGENT_URL=$NEOPASS_AGENT_URL,NEO_PAY_CROWN_AGENT_URL=$NEO_PAY_AGENT_URL,NOMNI_TREASURY_CROWN_AGENT_URL=$NOMNI_TREASURY_AGENT_URL,NOUS_OS_CROWN_AGENT_URL=$NOUS_OS_AGENT_URL,NEOPAY_BROADCAST_ENABLED=false"
           if [ -n "${NEO_PASS_JWT_ISSUER:-}" ]; then ENV_VARS="$ENV_VARS,NEO_PASS_JWT_ISSUER=$NEO_PASS_JWT_ISSUER"; fi
           gcloud run deploy "$SERVICE_NAME" \
             --project="$GCP_PROJECT_ID" \
@@ -99,7 +112,7 @@ jobs:
             --image="$IMAGE" \
             --service-account="$GCP_CLOUD_RUN_RUNTIME_ACCOUNT" \
             --set-env-vars="$ENV_VARS" \
-            --set-secrets="NEO_PASS_JWT_SECRET=$NEOPASS_SECRET_NAME:latest" \
+            --set-secrets="NEO_PASS_JWT_SECRET=$NEOPASS_SECRET_NAME:latest,NEOPASS_CROWN_OPERATOR_TOKEN=$NEOPASS_CROWN_OPERATOR_SECRET:latest,NEO_PAY_CROWN_OPERATOR_TOKEN=$NEO_PAY_CROWN_OPERATOR_SECRET:latest,NOMNI_TREASURY_CROWN_OPERATOR_TOKEN=$NOMNI_TREASURY_CROWN_OPERATOR_SECRET:latest,NOUS_OS_CROWN_OPERATOR_TOKEN=$NOUS_OS_CROWN_OPERATOR_SECRET:latest" \
             --allow-unauthenticated \
             --quiet
       - name: Verify production boundary
@@ -117,4 +130,23 @@ jobs:
           test "$CRM_STATUS" = 200
           grep -q '"status":"ready"' /tmp/crm-health.json
           test "$(curl -sS -o /dev/null -w '%{http_code}' "$URL/api/v1/temple/giss/eligibility")" = 401
+          test "$(curl -sS -o /tmp/nomni-unauth.json -w '%{http_code}' -X POST -H 'content-type: application/json' --data '{}' "$URL/api/v1/nomni/treasury/proposals")" = 401
+          test "$(curl -sS -o /tmp/neopay-unauth.json -w '%{http_code}' -X POST -H 'content-type: application/json' --data '{}' "$URL/api/v1/neopay/broadcast")" = 401
+          test "$(curl -sS -o /tmp/nous-unauth.json -w '%{http_code}' -X POST -H 'content-type: application/json' --data '{}' "$URL/api/v1/commands/execute")" = 401
+
+          declare -A agent_services=(
+            [neopass-crown-agent]="$NEOPASS_CROWN_OPERATOR_SECRET|neopass.signer.request"
+            [neo-pay-crown-agent]="$NEO_PAY_CROWN_OPERATOR_SECRET|neo-pay.payment.request"
+            [nomni-treasury-crown-agent]="$NOMNI_TREASURY_CROWN_OPERATOR_SECRET|nomni.treasury.propose"
+            [nous-os-crown-agent]="$NOUS_OS_CROWN_OPERATOR_SECRET|crown.workflow.orchestrate"
+          )
+          for service in "${!agent_services[@]}"; do
+            IFS='|' read -r secret scope <<< "${agent_services[$service]}"
+            agent_url="$(gcloud run services describe "$service" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format='value(status.url)')"
+            operator_token="$(gcloud secrets versions access latest --secret="$secret" --project="$GCP_PROJECT_ID" | tr -d '\r\n')"
+            payload="$(printf '{"scopes":["%s"]}' "$scope")"
+            curl -fsS -X POST -H "Authorization: Bearer $operator_token" -H 'content-type: application/json' --data "$payload" "$agent_url/crown/prove" >/tmp/crown-proof.json
+            jq -e --arg scope "$scope" '.verified == true and (.scopes | index($scope) != null) and .private_key_exposed == false' /tmp/crown-proof.json >/dev/null
+          done
+          echo "CROWN-036 Tier-1 service proofs PASS; NEOpay broadcast remains disabled." >> "$GITHUB_STEP_SUMMARY"
           echo "Temple GISS: $URL" >> "$GITHUB_STEP_SUMMARY"
