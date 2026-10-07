@@ -25,6 +25,8 @@ Facebook derivatives should generally test late morning; TikTok derivatives shou
 ## Queue
 
 ### M004 — What Is Noology, Really?
+Status: SCRIPTED — originality-adjusted to avoid duplicating Episode 001
+Production package: `content/media/m004-information-understanding-judgment-wisdom-production-package.md`
 Target master date: 2026-10-07
 Lane: Noology / Let's Talk Noology
 Hook: “Everybody talks about intelligence. But what happens after information—when the real problem is understanding?”
