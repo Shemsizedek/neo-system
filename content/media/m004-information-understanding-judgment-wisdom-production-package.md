@@ -1,6 +1,6 @@
 # M004 Production Package — From Information to Wisdom
 
-Status: **SCRIPTED**  
+Status: **VOICE READY**  
 Queue item: M004 — What Is Noology, Really?  
 Production date: 2026-10-07  
 Lane: Noology / Let's Talk Noology  
@@ -253,7 +253,10 @@ Question for leaders: where does your organization confuse a prediction with a d
 
 - Duplicate audit: Episode 001 (“What Is Noology? The Science of Understanding and Sound Reasoning”) already covers the generic definition. M004 is therefore focused on the decision ladder and is not a remake.
 - Recent long-form baseline checked 2026-10-07: Episode 003 had 14 views, Episode 002 had 8, and Episode 001 had 5. This is too small a sample to justify replacing the queue's 4:00 PM Central publication target.
-- Cost incurred for media generation: **$0**. No voice, image, or video generation was ordered.
-- Completed gates: IDEA → RESEARCHED → SCRIPTED.
-- Blocked gates: VOICE READY and later stages require the approved voice track and reusable source-media assembly.
+- Voice generation completed 2026-10-07.
+- Dr. Lawiy track: deep voice style — https://www.aidocmaker.com/g0/audio?name=4301916208aa49658d0e91150b222271
+- Chat track: clear voice style — https://www.aidocmaker.com/g0/audio?name=44d4346809e94391b024418ed16db134
+- VEED balance checked before generation: 50 AI Playground credits. A full talking-head render was not attempted because VEED's current generator costs approximately 8 credits per second and would exceed the available balance.
+- Completed gates: IDEA → RESEARCHED → SCRIPTED → VOICE READY.
+- Next gate: ASSEMBLED. Use the approved reusable Dr. Lawiy/Chat studio assets, five-step ladder graphic, captions, restrained B-roll, and the two generated voice tracks. No new full-scene generation is required.
 
