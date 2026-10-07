@@ -22,6 +22,7 @@ env:
   FIRESTORE_DATABASE_ID: '(default)'
   TERMINALS_SECRET_NAME: neo-counter-terminals-json
   STAFF_SECRET_NAME: neo-counter-staff-json
+  CROWN_OPERATOR_SECRET_NAME: neo-counter-crown-operator-token
 
 jobs:
   deploy:
@@ -72,6 +73,13 @@ jobs:
           gcloud projects add-iam-policy-binding "$GCP_PROJECT_ID" \
             --member="serviceAccount:$GCP_CLOUD_RUN_RUNTIME_ACCOUNT" \
             --role="roles/datastore.user" \
+            --condition=None \
+            --quiet >/dev/null
+          gcloud secrets describe "$CROWN_OPERATOR_SECRET_NAME" --project="$GCP_PROJECT_ID" >/dev/null
+          gcloud secrets add-iam-policy-binding "$CROWN_OPERATOR_SECRET_NAME" \
+            --project="$GCP_PROJECT_ID" \
+            --member="serviceAccount:$GCP_CLOUD_RUN_RUNTIME_ACCOUNT" \
+            --role="roles/secretmanager.secretAccessor" \
             --condition=None \
             --quiet >/dev/null
 
@@ -125,13 +133,15 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          CROWN_AGENT_URL="$(gcloud run services describe neo-counter-crown-agent --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format='value(status.url)')"
+          test -n "$CROWN_AGENT_URL"
           gcloud run deploy "$SERVICE_NAME" \
             --project="$GCP_PROJECT_ID" \
             --region="$GCP_REGION" \
             --image="$IMAGE" \
             --service-account="$GCP_CLOUD_RUN_RUNTIME_ACCOUNT" \
-            --set-env-vars="GOOGLE_CLOUD_PROJECT=$GCP_PROJECT_ID,FIRESTORE_DATABASE_ID=$FIRESTORE_DATABASE_ID,NEO_COUNTER_ALLOWED_ORIGIN=https://shemsizedek.github.io" \
-            --set-secrets="NEO_COUNTER_TERMINALS_JSON=$TERMINALS_SECRET_NAME:latest,NEO_COUNTER_STAFF_JSON=$STAFF_SECRET_NAME:latest" \
+            --set-env-vars="GOOGLE_CLOUD_PROJECT=$GCP_PROJECT_ID,FIRESTORE_DATABASE_ID=$FIRESTORE_DATABASE_ID,NEO_COUNTER_ALLOWED_ORIGIN=https://shemsizedek.github.io,NEO_COUNTER_CROWN_AGENT_URL=$CROWN_AGENT_URL" \
+            --set-secrets="NEO_COUNTER_TERMINALS_JSON=$TERMINALS_SECRET_NAME:latest,NEO_COUNTER_STAFF_JSON=$STAFF_SECRET_NAME:latest,NEO_COUNTER_CROWN_OPERATOR_TOKEN=$CROWN_OPERATOR_SECRET_NAME:latest" \
             --allow-unauthenticated \
             --quiet
 
@@ -146,6 +156,11 @@ jobs:
           STATUS="$(curl -sS -o /tmp/neo-counter-health.json -w '%{http_code}' "$URL/health")"
           test "$STATUS" = 200
           node -e "const fs=require('fs');const x=JSON.parse(fs.readFileSync('/tmp/neo-counter-health.json'));if(x.ok!==true||x.storage!=='firestore')process.exit(1)"
+          CROWN_AGENT_URL="$(gcloud run services describe neo-counter-crown-agent --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format='value(status.url)')"
+          CROWN_TOKEN="$(gcloud secrets versions access latest --secret="$CROWN_OPERATOR_SECRET_NAME" --project="$GCP_PROJECT_ID" | tr -d '\r\n')"
+          curl -fsS -X POST -H "Authorization: Bearer $CROWN_TOKEN" -H 'content-type: application/json' --data '{"scopes":["neo-counter.checkout"]}' "$CROWN_AGENT_URL/crown/prove" >/tmp/neo-counter-crown-proof.json
+          jq -e '.verified == true and (.scopes | index("neo-counter.checkout") != null) and .private_key_exposed == false' /tmp/neo-counter-crown-proof.json >/dev/null
+          test "$(curl -sS -o /dev/null -w '%{http_code}' -X POST -H 'content-type: application/json' --data '{}' "$URL/sync")" = 401
           gh variable set NEO_COUNTER_SYNC_ENDPOINT --repo "$GITHUB_REPOSITORY" --body "$URL"
           echo "### NEO Counter Firestore" >> "$GITHUB_STEP_SUMMARY"
           echo "Cloud Run service: $URL" >> "$GITHUB_STEP_SUMMARY"
