@@ -64,24 +64,14 @@ jobs:
 
       - uses: google-github-actions/setup-gcloud@v3
 
-      - name: Verify Firestore and grant runtime data access
+      - name: Verify pre-provisioned Firestore and Crown runtime access
         shell: bash
         run: |
           set -euo pipefail
-          gcloud services enable firestore.googleapis.com run.googleapis.com artifactregistry.googleapis.com secretmanager.googleapis.com --project="$GCP_PROJECT_ID"
           gcloud firestore databases describe --database="$FIRESTORE_DATABASE_ID" --project="$GCP_PROJECT_ID" >/dev/null
-          gcloud projects add-iam-policy-binding "$GCP_PROJECT_ID" \
-            --member="serviceAccount:$GCP_CLOUD_RUN_RUNTIME_ACCOUNT" \
-            --role="roles/datastore.user" \
-            --condition=None \
-            --quiet >/dev/null
           gcloud secrets describe "$CROWN_OPERATOR_SECRET_NAME" --project="$GCP_PROJECT_ID" >/dev/null
-          gcloud secrets add-iam-policy-binding "$CROWN_OPERATOR_SECRET_NAME" \
-            --project="$GCP_PROJECT_ID" \
-            --member="serviceAccount:$GCP_CLOUD_RUN_RUNTIME_ACCOUNT" \
-            --role="roles/secretmanager.secretAccessor" \
-            --condition=None \
-            --quiet >/dev/null
+          gcloud secrets versions access latest --secret="$CROWN_OPERATOR_SECRET_NAME" --project="$GCP_PROJECT_ID" >/dev/null
+          echo "Runtime IAM is treated as pre-provisioned infrastructure; this deployment does not mutate project or secret IAM."
 
       - name: Sync NEO Counter runtime secrets
         shell: bash
