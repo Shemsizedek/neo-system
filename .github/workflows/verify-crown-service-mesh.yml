@@ -96,7 +96,12 @@ jobs:
           test -n "$URL"
           test -n "$TOKEN"
 
-          curl -fsS -X POST             -H "Authorization: Bearer $TOKEN"             -H "Content-Type: application/json"             --data "{"scopes":["$ALLOWED_SCOPE"]}"             "$URL/crown/prove" > /tmp/allowed.json
+          payload="$(printf '{"scopes":["%s"]}' "$ALLOWED_SCOPE")"
+          curl -fsS -X POST \
+            -H "Authorization: Bearer $TOKEN" \
+            -H "Content-Type: application/json" \
+            --data "$payload" \
+            "$URL/crown/prove" > /tmp/allowed.json
 
           python3 - <<'PY'
 import json
