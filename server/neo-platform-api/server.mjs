@@ -107,7 +107,6 @@ export function createNeoPlatformApi({ now=()=>new Date().toISOString(), audit=(
       if(rejectCrossSite(req))return json(res,403,{error:'cross_site_request_blocked'});
       const subject=subjectResolver(req);if(!subject)return json(res,401,{error:'neopass_identity_required'});
       if(!authService?.crownAttestation)return json(res,503,{error:'crown_attestation_unavailable'});
-      if(!await requireCrown('neopass','neopass.signer.request',res))return;
       const body=await parseRequest(req);
       try{return json(res,200,await authService.crownAttestation(subject,body.slot,req.neopassClaims||{}));}
       catch(error){return json(res,403,{error:error?.message||'crown_office_authorization_required'});}
@@ -121,6 +120,7 @@ export function createNeoPlatformApi({ now=()=>new Date().toISOString(), audit=(
       if(rejectCrossSite(req))return json(res,403,{error:'cross_site_request_blocked'});
       const subject=subjectResolver(req);if(!subject)return json(res,401,{error:'neopass_identity_required'});
       if(!authService?.crownAttestation)return json(res,503,{error:'crown_attestation_unavailable'});
+      if(!await requireCrown('neopass','neopass.signer.request',res))return;
       const body=await parseRequest(req);
       try{
         const proof=await authService.crownAttestation(subject,body.slot,req.neopassClaims||{});
