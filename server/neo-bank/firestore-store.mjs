@@ -32,10 +32,13 @@ export function createNeoBankFirestoreStore({db,now=()=>new Date().toISOString()
       const binding=await this.myNmniBinding(subject);
       if(binding.externalIdentity?.nmniAccountId!==proof.nmniAccountId||binding.externalIdentity?.verificationStatus!=='VERIFIED')throw new Error('nmni_verification_required');
       const walletRef=db.collection('neoBankVerifiedWallets').doc(id);
+      const uniqueWalletRef=db.collection('neoBankUniqueWalletAddresses').doc(createHash('sha256').update(proof.network+':'+proof.address).digest('hex'));
       await db.runTransaction(async tx=>{
-        const [fresh,prior]=await Promise.all([tx.get(ref),tx.get(walletRef)]);
+        const [fresh,prior,claim]=await Promise.all([tx.get(ref),tx.get(walletRef),tx.get(uniqueWalletRef)]);
         if(!fresh.exists||fresh.data().consumed||fresh.data().status!=='UNVERIFIED'||Date.now()>=Date.parse(fresh.data().expiresAt)||prior.exists)throw new Error('wallet_challenge_unavailable');
+        if(claim.exists&&claim.data().subjectKey!==subjectKey(subject))throw new Error('wallet_address_conflict');
         tx.update(ref,{consumed:true,status:'VERIFIED',consumedAt:now()});
+        if(!claim.exists)tx.create(uniqueWalletRef,{subjectKey:subjectKey(subject),nmniAccountId:proof.nmniAccountId,address:proof.address,network:proof.network,createdAt:now()});
         tx.create(walletRef,{subjectKey:subjectKey(subject),nmniAccountId:proof.nmniAccountId,address:proof.address,network:proof.network,verificationStatus:'VERIFIED',verificationMethod:clean(input.scheme),challengeId:id,verifiedAt:now(),transfersEnabled:false});
       });
       return {...proof,transfersEnabled:false,crownAnchored:false};
