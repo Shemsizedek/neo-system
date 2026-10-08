@@ -5,6 +5,7 @@ import {getNomniValuation} from './market.mjs';
 import {issueSession,sessionFromRequest} from './auth.mjs';
 import {terminalCapabilities,terminalOverview} from './terminal-contracts.mjs';
 import {cesConnectorStatus,routingDescriptor} from './routing-bridge.mjs';
+import {tellerSessionReadiness,crownAnchorReadiness} from './teller-trust.mjs';
 const root=fileURLToPath(new URL('./public/',import.meta.url)),types={'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8'};
 function json(res,status,value,extra={}){res.writeHead(status,{'content-type':'application/json; charset=utf-8','cache-control':'no-store','x-content-type-options':'nosniff',...extra});res.end(JSON.stringify(value))}
 function authorized(req,token){return Boolean(token)&&req.headers.authorization===`Bearer ${token}`}
@@ -25,8 +26,9 @@ export function createNeoBankServer({store,fetchImpl=fetch,apiToken=process.env.
     if(req.method==='GET'&&url.pathname==='/api/v1/bank/terminal/capabilities'){const actor=required(req);return json(res,200,terminalCapabilities(actor.role))}
     if(req.method==='GET'&&url.pathname==='/api/v1/bank/terminal/overview'){const actor=required(req),account=await store.accountBySubject(actor.subject);return account?json(res,200,terminalOverview(account)):json(res,404,{error:'account_not_found'})}
     if(req.method==='GET'&&url.pathname==='/api/v1/bank/wallets'){const actor=required(req);return json(res,200,await store.myVerifiedWallets(actor.subject))}
+    if(req.method==='GET'&&url.pathname==='/api/v1/crown/anchoring-status'){required(req);return json(res,200,crownAnchorReadiness())}
     if(req.method==='GET'&&url.pathname==='/api/v1/crown/attestations'){const actor=required(req);return json(res,200,await store.myPrivateAttestations(actor.subject))}
-    if(req.method==='GET'&&url.pathname==='/api/v1/bank/teller/integration-status'){required(req);return json(res,200,{mode:'READ_ONLY',sessionVerification:'NOT_CONNECTED',walletLookup:'ACCOUNT_SCOPED',fundsMovement:false,crownAnchoring:false})}
+    if(req.method==='GET'&&url.pathname==='/api/v1/bank/teller/integration-status'){required(req);return json(res,200,{...tellerSessionReadiness(),walletLookup:'ACCOUNT_SCOPED',fundsMovement:false,crownAnchoring:false})}
     if(req.method==='POST'&&url.pathname==='/api/v1/bank/wallet/verify'){mutation(req);const actor=required(req);return json(res,200,{proof:await store.verifyIssuedWalletChallenge(actor.subject,await readBody(req),{verifySignature:verifyWalletSignature})})}
     if(req.method==='POST'&&url.pathname==='/api/v1/bank/wallet/challenges'){mutation(req);const actor=required(req);return json(res,201,{challenge:await store.issueWalletChallenge(actor.subject,await readBody(req))})}
     if(req.method==='GET'&&url.pathname==='/api/v1/bank/ces/connector-status'){required(req);return json(res,200,cesConnectorStatus())}
