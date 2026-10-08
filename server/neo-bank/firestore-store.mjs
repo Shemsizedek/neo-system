@@ -4,9 +4,31 @@ const subjectKey=subject=>createHash('sha256').update(clean(subject)).digest('he
 export function createNeoBankFirestoreStore({db,now=()=>new Date().toISOString()}={}){
   if(!db?.collection)throw new Error('firestore_db_required');
   const accounts=db.collection('neoBankCesAccounts'),offers=db.collection('neoBankCesOffers'),entries=db.collection('neoBankCesEntries'),idempotency=db.collection('neoBankCesIdempotency');
+  const cases=db.collection('neoBankServiceCases'),evidence=db.collection('neoBankCrownEvidence');
   const accountRef=subject=>accounts.doc(subjectKey(subject));
   const publicAccount=value=>({accountNumber:value.accountNumber,displayName:value.displayName,role:value.role||'member',balance:Number(value.balance||0),creditLimit:Number(value.creditLimit||0),status:value.status||'active',createdAt:value.createdAt});
   return {
+    async createSupportCase(subject,input){
+      const account=await this.accountBySubject(subject);if(!account)throw new Error('account_not_found');
+      const topic=clean(input.topic),details=clean(input.details);
+      if(topic.length<3||topic.length>120||details.length<5||details.length>2000)throw new Error('invalid_support_case');
+      const ref=cases.doc(),record={accountId:account.id,accountNumber:account.accountNumber,subjectKey:subjectKey(subject),topic,details,status:'open',createdAt:now(),updatedAt:now()};
+      await ref.create(record);return{id:ref.id,topic,status:record.status,createdAt:record.createdAt};
+    },
+    async listSupportCases(subject){
+      const snapshot=await cases.where('subjectKey','==',subjectKey(subject)).limit(50).get();
+      return snapshot.docs.map(doc=>({id:doc.id,topic:doc.data().topic,status:doc.data().status,createdAt:doc.data().createdAt})).sort((a,b)=>b.createdAt.localeCompare(a.createdAt));
+    },
+    async createEvidenceDigest(subject,input){
+      const account=await this.accountBySubject(subject);if(!account)throw new Error('account_not_found');
+      const kind=clean(input.kind),digest=clean(input.documentDigest),sourceEventId=clean(input.sourceEventId);
+      if(!['AGREEMENT','TIME_EQUITY','VDOLLAR_LEDGER','SERVICE_NOTE'].includes(kind)||!/^sha256:[a-f0-9]{64}$/.test(digest)||sourceEventId.length<8||sourceEventId.length>100)throw new Error('invalid_evidence');
+      // This journal stores digests only, never conversation plaintext or financial settlement assertions.
+      const id=subjectKey(subject)+'_'+createHash('sha256').update(sourceEventId).digest('hex'),ref=evidence.doc(id);
+      const record={subjectKey:subjectKey(subject),accountNumber:account.accountNumber,kind,documentDigest:digest,sourceEventId,status:'RECORDED',settlement:'NONE',createdAt:now()};
+      try{await ref.create(record)}catch(error){if(error.code!==6)throw error;const prior=(await ref.get()).data();if(prior.documentDigest!==digest||prior.kind!==kind)throw new Error('evidence_conflict')}
+      return{id,...record};
+    },
     async ping(){await db.collection('_neoBank').doc('health').get();return true},
     async ensureMember(identity){const ref=accountRef(identity.subject),snapshot=await ref.get();if(snapshot.exists){if(identity.role==='executive-admin'&&snapshot.data().role!=='executive-admin')await ref.update({role:'executive-admin',updatedAt:now()});return{id:ref.id,...(await ref.get()).data()}}const createdAt=now(),account={subject:identity.subject,accountNumber:`CES-${ref.id.slice(0,10).toUpperCase()}`,displayName:clean(identity.name)||'CES Member',email:clean(identity.email).toLowerCase(),role:identity.role||'member',balance:0,creditLimit:0,status:'active',createdAt,updatedAt:createdAt};try{await ref.create(account)}catch(error){if(error.code!==6)throw error}return{id:ref.id,...(await ref.get()).data()}},
     async accountBySubject(subject){const doc=await accountRef(subject).get();return doc.exists?{id:doc.id,...doc.data()}:null},
