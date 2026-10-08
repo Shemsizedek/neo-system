@@ -29,6 +29,28 @@ export function createNeoBankFirestoreStore({db,now=()=>new Date().toISOString()
       try{await ref.create(record)}catch(error){if(error.code!==6)throw error;const prior=(await ref.get()).data();if(prior.documentDigest!==digest||prior.kind!==kind)throw new Error('evidence_conflict')}
       return{id,...record};
     },
+    async customerActivity(subject){
+      const account=await this.accountBySubject(subject);if(!account)throw new Error('account_not_found');
+      const [journal,service,statement]=await Promise.all([
+        evidence.where('subjectKey','==',subjectKey(subject)).limit(50).get(),
+        cases.where('subjectKey','==',subjectKey(subject)).limit(50).get(),
+        this.statements(subject,50)
+      ]);
+      const records=[
+        ...journal.docs.map(doc=>({id:doc.id,category:'CROWN_EVIDENCE',source:'neo-bank-private-journal',state:'RECORDED',externalSettlementVerified:false,kind:doc.data().kind,createdAt:doc.data().createdAt})),
+        ...service.docs.map(doc=>({id:doc.id,category:'CUSTOMER_SERVICE',source:'neo-bank-customer-relations',state:doc.data().status,externalSettlementVerified:false,kind:'SUPPORT_CASE',createdAt:doc.data().createdAt})),
+        ...(statement?.entries||[]).map(entry=>({id:entry.id,category:'LOCAL_EXCHANGE',source:'neo-bank-internal-ledger',state:entry.status,externalSettlementVerified:false,kind:'TRANSFER',createdAt:entry.createdAt}))
+      ];
+      return {accountNumber:account.accountNumber,records:records.sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt))).slice(0,100),externalSources:{ces:'NOT_CONNECTED',bitcoin:'NOT_CONNECTED',counterparty:'NOT_CONNECTED'},teller:{integration:'PENDING'}};
+    },
+    async createTellerSupportHandoff(subject,input){
+      const account=await this.accountBySubject(subject);if(!account)throw new Error('account_not_found');
+      const sessionId=clean(input.sessionId),details=clean(input.details);
+      if(!/^[A-Za-z0-9._:-]{8,100}$/.test(sessionId)||details.length<5||details.length>1000)throw new Error('invalid_teller_handoff');
+      // Customer-submitted reference is unverified until trusted teller service attests it.
+      const ref=cases.doc(),timestamp=now(),record={accountId:account.id,accountNumber:account.accountNumber,subjectKey:subjectKey(subject),topic:'NEO Teller assistance',details,tellerSessionReference:sessionId,tellerSessionVerified:false,status:'open',createdAt:timestamp,updatedAt:timestamp};
+      await ref.create(record);return {id:ref.id,topic:record.topic,status:record.status,tellerSessionVerified:false,createdAt:timestamp};
+    },
     async ping(){await db.collection('_neoBank').doc('health').get();return true},
     async ensureMember(identity){const ref=accountRef(identity.subject),snapshot=await ref.get();if(snapshot.exists){if(identity.role==='executive-admin'&&snapshot.data().role!=='executive-admin')await ref.update({role:'executive-admin',updatedAt:now()});return{id:ref.id,...(await ref.get()).data()}}const createdAt=now(),account={subject:identity.subject,accountNumber:`CES-${ref.id.slice(0,10).toUpperCase()}`,displayName:clean(identity.name)||'CES Member',email:clean(identity.email).toLowerCase(),role:identity.role||'member',balance:0,creditLimit:0,status:'active',createdAt,updatedAt:createdAt};try{await ref.create(account)}catch(error){if(error.code!==6)throw error}return{id:ref.id,...(await ref.get()).data()}},
     async accountBySubject(subject){const doc=await accountRef(subject).get();return doc.exists?{id:doc.id,...doc.data()}:null},
