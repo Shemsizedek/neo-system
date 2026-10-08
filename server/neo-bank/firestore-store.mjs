@@ -1,13 +1,36 @@
 import {createHash} from 'node:crypto';
+import {validateVerifiedBinding,publicIdentityBinding} from './nmni-registry.mjs';
 const clean=value=>String(value??'').trim();
 const subjectKey=subject=>createHash('sha256').update(clean(subject)).digest('hex');
 export function createNeoBankFirestoreStore({db,now=()=>new Date().toISOString()}={}){
   if(!db?.collection)throw new Error('firestore_db_required');
   const accounts=db.collection('neoBankCesAccounts'),offers=db.collection('neoBankCesOffers'),entries=db.collection('neoBankCesEntries'),idempotency=db.collection('neoBankCesIdempotency');
-  const cases=db.collection('neoBankServiceCases'),evidence=db.collection('neoBankCrownEvidence');
+  const cases=db.collection('neoBankServiceCases'),evidence=db.collection('neoBankCrownEvidence'),nmniBindings=db.collection('neoBankNmniBindings');
   const accountRef=subject=>accounts.doc(subjectKey(subject));
   const publicAccount=value=>({accountNumber:value.accountNumber,displayName:value.displayName,role:value.role||'member',balance:Number(value.balance||0),creditLimit:Number(value.creditLimit||0),status:value.status||'active',createdAt:value.createdAt});
   return {
+    async myNmniBinding(subject){
+      const account=await this.accountBySubject(subject);if(!account)throw new Error('account_not_found');
+      const snapshot=await nmniBindings.doc(account.id).get();
+      return {internalAccountNumber:account.accountNumber,externalIdentity:snapshot.exists?publicIdentityBinding(snapshot.data()):null,cesIntegration:'AWAITING_AUTHORIZED_VERIFICATION'};
+    },
+    async bindNmniIdentity(subject,input,operator){
+      // Approval gate: only a configured executive identity may call this store action.
+      if(operator?.role!=='executive-admin')throw new Error('authorization_required');
+      const account=await this.accountBySubject(subject);if(!account)throw new Error('account_not_found');
+      const checked=validateVerifiedBinding(input),ref=nmniBindings.doc(account.id),uniqueRef=db.collection('neoBankNmniUnique').doc(checked.nmniAccountId);
+      const timestamp=now();
+      return db.runTransaction(async tx=>{
+        const [existing,claim]=await Promise.all([tx.get(ref),tx.get(uniqueRef)]);
+        if(claim.exists&&claim.data().accountId!==account.id)throw new Error('nmni_already_bound');
+        if(existing.exists&&existing.data().nmniAccountId!==checked.nmniAccountId)throw new Error('nmni_rebind_forbidden');
+        if(existing.exists)return publicIdentityBinding(existing.data());
+        const record={...checked,accountId:account.id,verifiedAt:timestamp,verifiedBy:operator.subject};
+        tx.create(ref,record);
+        if(!claim.exists)tx.create(uniqueRef,{accountId:account.id,createdAt:timestamp});
+        return publicIdentityBinding(record);
+      });
+    },
     async createSupportCase(subject,input){
       const account=await this.accountBySubject(subject);if(!account)throw new Error('account_not_found');
       const topic=clean(input.topic),details=clean(input.details);
