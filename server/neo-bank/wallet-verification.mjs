@@ -5,6 +5,7 @@ export async function verifyWalletProof(challenge,input,{verifySignature,clock=D
  if(!Number.isFinite(Date.parse(challenge.expiresAt))||clock()>=Date.parse(challenge.expiresAt))throw new Error('wallet_challenge_expired');
  if(!input||input.challengeId!==challenge.challengeId||input.address!==challenge.address||input.network!==challenge.network)throw new Error('wallet_challenge_mismatch');
  if(typeof input.signature!=='string'||!input.signature||input.signature.length>5000)throw new Error('invalid_wallet_signature');
+ if(input.scheme!=='BIP322'||! /^(smp|ful|pof)[A-Za-z0-9+/]+={0,2}$/.test(input.signature))throw new Error('unsupported_wallet_signature_format');
  if(typeof verifySignature!=='function')throw new Error('wallet_verifier_not_configured');
  const accepted=await verifySignature({message:challenge.message,address:challenge.address,network:challenge.network,signature:input.signature,scheme:input.scheme});
  if(accepted!==true)throw new Error('wallet_signature_invalid');
