@@ -1,6 +1,7 @@
 import {createHash} from 'node:crypto';
 import {validateVerifiedBinding,publicIdentityBinding} from './nmni-registry.mjs';
 import {newWalletChallenge} from './routing-bridge.mjs';
+import {verifyWalletProof} from './wallet-verification.mjs';
 const clean=value=>String(value??'').trim();
 const subjectKey=subject=>createHash('sha256').update(clean(subject)).digest('hex');
 export function createNeoBankFirestoreStore({db,now=()=>new Date().toISOString()}={}){
@@ -19,6 +20,25 @@ export function createNeoBankFirestoreStore({db,now=()=>new Date().toISOString()
       // Persist the exact issued challenge; never accept an arbitrary client-chosen nonce.
       await walletChallenges.doc(challenge.challengeId).create(record);
       return {challengeId:challenge.challengeId,message:challenge.message,expiresAt:challenge.expiresAt,status:'UNVERIFIED'};
+    },
+    async verifyIssuedWalletChallenge(subject,input,{verifySignature}={}){
+      // Signature verification must be real; absent verifier is an explicit deployment blocker.
+      if(typeof verifySignature!=='function')throw new Error('wallet_verifier_not_configured');
+      const id=clean(input?.challengeId);
+      if(!/^[a-f0-9]{64}$/.test(id))throw new Error('invalid_wallet_challenge');
+      const ref=walletChallenges.doc(id),snapshot=await ref.get();
+      if(!snapshot.exists||snapshot.data().subjectKey!==subjectKey(subject))throw new Error('wallet_challenge_unavailable');
+      const proof=await verifyWalletProof(snapshot.data(),input,{verifySignature});
+      const binding=await this.myNmniBinding(subject);
+      if(binding.externalIdentity?.nmniAccountId!==proof.nmniAccountId||binding.externalIdentity?.verificationStatus!=='VERIFIED')throw new Error('nmni_verification_required');
+      const walletRef=db.collection('neoBankVerifiedWallets').doc(id);
+      await db.runTransaction(async tx=>{
+        const [fresh,prior]=await Promise.all([tx.get(ref),tx.get(walletRef)]);
+        if(!fresh.exists||fresh.data().consumed||fresh.data().status!=='UNVERIFIED'||Date.now()>=Date.parse(fresh.data().expiresAt)||prior.exists)throw new Error('wallet_challenge_unavailable');
+        tx.update(ref,{consumed:true,status:'VERIFIED',consumedAt:now()});
+        tx.create(walletRef,{subjectKey:subjectKey(subject),nmniAccountId:proof.nmniAccountId,address:proof.address,network:proof.network,verificationStatus:'VERIFIED',verificationMethod:clean(input.scheme),challengeId:id,verifiedAt:now(),transfersEnabled:false});
+      });
+      return {...proof,transfersEnabled:false,crownAnchored:false};
     },
     async myNmniBinding(subject){
       const account=await this.accountBySubject(subject);if(!account)throw new Error('account_not_found');
