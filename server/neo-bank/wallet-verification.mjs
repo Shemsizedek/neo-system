@@ -1,0 +1,16 @@
+// NEOB-009: verifier adapter. No signature is accepted without a trusted implementation.
+// An integration must validate Bitcoin BIP-322 or an explicitly reviewed address-compatible scheme.
+export async function verifyWalletProof(challenge,input,{verifySignature,clock=Date.now}={}){
+ if(!challenge||challenge.consumed||challenge.status!=='UNVERIFIED')throw new Error('wallet_challenge_unavailable');
+ if(!Number.isFinite(Date.parse(challenge.expiresAt))||clock()>=Date.parse(challenge.expiresAt))throw new Error('wallet_challenge_expired');
+ if(!input||input.challengeId!==challenge.challengeId||input.address!==challenge.address||input.network!==challenge.network)throw new Error('wallet_challenge_mismatch');
+ if(typeof input.signature!=='string'||!input.signature||input.signature.length>5000)throw new Error('invalid_wallet_signature');
+ if(typeof verifySignature!=='function')throw new Error('wallet_verifier_not_configured');
+ const accepted=await verifySignature({message:challenge.message,address:challenge.address,network:challenge.network,signature:input.signature,scheme:input.scheme});
+ if(accepted!==true)throw new Error('wallet_signature_invalid');
+ return {status:'VERIFIED_PROOF',challengeId:challenge.challengeId,nmniAccountId:challenge.nmniAccountId,address:challenge.address,network:challenge.network};
+}
+export function cesReadAdapterConfig({approved=false,endpoint}={}){
+ // No legacy credentials or browser automation; future official integration only.
+ return {status:approved&&typeof endpoint==='string'&&endpoint.startsWith('https://')?'READY_FOR_REVIEW':'DISABLED',readOnly:true,automatedLogin:false,transactionsEnabled:false};
+}
