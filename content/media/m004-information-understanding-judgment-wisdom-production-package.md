@@ -1,6 +1,6 @@
 # M004 Production Package — From Information to Wisdom
 
-Status: **VOICE READY**  
+Status: **ASSEMBLY IN PROGRESS**  
 Queue item: M004 — What Is Noology, Really?  
 Production date: 2026-10-07  
 Lane: Noology / Let's Talk Noology  
@@ -258,5 +258,9 @@ Question for leaders: where does your organization confuse a prediction with a d
 - Chat track: clear voice style — https://www.aidocmaker.com/g0/audio?name=44d4346809e94391b024418ed16db134
 - VEED balance checked before generation: 50 AI Playground credits. A full talking-head render was not attempted because VEED's current generator costs approximately 8 credits per second and would exceed the available balance.
 - Completed gates: IDEA → RESEARCHED → SCRIPTED → VOICE READY.
-- Next gate: ASSEMBLED. Use the approved reusable Dr. Lawiy/Chat studio assets, five-step ladder graphic, captions, restrained B-roll, and the two generated voice tracks. No new full-scene generation is required.
+- Assembly project created 2026-10-07 in InVideo: https://ai.invideo.io/workspace/adee283b-db3c-4ee6-b944-be52c3f5893f/v45-copilot/agents-models/6b5d45c0-c0b9-420c-b8a6-8f26dbb297df?utm_source=chatgpt&utm_medium=chatgpt-app&utm_campaign=chatgpt_app
+- Assembly agent: NEO Media Assembly (agent id 7be4d8dc-e8ec-46a5-8a55-ca33c8b235d9).
+- Assembly directive: reuse the approved EP001 studio anchor and character language; use the two completed voice tracks exactly; add the five-step ladder, captions and restrained B-roll; do not publish.
+- Current assembly state: agent is reviewing existing EP001 materials before generation. No finished master has been returned yet.
+- Next gate: ASSEMBLED after a completed generation is available and reviewed.
 
