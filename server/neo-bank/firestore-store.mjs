@@ -12,6 +12,18 @@ export function createNeoBankFirestoreStore({db,now=()=>new Date().toISOString()
   const accountRef=subject=>accounts.doc(subjectKey(subject));
   const publicAccount=value=>({accountNumber:value.accountNumber,displayName:value.displayName,role:value.role||'member',balance:Number(value.balance||0),creditLimit:Number(value.creditLimit||0),status:value.status||'active',createdAt:value.createdAt});
   return {
+    async myVerifiedWallets(subject){
+      const identity=await this.myNmniBinding(subject);
+      if(!identity.externalIdentity||identity.externalIdentity.verificationStatus!=='VERIFIED')return {accountNumber:identity.internalAccountNumber,wallets:[],crownAnchored:false};
+      const snapshot=await db.collection('neoBankVerifiedWallets').where('subjectKey','==',subjectKey(subject)).limit(50).get();
+      const wallets=snapshot.docs.filter(doc=>doc.data().nmniAccountId===identity.externalIdentity.nmniAccountId).map(doc=>({id:doc.id,address:doc.data().address,network:doc.data().network,verificationStatus:doc.data().verificationStatus,verifiedAt:doc.data().verifiedAt,transfersEnabled:false}));
+      return {accountNumber:identity.internalAccountNumber,wallets,crownAnchored:false};
+    },
+    async myPrivateAttestations(subject){
+      const identity=await this.myNmniBinding(subject);
+      const snapshot=await db.collection('neoBankPrivateAttestations').where('subjectKey','==',subjectKey(subject)).limit(50).get();
+      return {accountNumber:identity.internalAccountNumber,attestations:snapshot.docs.map(doc=>({id:doc.id,kind:doc.data().kind,digest:doc.data().digest,status:doc.data().status,crownAnchored:false,createdAt:doc.data().createdAt}))};
+    },
     async issueWalletChallenge(subject,input){
       const binding=await this.myNmniBinding(subject);
       if(binding.externalIdentity?.verificationStatus!=='VERIFIED')throw new Error('nmni_verification_required');
