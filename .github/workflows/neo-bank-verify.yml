@@ -1,0 +1,26 @@
+name: NEO Bank cryptographic verification gate
+on:
+  pull_request:
+    paths:
+      - 'server/neo-bank/**'
+      - '.github/workflows/neo-bank-verify.yml'
+  workflow_dispatch:
+jobs:
+  verifier:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install NEO Bank dependencies
+        working-directory: server/neo-bank
+        run: npm install --ignore-scripts --no-audit --no-fund
+      - name: Test bank service and BIP-322
+        working-directory: server/neo-bank
+        run: node --test *.test.mjs
+      - name: Ensure signer stays disabled by default
+        run: |
+          test "${NEO_BANK_BIP322_VERIFY_ENABLED:-false}" = false
