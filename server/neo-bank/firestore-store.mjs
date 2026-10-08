@@ -32,16 +32,19 @@ export function createNeoBankFirestoreStore({db,now=()=>new Date().toISOString()
       const binding=await this.myNmniBinding(subject);
       if(binding.externalIdentity?.nmniAccountId!==proof.nmniAccountId||binding.externalIdentity?.verificationStatus!=='VERIFIED')throw new Error('nmni_verification_required');
       const walletRef=db.collection('neoBankVerifiedWallets').doc(id);
+      const attestationRef=db.collection('neoBankPrivateAttestations').doc(id);
+      const attestationDigest='sha256:'+createHash('sha256').update(JSON.stringify({version:1,challengeId:id,nmniAccountId:proof.nmniAccountId,address:proof.address,network:proof.network,verification:'BIP322'})).digest('hex');
       const uniqueWalletRef=db.collection('neoBankUniqueWalletAddresses').doc(createHash('sha256').update(proof.network+':'+proof.address).digest('hex'));
       await db.runTransaction(async tx=>{
-        const [fresh,prior,claim]=await Promise.all([tx.get(ref),tx.get(walletRef),tx.get(uniqueWalletRef)]);
-        if(!fresh.exists||fresh.data().consumed||fresh.data().status!=='UNVERIFIED'||Date.now()>=Date.parse(fresh.data().expiresAt)||prior.exists)throw new Error('wallet_challenge_unavailable');
+        const [fresh,prior,claim,priorAttestation]=await Promise.all([tx.get(ref),tx.get(walletRef),tx.get(uniqueWalletRef),tx.get(attestationRef)]);
+        if(!fresh.exists||fresh.data().consumed||fresh.data().status!=='UNVERIFIED'||Date.now()>=Date.parse(fresh.data().expiresAt)||prior.exists||priorAttestation.exists)throw new Error('wallet_challenge_unavailable');
         if(claim.exists&&claim.data().subjectKey!==subjectKey(subject))throw new Error('wallet_address_conflict');
         tx.update(ref,{consumed:true,status:'VERIFIED',consumedAt:now()});
         if(!claim.exists)tx.create(uniqueWalletRef,{subjectKey:subjectKey(subject),nmniAccountId:proof.nmniAccountId,address:proof.address,network:proof.network,createdAt:now()});
         tx.create(walletRef,{subjectKey:subjectKey(subject),nmniAccountId:proof.nmniAccountId,address:proof.address,network:proof.network,verificationStatus:'VERIFIED',verificationMethod:clean(input.scheme),challengeId:id,verifiedAt:now(),transfersEnabled:false});
+        tx.create(attestationRef,{subjectKey:subjectKey(subject),challengeId:id,kind:'WALLET_CONTROL',digest:attestationDigest,status:'PRIVATE_RECORDED',crownAnchored:false,createdAt:now()});
       });
-      return {...proof,transfersEnabled:false,crownAnchored:false};
+      return {...proof,transfersEnabled:false,crownAnchored:false,privateAttestationDigest:attestationDigest};
     },
     async myNmniBinding(subject){
       const account=await this.accountBySubject(subject);if(!account)throw new Error('account_not_found');
