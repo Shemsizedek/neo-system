@@ -62,6 +62,11 @@ export class NiaCore {
       this.#evidence.set(item.id, item); this.#record(actor, 'EVIDENCE_REGISTERED', item.id, { digest }); return clone(item);
     });
   }
+  authorizeEvidence(actor, evidenceId, action = 'read') {
+    const item = this.#evidence.get(evidenceId); assert(item, 'Evidence not found');
+    const c = this.#cases.get(item.caseId);
+    return this.#perform(actor, c.handling, action, () => clone(item));
+  }
   verifyEvidence(actor, evidenceId, content) {
     const item = this.#evidence.get(evidenceId); assert(item, 'Evidence not found');
     const c = this.#cases.get(item.caseId);
