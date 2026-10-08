@@ -13,7 +13,9 @@ export function createNiaEvidenceVaultAdapter({ path = ':memory:', core = new Ni
     assert(typeof title === 'string' && title.trim(), 'title required');
     assert(typeof content === 'string' || Buffer.isBuffer(content), 'content required');
     // Core enforces case clearance and source membership. No raw evidence bytes enter the Vault.
+    // Verify that caller-supplied caseId matches the source's canonical case before persistence.
     const evidence = core.registerEvidence(actor, { sourceId, content, derivedFrom });
+    assert(evidence.caseId === caseId, 'caseId does not match source');
     const prior = links.get(evidence.id);
     if (prior) return { ...evidence, vaultId: prior };
     const record = vault.createEvidence({
@@ -36,6 +38,7 @@ export function createNiaEvidenceVaultAdapter({ path = ':memory:', core = new Ni
 
   function review({ actor, evidenceId, status, note }) {
     assert(actor?.id && ['reviewer', 'administrator'].includes(actor.role), 'reviewer required');
+    core.authorizeEvidence(actor, evidenceId, 'read');
     assert(links.has(evidenceId), 'Vault evidence record not linked');
     return vault.reviewEvidence(links.get(evidenceId), { status, reviewer: actor.id, note });
   }
