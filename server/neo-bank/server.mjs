@@ -4,6 +4,7 @@ import {fileURLToPath} from 'node:url';
 import {getNomniValuation} from './market.mjs';
 import {issueSession,sessionFromRequest} from './auth.mjs';
 import {terminalCapabilities,terminalOverview} from './terminal-contracts.mjs';
+import {cesConnectorStatus,routingDescriptor} from './routing-bridge.mjs';
 const root=fileURLToPath(new URL('./public/',import.meta.url)),types={'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8'};
 function json(res,status,value,extra={}){res.writeHead(status,{'content-type':'application/json; charset=utf-8','cache-control':'no-store','x-content-type-options':'nosniff',...extra});res.end(JSON.stringify(value))}
 function authorized(req,token){return Boolean(token)&&req.headers.authorization===`Bearer ${token}`}
@@ -23,6 +24,8 @@ export function createNeoBankServer({store,fetchImpl=fetch,apiToken=process.env.
     if(req.method==='GET'&&url.pathname==='/api/v1/me'){const actor=required(req),account=await store.accountBySubject(actor.subject);return account?json(res,200,{account:{accountNumber:account.accountNumber,displayName:account.displayName,email:account.email,role:account.role,balance:Number(account.balance||0),creditLimit:Number(account.creditLimit||0),status:account.status}}):json(res,404,{error:'account_not_found'})}
     if(req.method==='GET'&&url.pathname==='/api/v1/bank/terminal/capabilities'){const actor=required(req);return json(res,200,terminalCapabilities(actor.role))}
     if(req.method==='GET'&&url.pathname==='/api/v1/bank/terminal/overview'){const actor=required(req),account=await store.accountBySubject(actor.subject);return account?json(res,200,terminalOverview(account)):json(res,404,{error:'account_not_found'})}
+    if(req.method==='GET'&&url.pathname==='/api/v1/bank/ces/connector-status'){required(req);return json(res,200,cesConnectorStatus())}
+    if(req.method==='GET'&&url.pathname==='/api/v1/bank/routing/status'){const actor=required(req),binding=await store.myNmniBinding(actor.subject);return json(res,200,{internalAccountNumber:binding.internalAccountNumber,routing:routingDescriptor(binding.externalIdentity,null)})}
     if(req.method==='GET'&&url.pathname==='/api/v1/bank/identity'){const actor=required(req);return json(res,200,await store.myNmniBinding(actor.subject))}
     if(req.method==='GET'&&url.pathname==='/api/v1/bank/activity'){const actor=required(req);return json(res,200,await store.customerActivity(actor.subject))}
     if(req.method==='POST'&&url.pathname==='/api/v1/bank/teller/support-handoffs'){mutation(req);const actor=required(req);return json(res,201,{case:await store.createTellerSupportHandoff(actor.subject,await readBody(req))})}
