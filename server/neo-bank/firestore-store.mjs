@@ -1,14 +1,25 @@
 import {createHash} from 'node:crypto';
 import {validateVerifiedBinding,publicIdentityBinding} from './nmni-registry.mjs';
+import {newWalletChallenge} from './routing-bridge.mjs';
 const clean=value=>String(value??'').trim();
 const subjectKey=subject=>createHash('sha256').update(clean(subject)).digest('hex');
 export function createNeoBankFirestoreStore({db,now=()=>new Date().toISOString()}={}){
   if(!db?.collection)throw new Error('firestore_db_required');
   const accounts=db.collection('neoBankCesAccounts'),offers=db.collection('neoBankCesOffers'),entries=db.collection('neoBankCesEntries'),idempotency=db.collection('neoBankCesIdempotency');
   const cases=db.collection('neoBankServiceCases'),evidence=db.collection('neoBankCrownEvidence'),nmniBindings=db.collection('neoBankNmniBindings');
+  const walletChallenges=db.collection('neoBankWalletChallenges');
   const accountRef=subject=>accounts.doc(subjectKey(subject));
   const publicAccount=value=>({accountNumber:value.accountNumber,displayName:value.displayName,role:value.role||'member',balance:Number(value.balance||0),creditLimit:Number(value.creditLimit||0),status:value.status||'active',createdAt:value.createdAt});
   return {
+    async issueWalletChallenge(subject,input){
+      const binding=await this.myNmniBinding(subject);
+      if(binding.externalIdentity?.verificationStatus!=='VERIFIED')throw new Error('nmni_verification_required');
+      const challenge=newWalletChallenge({accountId:binding.externalIdentity.nmniAccountId,network:input.network,address:input.address});
+      const record={...challenge,subjectKey:subjectKey(subject),nmniAccountId:binding.externalIdentity.nmniAccountId,network:input.network,address:input.address,createdAt:now(),consumed:false};
+      // Persist the exact issued challenge; never accept an arbitrary client-chosen nonce.
+      await walletChallenges.doc(challenge.challengeId).create(record);
+      return {challengeId:challenge.challengeId,message:challenge.message,expiresAt:challenge.expiresAt,status:'UNVERIFIED'};
+    },
     async myNmniBinding(subject){
       const account=await this.accountBySubject(subject);if(!account)throw new Error('account_not_found');
       const snapshot=await nmniBindings.doc(account.id).get();
