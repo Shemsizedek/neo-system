@@ -25,7 +25,7 @@ Facebook derivatives should generally test late morning; TikTok derivatives shou
 ## Queue
 
 ### M004 — What Is Noology, Really?
-Status: VOICE READY — originality-adjusted to avoid duplicating Episode 001
+Status: ASSEMBLY IN PROGRESS — InVideo assembly started; awaiting finished master
 Production package: `content/media/m004-information-understanding-judgment-wisdom-production-package.md`
 Target master date: 2026-10-07
 Lane: Noology / Let's Talk Noology
