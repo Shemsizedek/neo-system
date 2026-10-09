@@ -1,0 +1,18 @@
+name: NEO Energy session verification tests
+on:
+  pull_request:
+    paths:
+      - 'neo-energy/NES-023/**'
+      - '.github/workflows/neo-energy-session-tests.yml'
+  workflow_dispatch:
+jobs:
+  token-validation:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test neo-energy/NES-023/test-verify-session.mjs
