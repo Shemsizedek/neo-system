@@ -53,3 +53,18 @@ test('executive admin can govern CES credit limits',async()=>running({store,sess
   const response=await fetch(`${base}/api/v1/admin/accounts/CES-1234567890`,{method:'PATCH',headers:{cookie,'content-type':'application/json'},body:JSON.stringify({creditLimit:500,status:'active'})});
   assert.equal(response.status,200);assert.equal((await response.json()).account.creditLimit,500);
 }));
+
+test('NEOB-003 terminal routes require authentication',async()=>running({store,sessionSecret:'session-secret'},async base=>{
+ for(const path of ['/api/v1/bank/terminal/overview','/api/v1/bank/terminal/capabilities'])assert.equal((await fetch(base+path)).status,401);
+}));
+test('NEOB-003 authenticated terminal keeps unrelated ledgers unverified',async()=>running({store,sessionSecret:'session-secret',googleClientId:'client-1',verifyGoogleCredential:async()=>({sub:'user-1',email:'neo@example.test',email_verified:true,name:'NEO'})},async base=>{
+ const login=await fetch(base+'/api/v1/auth/google',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({credential:'verified'})});
+ const cookie=login.headers.get('set-cookie').split(';')[0];
+ const response=await fetch(base+'/api/v1/bank/terminal/overview',{headers:{cookie}});
+ assert.equal(response.status,200);
+ const body=await response.json();
+ assert.equal(body.ces.externalCesVerified,false);
+ assert.ok(body.instruments.every(x=>x.balance===null));
+ const capabilities=await fetch(base+'/api/v1/bank/terminal/capabilities',{headers:{cookie}}).then(r=>r.json());
+ assert.equal(capabilities.actions.conversions,'disabled');
+}));

@@ -1,12 +1,176 @@
 import {createHash} from 'node:crypto';
+import {validateVerifiedBinding,publicIdentityBinding} from './nmni-registry.mjs';
+import {newWalletChallenge} from './routing-bridge.mjs';
+import {verifyWalletProof} from './wallet-verification.mjs';
 const clean=value=>String(value??'').trim();
 const subjectKey=subject=>createHash('sha256').update(clean(subject)).digest('hex');
 export function createNeoBankFirestoreStore({db,now=()=>new Date().toISOString()}={}){
   if(!db?.collection)throw new Error('firestore_db_required');
   const accounts=db.collection('neoBankCesAccounts'),offers=db.collection('neoBankCesOffers'),entries=db.collection('neoBankCesEntries'),idempotency=db.collection('neoBankCesIdempotency');
+  const cases=db.collection('neoBankServiceCases'),evidence=db.collection('neoBankCrownEvidence'),nmniBindings=db.collection('neoBankNmniBindings');
+  const walletChallenges=db.collection('neoBankWalletChallenges');
   const accountRef=subject=>accounts.doc(subjectKey(subject));
   const publicAccount=value=>({accountNumber:value.accountNumber,displayName:value.displayName,role:value.role||'member',balance:Number(value.balance||0),creditLimit:Number(value.creditLimit||0),status:value.status||'active',createdAt:value.createdAt});
   return {
+    async consumeTellerServiceNonce(nonce,timestamp){
+      if(!/^[a-f0-9-]{36}$/.test(nonce)||!Number.isSafeInteger(timestamp)||Math.abs(Date.now()-timestamp)>60000)throw new Error('teller_service_invalid');
+      const ref=db.collection('neoBankTellerServiceNonces').doc(nonce);
+      try{await ref.create({createdAt:now(),timestamp,expiresAt:new Date(timestamp+120000).toISOString()})}
+      catch(error){if(error.code===6||error.code==='already-exists')throw new Error('teller_service_replayed');throw error}
+      return {accepted:true};
+    },
+    async crownAuditTimeline(operator,attestationId){
+      if(operator?.role!=='executive-admin')throw new Error('authorization_required');
+      if(attestationId&&!/^[a-f0-9]{64}$/.test(attestationId))throw new Error('invalid_attestation');
+      const snapshot=attestationId?await db.collection('neoBankCrownAudit').where('attestationId','==',attestationId).limit(100).get():await db.collection('neoBankCrownAudit').limit(100).get();
+      return {events:snapshot.docs.map(d=>({id:d.id,attestationId:d.data().attestationId,action:d.data().action,at:d.data().at,publication:d.data().publication===true})),complete:false,readOnly:true};
+    },
+    async decideCrownRequest(operator,attestationId,decision){
+      if(operator?.role!=='executive-admin')throw new Error('authorization_required');
+      if(!/^[a-f0-9]{64}$/.test(attestationId)||!['APPROVED','REJECTED'].includes(decision))throw new Error('invalid_crown_decision');
+      const ref=db.collection('neoBankCrownAnchorQueue').doc(attestationId);
+      return db.runTransaction(async tx=>{
+        const existing=await tx.get(ref);
+        if(!existing.exists)throw new Error('attestation_not_found');
+        if(existing.data().status!=='AWAITING_APPROVAL')throw new Error('crown_decision_conflict');
+        const eventRef=db.collection('neoBankCrownAudit').doc();
+        const decidedAt=now();
+        tx.update(ref,{status:decision,approved:decision==='APPROVED',submitted:false,decidedAt,decidedBy:subjectKey(operator.subject)});
+        tx.create(eventRef,{attestationId,action:decision,actorKey:subjectKey(operator.subject),at:decidedAt,sourceStatus:'AWAITING_APPROVAL',publication:false});
+        return {id:attestationId,status:decision,submitted:false,crownAnchored:false,auditEventId:eventRef.id};
+      });
+    },
+    async consumeTellerAssertion(subject,claims){
+      if(claims?.verified!==true||claims.subject!==subject||typeof claims.jti!=='string'||!/^[a-f0-9-]{36}$/.test(claims.jti)||!Number.isSafeInteger(claims.expiresAt)||claims.expiresAt<=Date.now())throw new Error('teller_session_invalid');
+      const ref=db.collection('neoBankTellerAssertionUses').doc(claims.jti);
+      try{await ref.create({subjectKey:subjectKey(subject),sessionId:claims.sessionId,expiresAt:claims.expiresAt,consumedAt:now()})}
+      catch(error){if(error.code===6)throw new Error('teller_assertion_replayed');throw error}
+      return {verified:true,sessionId:claims.sessionId,canSign:false,canBroadcast:false};
+    },
+    async queueCrownAttestation(subject,attestationId){
+      if(typeof attestationId!=='string'||!/^[a-f0-9]{64}$/.test(attestationId))throw new Error('invalid_attestation');
+      const source=db.collection('neoBankPrivateAttestations').doc(attestationId);
+      const target=db.collection('neoBankCrownAnchorQueue').doc(attestationId);
+      return db.runTransaction(async tx=>{
+        const [existing,queued]=await Promise.all([tx.get(source),tx.get(target)]);
+        if(!existing.exists||existing.data().subjectKey!==subjectKey(subject))throw new Error('attestation_not_found');
+        if(existing.data().status!=='PRIVATE_RECORDED'||existing.data().crownAnchored!==false)throw new Error('attestation_not_eligible');
+        if(!/^sha256:[a-f0-9]{64}$/.test(existing.data().digest))throw new Error('invalid_attestation');
+        if(!queued.exists)tx.create(target,{subjectKey:subjectKey(subject),digest:existing.data().digest,status:'AWAITING_APPROVAL',approved:false,submitted:false,createdAt:now()});
+        return {id:attestationId,status:'AWAITING_APPROVAL',approved:false,submitted:false};
+      });
+    },
+    async myVerifiedWallets(subject){
+      const identity=await this.myNmniBinding(subject);
+      if(!identity.externalIdentity||identity.externalIdentity.verificationStatus!=='VERIFIED')return {accountNumber:identity.internalAccountNumber,wallets:[],crownAnchored:false};
+      const snapshot=await db.collection('neoBankVerifiedWallets').where('subjectKey','==',subjectKey(subject)).limit(50).get();
+      const wallets=snapshot.docs.filter(doc=>doc.data().nmniAccountId===identity.externalIdentity.nmniAccountId).map(doc=>({id:doc.id,address:doc.data().address,network:doc.data().network,verificationStatus:doc.data().verificationStatus,verifiedAt:doc.data().verifiedAt,transfersEnabled:false}));
+      return {accountNumber:identity.internalAccountNumber,wallets,crownAnchored:false};
+    },
+    async myPrivateAttestations(subject){
+      const identity=await this.myNmniBinding(subject);
+      const snapshot=await db.collection('neoBankPrivateAttestations').where('subjectKey','==',subjectKey(subject)).limit(50).get();
+      return {accountNumber:identity.internalAccountNumber,attestations:snapshot.docs.map(doc=>({id:doc.id,kind:doc.data().kind,digest:doc.data().digest,status:doc.data().status,crownAnchored:false,createdAt:doc.data().createdAt}))};
+    },
+    async issueWalletChallenge(subject,input){
+      const binding=await this.myNmniBinding(subject);
+      if(binding.externalIdentity?.verificationStatus!=='VERIFIED')throw new Error('nmni_verification_required');
+      const challenge=newWalletChallenge({accountId:binding.externalIdentity.nmniAccountId,network:input.network,address:input.address});
+      const record={...challenge,subjectKey:subjectKey(subject),nmniAccountId:binding.externalIdentity.nmniAccountId,network:input.network,address:input.address,createdAt:now(),consumed:false};
+      // Persist the exact issued challenge; never accept an arbitrary client-chosen nonce.
+      await walletChallenges.doc(challenge.challengeId).create(record);
+      return {challengeId:challenge.challengeId,message:challenge.message,expiresAt:challenge.expiresAt,status:'UNVERIFIED'};
+    },
+    async verifyIssuedWalletChallenge(subject,input,{verifySignature}={}){
+      // Signature verification must be real; absent verifier is an explicit deployment blocker.
+      if(typeof verifySignature!=='function')throw new Error('wallet_verifier_not_configured');
+      const id=clean(input?.challengeId);
+      if(!/^[a-f0-9]{64}$/.test(id))throw new Error('invalid_wallet_challenge');
+      const ref=walletChallenges.doc(id),snapshot=await ref.get();
+      if(!snapshot.exists||snapshot.data().subjectKey!==subjectKey(subject))throw new Error('wallet_challenge_unavailable');
+      const proof=await verifyWalletProof(snapshot.data(),input,{verifySignature});
+      const binding=await this.myNmniBinding(subject);
+      if(binding.externalIdentity?.nmniAccountId!==proof.nmniAccountId||binding.externalIdentity?.verificationStatus!=='VERIFIED')throw new Error('nmni_verification_required');
+      const walletRef=db.collection('neoBankVerifiedWallets').doc(id);
+      const attestationRef=db.collection('neoBankPrivateAttestations').doc(id);
+      const attestationDigest='sha256:'+createHash('sha256').update(JSON.stringify({version:1,challengeId:id,nmniAccountId:proof.nmniAccountId,address:proof.address,network:proof.network,verification:'BIP322'})).digest('hex');
+      const uniqueWalletRef=db.collection('neoBankUniqueWalletAddresses').doc(createHash('sha256').update(proof.network+':'+proof.address).digest('hex'));
+      await db.runTransaction(async tx=>{
+        const [fresh,prior,claim,priorAttestation]=await Promise.all([tx.get(ref),tx.get(walletRef),tx.get(uniqueWalletRef),tx.get(attestationRef)]);
+        if(!fresh.exists||fresh.data().consumed||fresh.data().status!=='UNVERIFIED'||Date.now()>=Date.parse(fresh.data().expiresAt)||prior.exists||priorAttestation.exists)throw new Error('wallet_challenge_unavailable');
+        if(claim.exists&&claim.data().subjectKey!==subjectKey(subject))throw new Error('wallet_address_conflict');
+        tx.update(ref,{consumed:true,status:'VERIFIED',consumedAt:now()});
+        if(!claim.exists)tx.create(uniqueWalletRef,{subjectKey:subjectKey(subject),nmniAccountId:proof.nmniAccountId,address:proof.address,network:proof.network,createdAt:now()});
+        tx.create(walletRef,{subjectKey:subjectKey(subject),nmniAccountId:proof.nmniAccountId,address:proof.address,network:proof.network,verificationStatus:'VERIFIED',verificationMethod:clean(input.scheme),challengeId:id,verifiedAt:now(),transfersEnabled:false});
+        tx.create(attestationRef,{subjectKey:subjectKey(subject),challengeId:id,kind:'WALLET_CONTROL',digest:attestationDigest,status:'PRIVATE_RECORDED',crownAnchored:false,createdAt:now()});
+      });
+      return {...proof,transfersEnabled:false,crownAnchored:false,privateAttestationDigest:attestationDigest};
+    },
+    async myNmniBinding(subject){
+      const account=await this.accountBySubject(subject);if(!account)throw new Error('account_not_found');
+      const snapshot=await nmniBindings.doc(account.id).get();
+      return {internalAccountNumber:account.accountNumber,externalIdentity:snapshot.exists?publicIdentityBinding(snapshot.data()):null,cesIntegration:'AWAITING_AUTHORIZED_VERIFICATION'};
+    },
+    async bindNmniIdentity(subject,input,operator){
+      // Approval gate: only a configured executive identity may call this store action.
+      if(operator?.role!=='executive-admin')throw new Error('authorization_required');
+      const account=await this.accountBySubject(subject);if(!account)throw new Error('account_not_found');
+      const checked=validateVerifiedBinding(input),ref=nmniBindings.doc(account.id),uniqueRef=db.collection('neoBankNmniUnique').doc(checked.nmniAccountId);
+      const timestamp=now();
+      return db.runTransaction(async tx=>{
+        const [existing,claim]=await Promise.all([tx.get(ref),tx.get(uniqueRef)]);
+        if(claim.exists&&claim.data().accountId!==account.id)throw new Error('nmni_already_bound');
+        if(existing.exists&&existing.data().nmniAccountId!==checked.nmniAccountId)throw new Error('nmni_rebind_forbidden');
+        if(existing.exists)return publicIdentityBinding(existing.data());
+        const record={...checked,accountId:account.id,verifiedAt:timestamp,verifiedBy:operator.subject};
+        tx.create(ref,record);
+        if(!claim.exists)tx.create(uniqueRef,{accountId:account.id,createdAt:timestamp});
+        return publicIdentityBinding(record);
+      });
+    },
+    async createSupportCase(subject,input){
+      const account=await this.accountBySubject(subject);if(!account)throw new Error('account_not_found');
+      const topic=clean(input.topic),details=clean(input.details);
+      if(topic.length<3||topic.length>120||details.length<5||details.length>2000)throw new Error('invalid_support_case');
+      const ref=cases.doc(),record={accountId:account.id,accountNumber:account.accountNumber,subjectKey:subjectKey(subject),topic,details,status:'open',createdAt:now(),updatedAt:now()};
+      await ref.create(record);return{id:ref.id,topic,status:record.status,createdAt:record.createdAt};
+    },
+    async listSupportCases(subject){
+      const snapshot=await cases.where('subjectKey','==',subjectKey(subject)).limit(50).get();
+      return snapshot.docs.map(doc=>({id:doc.id,topic:doc.data().topic,status:doc.data().status,createdAt:doc.data().createdAt})).sort((a,b)=>b.createdAt.localeCompare(a.createdAt));
+    },
+    async createEvidenceDigest(subject,input){
+      const account=await this.accountBySubject(subject);if(!account)throw new Error('account_not_found');
+      const kind=clean(input.kind),digest=clean(input.documentDigest),sourceEventId=clean(input.sourceEventId);
+      if(!['AGREEMENT','TIME_EQUITY','VDOLLAR_LEDGER','SERVICE_NOTE'].includes(kind)||!/^sha256:[a-f0-9]{64}$/.test(digest)||sourceEventId.length<8||sourceEventId.length>100)throw new Error('invalid_evidence');
+      // This journal stores digests only, never conversation plaintext or financial settlement assertions.
+      const id=subjectKey(subject)+'_'+createHash('sha256').update(sourceEventId).digest('hex'),ref=evidence.doc(id);
+      const record={subjectKey:subjectKey(subject),accountNumber:account.accountNumber,kind,documentDigest:digest,sourceEventId,status:'RECORDED',settlement:'NONE',createdAt:now()};
+      try{await ref.create(record)}catch(error){if(error.code!==6)throw error;const prior=(await ref.get()).data();if(prior.documentDigest!==digest||prior.kind!==kind)throw new Error('evidence_conflict')}
+      return{id,...record};
+    },
+    async customerActivity(subject){
+      const account=await this.accountBySubject(subject);if(!account)throw new Error('account_not_found');
+      const [journal,service,statement]=await Promise.all([
+        evidence.where('subjectKey','==',subjectKey(subject)).limit(50).get(),
+        cases.where('subjectKey','==',subjectKey(subject)).limit(50).get(),
+        this.statements(subject,50)
+      ]);
+      const records=[
+        ...journal.docs.map(doc=>({id:doc.id,category:'CROWN_EVIDENCE',source:'neo-bank-private-journal',state:'RECORDED',externalSettlementVerified:false,kind:doc.data().kind,createdAt:doc.data().createdAt})),
+        ...service.docs.map(doc=>({id:doc.id,category:'CUSTOMER_SERVICE',source:'neo-bank-customer-relations',state:doc.data().status,externalSettlementVerified:false,kind:'SUPPORT_CASE',createdAt:doc.data().createdAt})),
+        ...(statement?.entries||[]).map(entry=>({id:entry.id,category:'LOCAL_EXCHANGE',source:'neo-bank-internal-ledger',state:entry.status,externalSettlementVerified:false,kind:'TRANSFER',createdAt:entry.createdAt}))
+      ];
+      return {accountNumber:account.accountNumber,records:records.sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt))).slice(0,100),externalSources:{ces:'NOT_CONNECTED',bitcoin:'NOT_CONNECTED',counterparty:'NOT_CONNECTED'},teller:{integration:'PENDING'}};
+    },
+    async createTellerSupportHandoff(subject,input){
+      const account=await this.accountBySubject(subject);if(!account)throw new Error('account_not_found');
+      const sessionId=clean(input.sessionId),details=clean(input.details);
+      if(!/^[A-Za-z0-9._:-]{8,100}$/.test(sessionId)||details.length<5||details.length>1000)throw new Error('invalid_teller_handoff');
+      // Customer-submitted reference is unverified until trusted teller service attests it.
+      const ref=cases.doc(),timestamp=now(),record={accountId:account.id,accountNumber:account.accountNumber,subjectKey:subjectKey(subject),topic:'NEO Teller assistance',details,tellerSessionReference:sessionId,tellerSessionVerified:false,status:'open',createdAt:timestamp,updatedAt:timestamp};
+      await ref.create(record);return {id:ref.id,topic:record.topic,status:record.status,tellerSessionVerified:false,createdAt:timestamp};
+    },
     async ping(){await db.collection('_neoBank').doc('health').get();return true},
     async ensureMember(identity){const ref=accountRef(identity.subject),snapshot=await ref.get();if(snapshot.exists){if(identity.role==='executive-admin'&&snapshot.data().role!=='executive-admin')await ref.update({role:'executive-admin',updatedAt:now()});return{id:ref.id,...(await ref.get()).data()}}const createdAt=now(),account={subject:identity.subject,accountNumber:`CES-${ref.id.slice(0,10).toUpperCase()}`,displayName:clean(identity.name)||'CES Member',email:clean(identity.email).toLowerCase(),role:identity.role||'member',balance:0,creditLimit:0,status:'active',createdAt,updatedAt:createdAt};try{await ref.create(account)}catch(error){if(error.code!==6)throw error}return{id:ref.id,...(await ref.get()).data()}},
     async accountBySubject(subject){const doc=await accountRef(subject).get();return doc.exists?{id:doc.id,...doc.data()}:null},
