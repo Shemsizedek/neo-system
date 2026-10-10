@@ -12,6 +12,19 @@ export function createNeoBankFirestoreStore({db,now=()=>new Date().toISOString()
   const accountRef=subject=>accounts.doc(subjectKey(subject));
   const publicAccount=value=>({accountNumber:value.accountNumber,displayName:value.displayName,role:value.role||'member',balance:Number(value.balance||0),creditLimit:Number(value.creditLimit||0),status:value.status||'active',createdAt:value.createdAt});
   return {
+    async consumeTellerServiceNonce(nonce,timestamp){
+      if(!/^[a-f0-9-]{36}$/.test(nonce)||!Number.isSafeInteger(timestamp)||Math.abs(Date.now()-timestamp)>60000)throw new Error('teller_service_invalid');
+      const ref=db.collection('neoBankTellerServiceNonces').doc(nonce);
+      try{await ref.create({createdAt:now(),timestamp,expiresAt:new Date(timestamp+120000).toISOString()})}
+      catch(error){if(error.code===6||error.code==='already-exists')throw new Error('teller_service_replayed');throw error}
+      return {accepted:true};
+    },
+    async crownAuditTimeline(operator,attestationId){
+      if(operator?.role!=='executive-admin')throw new Error('authorization_required');
+      if(attestationId&&!/^[a-f0-9]{64}$/.test(attestationId))throw new Error('invalid_attestation');
+      const snapshot=attestationId?await db.collection('neoBankCrownAudit').where('attestationId','==',attestationId).limit(100).get():await db.collection('neoBankCrownAudit').limit(100).get();
+      return {events:snapshot.docs.map(d=>({id:d.id,attestationId:d.data().attestationId,action:d.data().action,at:d.data().at,publication:d.data().publication===true})),complete:false,readOnly:true};
+    },
     async decideCrownRequest(operator,attestationId,decision){
       if(operator?.role!=='executive-admin')throw new Error('authorization_required');
       if(!/^[a-f0-9]{64}$/.test(attestationId)||!['APPROVED','REJECTED'].includes(decision))throw new Error('invalid_crown_decision');
