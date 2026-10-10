@@ -12,6 +12,26 @@ export function createNeoBankFirestoreStore({db,now=()=>new Date().toISOString()
   const accountRef=subject=>accounts.doc(subjectKey(subject));
   const publicAccount=value=>({accountNumber:value.accountNumber,displayName:value.displayName,role:value.role||'member',balance:Number(value.balance||0),creditLimit:Number(value.creditLimit||0),status:value.status||'active',createdAt:value.createdAt});
   return {
+    async consumeTellerAssertion(subject,claims){
+      if(claims?.verified!==true||claims.subject!==subject||typeof claims.jti!=='string'||!/^[a-f0-9-]{36}$/.test(claims.jti)||!Number.isSafeInteger(claims.expiresAt)||claims.expiresAt<=Date.now())throw new Error('teller_session_invalid');
+      const ref=db.collection('neoBankTellerAssertionUses').doc(claims.jti);
+      try{await ref.create({subjectKey:subjectKey(subject),sessionId:claims.sessionId,expiresAt:claims.expiresAt,consumedAt:now()})}
+      catch(error){if(error.code===6)throw new Error('teller_assertion_replayed');throw error}
+      return {verified:true,sessionId:claims.sessionId,canSign:false,canBroadcast:false};
+    },
+    async queueCrownAttestation(subject,attestationId){
+      if(typeof attestationId!=='string'||!/^[a-f0-9]{64}$/.test(attestationId))throw new Error('invalid_attestation');
+      const source=db.collection('neoBankPrivateAttestations').doc(attestationId);
+      const target=db.collection('neoBankCrownAnchorQueue').doc(attestationId);
+      return db.runTransaction(async tx=>{
+        const [existing,queued]=await Promise.all([tx.get(source),tx.get(target)]);
+        if(!existing.exists||existing.data().subjectKey!==subjectKey(subject))throw new Error('attestation_not_found');
+        if(existing.data().status!=='PRIVATE_RECORDED'||existing.data().crownAnchored!==false)throw new Error('attestation_not_eligible');
+        if(!/^sha256:[a-f0-9]{64}$/.test(existing.data().digest))throw new Error('invalid_attestation');
+        if(!queued.exists)tx.create(target,{subjectKey:subjectKey(subject),digest:existing.data().digest,status:'AWAITING_APPROVAL',approved:false,submitted:false,createdAt:now()});
+        return {id:attestationId,status:'AWAITING_APPROVAL',approved:false,submitted:false};
+      });
+    },
     async myVerifiedWallets(subject){
       const identity=await this.myNmniBinding(subject);
       if(!identity.externalIdentity||identity.externalIdentity.verificationStatus!=='VERIFIED')return {accountNumber:identity.internalAccountNumber,wallets:[],crownAnchored:false};
