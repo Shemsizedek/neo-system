@@ -12,6 +12,21 @@ export function createNeoBankFirestoreStore({db,now=()=>new Date().toISOString()
   const accountRef=subject=>accounts.doc(subjectKey(subject));
   const publicAccount=value=>({accountNumber:value.accountNumber,displayName:value.displayName,role:value.role||'member',balance:Number(value.balance||0),creditLimit:Number(value.creditLimit||0),status:value.status||'active',createdAt:value.createdAt});
   return {
+    async decideCrownRequest(operator,attestationId,decision){
+      if(operator?.role!=='executive-admin')throw new Error('authorization_required');
+      if(!/^[a-f0-9]{64}$/.test(attestationId)||!['APPROVED','REJECTED'].includes(decision))throw new Error('invalid_crown_decision');
+      const ref=db.collection('neoBankCrownAnchorQueue').doc(attestationId);
+      return db.runTransaction(async tx=>{
+        const existing=await tx.get(ref);
+        if(!existing.exists)throw new Error('attestation_not_found');
+        if(existing.data().status!=='AWAITING_APPROVAL')throw new Error('crown_decision_conflict');
+        const eventRef=db.collection('neoBankCrownAudit').doc();
+        const decidedAt=now();
+        tx.update(ref,{status:decision,approved:decision==='APPROVED',submitted:false,decidedAt,decidedBy:subjectKey(operator.subject)});
+        tx.create(eventRef,{attestationId,action:decision,actorKey:subjectKey(operator.subject),at:decidedAt,sourceStatus:'AWAITING_APPROVAL',publication:false});
+        return {id:attestationId,status:decision,submitted:false,crownAnchored:false,auditEventId:eventRef.id};
+      });
+    },
     async consumeTellerAssertion(subject,claims){
       if(claims?.verified!==true||claims.subject!==subject||typeof claims.jti!=='string'||!/^[a-f0-9-]{36}$/.test(claims.jti)||!Number.isSafeInteger(claims.expiresAt)||claims.expiresAt<=Date.now())throw new Error('teller_session_invalid');
       const ref=db.collection('neoBankTellerAssertionUses').doc(claims.jti);
