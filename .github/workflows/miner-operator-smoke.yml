@@ -23,4 +23,5 @@ jobs:
           NEO_OPERATOR_ORIGIN: ${{ vars.NEO_MINER_OPERATOR_ORIGIN }}
           NEO_SMOKE_OPERATOR_ID: ${{ secrets.NEO_SMOKE_OPERATOR_ID }}
           NEO_SMOKE_OPERATOR_PASSWORD: ${{ secrets.NEO_SMOKE_OPERATOR_PASSWORD }}
+          NEO_OPERATOR_ALLOWED_DOMAINS: ${{ vars.NEO_OPERATOR_ALLOWED_DOMAINS }}
         run: node server/miner-production/operatorDeploymentSmoke.mjs
