@@ -1,0 +1,3 @@
+OFFICE-004
+Purpose: retrigger existing NEO Edge Cloud Run deployment after Family Office mirror merge.
+No runtime configuration or DNS change.
