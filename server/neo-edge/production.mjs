@@ -151,7 +151,9 @@ export async function startNeoEdgeProduction(){
     }
     if(host==='neo.holytemples.org'&&url.pathname.startsWith('/api/ai/'))return proxyAiGateway(req,res);
     if(host==='office.holytemples.org'&&req.method==='GET'&&url.pathname==='/health')return json(res,200,{ok:true,service:'shelton-estate-family-office',surface:'legacy-mirror',origin:FAMILY_OFFICE_ORIGIN});
-    if(host==='office.holytemples.org'&&req.method==='GET'&&url.pathname==='/ads.txt'){res.writeHead(200,{'content-type':'text/plain; charset=utf-8','cache-control':'public, max-age=3600','x-content-type-options':'nosniff'});return res.end(renderAdsTxt(FAMILY_OFFICE_ADS_REGISTRY));}\n    if(host==='office.holytemples.org'&&req.method==='GET'&&url.pathname==='/api/ads/status')return json(res,200,familyOfficeAdsEvidence());\n    if(host==='office.holytemples.org'&&req.method==='GET'&&url.pathname==='/app-ads.txt'){res.writeHead(404,{'content-type':'text/plain; charset=utf-8','cache-control':'public, max-age=300','x-content-type-options':'nosniff'});return res.end('app-ads.txt not configured for this property\\n');}
+    if(host==='office.holytemples.org'&&req.method==='GET'&&url.pathname==='/ads.txt'){res.writeHead(200,{'content-type':'text/plain; charset=utf-8','cache-control':'public, max-age=3600','x-content-type-options':'nosniff'});return res.end(renderAdsTxt(FAMILY_OFFICE_ADS_REGISTRY));}
+    if(host==='office.holytemples.org'&&req.method==='GET'&&url.pathname==='/api/ads/status')return json(res,200,familyOfficeAdsEvidence());
+    if(host==='office.holytemples.org'&&req.method==='GET'&&url.pathname==='/app-ads.txt'){res.writeHead(404,{'content-type':'text/plain; charset=utf-8','cache-control':'public, max-age=300','x-content-type-options':'nosniff'});return res.end('app-ads.txt not configured for this property\\n');}
     if(host==='office.holytemples.org')return proxyFamilyOffice(req,res,url);
     const productServed=await serveProductStatic(req,res,url,host);
     if(productServed!==false)return productServed;
