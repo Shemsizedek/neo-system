@@ -1,0 +1,44 @@
+name: ADS-READY-003 AdSense Readiness Guard
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 13 * * *'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Verify HolyTemples AdSense prerequisites
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOT=https://holytemples.org
+          EXPECTED='google.com, pub-7219200716649339, DIRECT, f08c47fec0942fa0'
+
+          root_code="$(curl -sS -L -o /tmp/root.html -w '%{http_code}' "$ROOT/")"
+          ads_code="$(curl -sS -L -o /tmp/ads.txt -w '%{http_code}' "$ROOT/ads.txt")"
+          robots_code="$(curl -sS -L -o /tmp/robots.txt -w '%{http_code}' "$ROOT/robots.txt")"
+
+          echo "root_code=$root_code"
+          echo "ads_code=$ads_code"
+          echo "robots_code=$robots_code"
+
+          test "$root_code" = "200"
+          test "$ads_code" = "200"
+          test "$robots_code" = "200"
+
+          grep -Fxq "$EXPECTED" /tmp/ads.txt
+          grep -q 'ca-pub-7219200716649339' /tmp/root.html
+          grep -q 'pagead2.googlesyndication.com/pagead/js/adsbygoogle.js' /tmp/root.html
+
+          if grep -Eiq '^Disallow:[[:space:]]*/$' /tmp/robots.txt; then
+            echo "::error::robots.txt blocks the site root"
+            exit 1
+          fi
+
+          echo "AdSense readiness guard: PASS"
