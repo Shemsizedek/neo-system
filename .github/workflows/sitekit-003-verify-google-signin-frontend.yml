@@ -1,0 +1,51 @@
+name: SITEKIT-003 Verify Google Sign-In Frontend
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/sitekit-003-verify-google-signin-frontend.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Verify rendered Google Sign-In frontend
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOT=https://holytemples.org
+          curl -sS -L -o /tmp/root.html -w 'root_code=%{http_code}\n' "$ROOT/"
+
+          echo "CLIENT_ID:"
+          grep -Eo '[0-9]+-[A-Za-z0-9_-]+\.apps\.googleusercontent\.com' /tmp/root.html | sort -u || true
+
+          echo "GIS_LOADER:"
+          grep -Eo 'https://accounts\.google\.com/gsi/client' /tmp/root.html | sort -u || true
+
+          echo "SITEKIT_SIGNIN_ASSET:"
+          grep -Eo '[^"<> ]*google-site-kit[^"<> ]*sign-in-with-google[^"<> ]*\.js[^"<> ]*' /tmp/root.html | sort -u || true
+
+          echo "BUTTON_MARKUP:"
+          grep -Eio '.{0,180}googlesitekit-sign-in-with-google__frontend-output-button.{0,420}' /tmp/root.html | head -5 || true
+
+          echo "GSI_CONFIG:"
+          grep -Eio '.{0,220}(data-client_id|client_id|g_id_onload|google\.accounts\.id).{0,420}' /tmp/root.html | head -10 || true
+
+          client_count="$(grep -Eo '[0-9]+-[A-Za-z0-9_-]+\.apps\.googleusercontent\.com' /tmp/root.html | sort -u | wc -l)"
+          button_count="$(grep -o 'googlesitekit-sign-in-with-google__frontend-output-button' /tmp/root.html | wc -l)"
+          loader_count="$(grep -o 'accounts.google.com/gsi/client' /tmp/root.html | wc -l)"
+
+          echo "COUNTS client_ids=$client_count button_markers=$button_count gis_loaders=$loader_count"
+          test "$client_count" -ge 1
+          test "$button_count" -ge 1
+          test "$loader_count" -ge 1
+
+          echo "ADSENSE_RECHECK:"
+          grep -Eio 'ca-pub-[0-9]+|pagead2\.googlesyndication\.com/pagead/js/adsbygoogle\.js[^"<> ]*' /tmp/root.html | sort -u || true
+          curl -sS -L "$ROOT/ads.txt"
