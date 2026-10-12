@@ -1,0 +1,52 @@
+name: SITEKIT-004 OAuth Runtime and AdSense Readiness
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/sitekit-004-oauth-runtime-adsense.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Verify OAuth runtime and AdSense readiness
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOT=https://holytemples.org
+          curl -sS -L -D /tmp/root.headers -o /tmp/root.html -w 'root_code=%{http_code} final=%{url_effective}\n' "$ROOT/"
+
+          echo "GOOGLE_IDENTITY:"
+          grep -Eo '[0-9]+-[A-Za-z0-9_-]+\.apps\.googleusercontent\.com|https://accounts\.google\.com/gsi/client' /tmp/root.html | sort -u || true
+
+          echo "SITEKIT_SIGNIN_RUNTIME:"
+          grep -Eio '.{0,220}(sign-in-with-google|googlesitekit_auth|shouldShowOneTapPrompt|isWPLogin).{0,500}' /tmp/root.html | head -20 || true
+
+          echo "ADSENSE:"
+          grep -Eio 'ca-pub-[0-9]+|pagead2\.googlesyndication\.com/pagead/js/adsbygoogle\.js[^"<> ]*' /tmp/root.html | sort -u || true
+
+          echo "ADS_TXT:"
+          curl -sS -L -D /tmp/ads.headers -o /tmp/ads.txt -w 'ads_code=%{http_code}\n' "$ROOT/ads.txt"
+          cat /tmp/ads.txt
+
+          echo "ROBOTS:"
+          curl -sS -L -o /tmp/robots.txt -w 'robots_code=%{http_code}\n' "$ROOT/robots.txt"
+          cat /tmp/robots.txt
+
+          grep -q '539158440029-r92idtut5fv46mbb2cfqojam6737m315.apps.googleusercontent.com' /tmp/root.html
+          grep -q 'accounts.google.com/gsi/client' /tmp/root.html
+          grep -q 'googlesitekit-sign-in-with-google' /tmp/root.html
+          grep -q 'ca-pub-7219200716649339' /tmp/root.html
+          grep -Fxq 'google.com, pub-7219200716649339, DIRECT, f08c47fec0942fa0' /tmp/ads.txt
+          if grep -Eiq '^Disallow:[[:space:]]*/$' /tmp/robots.txt; then
+            echo "::error::robots.txt blocks site root"
+            exit 1
+          fi
+
+          echo "SITEKIT-004: PASS"
