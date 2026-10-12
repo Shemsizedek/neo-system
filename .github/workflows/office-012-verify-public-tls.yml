@@ -1,0 +1,35 @@
+name: OFFICE-012 Verify Public TLS
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/office-012-verify-public-tls.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Inspect public DNS and certificate
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "DNS:"
+          getent ahostsv4 office.holytemples.org || true
+          echo "CERTIFICATE:"
+          echo | openssl s_client -connect office.holytemples.org:443 -servername office.holytemples.org 2>/tmp/ssl.err |             openssl x509 -noout -subject -issuer -dates -ext subjectAltName
+          cat /tmp/ssl.err || true
+          echo "HTTPS:"
+          curl -sS -D /tmp/headers.txt -o /tmp/body.html -w 'code=%{http_code} remote_ip=%{remote_ip} ssl_verify=%{ssl_verify_result}\n' https://office.holytemples.org/
+          cat /tmp/headers.txt
+          echo "HEALTH:"
+          curl -sS https://office.holytemples.org/health
+          echo
+          echo "ADS:"
+          curl -sS https://office.holytemples.org/ads.txt
+          echo
