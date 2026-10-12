@@ -121,6 +121,8 @@ jobs:
           URL="$(gcloud run services describe "$SERVICE_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format='value(status.url)')"
           test "$(curl -sS -o /tmp/health.json -w '%{http_code}' "$URL/health")" = 200
           grep -q '"giss":"ready"' /tmp/health.json
+          test "$(curl -sS -o /tmp/giss-bridge-health.json -w '%{http_code}' "$URL/auth/giss/status")" = 200
+          grep -q '"configured":true' /tmp/giss-bridge-health.json
           CRM_STATUS=000
           for attempt in {1..12}; do
             CRM_STATUS="$(curl -sS -o /tmp/crm-health.json -w '%{http_code}' "$URL/health/crm")"

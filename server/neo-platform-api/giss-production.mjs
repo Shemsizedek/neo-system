@@ -9,6 +9,7 @@ import { createFirestoreCrmStore } from './firestore-crm-store.mjs';
 import { createFirestoreSchoolStore } from './firestore-school-store.mjs';
 import { createSchoolActionHandler } from './giss-school-actions.mjs';
 import { attachNeopassBrowserTokenExchange } from './browser-token-exchange.mjs';
+import { createGissAuthorizationBridge, createFirestoreGissCodeStore } from './giss-authorization-bridge.mjs';
 import { createCrownServiceAuthorizer } from './crown-service-authorizer.mjs';
 
 export function createGissProductionServer({
@@ -45,12 +46,14 @@ export function createGissProductionServer({
   }});
 
   const server = createNeoPlatformApi({ templeGissRuntime, subjectResolver, authService, crmStore, schoolStore, crownServiceAuthorizer:serviceAuthorizer, now });
+  const gissBridge = authService ? createGissAuthorizationBridge({codeStore:createFirestoreGissCodeStore({db}),authService,subjectResolver,gissService:templeGissRuntime.service,jwtSecret,jwtIssuer,now}) : null;
   const coreHandler = server.listeners('request')[0];
   const schoolActions = createSchoolActionHandler({ schoolStore, subjectResolver });
   server.removeAllListeners('request');
   server.on('request', async (req, res) => {
     try {
       const url = new URL(req.url || '/', 'http://neo.local');
+      if (gissBridge && await gissBridge(req,res,url)) return;
       if (await schoolActions(req, res, url)) return;
       return coreHandler(req, res);
     } catch (error) {

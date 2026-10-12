@@ -129,7 +129,7 @@ export function createNeopassSubjectResolver({ secret = process.env.NEO_PASS_JWT
     try {
       const header = JSON.parse(Buffer.from(parts[0], 'base64url').toString('utf8'));
       const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8'));
-      if (header.alg !== 'HS256' || header.typ !== 'JWT' || !payload.sub || (payload.exp && Number(payload.exp) <= Math.floor(Date.now() / 1000)) || (issuer && payload.iss !== issuer)) return null;
+      if (header.alg !== 'HS256' || header.typ !== 'JWT' || payload.token_use === 'giss-bridge' || !payload.sub || (payload.exp && Number(payload.exp) <= Math.floor(Date.now() / 1000)) || (issuer && payload.iss !== issuer)) return null;
       const expected = createHmac('sha256', secret).update(`${parts[0]}.${parts[1]}`).digest();
       const actual = Buffer.from(parts[2], 'base64url');
       if (actual.length !== expected.length || !timingSafeEqual(actual, expected)) return null;
