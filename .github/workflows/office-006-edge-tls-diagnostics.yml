@@ -1,0 +1,47 @@
+name: OFFICE-006 Edge TLS Diagnostics
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/office-006-edge-tls-diagnostics.yml'
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    environment: holytemples-production
+    timeout-minutes: 10
+    env:
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID || secrets.GCP_PROJECT_ID }}
+      GCP_WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER || secrets.GCP_WIF_PROVIDER }}
+      GCP_CLOUD_RUN_SERVICE_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_SERVICE_ACCOUNT || secrets.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+      IP_NAME: neo-edge-global-ip
+      HTTPS_PROXY_NAME: neo-edge-https-proxy
+      CERT_MANAGER_CERT_NAME: neo-edge-holytemples-wildcard
+      DNS_AUTH_NAME: neo-edge-holytemples-dns-auth
+      CERT_MAP_NAME: neo-edge-certificate-map
+  steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@v3
+      - name: Inspect edge TLS and routing
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "EDGE_IP=$(gcloud compute addresses describe "$IP_NAME" --global --project="$GCP_PROJECT_ID" --format='value(address)' 2>/dev/null || true)"
+          echo "WILDCARD_STATE=$(gcloud certificate-manager certificates describe "$CERT_MANAGER_CERT_NAME" --location=global --project="$GCP_PROJECT_ID" --format='value(managed.state)' 2>/dev/null || true)"
+          echo "DNS_AUTH:"
+          gcloud certificate-manager dns-authorizations describe "$DNS_AUTH_NAME" --location=global --project="$GCP_PROJECT_ID" --format='yaml(dnsResourceRecord)' 2>/dev/null || true
+          echo "CERT_MAP:"
+          gcloud certificate-manager maps describe "$CERT_MAP_NAME" --location=global --project="$GCP_PROJECT_ID" --format='yaml(name,description)' 2>/dev/null || true
+          echo "HTTPS_PROXY:"
+          gcloud compute target-https-proxies describe "$HTTPS_PROXY_NAME" --project="$GCP_PROJECT_ID" --format='yaml(name,certificateMap,sslCertificates,urlMap)' 2>/dev/null || true
