@@ -44,3 +44,19 @@ jobs:
             gcloud certificate-manager certificates create "$CERT_NAME" --domains='*.holytemples.org' --dns-authorizations="$DNS_AUTH_NAME" --location=global --project="$GCP_PROJECT_ID"
           fi
           echo "CERT_STATE=$(gcloud certificate-manager certificates describe "$CERT_NAME" --location=global --project="$GCP_PROJECT_ID" --format='value(managed.state)' || true)"
+
+      - name: Wait for wildcard certificate activation
+        shell: bash
+        run: |
+          set -euo pipefail
+          state=""
+          for i in {1..20}; do
+            state="$(gcloud certificate-manager certificates describe "$CERT_NAME" --location=global --project="$GCP_PROJECT_ID" --format='value(managed.state)' || true)"
+            echo "Wildcard certificate state: ${state:-unknown} (check $i/20)"
+            if [ "$state" = "ACTIVE" ]; then
+              exit 0
+            fi
+            sleep 30
+          done
+          echo "::error::Wildcard certificate did not become ACTIVE within 10 minutes."
+          exit 1
