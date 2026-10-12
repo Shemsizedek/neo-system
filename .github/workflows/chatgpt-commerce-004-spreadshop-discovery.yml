@@ -1,0 +1,40 @@
+name: CHATGPT-COMMERCE-004 Spreadshop Catalog Discovery
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/chatgpt-commerce-004-spreadshop-discovery.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Discover Temple Store / Spreadshop catalog surfaces
+        shell: bash
+        run: |
+          set -euo pipefail
+          STORE='https://Shemsizedek.myspreadshop.com'
+          PAGE='https://holytemples.org/temple-store/'
+
+          echo 'HOLYTEMPLES_STORE_PAGE:'
+          curl -sS -L -o /tmp/temple.html -w 'code=%{http_code} final=%{url_effective}\n' "$PAGE"
+          grep -Eio 'https://[^"<> ]*myspreadshop[^"<> ]*|shopName[^,;]+|prefix[^,;]+' /tmp/temple.html | head -50 || true
+
+          echo 'SPREADSHOP_ROOT:'
+          curl -sS -L -D /tmp/spread.headers -o /tmp/spread.html -w 'code=%{http_code} final=%{url_effective}\n' "$STORE/"
+          head -40 /tmp/spread.headers || true
+
+          echo 'DISCOVERED_URLS:'
+          grep -Eo 'https?://[^"<> ]+' /tmp/spread.html | grep -Ei 'api|product|article|shop|spread' | sort -u | head -100 || true
+
+          echo 'DISCOVERED_IDS_AND_MARKERS:'
+          grep -Eio '.{0,120}(shopId|shopName|sprd|product|article|apiKey|api\.spreadshirt|myspreadshop).{0,220}' /tmp/spread.html | head -120 || true
+
+          echo 'SCRIPTS:'
+          grep -Eo '<script[^>]+src=["'\''"][^"'\''>]+["'\''"]' /tmp/spread.html | sed -E 's/.*src=["'\'']([^"'\'']+)["'\''].*/\1/' | head -50 || true
