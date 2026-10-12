@@ -1,0 +1,42 @@
+name: ADS-READY-001 HolyTemples AdSense Readiness
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/ads-ready-001-holytemples.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Audit public AdSense prerequisites
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "ROOT:"
+          curl -sS -L -D /tmp/root.headers -o /tmp/root.html -w 'code=%{http_code} final=%{url_effective}\n' https://holytemples.org/
+          grep -Ei '^(HTTP/|content-type:|x-robots-tag:|location:)' /tmp/root.headers || true
+
+          echo "ADS_TXT:"
+          curl -sS -L -D /tmp/ads.headers -o /tmp/ads.txt -w 'code=%{http_code} final=%{url_effective}\n' https://holytemples.org/ads.txt
+          grep -Ei '^(HTTP/|content-type:|x-robots-tag:|location:)' /tmp/ads.headers || true
+          cat /tmp/ads.txt
+
+          echo "ROBOTS:"
+          curl -sS -L -o /tmp/robots.txt -w 'code=%{http_code}\n' https://holytemples.org/robots.txt || true
+          cat /tmp/robots.txt || true
+
+          echo "ADSENSE_MARKERS:"
+          grep -Eio 'ca-pub-[0-9]+|pagead2\.googlesyndication\.com[^"'\'' <]*|adsbygoogle|google-site-verification[^"'\'' <]*' /tmp/root.html | sort -u || true
+
+          echo "PUBLISHER_ID_MATCH:"
+          if grep -q 'pub-7219200716649339' /tmp/ads.txt; then echo yes; else echo no; fi
+
+          echo "ADSENSE_SCRIPT_MATCH:"
+          if grep -q 'ca-pub-7219200716649339' /tmp/root.html; then echo yes; else echo no; fi
