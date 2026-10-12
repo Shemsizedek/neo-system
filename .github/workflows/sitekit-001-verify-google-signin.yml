@@ -1,0 +1,29 @@
+name: SITEKIT-001 Verify Google Sign-In
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/sitekit-001-verify-google-signin.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Verify Site Kit Google Sign-In surface
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOT=https://holytemples.org
+          curl -sS -L -D /tmp/headers -o /tmp/root.html -w 'code=%{http_code} final=%{url_effective}\n' "$ROOT/"
+          echo "GOOGLE_SIGNIN_MARKERS:"
+          grep -Eio 'accounts\.google\.com/gsi/client|g_id_onload|data-client_id|client_id[^"<> ]*|google.accounts.id' /tmp/root.html | sort -u || true
+          echo "ADSENSE_MARKERS:"
+          grep -Eio 'ca-pub-[0-9]+|pagead2\.googlesyndication\.com/pagead/js/adsbygoogle\.js[^"<> ]*' /tmp/root.html | sort -u || true
+          echo "ADS_TXT:"
+          curl -sS -L "$ROOT/ads.txt"
