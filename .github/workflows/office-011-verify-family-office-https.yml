@@ -1,0 +1,34 @@
+name: OFFICE-011 Verify Family Office HTTPS
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/office-011-verify-family-office-https.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Verify HTTPS against NEO edge
+        shell: bash
+        run: |
+          set -euo pipefail
+          EDGE_IP=8.232.127.249
+          base=(--resolve office.holytemples.org:443:$EDGE_IP --connect-timeout 10 --max-time 20 -sS)
+          echo "ROOT:"
+          curl "${base[@]}" -o /tmp/root.html -w '%{http_code}\n' https://office.holytemples.org/
+          echo "HEALTH:"
+          curl "${base[@]}" https://office.holytemples.org/health
+          echo
+          echo "ADS:"
+          curl "${base[@]}" https://office.holytemples.org/ads.txt
+          echo
+          echo "ADS_STATUS:"
+          curl "${base[@]}" https://office.holytemples.org/api/ads/status
+          echo
