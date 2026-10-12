@@ -25,7 +25,7 @@ jobs:
       CERT_MANAGER_CERT_NAME: neo-edge-holytemples-wildcard
       DNS_AUTH_NAME: neo-edge-holytemples-dns-auth
       CERT_MAP_NAME: neo-edge-certificate-map
-  steps:
+    steps:
       - uses: actions/checkout@v7.0.1
       - uses: google-github-actions/auth@v3
         with:
