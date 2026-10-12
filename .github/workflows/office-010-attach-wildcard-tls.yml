@@ -1,0 +1,53 @@
+name: OFFICE-010 Attach Wildcard TLS
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/office-010-attach-wildcard-tls.yml'
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  attach:
+    runs-on: ubuntu-latest
+    environment: holytemples-production
+    timeout-minutes: 10
+    env:
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID || secrets.GCP_PROJECT_ID }}
+      GCP_WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER || secrets.GCP_WIF_PROVIDER }}
+      GCP_CLOUD_RUN_SERVICE_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_SERVICE_ACCOUNT || secrets.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+      CERT_NAME: neo-edge-holytemples-wildcard
+      CERT_MAP_NAME: neo-edge-certificate-map
+      CERT_MAP_ENTRY_NAME: neo-edge-wildcard-entry
+      HTTPS_PROXY_NAME: neo-edge-https-proxy
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@v3
+      - name: Attach wildcard certificate map
+        shell: bash
+        run: |
+          set -euo pipefail
+          state="$(gcloud certificate-manager certificates describe "$CERT_NAME" --location=global --project="$GCP_PROJECT_ID" --format='value(managed.state)')"
+          echo "Wildcard certificate state: $state"
+          test "$state" = "ACTIVE"
+
+          if ! gcloud certificate-manager maps describe "$CERT_MAP_NAME" --location=global --project="$GCP_PROJECT_ID" >/dev/null 2>&1; then
+            gcloud certificate-manager maps create "$CERT_MAP_NAME" --location=global --project="$GCP_PROJECT_ID"
+          fi
+
+          if ! gcloud certificate-manager maps entries describe "$CERT_MAP_ENTRY_NAME" --map="$CERT_MAP_NAME" --location=global --project="$GCP_PROJECT_ID" >/dev/null 2>&1; then
+            gcloud certificate-manager maps entries create "$CERT_MAP_ENTRY_NAME"               --map="$CERT_MAP_NAME"               --hostname='*.holytemples.org'               --certificates="$CERT_NAME"               --location=global               --project="$GCP_PROJECT_ID"
+          fi
+
+          gcloud compute target-https-proxies update "$HTTPS_PROXY_NAME"             --certificate-map="$CERT_MAP_NAME"             --project="$GCP_PROJECT_ID"             --quiet
+
+          gcloud compute target-https-proxies describe "$HTTPS_PROXY_NAME"             --project="$GCP_PROJECT_ID"             --format='yaml(name,certificateMap,urlMap)'
