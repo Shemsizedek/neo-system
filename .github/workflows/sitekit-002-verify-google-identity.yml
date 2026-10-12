@@ -1,0 +1,38 @@
+name: SITEKIT-002 Verify Google Identity Surface
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/sitekit-002-verify-google-identity.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Inspect Site Kit Google Identity surfaces
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOT=https://holytemples.org
+
+          for path in / /wp-login.php; do
+            safe="$(echo "$path" | tr '/.' '__')"
+            echo "SURFACE:$path"
+            curl -sS -L -D "/tmp/${safe}.headers" -o "/tmp/${safe}.html" -w 'code=%{http_code} final=%{url_effective}\n' "$ROOT$path"
+            grep -Eio 'accounts\.google\.com/gsi/client|g_id_onload|data-client_id|client_id[=:][^"<> ]+|[0-9]+-[A-Za-z0-9_-]+\.apps\.googleusercontent\.com|google\.accounts\.id' "/tmp/${safe}.html" | sort -u || true
+          done
+
+          echo "SITEKIT_MARKERS:"
+          grep -Eio 'googlesitekit[^"<> ]*|google-site-kit[^"<> ]*' /tmp/_.html | sort -u | head -50 || true
+
+          echo "ADSENSE:"
+          grep -Eio 'ca-pub-[0-9]+|pagead2\.googlesyndication\.com/pagead/js/adsbygoogle\.js[^"<> ]*' /tmp/_.html | sort -u || true
+
+          echo "ADS_TXT:"
+          curl -sS -L "$ROOT/ads.txt"
