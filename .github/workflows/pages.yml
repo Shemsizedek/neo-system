@@ -62,7 +62,8 @@ jobs:
           test -s dist/api/merchant/google-merchant.xml
           test -s dist/api/merchant/openai-products.csv
           grep -q '<rss xmlns:g="http://base.google.com/ns/1.0"' dist/api/merchant/google-merchant.xml
-          grep -q '^item_id,title,description,url,brand,seller_name,image_url,availability,price
+          grep -q '^item_id,title,description,url,brand,seller_name,image_url,availability,price$' dist/api/merchant/openai-products.csv
+      - name: Publish NEOpay application route
         run: |
           mkdir -p dist/neopay
           cp dist/index.html dist/neopay/index.html
