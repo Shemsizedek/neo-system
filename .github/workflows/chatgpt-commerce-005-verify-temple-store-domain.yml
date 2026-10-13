@@ -1,0 +1,49 @@
+name: CHATGPT-COMMERCE-005 Verify Temple Store Domain
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/chatgpt-commerce-005-verify-temple-store-domain.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Verify shop.holytemples.org
+        shell: bash
+        run: |
+          set -euo pipefail
+          HOST='shop.holytemples.org'
+          URL="https://$HOST/"
+
+          echo 'DNS:'
+          getent ahosts "$HOST" | head -10 || true
+
+          echo 'TLS:'
+          echo | openssl s_client -servername "$HOST" -connect "$HOST:443" 2>/tmp/ssl.err | openssl x509 -noout -subject -issuer -dates -ext subjectAltName || true
+
+          echo 'HTTP:'
+          curl -sS -L -D /tmp/headers -o /tmp/body.html -w 'code=%{http_code} final=%{url_effective} remote=%{remote_ip}\n' "$URL" || true
+          cat /tmp/headers | head -80 || true
+
+          echo 'BODY_MARKERS:'
+          grep -Eio '.{0,140}(myspreadshop|spreadshop|shopclient|product|article|catalog|feed|meta|merchant).{0,240}' /tmp/body.html | head -120 || true
+
+          echo 'URLS:'
+          grep -Eo 'https?://[^"<> ]+' /tmp/body.html | sort -u | grep -Ei 'spread|product|feed|catalog|shop' | head -100 || true
+
+          echo 'ROBOTS:'
+          curl -sS -L -o /tmp/robots.txt -w 'code=%{http_code}\n' "https://$HOST/robots.txt" || true
+          cat /tmp/robots.txt | head -120 || true
+
+          echo 'COMMON_FEED_PATHS:'
+          for path in product-feed.xml product-feed.csv feed.xml products.xml merchant-center.xml meta-feed.xml google-shopping.xml; do
+            code="$(curl -sS -o /dev/null -w '%{http_code}' "https://$HOST/$path" || true)"
+            echo "$path $code"
+          done
