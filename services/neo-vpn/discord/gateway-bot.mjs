@@ -10,6 +10,7 @@ import rolePolicy from './role-policy.json' with { type: 'json' };
 import { createControlRecord } from './control-plane.mjs';
 import { evaluateAcceptance } from './acceptance-probe.mjs';
 import { executeLocalReadOnly } from './local-executor.mjs';
+import { requestApproval } from './approval-store.mjs';
 import { readRuntimeState, writeRuntimeState } from './runtime-state.mjs';
 
 const required = ['DISCORD_BOT_TOKEN', 'DISCORD_APPLICATION_ID', 'DISCORD_GUILD_ID'];
@@ -249,6 +250,8 @@ client.on(Events.InteractionCreate, async interaction => {
       channelId: interaction.channelId,
       options: optionsFromInteraction(interaction)
     }, infrastructureLive);
+
+    if (record.state === 'pending-approval') await requestApproval(record);
 
     console.log(JSON.stringify({
       event: 'neo-vpn-control-request',
