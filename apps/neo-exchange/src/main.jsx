@@ -25,6 +25,10 @@ function fmt(value, digits = 8) {
 
 function App() {
   const [activePair, setActivePair] = useState('BTC/XCP');
+  const [activeView,setActiveView] = useState('Trade');
+  const [interval,setInterval] = useState('4H');
+  const [refreshTick,setRefreshTick] = useState(0);
+  const [notice,setNotice] = useState('');
   const [side, setSide] = useState('BUY');
   const [orderType, setOrderType] = useState('LIMIT');
   const [assets, setAssets] = useState([]);
@@ -56,7 +60,7 @@ function App() {
       }
     });
     return () => { cancelled = true; };
-  }, []);
+  }, [refreshTick]);
 
   useEffect(() => {
     const [base, quote] = activePair.split('/');
@@ -68,7 +72,7 @@ function App() {
       .then(d => { if (!cancelled) { setBook(d); setFeedState(d.status || 'LIVE'); } })
       .catch(() => { if (!cancelled && feedState === 'LIVE') setFeedState('DEGRADED'); });
     return () => { cancelled = true; };
-  }, [activePair]);
+  }, [activePair,refreshTick]);
 
   const displayMarkets = useMemo(() => {
     const live = markets.length ? markets : fallbackMarkets;
@@ -111,14 +115,20 @@ function App() {
     <header className="topbar">
       <div className="brand"><div className="brand-mark">N</div><div><strong>NEO EXCHANGE</strong><span>BITCOIN / COUNTERPARTY XCP</span></div></div>
       <div className="symbol-search"><Search size={16}/><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Symbol, asset, address or market"/></div>
-      <div className="top-status"><span className={`status-dot ${feedState === 'REFERENCE' ? 'muted' : ''}`}/><b>{feedState}</b><small>LIVE MARKET GATE</small></div>
+      <div className="top-status"><span className={`status-dot ${feedState === 'REFERENCE' ? 'muted' : ''}`}/><b>{feedState}</b><small>REFERENCE FEED</small><button onClick={()=>setRefreshTick(n=>n+1)}>↻ Refresh</button></div>
     </header>
 
     <aside className="sidebar">
-      {[[CandlestickChart,'Trade'],[BarChart3,'Markets'],[Layers3,'Assets'],[WalletCards,'Wallet'],[BriefcaseBusiness,'Portfolio'],[BookOpen,'Orders'],[Activity,'History'],[Gauge,'Analytics'],[ShieldCheck,'Security']].map(([Icon,label]) => <button className={label==='Trade'?'active':''} key={label}><Icon size={17}/><span>{label}</span></button>)}
+      {[[CandlestickChart,'Trade'],[BarChart3,'Markets'],[Layers3,'Assets'],[WalletCards,'Wallet'],[BriefcaseBusiness,'Portfolio'],[BookOpen,'Orders'],[Activity,'History'],[Gauge,'Analytics'],[ShieldCheck,'Security']].map(([Icon,label]) => <button className={activeView===label?'active':''} key={label} onClick={()=>{setActiveView(label);setNotice('')}}><Icon size={17}/><span>{label}</span></button>)}
     </aside>
 
     <main className="workspace">
+    <section className="panel" style={{padding:14,marginBottom:14,display:'flex',gap:12,alignItems:'center',justifyContent:'space-between',flexWrap:'wrap'}}>
+      <div><b>NEO FX Account Portal</b><div style={{fontSize:12,opacity:.8}}>Alpaca Connect · paper environment · authorization pending</div></div>
+      <button onClick={()=>{setActiveView('Security');setNotice('Account authorization is not yet deployed. Secure NEO Pass authentication and a private OAuth vault are required.')}}>Connection status</button>
+    </section>
+    {activeView!=='Trade'&&<section className="panel" style={{padding:16,marginBottom:14}}><h2>{activeView}</h2><p>{activeView==='Markets'?'Select a market below to inspect available verified quotes.':activeView==='Security'?'NEO Pass and Alpaca OAuth callback are not yet deployed. Do not enter brokerage credentials on this public terminal.':'This account view requires an authorized private broker connection. No portfolio or transactions are currently synchronized.'}</p><button onClick={()=>setActiveView('Trade')}>Return to terminal</button></section>}
+    {notice&&<section className="panel" role="status" style={{padding:12,marginBottom:12}}>{notice}<button onClick={()=>setNotice('')} style={{marginLeft:12}}>Dismiss</button></section>}
       <section className="market-strip">
         {displayMarkets.map(m => <button key={m.pair} onClick={()=>setActivePair(m.pair)} className={activePair===m.pair?'selected':''}><span>{m.pair}</span><strong>{fmt(m.mid)}</strong><small>BID {fmt(m.best_bid)} · ASK {fmt(m.best_ask)}</small></button>)}
       </section>
@@ -126,9 +136,9 @@ function App() {
       <section className="terminal-grid">
         <div className="panel chart-panel">
           <div className="panel-header"><div><small>MARKET</small><h1>{activePair}</h1></div><div className="quote"><b>{fmt(book.mid)}</b><span>BID {fmt(book.best_bid)} · ASK {fmt(book.best_ask)}</span></div></div>
-          <div className="toolbar"><button>1m</button><button>5m</button><button>15m</button><button>1H</button><button className="active">4H</button><button>1D</button><i/><button>Indicators</button><button>Objects</button></div>
+          <div className="toolbar">{['1m','5m','15m','1H','4H','1D'].map(t=><button key={t} className={interval===t?'active':''} onClick={()=>setInterval(t)}>{t}</button>)}<i/><button onClick={()=>setNotice('Historical OHLC and indicator data are not connected.')}>Indicators</button><button onClick={()=>setNotice('Drawing tools require the historical OHLC chart integration.')}>Objects</button></div>
           <div className="chart-stage">
-            <div className="chart-watermark"><CandlestickChart size={50}/><b>NEO EXCHANGE</b><span>Verified historical OHLC adapter is the next data gate</span></div>
+            <div className="chart-watermark"><CandlestickChart size={50}/><b>NEO EXCHANGE</b><span>Historical OHLC feed unavailable</span></div>
             <div className="price-axis"><span>ASK {fmt(book.best_ask)}</span><span>MID {fmt(book.mid)}</span><span>BID {fmt(book.best_bid)}</span></div>
           </div>
         </div>
@@ -150,9 +160,9 @@ function App() {
           <label>Order Type<select value={orderType} onChange={e=>setOrderType(e.target.value)}><option>LIMIT</option><option>MARKET</option></select></label>
           <label>Price<input placeholder={orderType==='MARKET'?'Market':fmt(side==='BUY' ? book.best_ask : book.best_bid)}/></label>
           <label>Amount<input placeholder="0.00000000"/></label>
-          <div className="allocation"><button>25%</button><button>50%</button><button>75%</button><button>100%</button></div>
+          <div className="allocation">{['25%','50%','75%','100%'].map(p=><button key={p} onClick={()=>setNotice('Allocation requires a verified brokerage balance and account authorization.')}>{p}</button>)}</div>
           <div className="review-box"><span>Market</span><b>{activePair}</b><span>Network</span><b>Bitcoin / Counterparty</b><span>Signing</span><b>User-controlled</b></div>
-          <button className={`submit ${side.toLowerCase()}`}>REVIEW {side} ORDER</button>
+          <button className={`submit ${side.toLowerCase()}`} onClick={()=>setNotice('Orders are disabled pending authorized paper brokerage enrollment and pre-trade checks.')}>REVIEW {side} ORDER</button>
           <p className="safety-note">No private keys are stored by the GitHub Pages client. Composition, signing and broadcast remain separate reviewed security gates.</p>
         </div>
 
