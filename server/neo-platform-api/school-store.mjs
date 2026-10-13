@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { OFFICIAL_101_ADDITIONS, official101 } from './official-101-catalog.mjs';
 
 export class SchoolStoreError extends Error {
   constructor(code, status = 400) { super(code); this.code = code; this.status = status; }
@@ -11,7 +12,8 @@ export function normalizeCourse(input = {}, existing = null) {
   const title = clean(input.title || existing?.title, 120);
   if (!title) throw new SchoolStoreError('course_title_required');
   return {
-    title,
+    title: /\b101$/.test(title) ? title : `${title} 101`,
+    free: true, accessCodeRequired: false,
     code: clean(input.code ?? existing?.code, 30).toUpperCase(),
     description: clean(input.description ?? existing?.description, 800),
     teacher: clean(input.teacher ?? existing?.teacher, 100),
@@ -93,17 +95,15 @@ export const SCHOOL_SEED = [
       captureRange:'2019-12-10 to 2024-07-31'
     }
   },
-  { id:'course:giss-foundations', title:'GISS Foundations', code:'GISS-101', description:'Orientation to Temple learning, sacred citizenship, and the Nous learning path.', teacher:'World Education', color:'gold', status:'published' },
-  { id:'course:holy-tablets', title:'Holy Tablets', code:'GISS-120', description:'Guided study of the Holy Tablets with readings, reflections, and discussion.', teacher:'World Education', color:'green', status:'published' },
-  { id:'course:temple-governance', title:'Temple Governance', code:'GISS-210', description:'Institutions, public service, councils, and the responsibilities of Temple citizenship.', teacher:'Holy See Global District', color:'blue', status:'published' }
-];
+  ...OFFICIAL_101_ADDITIONS
+].map(official101);
 
 export function createInMemorySchoolStore({ now=()=>new Date().toISOString(), id=()=>randomUUID() }={}) {
   const courses=new Map(), assignments=new Map(), enrollments=new Map();
   const enrollmentKey=(subject,courseId)=>`${clean(subject,240)}::${clean(courseId,120)}`;
   const getCourse=courseId=>{const course=courses.get(clean(courseId,120));if(!course)throw new SchoolStoreError('course_not_found',404);return course;};
   return {
-    async ensureSeed(items=SCHOOL_SEED){ for(const item of items){ if(!courses.has(item.id)) courses.set(item.id,{...item,createdAt:now(),updatedAt:now()}); } },
+    async ensureSeed(items=SCHOOL_SEED){ for(const item of items){ const existing=courses.get(item.id); if(!existing) courses.set(item.id,{...item,createdAt:now(),updatedAt:now()}); else if((existing.catalogRevision||0)<item.catalogRevision) courses.set(item.id,{...existing,...item,createdAt:existing.createdAt,updatedAt:now()}); } },
     async dashboard({subject}={}){ return { courses:[...courses.values()].filter(x=>x.status!=='archived'), assignments:[...assignments.values()].filter(x=>x.status!=='closed'), students:[], teachers:[], enrollments:subject?[...enrollments.values()].filter(x=>x.subject===subject):[] }; },
     async createCourse(input, actor){ const value={id:id(),...normalizeCourse(input),createdBy:actor,createdAt:now(),updatedAt:now()}; courses.set(value.id,value); return structuredClone(value); },
     async createAssignment(input, actor){ if(!courses.has(clean(input.courseId,120))) throw new SchoolStoreError('course_not_found',404); const value={id:id(),...normalizeAssignment(input),createdBy:actor,createdAt:now(),updatedAt:now()}; assignments.set(value.id,value); return structuredClone(value); },
