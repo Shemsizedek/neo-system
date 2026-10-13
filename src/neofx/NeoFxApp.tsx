@@ -62,5 +62,23 @@ export function NeoFxApp(){
       <div className="neofx-table"><div className="neofx-row neofx-row-head"><span>ASSET</span><span>CLASS</span><span>ROLE</span><span>QUANTITY</span><span>PROVENANCE</span></div>{filtered.map(asset=><button className="neofx-row" key={asset.asset} onClick={()=>window.location.hash=`/explorer/${asset.asset}`}><b>{asset.asset}</b><span>{asset.classification.replaceAll('_',' ')}</span><span>{asset.settlementRole}</span><span>{String(asset.quantity??'—')}</span><span>{asset.blockIndex?`BLOCK ${asset.blockIndex}`:'TREASURY ISSUANCE'}</span></button>)}</div>
       {!filtered.length&&<p className="neofx-empty">{state==='loading'?'Loading Treasury issuance history…':'No Treasury currencies match this search.'}</p>}
     </section>
+
+    <section aria-label="Global multi-broker connectivity" style={{marginTop:24,padding:20,border:'1px solid #367553',borderRadius:12,background:'#10271e',color:'#e4faeb'}}>
+      <div style={{display:'flex',justifyContent:'space-between',gap:12,flexWrap:'wrap',alignItems:'center'}}>
+        <div><small style={{letterSpacing:2,color:'#9ddec0'}}>NEO FX GLOBAL BROKER NETWORK</small><h2 style={{margin:'6px 0'}}>Multi-Broker Account Gateway</h2><p style={{margin:0}}>One workstation. Separately authorized regional broker accounts.</p></div>
+        <strong style={{color:'#ffd18b'}}>READ-ONLY PLANNING · EXECUTION DISABLED</strong>
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(185px,1fr))',gap:12,marginTop:18}}>
+        {[
+          {name:'Interactive Brokers',markets:'Global multi-asset securities',mode:'Adapter planned'},
+          {name:'OANDA',markets:'FX and regional products',mode:'Adapter planned'},
+          {name:'MetaTrader broker',markets:'MT4 / MT5 broker-specific accounts',mode:'Adapter planned'},
+          {name:'NEO Counterparty',markets:'BTC, XCP and verified assets',mode:'Separate wallet authorization'}
+        ].map(provider=><article key={provider.name} style={{padding:14,borderRadius:8,background:'#193829',border:'1px solid #32654b'}}>
+          <strong>{provider.name}</strong><p style={{fontSize:13,margin:'8px 0',opacity:.85}}>{provider.markets}</p><small style={{color:'#ffd18b'}}>{provider.mode}</small>
+        </article>)}
+      </div>
+      <p style={{marginBottom:0,marginTop:15,fontSize:13}}>No broker credentials or accounts are connected. Regional onboarding, KYC, licensed market data, permitted products, and account-specific risk approval are mandatory before live routing. Treasury assets shown above are not brokerage balances.</p>
+    </section>
   </main>
 }
