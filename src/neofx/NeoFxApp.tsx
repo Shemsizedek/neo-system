@@ -2,6 +2,8 @@ import {useEffect,useMemo,useState} from 'react'
 import {Banknote,Coins,ExternalLink,RefreshCw,Search,ShieldCheck} from 'lucide-react'
 import {loadNeoFxTreasuryRegistry,NEO_TREASURY_WALLET,WORLD_CURRENCY_REFERENCE,type NeoFxTreasuryAsset} from './treasuryRegistry'
 
+type FeedQuote={pair:string;mid?:number|null;last?:number|null;timestamp?:string;source?:string;status?:string;confidence?:string}
+type FeedResponse={quotes?:FeedQuote[];generatedAt?:string;errors?:Record<string,string|null>}
 export function NeoFxApp(){
   const[assets,setAssets]=useState<NeoFxTreasuryAsset[]>([])
   const[query,setQuery]=useState('')
@@ -9,6 +11,29 @@ export function NeoFxApp(){
   const[sources,setSources]=useState({counterparty:false,tokenScan:false})
   const[observedAt,setObservedAt]=useState('')
   const[refreshKey,setRefreshKey]=useState(0)
+  const[feedQuotes,setFeedQuotes]=useState<FeedQuote[]>([])
+  const[feedStatus,setFeedStatus]=useState<'loading'|'available'|'unavailable'>('loading')
+  const[feedAt,setFeedAt]=useState('')
+  useEffect(()=>{
+    let cancelled=false
+    const controller=new AbortController()
+    const timer=setTimeout(()=>controller.abort(),9000)
+    setFeedStatus('loading')
+    fetch('/api/markets/tickers?market=fx',{signal:controller.signal,headers:{accept:'application/json'}})
+      .then(async response=>{if(!response.ok)throw new Error('feed_http_unavailable');return response.json() as Promise<FeedResponse>})
+      .then(payload=>{
+        if(cancelled)return
+        const valid=(Array.isArray(payload.quotes)?payload.quotes:[]).filter(quote=>
+          typeof quote.pair==='string'&&typeof quote.source==='string'&&
+          (quote.mid==null||(Number.isFinite(quote.mid)&&quote.mid>0))&&
+          (quote.last==null||(Number.isFinite(quote.last)&&quote.last>0)))
+        setFeedQuotes(valid);setFeedAt(payload.generatedAt||'')
+        setFeedStatus(valid.some(quote=>quote.status!=='unavailable'&&(quote.mid||quote.last))?'available':'unavailable')
+      })
+      .catch(()=>{if(!cancelled){setFeedQuotes([]);setFeedStatus('unavailable')}})
+      .finally(()=>clearTimeout(timer))
+    return()=>{cancelled=true;controller.abort();clearTimeout(timer)}
+  },[refreshKey])
 
   useEffect(()=>{
     let cancelled=false
@@ -51,6 +76,27 @@ export function NeoFxApp(){
       <div><span>SOURCES</span><b>{sources.counterparty?'CP✓':'CP—'} • {sources.tokenScan?'NS✓':'NS—'}</b><small>{observedAt?new Date(observedAt).toLocaleString():'Waiting for live data'}</small></div>
     </section>
 
+
+    <section aria-label="Market reference feeds" style={{padding:20,marginTop:24,border:'1px solid #35734b',borderRadius:12,background:'#10271e',color:'#eef9ef'}}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:12,flexWrap:'wrap'}}>
+        <div><small>NEO FX · GLOBAL MARKET DATA</small><h2 style={{margin:'5px 0'}}>Reference Market Watch</h2></div>
+        <strong>{feedStatus==='loading'?'CONNECTING':feedStatus==='available'?'SOURCE DATA RECEIVED':'FEED UNAVAILABLE'}</strong>
+      </div>
+      <p style={{fontSize:13}}>Read-only reference data. Prices are not broker-executable bids or offers. A live endpoint must be deployed on this host for quotes to appear.</p>
+      <div style={{overflowX:'auto'}}>
+        <table style={{width:'100%',textAlign:'left',borderCollapse:'collapse',fontSize:13}}>
+          <thead><tr><th>PAIR</th><th>REFERENCE PRICE</th><th>SOURCE</th><th>CLASSIFICATION</th></tr></thead>
+          <tbody>{feedQuotes.map(q=><tr key={q.pair} style={{borderTop:'1px solid #33523b'}}>
+            <td style={{padding:'10px 3px'}}>{q.pair}</td>
+            <td>{q.status==='unavailable'||!(q.mid||q.last)?'Unavailable':String(q.mid||q.last)}</td>
+            <td>{q.source}</td>
+            <td>{q.confidence||'reference'}</td>
+          </tr>)}</tbody>
+        </table>
+      </div>
+      {!feedQuotes.length&&<p>Reference quotes are unavailable. No simulated prices are substituted.</p>}
+      <small>Feed response time: {feedAt||'Not available'} · Refresh using the Refresh Treasury control above</small>
+    </section>
     <section className="neofx-doctrine">
       <article><Coins size={18}/><div><b>Coinage</b><p>Treasury-issued assets containing “coin” are classified operationally as digital coinage for change and settlement denomination inside the NEO Ecosystem.</p></div></article>
       <article><Banknote size={18}/><div><b>Cash</b><p>Treasury-issued assets containing “cash” are classified operationally as digital or cryptographic fiat-cash denominations.</p></div></article>
