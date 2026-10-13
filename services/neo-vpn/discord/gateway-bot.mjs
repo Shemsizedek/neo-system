@@ -11,7 +11,6 @@ import { createControlRecord } from './control-plane.mjs';
 import { evaluateAcceptance } from './acceptance-probe.mjs';
 import { executeLocalReadOnly } from './local-executor.mjs';
 import { requestApproval, readApproval, decideApproval } from './approval-store.mjs';
-import { requestApproval } from './approval-store.mjs';
 import { readRuntimeState, writeRuntimeState } from './runtime-state.mjs';
 
 const required = ['DISCORD_BOT_TOKEN', 'DISCORD_APPLICATION_ID', 'DISCORD_GUILD_ID'];
