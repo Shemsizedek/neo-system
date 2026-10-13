@@ -47,6 +47,59 @@ jobs:
           workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
           service_account: ${{ env.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
       - uses: google-github-actions/setup-gcloud@v3
+      - name: Generate ChatGPT product discovery feed
+        env:
+          SPREADSHOP_SHOP_ID: ${{ secrets.SPREADSHOP_SHOP_ID }}
+          SPREADSHOP_API_KEY: ${{ secrets.SPREADSHOP_API_KEY }}
+          SPREADSHOP_PLATFORM: ${{ secrets.SPREADSHOP_PLATFORM }}
+          SPREADSHOP_STORE_URL: https://shop.holytemples.org
+          OPENAI_COMMERCE_SELLER_NAME: World Temple
+          OPENAI_COMMERCE_OUTPUT_DIR: server/house-of-negus-shop/generated
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf server/house-of-negus-shop/generated
+          mkdir -p server/house-of-negus-shop/generated
+          node scripts/spreadshop-sync-v2.mjs
+          node scripts/spreadshop-openai-product-feed.mjs
+          node --test scripts/spreadshop-openai-product-feed.test.mjs
+          test -s server/house-of-negus-shop/generated/openai-products.csv
+          test -s server/house-of-negus-shop/generated/openai-products-report.json
+          grep -q '^item_id,title,description,url,brand,seller_name,image_url,availability,price
+        env:
+          IMAGE: ${{ env.GCP_ARTIFACT_REGISTRY }}/house-of-negus-shop:${{ github.sha }}
+        run: |
+          gcloud auth configure-docker "${GCP_REGION}-docker.pkg.dev" --quiet
+          docker build -f server/house-of-negus-shop/Dockerfile -t "$IMAGE" .
+          docker push "$IMAGE"
+      - name: Deploy public shop service
+        env:
+          IMAGE: ${{ env.GCP_ARTIFACT_REGISTRY }}/house-of-negus-shop:${{ github.sha }}
+        run: |
+          gcloud run deploy "$SERVICE_NAME"             --project="$GCP_PROJECT_ID"             --region="$GCP_REGION"             --image="$IMAGE"             --service-account="$GCP_CLOUD_RUN_RUNTIME_ACCOUNT"             --allow-unauthenticated             --quiet
+      - name: Verify Cloud Run origin
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL="$(gcloud run services describe "$SERVICE_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format='value(status.url)')"
+          test -n "$URL"
+          test "$(curl -sS -o /tmp/shop.html -w '%{http_code}' "$URL/")" = 200
+          grep -q 'google-site-verification' /tmp/shop.html
+          grep -q 'spread_shop_config' /tmp/shop.html
+          echo "Origin: $URL" >> "$GITHUB_STEP_SUMMARY"
+      - name: Ensure custom-domain mapping
+        shell: bash
+        run: |
+          set -euo pipefail
+          gcloud components install beta --quiet
+          if gcloud beta run domain-mappings describe             --domain="$SHOP_DOMAIN"             --project="$GCP_PROJECT_ID"             --region="$GCP_REGION" >/dev/null 2>&1; then
+            echo "Domain mapping already exists."
+          else
+            gcloud beta run domain-mappings create               --service="$SERVICE_NAME"               --domain="$SHOP_DOMAIN"               --project="$GCP_PROJECT_ID"               --region="$GCP_REGION"               --quiet
+          fi
+          echo "### shop.holytemples.org mapping" >> "$GITHUB_STEP_SUMMARY"
+          gcloud beta run domain-mappings describe             --domain="$SHOP_DOMAIN"             --project="$GCP_PROJECT_ID"             --region="$GCP_REGION"             --format='yaml(status.conditions,status.resourceRecords)' | tee -a "$GITHUB_STEP_SUMMARY"
+ server/house-of-negus-shop/generated/openai-products.csv
       - name: Build and push shop image
         env:
           IMAGE: ${{ env.GCP_ARTIFACT_REGISTRY }}/house-of-negus-shop:${{ github.sha }}
