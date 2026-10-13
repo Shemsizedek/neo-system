@@ -31,6 +31,8 @@ jobs:
           npm run build
           test -s dist/index.html
           find dist -type f -name '*.js' | grep -q .
+      - name: Verify shared-edge NEO FX release preflight (no deployment)
+        run: node scripts/neofx-release-check-049.mjs
       - name: Validate edge syntax
         run: |
           node --check server/neo-edge/production.mjs
