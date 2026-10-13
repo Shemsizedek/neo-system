@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { MINISTRY_101 } from './ministry-101.mjs';
 import { OFFICIAL_101_ADDITIONS, official101 } from './official-101-catalog.mjs';
 
 export class SchoolStoreError extends Error {
@@ -46,6 +47,7 @@ const CIVICS_101_MONTHS = [
 ];
 
 export const SCHOOL_SEED = [
+  MINISTRY_101,
   {
     id:'course:civics-101',
     title:'Civics 101',
