@@ -1,8 +1,14 @@
 import http from "node:http";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 const PORT = Number(process.env.PORT || 8080);
 const SHOP_HOST = "https://Shemsizedek.myspreadshop.com";
 const VERIFY = "YOlhCWqfC2W9h4eyCBZl36jDYopfDggLnUftnbYSLYA";
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const OPENAI_FEED_PATH = path.join(__dirname, "generated", "openai-products.csv");
+const OPENAI_REPORT_PATH = path.join(__dirname, "generated", "openai-products-report.json");
 
 const pages = {
   "/shipping": {
@@ -135,6 +141,29 @@ const server=http.createServer((req,res)=>{
   if(path==="/health"){
     res.writeHead(200,{"content-type":"application/json","cache-control":"no-store"});
     return res.end(JSON.stringify({ok:true,service:"house-of-negus-shop"}));
+  }
+
+  if(path==="/openai-products.csv"){
+    if(!fs.existsSync(OPENAI_FEED_PATH)){
+      res.writeHead(503,{"content-type":"application/json","cache-control":"no-store"});
+      return res.end(JSON.stringify({ok:false,error:"openai_product_feed_unavailable"}));
+    }
+    res.writeHead(200,{
+      "content-type":"text/csv; charset=utf-8",
+      "cache-control":"public, max-age=900",
+      "content-disposition":"inline; filename=openai-products.csv",
+      "x-content-type-options":"nosniff"
+    });
+    return fs.createReadStream(OPENAI_FEED_PATH).pipe(res);
+  }
+
+  if(path==="/openai-products-report.json"){
+    if(!fs.existsSync(OPENAI_REPORT_PATH)){
+      res.writeHead(503,{"content-type":"application/json","cache-control":"no-store"});
+      return res.end(JSON.stringify({ok:false,error:"openai_product_report_unavailable"}));
+    }
+    res.writeHead(200,{"content-type":"application/json; charset=utf-8","cache-control":"public, max-age=900","x-content-type-options":"nosniff"});
+    return fs.createReadStream(OPENAI_REPORT_PATH).pipe(res);
   }
 
   const policy=pages[path];
