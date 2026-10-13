@@ -3,8 +3,9 @@ Status: APPLICATION PREPARATION ONLY. No broker accounts opened. No user identit
 
 ## Track A: NEO FX proprietary organizational account
 Provider priority 1: Interactive Brokers (organization/small business account, not introducing broker unless eligibility and registration are established).
-Applicant legal entity: UNCONFIRMED; must be chosen by authorized signatory before submission.
-Entity formation jurisdiction: PENDING.
+Onboarding decision: start a new application only after exact entity legal form and jurisdiction are established. Prefer CASH permissions at opening, no margin authorization by default.
+Proposed applicant operating name: Shelton Estate & Co. (user selected; legal form/registered name unverified). Authorized signatory and provider must confirm exact legal entity before submission.
+Entity formation jurisdiction: PENDING; do not infer from office location.
 Tax classification / EIN: PENDING; NEVER COMMIT CONFIDENTIAL IDs.
 Controlling officer and beneficial owner KYC: PENDING; supply through broker secure portal.
 Entity documentation: PENDING.
@@ -38,3 +39,11 @@ One NEO FX UI; isolated per broker account/tenant/jurisdiction. Secrets in Googl
 - Signatory independently verifies identity, beneficial ownership, tax information, source of funds and agreement disclosures in provider's portal.
 - Provider conducts KYC and approves brokerage application.
 - Only then activate private API account authorization and confirm read-only balances.
+
+## Gate 034 — applicant eligibility audit (2026-10-12)
+- Shelton Estate & Co. selected by user as proposed applicant. This does not establish incorporated legal status or eligibility.
+- IBKR US Small Business account requires tax ID, control-person and shareholder data, finances, proof of business existence and authorization documents according to legal form: https://brokerage.ibkr.com/en/general/what-you-need-sb.php
+- OANDA US accepts US-registered corporations, general partnerships, LLCs, LLPs and trusts; not all informal organizational forms. Official source: https://www.oanda.com/us-en/trading/corporate-account/
+- OANDA requires entity documents, identity verification, and a named-person email for application contact; no generic shared inbox: https://help.oanda.com/us/en/faqs/open-entity-corporate-account-us.htm
+- Do not claim application submitted, account activated, broker API credentials issued, or live trade approved. Applicant must attest, sign and complete KYC directly in secured broker portal.
+- First missing decision: What exact registered legal entity type and jurisdiction does Shelton Estate & Co. have? Then gather non-sensitive document inventory. Private EIN/SSN, identity IDs and banking details must be provided only in secure broker workflow.
