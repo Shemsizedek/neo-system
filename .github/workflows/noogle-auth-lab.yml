@@ -40,4 +40,4 @@ jobs:
       - name: Verify fail-closed browser enrollment
         run: node tests/noogle-connect/passkeys.test.cjs
       - name: Verify NEO Pass identity bridge and enrollment authorization
-        run: node --test services/noogle-auth-lab/identity-bridge.test.mjs services/noogle-auth-lab/enrollment-authorization.test.mjs
+        run: node --test services/noogle-auth-lab/identity-bridge.test.mjs services/noogle-auth-lab/enrollment-authorization.test.mjs services/noogle-auth-lab/guardian-gateway.test.mjs
