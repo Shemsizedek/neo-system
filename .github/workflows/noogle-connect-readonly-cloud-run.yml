@@ -36,7 +36,7 @@ jobs:
           docker run -d --name noogle-test -p 127.0.0.1:18080:8080 noogle-connect-staging:ci
           trap 'docker logs noogle-test || true; docker rm -f noogle-test || true' EXIT
           for i in $(seq 1 30); do
-            curl -fsS http://127.0.0.1:18080/healthz > /tmp/noogle.json && break
+            curl -fsS http://127.0.0.1:18080/readyz > /tmp/noogle.json && break
             sleep 1
           done
           node -e 'const v=require("/tmp/noogle.json");if(v.ok!==true||v.mode!=="read-only")process.exit(1)'
