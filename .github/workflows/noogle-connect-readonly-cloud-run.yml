@@ -1,0 +1,87 @@
+name: Noogle Connect Read-only Cloud Run Staging
+on:
+  pull_request:
+    paths:
+      - 'deploy/noogle-connect-staging/**'
+      - '.github/workflows/noogle-connect-readonly-cloud-run.yml'
+  push:
+    paths:
+      - 'deploy/noogle-connect-staging/**'
+      - '.github/workflows/noogle-connect-readonly-cloud-run.yml'
+  workflow_dispatch:
+    inputs:
+      deploy:
+        description: 'Type DEPLOY_PRIVATE to deploy the private read-only service'
+        required: true
+        type: string
+permissions:
+  contents: read
+  id-token: write
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Verify isolated preview behavior
+        run: node --test deploy/noogle-connect-staging/server.test.mjs
+      - name: Build actual release image
+        run: docker build -f deploy/noogle-connect-staging/Dockerfile -t noogle-connect-staging:ci .
+      - name: Probe running container
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker run -d --name noogle-test -p 127.0.0.1:18080:8080 noogle-connect-staging:ci
+          trap 'docker logs noogle-test || true; docker rm -f noogle-test || true' EXIT
+          for i in $(seq 1 30); do
+            curl -fsS http://127.0.0.1:18080/healthz > /tmp/noogle.json && break
+            sleep 1
+          done
+          node -e 'const v=require("/tmp/noogle.json");if(v.ok!==true||v.mode!=="read-only")process.exit(1)'
+          curl -fsS http://127.0.0.1:18080/api/guardian/capabilities > /tmp/noogle-cap.json
+          node -e 'const v=require("/tmp/noogle-cap.json");if(v.remote_terminal!=="disabled"||v.device_enrollment!=="not_enabled")process.exit(1)'
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:18080/api/guardian/session)" = "403"
+  deploy-private:
+    needs: certify
+    if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.deploy == 'DEPLOY_PRIVATE' && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    environment: holytemples-production
+    env:
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID || secrets.GCP_PROJECT_ID }}
+      GCP_REGION: ${{ vars.GCP_REGION || secrets.GCP_REGION }}
+      GCP_WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER || secrets.GCP_WIF_PROVIDER }}
+      GCP_CLOUD_RUN_SERVICE_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_SERVICE_ACCOUNT || secrets.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+      GCP_CLOUD_RUN_RUNTIME_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_RUNTIME_ACCOUNT || secrets.GCP_CLOUD_RUN_RUNTIME_ACCOUNT }}
+      GCP_ARTIFACT_REGISTRY: ${{ vars.GCP_ARTIFACT_REGISTRY || secrets.GCP_ARTIFACT_REGISTRY }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check Cloud Run environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          for key in GCP_PROJECT_ID GCP_REGION GCP_WIF_PROVIDER GCP_CLOUD_RUN_SERVICE_ACCOUNT GCP_CLOUD_RUN_RUNTIME_ACCOUNT GCP_ARTIFACT_REGISTRY; do
+            test -n "${!key:-}" || { echo "::error::Missing $key"; exit 1; }
+          done
+      - uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@v3
+      - name: Push release image
+        shell: bash
+        run: |
+          set -euo pipefail
+          image="${GCP_ARTIFACT_REGISTRY}/noogle-connect-staging:${GITHUB_SHA}"
+          docker build -f deploy/noogle-connect-staging/Dockerfile -t "$image" .
+          gcloud auth configure-docker "${GCP_REGION}-docker.pkg.dev" --quiet
+          docker push "$image"
+          echo "RELEASE_IMAGE=$image" >> "$GITHUB_ENV"
+      - name: Deploy private Cloud Run service
+        shell: bash
+        run: |
+          set -euo pipefail
+          gcloud run deploy noogle-connect-staging --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --image="$RELEASE_IMAGE" --service-account="$GCP_CLOUD_RUN_RUNTIME_ACCOUNT" --port=8080 --no-allow-unauthenticated --quiet
+          gcloud run services describe noogle-connect-staging --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format='yaml(status.url,status.latestReadyRevisionName,status.traffic)'
