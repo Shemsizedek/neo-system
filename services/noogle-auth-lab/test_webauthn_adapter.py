@@ -1,5 +1,6 @@
 import unittest
-from unittest.mock import patch, SimpleNamespace
+from unittest.mock import patch
+from types import SimpleNamespace
 from webauthn_adapter import RP_ID, ORIGIN, decode_b64url, verify_new_credential, verify_existing_credential, VerifiedCredential
 class TestWebAuthnAdapter(unittest.TestCase):
     def test_rp_binding(self):
