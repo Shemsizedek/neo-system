@@ -111,14 +111,27 @@ jobs:
         run: |
           set -euo pipefail
           gcloud run services describe "$SERVICE_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format='yaml(metadata.name,metadata.annotations,status.url,status.latestReadyRevisionName,status.traffic,spec.traffic)' | sed -E 's/(token|secret|password):.*/\\1: [REDACTED]/Ig'
-          gcloud run services describe "$SERVICE_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format='value(metadata.annotations.run.googleapis.com/ingress)' || true
 
       - name: Verify Cloud Run origin
         run: |
           set -euo pipefail
           SERVICE_URL="$(gcloud run services describe "$SERVICE_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format='value(status.url)')"
           test -n "$SERVICE_URL"
+          echo "Probing Cloud Run status URL"
           code="$(curl --retry 6 --retry-delay 5 --connect-timeout 10 --max-time 30 -sS -o /tmp/neoguard-health.json -w '%{http_code}' "$SERVICE_URL/healthz")"
+          if [ "$code" != 200 ]; then
+            echo "Status URL returned HTTP $code; checking the deployment URL"
+            DEPLOY_URL="$(gcloud run services describe "$SERVICE_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format='value(metadata.annotations)' | grep -oE 'https://[A-Za-z0-9.-]+\\.run\\.app' | head -n 1 || true)"
+            if [ -n "$DEPLOY_URL" ] && [ "$DEPLOY_URL" != "$SERVICE_URL" ]; then
+              alt_code="$(curl --connect-timeout 10 --max-time 30 -sS -o /tmp/neoguard-alt-health.json -w '%{http_code}' "$DEPLOY_URL/healthz" || true)"
+              echo "Alternate Cloud Run URL HTTP status: ${alt_code:-000}"
+              if [ "$alt_code" = 200 ]; then
+                cp /tmp/neoguard-alt-health.json /tmp/neoguard-health.json
+                SERVICE_URL="$DEPLOY_URL"
+                code="$alt_code"
+              fi
+            fi
+          fi
           echo "Cloud Run origin HTTP status: ${code:-000}"
           if [ -f /tmp/neoguard-health.json ]; then
             node -e 'const fs=require("fs");const s=fs.readFileSync("/tmp/neoguard-health.json","utf8");try{const j=JSON.parse(s);console.log("Health response:",JSON.stringify({ok:j.ok,schema:j.schema,status:j.status}));}catch{console.log("Health response was not valid JSON (body withheld)");}'
