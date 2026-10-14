@@ -1,6 +1,6 @@
 # Chaplaincy, GISS and NEO Device Approval Integration
 
-Status: implementation design; passkey endpoints and approval execution are NOT implemented by this change.
+Status: Gate 2 server-only registration/approval core implemented in server/neo-pass/approval-service.mjs. Authenticated endpoints, session-provider integration, production device certification and live execution remain pending.
 
 ## Scope
 Bring Chaplaincy instruction, duties, team structure and governance into NEO Cipher/GISS institution workflows. Use NEO Pass for identity and device-backed step-up verification, with Crown Chain evidence receipts for document signing, approval and voting. Reuse existing Tribunal/E-File, education permissions and Crown authorization adapters rather than treating founder identity as universal authority.
