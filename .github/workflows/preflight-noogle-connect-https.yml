@@ -1,0 +1,59 @@
+name: Noogle Connect HTTPS Edge Preflight
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+  id-token: write
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    environment: holytemples-production
+    env:
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID || secrets.GCP_PROJECT_ID }}
+      GCP_REGION: ${{ vars.GCP_REGION || secrets.GCP_REGION }}
+      GCP_WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER || secrets.GCP_WIF_PROVIDER }}
+      GCP_CLOUD_RUN_SERVICE_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_SERVICE_ACCOUNT || secrets.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+    steps:
+      - uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@v3
+      - name: Inspect existing load balancer, certificate map, and service
+        shell: bash
+        run: |
+          set -euo pipefail
+          gcloud compute url-maps describe neo-edge-url-map --project="$GCP_PROJECT_ID" --format=json > /tmp/url-map.json
+          gcloud compute target-https-proxies describe neo-edge-https-proxy --project="$GCP_PROJECT_ID" --format=json > /tmp/proxy.json
+          gcloud compute addresses describe neo-edge-global-ip --global --project="$GCP_PROJECT_ID" --format=json > /tmp/ip.json
+          gcloud run services describe noogle-connect-staging --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format=json > /tmp/run.json
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          const load=name=>JSON.parse(fs.readFileSync('/tmp/'+name+'.json','utf8'));
+          const map=load('url-map'),proxy=load('proxy'),ip=load('ip'),run=load('run');
+          const hosts=(map.hostRules||[]).flatMap(r=>r.hosts||[]);
+          const connectRules=(map.hostRules||[]).filter(r=>(r.hosts||[]).includes('connect.holytemples.org'));
+          const certMap=proxy.certificateMap||'';
+          const certs=proxy.sslCertificates||[];
+          console.log('Load balancer address:',ip.address||'unknown');
+          console.log('HTTPS proxy certificate map configured:',Boolean(certMap));
+          console.log('HTTPS proxy attached certificate count:',certs.length);
+          console.log('Connect host routing present:',connectRules.length>0);
+          console.log('Existing host count:',hosts.length);
+          console.log('Cloud Run latest ready revision:',run.status?.latestReadyRevisionName||'missing');
+          console.log('Cloud Run ingress:',run.metadata?.annotations?.['run.googleapis.com/ingress']||'unspecified');
+          if(connectRules.length)console.log('Connect matcher:',connectRules[0].pathMatcher);
+          JS
+          if gcloud certificate-manager maps describe neo-edge-certificate-map --location=global --project="$GCP_PROJECT_ID" --format=json > /tmp/cert-map.json 2>/dev/null; then
+            echo "Certificate map exists"
+            gcloud certificate-manager maps entries list --map=neo-edge-certificate-map --location=global --project="$GCP_PROJECT_ID" --format=json > /tmp/cert-entries.json
+            node --input-type=module <<'JS'
+            import fs from 'node:fs';
+            const entries=JSON.parse(fs.readFileSync('/tmp/cert-entries.json','utf8'));
+            for(const e of entries)if(e.hostname==='connect.holytemples.org'||e.hostname==='*.holytemples.org')console.log('Relevant certificate map hostname:',e.hostname,'certificate count:',(e.certificates||[]).length);
+            JS
+          else
+            echo "Certificate map unavailable; explicit TLS certificate inspection required"
+          fi
+          echo "Read-only preflight complete: NO DNS, LB, IAM or Cloud Run changes."
