@@ -318,6 +318,26 @@ export function createNeoEdgeServer() {
 
     if (!service) return json(req, res, 421, { error: 'unknown_neo_host', host });
 
+    // NSEC-067: reserved Noogle Connect route. The public Noogle search stays unchanged.
+    // Never infer an authenticated NEO Pass session from browser-supplied headers.
+    if (host === 'noogle.holytemples.org' &&
+        (url.pathname === '/connect' || url.pathname.startsWith('/connect/'))) {
+      res.writeHead(403, {
+        'content-type': 'application/json; charset=utf-8',
+        'cache-control': 'no-store, private',
+        'x-content-type-options': 'nosniff',
+        'referrer-policy': 'no-referrer',
+        'content-security-policy': "default-src 'none'; frame-ancestors 'none'",
+        'vary': 'Authorization, Cookie'
+      });
+      return res.end(JSON.stringify({
+        error: 'neopass_authentication_required',
+        service: 'noogle-connect',
+        enrollment: 'disabled',
+        remote_terminal: 'disabled'
+      }));
+    }
+
     if (req.method === 'GET' && ['/favicon.ico','/favicon.png','/apple-touch-icon.png'].includes(url.pathname)) {
       res.writeHead(302, {
         location: HOLY_KEYS_FAVICON_URL,

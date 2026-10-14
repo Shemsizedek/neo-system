@@ -86,3 +86,21 @@ test('previews public library records for the Knowledge Browser', async () => wi
   assert.equal(body.oracleClass, 'internal-record-context');
   assert.equal(body.accessClass, 'PUBLIC_WORLD_LIBRARY');
 }));
+
+test('reserves Noogle Connect under a fail-closed same-origin route', async () => withServer(async base => {
+  const headers = {'x-forwarded-host':'noogle.holytemples.org'};
+  for(const path of ['/connect','/connect/','/connect/api/devices','/connect/terminal']) {
+    const r=await fetch(base+path,{headers});
+    assert.equal(r.status,403);
+    assert.match(r.headers.get('cache-control'),/no-store/);
+    const result=await r.json();
+    assert.equal(result.remote_terminal,'disabled');
+    assert.equal(result.enrollment,'disabled');
+  }
+  const forged=await fetch(base+'/connect/',{headers:{...headers,'x-neopass-user':'admin',authorization:'Bearer fake'}});
+  assert.equal(forged.status,403);
+  const home=await fetch(base+'/',{headers:{...headers,accept:'text/html'}});
+  assert.equal(home.status,200);
+  const search=await fetch(base+'/noogle/search?q=temple',{headers});
+  assert.equal(search.status,200);
+}));
