@@ -1,0 +1,41 @@
+name: Diagnose Noogle Health Route
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+  id-token: write
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    environment: holytemples-production
+    env:
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID || secrets.GCP_PROJECT_ID }}
+      GCP_REGION: ${{ vars.GCP_REGION || secrets.GCP_REGION }}
+      GCP_WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER || secrets.GCP_WIF_PROVIDER }}
+      GCP_CLOUD_RUN_SERVICE_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_SERVICE_ACCOUNT || secrets.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+      GCP_CLOUD_RUN_RUNTIME_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_RUNTIME_ACCOUNT || secrets.GCP_CLOUD_RUN_RUNTIME_ACCOUNT }}
+    steps:
+      - uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@v3
+      - name: Compare authorized routes and response types
+        shell: bash
+        run: |
+          set -euo pipefail
+          url="$(gcloud run services describe noogle-connect-staging --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format='value(status.url)')"
+          test -n "$url"
+          token="$(gcloud auth print-identity-token --audiences="$url" --impersonate-service-account="$GCP_CLOUD_RUN_RUNTIME_ACCOUNT")"
+          test -n "$token"
+          for path in / /healthz /healthz/ /api/guardian/capabilities /api/guardian/session; do
+            code="$(curl --silent --show-error --max-time 20 -H "Authorization: Bearer $token" -D /tmp/noogle-headers -o /tmp/noogle-body -w '%{http_code}' "$url$path")"
+            content_type="$(grep -i '^content-type:' /tmp/noogle-headers | head -n 1 | tr -d '\r' || true)"
+            server="$(grep -i '^server:' /tmp/noogle-headers | head -n 1 | tr -d '\r' || true)"
+            echo "PATH=$path CODE=$code $content_type $server"
+            if [ "$path" = /healthz ] && [ "$code" != 200 ]; then
+              node -e 'const s=require("fs").readFileSync("/tmp/noogle-body","utf8"); console.log("Health body kind:",s.trim().startsWith("{")?"JSON":s.trim().startsWith("<")?"HTML":"other","length:",s.length)' 
+            fi
+          done
+          echo "Read-only diagnostic. No service, IAM or DNS changes."
