@@ -58,7 +58,7 @@ jobs:
         run: |
           set -euo pipefail
           url="$(cat /tmp/noogle-url)"
-          code="$(curl --silent --show-error --max-time 20 -o /tmp/noogle-anonymous-body -w '%{http_code}' "$url/healthz")"
+          code="$(curl --silent --show-error --max-time 20 -o /tmp/noogle-anonymous-body -w '%{http_code}' "$url/readyz")"
           echo "Anonymous HTTP code: $code"
           test "$code" != 200 || { echo "::error::Anonymous health call succeeded"; exit 1; }
           test "$code" = 401 -o "$code" = 403 -o "$code" = 404 || { echo "::error::Unexpected anonymous response"; exit 1; }
@@ -73,7 +73,7 @@ jobs:
             local path="$1" outfile="$2"
             curl --silent --show-error --max-time 20 -H "Authorization: Bearer $token" -o "$outfile" -w '%{http_code}' "$url$path"
           }
-          code="$(request /healthz /tmp/noogle-health.json)"
+          code="$(request /readyz /tmp/noogle-health.json)"
           test "$code" = 200 || { echo "::error::Authorized health HTTP $code"; exit 1; }
           code="$(request /api/guardian/capabilities /tmp/noogle-capabilities.json)"
           test "$code" = 200 || { echo "::error::Authorized capabilities HTTP $code"; exit 1; }
