@@ -18,6 +18,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Install WebAuthn verifier test dependency
+        run: python -m pip install 'webauthn>=2,<3'
       - name: Verify fail-closed authentication laboratory
         working-directory: services/noogle-auth-lab
         run: python -m unittest discover -v -p 'test_*.py'
