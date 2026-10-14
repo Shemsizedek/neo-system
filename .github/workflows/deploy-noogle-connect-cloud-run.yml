@@ -1,0 +1,60 @@
+name: Noogle Connect Cloud Run Staging (Manual)
+on:
+  workflow_dispatch:
+    inputs:
+      approval:
+        description: "Type DEPLOY_READ_ONLY to deploy the disabled-capabilities preview"
+        required: true
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: noogle-connect-staging
+  cancel-in-progress: false
+jobs:
+  build-test-deploy:
+    if: ${{ github.event.inputs.approval == 'DEPLOY_READ_ONLY' }}
+    runs-on: ubuntu-latest
+    environment: holytemples-production
+    env:
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID || secrets.GCP_PROJECT_ID }}
+      GCP_REGION: ${{ vars.GCP_REGION || secrets.GCP_REGION }}
+      GCP_WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER || secrets.GCP_WIF_PROVIDER }}
+      GCP_CLOUD_RUN_SERVICE_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_SERVICE_ACCOUNT || secrets.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+      GCP_CLOUD_RUN_RUNTIME_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_RUNTIME_ACCOUNT || secrets.GCP_CLOUD_RUN_RUNTIME_ACCOUNT }}
+      GCP_ARTIFACT_REGISTRY: ${{ vars.GCP_ARTIFACT_REGISTRY || secrets.GCP_ARTIFACT_REGISTRY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Check preview syntax
+        run: node --check services/noogle-auth-lab/cloud-run-preview.mjs
+      - name: Validate deployment inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in GCP_PROJECT_ID GCP_REGION GCP_WIF_PROVIDER GCP_CLOUD_RUN_SERVICE_ACCOUNT GCP_CLOUD_RUN_RUNTIME_ACCOUNT GCP_ARTIFACT_REGISTRY; do
+            test -n "${!name:-}" || { echo "::error::Missing $name"; exit 1; }
+          done
+      - uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@v3
+      - name: Build and push container
+        env:
+          IMAGE: ${{ env.GCP_ARTIFACT_REGISTRY }}/noogle-connect-staging:${{ github.sha }}
+        run: |
+          set -euo pipefail
+          docker build -f services/noogle-auth-lab/Dockerfile.preview -t "$IMAGE" .
+          gcloud auth configure-docker "${GCP_REGION}-docker.pkg.dev" --quiet
+          docker push "$IMAGE"
+      - name: Deploy read-only staging service only
+        env:
+          IMAGE: ${{ env.GCP_ARTIFACT_REGISTRY }}/noogle-connect-staging:${{ github.sha }}
+        run: |
+          set -euo pipefail
+          gcloud run deploy noogle-connect-staging --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --image="$IMAGE" --service-account="$GCP_CLOUD_RUN_RUNTIME_ACCOUNT" --port=8080 --no-allow-unauthenticated --quiet
+          gcloud run services describe noogle-connect-staging --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format='value(status.url)'
