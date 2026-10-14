@@ -107,6 +107,12 @@ jobs:
             --allow-unauthenticated \
             --quiet
 
+      - name: Inspect Cloud Run ingress and revision routing
+        run: |
+          set -euo pipefail
+          gcloud run services describe "$SERVICE_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format='yaml(metadata.name,metadata.annotations,status.url,status.latestReadyRevisionName,status.traffic,spec.traffic)' | sed -E 's/(token|secret|password):.*/\\1: [REDACTED]/Ig'
+          gcloud run services describe "$SERVICE_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format='value(metadata.annotations.run.googleapis.com/ingress)' || true
+
       - name: Verify Cloud Run origin
         run: |
           set -euo pipefail
