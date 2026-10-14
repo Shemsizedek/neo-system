@@ -60,9 +60,9 @@ export const neoModules: NeoModule[] = [
   },
   {
     id: 'chaplaincy',
-    name: 'World Chaplaincy E-File',
-    domain: 'Intake & Records',
-    description: 'File, record, e-post and route petitions, notices, exhibits and case metadata.',
+    name: 'World Temple Chaplaincy Administration',
+    domain: 'Instructions, Offices, Governance & E-File',
+    description: 'Coordinate Temple Instructions, office duties, team structure and governance review with existing Tribunal E-File, Treasury and Router workspaces.',
     status: 'FOUNDATION',
     boundary: 'Institutional filing workflow; external service or government filing requires the competent external authority.'
   },
