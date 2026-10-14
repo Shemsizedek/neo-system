@@ -9,6 +9,8 @@ on:
   push:
     paths:
       - 'services/noogle-auth-lab/**'
+      - 'docs/connect/**'
+      - 'tests/noogle-connect/**'
       - '.github/workflows/noogle-auth-lab.yml'
 permissions:
   contents: read
