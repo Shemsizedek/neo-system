@@ -3,6 +3,8 @@ on:
   pull_request:
     paths:
       - 'services/noogle-auth-lab/**'
+      - 'docs/connect/**'
+      - 'tests/noogle-connect/**'
       - '.github/workflows/noogle-auth-lab.yml'
   push:
     paths:
@@ -23,3 +25,15 @@ jobs:
       - name: Verify fail-closed authentication laboratory
         working-directory: services/noogle-auth-lab
         run: python -m unittest discover -v -p 'test_*.py'
+
+  browser-security-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check browser adapter syntax
+        run: node --check docs/connect/passkeys.js
+      - name: Verify fail-closed browser enrollment
+        run: node tests/noogle-connect/passkeys.test.cjs
