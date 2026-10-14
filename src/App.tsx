@@ -31,8 +31,8 @@ const moduleRoutes:Record<string,string>={
 }
 function Stat({label,value,sub,Icon}:{label:string;value:string;sub:string;Icon:typeof Activity}){return <div className="card stat"><div><span>{label}</span><strong>{value}</strong><small>{sub}</small></div><Icon size={22}/></div>}
 
-export function App(){
- const[txs,setTxs]=useState<Transaction[]>(seedTxs);const[amount,setAmount]=useState('250');const[active,setActive]=useState('overview')
+export function App({initialActive='overview'}:{initialActive?:string}){
+ const[txs,setTxs]=useState<Transaction[]>(seedTxs);const[amount,setAmount]=useState('250');const[active,setActive]=useState(initialActive)
  const privateModules=useMemo(()=>neoModules.filter(m=>privateModuleIds.has(m.id)),[])
  const totals=useMemo(()=>({cash:tellers.reduce((a,t)=>a+t.cashUsd,0),btc:tellers.reduce((a,t)=>a+t.btc,0),xcp:tellers.reduce((a,t)=>a+t.xcp,0),online:tellers.filter(t=>t.status==='ONLINE').length}),[]);const gasReady=useMemo(()=>readinessSummary(),[])
  const simulate=()=>{const n=Math.max(1,Number(amount)||1);const id=`ETHA-${Math.random().toString(16).slice(2,8).toUpperCase()}`;setTxs(v=>[{id,tellerId:'NT-000001',type:'BUY BTC',source:'USD',destination:'BTC',amount:n,fiatValue:n,status:'AUTHORIZED',risk:9,createdAt:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})},...v])}
