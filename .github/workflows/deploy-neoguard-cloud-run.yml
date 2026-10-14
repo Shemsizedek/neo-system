@@ -136,6 +136,14 @@ jobs:
           if [ -f /tmp/neoguard-health.json ]; then
             node -e 'const fs=require("fs");const s=fs.readFileSync("/tmp/neoguard-health.json","utf8");try{const j=JSON.parse(s);console.log("Health response:",JSON.stringify({ok:j.ok,schema:j.schema,status:j.status}));}catch{console.log("Health response was not valid JSON (body withheld)");}'
           fi
+          if [ "$code" != 200 ]; then
+            echo "::group::Cloud Run origin failure diagnostics"
+            gcloud run services describe "$SERVICE_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format=json | node -e 'let s="";process.stdin.on("data",c=>s+=c);process.stdin.on("end",()=>{const j=JSON.parse(s);console.log(JSON.stringify({defaultUriDisabled:j.metadata?.annotations?.["run.googleapis.com/default-url-disabled"]??j.spec?.template?.metadata?.annotations?.["run.googleapis.com/default-url-disabled"]??null,ingress:j.metadata?.annotations?.["run.googleapis.com/ingress"],readyRevision:j.status?.latestReadyRevisionName,traffic:j.status?.traffic?.map(t=>({revisionName:t.revisionName,percent:t.percent}))},null,2))})'
+            curl -sS -D /tmp/neoguard-response-headers -o /dev/null --connect-timeout 10 --max-time 20 "$SERVICE_URL/healthz" || true
+            grep -iE '^(HTTP/|server:|content-type:|via:|x-cloud-trace-context:)' /tmp/neoguard-response-headers || true
+            gcloud logging read 'resource.type="cloud_run_revision" AND resource.labels.service_name="neoguard" AND httpRequest.status=404' --project="$GCP_PROJECT_ID" --freshness=20m --limit=5 --format='value(resource.labels.revision_name,httpRequest.status)' || true
+            echo "::endgroup::"
+          fi
           test "$code" = 200 || { echo "::error::Cloud Run origin returned HTTP ${code:-000}"; exit 1; }
           node -e 'const j=JSON.parse(require("fs").readFileSync("/tmp/neoguard-health.json","utf8"));if(j.ok!==true)process.exit(1)' || { echo "::error::Cloud Run origin health JSON did not report ok=true"; exit 1; }
           echo "NEOGUARD_SERVICE_URL=$SERVICE_URL" >> "$GITHUB_ENV"
