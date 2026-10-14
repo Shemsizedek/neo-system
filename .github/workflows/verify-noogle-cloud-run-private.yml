@@ -1,0 +1,89 @@
+name: Verify Noogle Connect Private Cloud Run
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+  id-token: write
+jobs:
+  verify-private:
+    runs-on: ubuntu-latest
+    environment: holytemples-production
+    env:
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID || secrets.GCP_PROJECT_ID }}
+      GCP_REGION: ${{ vars.GCP_REGION || secrets.GCP_REGION }}
+      GCP_WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER || secrets.GCP_WIF_PROVIDER }}
+      GCP_CLOUD_RUN_SERVICE_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_SERVICE_ACCOUNT || secrets.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+      GCP_CLOUD_RUN_RUNTIME_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_RUNTIME_ACCOUNT || secrets.GCP_CLOUD_RUN_RUNTIME_ACCOUNT }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          for key in GCP_PROJECT_ID GCP_REGION GCP_WIF_PROVIDER GCP_CLOUD_RUN_SERVICE_ACCOUNT GCP_CLOUD_RUN_RUNTIME_ACCOUNT; do
+            test -n "${!key:-}" || { echo "::error::Missing $key"; exit 1; }
+          done
+      - uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@v3
+      - name: Verify exact revision and private IAM
+        shell: bash
+        run: |
+          set -euo pipefail
+          SERVICE=noogle-connect-staging
+          gcloud run services describe "$SERVICE" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format=json > /tmp/noogle-service.json
+          gcloud run services get-iam-policy "$SERVICE" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format=json > /tmp/noogle-iam.json
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          const s=JSON.parse(fs.readFileSync('/tmp/noogle-service.json','utf8'));
+          const iam=JSON.parse(fs.readFileSync('/tmp/noogle-iam.json','utf8'));
+          const name=s.metadata?.name;
+          const url=s.status?.url;
+          const revision=s.status?.latestReadyRevisionName;
+          const traffic=s.status?.traffic||[];
+          if(name!=='noogle-connect-staging'||!/^https:\/\//.test(url||'')||!revision) throw Error('service_not_ready');
+          if(traffic.some(t=>t.revisionName!==revision || t.percent!==100)) throw Error('unexpected_revision_traffic');
+          const publicMembers=new Set(['allUsers','allAuthenticatedUsers']);
+          if((iam.bindings||[]).some(b=>(b.role==='roles/run.invoker'||b.role==='roles/run.servicesInvoker')&&(b.members||[]).some(m=>publicMembers.has(m)))) throw Error('public_iam_member_detected');
+          const invokerDisabled=String(s.metadata?.annotations?.['run.googleapis.com/invoker-iam-disabled']||'').toLowerCase()==='true';
+          if(invokerDisabled) throw Error('invoker_iam_disabled');
+          fs.writeFileSync('/tmp/noogle-url',url);
+          console.log('Service ready:',name,'revision:',revision,'traffic: 100%','public invoker policy: absent');
+          JS
+      - name: Verify anonymous access is rejected
+        shell: bash
+        run: |
+          set -euo pipefail
+          url="$(cat /tmp/noogle-url)"
+          code="$(curl --silent --show-error --max-time 20 -o /tmp/noogle-anonymous-body -w '%{http_code}' "$url/healthz")"
+          echo "Anonymous HTTP code: $code"
+          test "$code" != 200 || { echo "::error::Anonymous health call succeeded"; exit 1; }
+          test "$code" = 401 -o "$code" = 403 -o "$code" = 404 || { echo "::error::Unexpected anonymous response"; exit 1; }
+      - name: Verify authenticated health and disabled capabilities
+        shell: bash
+        run: |
+          set -euo pipefail
+          url="$(cat /tmp/noogle-url)"
+          token="$(gcloud auth print-identity-token --audiences="$url" --impersonate-service-account="$GCP_CLOUD_RUN_RUNTIME_ACCOUNT")"
+          test -n "$token" || { echo "::error::Identity token generation failed"; exit 1; }
+          request() {
+            local path="$1" outfile="$2"
+            curl --silent --show-error --max-time 20 -H "Authorization: Bearer $token" -o "$outfile" -w '%{http_code}' "$url$path"
+          }
+          code="$(request /healthz /tmp/noogle-health.json)"
+          test "$code" = 200 || { echo "::error::Authorized health HTTP $code"; exit 1; }
+          code="$(request /api/guardian/capabilities /tmp/noogle-capabilities.json)"
+          test "$code" = 200 || { echo "::error::Authorized capabilities HTTP $code"; exit 1; }
+          code="$(request /api/guardian/session /tmp/noogle-session.json)"
+          test "$code" = 403 || { echo "::error::Session endpoint HTTP $code"; exit 1; }
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          const h=JSON.parse(fs.readFileSync('/tmp/noogle-health.json','utf8'));
+          const c=JSON.parse(fs.readFileSync('/tmp/noogle-capabilities.json','utf8'));
+          if(h.ok!==true||h.mode!=='read-only') throw Error('not_read_only');
+          if(c.webauthn!=='not_enabled'||c.device_enrollment!=='not_enabled'||c.identity_session!=='not_verified'||c.remote_terminal!=='disabled') throw Error('unexpected_privileged_capability');
+          console.log('Authorized health and disabled capabilities verified');
+          JS
