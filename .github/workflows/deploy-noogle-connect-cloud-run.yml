@@ -30,6 +30,8 @@ jobs:
           node-version: '24'
       - name: Check preview syntax
         run: node --check services/noogle-auth-lab/cloud-run-preview.mjs
+      - name: Test read-only preview endpoints
+        run: node --test services/noogle-auth-lab/cloud-run-preview.test.mjs
       - name: Validate deployment inputs
         shell: bash
         run: |
