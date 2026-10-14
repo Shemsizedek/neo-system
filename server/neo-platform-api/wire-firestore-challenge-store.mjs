@@ -21,8 +21,8 @@ export class FirestorePasskeyChallengeStore {
   return this.collection.firestore.runTransaction(async tx=>{
    const snapshot=await tx.get(ref);
    if(!snapshot.exists) return false;
-   tx.delete(ref); // burn the attempt atomically even on scope mismatch
    const record=snapshot.data();
+   tx.delete(ref); // burn the attempt atomically even on scope mismatch
    return record.expires>this.now()&&equal(record.memberId,memberId)&&equal(record.operation,operation)&&equal(record.rpId,rpId);
   });
  }
