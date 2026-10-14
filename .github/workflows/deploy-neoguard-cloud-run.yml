@@ -121,7 +121,7 @@ jobs:
           code="$(curl --retry 6 --retry-delay 5 --connect-timeout 10 --max-time 30 -sS -o /tmp/neoguard-health.json -w '%{http_code}' "$SERVICE_URL/healthz")"
           if [ "$code" != 200 ]; then
             echo "Status URL returned HTTP $code; checking the deployment URL"
-            DEPLOY_URL="$(gcloud run services describe "$SERVICE_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format='value(metadata.annotations)' | grep -oE 'https://[A-Za-z0-9.-]+\\.run\\.app' | head -n 1 || true)"
+            DEPLOY_URL="$(gcloud run services describe "$SERVICE_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format=json | node -e 'let s="";process.stdin.on("data",c=>s+=c);process.stdin.on("end",()=>{const j=JSON.parse(s);const urls=JSON.parse(j.metadata?.annotations?.["run.googleapis.com/urls"]||"[]");const primary=j.status?.url;console.log(urls.find(u=>u!==primary)||"")})')"
             if [ -n "$DEPLOY_URL" ] && [ "$DEPLOY_URL" != "$SERVICE_URL" ]; then
               alt_code="$(curl --connect-timeout 10 --max-time 30 -sS -o /tmp/neoguard-alt-health.json -w '%{http_code}' "$DEPLOY_URL/healthz" || true)"
               echo "Alternate Cloud Run URL HTTP status: ${alt_code:-000}"
