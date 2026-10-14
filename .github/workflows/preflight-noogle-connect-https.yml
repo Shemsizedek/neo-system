@@ -48,11 +48,7 @@ jobs:
           if gcloud certificate-manager maps describe neo-edge-certificate-map --location=global --project="$GCP_PROJECT_ID" --format=json > /tmp/cert-map.json 2>/dev/null; then
             echo "Certificate map exists"
             gcloud certificate-manager maps entries list --map=neo-edge-certificate-map --location=global --project="$GCP_PROJECT_ID" --format=json > /tmp/cert-entries.json
-            node --input-type=module <<'JS'
-            import fs from 'node:fs';
-            const entries=JSON.parse(fs.readFileSync('/tmp/cert-entries.json','utf8'));
-            for(const e of entries)if(e.hostname==='connect.holytemples.org'||e.hostname==='*.holytemples.org')console.log('Relevant certificate map hostname:',e.hostname,'certificate count:',(e.certificates||[]).length);
-            JS
+            node -e 'const entries=require("/tmp/cert-entries.json");for(const e of entries){if(e.hostname==="connect.holytemples.org"||e.hostname==="*.holytemples.org")console.log("Relevant certificate map hostname:",e.hostname,"certificate count:",(e.certificates||[]).length)}'
           else
             echo "Certificate map unavailable; explicit TLS certificate inspection required"
           fi
