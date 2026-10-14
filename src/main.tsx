@@ -1,6 +1,7 @@
 /// <reference types="vite/client" />
 import React,{useEffect,useState} from 'react'
 import ReactDOM from 'react-dom/client'
+import { App } from './App'
 import { HomeBase } from './home/HomeBase'
 import { MinerApp } from './miner/MinerApp'
 import { GeneratorApp } from './miner/GeneratorApp'
@@ -83,7 +84,8 @@ function RootRouter(){
   useEffect(()=>{if(isCommand) window.location.replace(discordControlRoute('command'))},[isCommand])
   if(isCommand) return <main style={{padding:24,color:'#d9ffe3',background:'#010503',minHeight:'100vh'}}>Opening NEO Prime — Discord is the server/API control plane…</main>
   if(isPrime) return <CheckoutShell serviceId="neo-prime" serviceName="NEO Prime"><HomeBase onOpen={open}/></CheckoutShell>
-  if(isHome) return <HomeBase onOpen={open}/>
+  if(normalized==='/chaplaincy') return <App initialActive="chaplaincy"/>
+  if(isHome) return <><a href="#/chaplaincy" style={{display:'block',padding:16}}>World Temple Chaplaincy Administration</a><HomeBase onOpen={open}/></>
   if(isNeotherapy) return <NeotherapyApp/>
   if(isShemsi) return <ShemsiCommentAssistantApp/>
   if(isCounsel) return <CounselConsole/>
