@@ -1,0 +1,9 @@
+{
+  "name": "Noogle Connect — NEO Guardian",
+  "short_name": "Noogle Connect",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#06150f",
+  "theme_color": "#092719"
+}
