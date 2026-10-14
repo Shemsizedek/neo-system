@@ -14,7 +14,7 @@ test('public capability endpoint remains disabled',()=>withServer(async base=>{
  assert.equal(res.status,200);assert.equal((await res.json()).remote_terminal,'disabled');
 }));
 test('unauthenticated session fails closed',()=>withServer(async base=>{
- const res=await fetch(base+'/api/guardian/session');assert.equal(res.status,401);
+ const res=await fetch(base+'/api/guardian/session',{headers:{Host:'connect.holytemples.org'}});assert.equal(res.status,401);
 }));
 test('NEO Pass signature verification gives subject without privileges',()=>withServer(async base=>{
  const token=issueNeopassToken({subject:'user:test',secret,now,ttlSeconds:300});
