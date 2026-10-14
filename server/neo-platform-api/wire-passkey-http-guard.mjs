@@ -11,3 +11,11 @@ export function authorizeWirePasskeyRequest({req,member,origin='https://wire.hol
  if(contentType!=='application/json') return {ok:false,status:415,error:'json_required'};
  return {ok:true,memberId:member.id};
 }
+
+// Resolve identity on the server before applying the request guard.
+export async function authorizeWirePasskeySession({req,resolveMember,origin}={}) {
+ if(typeof resolveMember!=='function') return {ok:false,status:503,error:'neopass_resolver_unavailable'};
+ let member;
+ try { member=await resolveMember(req); } catch { return {ok:false,status:401,error:'neopass_session_invalid'}; }
+ return authorizeWirePasskeyRequest({req,member,origin});
+}
