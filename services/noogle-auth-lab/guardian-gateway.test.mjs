@@ -18,19 +18,22 @@ test('unauthenticated session fails closed',()=>withServer(async base=>{
 }));
 test('NEO Pass signature verification gives subject without privileges',()=>withServer(async base=>{
  const token=issueNeopassToken({subject:'user:test',secret,now,ttlSeconds:300});
- const res=await fetch(base+'/api/guardian/session',{headers:{Authorization:'Bearer '+token}});
+ const res=await fetch(base+'/api/guardian/session',{headers:{Host:'connect.holytemples.org',Authorization:'Bearer '+token}});
  assert.equal(res.status,200);assert.deepEqual(await res.json(),{authenticated:true,subject:'user:test'});
- const blocked=await fetch(base+'/api/guardian/terminal/requests',{method:'POST',headers:{Authorization:'Bearer '+token}});
+ const blocked=await fetch(base+'/api/guardian/terminal/requests',{method:'POST',headers:{Host:'connect.holytemples.org',Authorization:'Bearer '+token}});
  assert.equal(blocked.status,403);
 }));
 test('rejects tampered and differently scoped identity tokens',()=>withServer(async base=>{
  const token=issueNeopassToken({subject:'user:test',secret,now,ttlSeconds:300});
- const bad=await fetch(base+'/api/guardian/session',{headers:{Authorization:'Bearer '+token+'x'}});
+ const bad=await fetch(base+'/api/guardian/session',{headers:{Host:'connect.holytemples.org',Authorization:'Bearer '+token+'x'}});
  assert.equal(bad.status,401);
  const privileged=issueNeopassToken({subject:'user:test',secret,now,ttlSeconds:300,claims:{scope:'crown:root-enroll',token_use:'crown-office-attestation'}});
- const res=await fetch(base+'/api/guardian/session',{headers:{Authorization:'Bearer '+privileged}});
+ const res=await fetch(base+'/api/guardian/session',{headers:{Host:'connect.holytemples.org',Authorization:'Bearer '+privileged}});
  assert.equal(res.status,401);
 }));
 test('unknown paths do not leak service data',()=>withServer(async base=>{
  const res=await fetch(base+'/unknown');assert.equal(res.status,404);
 }));
+
+test('rejects untrusted host on session endpoint',()=>withServer(async base=>{const res=await fetch(base+'/api/guardian/session');assert.equal(res.status,403);}));
+test('session response disallows caching',()=>withServer(async base=>{const res=await fetch(base+'/api/guardian/session',{headers:{Host:'connect.holytemples.org'}});assert.match(res.headers.get('cache-control'),/no-store/);assert.equal(res.headers.get('vary'),'Authorization');}));
