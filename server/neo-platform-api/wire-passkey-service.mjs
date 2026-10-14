@@ -16,7 +16,7 @@ export function createWirePasskeyService({challenges,credentials,verifier,rpId='
      try {
        info=await verifier.verifyRegistration({response,expectedChallenge:challenge});
      } finally {
-       const consumed=challenges.consumeVerified({challenge,...scope(memberId,'passkey.register')});
+       const consumed=await challenges.consumeVerified({challenge,...scope(memberId,'passkey.register')});
        if(!consumed) throw new Error('invalid_or_expired_challenge');
      }
      const credential=info?.credential;
@@ -35,7 +35,7 @@ export function createWirePasskeyService({challenges,credentials,verifier,rpId='
      try {
        info=await verifier.verifyAuthentication({response,expectedChallenge:challenge,authenticator:{id:credential.credentialId,publicKey:credential.publicKey,counter:credential.signCount,transports:credential.transports}});
      } finally {
-       const consumed=challenges.consumeVerified({challenge,...scope(memberId,'passkey.authenticate')});
+       const consumed=await challenges.consumeVerified({challenge,...scope(memberId,'passkey.authenticate')});
        if(!consumed) throw new Error('invalid_or_expired_challenge');
      }
      if(!await credentials.updateCounter({credentialId,memberId,rpId,expectedCounter:credential.signCount,newCounter:info.newCounter})) throw new Error('counter_update_failed');
