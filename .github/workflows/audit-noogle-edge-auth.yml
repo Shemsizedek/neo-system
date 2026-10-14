@@ -1,0 +1,47 @@
+name: Audit Noogle Protected Edge Authentication
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+  id-token: write
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    environment: holytemples-production
+    env:
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID || secrets.GCP_PROJECT_ID }}
+      GCP_REGION: ${{ vars.GCP_REGION || secrets.GCP_REGION }}
+      GCP_WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER || secrets.GCP_WIF_PROVIDER }}
+      GCP_CLOUD_RUN_SERVICE_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_SERVICE_ACCOUNT || secrets.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+    steps:
+      - uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@v3
+      - name: Inspect URL routing and backend IAP (no changes)
+        shell: bash
+        run: |
+          set -euo pipefail
+          gcloud compute url-maps describe neo-edge-url-map --project="$GCP_PROJECT_ID" --format=json > /tmp/url-map.json
+          gcloud compute backend-services list --global --project="$GCP_PROJECT_ID" --format=json > /tmp/backends.json
+          gcloud compute network-endpoint-groups list --project="$GCP_PROJECT_ID" --format=json > /tmp/negs.json
+          gcloud run services describe noogle-connect-staging --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format=json > /tmp/noogle.json
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          const read=n=>JSON.parse(fs.readFileSync('/tmp/'+n+'.json','utf8'));
+          const url=read('url-map'),backends=read('backends'),negs=read('negs'),run=read('noogle');
+          const matchingRules=(url.hostRules||[]).filter(x=>(x.hosts||[]).includes('connect.holytemples.org'));
+          const candidates=backends.filter(x=>/noogle|connect/i.test(x.name||''));
+          const negCandidates=negs.filter(x=>/noogle|connect/i.test(x.name||''));
+          console.log('Connect host route exists:',matchingRules.length>0);
+          console.log('Noogle backend candidates:',candidates.length);
+          for(const b of candidates) console.log('Candidate backend:',b.name,'IAP enabled:',b.iap?.enabled===true,'backend attachments:',(b.backends||[]).length);
+          console.log('Noogle NEG candidates:',negCandidates.length);
+          for(const n of negCandidates) console.log('Candidate NEG:',n.name,'type:',n.networkEndpointType||'unknown');
+          console.log('Cloud Run revision:',run.status?.latestReadyRevisionName||'missing');
+          console.log('Cloud Run ingress:',run.metadata?.annotations?.['run.googleapis.com/ingress']||'unspecified');
+          console.log('Cloud Run invoker IAM disabled:',run.metadata?.annotations?.['run.googleapis.com/invoker-iam-disabled']==='true');
+          console.log('No resources changed');
+          JS
