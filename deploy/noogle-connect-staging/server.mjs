@@ -18,7 +18,7 @@ export function handler(req,res){
  const method=req.method||'GET';const head=method==='HEAD';
  if(method!=='GET'&&!head)return send(res,405,JSON.stringify({error:'method_not_allowed'}));
  let path;try{path=new URL(req.url||'/', 'http://localhost').pathname}catch{return send(res,400,JSON.stringify({error:'bad_request'}))}
- if(path==='/healthz')return send(res,200,JSON.stringify({ok:true,service:'noogle-connect-staging',mode:'read-only'}),'application/json; charset=utf-8',head);
+ if(path==='/readyz')return send(res,200,JSON.stringify({ok:true,service:'noogle-connect-staging',mode:'read-only'}),'application/json; charset=utf-8',head);
  if(path==='/api/guardian/capabilities')return send(res,200,JSON.stringify({webauthn:'not_enabled',device_enrollment:'not_enabled',identity_session:'not_verified',remote_terminal:'disabled'}),'application/json; charset=utf-8',head);
  if(path.startsWith('/api/'))return send(res,403,JSON.stringify({error:'disabled'}),'application/json; charset=utf-8',head);
  if(path==='/'||path==='/index.html')return send(res,200,page,'text/html; charset=utf-8',head);
