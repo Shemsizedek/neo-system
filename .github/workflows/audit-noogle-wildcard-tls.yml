@@ -1,0 +1,49 @@
+name: Noogle Wildcard TLS Certificate Audit
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+  id-token: write
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    environment: holytemples-production
+    env:
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID || secrets.GCP_PROJECT_ID }}
+      GCP_WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER || secrets.GCP_WIF_PROVIDER }}
+      GCP_CLOUD_RUN_SERVICE_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_SERVICE_ACCOUNT || secrets.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+    steps:
+      - uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@v3
+      - name: Audit certificate map and wildcard certificate
+        shell: bash
+        run: |
+          set -euo pipefail
+          gcloud certificate-manager maps entries list --map=neo-edge-certificate-map --location=global --project="$GCP_PROJECT_ID" --format=json > /tmp/entries.json
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          const entries=JSON.parse(fs.readFileSync('/tmp/entries.json','utf8'));
+          const wildcard=entries.find(e=>e.hostname==='*.holytemples.org');
+          if(!wildcard)throw Error('wildcard_map_entry_missing');
+          const certs=wildcard.certificates||[];
+          if(!certs.length)throw Error('wildcard_entry_has_no_certificate');
+          fs.writeFileSync('/tmp/wildcard-cert-paths',certs.join('\n')+'\n');
+          console.log('Wildcard map entry verified; reference count:',certs.length);
+          JS
+          while IFS= read -r resource; do
+            test -n "$resource" || continue
+            name="${resource##*/}"
+            gcloud certificate-manager certificates describe "$name" --location=global --project="$GCP_PROJECT_ID" --format=json > /tmp/cert.json
+            node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          const c=JSON.parse(fs.readFileSync('/tmp/cert.json','utf8'));
+          console.log('Certificate:',(c.name||'').split('/').at(-1),'state:',c.managed?.state||'unknown','domains:',(c.managed?.domains||[]).join(','));
+          if(c.managed?.state!=='ACTIVE')throw Error('wildcard_certificate_not_active');
+          if(!(c.managed?.domains||[]).includes('*.holytemples.org'))throw Error('certificate_wildcard_missing');
+          JS
+          done < /tmp/wildcard-cert-paths
+          echo "Read-only certificate verification completed. No DNS, IAM or LB changes."
