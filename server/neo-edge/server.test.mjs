@@ -104,3 +104,25 @@ test('reserves Noogle Connect under a fail-closed same-origin route', async () =
   const search=await fetch(base+'/noogle/search?q=temple',{headers});
   assert.equal(search.status,200);
 }));
+
+test('Noogle Connect read-only session requires a signed and scoped NEO Pass token', async () => withServer(async base => {
+  const { issueNeopassToken } = await import('../neo-platform-api/neopass-google-auth.mjs');
+  const previous=process.env.NEO_PASS_JWT_SECRET;
+  process.env.NEO_PASS_JWT_SECRET='local-integration-test-secret';
+  try {
+    const headers={'x-forwarded-host':'noogle.holytemples.org'};
+    const endpoint=base+'/connect/session';
+    assert.equal((await fetch(endpoint,{headers})).status,401);
+    const scoped=issueNeopassToken({subject:'test-account',secret:process.env.NEO_PASS_JWT_SECRET,ttlSeconds:120,claims:{scope:'neo:oracle:execute',token_use:'browser'}});
+    const verified=await fetch(endpoint,{headers:{...headers,authorization:'Bearer '+scoped}});
+    assert.equal(verified.status,200);
+    assert.equal(verified.headers.get('cache-control'),'no-store, private');
+    assert.deepEqual(await verified.json(),{authenticated:true,subject:'test-account',capability:'read-only',enrollment:'disabled',remote_terminal:'disabled'});
+    const unrelated=issueNeopassToken({subject:'test-account',secret:process.env.NEO_PASS_JWT_SECRET,ttlSeconds:120,claims:{scope:'crown:root-enroll',token_use:'crown-office-attestation'}});
+    assert.equal((await fetch(endpoint,{headers:{...headers,authorization:'Bearer '+unrelated}})).status,401);
+    assert.equal((await fetch(base+'/connect/terminal',{headers:{...headers,authorization:'Bearer '+scoped}})).status,403);
+  } finally {
+    if(previous===undefined)delete process.env.NEO_PASS_JWT_SECRET;
+    else process.env.NEO_PASS_JWT_SECRET=previous;
+  }
+}));
