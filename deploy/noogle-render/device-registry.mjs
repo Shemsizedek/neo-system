@@ -6,7 +6,7 @@ import { randomUUID, createHash } from 'node:crypto';
 const digest = value => createHash('sha256').update(value).digest('hex');
 const validType = new Set(['android','chromebook']);
 export function createDeviceRegistry({store, verifyIdentity, verifyEnrollmentProof, now=()=>Date.now()}) {
-  if(!store || typeof verifyIdentity!=='function' || typeof verifyEnrollmentProof!=='function') throw Error('secure_store_and_identity_required');
+  if(!store || typeof store.enrollAtomically!=='function' || typeof verifyIdentity!=='function' || typeof verifyEnrollmentProof!=='function') throw Error('secure_store_and_identity_required');
   async function authorized(context) {
     const identity=await verifyIdentity(context);
     if(!identity?.subject || identity.assurance!=='device-bound') throw Error('authentication_required');
@@ -24,10 +24,10 @@ export function createDeviceRegistry({store, verifyIdentity, verifyEnrollmentPro
         throw Error('enrollment_preconditions_failed');
       const verified=await verifyEnrollmentProof({subject,type,publicKey,challenge});
       if(verified!==true) throw Error('enrollment_proof_not_verified');
-      const existing=await store.findByKey(subject,digest(publicKey));
-      if(existing)throw Error('device_already_registered');
       const record={id:randomUUID(),subject,type,label,publicKeyHash:digest(publicKey),createdAt:now(),revokedAt:null};
-      await store.insert(record);
+      // Adapter must consume the verified challenge and insert the device in one
+      // database transaction with uniqueness and replay prevention enforced.
+      await store.enrollAtomically({record,challenge});
       return {id:record.id,type,label,createdAt:record.createdAt};
     },
     async revoke(context,id) {
