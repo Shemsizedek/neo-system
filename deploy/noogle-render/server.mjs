@@ -27,7 +27,7 @@ export function createStagingServer() {
     catch { return json(res,400,{error:'invalid_request'}); }
     if(req.method === 'GET' && pathname === '/search') {
       const query=new URL(req.url,'http://127.0.0.1').searchParams.get('q')?.trim().slice(0,100) || '';
-      const terms=query.toLowerCase().split(/\\s+/).filter(Boolean);
+      const terms=query.toLowerCase().split(/\s+/).filter(Boolean);
       const results=terms.length ? publicCatalog.filter(item=>terms.every(term=>(item.title+' '+item.tags).toLowerCase().includes(term))) : publicCatalog;
       return json(res,200,{mode:'curated-public-preview',liveIndex:false,query,results,count:results.length});
     }
