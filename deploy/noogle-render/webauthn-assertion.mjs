@@ -21,11 +21,11 @@ export function createAssertionVerifier({rpId,origin,consumeChallenge,getCredent
    if(!userPresent||!userVerified)return null;
    const credential=await getCredential(credentialId);
    if(!credential || credential.revoked || credential.rpId!==rpId)return null;
-   if(!await consumeChallenge({challenge:client.challenge,credentialId,subject:credential.subject}))return null;
    const counter=authData.readUInt32BE(33);
    const key=createPublicKey(credential.publicKey);
    const signed=Buffer.concat([authData,sha256(clientRaw)]);
    if(!verify('sha256',signed,key,Buffer.from(signature,'base64url')))return null;
+   if(!await consumeChallenge({challenge:client.challenge,credentialId,subject:credential.subject}))return null;
    // Counter validation/update must be atomic against durable credential storage.
    if(typeof credential.confirmCounter!=='function'||!await credential.confirmCounter(counter))return null;
    return {subject:credential.subject,credentialId,assurance:'device-bound'};
