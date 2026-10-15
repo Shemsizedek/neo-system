@@ -1,4 +1,5 @@
 import http from 'node:http';
+import { verifyNeopassToken } from '../neo-platform-api/neopass-google-auth.mjs';
 import { URL } from 'node:url';
 import { searchPublicLibrary, libraryCatalog, libraryAsset, health as libraryHealth } from '../holytemples-adapter/adapter.mjs';
 import { createFirestoreRestDb } from '../neo-counter-backend/firestore-rest-db.mjs';
@@ -317,6 +318,30 @@ export function createNeoEdgeServer() {
     const url = new URL(req.url || '/', `https://${host || 'neo.holytemples.org'}`);
 
     if (!service) return json(req, res, 421, { error: 'unknown_neo_host', host });
+
+    // NSEC-068: read-only verification of a scoped, signed NEO Pass browser identity.
+    // NEVER use this token as proof of device enrollment, passkeys or command authority.
+    if (host === 'noogle.holytemples.org' && req.method === 'GET' &&
+        url.pathname === '/connect/session') {
+      const authorization = String(req.headers.authorization || '');
+      const token = authorization.startsWith('Bearer ') ? authorization.slice(7) : '';
+      const secret = process.env.NEO_PASS_JWT_SECRET || '';
+      const claims = secret && token ? verifyNeopassToken(token, { secret, issuer: 'neo-pass' }) : null;
+      const valid = claims && typeof claims.sub === 'string' && claims.sub.length > 0 &&
+        claims.scope === 'neo:oracle:execute' && claims.token_use === 'browser' &&
+        Number.isSafeInteger(claims.exp) && claims.exp > Math.floor(Date.now() / 1000) &&
+        Number.isSafeInteger(claims.iat) && claims.iat <= Math.floor(Date.now() / 1000) + 30;
+      res.writeHead(valid ? 200 : 401, {
+        'content-type': 'application/json; charset=utf-8',
+        'cache-control': 'no-store, private',
+        'x-content-type-options': 'nosniff',
+        'referrer-policy': 'no-referrer',
+        'vary': 'Authorization'
+      });
+      return res.end(JSON.stringify(valid
+        ? { authenticated: true, subject: claims.sub, capability: 'read-only', enrollment: 'disabled', remote_terminal: 'disabled' }
+        : { authenticated: false, error: 'neopass_authentication_required' }));
+    }
 
     // NSEC-067: reserved Noogle Connect route. The public Noogle search stays unchanged.
     // Never infer an authenticated NEO Pass session from browser-supplied headers.
