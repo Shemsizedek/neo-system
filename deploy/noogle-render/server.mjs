@@ -1,3 +1,4 @@
+import { createPairingPreview } from './pairing-preview.mjs';
 import http from 'node:http';
 
 const port = Number(process.env.PORT || 10000);
@@ -21,10 +22,34 @@ const publicCatalog = Object.freeze([
   { title:'Noogle production',url:'https://noogle.holytemples.org/',tags:'noogle search production'}
 ]);
 export function createStagingServer() {
-  return http.createServer((req,res) => {
+  const preview=createPairingPreview();
+  return http.createServer(async (req,res) => {
     let pathname;
     try { pathname = new URL(req.url || '/', 'http://127.0.0.1').pathname; }
     catch { return json(res,400,{error:'invalid_request'}); }
+    // Staging-only protocol simulation: no NEO Pass, real enrollment, or control privileges.
+    if(pathname.startsWith('/preview/pair/')) {
+      if(req.method !== 'POST') return json(res,405,{error:'method_not_allowed'});
+      if(req.headers.origin && req.headers.origin !== 'https://noogle-connect-staging.onrender.com')
+        return json(res,403,{error:'origin_denied'});
+      if(req.headers['content-type']?.split(';')[0] !== 'application/json')
+        return json(res,415,{error:'json_required'});
+      let raw='';
+      try {
+        for await (const part of req) {
+          raw+=part.toString('utf8');
+          if(raw.length>2048) return json(res,413,{error:'payload_too_large'});
+        }
+        const body=JSON.parse(raw);
+        const action=pathname.slice('/preview/pair/'.length);
+        const result=action==='create'?preview.create()
+          :action==='join'?preview.join(body)
+          :action==='approve'?preview.approve(body)
+          :action==='status'?preview.status(body)
+          :{status:404,body:{error:'not_found'}};
+        return json(res,result.status,result.body);
+      }catch{return json(res,400,{error:'invalid_json'});}
+    }
     if(req.method === 'GET' && pathname === '/search') {
       const query=new URL(req.url,'http://127.0.0.1').searchParams.get('q')?.trim().slice(0,100) || '';
       const terms=query.toLowerCase().split(/\s+/).filter(Boolean);
