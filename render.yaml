@@ -5,7 +5,7 @@ services:
     plan: free
     branch: main
     autoDeployTrigger: off
-    buildCommand: node --check deploy/noogle-render/server.mjs && node --test deploy/noogle-render/server.test.mjs
+    buildCommand: node --check deploy/noogle-render/server.mjs && node --test deploy/noogle-render/server.test.mjs deploy/noogle-render/pairing-preview.test.mjs
     startCommand: node deploy/noogle-render/server.mjs
     healthCheckPath: /healthz
     envVars:
