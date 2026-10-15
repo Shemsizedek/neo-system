@@ -36,3 +36,19 @@ test('curated public search does not expose production data or bypass device den
     assert.equal((await fetch(base+'/connect/terminal')).status,403);
   }finally{await new Promise(resolve=>server.close(resolve));}
 });
+
+test('staging homepage serves an accessible responsive search interface',async()=>{
+ const server=createStagingServer();await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+ try{
+ const base='http://127.0.0.1:'+server.address().port;
+ const page=await fetch(base+'/');const html=await page.text();
+ assert.equal(page.status,200);
+ assert.match(html,/role="search"/);assert.match(html,/aria-live="polite"/);
+ assert.match(html,/encodeURIComponent/);assert.match(html,/createElement/);
+ assert.doesNotMatch(html,/innerHTML/);
+ assert.match(page.headers.get('content-security-policy'),/connect-src 'self'/);
+ const search=await fetch(base+'/search?q=ministry');assert.equal(search.status,200);
+ assert.equal((await search.json()).count,2);
+ assert.equal((await fetch(base+'/connect/terminal')).status,403);
+ }finally{await new Promise(resolve=>server.close(resolve));}
+});
