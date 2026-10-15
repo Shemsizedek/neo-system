@@ -24,3 +24,19 @@ test('wrong code cannot join and guess attempts are limited',()=>{
  for(let i=0;i<5;i++)assert.equal(pairing.join({id,code:'wrong'}).status,403);
  assert.equal(pairing.join({id,code}).status,403);
 });
+
+test('approved owner and joiner can exchange only transient ping counters',()=>{
+ const pairing=createPairingPreview(()=>1000);
+ const {id,owner,code}=pairing.create().body;
+ assert.equal(pairing.ping({id,credential:owner}).status,403);
+ const {joiner}=pairing.join({id,code}).body;
+ assert.equal(pairing.ping({id,credential:joiner}).status,403);
+ pairing.approve({id,owner});
+ assert.equal(pairing.ping({id,credential:'forged'}).status,403);
+ assert.equal(pairing.ping({id,credential:owner}).status,200);
+ assert.equal(pairing.signalStatus({id,credential:joiner}).body.received,1);
+ assert.equal(pairing.signalStatus({id,credential:owner}).body.received,0);
+ assert.equal(pairing.ping({id,credential:joiner}).status,200);
+ assert.equal(pairing.signalStatus({id,credential:owner}).body.received,1);
+ assert.deepEqual(pairing.ping({id,credential:owner}).body.permissions,[]);
+});

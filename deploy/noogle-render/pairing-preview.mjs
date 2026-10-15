@@ -23,7 +23,7 @@ export function createPairingPreview(now=()=>Date.now()) {
       prune(now());
       if(sessions.size >= limit) return {status:429,body:{error:'capacity_reached'}};
       const id=token(),owner=token(),pairCode=code();
-      const session={owner,pairCode,joiner:null,state:'pending',attempts:0,expiresAt:now()+ttlMs};
+      const session={owner,pairCode,joiner:null,state:'pending',attempts:0,signals:{owner:0,joiner:0},expiresAt:now()+ttlMs};
       sessions.set(id,session);
       return {status:201,body:{id,owner,code:pairCode,expiresAt:session.expiresAt,mode:'staging-demonstration',permissions:[]}};
     },
@@ -41,6 +41,19 @@ export function createPairingPreview(now=()=>Date.now()) {
       if(!s || s.state!=='awaiting_approval') return {status:403,body:{error:'approval_not_authorized'}};
       s.state='approved_preview';
       return {status:200,body:{state:s.state,permissions:[],deviceEnrolled:false,remoteTerminal:false}};
+    },
+    ping({id,credential}) {
+      const s=get(id,'owner',credential)||get(id,'joiner',credential);
+      if(!s || s.state!=='approved_preview') return {status:403,body:{error:'pairing_not_approved'}};
+      const role=same(s.owner,credential)?'owner':'joiner';
+      s.signals[role]++;
+      return {status:200,body:{sent:true,peer:'browser',permissions:[],deviceEnrolled:false}};
+    },
+    signalStatus({id,credential}) {
+      const s=get(id,'owner',credential)||get(id,'joiner',credential);
+      if(!s || s.state!=='approved_preview')return {status:403,body:{error:'pairing_not_approved'}};
+      const role=same(s.owner,credential)?'owner':'joiner';
+      return {status:200,body:{received:s.signals[role==='owner'?'joiner':'owner'],mode:'temporary-browser-signal',permissions:[]}};
     },
     status({id,credential}) {
       const s=get(id,'owner',credential)||get(id,'joiner',credential);
