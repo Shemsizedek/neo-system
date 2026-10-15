@@ -13,11 +13,24 @@ const json = (res, status, body) => {
   res.end(JSON.stringify(body));
 };
 
+// Curated public navigation only. No production indexes or private NEO data.
+const publicCatalog = Object.freeze([
+  { title:'World Temple of Karast',url:'https://holytemples.org/',tags:'temple ministry public'},
+  { title:'World Education',url:'https://holytemples.org/holy-orders/',tags:'ministry education orders'},
+  { title:'NEO System GitHub',url:'https://github.com/Shemsizedek/neo-system',tags:'neo development code'},
+  { title:'Noogle production',url:'https://noogle.holytemples.org/',tags:'noogle search production'}
+]);
 export function createStagingServer() {
   return http.createServer((req,res) => {
     let pathname;
     try { pathname = new URL(req.url || '/', 'http://127.0.0.1').pathname; }
     catch { return json(res,400,{error:'invalid_request'}); }
+    if(req.method === 'GET' && pathname === '/search') {
+      const query=new URL(req.url,'http://127.0.0.1').searchParams.get('q')?.trim().slice(0,100) || '';
+      const terms=query.toLowerCase().split(/\s+/).filter(Boolean);
+      const results=terms.length ? publicCatalog.filter(item=>terms.every(term=>(item.title+' '+item.tags).toLowerCase().includes(term))) : publicCatalog;
+      return json(res,200,{mode:'curated-public-preview',liveIndex:false,query,results,count:results.length});
+    }
     if(req.method === 'GET' && pathname === '/healthz')
       return json(res,200,{ok:true,service:'noogle-connect-render-staging',mode:'read-only'});
     if(req.method === 'GET' && pathname === '/') {

@@ -20,3 +20,19 @@ test('Render staging serves landing and health while denying privileged routes',
     }
   }finally{await new Promise(resolve=>server.close(resolve));}
 });
+
+test('curated public search does not expose production data or bypass device denial',async()=>{
+  const server=createStagingServer();
+  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+  try{
+    const base='http://127.0.0.1:'+server.address().port;
+    const response=await fetch(base+'/search?q=ministry');
+    assert.equal(response.status,200);
+    const data=await response.json();
+    assert.equal(data.liveIndex,false);
+    assert.equal(data.mode,'curated-public-preview');
+    assert.ok(data.results.some(row=>row.title==='World Education'));
+    assert.equal((await fetch(base+'/api/noogle/search?q=ministry')).status,403);
+    assert.equal((await fetch(base+'/connect/terminal')).status,403);
+  }finally{await new Promise(resolve=>server.close(resolve));}
+});
