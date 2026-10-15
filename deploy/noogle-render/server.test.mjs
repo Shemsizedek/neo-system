@@ -12,7 +12,7 @@ test('Render staging serves landing and health while denying privileged routes',
     assert.equal((await health.json()).mode,'read-only');
     const home=await fetch(base+'/');
     assert.equal(home.status,200);
-    assert.ok((await home.text()).includes('https://noogle.holytemples.org/'));
+    assert.match(await home.text(),/Noogle Connect — Device Hub/);
     for(const path of ['/connect','/connect/session','/connect/terminal','/api/guardian/session']){
       const r=await fetch(base+path,{headers:{authorization:'Bearer forged','x-neopass-user':'admin'}});
       assert.equal(r.status,403);
