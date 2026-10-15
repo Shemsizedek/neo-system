@@ -23,14 +23,15 @@ export function createPairingPreview(now=()=>Date.now()) {
       prune(now());
       if(sessions.size >= limit) return {status:429,body:{error:'capacity_reached'}};
       const id=token(),owner=token(),pairCode=code();
-      const session={owner,pairCode,joiner:null,state:'pending',expiresAt:now()+ttlMs};
+      const session={owner,pairCode,joiner:null,state:'pending',attempts:0,expiresAt:now()+ttlMs};
       sessions.set(id,session);
       return {status:201,body:{id,owner,code:pairCode,expiresAt:session.expiresAt,mode:'staging-demonstration',permissions:[]}};
     },
     join({id,code:submitted}) {
       prune(now());
       const s=sessions.get(id);
-      if(!s || s.state!=='pending' || !same(s.pairCode,submitted)) return {status:403,body:{error:'pairing_unavailable'}};
+      if(!s || s.state!=='pending' || s.attempts>=5) return {status:403,body:{error:'pairing_unavailable'}};
+      if(!same(s.pairCode,submitted)) {s.attempts++;return {status:403,body:{error:'pairing_unavailable'}};}
       const joiner=token();
       s.joiner=joiner;s.state='awaiting_approval';s.pairCode=null;
       return {status:200,body:{id,joiner,state:s.state,permissions:[]}};
