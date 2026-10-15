@@ -16,16 +16,17 @@ function fixture(){
  };
  const registry=createDeviceRegistry({
   store,now:()=>1000,
+  verifyEnrollmentProof:async ({challenge})=>challenge==='valid-device-proof',
   verifyIdentity:async context=>context?.subject?{subject:context.subject,assurance:context.assurance}:null
  });
  return {registry,records};
 }
-const proof={type:'android',label:'Phone',publicKey:'a'.repeat(64),proofVerified:true};
+const proof={type:'android',label:'Phone',publicKey:'a'.repeat(64),challenge:'valid-device-proof'};
 test('unauthenticated or weakly authenticated users cannot enroll or list',async()=>{
  const {registry}=fixture();
  await assert.rejects(()=>registry.list(null),/authentication_required/);
  await assert.rejects(()=>registry.enroll({subject:'a',assurance:'password'},proof),/authentication_required/);
- await assert.rejects(()=>registry.enroll({subject:'a',assurance:'device-bound'},{...proof,proofVerified:false}),/enrollment_preconditions_failed/);
+ await assert.rejects(()=>registry.enroll({subject:'a',assurance:'device-bound'},{...proof,challenge:'invalid-device-proof'}),/enrollment_proof_not_verified/);
 });
 test('registry operations enforce user ownership and revocation',async()=>{
  const {registry,records}=fixture();
@@ -38,4 +39,11 @@ test('registry operations enforce user ownership and revocation',async()=>{
  await registry.revoke(a,enrolled.id);
  assert.equal((await registry.list(a))[0].revokedAt,1000);
  await assert.rejects(()=>registry.revoke(a,enrolled.id),/device_not_found/);
+});
+
+test('caller-supplied proofVerified cannot bypass trusted challenge verifier',async()=>{
+ const {registry}=fixture();
+ await assert.rejects(()=>registry.enroll({subject:'a',assurance:'device-bound'},{
+ type:'chromebook',label:'Laptop',publicKey:'b'.repeat(64),proofVerified:true,challenge:'not-verified'
+ }),/enrollment_proof_not_verified/);
 });

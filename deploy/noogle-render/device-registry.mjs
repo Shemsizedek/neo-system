@@ -5,8 +5,8 @@ import { randomUUID, createHash } from 'node:crypto';
 // account scope before calling any mutating method.
 const digest = value => createHash('sha256').update(value).digest('hex');
 const validType = new Set(['android','chromebook']);
-export function createDeviceRegistry({store, verifyIdentity, now=()=>Date.now()}) {
-  if(!store || typeof verifyIdentity!=='function') throw Error('secure_store_and_identity_required');
+export function createDeviceRegistry({store, verifyIdentity, verifyEnrollmentProof, now=()=>Date.now()}) {
+  if(!store || typeof verifyIdentity!=='function' || typeof verifyEnrollmentProof!=='function') throw Error('secure_store_and_identity_required');
   async function authorized(context) {
     const identity=await verifyIdentity(context);
     if(!identity?.subject || identity.assurance!=='device-bound') throw Error('authentication_required');
@@ -17,11 +17,13 @@ export function createDeviceRegistry({store, verifyIdentity, now=()=>Date.now()}
       const subject=await authorized(context);
       return (await store.list(subject)).map(({id,type,label,createdAt,revokedAt})=>({id,type,label,createdAt,revokedAt}));
     },
-    async enroll(context,{type,label,publicKey,proofVerified}) {
+    async enroll(context,{type,label,publicKey,challenge}) {
       const subject=await authorized(context);
-      if(proofVerified!==true || !validType.has(type) || typeof label!=='string' || label.length<1 || label.length>80 ||
+      if(!validType.has(type) || typeof label!=='string' || label.length<1 || label.length>80 ||
         typeof publicKey!=='string' || publicKey.length<32 || publicKey.length>8192)
         throw Error('enrollment_preconditions_failed');
+      const verified=await verifyEnrollmentProof({subject,type,publicKey,challenge});
+      if(verified!==true) throw Error('enrollment_proof_not_verified');
       const existing=await store.findByKey(subject,digest(publicKey));
       if(existing)throw Error('device_already_registered');
       const record={id:randomUUID(),subject,type,label,publicKeyHash:digest(publicKey),createdAt:now(),revokedAt:null};
