@@ -49,3 +49,22 @@ test('staging homepage focuses on device connection with no fake pairing',async(
  assert.equal((await fetch(base+'/search?q=ministry')).status,200);
  }finally{await new Promise(resolve=>server.close(resolve));}
 });
+
+test('two-browser preview requires explicit approval and never enrolls a device',async()=>{
+ const server=createStagingServer();await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+ try{
+ const base='http://127.0.0.1:'+server.address().port;
+ const home=await (await fetch(base+'/')).text();
+ assert.match(home,/Create pairing code/);assert.match(home,/Request approval/);assert.match(home,/No devices are enrolled/);
+ const call=async(action,data)=>fetch(base+'/preview/pair/'+action,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(data)});
+ const created=await (await call('create',{})).json();
+ assert.equal((await call('approve',{id:created.id,owner:created.owner})).status,403);
+ const joined=await (await call('join',{id:created.id,code:created.code})).json();
+ const before=await (await call('status',{id:created.id,credential:joined.joiner})).json();
+ assert.equal(before.state,'awaiting_approval');
+ const approved=await (await call('approve',{id:created.id,owner:created.owner})).json();
+ assert.equal(approved.state,'approved_preview');assert.deepEqual(approved.permissions,[]);
+ assert.equal(approved.remoteTerminal,false);assert.equal(approved.deviceEnrolled,false);
+ assert.equal((await fetch(base+'/connect/session')).status,403);
+ }finally{await new Promise(resolve=>server.close(resolve));}
+});
