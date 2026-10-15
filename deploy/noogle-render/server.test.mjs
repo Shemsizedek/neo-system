@@ -80,3 +80,13 @@ test('preview pairing accepts only staging and Connect domain browser origins',a
  assert.equal((await fetch('http://127.0.0.1:'+server.address().port+'/connect/terminal')).status,403);
  }finally{await new Promise(resolve=>server.close(resolve));}
 });
+
+test('one tap device hub never grants remote terminal privilege',async()=>{
+ const server=createStagingServer();await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+ try {const base='http://127.0.0.1:'+server.address().port;
+ const page=await (await fetch(base+'/')).text();
+ assert.match(page,/id="one-tap-connect"/);
+ assert.match(page,/requires NEO Pass and the companion agent/);
+ assert.equal((await fetch(base+'/connect/terminal')).status,403);
+ }finally{await new Promise(resolve=>server.close(resolve));}
+});
