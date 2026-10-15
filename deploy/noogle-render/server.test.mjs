@@ -37,18 +37,15 @@ test('curated public search does not expose production data or bypass device den
   }finally{await new Promise(resolve=>server.close(resolve));}
 });
 
-test('staging homepage serves an accessible responsive search interface',async()=>{
+test('staging homepage focuses on device connection with no fake pairing',async()=>{
  const server=createStagingServer();await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
- try{
- const base='http://127.0.0.1:'+server.address().port;
+ try{const base='http://127.0.0.1:'+server.address().port;
  const page=await fetch(base+'/');const html=await page.text();
- assert.equal(page.status,200);
- assert.match(html,/role="search"/);assert.match(html,/aria-live="polite"/);
- assert.match(html,/encodeURIComponent/);assert.match(html,/createElement/);
- assert.doesNotMatch(html,/innerHTML/);
- assert.match(page.headers.get('content-security-policy'),/connect-src 'self'/);
- const search=await fetch(base+'/search?q=ministry');assert.equal(search.status,200);
- assert.equal((await search.json()).count,2);
+ assert.equal(page.status,200);assert.match(html,/Connect your/);assert.match(html,/Android phone/);assert.match(html,/Chromebook/);
+ assert.match(html,/Check this device/);assert.match(html,/PublicKeyCredential/);assert.match(html,/aria-live="polite"/);
+ assert.doesNotMatch(html,/id="search-form"/);assert.doesNotMatch(html,/innerHTML/);
+ assert.equal((await fetch(base+'/connect/session')).status,403);
  assert.equal((await fetch(base+'/connect/terminal')).status,403);
+ assert.equal((await fetch(base+'/search?q=ministry')).status,200);
  }finally{await new Promise(resolve=>server.close(resolve));}
 });
