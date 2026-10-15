@@ -7,7 +7,7 @@ function fixture(){
  const store={
   async list(subject){return records.filter(r=>r.subject===subject);},
   async findByKey(subject,key){return records.find(r=>r.subject===subject && r.publicKeyHash===key && !r.revokedAt);},
-  async insert(row){records.push(row);},
+  async enrollAtomically({record,challenge}){if(challenge!=='valid-device-proof')throw Error('challenge_replay');if(records.some(r=>r.subject===record.subject&&r.publicKeyHash===record.publicKeyHash&&!r.revokedAt))throw Error('device_already_registered');records.push(record);},
   async revokeIfOwned(subject,id,time){
     const item=records.find(r=>r.subject===subject && r.id===id && !r.revokedAt);
     if(!item)return false;
@@ -46,4 +46,13 @@ test('caller-supplied proofVerified cannot bypass trusted challenge verifier',as
  await assert.rejects(()=>registry.enroll({subject:'a',assurance:'device-bound'},{
  type:'chromebook',label:'Laptop',publicKey:'b'.repeat(64),proofVerified:true,challenge:'not-verified'
  }),/enrollment_proof_not_verified/);
+});
+
+test('registry demands an atomic durable enrollment adapter',()=>{
+ assert.throws(()=>createDeviceRegistry({store:{},verifyIdentity:async()=>({subject:'a',assurance:'device-bound'}),verifyEnrollmentProof:async()=>true}),/secure_store_and_identity_required/);
+});
+test('duplicate active public keys are rejected within the durable store transaction',async()=>{
+ const {registry}=fixture();const context={subject:'a',assurance:'device-bound'};
+ await registry.enroll(context,proof);
+ await assert.rejects(()=>registry.enroll(context,proof),/device_already_registered/);
 });
