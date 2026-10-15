@@ -1,0 +1,45 @@
+name: Noogle NEO Pass Runtime IAM Authorization Audit
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+  id-token: write
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    environment: holytemples-production
+    env:
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID || secrets.GCP_PROJECT_ID }}
+      GCP_REGION: ${{ vars.GCP_REGION || secrets.GCP_REGION }}
+      GCP_WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER || secrets.GCP_WIF_PROVIDER }}
+      GCP_CLOUD_RUN_SERVICE_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_SERVICE_ACCOUNT || secrets.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+    steps:
+      - uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@v3
+      - name: Check NEO Edge runtime authorization without exposing identities
+        shell: bash
+        run: |
+          set -euo pipefail
+          gcloud run services describe neo-edge --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format=json > /tmp/edge.json
+          gcloud secrets get-iam-policy neo-pass-jwt-secret --project="$GCP_PROJECT_ID" --format=json > /tmp/policy.json
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          const s=JSON.parse(fs.readFileSync('/tmp/edge.json','utf8'));
+          const p=JSON.parse(fs.readFileSync('/tmp/policy.json','utf8'));
+          const email=s.spec?.template?.spec?.serviceAccountName;
+          if(!email)throw Error('edge_runtime_identity_missing');
+          const member='serviceAccount:'+email;
+          const bindings=(p.bindings||[]).filter(b=>b.role==='roles/secretmanager.secretAccessor');
+          const direct=bindings.some(b=>(b.members||[]).includes(member)&&!b.condition);
+          const conditional=bindings.some(b=>(b.members||[]).includes(member)&&Boolean(b.condition));
+          console.log('NEO Edge runtime identity resolved:',Boolean(email));
+          console.log('Direct unconditioned secretAccessor grant:',direct);
+          console.log('Conditional secretAccessor grant:',conditional);
+          console.log('Project-inherited or group-based authorization: not determined by this audit');
+          console.log('No service account identifiers or secret contents printed');
+          JS
+          echo 'No IAM, deployments, or credentials modified.'
