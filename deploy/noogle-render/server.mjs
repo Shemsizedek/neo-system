@@ -30,7 +30,7 @@ export function createStagingServer() {
     // Staging-only protocol simulation: no NEO Pass, real enrollment, or control privileges.
     if(pathname.startsWith('/preview/pair/')) {
       if(req.method !== 'POST') return json(res,405,{error:'method_not_allowed'});
-      if(req.headers.origin && req.headers.origin !== 'https://noogle-connect-staging.onrender.com')
+      if(req.headers.origin && !['https://noogle-connect-staging.onrender.com','https://connect.holytemples.org'].includes(req.headers.origin))
         return json(res,403,{error:'origin_denied'});
       if(req.headers['content-type']?.split(';')[0] !== 'application/json')
         return json(res,415,{error:'json_required'});

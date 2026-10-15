@@ -68,3 +68,15 @@ test('two-browser preview requires explicit approval and never enrolls a device'
  assert.equal((await fetch(base+'/connect/session')).status,403);
  }finally{await new Promise(resolve=>server.close(resolve));}
 });
+
+test('preview pairing accepts only staging and Connect domain browser origins',async()=>{
+ const server=createStagingServer();await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+ try{
+ const url='http://127.0.0.1:'+server.address().port+'/preview/pair/create';
+ const attempt=origin=>fetch(url,{method:'POST',headers:{'content-type':'application/json',origin},body:'{}'});
+ const domain=await attempt('https://connect.holytemples.org');assert.equal(domain.status,201);
+ const staging=await attempt('https://noogle-connect-staging.onrender.com');assert.equal(staging.status,201);
+ const hostile=await attempt('https://attacker.example');assert.equal(hostile.status,403);
+ assert.equal((await fetch('http://127.0.0.1:'+server.address().port+'/connect/terminal')).status,403);
+ }finally{await new Promise(resolve=>server.close(resolve));}
+});
