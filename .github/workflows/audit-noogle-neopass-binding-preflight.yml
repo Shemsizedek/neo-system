@@ -1,0 +1,49 @@
+name: Noogle NEO Pass Binding Preflight
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+  id-token: write
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    environment: holytemples-production
+    env:
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID || secrets.GCP_PROJECT_ID }}
+      GCP_REGION: ${{ vars.GCP_REGION || secrets.GCP_REGION }}
+      GCP_WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER || secrets.GCP_WIF_PROVIDER }}
+      GCP_CLOUD_RUN_SERVICE_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_SERVICE_ACCOUNT || secrets.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+    steps:
+      - uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@v3
+      - name: Inspect binding consistency and policy metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          for service in neo-ai-gateway neo-bank neo-temple-giss neo-edge; do
+            gcloud run services describe "$service" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format=json > "/tmp/${service}.json"
+          done
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          for(const name of ['neo-ai-gateway','neo-bank','neo-temple-giss','neo-edge']){
+            const s=JSON.parse(fs.readFileSync('/tmp/'+name+'.json','utf8'));
+            const env=(s.spec?.template?.spec?.containers||[]).flatMap(c=>c.env||[]);
+            const entry=env.find(e=>e.name==='NEO_PASS_JWT_SECRET');
+            console.log(name,'bound:',Boolean(entry?.valueFrom?.secretKeyRef),'reference:',entry?.valueFrom?.secretKeyRef?.name||'none','version:',entry?.valueFrom?.secretKeyRef?.key||'none');
+            console.log(name,'runtime identity:',s.spec?.template?.spec?.serviceAccountName||'default');
+          }
+          JS
+          gcloud secrets describe neo-pass-jwt-secret --project="$GCP_PROJECT_ID" --format='value(name,replication.automatic)' >/dev/null
+          echo 'Secret resource: exists'
+          gcloud secrets get-iam-policy neo-pass-jwt-secret --project="$GCP_PROJECT_ID" --format=json > /tmp/policy.json
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          const p=JSON.parse(fs.readFileSync('/tmp/policy.json','utf8'));
+          console.log('Secret IAM binding roles:',(p.bindings||[]).map(b=>b.role).join(','));
+          console.log('IAM membership and secret values intentionally not printed');
+          JS
+          echo 'Read-only preflight complete. No bindings, IAM or credentials modified.'
