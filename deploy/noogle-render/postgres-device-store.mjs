@@ -19,6 +19,10 @@ export function createPostgresDeviceStore(db) {
        'INSERT INTO noogle_connect_devices(id,subject_id,type,label,public_key_hash,created_at,revoked_at) VALUES($1,$2,$3,$4,$5,$6,NULL)',
        [record.id,record.subject,record.type,record.label,record.publicKeyHash,record.createdAt]);
    },
+   async renameIfOwned(subject,id,label) {
+     const result=await db.query('UPDATE noogle_connect_devices SET label=$3 WHERE subject_id=$1 AND id=$2 AND revoked_at IS NULL RETURNING id',[subject,id,label]);
+     return result.rows.length===1;
+   },
    async revokeIfOwned(subject,id,now) {
      const result=await db.query(
        'UPDATE noogle_connect_devices SET revoked_at=$3 WHERE subject_id=$1 AND id=$2 AND revoked_at IS NULL RETURNING id',
