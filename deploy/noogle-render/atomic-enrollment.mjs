@@ -1,15 +1,18 @@
+import { createHash } from 'node:crypto';
 // Inactive transaction boundary; use dedicated DB connection per transaction.
 // Proof is consumed by trusted in-process gate; server must recover if commit fails.
 export function createAtomicEnrollment({pool,proofConsumer}) {
  if(!pool?.connect || typeof proofConsumer?.consume!=='function')throw Error('transaction_dependencies_required');
- return async function enroll({subject,proof,challengeHash,rpId,origin,id,type,label,publicKeyHash,now}) {
+ return async function enroll({subject,proof,challengeHash,rpId,origin,id,type,label,now}) {
   if(typeof subject!=='string'||!subject||typeof challengeHash!=='string'||!challengeHash ||
     !['android','chromebook'].includes(type)||typeof id!=='string'||!id ||
-    typeof label!=='string'||!label||!publicKeyHash)throw Error('invalid_enrollment_request');
+    typeof label!=='string'||!label||label.length>80)throw Error('invalid_enrollment_request');
   // A consumed in-memory proof cannot be replayed if a transaction fails.
   // Recovery requires a new verified ceremony; no retry with the old proof.
   const checked=proofConsumer.consume(proof,subject);
   if(!checked?.credentialId||!checked?.publicKey)throw Error('verified_proof_required');
+  const publicKeyHash=createHash('sha256').update(checked.publicKey).digest('hex');
+  const credentialIdHash=createHash('sha256').update(checked.credentialId).digest('hex');
   const client=await pool.connect();
   try {
    await client.query('BEGIN');
@@ -18,8 +21,8 @@ export function createAtomicEnrollment({pool,proofConsumer}) {
     [challengeHash,subject,rpId,origin,now]);
    if(consume.rows.length!==1)throw Error('challenge_invalid_or_replayed');
    const inserted=await client.query(
-    'INSERT INTO noogle_connect_devices(id,subject_id,type,label,public_key_hash,created_at,revoked_at) VALUES($1,$2,$3,$4,$5,$6,NULL) RETURNING id',
-    [id,subject,type,label,publicKeyHash,now]);
+    'INSERT INTO noogle_connect_devices(id,subject_id,type,label,public_key_hash,created_at,revoked_at,credential_id_hash) VALUES($1,$2,$3,$4,$5,$6,NULL,$7) RETURNING id',
+    [id,subject,type,label,publicKeyHash,now,credentialIdHash]);
    if(inserted.rows.length!==1)throw Error('device_insert_failed');
    await client.query('COMMIT');
    return {id,registered:true,permissions:[]};
