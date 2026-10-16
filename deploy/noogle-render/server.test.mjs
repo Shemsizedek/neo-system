@@ -102,3 +102,16 @@ test('live UI automatically checks pairing progress and reports NEO Mask passkey
  assert.equal((await fetch(base+'/connect/terminal')).status,403);
  }finally{await new Promise(resolve=>server.close(resolve));}
 });
+
+test('live shell reflects available browser pairing and avoids false terminal claims',async()=>{
+ const server=createStagingServer();await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+ try{
+ const base='http://127.0.0.1:'+server.address().port;
+ const html=await (await fetch(base+'/')).text();
+ assert.match(html,/Browser-to-browser signals/);
+ assert.match(html,/id="neopass-entry"/);
+ assert.match(html,/href="https:\/\/neopass.holytemples.org\/"/);
+ assert.match(html,/Browser pairing is live today/);
+ assert.equal((await fetch(base+'/connect/terminal')).status,403);
+ }finally{await new Promise(resolve=>server.close(resolve));}
+});
