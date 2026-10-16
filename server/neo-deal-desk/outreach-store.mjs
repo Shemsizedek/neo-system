@@ -61,7 +61,7 @@ export function createInMemoryOutreachStore({now=nowIso,id=()=>randomUUID()}={})
         if(!records.has(recordId)) records.set(recordId,{id:recordId,...value,createdAt:now(),updatedAt:now(),revision:1});
       }
     },
-    async list({status}={}){return [...records.values()].filter(x=>!status||x.status===status).sort((a,b)=>b.updatedAt.localeCompare(a.updatedAt)).map(structuredClone);},
+    async list({status}={}){return [...records.values()].filter(x=>!status||x.status===status).sort((a,b)=>b.updatedAt.localeCompare(a.updatedAt)).map(item=>structuredClone(item));},
     async get(recordId){const value=records.get(recordId);return value?structuredClone(value):null;},
     async create(input,actor='NIA-013 DEALDESK'){const value={id:id(),...normalizeOutreach(input),createdAt:now(),updatedAt:now(),revision:1};records.set(value.id,value);log('created',value,actor);return structuredClone(value);},
     async update(recordId,input,actor='NIA-013 DEALDESK'){
