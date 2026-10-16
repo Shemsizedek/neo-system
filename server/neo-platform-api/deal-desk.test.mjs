@@ -4,10 +4,10 @@ import { once } from 'node:events';
 import { createNeoPlatformApi } from './server.mjs';
 import { createInMemoryCrmStore } from './crm-store.mjs';
 
-async function withServer(fn,{crmStore=createInMemoryCrmStore(),dealDeskMailAdapter=null,dealDeskOutboundEnabled=false}={}){
+async function withServer(fn,{crmStore=createInMemoryCrmStore(),dealDeskMailAdapter=null,dealDeskInboundReader=null,dealDeskOutboundEnabled=false}={}){
   const subjectResolver=req=>req.headers.authorization?.replace('Bearer ','')||null;
   const authService={session:async subject=>({subject,displayName:subject,role:subject==='admin'?'executive-admin':'member',neopassStatus:'active'})};
-  const server=createNeoPlatformApi({now:()=> '2026-10-16T16:00:00.000Z',subjectResolver,authService,crmStore,dealDeskMailAdapter,dealDeskOutboundEnabled});
+  const server=createNeoPlatformApi({now:()=> '2026-10-16T16:00:00.000Z',subjectResolver,authService,crmStore,dealDeskMailAdapter,dealDeskInboundReader,dealDeskOutboundEnabled});
   server.listen(0,'127.0.0.1');
   await once(server,'listening');
   const {port}=server.address();
@@ -63,7 +63,11 @@ test('Deal Desk outbox is executive-only and seeded from Wave 1',async()=>{
 
 test('Deal Desk approval works but dispatch remains blocked while execution is disabled',async()=>{
   await withServer(async base=>{
-    let response=await fetch(`${base}/api/v1/deal-desk/outbox/wave1%3A1/approve`,{
+    let response=await fetch(`${base}/api/v1/deal-desk/outbox/wave1%3A1/recipient`,{
+      method:'POST',headers:{authorization:'Bearer admin','content-type':'application/json'},body:JSON.stringify({email:'public@example.org',sourceUrl:'https://example.org/contact'})
+    });
+    assert.equal(response.status,200);
+    response=await fetch(`${base}/api/v1/deal-desk/outbox/wave1%3A1/approve`,{
       method:'POST',
       headers:{authorization:'Bearer admin','content-type':'application/json'},
       body:JSON.stringify({note:'Approved commercial introduction'})
@@ -87,7 +91,11 @@ test('Deal Desk dispatch logs CRM activity when explicitly enabled with an adapt
   const delivered=[];
   const crmStore=createInMemoryCrmStore();
   await withServer(async base=>{
-    let response=await fetch(`${base}/api/v1/deal-desk/outbox/wave1%3A1/approve`,{
+    let response=await fetch(`${base}/api/v1/deal-desk/outbox/wave1%3A1/recipient`,{
+      method:'POST',headers:{authorization:'Bearer admin','content-type':'application/json'},body:JSON.stringify({email:'public@example.org',sourceUrl:'https://example.org/contact'})
+    });
+    assert.equal(response.status,200);
+    response=await fetch(`${base}/api/v1/deal-desk/outbox/wave1%3A1/approve`,{
       method:'POST',
       headers:{authorization:'Bearer admin','content-type':'application/json'},
       body:'{}'
@@ -117,7 +125,11 @@ test('Deal Desk dispatch logs CRM activity when explicitly enabled with an adapt
 test('Deal Desk reply intake classifies a delivered response and logs CRM activity',async()=>{
   const crmStore=createInMemoryCrmStore();
   await withServer(async base=>{
-    let response=await fetch(`${base}/api/v1/deal-desk/outbox/wave1%3A1/approve`,{
+    let response=await fetch(`${base}/api/v1/deal-desk/outbox/wave1%3A1/recipient`,{
+      method:'POST',headers:{authorization:'Bearer admin','content-type':'application/json'},body:JSON.stringify({email:'public@example.org',sourceUrl:'https://example.org/contact'})
+    });
+    assert.equal(response.status,200);
+    response=await fetch(`${base}/api/v1/deal-desk/outbox/wave1%3A1/approve`,{
       method:'POST',
       headers:{authorization:'Bearer admin','content-type':'application/json'},
       body:'{}'
@@ -161,5 +173,58 @@ test('Deal Desk reply intake fails closed before a message is sent',async()=>{
     assert.equal(response.status,409);
     const data=await response.json();
     assert.equal(data.error,'outbox_item_not_sent');
+  });
+});
+
+
+test('Deal Desk recipient gate requires public-source provenance',async()=>{
+  await withServer(async base=>{
+    let response=await fetch(`${base}/api/v1/deal-desk/outbox/wave1%3A1/recipient`,{
+      method:'POST',headers:{authorization:'Bearer admin','content-type':'application/json'},body:JSON.stringify({email:'public@example.org'})
+    });
+    assert.equal(response.status,400);
+    let data=await response.json();
+    assert.equal(data.error,'recipient_email_source_required');
+
+    response=await fetch(`${base}/api/v1/deal-desk/outbox/wave1%3A1/recipient`,{
+      method:'POST',headers:{authorization:'Bearer admin','content-type':'application/json'},body:JSON.stringify({email:'public@example.org',sourceUrl:'https://example.org/contact'})
+    });
+    assert.equal(response.status,200);
+    data=await response.json();
+    assert.equal(data.item.recipientEmail,'public@example.org');
+    assert.equal(data.item.recipientEmailSourceUrl,'https://example.org/contact');
+  });
+});
+
+test('Deal Desk mail poll matches Titan-style reply to delivery Message-ID',async()=>{
+  const crmStore=createInMemoryCrmStore();
+  const seen=[];
+  const inbound={
+    provider:'titan',
+    ready:()=>true,
+    pollUnread:async()=>[{uid:'101',inReplyTo:'<msg-titan-1>',references:'',from:'Prospect <public@example.org>',subject:'Re: NEO',text:'Interested. Let us schedule a call.'}],
+    markSeen:async uid=>seen.push(uid)
+  };
+  await withServer(async base=>{
+    let response=await fetch(`${base}/api/v1/deal-desk/outbox/wave1%3A1/recipient`,{
+      method:'POST',headers:{authorization:'Bearer admin','content-type':'application/json'},body:JSON.stringify({email:'public@example.org',sourceUrl:'https://example.org/contact'})
+    });
+    assert.equal(response.status,200);
+    response=await fetch(`${base}/api/v1/deal-desk/outbox/wave1%3A1/approve`,{method:'POST',headers:{authorization:'Bearer admin','content-type':'application/json'},body:'{}'});
+    assert.equal(response.status,200);
+    response=await fetch(`${base}/api/v1/deal-desk/outbox/wave1%3A1/dispatch`,{method:'POST',headers:{authorization:'Bearer admin','content-type':'application/json'},body:'{}'});
+    assert.equal(response.status,200);
+
+    response=await fetch(`${base}/api/v1/deal-desk/mail/poll`,{method:'POST',headers:{authorization:'Bearer admin','content-type':'application/json'},body:'{}'});
+    assert.equal(response.status,200);
+    const data=await response.json();
+    assert.equal(data.matched,1);
+    assert.equal(data.results[0].classification,'positive_interest');
+    assert.deepEqual(seen,['101']);
+  },{
+    crmStore,
+    dealDeskOutboundEnabled:true,
+    dealDeskMailAdapter:{ready:()=>true,send:async()=>({provider:'titan-smtp',messageId:'<msg-titan-1>'})},
+    dealDeskInboundReader:inbound
   });
 });
