@@ -7,7 +7,7 @@ export const ONBOARDING_STEPS=Object.freeze([
 export function makeNeoTeleOnboarding({memberId,deviceRef,zipCode}={}) {
  if(typeof memberId!=='string'||!memberId.trim()) throw Error('member_required');
  if(typeof deviceRef!=='string'||!deviceRef.trim()) throw Error('device_required');
- if(!/^\\d{5}$/.test(zipCode??'')) throw Error('valid_zip_required');
+ if(!/^\d{5}$/.test(zipCode??'')) throw Error('valid_zip_required');
  return {memberId,deviceRef,zipCode,step:'DEVICE_CHECK',providerId:null,
   applicationRef:null,carrierApproval:false,activationConfirmed:false,
   lifelineStatus:'NOT_VERIFIED',serviceStatus:'NOT_ACTIVE'};
