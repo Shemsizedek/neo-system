@@ -2,6 +2,8 @@ import { randomUUID } from 'node:crypto';
 import { DealDeskOutboundError } from './outbound.mjs';
 
 const clean=(v,max=1000)=>String(v??'').trim().slice(0,max);
+const validEmail=v=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clean(v,320));
+const validPublicUrl=v=>{try{const u=new URL(v);return ['http:','https:'].includes(u.protocol)}catch{return false}};
 
 export function createFirestoreDealDeskOutbox({db,now=()=>new Date().toISOString(),id=()=>randomUUID()}={}){
   if(!db?.collection)throw new Error('firestore_db_required');
@@ -15,7 +17,7 @@ export function createFirestoreDealDeskOutbox({db,now=()=>new Date().toISOString
         const key=input.id||`outbox:${input.prospectId}`;
         const ref=records.doc(key),snap=await ref.get();
         if(snap.exists)continue;
-        await ref.create({...input,id:key,status:input.status||'draft_ready',approvedAt:null,approvedBy:null,sentAt:null,delivery:null,reply:null,createdAt:now(),updatedAt:now(),revision:1});
+        await ref.create({...input,id:key,status:input.status||'draft_ready',recipientEmail:input.recipientEmail||null,recipientEmailSourceUrl:input.recipientEmailSourceUrl||null,recipientEmailVerifiedAt:input.recipientEmailVerifiedAt||null,approvedAt:null,approvedBy:null,sentAt:null,delivery:null,reply:null,createdAt:now(),updatedAt:now(),revision:1});
       }
     },
 
@@ -27,6 +29,21 @@ export function createFirestoreDealDeskOutbox({db,now=()=>new Date().toISOString
     async get(itemId){
       const snap=await records.doc(itemId).get();
       return snap.exists?{id:snap.id,...snap.data()}:null;
+    },
+
+    async setRecipientEmail(itemId,actor,{email,sourceUrl}={}){
+      if(!validEmail(email))throw new DealDeskOutboundError('recipient_email_invalid',400);
+      if(!validPublicUrl(sourceUrl))throw new DealDeskOutboundError('recipient_email_source_required',400);
+      const ref=records.doc(itemId);let saved;
+      await db.runTransaction(async tx=>{
+        const snap=await tx.get(ref);if(!snap.exists)throw new DealDeskOutboundError('outbox_item_not_found',404);
+        const current={id:snap.id,...snap.data()};
+        if(['sent','replied'].includes(current.status))throw new DealDeskOutboundError('outbox_recipient_locked',409);
+        const value={...current,recipientEmail:clean(email,320).toLowerCase(),recipientEmailSourceUrl:clean(sourceUrl,1000),recipientEmailVerifiedAt:now(),updatedAt:now(),revision:(current.revision||0)+1};
+        const event=eventValue('recipient_verified',value,actor,{sourceUrl:value.recipientEmailSourceUrl});
+        tx.set(ref,value,{merge:false});tx.create(events.doc(event.id),event);saved=value;
+      });
+      return saved;
     },
 
     async approve(itemId,actor,note=''){

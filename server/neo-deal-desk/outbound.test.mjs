@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { buildWave1Outbox, classifyReply, createDealDeskOutboundService, createInMemoryDealDeskOutbox } from './outbound.mjs';
 
-const snapshot={campaign:'NEO-DEALDESK-004',wave:1,prospects:[{normalized:{organization:'Example Org',decisionMakerName:'A Person',decisionAuthority:'CIO',publicContactUrl:'https://example.org/contact'},opportunity:{dealClass:'institutional_saas',quote:{ask:100000,approvalRequired:false}}}],outreach:[{prospect:'Example Org',decisionMaker:'A Person',decisionRole:'CIO',channel:'public_business_contact_route',publicContactUrl:'https://example.org/contact',subject:'NEO System opportunity for Example Org',sourceUrls:['https://example.org/about'],sendState:'draft_ready'}]};
+const snapshot={campaign:'NEO-DEALDESK-004',wave:1,prospects:[{normalized:{organization:'Example Org',decisionMakerName:'A Person',decisionAuthority:'CIO',publicContactUrl:'https://example.org/contact'},opportunity:{dealClass:'institutional_saas',quote:{ask:100000,approvalRequired:false}}}],outreach:[{prospect:'Example Org',decisionMaker:'A Person',decisionRole:'CIO',channel:'public_business_contact_route',publicContactUrl:'https://example.org/contact',subject:'NEO System opportunity for Example Org',recipientEmail:'public@example.org',recipientEmailSourceUrl:'https://example.org/contact',sourceUrls:['https://example.org/about'],sendState:'draft_ready'}]};
 
 test('builds deterministic Wave 1 outbox items',()=>{
   const items=buildWave1Outbox(snapshot);
@@ -64,4 +64,14 @@ test('sent outreach can record a classified reply and CRM activity',async()=>{
   assert.equal(replied.status,'replied');
   assert.equal(replied.reply.classification,'positive_interest');
   assert.ok(crm.some(item=>item.name.startsWith('Reply received')));
+});
+
+
+test('enabled dispatch still fails closed without a sourced recipient email',async()=>{
+  const noRecipient={...snapshot,outreach:[{...snapshot.outreach[0],recipientEmail:null,recipientEmailSourceUrl:null}]};
+  const outbox=createInMemoryDealDeskOutbox();
+  const service=createDealDeskOutboundService({outbox,executionEnabled:true,mailAdapter:{send:async()=>({provider:'test'})}});
+  await service.seed(noRecipient);
+  await service.approve('wave1:1',{actor:'admin'});
+  await assert.rejects(()=>service.dispatch('wave1:1',{actor:'admin'}),/verified_recipient_email_required/);
 });
