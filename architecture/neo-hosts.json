@@ -1,5 +1,5 @@
 {
-  "version": "1.6.0",
+  "version": "1.7.0",
   "domainRoot": "holytemples.org",
   "dnsTarget": "ghs.googlehosted.com.",
   "runtime": "google-cloud-run",
@@ -144,7 +144,14 @@
     {
       "host": "desk.holytemples.org",
       "service": "neo-deal-desk",
-      "role": "executive-commercial-operations"
+      "role": "executive-commercial-operations",
+      "runtime": "render",
+      "origin": "https://neo-deal-desk.onrender.com",
+      "dns": {
+        "type": "CNAME",
+        "target": "neo-deal-desk.onrender.com."
+      },
+      "authAuthority": "https://egov.holytemples.org"
     }
   ],
   "treasury": {
@@ -172,7 +179,7 @@
   },
   "rules": {
     "publicDnsDoesNotImplyServiceReady": true,
-    "cloudRunMappingRequiredPerHost": true,
+    "cloudRunMappingRequiredPerHost": "except-explicit-runtime-overrides",
     "tlsRequired": true,
     "secretsRuntimeOnly": true,
     "defaultDenyPrivilegedRoutes": true,

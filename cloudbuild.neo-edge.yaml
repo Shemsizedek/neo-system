@@ -57,7 +57,6 @@ steps:
           treasury.holytemples.org
           neoteric.holytemples.org tabernacle.holytemples.org
           office.holytemples.org
-          desk.holytemples.org
         )
         for domain in "${domains[@]}"; do
           if gcloud run domain-mappings describe --domain="$domain" --region=us-central1 >/dev/null 2>&1; then

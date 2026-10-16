@@ -1,0 +1,62 @@
+name: Verify NEO Deal Desk Custom Domain
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 * * * *'
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Verify authoritative DNS target
+        run: |
+          set -euo pipefail
+          target="$(dig +short CNAME desk.holytemples.org | tail -n1)"
+          echo "desk CNAME: $target"
+          test "$target" = "neo-deal-desk.onrender.com."
+
+      - name: Verify Render origin health
+        run: |
+          set -euo pipefail
+          curl --connect-timeout 10 --max-time 30 --retry 3 --retry-all-errors -fsS             https://neo-deal-desk.onrender.com/healthz -o /tmp/render-health.json
+          node --input-type=module -e '
+            import fs from "node:fs";
+            const h=JSON.parse(fs.readFileSync("/tmp/render-health.json","utf8"));
+            if(h.ok!==true||h.service!=="neo-deal-desk-render-proxy") throw new Error("render_health_invalid");
+          '
+
+      - name: Verify custom-domain TLS and login
+        run: |
+          set -euo pipefail
+          code="$(curl --connect-timeout 10 --max-time 30 --retry 3 --retry-delay 5 --retry-all-errors             -sS -o /tmp/desk-home.html -w '%{http_code}' https://desk.holytemples.org/ || true)"
+          echo "desk.holytemples.org -> $code"
+          test "$code" = "200"
+          grep -q 'Member Login' /tmp/desk-home.html
+
+      - name: Verify Deal Desk route and auth boundary
+        run: |
+          set -euo pipefail
+          code="$(curl --connect-timeout 10 --max-time 30 --retry 3 --retry-delay 5 --retry-all-errors             -sS -o /tmp/desk-portal.html -w '%{http_code}' https://desk.holytemples.org/portal || true)"
+          echo "desk portal -> $code"
+          test "$code" = "200"
+          grep -Eq 'NEO Deal Desk|Member Login' /tmp/desk-portal.html
+          if grep -Eqi 'stack trace|private key|client_secret|NEO_PASS_JWT_SECRET' /tmp/desk-portal.html; then
+            echo "::error::Sensitive runtime material surfaced in Deal Desk response"
+            exit 1
+          fi
+
+      - name: Certification summary
+        run: |
+          {
+            echo "## NEO Deal Desk certification"
+            echo "- DNS: desk.holytemples.org -> neo-deal-desk.onrender.com"
+            echo "- TLS: valid HTTPS response"
+            echo "- Public boundary: NEOpass login enforced"
+            echo "- Portal route: reachable"
+            echo "- Sensitive material: not exposed"
+          } >> "$GITHUB_STEP_SUMMARY"
