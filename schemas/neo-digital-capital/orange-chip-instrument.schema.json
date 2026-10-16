@@ -1,0 +1,114 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "NEO Orange Chip Instrument",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "name",
+    "asset_class",
+    "network",
+    "protocol",
+    "issuer",
+    "verification_status",
+    "legal_rights_status",
+    "source_refs"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "asset_class": {
+      "enum": [
+        "equity",
+        "interest",
+        "credit",
+        "realty",
+        "fund",
+        "commodity",
+        "utility",
+        "metal"
+      ]
+    },
+    "network": {
+      "const": "bitcoin"
+    },
+    "protocol": {
+      "const": "counterparty"
+    },
+    "counterparty_asset": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "issuer": {
+      "type": "string"
+    },
+    "underlying_asset": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "supply": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Decimal quantity encoded as string to prevent floating-point loss"
+    },
+    "verification_status": {
+      "enum": [
+        "unverified",
+        "source_checked",
+        "verified"
+      ]
+    },
+    "legal_rights_status": {
+      "enum": [
+        "unknown",
+        "counsel_review_pending",
+        "documented"
+      ]
+    },
+    "jurisdiction": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "source_refs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "url",
+          "retrieved_at"
+        ],
+        "properties": {
+          "url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "retrieved_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "sha256": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "last_updated": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}
