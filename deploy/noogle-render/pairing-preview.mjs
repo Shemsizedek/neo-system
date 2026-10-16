@@ -1,6 +1,6 @@
 import { randomBytes, timingSafeEqual } from 'node:crypto';
 
-const ttlMs = 5 * 60_000;
+const ttlMs = 30 * 60_000;
 const limit = 100;
 const sessions = new Map();
 const token = () => randomBytes(24).toString('base64url');
