@@ -48,6 +48,7 @@ function pollOnce() {
     return;
   }
   attempts += 1;
+  // Programmatic clicks must not restart the polling window.
   refreshButton?.click();
 }
 
@@ -58,8 +59,9 @@ function startPolling() {
   timer = window.setInterval(pollOnce, POLL_INTERVAL_MS);
 }
 
-refreshButton?.addEventListener('click', () => {
-  if (hasNeopassCredential() && !terminalStatusReached()) startPolling();
+refreshButton?.addEventListener('click', (event) => {
+  // Ignore synthetic polling clicks; only a user-initiated refresh may restart.
+  if (event.isTrusted && hasNeopassCredential() && !terminalStatusReached()) startPolling();
 });
 
 tokenInput?.addEventListener('change', () => {
