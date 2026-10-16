@@ -15,7 +15,7 @@ test('explicit approval is required and never enables device control',()=>{
  assert.equal(accepted.body.deviceEnrolled,false);
  assert.equal(accepted.body.remoteTerminal,false);
  assert.deepEqual(accepted.body.permissions,[]);
- time+=300001;
+ time+=1800001;
  assert.equal(pairing.status({id,credential:owner}).status,403);
 });
 test('wrong code cannot join and guess attempts are limited',()=>{
@@ -39,4 +39,16 @@ test('approved owner and joiner can exchange only transient ping counters',()=>{
  assert.equal(pairing.ping({id,credential:joiner}).status,200);
  assert.equal(pairing.signalStatus({id,credential:owner}).body.received,1);
  assert.deepEqual(pairing.ping({id,credential:owner}).body.permissions,[]);
+});
+
+test('pairing remains valid after five minutes but expires after 30 minutes',()=>{
+ let now=1000;const pairing=createPairingPreview(()=>now);
+ const {id,owner,code,expiresAt}=pairing.create().body;
+ assert.equal(expiresAt,now+1800000);
+ now+=6*60000;
+ assert.equal(pairing.status({id,credential:owner}).status,200);
+ const join=pairing.join({id,code});assert.equal(join.status,200);
+ assert.equal(pairing.approve({id,owner}).status,200);
+ now=expiresAt;
+ assert.equal(pairing.status({id,credential:owner}).status,403);
 });
