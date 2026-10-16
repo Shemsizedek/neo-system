@@ -110,5 +110,5 @@ export function createDealDeskOutboundService({outbox,mailAdapter=null,execution
     }
   }
 
-  return Object.freeze({seed,approve,dispatch,list:()=>outbox.list(),events:(limit)=>outbox.events(limit)});
+  return Object.freeze({seed,approve,dispatch,list:()=>outbox.list(),events:(limit)=>outbox.events(limit),status:()=>({executionEnabled:Boolean(executionEnabled),mailAdapterConfigured:Boolean(mailAdapter?.send)})});
 }
