@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://neo-system.local/schemas/deal-approval-queue.schema.json",
+  "title": "NEO Deal Approval Queue Item",
+  "type": "object",
+  "required": ["type","status","owner","requestedBy","dealClass","reasons","requiredDecision","silenceIsApproval"],
+  "properties": {
+    "type": { "const": "deal_approval" },
+    "status": { "enum": ["pending","approved","rejected","revision_requested"] },
+    "owner": { "type": "string", "minLength": 1 },
+    "requestedBy": { "type": "string", "minLength": 1 },
+    "dealClass": { "type": "string" },
+    "prospect": { "type": ["object","null"] },
+    "reasons": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "securities_solicitation",
+          "equity_terms",
+          "token_or_revenue_share",
+          "discount_below_minimum",
+          "binding_commitment",
+          "ip_transfer",
+          "exclusive_or_perpetual_rights",
+          "accept_funds"
+        ]
+      },
+      "uniqueItems": true
+    },
+    "ask": { "type": ["number","null"], "minimum": 0 },
+    "range": {
+      "type": ["array","null"],
+      "items": { "type": "number", "minimum": 0 },
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "draft": {},
+    "requiredDecision": { "const": "approve_reject_or_return_for_revision" },
+    "silenceIsApproval": { "const": false }
+  },
+  "additionalProperties": true
+}
