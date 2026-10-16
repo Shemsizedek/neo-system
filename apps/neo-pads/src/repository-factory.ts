@@ -72,5 +72,8 @@ class LocalRepository implements Repository {
 
 export function createRepository(): Repository {
   const databaseUrl = process.env.DATABASE_URL?.trim();
+  if (process.env.NODE_ENV === "production" && !databaseUrl) {
+    throw new Error("production_database_url_required");
+  }
   return databaseUrl ? new PostgresRepository(databaseUrl) : new LocalRepository();
 }
