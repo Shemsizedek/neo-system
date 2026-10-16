@@ -90,3 +90,15 @@ test('one tap device hub never grants remote terminal privilege',async()=>{
  assert.equal((await fetch(base+'/connect/terminal')).status,403);
  }finally{await new Promise(resolve=>server.close(resolve));}
 });
+
+test('live UI automatically checks pairing progress and reports NEO Mask passkey readiness',async()=>{
+ const server=createStagingServer();await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+ try{const base='http://127.0.0.1:'+server.address().port;
+ const html=await (await fetch(base+'/')).text();
+ assert.match(html,/id="neomask-check"/);
+ assert.match(html,/isUserVerifyingPlatformAuthenticatorAvailable/);
+ assert.match(html,/setInterval\(\(\)=>\{if\(!document.hidden\)refreshPairState\(\);\},3000\)/);
+ assert.match(html,/Bitcoin anchoring is a future audit feature/);
+ assert.equal((await fetch(base+'/connect/terminal')).status,403);
+ }finally{await new Promise(resolve=>server.close(resolve));}
+});
