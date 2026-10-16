@@ -2,6 +2,31 @@ import { randomUUID } from 'node:crypto';
 
 const clean=(v,max=1000)=>String(v??'').trim().slice(0,max);
 
+export const REPLY_CLASSES=Object.freeze([
+  'positive_interest',
+  'request_information',
+  'referral',
+  'not_now',
+  'objection_budget',
+  'objection_fit',
+  'unsubscribe',
+  'negative',
+  'unknown'
+]);
+
+export function classifyReply(text=''){
+  const value=clean(text,12000).toLowerCase();
+  if(/unsubscribe|remove me|stop email|do not contact|opt.?out/.test(value))return 'unsubscribe';
+  if(/interested|let.?s talk|schedule|meeting|call|sounds good|explore|discuss/.test(value))return 'positive_interest';
+  if(/send.*information|more info|more information|details|deck|proposal|brief|materials/.test(value))return 'request_information';
+  if(/talk to|contact|reach out to|forwarded|looping in|connect you with/.test(value))return 'referral';
+  if(/budget|too expensive|cost|price|pricing/.test(value))return 'objection_budget';
+  if(/not a fit|doesn.?t fit|not relevant|not applicable/.test(value))return 'objection_fit';
+  if(/not now|later|next quarter|next year|timing|circle back/.test(value))return 'not_now';
+  if(/no thank|not interested|decline|pass on this/.test(value))return 'negative';
+  return 'unknown';
+}
+
 export class DealDeskOutboundError extends Error{
   constructor(code,status=400){super(code);this.code=code;this.status=status;}
 }
@@ -15,7 +40,7 @@ export function createInMemoryDealDeskOutbox({now=()=>new Date().toISOString(),i
       for(const input of seed){
         const key=input.id||`outbox:${input.prospectId}`;
         if(items.has(key))continue;
-        items.set(key,{...input,id:key,status:input.status||'draft_ready',approvedAt:null,approvedBy:null,sentAt:null,delivery:null,createdAt:now(),updatedAt:now()});
+        items.set(key,{...input,id:key,status:input.status||'draft_ready',approvedAt:null,approvedBy:null,sentAt:null,delivery:null,reply:null,createdAt:now(),updatedAt:now()});
       }
     },
     async list(){return [...items.values()].sort((a,b)=>b.updatedAt.localeCompare(a.updatedAt)).map(x=>structuredClone(x));},
@@ -35,6 +60,18 @@ export function createInMemoryDealDeskOutbox({now=()=>new Date().toISOString(),i
       const current=items.get(itemId);if(!current)throw new DealDeskOutboundError('outbox_item_not_found',404);
       const value={...current,status:'send_failed',lastError:clean(error?.message||error,500),updatedAt:now()};
       items.set(itemId,value);event('send_failed',value,actor,{error:value.lastError});return structuredClone(value);
+    },
+    async recordReply(itemId,actor,reply={}){
+      const current=items.get(itemId);if(!current)throw new DealDeskOutboundError('outbox_item_not_found',404);
+      if(current.status!=='sent'&&current.status!=='replied')throw new DealDeskOutboundError('outbox_item_not_sent',409);
+      const normalized={
+        classification:clean(reply.classification||'unknown',80),
+        summary:clean(reply.summary,2000),
+        receivedAt:reply.receivedAt||now(),
+        source:clean(reply.source||'mail-provider',120)
+      };
+      const value={...current,status:'replied',reply:normalized,updatedAt:now()};
+      items.set(itemId,value);event('replied',value,actor,{classification:normalized.classification});return structuredClone(value);
     },
     async events(limit=50){return structuredClone(events.slice(0,limit));}
   };
@@ -110,5 +147,26 @@ export function createDealDeskOutboundService({outbox,mailAdapter=null,execution
     }
   }
 
-  return Object.freeze({seed,approve,dispatch,list:()=>outbox.list(),events:(limit)=>outbox.events(limit),status:()=>({executionEnabled:Boolean(executionEnabled),mailAdapterConfigured:Boolean(mailAdapter?.send)})});
+  async function recordReply(itemId,{actor,text='',summary='',source='mail-provider'}={}){
+    const item=await outbox.get(itemId);if(!item)throw new DealDeskOutboundError('outbox_item_not_found',404);
+    const classification=classifyReply(text||summary);
+    const saved=await outbox.recordReply(itemId,actor,{
+      classification,
+      summary:summary||text,
+      source,
+      receivedAt:now()
+    });
+    if(crmStore?.create)await crmStore.create({
+      type:'activity',
+      name:`Reply received — ${item.prospect}`,
+      status:'active',
+      owner:'NIA-013 DEALDESK',
+      description:`Inbound reply classified as ${classification} at ${now()}; item ${item.id}.`,
+      endpoint:item.publicContactUrl,
+      tags:`dealdesk,outbound,reply,${classification}`
+    },actor);
+    return saved;
+  }
+
+  return Object.freeze({seed,approve,dispatch,recordReply,list:()=>outbox.list(),events:(limit)=>outbox.events(limit),status:()=>({executionEnabled:Boolean(executionEnabled),mailAdapterConfigured:Boolean(mailAdapter?.send)})});
 }
