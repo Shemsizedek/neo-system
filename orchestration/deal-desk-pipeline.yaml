@@ -1,0 +1,83 @@
+schema_version: "1.0"
+workflow_id: "NEO-DEALDESK-002"
+owner_agent: "NIA-013"
+status: "active-proposed"
+
+stages:
+  - id: discover
+    owner: "NIA-003"
+    source_service: "NEO Crawler"
+    crawler_route_target: "neo-deal-desk"
+    action: "Find authorized/public organizations and decision-makers matching approved prospect classes."
+    output: "prospect_candidate"
+  - id: enrich
+    owner: "NIA-003"
+    action: "Add sector, geography, decision authority, public need signals, procurement signals and source provenance."
+    output: "enriched_prospect"
+  - id: qualify
+    owner: "NIA-013"
+    runtime: "server/neo-deal-desk/core.mjs#scoreProspect"
+    output: "qualified_prospect"
+  - id: classify
+    owner: "NIA-013"
+    runtime: "server/neo-deal-desk/core.mjs#classifyProspect"
+    output: "deal_class"
+  - id: price
+    owner: "NIA-013"
+    runtime: "server/neo-deal-desk/core.mjs#quoteDeal"
+    canonical_pricing: "registry/neo-commercial-pricing.yaml"
+    output: "non_binding_quote"
+  - id: register
+    owner: "NIA-013"
+    target: "existing NEO CRM lead/contact/organization records"
+    runtime: "server/neo-deal-desk/prospect-pipeline.mjs#ingestPreparedProspect"
+    output: "crm_opportunity"
+  - id: draft
+    owner: "NIA-005"
+    action: "Prepare personalized, factual, non-binding outreach/proposal using approved scope and pricing."
+    output: "draft_outreach"
+  - id: compliance_gate
+    owner: "NIA-013"
+    runtime: "server/neo-deal-desk/core.mjs#evaluateApproval"
+    output: "approval_state"
+  - id: send_or_queue
+    owner: "NIA-001"
+    rules:
+      commercial_non_binding: "may_send_only_under_configured_external-execution permission"
+      investor_or_securities: "human_and_compliance_approval_required"
+      discount_below_minimum: "human_approval_required"
+      binding_terms: "human_approval_required"
+      ip_transfer_or_exclusivity: "human_approval_required"
+  - id: follow_up
+    owner: "NIA-013"
+    action: "Track response, engagement, next action, objections and negotiation exceptions."
+  - id: finance_review
+    owner: "NIA-006"
+    when: "material custom pricing, strategic license, financing, acquisition or TCV modeling"
+  - id: archive
+    owner: "NIA-002"
+    action: "Preserve approved material deal records and decision provenance."
+
+autopilot:
+  allowed:
+    - discover_public_prospects
+    - enrich_public_business_data
+    - classify
+    - score
+    - price_within_canonical_policy
+    - create_or_update_crm_lead
+    - draft_non_binding_outreach
+    - generate_non_binding_proposal
+    - schedule_internal_follow_up_state
+    - flag_hot_lead
+    - escalate_exception
+  blocked_without_gate:
+    - live_securities_solicitation
+    - final_equity_terms
+    - token_or_revenue_share_offer
+    - discount_below_minimum
+    - binding_contract
+    - ip_transfer
+    - exclusive_or_perpetual_license
+    - accept_funds
+    - execute_signature
