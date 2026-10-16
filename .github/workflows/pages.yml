@@ -85,6 +85,17 @@ jobs:
           test -f apps/omnitrix/web/index.html
           mkdir -p dist/omnitrix
           cp -R apps/omnitrix/web/. dist/omnitrix/
+      - name: Publish NEO Pads marketplace
+        run: |
+          test -f apps/neo-pads/web/index.html
+          test -f apps/neo-pads/web/styles.css
+          test -f apps/neo-pads/web/app.js
+          test -f apps/neo-pads/web/checkout-return-poller.js
+          node --check apps/neo-pads/web/app.js
+          node --check apps/neo-pads/web/checkout-return-poller.js
+          mkdir -p dist/neo-pads
+          cp -R apps/neo-pads/web/. dist/neo-pads/
+          test -f dist/neo-pads/index.html
       - name: Publish NEOscan explorer
         run: |
           test -f apps/neoscan/web/index.html

@@ -7,6 +7,7 @@
     {"service":"neo-prime","path":"/neo-prime/"},
     {"service":"neopay","path":"/neopay/"},
     {"service":"neo-counter","path":"/neo-counter/"},
+    {"service":"neo-pads","path":"/neo-pads/"},
     {"service":"neo-exchange","path":"/neo-exchange/"},
     {"service":"neoscan","path":"/neoscan/"},
     {"service":"neo-relations","path":"/neo-relations/"},
