@@ -107,7 +107,8 @@ const SERVICES = Object.freeze({
   'nvsn.holytemples.org': { id: 'nvsn', name: 'NEO Virtual Satellite Network', role: 'communications-fabric', api: true },
   'neoteric.holytemples.org': { id: 'neoteric-method', name: 'Neoteric Method', role: 'neotherapy', api: true },
   'tabernacle.holytemples.org': { id: 'neo-tabernacle', name: 'NEO Tabernacle', role: 'storefront', api: true },
-  'leaders.holytemples.org': { id: 'world-leaders-forum', name: 'World Leaders Forum — World HQ', role: 'public-site', api: false }
+  'leaders.holytemples.org': { id: 'world-leaders-forum', name: 'World Leaders Forum — World HQ', role: 'public-site', api: false },
+  'desk.holytemples.org': { id: 'neo-deal-desk', name: 'NEO Deal Desk', role: 'commercial-operations', api: true }
 });
 
 
@@ -139,7 +140,8 @@ const SEO = Object.freeze({
   'nvsn': ['NVSN — NEO Virtual Satellite Network','Explore the NEO Virtual Satellite Network, a communications-fabric project within the wider NEO ecosystem.'],
   'neoteric-method': ['Neoteric Method — Applied Noology & Neotherapy','Explore the Neoteric Method, an applied Noology and Neotherapy framework for disciplined reasoning, self-development and educational practice.'],
   'neo-tabernacle': ['NEO Tabernacle — World Temple Storefront','Explore the World Temple storefront for official educational, cultural and NEO ecosystem merchandise.'],
-  'world-leaders-forum': ['World Leaders Forum — International Cooperation & Global Peace','The World Leaders Forum connects leaders and communities around diplomacy, peacebuilding, human rights and international cooperation.']
+  'world-leaders-forum': ['World Leaders Forum — International Cooperation & Global Peace','The World Leaders Forum connects leaders and communities around diplomacy, peacebuilding, human rights and international cooperation.'],
+  'neo-deal-desk': ['NEO Deal Desk — Commercial Operations','Executive commercial operations for sourced prospects, pricing, proposals, approval gates and outreach readiness across the NEO System.']
 });
 
 function seoFor(service, host) {

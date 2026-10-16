@@ -157,6 +157,11 @@ jobs:
           dex_compose_code="$(curl -sS -o /tmp/neo-dex-compose.json -w '%{http_code}' -X POST -H 'X-Forwarded-Host: neofx.holytemples.org' "$SERVICE_URL/api/neo-exchange/orders/compose")"
           test "$dex_compose_code" = 501
           jq -e '.crown_capability_verified == true and .broadcast == false and .code == "SIGNING_GATE_NOT_ENABLED"' /tmp/neo-dex-compose.json >/dev/null
+          desk_code="$(curl --retry 5 --retry-delay 3 --retry-all-errors -sS -o /tmp/neo-deal-desk-login.html -w '%{http_code}' -H 'X-Forwarded-Host: desk.holytemples.org' "$SERVICE_URL/")"
+          test "$desk_code" = 200
+          grep -q 'Member Login' /tmp/neo-deal-desk-login.html
+          echo "desk.holytemples.org origin proxy healthy" >> "$GITHUB_STEP_SUMMARY"
+
           office_code="$(curl --retry 5 --retry-delay 3 --retry-all-errors -sS -o /tmp/neo-office.html -w '%{http_code}' -H 'X-Forwarded-Host: office.holytemples.org' "$SERVICE_URL/")"
           test "$office_code" = 200
           if grep -q 'NEO Service' /tmp/neo-office.html; then
@@ -226,6 +231,7 @@ jobs:
             neoteric.holytemples.org
             tabernacle.holytemples.org
             office.holytemples.org
+            desk.holytemples.org
           )
           pending=0
           for domain in "${domains[@]}"; do
@@ -303,6 +309,7 @@ jobs:
             'https://tabernacle.holytemples.org/health'
             'https://tabernacle.holytemples.org/'
             'https://office.holytemples.org/'
+            'https://desk.holytemples.org/'
           )
           for url in "${urls[@]}"; do
             host="$(node -e 'console.log(new URL(process.argv[1]).hostname)' "$url")"
