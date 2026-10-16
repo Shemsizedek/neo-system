@@ -1,6 +1,8 @@
 import { randomUUID } from 'node:crypto';
 
 const clean=(v,max=1000)=>String(v??'').trim().slice(0,max);
+const validEmail=v=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clean(v,320));
+const validPublicUrl=v=>{try{const u=new URL(v);return ['http:','https:'].includes(u.protocol)}catch{return false}};
 
 export const REPLY_CLASSES=Object.freeze([
   'positive_interest',
@@ -40,11 +42,19 @@ export function createInMemoryDealDeskOutbox({now=()=>new Date().toISOString(),i
       for(const input of seed){
         const key=input.id||`outbox:${input.prospectId}`;
         if(items.has(key))continue;
-        items.set(key,{...input,id:key,status:input.status||'draft_ready',approvedAt:null,approvedBy:null,sentAt:null,delivery:null,reply:null,createdAt:now(),updatedAt:now()});
+        items.set(key,{...input,id:key,status:input.status||'draft_ready',recipientEmail:input.recipientEmail||null,recipientEmailSourceUrl:input.recipientEmailSourceUrl||null,recipientEmailVerifiedAt:input.recipientEmailVerifiedAt||null,approvedAt:null,approvedBy:null,sentAt:null,delivery:null,reply:null,createdAt:now(),updatedAt:now()});
       }
     },
     async list(){return [...items.values()].sort((a,b)=>b.updatedAt.localeCompare(a.updatedAt)).map(x=>structuredClone(x));},
     async get(itemId){const v=items.get(itemId);return v?structuredClone(v):null;},
+    async setRecipientEmail(itemId,actor,{email,sourceUrl}={}){
+      const current=items.get(itemId);if(!current)throw new DealDeskOutboundError('outbox_item_not_found',404);
+      if(!validEmail(email))throw new DealDeskOutboundError('recipient_email_invalid',400);
+      if(!validPublicUrl(sourceUrl))throw new DealDeskOutboundError('recipient_email_source_required',400);
+      if(['sent','replied'].includes(current.status))throw new DealDeskOutboundError('outbox_recipient_locked',409);
+      const value={...current,recipientEmail:clean(email,320).toLowerCase(),recipientEmailSourceUrl:clean(sourceUrl,1000),recipientEmailVerifiedAt:now(),updatedAt:now()};
+      items.set(itemId,value);event('recipient_verified',value,actor,{sourceUrl:value.recipientEmailSourceUrl});return structuredClone(value);
+    },
     async approve(itemId,actor,note=''){
       const current=items.get(itemId);if(!current)throw new DealDeskOutboundError('outbox_item_not_found',404);
       if(current.status==='sent')throw new DealDeskOutboundError('outbox_item_already_sent',409);
@@ -92,6 +102,9 @@ export function buildWave1Outbox(snapshot={}){
       recipientRole:brief.decisionRole||p.decisionAuthority||null,
       channel:brief.channel||'public_business_contact_route',
       publicContactUrl:brief.publicContactUrl||p.publicContactUrl||null,
+      recipientEmail:brief.recipientEmail||p.publicEmail||null,
+      recipientEmailSourceUrl:brief.recipientEmailSourceUrl||null,
+      recipientEmailVerifiedAt:brief.recipientEmailVerifiedAt||null,
       subject:brief.subject,
       body:`NEO Deal Desk commercial introduction for ${brief.prospect||p.organization}. Use the approved proposal and sourced public facts only. Deal class: ${o.dealClass||'unclassified'}. Opening position: ${o.quote?.ask??'terms gated'}.`,
       sourceUrls:brief.sourceUrls||[],
@@ -110,6 +123,11 @@ export function createDealDeskOutboundService({outbox,mailAdapter=null,execution
     return outbox.list();
   }
 
+  async function setRecipient(itemId,{actor,email,sourceUrl}={}){
+    if(!outbox.setRecipientEmail)throw new DealDeskOutboundError('recipient_update_unavailable',503);
+    return outbox.setRecipientEmail(itemId,actor,{email,sourceUrl});
+  }
+
   async function approve(itemId,{actor,note='',complianceApproved=false}={}){
     const item=await outbox.get(itemId);if(!item)throw new DealDeskOutboundError('outbox_item_not_found',404);
     if(item.requiresCompliance&&!complianceApproved)throw new DealDeskOutboundError('compliance_approval_required',409);
@@ -120,13 +138,16 @@ export function createDealDeskOutboundService({outbox,mailAdapter=null,execution
     const item=await outbox.get(itemId);if(!item)throw new DealDeskOutboundError('outbox_item_not_found',404);
     if(item.status!=='approved_to_send')throw new DealDeskOutboundError('outbox_item_not_approved',409);
     if(!executionEnabled)throw new DealDeskOutboundError('outbound_execution_disabled',503);
-    if(!mailAdapter?.send)throw new DealDeskOutboundError('mail_adapter_unavailable',503);
+    const adapterReady=Boolean(mailAdapter?.send)&&(typeof mailAdapter?.ready!=='function'||mailAdapter.ready());
+    if(!adapterReady)throw new DealDeskOutboundError('mail_adapter_unavailable',503);
+    if(!validEmail(item.recipientEmail)||!validPublicUrl(item.recipientEmailSourceUrl))throw new DealDeskOutboundError('verified_recipient_email_required',409);
     try{
       const delivery=await mailAdapter.send({
         subject:item.subject,
         body:item.body,
         recipientName:item.recipientName,
         recipientRole:item.recipientRole,
+        recipientEmail:item.recipientEmail,
         publicContactUrl:item.publicContactUrl,
         metadata:{campaign:item.campaign,prospect:item.prospect,itemId:item.id}
       });
@@ -168,5 +189,5 @@ export function createDealDeskOutboundService({outbox,mailAdapter=null,execution
     return saved;
   }
 
-  return Object.freeze({seed,approve,dispatch,recordReply,list:()=>outbox.list(),events:(limit)=>outbox.events(limit),status:()=>({executionEnabled:Boolean(executionEnabled),mailAdapterConfigured:Boolean(mailAdapter?.send)})});
+  return Object.freeze({seed,setRecipient,approve,dispatch,recordReply,list:()=>outbox.list(),events:(limit)=>outbox.events(limit),status:()=>({executionEnabled:Boolean(executionEnabled),mailAdapterConfigured:Boolean(mailAdapter?.send)&&(typeof mailAdapter?.ready!=='function'||mailAdapter.ready()),mailAdapterStatus:typeof mailAdapter?.status==='function'?mailAdapter.status():null})});
 }
