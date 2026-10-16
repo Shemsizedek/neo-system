@@ -1,0 +1,35 @@
+name: NEO Pads Pages Validation
+on:
+  pull_request:
+    paths:
+      - 'apps/neo-pads/web/**'
+      - '.github/workflows/pages.yml'
+      - '.github/workflows/neo-pads-pages-validation.yml'
+      - 'architecture/neo-pages-routes.json'
+  push:
+    branches: [main]
+    paths:
+      - 'apps/neo-pads/web/**'
+      - '.github/workflows/pages.yml'
+      - '.github/workflows/neo-pads-pages-validation.yml'
+      - 'architecture/neo-pages-routes.json'
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate NEO Pads frontend and canonical owner
+        run: |
+          test -f apps/neo-pads/web/index.html
+          test -f apps/neo-pads/web/app.js
+          test -f apps/neo-pads/web/checkout-return-poller.js
+          test -f apps/neo-pads/web/styles.css
+          node --check apps/neo-pads/web/app.js
+          node --check apps/neo-pads/web/checkout-return-poller.js
+          node - <<'NODE'
+          const registry = require('./architecture/neo-pages-routes.json');
+          if (registry.deploymentOwner !== '.github/workflows/pages.yml') throw new Error('Canonical Pages owner changed');
+          if (!registry.routes.some(r => r.path === '/neo-pads/')) throw new Error('Missing NEO Pads route');
+          NODE
