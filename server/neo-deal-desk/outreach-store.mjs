@@ -37,7 +37,7 @@ export function normalizeOutreach(input={},existing=null){
     subject,
     body,
     status,
-    approvalClass:clean(input.approvalClass??existing?.approvalClass||'commercial',80),
+    approvalClass:clean(input.approvalClass ?? existing?.approvalClass ?? 'commercial',80),
     approvalReasons:Array.isArray(input.approvalReasons)?input.approvalReasons.slice(0,12).map(x=>clean(x,100)):(existing?.approvalReasons||[]),
     approvedBy:clean(input.approvedBy??existing?.approvedBy,160),
     approvedAt:clean(input.approvedAt??existing?.approvedAt,80),
