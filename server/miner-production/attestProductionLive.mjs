@@ -6,8 +6,21 @@ const origin=String(process.env.NEO_OPERATOR_ORIGIN||'')
 const operatorId=String(process.env.NEO_ATTEST_OPERATOR_ID||process.env.NEO_SMOKE_OPERATOR_ID||'')
 const password=String(process.env.NEO_ATTEST_OPERATOR_PASSWORD||process.env.NEO_SMOKE_OPERATOR_PASSWORD||'')
 const output=String(process.env.NEO_ATTESTATION_OUTPUT||'production-attestation.json')
+const allowedDomains=String(process.env.NEO_OPERATOR_ALLOWED_DOMAINS||'').split(',').map(d=>d.trim()).filter(Boolean)
+
 if(!base||!origin||!operatorId||!password)throw new Error('PRODUCTION_ATTESTATION_CONFIGURATION_REQUIRED')
 if(!base.startsWith('https://')||!origin.startsWith('https://'))throw new Error('PRODUCTION_ATTESTATION_HTTPS_REQUIRED')
+
+// Validate operator URL against repository-controlled allowlist to prevent credential exfiltration
+if(allowedDomains.length===0)throw new Error('PRODUCTION_ATTESTATION_ALLOWLIST_REQUIRED')
+const operatorHostname=new URL(base).hostname.toLowerCase()
+const originHostname=new URL(origin).hostname.toLowerCase()
+const isAllowed=hostname=>allowedDomains.some(allowed=>{
+  const domain=allowed.toLowerCase()
+  return hostname===domain||hostname.endsWith(`.${domain}`)
+})
+if(!isAllowed(operatorHostname))throw new Error(`PRODUCTION_ATTESTATION_OPERATOR_DOMAIN_NOT_ALLOWED: ${operatorHostname}`)
+if(!isAllowed(originHostname))throw new Error(`PRODUCTION_ATTESTATION_ORIGIN_DOMAIN_NOT_ALLOWED: ${originHostname}`)
 
 async function request(path,{method='GET',body,cookie,csrf}={}){
   const headers={origin}
