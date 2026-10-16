@@ -45,6 +45,8 @@ test('Deal Desk snapshot remains draft-only for Wave 1',async()=>{
     assert.equal(data.wave,1);
     assert.equal(data.liveSendEnabled,false);
     assert.equal(data.prospects.length,2);
+    assert.equal(data.outboundExecution.providerBoundary,'NEO_MAIL');
+    assert.equal(data.outboundExecution.liveNetworkSend,false);
   });
 });
 
