@@ -11,6 +11,8 @@ import { createSchoolActionHandler } from './giss-school-actions.mjs';
 import { attachNeopassBrowserTokenExchange } from './browser-token-exchange.mjs';
 import { createGissAuthorizationBridge, createFirestoreGissCodeStore } from './giss-authorization-bridge.mjs';
 import { createCrownServiceAuthorizer } from './crown-service-authorizer.mjs';
+import { createGisdAdminRoute } from './giss-admin-route.mjs';
+import { createFirestoreInstitutionContextLoader } from './firestore-gisd-institution-context.mjs';
 
 export function createGissProductionServer({
   projectId = process.env.GOOGLE_CLOUD_PROJECT || process.env.GCP_PROJECT_ID,
@@ -49,12 +51,14 @@ export function createGissProductionServer({
   const gissBridge = authService ? createGissAuthorizationBridge({codeStore:createFirestoreGissCodeStore({db}),authService,subjectResolver,gissService:templeGissRuntime.service,jwtSecret,jwtIssuer,now}) : null;
   const coreHandler = server.listeners('request')[0];
   const schoolActions = createSchoolActionHandler({ schoolStore, subjectResolver });
+  const gisdAdminRoute = createGisdAdminRoute({ subjectResolver, loadInstitutionContext: createFirestoreInstitutionContextLoader({ db }) });
   server.removeAllListeners('request');
   server.on('request', async (req, res) => {
     try {
       const url = new URL(req.url || '/', 'http://neo.local');
       if (gissBridge && await gissBridge(req,res,url)) return;
       if (await schoolActions(req, res, url)) return;
+      if (await gisdAdminRoute(req, res, url)) return;
       return coreHandler(req, res);
     } catch (error) {
       console.error('GISS production route failure:', error?.code || error?.message || 'unknown');
