@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "registryId": "CSC-GISS-006",
+  "status": "draft",
+  "source": {
+    "title": "Global Interdependent School System — For the Year 2020 & Beyond",
+    "issuingHeading": "Noocratic Council of Education System",
+    "kind": "user-supplied organizational chart",
+    "sourceAsset": "conversation attachment 11561.jpg",
+    "sourceDateLabel": "2020 & Beyond",
+    "provenanceNote": "Transcribed from user-supplied chart; source image must be retained in governed evidence storage before certification."
+  },
+  "institutionalDesignation": {
+    "office": "World Chaplain",
+    "districtTitle": "Global Superintendent",
+    "additionalTitles": [
+      "The Global Deen",
+      "World Chancellor of the Holy See of Noble Drew Ali (Nun)"
+    ],
+    "position": 1,
+    "designationScope": "internal ecclesiastical and GISD governance",
+    "civilAuthorityClaim": false,
+    "officeholder": null
+  },
+  "positions": [
+    {"position":1,"label":"Superintendent","districtDesignation":"Global Superintendent / World Chaplain","functions":[]},
+    {"position":2,"label":"Deputy Superintendent","functions":[]},
+    {"position":3,"label":"School Council Director","body":"Global Interdependent School System","functions":[]},
+    {"position":4,"label":"School Council Director","body":"Global Interdependent School District","functions":[]},
+    {"position":5,"label":"School Council Director","body":"World Council of Education","functions":[]},
+    {"position":6,"label":"School Council Director","body":"Noocratic Council of Noological Studies","functions":[]},
+    {"position":7,"label":"Special Education","functions":[]},
+    {"position":8,"label":"School Principals / Vice Principals / Teachers / School Workers / Outreach Clerks","functions":["School Principals","Vice Principals","Teachers","School Workers","Outreach Clerks"]},
+    {"position":9,"label":"Director of Principals / Maintenance / Nutrition / Building Supervision","functions":["Director of Principals","Maintenance","Nutrition","Building Supervision"]},
+    {"position":10,"label":"Directors of Personnel / Administration Staff / Social Workers / Nursing Staff / Business Director / Payroll / Transportation","functions":["Directors of Personnel","Administration Staff","Social Workers","Nursing Staff","Business Director","Payroll","Transportation"]}
+  ],
+  "authorization": {
+    "engine": "server/neo-platform-api/giss-institution-authorization.mjs",
+    "roleMappingStatus": "pending approved delegations",
+    "rules": [
+      "Organizational chart positions are not authentication roles or automatic permission grants.",
+      "World Chaplain designation does not grant blanket access to independently governed institutions.",
+      "Institution-specific permissions require explicit scoped delegation and separate appointment evidence.",
+      "Course completion cannot appoint officers; GISS read-only tokens cannot mutate governance records."
+    ]
+  }
+}
