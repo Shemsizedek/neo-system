@@ -1,7 +1,7 @@
 import { CRM_STATUSES, CRM_TYPES } from './crm-store.mjs';
 
 const esc = value => String(value ?? '').replace(/[&<>"']/g, character => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[character]));
-const labels = { app:'Apps', platform:'Platforms', module:'Modules', plugin:'Plugins', member:'Members', lead:'Leads', contact:'Contacts', organization:'Organizations' };
+const labels = { app:'Apps', platform:'Platforms', module:'Modules', plugin:'Plugins', member:'Members', lead:'Leads', contact:'Contacts', organization:'Organizations', activity:'Activity' };
 
 export function crmPortal(res, { member, records = [], audits = [], selectedType = '', notice = '', error = '' }) {
   const counts = Object.fromEntries(CRM_TYPES.map(type => [type, records.filter(item => item.type === type && !item.archivedAt).length]));
