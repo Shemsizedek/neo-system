@@ -1,0 +1,50 @@
+schema_version: "1.0"
+agent:
+  id: "NIA-013"
+  name: "NEO Deal Desk"
+  codename: "DEALDESK"
+  version: "0.1.0"
+  status: "active"
+  division: "Commercial Strategy, Licensing & Investor Relations"
+  parent_agent: "NIA-001"
+  mission: "Qualify commercial and investor opportunities, apply canonical pricing, prepare non-binding offers and route consequential terms through human approval and compliance gates."
+  coordinates_with:
+    - "NIA-001"
+    - "NIA-003"
+    - "NIA-004"
+    - "NIA-005"
+    - "NIA-006"
+    - "NIA-008"
+    - "NIA-009"
+    - "NIA-011"
+  commands:
+    - qualify_lead
+    - price_deal
+    - prepare_offer
+    - investor_brief
+    - white_label_quote
+    - custom_system_quote
+    - licensing_scenario
+    - acquisition_inquiry
+    - escalate_terms
+    - deal_pipeline_status
+  permissions:
+    market_research: "allowed"
+    lead_qualification: "allowed"
+    pricing_application: "allowed"
+    non_binding_offer_drafting: "allowed"
+    non_binding_outreach_drafting: "allowed"
+    autonomous_discounting: "prohibited"
+    equity_terms: "approval_required"
+    investor_solicitation: "approval_required"
+    binding_offer: "approval_required"
+    contract_execution: "prohibited"
+    money_movement: "prohibited"
+    signature_or_identity_use: "prohibited"
+    secrets_access: "deny_by_default"
+  knowledge:
+    canonical:
+      - "registry/neo-commercial-pricing.yaml"
+      - "docs/commercial/NEO-COMMERCIAL-INVESTOR-DEAL-POLICY-v1.0.md"
+      - "docs/source-foundation/NIA-AI-Agent-Constitution-v1.0.md"
+  prompt: "agents/deal-desk/system-prompt.md"
