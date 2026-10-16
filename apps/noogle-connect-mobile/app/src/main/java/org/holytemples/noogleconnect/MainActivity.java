@@ -24,6 +24,8 @@ public final class MainActivity extends Activity {
     Button web=new Button(this);web.setText("Open Noogle Connect");root.addView(web);
     web.setOnClickListener(v->startActivity(new Intent(Intent.ACTION_VIEW,Uri.parse("https://connect.holytemples.org/"))));
     Button status=new Button(this);status.setText("Check this device");root.addView(status);
+    Button enrollment=new Button(this);enrollment.setText("NEO Pass enrollment status");root.addView(enrollment);
+    enrollment.setOnClickListener(v->checkEnrollmentStatus());
     status.setOnClickListener(v->output.setText("Android "+Build.VERSION.RELEASE+" · "+Build.MANUFACTURER+" "+Build.MODEL+"\nNative companion installed. NEO Pass remote enrollment is not active."));
     command=new EditText(this);command.setSingleLine(true);command.setTextColor(0xffffffff);command.setHintTextColor(0xffa6c6b3);command.setHint("Local command (runs on this phone)");root.addView(command);
     Button run=new Button(this);run.setText("Run local terminal command");root.addView(run);
@@ -40,6 +42,25 @@ public final class MainActivity extends Activity {
       runOnUiThread(()->output.setText(result.toString()));
     });});
     setContentView(root);
+  }
+  // Read-only endpoint check. No credential or terminal execution is accepted from network.
+  private void checkEnrollmentStatus() {
+    output.setText("Checking NEO Pass availability…");
+    worker.execute(()->{
+      String result;
+      try {
+        java.net.URL endpoint=new java.net.URL("https://neopass.holytemples.org/");
+        java.net.HttpURLConnection connection=(java.net.HttpURLConnection)endpoint.openConnection();
+        connection.setConnectTimeout(7000);connection.setReadTimeout(7000);
+        connection.setInstanceFollowRedirects(false);
+        int status=connection.getResponseCode();connection.disconnect();
+        result=(status>=200&&status<400)
+          ?"NEO Pass service reachable (HTTP "+status+"). Identity verification and agent enrollment are not configured."
+          :"NEO Pass unavailable (HTTP "+status+"). No device enrollment performed.";
+      }catch(Exception e){result="NEO Pass not reachable. No device enrollment performed.";}
+      final String message=result;
+      runOnUiThread(()->output.setText(message));
+    });
   }
   private TextView text(String s,int size){TextView v=new TextView(this);v.setText(s);v.setTextColor(0xffeafaf0);v.setTextSize(size);v.setPadding(2,8,2,16);return v;}
   @Override public void onDestroy(){worker.shutdownNow();super.onDestroy();}
