@@ -33,3 +33,15 @@ test('Titan IMAP reader can be injected for deterministic reply polling',async()
   const rows=await reader.pollUnread({limit:2});
   assert.equal(rows[0].uid,'7');
 });
+
+
+test('Titan self-test can only target the configured mailbox',async()=>{
+  const captured=[];
+  const adapter=createTitanMailAdapter({env,sendRaw:async(_cfg,msg)=>{captured.push(msg);return {provider:'titan-smtp',messageId:msg.messageId,accepted:[msg.to]};}});
+  const result=await adapter.selfTest();
+  assert.equal(result.provider,'titan-smtp');
+  assert.equal(captured.length,1);
+  assert.equal(captured[0].to,'postmaster@holytemples.org');
+  assert.equal(captured[0].campaign,'NEO-MAIL-CERT');
+  assert.equal(captured[0].itemId,'neo-mail-self-test');
+});
