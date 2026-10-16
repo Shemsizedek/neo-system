@@ -14,6 +14,7 @@ Provide an approval-scoped execution boundary between Deal Desk opportunity prep
 - `approved_to_send` — an executive administrator explicitly approved this exact outbox item.
 - `sent` — the configured adapter returned a delivery receipt.
 - `send_failed` — adapter execution failed; no success may be inferred.
+- `replied` — an inbound provider or executive-recorded response was received after a confirmed send and classified for next action.
 
 ## Execution controls
 
@@ -34,8 +35,23 @@ Equity, securities, token/revenue-share or other regulated-investment outreach r
 
 ## Audit
 
-Successful dispatch creates a NEO CRM `activity` record and an outbox event. Adapter failures create a failed outbox event and leave the item unsent.
+Successful dispatch creates a NEO CRM `activity` record and an outbox event. Adapter failures create a failed outbox event and leave the item unsent. Production outbox state and audit events persist in Firestore. Inbound replies create a separate CRM activity entry and retain the reply classification on the outbox item.
 
 ## Provider boundary
 
 Provider credentials must stay outside source control. Gmail, NEO Mail/Titan or another approved provider may implement the adapter contract later without changing Deal Desk policy.
+
+
+## Reply intelligence
+
+Inbound responses are classified into a bounded operational vocabulary: positive interest, request for information, referral, timing deferral, budget objection, fit objection, unsubscribe, negative response, or unknown.
+
+Reply intake is fail-closed:
+- an item must already be in `sent` or `replied` state;
+- it remains executive-authenticated until a separately authenticated NEO Mail callback is deployed;
+- an unsubscribe classification must suppress future outreach in the downstream campaign workflow;
+- response classification is operational triage, not a claim about contractual intent.
+
+## Production persistence
+
+The production eGov runtime uses Firestore collections `neoDealDeskOutbox` and `neoDealDeskOutboxEvents`. In-memory storage remains available for local tests and non-production development.
