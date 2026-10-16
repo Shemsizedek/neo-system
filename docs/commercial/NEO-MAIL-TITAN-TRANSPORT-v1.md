@@ -30,7 +30,8 @@ No mailbox password or app password belongs in Git.
 - `NEO_MAIL_SMTP_PORT` — defaults to `465`.
 - `NEO_MAIL_IMAP_HOST` — defaults to `imap.titan.email`.
 - `NEO_MAIL_IMAP_PORT` — defaults to `993`.
-- `NEO_DEAL_DESK_OUTBOUND_ENABLED=true` — final execution switch. It remains off by default.
+- `NEO_DEAL_DESK_OUTBOUND_ENABLED=true` — final campaign execution switch. It remains off by default.
+- `NEO_MAIL_SELF_TEST_ENABLED=true` — separately enables the mailbox-only certification message. It remains off by default.
 
 Store production values in the deployment secret manager, not source control.
 
@@ -101,3 +102,12 @@ Reports sanitized transport readiness only. It never returns mailbox passwords o
 - Unmatched inbound mail is not attached to a deal automatically.
 - Reply classification is operational triage, not legal or contractual interpretation.
 - Provider credentials remain outside source control.
+
+
+## Production certification self-test
+
+The Render recovery entrypoint auto-loads the Titan SMTP/IMAP adapters from environment configuration. This makes the sanitized mail health endpoint useful even when the GCP-backed GISS production runtime is unavailable.
+
+The executive-only endpoint `POST /api/v1/deal-desk/mail/self-test` remains disabled unless `NEO_MAIL_SELF_TEST_ENABLED=true`.
+
+When enabled, it sends exactly one certification message to the configured Titan mailbox username. It does not accept an arbitrary recipient and does not contact a campaign prospect. Keep `NEO_DEAL_DESK_OUTBOUND_ENABLED=false` during this certification step.
