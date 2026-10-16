@@ -1,0 +1,45 @@
+name: NEO Deal Desk CI
+
+on:
+  pull_request:
+    paths:
+      - 'server/neo-deal-desk/**'
+      - 'server/neo-platform-api/**'
+      - 'campaigns/deal-desk/**'
+      - 'registry/neo-commercial-pricing.yaml'
+      - 'registry/neo-deal-stages.yaml'
+      - 'registry/neo-prospect-targets.yaml'
+      - '.github/workflows/deal-desk-ci.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'server/neo-deal-desk/**'
+      - 'server/neo-platform-api/**'
+      - 'campaigns/deal-desk/**'
+      - 'registry/neo-commercial-pricing.yaml'
+      - 'registry/neo-deal-stages.yaml'
+      - 'registry/neo-prospect-targets.yaml'
+      - '.github/workflows/deal-desk-ci.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm ci
+      - name: Syntax certification
+        run: |
+          node --check server/neo-deal-desk/outreach-store.mjs
+          node --check server/neo-deal-desk/outbound.mjs
+          node --check server/neo-deal-desk/runtime.mjs
+          node --check server/neo-platform-api/server.mjs
+          node --check server/neo-platform-api/giss-production.mjs
+      - name: Deal Desk tests
+        run: node --test server/neo-deal-desk/*.test.mjs server/neo-platform-api/deal-desk.test.mjs
