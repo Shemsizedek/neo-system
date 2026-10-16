@@ -11,6 +11,7 @@ import { createSchoolActionHandler } from './giss-school-actions.mjs';
 import { attachNeopassBrowserTokenExchange } from './browser-token-exchange.mjs';
 import { createGissAuthorizationBridge, createFirestoreGissCodeStore } from './giss-authorization-bridge.mjs';
 import { createCrownServiceAuthorizer } from './crown-service-authorizer.mjs';
+import { createFirestoreDealDeskOutbox } from '../neo-deal-desk/firestore-outbox.mjs';
 
 export function createGissProductionServer({
   projectId = process.env.GOOGLE_CLOUD_PROJECT || process.env.GCP_PROJECT_ID,
@@ -30,6 +31,7 @@ export function createGissProductionServer({
   const registry = createFirestoreTempleRegistry({ db, now });
   const crmStore = createFirestoreCrmStore({ db, now });
   const schoolStore = createFirestoreSchoolStore({ db, now });
+  const dealDeskOutbox = createFirestoreDealDeskOutbox({ db, now });
   const templeGissRuntime = createTempleGissRuntime({ registry, now });
   const subjectResolver = createNeopassSubjectResolver({ secret: jwtSecret, issuer: jwtIssuer });
   const googleClient = new OAuth2Client(googleClientId);
@@ -45,7 +47,7 @@ export function createGissProductionServer({
     'nous-os':{url:process.env.NOUS_OS_CROWN_AGENT_URL,operatorToken:process.env.NOUS_OS_CROWN_OPERATOR_TOKEN}
   }});
 
-  const server = createNeoPlatformApi({ templeGissRuntime, subjectResolver, authService, crmStore, schoolStore, crownServiceAuthorizer:serviceAuthorizer, now });
+  const server = createNeoPlatformApi({ templeGissRuntime, subjectResolver, authService, crmStore, schoolStore, dealDeskOutbox, crownServiceAuthorizer:serviceAuthorizer, now });
   const gissBridge = authService ? createGissAuthorizationBridge({codeStore:createFirestoreGissCodeStore({db}),authService,subjectResolver,gissService:templeGissRuntime.service,jwtSecret,jwtIssuer,now}) : null;
   const coreHandler = server.listeners('request')[0];
   const schoolActions = createSchoolActionHandler({ schoolStore, subjectResolver });

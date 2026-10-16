@@ -112,3 +112,54 @@ test('Deal Desk dispatch logs CRM activity when explicitly enabled with an adapt
   assert.equal(activity.length,1);
   assert.match(activity[0].name,/Outbound sent/);
 });
+
+
+test('Deal Desk reply intake classifies a delivered response and logs CRM activity',async()=>{
+  const crmStore=createInMemoryCrmStore();
+  await withServer(async base=>{
+    let response=await fetch(`${base}/api/v1/deal-desk/outbox/wave1%3A1/approve`,{
+      method:'POST',
+      headers:{authorization:'Bearer admin','content-type':'application/json'},
+      body:'{}'
+    });
+    assert.equal(response.status,200);
+
+    response=await fetch(`${base}/api/v1/deal-desk/outbox/wave1%3A1/dispatch`,{
+      method:'POST',
+      headers:{authorization:'Bearer admin','content-type':'application/json'},
+      body:'{}'
+    });
+    assert.equal(response.status,200);
+
+    response=await fetch(`${base}/api/v1/deal-desk/outbox/wave1%3A1/reply`,{
+      method:'POST',
+      headers:{authorization:'Bearer admin','content-type':'application/json'},
+      body:JSON.stringify({text:'Interested. Please send a brief and let us schedule a call.',source:'test-mail'})
+    });
+    assert.equal(response.status,200);
+    const data=await response.json();
+    assert.equal(data.item.status,'replied');
+    assert.equal(data.item.reply.classification,'positive_interest');
+  },{
+    crmStore,
+    dealDeskOutboundEnabled:true,
+    dealDeskMailAdapter:{send:async()=>({provider:'test-mail',messageId:'msg-reply-1'})}
+  });
+
+  const activity=await crmStore.list({type:'activity'});
+  assert.ok(activity.some(item=>item.name.startsWith('Reply received')));
+  assert.ok(activity.some(item=>item.description.includes('positive_interest')));
+});
+
+test('Deal Desk reply intake fails closed before a message is sent',async()=>{
+  await withServer(async base=>{
+    const response=await fetch(`${base}/api/v1/deal-desk/outbox/wave1%3A1/reply`,{
+      method:'POST',
+      headers:{authorization:'Bearer admin','content-type':'application/json'},
+      body:JSON.stringify({text:'Interested'})
+    });
+    assert.equal(response.status,409);
+    const data=await response.json();
+    assert.equal(data.error,'outbox_item_not_sent');
+  });
+});
