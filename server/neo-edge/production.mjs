@@ -13,6 +13,7 @@ const PORT=Number(process.env.PORT||8080);
 const LEGACY_HOST='127.0.0.1';
 const AI_GATEWAY_URL=String(process.env.AI_GATEWAY_URL||'').replace(/\/$/,'');
 const FAMILY_OFFICE_ORIGIN='sheltonestate.family.blog';
+const NEO_PLATFORM_API_ORIGIN=String(process.env.NEO_PLATFORM_API_ORIGIN||'https://egov.holytemples.org').replace(/\/$/,'');
 
 const SERVICE_UI=Object.freeze({
   'neo.holytemples.org':{name:'NEO System',role:'System Gateway',summary:'Unified production gateway for the NEO ecosystem.'},
@@ -41,7 +42,8 @@ const SERVICE_UI=Object.freeze({
   'nvsn.holytemples.org':{name:'NEO Virtual Satellite Network',role:'Communications Fabric',summary:'Software-defined distributed communications fabric connecting authorized terrestrial, Internet, radio, telephone and satellite-capable nodes.'},
   'neoteric.holytemples.org':{name:'Neoteric Method',role:'Neotherapy Public Portal',summary:'Public Neotherapy information and entrypoint. The NEO System remains the source of truth for consent, credentials, sessions, evidence and audit records.'},
   'tabernacle.holytemples.org':{name:'NEO Tabernacle',role:'Storefront Gateway',summary:'Canonical Holy Temples commerce gateway for the Neoteric Method storefront.'},
-  'office.holytemples.org':{name:'Shelton Estate & Co.',role:'Global Religious Family Office',summary:'Public Family Office portal and legacy-site mirror for Shelton Estate & Co.'}
+  'office.holytemples.org':{name:'Shelton Estate & Co.',role:'Global Religious Family Office',summary:'Public Family Office portal and legacy-site mirror for Shelton Estate & Co.'},
+  'desk.holytemples.org':{name:'NEO Deal Desk',role:'Commercial Operations',summary:'Executive prospect, pricing, proposal, approval and outreach-readiness control plane.'}
 });
 
 function hostOf(req){return String(req.headers['x-forwarded-host']||req.headers.host||'').split(',')[0].trim().split(':')[0].toLowerCase()}
@@ -134,6 +136,31 @@ function proxyFamilyOffice(req,res,url){
   req.pipe(upstream);
 }
 
+
+function proxyDealDesk(req,res,url){
+  let target;
+  try{target=new URL(NEO_PLATFORM_API_ORIGIN)}catch{return json(res,503,{error:'neo_platform_api_origin_invalid'})}
+  const mappedPath=(url.pathname==='/portal'||url.pathname==='/ui')?'/portal/deal-desk':url.pathname;
+  const path=`${mappedPath}${url.search}`;
+  const transport=target.protocol==='http:'?http:https;
+  const headers={...req.headers,host:target.host,'x-forwarded-host':'desk.holytemples.org','x-forwarded-proto':'https','accept-encoding':'identity'};
+  const upstream=transport.request({hostname:target.hostname,port:target.port||undefined,path,method:req.method,headers},reply=>{
+    const responseHeaders={...reply.headers};
+    delete responseHeaders['content-length'];
+    if(responseHeaders.location){
+      const location=String(responseHeaders.location);
+      responseHeaders.location=location
+        .replaceAll(NEO_PLATFORM_API_ORIGIN,'https://desk.holytemples.org')
+        .replaceAll('https://egov.holytemples.org','https://desk.holytemples.org');
+    }
+    responseHeaders['cache-control']='no-store';
+    res.writeHead(reply.statusCode||502,responseHeaders);
+    reply.pipe(res);
+  });
+  upstream.on('error',error=>json(res,502,{error:'deal_desk_upstream_unavailable',detail:error.message}));
+  req.pipe(upstream);
+}
+
 export async function startNeoEdgeProduction(){
   const legacy=createNeoEdgeServer();
   await new Promise((resolve,reject)=>{legacy.once('error',reject);legacy.listen(0,LEGACY_HOST,resolve)});
@@ -150,6 +177,7 @@ export async function startNeoEdgeProduction(){
       if(handled!==false)return handled;
     }
     if(host==='neo.holytemples.org'&&url.pathname.startsWith('/api/ai/'))return proxyAiGateway(req,res);
+    if(host==='desk.holytemples.org')return proxyDealDesk(req,res,url);
     if(host==='office.holytemples.org'&&req.method==='GET'&&url.pathname==='/health')return json(res,200,{ok:true,service:'shelton-estate-family-office',surface:'legacy-mirror',origin:FAMILY_OFFICE_ORIGIN});
     if(host==='office.holytemples.org'&&req.method==='GET'&&url.pathname==='/ads.txt'){res.writeHead(200,{'content-type':'text/plain; charset=utf-8','cache-control':'public, max-age=3600','x-content-type-options':'nosniff'});return res.end(renderAdsTxt(FAMILY_OFFICE_ADS_REGISTRY));}
     if(host==='office.holytemples.org'&&req.method==='GET'&&url.pathname==='/api/ads/status')return json(res,200,familyOfficeAdsEvidence());
