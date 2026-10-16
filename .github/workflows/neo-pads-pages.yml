@@ -1,0 +1,37 @@
+name: NEO Pads Pages
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/neo-pads/web/**'
+      - '.github/workflows/neo-pads-pages.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: neo-pads-pages
+  cancel-in-progress: true
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify static frontend
+        run: |
+          test -f apps/neo-pads/web/index.html
+          test -f apps/neo-pads/web/app.js
+          test -f apps/neo-pads/web/CNAME
+          test "$(cat apps/neo-pads/web/CNAME)" = "pads.holytemples.org"
+          node --check apps/neo-pads/web/app.js
+          node --check apps/neo-pads/web/checkout-return-poller.js
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: apps/neo-pads/web
+      - id: deployment
+        uses: actions/deploy-pages@v4
