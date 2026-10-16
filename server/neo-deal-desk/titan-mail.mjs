@@ -193,15 +193,16 @@ function parseRawEmail(raw='',uid=null){
 
 async function imapCommand(session,tag,command){
   session.socket.write(`${tag} ${command}\r\n`);
-  const marker=Buffer.from(`\r\n${tag} `);
   const result=await session.waitFor(buf=>{
-    const idx=buf.indexOf(marker);if(idx<0)return null;
-    const lineEnd=buf.indexOf(Buffer.from('\r\n'),idx+2);if(lineEnd<0)return null;
-    return {buffer:buf.subarray(0,lineEnd+2),bytes:lineEnd+2};
+    const text=buf.toString('latin1');
+    const re=new RegExp(`(?:^|\\r\\n)${tag} (OK|NO|BAD)[^\\r\\n]*\\r\\n`,'i');
+    const match=re.exec(text);if(!match)return null;
+    const endChars=match.index+match[0].length;
+    const bytes=Buffer.byteLength(text.slice(0,endChars),'latin1');
+    return {buffer:buf.subarray(0,bytes),bytes,status:match[1].toUpperCase()};
   });
   session.consume(result.bytes);
-  const text=result.buffer.toString('utf8');
-  if(!new RegExp(`\\r?\\n${tag} OK\\b`,'i').test(text)&&!new RegExp(`^${tag} OK\\b`,'im').test(text))throw new Error('imap_command_failed');
+  if(result.status!=='OK')throw new Error('imap_command_failed');
   return result.buffer;
 }
 
