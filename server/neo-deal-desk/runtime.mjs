@@ -1,5 +1,6 @@
 import { prepareProspect, buildOutreachBrief } from './prospect-pipeline.mjs';
 import { renderDealDeskDashboard } from './dashboard.mjs';
+import { composeOutreach } from './outbound.mjs';
 
 export const WAVE1_PROSPECTS = Object.freeze([
   {
@@ -79,7 +80,7 @@ function seedRecords(prepared){
   return base;
 }
 
-export function createDealDeskRuntime({crmStore,now=()=>new Date().toISOString()}={}){
+export function createDealDeskRuntime({crmStore,outreachStore=null,now=()=>new Date().toISOString()}={}){
   const prepared=()=>WAVE1_PROSPECTS.map(prospect=>prepareProspect(prospect,{asOf:now()}));
 
   async function ensureWave1Crm(){
@@ -90,9 +91,18 @@ export function createDealDeskRuntime({crmStore,now=()=>new Date().toISOString()
     return {seeded:records.length,prospects:deals.length};
   }
 
+  async function ensureWave1Outreach(){
+    if(!outreachStore?.ensureSeed)return {seeded:0,prospects:0,available:false};
+    const deals=prepared();
+    const items=deals.map((deal,index)=>composeOutreach(deal,{prospectId:WAVE1_PROSPECTS[index]?.id||deal.normalized?.organization}));
+    await outreachStore.ensureSeed(items);
+    return {seeded:items.length,prospects:deals.length,available:true};
+  }
+
   async function snapshot(){
     const deals=prepared();
     const approvalQueue=deals.map(x=>x.approvalQueueItem).filter(Boolean);
+    const outreachQueue=outreachStore?.list ? await outreachStore.list() : [];
     return {
       campaign:'NEO-DEALDESK-004',
       wave:1,
@@ -100,14 +110,16 @@ export function createDealDeskRuntime({crmStore,now=()=>new Date().toISOString()
       prospects:deals,
       outreach:deals.map(buildOutreachBrief),
       approvalQueue,
+      outreachQueue,
+      outboundExecution:{providerBoundary:'NEO_MAIL',liveNetworkSend:false,approvalRequired:true},
       asOf:now()
     };
   }
 
   async function dashboardHtml(){
     const data=await snapshot();
-    return renderDealDeskDashboard({opportunities:data.prospects,approvalQueue:data.approvalQueue,asOf:data.asOf});
+    return renderDealDeskDashboard({opportunities:data.prospects,approvalQueue:data.approvalQueue,outreachQueue:data.outreachQueue,asOf:data.asOf});
   }
 
-  return Object.freeze({ensureWave1Crm,snapshot,dashboardHtml});
+  return Object.freeze({ensureWave1Crm,ensureWave1Outreach,snapshot,dashboardHtml});
 }
