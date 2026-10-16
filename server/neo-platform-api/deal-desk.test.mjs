@@ -228,3 +228,18 @@ test('Deal Desk mail poll matches Titan-style reply to delivery Message-ID',asyn
     dealDeskInboundReader:inbound
   });
 });
+
+
+test('Titan self-test endpoint is disabled by default',async()=>{
+  const mail={ready:()=>true,status:()=>({provider:'titan',configured:true}),selfTest:async()=>({provider:'titan-smtp',messageId:'<self@test>'})};
+  await withServer(async base=>{
+    const response=await fetch(`${base}/api/v1/deal-desk/mail/self-test`,{
+      method:'POST',
+      headers:{authorization:'Bearer admin','content-type':'application/json'},
+      body:'{}'
+    });
+    assert.equal(response.status,503);
+    const data=await response.json();
+    assert.equal(data.error,'mail_self_test_disabled');
+  },{dealDeskMailAdapter:mail});
+});

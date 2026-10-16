@@ -143,6 +143,18 @@ export function createTitanMailAdapter({env=process.env,sendRaw=sendTitanSmtpRaw
         itemId:clean(input.metadata?.itemId,180),
         campaign:clean(input.metadata?.campaign,180)
       });
+    },
+    async selfTest(){
+      if(!config.configured)throw new Error('titan_mail_not_configured');
+      const messageId=normalizeMessageId('neo-mail-self-test');
+      return sendRaw(config,{
+        to:config.username,
+        subject:'NEO Mail Titan transport certification',
+        body:'This is a controlled NEO Mail self-test sent to the configured Titan mailbox. No campaign prospect was contacted.',
+        messageId,
+        itemId:'neo-mail-self-test',
+        campaign:'NEO-MAIL-CERT'
+      });
     }
   });
 }
