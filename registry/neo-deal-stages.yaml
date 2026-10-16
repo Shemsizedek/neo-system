@@ -1,0 +1,47 @@
+schema_version: "1.0"
+registry_id: "NEO-DEAL-STAGES-001"
+stages:
+  discovered:
+    next: enriched
+  enriched:
+    next: qualified
+  qualified:
+    next: priced
+  priced:
+    next: draft_ready
+  draft_ready:
+    next:
+      - approved_to_send
+      - approval_required
+  approval_required:
+    next:
+      - approved_to_send
+      - lost
+  approved_to_send:
+    next: contacted
+  contacted:
+    next:
+      - engaged
+      - lost
+  engaged:
+    next:
+      - negotiating
+      - lost
+  negotiating:
+    next:
+      - won
+      - lost
+  won:
+    terminal: true
+  lost:
+    terminal: true
+  archived:
+    terminal: true
+
+hot_lead:
+  minimum_score: 80
+  actions:
+    - flag_for_executive_review
+    - prepare_scope
+    - prepare_non_binding_quote
+    - prepare_next_contact

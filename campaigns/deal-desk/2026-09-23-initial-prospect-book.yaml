@@ -1,0 +1,173 @@
+schema_version: "1.0"
+campaign_id: "NEO-DEALDESK-004"
+campaign_name: "Initial Qualified Prospect Book"
+status: "draft_ready"
+created_at: "2026-09-23"
+owner_agent: "NIA-013"
+source_policy: "authorized/public business intelligence only"
+notes:
+  - "Scores are internal prioritization outputs, not claims about willingness to buy."
+  - "Asking prices are non-binding NEO commercial positions, not prospect budgets."
+  - "Public work-contact routes are included only where openly published by the organization."
+  - "No live outbound investor solicitation is authorized by this campaign."
+
+prospects:
+  - id: "prospect-uconn-001"
+    organization: "University of Connecticut"
+    sector: "university"
+    geography: "Connecticut, USA"
+    public_signal: "University-wide AI for ImpaCT initiative coordinating AI across academic, research, operational, and public-service missions."
+    decision_maker:
+      name: "Haleh Ghaemolsabahi"
+      role: "Interim Vice President and Chief Information Officer"
+      public_contact: "haleh@uconn.edu"
+      contact_page: "https://its.uconn.edu/leadership/"
+    sources:
+      - url: "https://academicaffairs.uconn.edu/2026/06/03/announcing-ai-for-impact-uconns-university-wide-ai-initiative/"
+        title: "Announcing AI for ImpaCT: UConn’s University-Wide AI Initiative"
+      - url: "https://its.uconn.edu/leadership/"
+        title: "UConn ITS Leadership"
+    proposed_deal_class: "institutional_saas"
+    internal_score: 68
+    internal_grade: "B"
+    opening_ask:
+      cadence: "monthly"
+      amount_usd: 100000
+    pitch_angle: "Governed campus AI operating layer connecting academic, research, administrative, knowledge, workflow, and audit functions without replacing existing systems."
+
+  - id: "prospect-uiowa-001"
+    organization: "University of Iowa"
+    sector: "university"
+    geography: "Iowa, USA"
+    public_signal: "Campuswide AI strategy focused on coordinating teaching, research, public engagement, policy, and AI resources."
+    decision_maker:
+      name: "Brad Rohrer"
+      role: "Associate Vice President and Chief Information Officer"
+      public_contact: "brad-rohrer@uiowa.edu"
+      contact_page: "https://its.uiowa.edu/its-organization"
+    sources:
+      - url: "https://ai.uiowa.edu/news/2026/09/ui-outlines-strategy-artificial-intelligence"
+        title: "UI outlines strategy for artificial intelligence"
+      - url: "https://cio.uiowa.edu/"
+        title: "University of Iowa CIO Office"
+      - url: "https://its.uiowa.edu/its-organization"
+        title: "ITS Organization and Leadership"
+    proposed_deal_class: "institutional_saas"
+    internal_score: 68
+    internal_grade: "B"
+    opening_ask:
+      cadence: "monthly"
+      amount_usd: 100000
+    pitch_angle: "OneIT-compatible governed AI coordination layer spanning institutional knowledge, workflow routing, research support, education, and executive visibility."
+
+  - id: "prospect-edot-001"
+    organization: "Episcopal Diocese of Texas"
+    sector: "religious network"
+    geography: "Texas, USA"
+    public_signal: "Diocesan IT already operates centralized records and information software across churches, clergy, vestries, lay leaders, directories, reporting, and council administration."
+    decision_maker:
+      name: "Nina Gaspar"
+      role: "Director of Information Technology"
+      public_contact: "ngaspar@epicenter.org"
+      contact_page: "https://www.epicenter.org/about/the-diocese/staff-directory/"
+    sources:
+      - url: "https://www.epicenter.org/about/the-diocese/staff-directory/"
+        title: "Episcopal Diocese of Texas Staff Directory"
+    proposed_deal_class: "white_label_foundation"
+    internal_score: 68
+    internal_grade: "B"
+    opening_ask:
+      implementation_usd: 250000
+      recurring_monthly_range_usd: [5000,15000]
+    pitch_angle: "White-label diocesan operating environment connecting records, member/church administration, education, communications, governance workflows, and role-aware AI assistance."
+
+  - id: "prospect-klgates-001"
+    organization: "K&L Gates LLP"
+    sector: "law firm"
+    geography: "Global"
+    public_signal: "Created a Global AI and Innovation Partner role to lead AI strategy, governance, platform selection, workflow development, data, and knowledge management ahead of agentic AI deployment."
+    decision_maker:
+      name: "Jake Bernstein"
+      role: "Global AI and Innovation Partner"
+      public_contact: "Jake.Bernstein@klgates.com"
+      contact_page: "https://www.klgates.com/artificial-intelligence"
+    sources:
+      - url: "https://www.klgates.com/KL-Gates-Establishes-Global-AI-and-Innovation-Partner-Role-5-4-2026"
+        title: "K&L Gates Establishes Global AI and Innovation Partner Role"
+      - url: "https://www.klgates.com/artificial-intelligence"
+        title: "K&L Gates Artificial Intelligence"
+    proposed_deal_class: "systems_architecture"
+    internal_score: 68
+    internal_grade: "B"
+    complexity: 7
+    opening_ask:
+      implementation_usd: 1583333
+    pitch_angle: "Private agentic legal-AI operating architecture for governed workflow orchestration, internal knowledge, tool routing, auditability, and custom practice-group automation."
+
+  - id: "prospect-weil-001"
+    organization: "Weil, Gotshal & Manges LLP"
+    sector: "law firm"
+    geography: "Global / Dallas contact"
+    public_signal: "Chief AI & Innovation Officer leads AI strategy, practical tools, workflows, governance, and cross-functional lawyer/consultant/software-engineering teams."
+    decision_maker:
+      name: "Andrew Simon"
+      role: "Chief AI & Innovation Officer"
+      public_contact: "andrew.simon@weil.com"
+      public_phone: "+1 214 746 7841"
+      contact_page: "https://www.weil.com/people/andrew-simon"
+    sources:
+      - url: "https://www.weil.com/people/andrew-simon"
+        title: "Andrew Simon — Chief AI & Innovation Officer"
+    proposed_deal_class: "systems_architecture"
+    internal_score: 68
+    internal_grade: "B"
+    complexity: 7
+    opening_ask:
+      implementation_usd: 1583333
+    pitch_angle: "Extend existing AI innovation into a governed multi-agent operating layer with reusable workflow components, provenance, audit trails, and practice-specific orchestration."
+
+  - id: "prospect-mintz-001"
+    organization: "Mintz"
+    sector: "law firm"
+    geography: "USA"
+    public_signal: "Chief Innovation and AI Officer leads enterprise-wide data, AI, governance, deployment, efficiency, client service, and strategic advantage initiatives."
+    decision_maker:
+      name: "John B. Koss"
+      role: "Chief Innovation and AI Officer"
+      public_phone: "+1 617 210 6855"
+      contact_page: "https://www.mintz.com/our-people/john-b-koss"
+    sources:
+      - url: "https://www.mintz.com/our-people/john-b-koss"
+        title: "John B. Koss — Chief Innovation and AI Officer"
+    proposed_deal_class: "systems_architecture"
+    internal_score: 65
+    internal_grade: "B"
+    complexity: 6
+    opening_ask:
+      implementation_usd: 1444444
+    pitch_angle: "Composable AI/data operating architecture for legal delivery, internal knowledge, governance, evidence, automation, and client-facing innovation."
+
+  - id: "prospect-trowe-001"
+    organization: "T. Rowe Price"
+    sector: "investment firm"
+    geography: "Global"
+    public_signal: "Expanded Claude across investment research and development while strengthening firmwide AI leadership, governance, risk oversight, and practical use-case scaling."
+    decision_maker:
+      name: null
+      role: "AI / Technology, Data and Operations leadership"
+      public_contact: "info@troweprice.com"
+      contact_page: "https://www.troweprice.com/personal-investing/help/contact/"
+    sources:
+      - url: "https://www.troweprice.com/en/us/press/2026/press-release--t--rowe-price-works-with-anthropic-to-bring-claud"
+        title: "T. Rowe Price Works With Anthropic To Bring Claude To More Of Its Investment Process"
+      - url: "https://www.troweprice.com/en/us/press/2026/press-release--t--rowe-price-advances-ai-strategy-with-leadershi"
+        title: "T. Rowe Price Advances AI Strategy With Leadership Model Built To Accelerate And Scale Execution"
+      - url: "https://www.troweprice.com/personal-investing/help/contact/"
+        title: "T. Rowe Price Contact"
+    proposed_deal_class: "systems_architecture"
+    internal_score: 59
+    internal_grade: "C"
+    complexity: 8
+    opening_ask:
+      implementation_usd: 4333333
+    pitch_angle: "Research and portfolio-intelligence orchestration layer that connects proprietary research workflows, model/tool routing, evidence provenance, governance, and internal AI operations without displacing existing model providers."
