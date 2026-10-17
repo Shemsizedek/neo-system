@@ -62,3 +62,11 @@ Upstream references: https://github.com/CounterpartyXCP/counterwallet and https:
 - The UI permits inspecting an estimated funding plan after UTXO and fee observations, but its output must **never** be supplied to a live broadcaster or signer.
 - For a real PSBT milestone: checksum/network validate both output addresses; obtain verified scriptPubKeys, UTXO amounts and confirmation proofs; apply script-aware weight/dust/fee calculations; serialize BIP174-compliant unsigned PSBT with an audited Bitcoin library; round-trip decode and assert every input, output, change, network and maximum fee; keep external signing disabled pending independent security review.
 - Tests: `node --test apps/counterpay/*.test.mjs` (CI configured, execution outcome not yet confirmed).
+
+## COUNTERPAY-008: PSBT builder (unreviewed prototype)
+- `psbt-builder.mjs` uses pinned `bitcoinjs-lib@6.1.7` to generate an **unsigned BIP174 PSBT** with P2WPKH witness UTXOs and explicitly specified payment and optional change outputs.
+- It validates recipient/change address checksums and intended network, enforces the caller-supplied maximum fee, refuses duplicate outpoints and unsuitable scripts, and decodes its resulting PSBT to compare outputs.
+- All source UTXO values, confirmations and scriptPubKeys are **caller assertions**, NOT verified blockchain proofs. It does not prove input ownership, authenticate a node, verify chain state, ensure fee-rate optimality or guarantee spendability.
+- No external signer, WebAuthn passkey, device approval, Crown Chain attestation, finalization, mainnet broadcast or production wallet UI action is wired to PSBT output.
+- Tests are in `psbt-builder.test.mjs`. CI installs dependencies in this app then runs all `*.test.mjs`. The output MUST be reviewed before merging.
+- A full integration security review is required before offering PSBT output to any external signer: bind trusted chain/network data, validate prevout script and amount against authoritative sources, validate change ownership from authenticated wallet descriptors, and reject policy deviations.
