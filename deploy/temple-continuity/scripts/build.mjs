@@ -1,0 +1,10 @@
+import {mkdir,readFile,writeFile,copyFile} from 'node:fs/promises';
+const snapshots=JSON.parse(await readFile('worker/snapshots.json','utf8'));
+const source=await readFile('worker/index.js','utf8');
+await mkdir('dist/server',{recursive:true});
+await mkdir('dist/.openai',{recursive:true});
+await writeFile('dist/server/index.js','const SNAPSHOTS='+JSON.stringify(snapshots)+';\n'+source);
+await copyFile('.openai/hosting.json','dist/.openai/hosting.json');
+const worker=await import('../dist/server/index.js?build='+Date.now());
+if(typeof worker.default?.fetch!=='function')throw new Error('Worker fetch export missing');
+console.log('Worker ESM artifact ready.');

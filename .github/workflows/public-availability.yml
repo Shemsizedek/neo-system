@@ -1,0 +1,36 @@
+name: Public Website Availability
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/check-public-availability.py'
+      - '.github/workflows/public-availability.yml'
+  schedule:
+    - cron: '*/10 * * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: public-website-availability
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check public pages, application assets and AdSense prerequisites
+        run: |
+          set -o pipefail
+          python3 scripts/check-public-availability.py | tee /tmp/public-availability.jsonl
+      - name: Retain availability report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: public-availability
+          path: /tmp/public-availability.jsonl
+          retention-days: 14
