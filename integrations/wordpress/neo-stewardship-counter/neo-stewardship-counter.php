@@ -2,7 +2,7 @@
 /**
  * Plugin Name: NEO Counter Holy Stewardship
  * Description: Page-specific stewardship checkout review. Itemized market-reference checkout preview.
- * Version: 0.5.0
+ * Version: 0.6.0
  */
 defined('ABSPATH') || exit;
 require_once __DIR__ . '/market.php';
@@ -83,7 +83,7 @@ add_shortcode('neo_stewardship_counter', function () {
       <a href="https://tokenscan.io/asset/PLEDGEBOND" target="_blank" rel="noopener noreferrer">PLEDGEBOND — TokenScan asset information</a></p>
       <div id="neo-stewardship-gateway" data-wallet-scanner>
         <h3>NEO Counter — wallet and checkout</h3>
-        <p>Payment collection is awaiting a verified treasury destination and connected token-delivery signer. No payable QR code is issued yet.</p>
+        <p>Treasury confirmed: 1Ky2wRYYrJzqdQJH64F7TR98fqLxJs7LK8. Freewallet is the designated signing wallet. Payment collection awaits a tested signing and token-delivery connection; no payable QR code is issued yet.</p>
         <?php
         $prepared_id = isset($_GET['neo_prepared']) ? absint($_GET['neo_prepared']) : 0;
         if ($prepared_id && is_user_logged_in() && get_post_type($prepared_id) === 'neo_steward_order' &&
