@@ -1,7 +1,7 @@
 import { quoteStewardship } from './pricing.mjs';
 
 export function mountStewardship(root, references = {}, clock = Date.now, schedule = setTimeout, unschedule = clearTimeout) {
-  const form = root.querySelector('form');
+  const form = root.querySelector('[data-quote-form]');
   const output = root.querySelector('output');
   const priceStatus = root.querySelector('[data-price-status]');
   const select = form.elements.purpose;
@@ -27,7 +27,9 @@ export function mountStewardship(root, references = {}, clock = Date.now, schedu
       ? 'TEMPLEBOND represents an Adept’s deeper commitment to the Temple mission.'
       : 'PLEDGEBOND represents member participation and stewardship pledges.';
     const link = root.querySelector('[data-asset]');
-    link.href = 'https://tokenscan.io/asset/' + symbol;
+    const selectedExplorer = root.getAttribute('data-ledger-explorer');
+    const explorer = ['https://classic.tokenscan.io','https://cp20.tokenscan.io'].includes(selectedExplorer) ? selectedExplorer : 'https://tokenscan.io';
+    link.href = explorer + '/asset/' + symbol;
     link.textContent = 'View ' + symbol + ' on TokenScan';
     try {
       const q = calculate();
