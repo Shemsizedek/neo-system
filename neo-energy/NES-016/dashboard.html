@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NEO Utility — Simulation Dashboard</title><style>
+:root{font-family:system-ui,sans-serif;color:#e8f1ef;background:#0b1418}
+*{box-sizing:border-box}body{margin:0;padding:24px;max-width:1080px;margin-inline:auto}
+header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}
+h1{font-size:1.6rem}button{border:1px solid #52746e;background:#192c30;color:white;border-radius:8px;padding:10px 14px;cursor:pointer}
+button[aria-pressed=true]{background:#126c5c}main{display:grid;gap:16px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}
+.card{background:#16252a;border:1px solid #334b4e;padding:18px;border-radius:12px}.value{font-size:1.7rem;font-weight:750}
+small,p{color:#b5c9c6}strong{color:#fff}.banner{border-left:5px solid #e0b45f;padding:12px;background:#2e281e}
+.bar{height:14px;background:#31474a;border-radius:8px;overflow:hidden}.fill{height:100%;background:#33b293}
+:focus-visible{outline:3px solid #f9c46f;outline-offset:3px}
+</style></head><body>
+<header><div><h1>⚡ NEO Utility Terminal</h1><p>NEO Energy Works · Project 144</p></div><strong>SIMULATION — NOT A BILL</strong></header>
+<p class="banner" role="status">Synthetic demonstration only. No NEO Pass login, customer meters, payment features, or electrical equipment controls are connected.</p>
+<nav aria-label="Terminal views"><button id="customer" aria-pressed="true">Customer</button> <button id="operator" aria-pressed="false">Operator</button> <button id="engineer" aria-pressed="false">Engineer</button></nav>
+<main id="view" aria-live="polite"></main>
+<script>
+"use strict";
+const sections={
+ customer:{heading:"Customer overview",metrics:[["Grid imported","420 kWh"],["Solar exported","160 kWh"],["Illustrative statement","$75.40"],["Service status","Demo only"]],note:"Illustrative statement assumes $0.17/kWh imports, $0.05/kWh export credit and $12 fixed charges."},
+ operator:{heading:"Utility operator overview",metrics:[["Meter readings","Synthetic"],["Integrity flags","0 example flags"],["Dispatch commands","Disabled"],["Billing eligibility","No"]],note:"All operational commands are disabled. No live outage or meter status is represented."},
+ engineer:{heading:"NEO Engineer overview",metrics:[["Site model","NES-TWIN-0001"],["Solar design","8 kW"],["Storage design","15 kWh"],["Commissioning","Not authorized"]],note:"Illustrative specifications only. No sealed construction drawings or validated site study."}
+};
+const view=document.getElementById("view");
+function render(role){
+ const data=sections[role];
+ document.querySelectorAll("nav button").forEach(b=>b.setAttribute("aria-pressed",String(b.id===role)));
+ view.replaceChildren();
+ const title=document.createElement("h2");title.textContent=data.heading;view.append(title);
+ const grid=document.createElement("div");grid.className="grid";
+ for(const [label,value] of data.metrics){const card=document.createElement("section");card.className="card";
+ const heading=document.createElement("p");heading.textContent=label;
+ const figure=document.createElement("div");figure.className="value";figure.textContent=value;
+ card.append(heading,figure);grid.append(card)}view.append(grid);
+ const note=document.createElement("p");note.textContent=data.note;view.append(note);
+}
+document.querySelectorAll("nav button").forEach(b=>b.addEventListener("click",()=>render(b.id)));
+render("customer");
+</script></body></html>

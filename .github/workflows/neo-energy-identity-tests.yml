@@ -1,0 +1,18 @@
+name: NEO Energy tenant access tests
+on:
+  pull_request:
+    paths:
+      - 'neo-energy/NES-019/**'
+      - '.github/workflows/neo-energy-identity-tests.yml'
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m unittest discover -s neo-energy/NES-019 -p 'test_*.py' -v

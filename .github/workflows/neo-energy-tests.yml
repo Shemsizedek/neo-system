@@ -1,0 +1,24 @@
+name: NEO Energy simulation safety tests
+on:
+  pull_request:
+    paths:
+      - 'neo-energy/**'
+      - '.github/workflows/neo-energy-tests.yml'
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate NEO Energy simulation modules
+        shell: bash
+        run: |
+          set -euo pipefail
+          for gate in NES-008 NES-009 NES-010 NES-011 NES-013; do
+            python -m unittest discover -s "neo-energy/$gate" -p 'test_*.py' -v
+          done

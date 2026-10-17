@@ -1,0 +1,42 @@
+name: NEO Energy NES-025 staging contract tests
+on:
+  pull_request:
+    paths:
+      - 'neo-energy/NES-023/**'
+      - 'neo-energy/NES-024/**'
+      - 'neo-energy/NES-025/**'
+      - '.github/workflows/neo-energy-nes025-tests.yml'
+  workflow_dispatch:
+jobs:
+  staging-contract:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ci-only-password
+          POSTGRES_DB: neo_energy_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d neo_energy_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: localhost
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: ci-only-password
+      PGDATABASE: neo_energy_ci
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test neo-energy/NES-025/test-preview-api.mjs
+      - run: psql -X -v ON_ERROR_STOP=1 -f neo-energy/NES-025/tenant_grants.sql
+      - run: psql -X -v ON_ERROR_STOP=1 -f neo-energy/NES-025/check_tenant_grants.sql

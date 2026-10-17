@@ -1,0 +1,13 @@
+prototype,stage,check,required_evidence,release_gate
+THERMO-01,design,TEG part number and thermal ratings,datasheet and manufacturer reference,ENGINEERING_REVIEW
+THERMO-01,design,boost converter cold start compatibility,measured source IV curve plus datasheet,ENGINEERING_REVIEW
+THERMO-01,test,temperature and energy balance,calibrated time-series power and temperature log,FIRST_ARTICLE
+RESONANCE-01,design,transmitter receiver matching,manufacturer technical specification,ENGINEERING_REVIEW
+RESONANCE-01,test,coil alignment and efficiency,input output power over spacing plus temperature,FIRST_ARTICLE
+RESONANCE-01,test,foreign object thermal fault behavior,manufacturer specified fault test,FIRST_ARTICLE
+HARVEST-01,design,storage overvoltage and undervoltage limits,BQ25570 board configuration and storage datasheet,ENGINEERING_REVIEW
+HARVEST-01,firmware,brownout recovery and watchdog,reproducible firmware build and bench log,FIRST_ARTICLE
+HARVEST-01,test,energy positive duty cycle,harvest input and load consumption time-series,FIRST_ARTICLE
+ALL,procurement,delivered supplier price,dated itemized vendor quote,PURCHASE_APPROVAL
+ALL,manufacture,exact drawing version,reviewed native CAD and schematic exports,FABRICATION_APPROVAL
+ALL,release,repeatability and defect disposition,signed first article report,DUPLICATE_BUILD_APPROVAL
