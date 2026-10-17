@@ -1,0 +1,28 @@
+import {readFile,writeFile,readdir,mkdir} from 'node:fs/promises';
+import {join,extname} from 'node:path';
+const root=process.argv[2]||'/workspace/neo-system';
+const files={};
+const types={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json; charset=utf-8','.svg':'image/svg+xml','.png':'image/png'};
+async function capture(source,dest){for(const entry of await readdir(join(root,source),{withFileTypes:true})){const from=join(source,entry.name),to=dest+'/'+entry.name;if(entry.isDirectory())await capture(from,to);else if(types[extname(entry.name)]){const bytes=await readFile(join(root,from));files[to]={type:types[extname(entry.name)],encoding:extname(entry.name)==='.png'?'base64':'text',body:extname(entry.name)==='.png'?bytes.toString('base64'):bytes.toString('utf8')};}}}
+for(const [source,dest] of [['apps/noogle/web','noogle'],['apps/omnitrix/web','omnitrix'],['public/neo-books','neo-books'],['docs/neo-oracle','neo-oracle'],['docs/neo-algo','neo-algo'],['docs/public-workspace','public-workspace']])await capture(source,dest);
+for(const name of ['platform-shell.js','platform-shell.css'])files[name]={type:types[extname(name)],encoding:'text',body:await readFile(join(root,'public',name),'utf8')};
+const set=(path,value)=>{files[path]={type:'application/json; charset=utf-8',encoding:'text',body:JSON.stringify(value)};};
+const records=JSON.parse(await readFile('sources/public-library-records.json','utf8'));
+if(records.some(record=>record.accessClass!=='PUBLIC_WORLD_LIBRARY'))throw Error('Non-public record rejected');
+const generatedAt=new Date().toISOString();
+const documents=records.map(r=>({id:r.id,title:r.title,summary:'Public World Library catalog entry. Follow the source link to review the original material.',canonicalUrl:r.sourceUrl,publisher:'World Temple Public Library',sourceClass:'PUBLIC_WORLD_LIBRARY',evidenceState:'public-catalog-entry',sourceModifiedAt:r.modifiedAt}));
+set('api/noogle/index.json',{version:1,generatedAt,scope:'public-library-catalog-snapshot',documents});
+set('api/noogle/source-health.json',{generatedAt,total:records.length,scope:'catalog-snapshot; original source availability not checked',sources:records.map(r=>({id:r.id,url:r.sourceUrl,status:'not-checked'}))});
+set('api/noogle/knowledge-graph.json',{version:1,generatedAt,nodes:records.map(r=>({id:r.id,label:r.title,type:'public-catalog-entry'})),edges:[]});
+set('api/noogle/claim-graph.json',{version:1,generatedAt,claims:[],evidence:[]});
+const books=JSON.parse(await readFile(join(root,'dist/api/platforms/neo-books.json'),'utf8'));
+books.transport='static-public-schema-snapshot';books.scope='public-metadata-only';books.page='https://book.holytemples.org/';books.self='https://book.holytemples.org/api/platforms/neo-books.json';set('api/platforms/neo-books.json',books);
+for(const file of Object.values(files))if(file.encoding==='text')file.body=file.body.replaceAll('../neo-hub/','https://hub.holytemples.org/').replaceAll('../noogle/','https://noogle.holytemples.org/');
+let home=files['noogle/index.html'];home.body=home.body.replace('<title>Omnitrix — Browse the NEO Way</title>','<title>Noogle — Search Public Knowledge</title>').replace('>OMNITRIX</div>','>NOOGLE</div>').replace('powered by Noogle','Public knowledge search').replace('One browser. Search, Bitcoin, XCP and knowledge.','Search public knowledge and the web.').replace('Omnitrix keeps the web simple while Noogle adds','Noogle combines a public library catalog with').replace('OMNITRIX INSIGHT','NOOGLE INSIGHT').replace('<strong>NEO IDENTITY</strong><small>Founder Account #1 reserved<br><span id="founderIdentity">neo:founder:000001</span><br>Verified enrollment required</small>','<strong>PUBLIC LIBRARY</strong><small>Four catalog entries are available locally. External search results depend on their providers.</small>').replace('<span>Reachable</span>','<span>Verified live sources</span>');
+for(const name of ['noogle/health.js','noogle/status.html'])files[name].body=files[name].body.replaceAll("'/neo-system/api/noogle/'","'/api/noogle/'").replaceAll("textContent='ONLINE'","textContent='PUBLIC CATALOG'").replaceAll('Live visibility into the native Noogle index snapshot and allowlisted source registry.','Public catalog snapshot. Original source availability has not been checked.').replaceAll('OMNITRIX INDEX HEALTH','NOOGLE CATALOG').replaceAll('<dt>Checked</dt>','<dt>Snapshot generated</dt>');
+files['neo-books/index.html'].body=files['neo-books/index.html'].body.replace('href="../"','href="https://neo.holytemples.org/"');
+files['platform-shell.js'].body=files['platform-shell.js'].body.replace("'Pages API online'","'Public schema available'");
+let app=files['omnitrix/app.js'];app.body=app.body.replace("const $=id=>",`const escapeHtml=value=>String(value??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[c]));\nconst $=id=>`).replace('try{return new URL(v).href}catch{}',"try{const parsed=new URL(v);return ['https:','http:'].includes(parsed.protocol)?parsed.href:null}catch{}");
+for(const expr of ['x.url','x.title','item.url','item.title','x.name||x.url'])app.body=app.body.replaceAll('${'+expr+'}','${escapeHtml('+expr+')}');
+files['omnitrix/sw.js'].body=await readFile('worker/safe-service-worker.js','utf8');
+await writeFile('worker/public-content.json',JSON.stringify({files,generatedAt}));console.log('Packaged '+Object.keys(files).length+' public files and '+records.length+' catalog entries');

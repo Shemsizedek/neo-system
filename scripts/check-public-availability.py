@@ -38,6 +38,24 @@ def redirected_page(url, expected_target):
         raise RuntimeError(f'{expected_target}: destination content missing')
     return {'url': url, 'status': 'PASS', 'redirect': expected_target, 'scope': 'public landing page; member workflows not exercised'}
 
+
+def knowledge_catalog():
+    url = 'https://noogle.holytemples.org/api/noogle/index.json'
+    index = json.loads(fetch(url))
+    documents = index.get('documents', [])
+    if len(documents) != 4 or any(item.get('sourceClass') != 'PUBLIC_WORLD_LIBRARY' for item in documents):
+        raise RuntimeError('Noogle public catalog entries missing or unexpected record class')
+    if not any('Codex' in item.get('title', '') for item in documents):
+        raise RuntimeError('Noogle public Codex catalog entry missing')
+    return {'url': url, 'status': 'PASS', 'scope': 'public catalog snapshot; source documents not revalidated'}
+
+def books_schema():
+    url = 'https://book.holytemples.org/api/platforms/neo-books.json'
+    data = json.loads(fetch(url))
+    if data.get('platform') != 'neo-books' or data.get('scope') != 'public-metadata-only' or not data.get('capabilities'):
+        raise RuntimeError('Books public schema missing')
+    return {'url': url, 'status': 'PASS', 'scope': 'public schema; private ledgers not exercised'}
+
 def adsense():
     root = fetch('https://holytemples.org/')
     ads = fetch('https://holytemples.org/ads.txt')
@@ -71,6 +89,13 @@ if __name__ == '__main__':
         lambda: page('https://neoteric.holytemples.org/', 'Neoteric Method'),
         lambda: redirected_page('https://society.holytemples.org/', 'https://neo.dnnr.io/'),
         lambda: redirected_page('https://lifestyle.holytemples.org/', 'https://neo.dnnr.io/neo/ambassador-application'),
+        lambda: page('https://noogle.holytemples.org/', 'Noogle — Search Public Knowledge', True),
+        lambda: page('https://omnitrix.holytemples.org/', 'Omnitrix', True),
+        lambda: page('https://oracle.holytemples.org/', 'NEO ORACLE'),
+        lambda: page('https://algo.holytemples.org/', 'Run Model', True),
+        lambda: page('https://book.holytemples.org/', 'NEO Books', True),
+        knowledge_catalog,
+        books_schema,
         adsense,
     ]
     failures = 0

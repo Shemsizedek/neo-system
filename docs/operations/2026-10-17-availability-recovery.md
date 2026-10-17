@@ -68,3 +68,23 @@ Only these five failed subdomains' address records and their ownership/TLS verif
 Public Office root content is a versioned snapshot; other public Office pages/assets use a fixed WordPress origin. Upstream cookies are removed, visitors' session credentials are not forwarded, and private/admin/write routes return unavailable. Leaders and Neoteric pages are independent of sleeping backend processes. No private account data, payment services, checkout flows or authenticated community workflows are restored or validated by this batch.
 
 Five gateway tests passed: root/subpage content without origin access, HEAD behavior, established community redirect paths/queries, rejected writes/private routes, and fixed-origin session isolation/redirect rewriting. The availability monitor checks the five additional custom domains; Office assets and exact community redirect destinations are included.
+
+## Knowledge public-interface migration
+
+The next group publishes Noogle, Omnitrix, Oracle, Algo and Books independently of the disabled Google public edge. All five original domains returned HTTP 503 before this migration.
+
+- `noogle.holytemples.org`: existing public search interface, with corrected Noogle branding, working local assets and a four-entry public library catalog snapshot. Federated search continues to depend on its external providers; catalog metadata is not a fresh verification of original Drive document availability or contents.
+- `omnitrix.holytemples.org`: existing browser-home interface, local bookmarks/settings and canonical Noogle search navigation. Service-worker caching is restricted to a public shell allowlist; APIs, external URLs and requests with authorization are excluded. Non-HTTP navigation is rejected and stored display values are HTML-escaped.
+- `oracle.holytemples.org`: existing public prompt interface hands the query to Noogle on its canonical domain. This does not restore a private AI inference backend.
+- `algo.holytemples.org`: existing browser-local model and reasoning workbench, with corrected shared CSS and research links.
+- `book.holytemples.org`: existing public Books overview and read-only schema/status snapshot. Private journals, credentials and financial records remain behind an unavailable authenticated backend.
+
+Sites project: `appgprj_6ad3c15dd8b88191a09ca2017bd81b20`. Deployment URL: https://temple-knowledge.shemsizedek.chatgpt.site. Sites source commit: `38a4b75de4fcf9487dce15944bcdd1404f179081`. Deployment: `appgdep_6ad3c1e3727c8191a79855d626c614b1` (succeeded).
+
+The Worker packages 39 selected public files. Only records already labeled `PUBLIC_WORLD_LIBRARY` enter the catalog. The knowledge graph contains catalog nodes without invented relationships; the claims snapshot has no invented evidence. Public schema metadata is explicitly labeled `public-metadata-only`. Unsupported private API paths and all writes return 503 without modifying data.
+
+Seven local checks passed: five pages and their referenced local assets, public API/alias routes and private-write boundaries, canonical query navigation, native catalog results when external results fail, Algo calculation and Oracle handoff, service-worker isolation, and parsing every packaged JavaScript file. Client behavior was checked with Node VM tests; browser UI automation was unavailable.
+
+Availability monitoring now includes the five frontends, their applicable assets, the four-entry Noogle catalog and Books schema. Each previous address record had a 3600-second TTL, so clients can retain the old Google destination for up to an hour. Only these five subdomains and their ownership/TLS verification records changed. Root, mail and existing healthy site records are preserved.
+
+Public frontend updates require rebuilding and publishing the Sites bundle; a main-repository commit alone does not update the deployed Sites source.
