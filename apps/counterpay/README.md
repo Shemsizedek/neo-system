@@ -99,3 +99,12 @@ Upstream references: https://github.com/CounterpartyXCP/counterwallet and https:
 - The coordinator's `verifyWebAuthn` dependency can now be supplied by `createWebAuthnVerifier({credentialRepository})` **only within a trusted server runtime**. It is not wired to production HTTP routes, registered NEO Pass devices or an operational backend.
 - This gate does not establish ownership of Bitcoin keys, device-bound signing, transaction authorization, Crown Chain anchoring or broadcast.
 - `npm install --prefix apps/counterpay && node --test apps/counterpay/*.test.mjs` requires verification in CI. No production rollout without reviewing CI, WebAuthn registration and live-device tests.
+
+## COUNTERPAY-012: enrollment and read-only session service contracts
+- `enrollment-session.mjs` provides server-only begin/finish registration with random one-time challenges, user-ID binding, two-minute expiry and a required trusted registration verifier.
+- Credential persistence is injected; it must be durable, atomically reject duplicate credential IDs, and bind each credential to a previously authenticated user.
+- Sessions are restricted to `wallet:read`, expire in fifteen minutes, and support explicit revocation.
+- **Security requirement:** a service caller must never construct or pass arbitrary authentication objects to session creation. Only a server-verified assertion result retrieved from the trusted coordinator and bound to the same user is acceptable. HTTP routes, account authorization middleware, cookie security, CSRF defenses, rate limiting, production credential registration, trusted verifier configuration and durable stores are not built yet.
+- The session token is a bearer secret; do not expose it in logs, URL parameters, browser localStorage or screenshots. Server-side session cookies should be HttpOnly, Secure and SameSite restricted.
+- Tests use simulated repositories and registration verification; these do not demonstrate live passkey enrollment or cryptographic device verification.
+- Bitcoin signing, approval-to-wallet-key binding and broadcasting stay disabled.
