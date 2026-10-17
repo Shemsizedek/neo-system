@@ -3,5 +3,6 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
-  base: '/neo-system/',
+  // Render hosts this app at /; GitHub Pages hosts it at /neo-system/.
+  base: process.env.RENDER === 'true' ? '/' : '/neo-system/',
 })
