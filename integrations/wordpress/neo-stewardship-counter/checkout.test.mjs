@@ -21,7 +21,8 @@ assert.match(s.nodes.output.textContent,/TEMPLEBOND/);
 s.expire();assert.match(s.nodes.output.textContent,/Quote expired/);
 const absent=setup({});absent.submit();assert.match(absent.nodes.output.textContent,/Quote unavailable/);
 const stale=setup({PLEDGEBOND:{...fixture,expiresAt:1500}});stale.submit();assert.match(stale.nodes.output.textContent,/Quote unavailable/);
-s.select.value='patronage';s.selectListeners.change();s.nodes.form.elements.quantity.value='0';s.submit();assert.match(s.nodes.output.textContent,/Quote unavailable/);
+s.select.value='patronage';s.selectListeners.change();s.nodes['[data-quote-form]'].elements.quantity.value='0';s.submit();assert.match(s.nodes.output.textContent,/Quote unavailable/);
 console.log('PASS: connected quote rendering, fees, path switch, edits, expiry, missing/stale prices, invalid quantity');
 
 const blocked=setup({PLEDGEBOND:fixture},'0');blocked.submit();assert.match(blocked.nodes.output.textContent,/Upload your completed Form 144/);
+
