@@ -8,5 +8,5 @@ function neo_stewardship_currency_catalog() {
 function neo_stewardship_selected_currency() {
     $requested = isset($_GET['neo_currency']) && is_string($_GET['neo_currency']) ? sanitize_key($_GET['neo_currency']) : 'btc';
     foreach (neo_stewardship_currency_catalog() as $entry) if ($entry['id'] === $requested) return $entry;
-    return array('id'=>'btc','symbol'=>'BTC','name'=>'Bitcoin','counterpartyAsset'=>'BTC');
+    wp_die('Unknown payment currency. Choose an entry from the World Currency catalog.', '', array('response'=>400));
 }
