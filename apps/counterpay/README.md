@@ -91,3 +91,11 @@ Upstream references: https://github.com/CounterpartyXCP/counterwallet and https:
 - `verifyWebAuthn` is an **injected trust dependency**, not yet implemented. A production handler must use a reviewed WebAuthn library, persisted registered public keys/credential IDs/signature counters, strict RP ID, origin, challenge and user-verification checks, and a shared atomic TTL storage backend.
 - A caller could inject a dishonest verifier; therefore the coordinator is NOT an authentication security boundary until it is owned by a trusted backend with audited verification and identity binding.
 - Approval is **not** equivalent to a Bitcoin transaction signature. Bitcoin signing, PSBT finalization, Crown Chain anchoring and broadcasting remain disabled.
+
+## COUNTERPAY-011: real WebAuthn verification integration
+- Server-only `webauthn-verifier.mjs` uses pinned `@simplewebauthn/server@14.0.3` to validate challenge, origin, RP ID, credential public-key signature, and user verification.
+- Credential records MUST come from trusted persistent registration and be scoped to the authenticated user. Credential counter persistence must use atomic compare-and-swap, including an explicit policy for zero-counter authenticators.
+- `webauthn-persistence.mjs` provides a Redis adapter that requires atomic SET NX PX and GETDEL for one-time challenges; configure real Redis and credential storage before deployment.
+- The coordinator's `verifyWebAuthn` dependency can now be supplied by `createWebAuthnVerifier({credentialRepository})` **only within a trusted server runtime**. It is not wired to production HTTP routes, registered NEO Pass devices or an operational backend.
+- This gate does not establish ownership of Bitcoin keys, device-bound signing, transaction authorization, Crown Chain anchoring or broadcast.
+- `npm install --prefix apps/counterpay && node --test apps/counterpay/*.test.mjs` requires verification in CI. No production rollout without reviewing CI, WebAuthn registration and live-device tests.
