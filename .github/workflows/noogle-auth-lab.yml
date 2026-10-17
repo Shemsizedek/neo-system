@@ -1,0 +1,72 @@
+name: Noogle Authentication Laboratory
+on:
+  pull_request:
+    paths:
+      - 'services/noogle-auth-lab/**'
+      - 'docs/connect/**'
+      - 'tests/noogle-connect/**'
+      - '.github/workflows/noogle-auth-lab.yml'
+  push:
+    paths:
+      - 'services/noogle-auth-lab/**'
+      - 'docs/connect/**'
+      - 'tests/noogle-connect/**'
+      - '.github/workflows/noogle-auth-lab.yml'
+permissions:
+  contents: read
+jobs:
+  auth-lab-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install WebAuthn verifier test dependency
+        run: python -m pip install 'webauthn>=2,<3'
+      - name: Verify fail-closed authentication laboratory
+        working-directory: services/noogle-auth-lab
+        run: python -m unittest discover -v -p 'test_*.py'
+
+  browser-security-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check browser adapter syntax
+        run: node --check docs/connect/passkeys.js
+      - name: Verify fail-closed browser enrollment
+        run: node tests/noogle-connect/passkeys.test.cjs
+      - name: Verify NEO Pass identity bridge and enrollment authorization
+        run: node --test services/noogle-auth-lab/identity-bridge.test.mjs services/noogle-auth-lab/enrollment-authorization.test.mjs services/noogle-auth-lab/guardian-gateway.test.mjs services/noogle-auth-lab/staging-policy.test.mjs services/noogle-auth-lab/cloud-run-preview.test.mjs
+
+  cloud-run-container-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the exact Cloud Run preview container
+        run: docker build -f services/noogle-auth-lab/Dockerfile.preview -t noogle-connect-preview:ci .
+      - name: Launch local read-only container
+        run: docker run -d --name noogle-connect-preview -p 127.0.0.1:18080:8080 noogle-connect-preview:ci
+      - name: Probe HTTP readiness and fail-closed operations
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:18080/healthz > /tmp/noogle-health.json; then break; fi
+            sleep 1
+          done
+          node -e 'const a=require("/tmp/noogle-health.json"); if(a.ok!==true || a.mode!=="read-only")process.exit(1)'
+          curl --fail --silent http://127.0.0.1:18080/api/guardian/capabilities > /tmp/noogle-capabilities.json
+          node -e 'const a=require("/tmp/noogle-capabilities.json");if(a.remote_terminal!=="disabled"||a.device_enrollment!=="not_enabled"||a.identity_session!=="not_verified")process.exit(1)'
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' --request POST http://127.0.0.1:18080/api/guardian/terminal)" = 405
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:18080/api/guardian/session)" = 403
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:18080/)" = 200
+      - name: Collect container logs on failure
+        if: failure()
+        run: docker logs noogle-connect-preview || true
+      - name: Remove test container
+        if: always()
+        run: docker rm -f noogle-connect-preview || true
