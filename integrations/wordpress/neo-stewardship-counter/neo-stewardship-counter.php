@@ -2,12 +2,13 @@
 /**
  * Plugin Name: NEO Counter Holy Stewardship
  * Description: Page-specific stewardship checkout review. Itemized market-reference checkout preview.
- * Version: 0.9.0
+ * Version: 0.10.0
  */
 defined('ABSPATH') || exit;
 require_once __DIR__ . '/market.php';
 require_once __DIR__ . '/form144.php';
 require_once __DIR__ . '/payment.php';
+require_once __DIR__ . '/currencies.php';
 add_shortcode('neo_stewardship_counter', function () {
     if (!is_page('holy-stewardship')) {
         return '';
@@ -16,10 +17,12 @@ add_shortcode('neo_stewardship_counter', function () {
     if (!in_array($ledger,array('classic','cp20'),true)) $ledger = '';
     $ledger_hosts = array('classic'=>'https://classic.tokenscan.io','cp20'=>'https://cp20.tokenscan.io');
     $explorer = $ledger ? $ledger_hosts[$ledger] : 'https://tokenscan.io';
+    $selected_currency = neo_stewardship_selected_currency();
+    $currency_is_btc = $selected_currency['id'] === 'btc';
     $received144 = neo_stewardship_form144_received();
     $id = wp_unique_id('neo-stewardship-');
     // Only trusted server-side adapters supply quote inputs. Never use query parameters.
-    $references = apply_filters('neo_stewardship_quote_references', neo_stewardship_market_references($ledger));
+    $references = $currency_is_btc ? apply_filters('neo_stewardship_quote_references', neo_stewardship_market_references($ledger)) : array();
     if (!is_array($references)) {
         $references = array();
     }
@@ -47,9 +50,21 @@ add_shortcode('neo_stewardship_counter', function () {
             <option value="classic" <?php selected($ledger,'classic'); ?>>Counterparty Classic</option>
           </select>
         </label>
-        <button type="submit">Use selected ledger</button>
+        <label>Requested payment currency
+          <select name="neo_currency">
+            <?php foreach (neo_stewardship_currency_catalog() as $currency) : ?>
+              <option value="<?php echo esc_attr($currency['id']); ?>" <?php selected($selected_currency['id'],$currency['id']); ?>><?php echo esc_html($currency['symbol'] . ' — ' . $currency['name']); ?></option>
+            <?php endforeach; ?>
+          </select>
+        </label>
+        <button type="submit">Use ledger and currency</button>
       </form>
       <p>Bitcoin mainnet payments share the Bitcoin network. Token balances, pricing and delivery are verified separately on the selected Counterparty ledger. No automatic conversion between ledgers occurs.</p>
+      <p><strong>Selected currency: <?php echo esc_html($selected_currency['symbol'] . ' — ' . $selected_currency['name']); ?></strong></p>
+      <?php if (!$currency_is_btc) : ?>
+        <p role="status"><?php echo $selected_currency['counterpartyAsset'] ? 'Asset mapping recorded; verified exchange pricing and settlement routing are still required for this currency.' : 'The on-chain asset mapping for this currency is not yet recorded in the registry.'; ?> No BTC substitution or payment request is made.</p>
+      <?php endif; ?>
+      <p>The 118-entry World Currency catalog is available for selection. Catalog inclusion does not mean live payment acceptance. BTC quotes remain references while payment reconciliation and token delivery are unfinished.</p>
       <form data-quote-form>
         <label>Participation path
           <select name="purpose" required>
@@ -65,7 +80,7 @@ add_shortcode('neo_stewardship_counter', function () {
         <p data-price-status aria-live="polite">Loading quote availability…</p>
         <p><a data-asset href="https://tokenscan.io/asset/PLEDGEBOND" target="_blank" rel="noopener noreferrer">View PLEDGEBOND on TokenScan</a></p>
         <label><input name="acknowledge" type="checkbox" required> I understand this is a preview and creates no payment, token holding, membership recognition or insurance coverage.</label>
-        <button type="submit" <?php disabled(!$received144 || !$ledger); ?>>Review stewardship selection</button>
+        <button type="submit" <?php disabled(!$received144 || !$ledger || !$currency_is_btc); ?>>Review stewardship selection</button>
       </form>
       <div id="neo-form144">
         <h3>Required for all members: completed Form 144</h3>
@@ -116,9 +131,10 @@ add_shortcode('neo_stewardship_counter', function () {
         ?>
           <p role="status">Checkout prepared. Indenture acknowledgment recorded; payment has not been requested and tokens have not been delivered.</p>
         <?php endif; ?>
-        <?php if ($received144 && $ledger) : ?>
+        <?php if ($received144 && $ledger && $currency_is_btc) : ?>
           <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
             <input type="hidden" name="action" value="neo_stewardship_prepare">
+            <input type="hidden" name="currency" value="btc">
             <input type="hidden" name="ledger" value="<?php echo esc_attr($ledger); ?>">
             <input type="hidden" name="terms_hash" value="<?php echo esc_attr(hash('sha256',neo_stewardship_indenture_snapshot())); ?>">
             <?php wp_nonce_field('neo_stewardship_prepare'); ?>
