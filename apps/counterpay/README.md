@@ -108,3 +108,10 @@ Upstream references: https://github.com/CounterpartyXCP/counterwallet and https:
 - The session token is a bearer secret; do not expose it in logs, URL parameters, browser localStorage or screenshots. Server-side session cookies should be HttpOnly, Secure and SameSite restricted.
 - Tests use simulated repositories and registration verification; these do not demonstrate live passkey enrollment or cryptographic device verification.
 - Bitcoin signing, approval-to-wallet-key binding and broadcasting stay disabled.
+
+## COUNTERPAY-013: runnable local preview gate
+- From `apps/counterpay` run `npm install` then `npm run preview`; visit `http://127.0.0.1:8080` on the **same computer**. The server deliberately binds only to loopback and is not accessible directly from a phone or public internet.
+- `GET /api/health` returns `preview-only`; other `/api/*` routes fail closed. There is NO NEO Pass login API, no production credential store, no authenticated wallet session route, and no signing or broadcast.
+- A dedicated smoke test ensures the preview serves the UI, rejects auth/transfer calls and does not serve arbitrary repository files.
+- Before a private HTTPS deployment: implement reviewed registration/authentication HTTP handlers, trusted server identity binding, persistent session/challenge and credential storage, CSRF/rate limiting, secure cookies, correct browser WebAuthn ceremony, and private ingress. Never expose this local server directly to the internet.
+- Some read-only Counterparty/Bitcoin browser calls may require CORS and trusted proxy configuration. Current test status and deployed URL require separate verification.
