@@ -8,7 +8,8 @@ const hex64=/^[0-9a-f]{64}$/i;
 const isP2WPKH=script=>script.length===22&&script[0]===0&&script[1]===20;
 const sat=n=>Number.isSafeInteger(n)&&n>=0;
 
-export async function constructUnsignedPsbt({network,inputs,recipient,changeAddress,amountSats,changeSats,maximumFeeSats=100000}) {
+export async function constructUnsignedPsbt({network,inputs,recipient,changeAddress,amountSats,changeSats,maximumFeeSats=100000,verifyInput}) {
+  if(typeof verifyInput!=='function')throw Error('Independent input verifier required');
   const chain=networks[network];
   if(!chain)throw Error('Unsupported network');
   await validateBitcoinAddress(recipient,network);
@@ -22,6 +23,7 @@ export async function constructUnsignedPsbt({network,inputs,recipient,changeAddr
     if(typeof input.scriptPubKeyHex!=='string'||!/^[a-f0-9]{44}$/i.test(input.scriptPubKeyHex))throw Error('Verified P2WPKH script required');
     const script=Buffer.from(input.scriptPubKeyHex,'hex');
     if(!isP2WPKH(script))throw Error('Only P2WPKH supported');
+    if(await verifyInput(Object.freeze({...input,network}))!==true)throw Error('Independent UTXO verification failed');
     const key=input.txid.toLowerCase()+':'+input.vout;if(seen.has(key))throw Error('Duplicate outpoint');seen.add(key);
     psbt.addInput({hash:input.txid,index:input.vout,witnessUtxo:{script,value:input.satoshis}});
     total+=input.satoshis;
