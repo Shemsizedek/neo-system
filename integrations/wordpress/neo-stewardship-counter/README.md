@@ -52,3 +52,16 @@ The form links to the supplied official Form 144 and membership instructions. Au
 Upload receipt is pending review, not verification of completed fields, authenticity, eligibility or membership approval. The signed-in member's own private submission enables the preview; anonymous visitors see a login link and disabled review button. Live payment remains absent and would need independent server-side membership enforcement.
 
 Validation: controller tests pass with submitted-member fixtures and a missing-submission blocking test. Deployed public HTML confirms the calculator follows the Indenture, exactly two options, official Form 144 links, login prompt and disabled review. WordPress reports v0.4.0 active. Actual signed-in PDF submission and administrator download have not been exercised with a member's document.
+
+## Gate 6 — wallet scanning and Indenture checkout preparation
+Plugin 0.5.0 installed active on the live page. Both permanent TokenScan links appear with TEMPLEBOND above PLEDGEBOND. PLEDGEBOND uses the canonical asset URL without a trailing period.
+
+Members with a received Form 144 can scan or paste a delivery address, select one of the two instruments, acknowledge the displayed Indenture and prepare a private server-side checkout. Only mainnet legacy P2PKH delivery addresses are enabled at this gate; PHP validates their full Base58Check checksum. BarcodeDetector camera support is optional; manual paste remains available. Camera tracks stop when scanned, cancelled, errored or leaving the page. Camera operation itself remains untested.
+
+payment.php registers private non-REST administrator-managed checkout records. A nonce-protected authenticated action enforces Form 144 receipt, asset/quantity/wallet checks, current market reference and exact current Indenture hash. It saves a server-calculated amount, delivery wallet, the exact Indenture block/version and acknowledgment timestamp. The 10 BTC reference limit prevents arithmetic overflow and oversized draft checkouts.
+
+These records are PREPARED_NOT_PAYABLE with payment NOT_REQUESTED and delivery NOT_STARTED. They do not issue a BIP21 request, generate a payable QR, collect money, sign/broadcast transactions, certify legal satisfaction, or claim token delivery. The current existing NEO Counter rails are read-only observers; they do not supply a signer.
+
+To activate live collection, confirm a treasury receiving address separately from the token issuer address, connect an authorized funded token signer/delivery service and implement/test authoritative invoice allocation, payment confirmation, inventory reservation, idempotent delivery and recovery/refund handling. Full operative terms must be available before live payment. No private keys belong in the plugin.
+
+Tests passed for wallet QR address parsing, Bitcoin URI extraction and invalid input rejection. Deployed public HTML verified for ordered asset links, membership gate, scanner import and accurate payment status. Actual signed-in order creation, payment observation, signing and fulfillment remain unverified.
