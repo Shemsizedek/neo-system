@@ -2,7 +2,7 @@
 /**
  * Plugin Name: NEO Counter Holy Stewardship
  * Description: Page-specific stewardship checkout review. Itemized market-reference checkout preview.
- * Version: 0.12.0
+ * Version: 0.13.0
  */
 defined('ABSPATH') || exit;
 require_once __DIR__ . '/market.php';
@@ -52,6 +52,12 @@ add_shortcode('neo_stewardship_counter', function () {
 @media(max-width:680px){#<?php echo esc_attr($id); ?> .neo-layout{grid-template-columns:1fr}}
 #<?php echo esc_attr($id); ?> select[name=purpose]{font-size:14px}
 #<?php echo esc_attr($id); ?> input[type=text]{display:block;width:100%;padding:12px;font:inherit;box-sizing:border-box;margin-top:8px}
+#<?php echo esc_attr($id); ?> .neomask-brand{display:flex;align-items:center;gap:12px}
+#<?php echo esc_attr($id); ?> .neomask-mark{display:block;width:48px;height:48px;flex:none}
+#<?php echo esc_attr($id); ?> .neomask-brand h3{font-size:24px;line-height:1.2;margin:0;color:#194b36}
+#<?php echo esc_attr($id); ?> .neomask-brand p{margin:3px 0 0}
+#<?php echo esc_attr($id); ?> .neomask-connect button{margin:4px 6px 4px 0}
+#<?php echo esc_attr($id); ?> [data-connect-status]{overflow-wrap:anywhere}
       </style>
 <div class="neo-heading"><div><p class="neo-eyebrow">HOLY STEWARDSHIP</p><h2>NEO Counter</h2><p>Choose your bond and see your estimate.</p></div><span class="neo-badge">Payments coming soon</span></div><div class="neo-layout"><div class="neo-card"><form data-quote-form><label>Your bond<select name="purpose"><option value="patronage">PLEDGEBOND: member patronage</option><option value="adept">TEMPLEBOND: Adept commitment</option></select></label><label>Quantity<input name="quantity" type="number" min="1" max="999999" step="1" value="1" required></label></form><details <?php if (!$ledger) echo 'open'; ?>><summary>Currency &amp; wallet settings</summary>      <form method="get" action="<?php echo esc_url(home_url('/holy-stewardship/')); ?>">
         <label>Wallet version
@@ -99,18 +105,18 @@ add_shortcode('neo_stewardship_counter', function () {
       </details>
       <details class="neo-card"><summary>Bond information</summary><p><a href="https://tokenscan.io/asset/TEMPLEBOND" target="_blank" rel="noopener noreferrer">TEMPLEBOND — TokenScan asset information</a><br>
       <a href="https://tokenscan.io/asset/PLEDGEBOND" target="_blank" rel="noopener noreferrer">PLEDGEBOND — TokenScan asset information</a></p></details>
+<div class="neo-card neomask-connect" data-wallet-connections>
+ <div class="neomask-brand"><svg class="neomask-mark" viewBox="0 0 64 64" aria-hidden="true" focusable="false"><path fill="#194b36" d="M32 2 58 17v30L32 62 6 47V17Z"/><path fill="none" stroke="#d9b55b" stroke-width="5" stroke-linejoin="round" d="M20 44V20l24 24V20"/><path fill="#d9b55b" d="m32 6 4 7-4-2-4 2Z"/></svg><div><h3>NeoMask</h3><p class="neo-small">Bitcoin. Connected.</p></div></div>
+ <p>Your connection to Bitcoin &amp; Counterparty.</p>
+ <button type="button" data-connect-member>Connect NeoMask</button>
+ <?php if (current_user_can('manage_options')) : ?>
+ <button type="button" data-connect-merchant>Connect treasury via NeoMask</button>
+ <?php endif; ?>
+ <p class="neo-small" data-connect-status role="status">Connect your wallet to continue.</p>
+ <p class="neo-small" data-neomask-install hidden>NeoMask is required. <a href="https://github.com/Shemsizedek/neo-system/blob/feat/holy-stewardship-counter-gate1/apps/neomask-extension/README.md" target="_blank" rel="noopener noreferrer">Setup instructions</a></p>
+</div>
       <details id="neo-stewardship-gateway" class="neo-card" data-wallet-scanner><summary>Wallet &amp; checkout details</summary>
         
-        <div data-wallet-connections>
-          <h4>Connect a Counterparty wallet</h4>
-          <p>Connect NeoMask or a compatible NEOpay or CounterPay wallet.</p>
-          <button type="button" data-connect-member>Connect member wallet</button>
-          <?php if (current_user_can('manage_options')) : ?>
-            <button type="button" data-connect-merchant>Connect merchant signing wallet</button>
-          <?php endif; ?>
-          <p data-connect-status aria-live="polite">No wallet account connected on this page.</p>
-          <p><a href="https://freewallet.io/" target="_blank" rel="noopener noreferrer">Freewallet / Freewallet Classic</a> — external signing workflow; browser connection requires a compatible bridge.</p>
-        </div>
         <?php
         $prepared_id = isset($_GET['neo_prepared']) ? absint($_GET['neo_prepared']) : 0;
         if ($prepared_id && is_user_logged_in() && get_post_type($prepared_id) === 'neo_steward_order' &&
@@ -141,7 +147,7 @@ add_shortcode('neo_stewardship_counter', function () {
         <?php endif; ?>
       </details>
       <script type="module">
-        import { mountWalletConnections } from <?php echo wp_json_encode(add_query_arg('ver','0.9.0',plugins_url('wallet-connect.mjs', __FILE__))); ?>;
+        import { mountWalletConnections } from <?php echo wp_json_encode(add_query_arg('ver','0.13.0',plugins_url('wallet-connect.mjs', __FILE__))); ?>;
         const connectRoot = document.querySelector('[data-wallet-connections]');
         if (connectRoot) mountWalletConnections(connectRoot);
         import { mountWalletScanner } from <?php echo wp_json_encode(plugins_url('wallet-scanner.mjs', __FILE__)); ?>;
