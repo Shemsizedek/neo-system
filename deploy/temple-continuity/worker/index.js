@@ -31,7 +31,11 @@ export function createGateway(snapshots,fetchImpl=fetch) {
     if(path==='/robots.txt')return text('User-agent: *\nAllow: /\nDisallow: /portal\nDisallow: /api/\n','text/plain; charset=utf-8');
     if(path==='/favicon.ico'||path==='/favicon.png'||path==='/apple-touch-icon.png')return Response.redirect('https://holytemples.org/wp-content/uploads/2026/09/holy-keys-transparent-master.png',302);
     if(isPortal){
-      if(request.method==='GET'&&Object.hasOwn(snapshots.portal,path))return text(snapshots.portal[path],path.endsWith('.js')?'text/javascript; charset=utf-8':'text/html; charset=utf-8');
+      if(['GET','HEAD'].includes(request.method)&&Object.hasOwn(snapshots.portal,path)){
+        const response=text(snapshots.portal[path],path.endsWith('.js')?'text/javascript; charset=utf-8':'text/html; charset=utf-8');
+        response.headers.set('content-security-policy',"default-src 'self'; script-src 'self' https://accounts.google.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://holytemples.org https://*.googleusercontent.com; frame-src https://accounts.google.com; connect-src 'self' https://accounts.google.com; frame-ancestors 'self' https://holytemples.org; base-uri 'none'; form-action 'self'");
+        return request.method==='HEAD'?new Response(null,{status:response.status,headers:response.headers}):response;
+      }
       return forwardPortal(request,fetchImpl);
     }
     if(!['GET','HEAD','OPTIONS'].includes(request.method))return json({error:'service_temporarily_unavailable'},503);

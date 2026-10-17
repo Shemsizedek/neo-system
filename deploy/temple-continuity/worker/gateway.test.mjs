@@ -6,6 +6,7 @@ test('public pages and assets remain available when every backend fails',async()
  let calls=0;const gateway=createGateway(snapshots,async()=>{calls++;throw Error('offline');});
  for(const url of ['https://egov.holytemples.org/','https://egov.holytemples.org/portal.js','https://neo.holytemples.org/','https://neo.holytemples.org/assets/neo-suite.js','https://hub.holytemples.org/'])assert.equal((await gateway.fetch(new Request(url))).status,200);
  assert.equal(calls,0);
+ const head=await gateway.fetch(new Request('https://egov.holytemples.org/',{method:'HEAD'}));assert.equal(head.status,200);assert.equal(await head.text(),'');assert.match(head.headers.get('content-security-policy'),/form-action 'self'/);
  const outage=await gateway.fetch(new Request('https://egov.holytemples.org/api/v1/auth/session'));assert.equal(outage.status,503);assert.equal(outage.headers.get('cache-control'),'no-store');
 });
 test('member operations retain backend authorization and do not cache sessions',async()=>{

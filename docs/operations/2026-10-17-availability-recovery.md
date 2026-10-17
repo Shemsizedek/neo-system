@@ -15,7 +15,11 @@
 - Canonical hostnames being connected: `egov.holytemples.org`, `neo.holytemples.org`, `hub.holytemples.org`.
 - Member requests use the existing Render platform recovery runtime. They retain cookies, authentication and error responses, are never cached, and return 503 on dependency failure. No member data or credentials were copied into the public Worker.
 
-Domain connection is complete only when Sites reports active TLS and public HTTPS requests return the expected page and assets. DNS caches may retain old records for their previous TTL of 3600 seconds. Record the final validation separately; do not equate submitted DNS changes with restored service.
+Domain connection is complete only when Sites reports active TLS and public HTTPS requests return the expected page and assets. DNS caches may retain old records for their previous TTL of 3600 seconds.
+
+### Verified result
+
+All three custom domains reached `active` status with active TLS. The public availability workflow, run [39044485314](https://github.com/Shemsizedek/neo-system/actions/runs/39044485314), passed on its second attempt after domain activation. The Temple portal and its JavaScript, NEO workspace, Hub, Render React recovery page and its JS/CSS, and the WordPress AdSense technical prerequisites all passed. Unauthenticated member requests remain subject to the existing backend's authorization. This result establishes public-site recovery, not restoration of the disabled Google database or a successful member login.
 
 ## Remaining dependencies
 
