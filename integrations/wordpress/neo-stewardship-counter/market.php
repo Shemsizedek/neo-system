@@ -2,16 +2,19 @@
 defined('ABSPATH') || exit;
 
 /** TokenScan snapshot, not an executable offer or proof of trade freshness. */
-function neo_stewardship_market_references() {
+function neo_stewardship_market_references($ledger = '') {
+    $hosts = array('classic'=>'https://classic.tokenscan.io', 'cp20'=>'https://cp20.tokenscan.io');
+    if (!isset($hosts[$ledger])) return array();
+    $host = $hosts[$ledger];
     $references = array();
     foreach (array('TEMPLEBOND', 'PLEDGEBOND') as $asset) {
-        $key = 'neo_stewardship_market_' . strtolower($asset);
+        $key = 'neo_stewardship_' . $ledger . '_' . strtolower($asset);
         $cached = get_transient($key);
         if (is_array($cached) && isset($cached['expiresAt']) && $cached['expiresAt'] > time() * 1000) {
             $references[$asset] = $cached;
             continue;
         }
-        $url = 'https://tokenscan.io/api/asset/' . $asset;
+        $url = $host . '/api/asset/' . $asset;
         $response = wp_remote_get($url, array('timeout' => 6, 'redirection' => 0, 'limit_response_size' => 65536));
         if (is_wp_error($response) || wp_remote_retrieve_response_code($response) !== 200) {
             continue;
@@ -31,6 +34,7 @@ function neo_stewardship_market_references() {
         }
         $now = time() * 1000;
         $references[$asset] = array(
+            'ledger' => $ledger,
             'currency' => 'BTC',
             'unitPriceMinor' => (string) $sats,
             'feeAllowanceMinor' => '2000',
@@ -38,7 +42,7 @@ function neo_stewardship_market_references() {
             'processorFeeBps' => '0',
             'roundingMinor' => '1000',
             'source' => $url,
-            'referenceId' => $asset . '-snapshot-' . (string) $now,
+            'referenceId' => $ledger . '-' . $asset . '-snapshot-' . (string) $now,
             'observedAt' => $now,
             'expiresAt' => $now + 300000,
             'referenceType' => 'retrieved_snapshot',
