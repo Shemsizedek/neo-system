@@ -2,7 +2,7 @@
 /**
  * Plugin Name: NEO Counter Holy Stewardship
  * Description: Page-specific stewardship checkout review. Itemized market-reference checkout preview.
- * Version: 0.8.0
+ * Version: 0.9.0
  */
 defined('ABSPATH') || exit;
 require_once __DIR__ . '/market.php';
@@ -26,7 +26,7 @@ add_shortcode('neo_stewardship_counter', function () {
     $references = array_intersect_key($references, array('TEMPLEBOND' => true, 'PLEDGEBOND' => true));
     ob_start();
     ?>
-    <section data-ledger-explorer="<?php echo esc_url($explorer); ?>" data-form144-received="<?php echo $received144 ? '1' : '0'; ?>" id="<?php echo esc_attr($id); ?>" aria-label="NEO Counter stewardship checkout">
+    <section data-selected-ledger="<?php echo esc_attr($ledger); ?>" data-ledger-explorer="<?php echo esc_url($explorer); ?>" data-form144-received="<?php echo $received144 ? '1' : '0'; ?>" id="<?php echo esc_attr($id); ?>" aria-label="NEO Counter stewardship checkout">
       <style>
       #<?php echo esc_attr($id); ?>{background:#edf3e9;color:#152b20;padding:clamp(20px,4vw,40px);border-radius:18px;margin:24px 0}
       #<?php echo esc_attr($id); ?> label{display:block;margin:18px 0}
@@ -100,7 +100,7 @@ add_shortcode('neo_stewardship_counter', function () {
         <h3>NEO Counter — wallet and checkout</h3>
         <div data-wallet-connections>
           <h4>Connect a Counterparty wallet</h4>
-          <p>NEOpay, CounterPay and other wallets can connect through the NEOpay-compatible browser signer interface. The wallet must expose its provider on this page; opening another tab does not connect it automatically.</p>
+          <p>NeoMask connects your local wallet to this page and requests approval for each signing operation. NEOpay, CounterPay and other compatible providers can also connect. Install and configure the wallet on your device before connecting.</p>
           <button type="button" data-connect-member>Connect member wallet</button>
           <?php if (current_user_can('manage_options')) : ?>
             <button type="button" data-connect-merchant>Connect merchant signing wallet</button>
@@ -141,7 +141,7 @@ add_shortcode('neo_stewardship_counter', function () {
         <?php endif; ?>
       </div>
       <script type="module">
-        import { mountWalletConnections } from <?php echo wp_json_encode(add_query_arg('ver','0.8.0',plugins_url('wallet-connect.mjs', __FILE__))); ?>;
+        import { mountWalletConnections } from <?php echo wp_json_encode(add_query_arg('ver','0.9.0',plugins_url('wallet-connect.mjs', __FILE__))); ?>;
         const connectRoot = document.querySelector('[data-wallet-connections]');
         if (connectRoot) mountWalletConnections(connectRoot);
         import { mountWalletScanner } from <?php echo wp_json_encode(plugins_url('wallet-scanner.mjs', __FILE__)); ?>;
