@@ -2,7 +2,7 @@
 /**
  * Plugin Name: NEO Counter Holy Stewardship
  * Description: Page-specific stewardship checkout review. Itemized market-reference checkout preview.
- * Version: 0.6.0
+ * Version: 0.7.0
  */
 defined('ABSPATH') || exit;
 require_once __DIR__ . '/market.php';
@@ -12,17 +12,21 @@ add_shortcode('neo_stewardship_counter', function () {
     if (!is_page('holy-stewardship')) {
         return '';
     }
+    $ledger = isset($_GET['neo_ledger']) && is_string($_GET['neo_ledger']) ? sanitize_key($_GET['neo_ledger']) : '';
+    if (!in_array($ledger,array('classic','cp20'),true)) $ledger = '';
+    $ledger_hosts = array('classic'=>'https://classic.tokenscan.io','cp20'=>'https://cp20.tokenscan.io');
+    $explorer = $ledger ? $ledger_hosts[$ledger] : 'https://tokenscan.io';
     $received144 = neo_stewardship_form144_received();
     $id = wp_unique_id('neo-stewardship-');
     // Only trusted server-side adapters supply quote inputs. Never use query parameters.
-    $references = apply_filters('neo_stewardship_quote_references', neo_stewardship_market_references());
+    $references = apply_filters('neo_stewardship_quote_references', neo_stewardship_market_references($ledger));
     if (!is_array($references)) {
         $references = array();
     }
     $references = array_intersect_key($references, array('TEMPLEBOND' => true, 'PLEDGEBOND' => true));
     ob_start();
     ?>
-    <section data-form144-received="<?php echo $received144 ? '1' : '0'; ?>" id="<?php echo esc_attr($id); ?>" aria-label="NEO Counter stewardship checkout">
+    <section data-ledger-explorer="<?php echo esc_url($explorer); ?>" data-form144-received="<?php echo $received144 ? '1' : '0'; ?>" id="<?php echo esc_attr($id); ?>" aria-label="NEO Counter stewardship checkout">
       <style>
       #<?php echo esc_attr($id); ?>{background:#edf3e9;color:#152b20;padding:clamp(20px,4vw,40px);border-radius:18px;margin:24px 0}
       #<?php echo esc_attr($id); ?> label{display:block;margin:18px 0}
@@ -35,7 +39,18 @@ add_shortcode('neo_stewardship_counter', function () {
       <h2>NEO Counter</h2>
       <p>Choose your stewardship instrument and review your participation here.</p>
       <p><strong>Sandbox preview — payments and token delivery are not active.</strong></p>
-      <form>
+      <form method="get" action="<?php echo esc_url(home_url('/holy-stewardship/')); ?>">
+        <label>Counterparty ledger
+          <select name="neo_ledger" required>
+            <option value="">Select the ledger used by your wallet</option>
+            <option value="cp20" <?php selected($ledger,'cp20'); ?>>Counterparty 2.0</option>
+            <option value="classic" <?php selected($ledger,'classic'); ?>>Counterparty Classic</option>
+          </select>
+        </label>
+        <button type="submit">Use selected ledger</button>
+      </form>
+      <p>Bitcoin mainnet payments share the Bitcoin network. Token balances, pricing and delivery are verified separately on the selected Counterparty ledger. No automatic conversion between ledgers occurs.</p>
+      <form data-quote-form>
         <label>Participation path
           <select name="purpose" required>
             <option value="patronage">PLEDGEBOND: member patronage</option>
@@ -50,7 +65,7 @@ add_shortcode('neo_stewardship_counter', function () {
         <p data-price-status aria-live="polite">Loading quote availability…</p>
         <p><a data-asset href="https://tokenscan.io/asset/PLEDGEBOND" target="_blank" rel="noopener noreferrer">View PLEDGEBOND on TokenScan</a></p>
         <label><input name="acknowledge" type="checkbox" required> I understand this is a preview and creates no payment, token holding, membership recognition or insurance coverage.</label>
-        <button type="submit" <?php disabled(!$received144); ?>>Review stewardship selection</button>
+        <button type="submit" <?php disabled(!$received144 || !$ledger); ?>>Review stewardship selection</button>
       </form>
       <div id="neo-form144">
         <h3>Required for all members: completed Form 144</h3>
@@ -91,9 +106,10 @@ add_shortcode('neo_stewardship_counter', function () {
         ?>
           <p role="status">Checkout prepared. Indenture acknowledgment recorded; payment has not been requested and tokens have not been delivered.</p>
         <?php endif; ?>
-        <?php if ($received144) : ?>
+        <?php if ($received144 && $ledger) : ?>
           <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
             <input type="hidden" name="action" value="neo_stewardship_prepare">
+            <input type="hidden" name="ledger" value="<?php echo esc_attr($ledger); ?>">
             <input type="hidden" name="terms_hash" value="<?php echo esc_attr(hash('sha256',neo_stewardship_indenture_snapshot())); ?>">
             <?php wp_nonce_field('neo_stewardship_prepare'); ?>
             <label>Instrument
@@ -111,7 +127,7 @@ add_shortcode('neo_stewardship_counter', function () {
             <button type="submit">Prepare checkout — no payment</button>
           </form>
         <?php else : ?>
-          <p>Sign in and upload completed Form 144 to prepare checkout.</p>
+          <p>Select a ledger, sign in and upload completed Form 144 to prepare checkout.</p>
         <?php endif; ?>
       </div>
       <script type="module">
