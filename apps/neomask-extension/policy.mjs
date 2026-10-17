@@ -27,3 +27,4 @@ export function readAccount(grant, now=Date.now()) {
   if(!grant || grant.expiresAt<=now)throw new Error('Connect through the NeoMask approval window');
   return {address:grant.address,network:'mainnet',ledger:grant.ledger,watchOnly:true,signingAvailable:false};
 }
+

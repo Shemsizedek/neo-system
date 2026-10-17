@@ -1,7 +1,7 @@
 (() => {
  if(window.neoMask)return;
  const request=({method,params={}})=>{
-  if(!['connect','getAccount','disconnect','getCapabilities'].includes(method))
+  if(!['connect','getAccount','disconnect','getCapabilities','signPsbt','composeBond'].includes(method))
    return Promise.reject(new Error('NeoMask signing is not enabled in this build'));
   const id=crypto.randomUUID();
   return new Promise((resolve,reject)=>{
@@ -17,6 +17,7 @@
  };
  Object.defineProperty(window,'neoMask',{value:Object.freeze({name:'NeoMask',isNeoMask:true,request,
   connect:params=>request({method:'connect',params}),getAccount:params=>request({method:'getAccount',params}),
-  disconnect:params=>request({method:'disconnect',params})}),writable:false,configurable:false});
+  disconnect:params=>request({method:'disconnect',params}),signPsbt:(hex,ledger)=>request({method:'signPsbt',params:{hex,ledger}}),composeBond:(options,ledger)=>request({method:'composeBond',params:{...options,ledger}})}),writable:false,configurable:false});
  window.dispatchEvent(new Event('neomask:initialized'));
 })();
+

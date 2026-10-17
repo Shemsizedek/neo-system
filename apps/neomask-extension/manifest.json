@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "NeoMask — Bitcoin Wallet Foundation",
-  "version": "0.1.0",
-  "description": "Watch-only Bitcoin and Counterparty site permissions. Transaction signing is not enabled.",
+  "name": "NeoMask — Bitcoin Wallet",
+  "version": "0.2.0",
+  "description": "Encrypted local Bitcoin vault, site permissions and reviewed P2PKH PSBT signing.",
   "minimum_chrome_version": "111",
   "permissions": [
     "storage"

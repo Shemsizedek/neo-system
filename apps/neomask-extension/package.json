@@ -1,0 +1,25 @@
+{
+  "name": "neomask-extension",
+  "version": "0.2.0",
+  "description": "Local encrypted Bitcoin vault and Counterparty PSBT signing extension",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "build": "node build.mjs",
+    "test": "node test/engine.test.mjs && node test/counterparty.test.mjs && node test/background.test.mjs"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "@bitcoinerlab/secp256k1": "2.0.0",
+    "bitcoinjs-lib": "7.0.4",
+    "buffer": "6.0.3",
+    "ecpair": "3.0.0",
+    "esbuild": "0.28.2"
+  },
+  "private": true
+}
