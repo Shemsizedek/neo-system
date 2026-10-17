@@ -3,7 +3,7 @@
   "source": "data/neo-counter/world-currencies.csv",
   "sourceSha": "a518186bc00acbf1d528b543ddabb609b9ae3f12",
   "sourceTreasury": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
-  "stewardshipTreasury": "1Ky2wRYYrJzqdQJH64F7TR98fqLxJs7LK8",
+  "stewardshipTreasury": "18SzD3cfwCcV9p6C38ho4uZPHE8ygVB9iq",
   "currencies": [
     {
       "id": "nmni",
@@ -949,5 +949,7 @@
       "enabledForCollection": false,
       "status": "asset_mapping_required"
     }
-  ]
+  ],
+  "collectionAddress": "18SzD3cfwCcV9p6C38ho4uZPHE8ygVB9iq",
+  "bondSourceAddress": "1Ky2wRYYrJzqdQJH64F7TR98fqLxJs7LK8"
 }
