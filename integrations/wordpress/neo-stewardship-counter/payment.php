@@ -47,6 +47,8 @@ add_action('admin_post_neo_stewardship_prepare', function () {
     if (!neo_stewardship_form144_received()) wp_die('Upload completed Form 144 first.', '', array('response'=>403));
     $ledger = isset($_POST['ledger']) && is_string($_POST['ledger']) ? sanitize_key($_POST['ledger']) : '';
     if (!in_array($ledger,array('classic','cp20'),true)) wp_die('Select a supported Counterparty ledger.', '', array('response'=>400));
+    $currency = isset($_POST['currency']) && is_string($_POST['currency']) ? sanitize_key($_POST['currency']) : '';
+    if ($currency !== 'btc') wp_die('This currency does not have a verified payment route. No substitution is permitted.', '', array('response'=>409));
     $asset = isset($_POST['asset']) ? sanitize_text_field(wp_unslash($_POST['asset'])) : '';
     $wallet = isset($_POST['wallet']) ? trim(wp_unslash($_POST['wallet'])) : '';
     $qty = isset($_POST['quantity']) && is_string($_POST['quantity']) ? $_POST['quantity'] : '';
@@ -73,7 +75,7 @@ add_action('admin_post_neo_stewardship_prepare', function () {
     $id = wp_insert_post(array('post_type'=>'neo_steward_order','post_status'=>'private',
         'post_author'=>get_current_user_id(),'post_title'=>'Prepared checkout — ' . $asset . ' — ' . gmdate('Y-m-d H:i:s')), true);
     if (is_wp_error($id) || !$id) wp_die('Checkout record could not be saved.', '', array('response'=>500));
-    $record = array('state'=>'PREPARED_NOT_PAYABLE','asset'=>$asset,'quantity'=>$qty,
+    $record = array('state'=>'PREPARED_NOT_PAYABLE','payment_currency'=>'BTC','payment_network'=>'bitcoin-mainnet','asset'=>$asset,'quantity'=>$qty,
         'delivery_wallet'=>$wallet,'treasury_address'=>NEO_STEWARDSHIP_TREASURY,
         'token_source_address'=>NEO_STEWARDSHIP_TREASURY,'signing_wallet'=>'Freewallet',
         'signing_status'=>'CONNECTION_REQUIRED','counterparty_ledger'=>$ledger,
