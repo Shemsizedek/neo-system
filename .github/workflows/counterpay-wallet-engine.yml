@@ -21,4 +21,4 @@ jobs:
         with:
           node-version: '22'
       - name: Read-only adapter unit tests
-        run: node --test apps/counterpay/wallet-engine.test.mjs
+        run: node --test apps/counterpay/*.test.mjs
