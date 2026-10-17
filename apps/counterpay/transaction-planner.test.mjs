@@ -1,0 +1,10 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {planTransfer,planDexInspection,evidenceEnvelope} from './transaction-planner.mjs';
+const source='1BoatSLRHtKNngkdXEeobR76b53LETtpyT';
+const destination='1BitcoinEaterAddressDontSendf59kuE';
+test('preview intent is not a transaction',()=>{const p=planTransfer({network:'mainnet',source,destination,asset:'XCP',quantity:'1.25'});assert.equal(p.status,'PREVIEW_ONLY');assert.equal(p.signed,false);assert.equal(p.broadcast,false);assert.equal(p.schema,'counterpay.transfer-intent.v1')});
+test('refuses negative amount',()=>assert.throws(()=>planTransfer({network:'mainnet',source,destination,asset:'XCP',quantity:'-1'})));
+test('refuses same address',()=>assert.throws(()=>planTransfer({network:'mainnet',source,destination:source,asset:'BTC',quantity:'1'})));
+test('DEX inspection never creates an order',()=>{const d=planDexInspection({network:'mainnet',asset:'XCP'});assert.equal(d.mode,'READ_ONLY');assert.deepEqual(d.orders,[])});
+test('Crown envelope makes no attestation claim',()=>{const p=planTransfer({network:'mainnet',source,destination,asset:'XCP',quantity:'1'});const e=evidenceEnvelope(p,'demo-001');assert.equal(e.attested,false);assert.equal(e.anchored,false);assert.equal(e.settled,false)});
