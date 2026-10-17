@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';
+import {connectStewardshipWallet as connect} from './wallet-connect.mjs';
+const address='1Ky2wRYYrJzqdQJH64F7TR98fqLxJs7LK8';
+const provider={name:'NEOpay test fixture',connect:async()=>({address,network:'mainnet'}),signRawTransaction:()=>{throw new Error('Signing must not be called during account connection');}};
+assert.equal((await connect(provider,address)).signingTested,false);
+await assert.rejects(connect(undefined));
+await assert.rejects(connect({...provider,connect:async()=>({address,network:'testnet'})}));
+await assert.rejects(connect({...provider,connect:async()=>({address})}));
+await assert.rejects(connect(provider,'1BoatSLRHtKNngkdXEeobR76b53LETtpyT'));
+await assert.rejects(connect({...provider,signRawTransaction:undefined}));
+console.log('PASS: provider connection, explicit mainnet, treasury matching, no signing side effects and unavailable-provider rejection');
