@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test *.test.mjs"
+    "test": "node --test *.test.mjs",
+    "preview": "node preview-server.mjs"
   },
   "dependencies": {
     "bitcoinjs-lib": "6.1.7",
