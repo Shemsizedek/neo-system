@@ -1,5 +1,7 @@
 <?php
 defined('ABSPATH') || exit;
+// User-confirmed on 2026-10-17. This is a public address, never signing material.
+define('NEO_STEWARDSHIP_TREASURY', '1Ky2wRYYrJzqdQJH64F7TR98fqLxJs7LK8');
 add_action('init', function () {
     register_post_type('neo_steward_order', array('label'=>'NEO Stewardship Checkouts',
         'public'=>false, 'show_ui'=>true, 'show_in_rest'=>false, 'supports'=>array('title'),
@@ -70,7 +72,10 @@ add_action('admin_post_neo_stewardship_prepare', function () {
         'post_author'=>get_current_user_id(),'post_title'=>'Prepared checkout — ' . $asset . ' — ' . gmdate('Y-m-d H:i:s')), true);
     if (is_wp_error($id) || !$id) wp_die('Checkout record could not be saved.', '', array('response'=>500));
     $record = array('state'=>'PREPARED_NOT_PAYABLE','asset'=>$asset,'quantity'=>$qty,
-        'delivery_wallet'=>$wallet,'total_sats'=>(string)$total,'market_reference'=>$ref,
+        'delivery_wallet'=>$wallet,'treasury_address'=>NEO_STEWARDSHIP_TREASURY,
+        'token_source_address'=>NEO_STEWARDSHIP_TREASURY,'signing_wallet'=>'Freewallet',
+        'signing_status'=>'CONNECTION_REQUIRED','counterparty_ledger'=>'UNVERIFIED',
+        'total_sats'=>(string)$total,'market_reference'=>$ref,
         'terms_sha256'=>hash('sha256',$terms),'terms_snapshot'=>$terms,
         'acknowledged_at'=>gmdate('c'),'payment_status'=>'NOT_REQUESTED',
         'token_delivery'=>'NOT_STARTED','note'=>'Acknowledgment recorded; payment and fulfillment have not occurred.');
@@ -84,6 +89,8 @@ add_action('admin_post_neo_stewardship_prepare', function () {
 add_action('add_meta_boxes_neo_steward_order',function(){
     add_meta_box('neo_checkout_record','Checkout record',function($post){
         if (!current_user_can('manage_options')) return;
+        echo '<p>Freewallet signing handoff: after independently verified payment, send the recorded instrument and exact quantity from ' .
+            esc_html(NEO_STEWARDSHIP_TREASURY) . ' to the recorded delivery wallet. Verify the correct Counterparty ledger, source inventory, destination, amount and network fee inside Freewallet. This record does not authorize or broadcast a transfer.</p>';
         echo '<pre style="white-space:pre-wrap;overflow-wrap:anywhere">' .
             esc_html(wp_json_encode(get_post_meta($post->ID,'_neo_checkout',true),JSON_PRETTY_PRINT)) . '</pre>';
     },'neo_steward_order');
