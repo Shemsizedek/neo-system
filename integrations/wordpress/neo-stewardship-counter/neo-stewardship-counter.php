@@ -2,7 +2,7 @@
 /**
  * Plugin Name: NEO Counter Holy Stewardship
  * Description: Page-specific stewardship checkout review. Itemized market-reference checkout preview.
- * Version: 0.7.0
+ * Version: 0.8.0
  */
 defined('ABSPATH') || exit;
 require_once __DIR__ . '/market.php';
@@ -98,6 +98,16 @@ add_shortcode('neo_stewardship_counter', function () {
       <a href="https://tokenscan.io/asset/PLEDGEBOND" target="_blank" rel="noopener noreferrer">PLEDGEBOND — TokenScan asset information</a></p>
       <div id="neo-stewardship-gateway" data-wallet-scanner>
         <h3>NEO Counter — wallet and checkout</h3>
+        <div data-wallet-connections>
+          <h4>Connect a Counterparty wallet</h4>
+          <p>NEOpay, CounterPay and other wallets can connect through the NEOpay-compatible browser signer interface. The wallet must expose its provider on this page; opening another tab does not connect it automatically.</p>
+          <button type="button" data-connect-member>Connect member wallet</button>
+          <?php if (current_user_can('manage_options')) : ?>
+            <button type="button" data-connect-merchant>Connect merchant signing wallet</button>
+          <?php endif; ?>
+          <p data-connect-status aria-live="polite">No wallet account connected on this page.</p>
+          <p><a href="https://freewallet.io/" target="_blank" rel="noopener noreferrer">Freewallet / Freewallet Classic</a> — external signing workflow; browser connection requires a compatible bridge.</p>
+        </div>
         <p>Treasury confirmed: 1Ky2wRYYrJzqdQJH64F7TR98fqLxJs7LK8. Freewallet is the designated signing wallet. Payment collection awaits a tested signing and token-delivery connection; no payable QR code is issued yet.</p>
         <?php
         $prepared_id = isset($_GET['neo_prepared']) ? absint($_GET['neo_prepared']) : 0;
@@ -131,6 +141,9 @@ add_shortcode('neo_stewardship_counter', function () {
         <?php endif; ?>
       </div>
       <script type="module">
+        import { mountWalletConnections } from <?php echo wp_json_encode(add_query_arg('ver','0.8.0',plugins_url('wallet-connect.mjs', __FILE__))); ?>;
+        const connectRoot = document.querySelector('[data-wallet-connections]');
+        if (connectRoot) mountWalletConnections(connectRoot);
         import { mountWalletScanner } from <?php echo wp_json_encode(plugins_url('wallet-scanner.mjs', __FILE__)); ?>;
         const scanRoot = document.querySelector('[data-wallet-scanner]');
         if (scanRoot && scanRoot.querySelector('[data-scan-wallet]')) mountWalletScanner(scanRoot);
