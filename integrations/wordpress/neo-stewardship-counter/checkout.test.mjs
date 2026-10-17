@@ -5,7 +5,7 @@ function setup(references, received = '1') {
  const listeners={}, selectListeners={};
  const select={value:'patronage',selectedIndex:0,options:[{text:'Citizen'},{text:'Adept'}],addEventListener:(k,fn)=>selectListeners[k]=fn};
  const form={elements:{purpose:select,quantity:{value:'2'}},reportValidity:()=>true,addEventListener:(k,fn)=>listeners[k]=fn};
- const nodes={'form':form,'output':{textContent:''},'[data-price-status]':{},'[data-description]':{},'[data-protection]':{},'[data-asset]':{}};
+ const nodes={'[data-quote-form]':form,'output':{textContent:''},'[data-price-status]':{},'[data-description]':{},'[data-protection]':{},'[data-asset]':{}};
  let expire;
  mountStewardship({querySelector:k=>nodes[k],getAttribute:()=>received},references,()=>2000,fn=>{expire=fn;return 1},()=>{expire=undefined});
  const submit=()=>listeners.submit({preventDefault(){}});
