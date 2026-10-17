@@ -2,7 +2,7 @@
 /**
  * Plugin Name: NEO Counter Holy Stewardship
  * Description: Page-specific stewardship checkout review. Itemized market-reference checkout preview.
- * Version: 0.15.0
+ * Version: 0.15.1
  */
 defined('ABSPATH') || exit;
 require_once __DIR__ . '/market.php';
@@ -18,7 +18,6 @@ add_shortcode('neo_stewardship_counter', function () {
     $ledger_hosts = array('classic'=>'https://classic.tokenscan.io','cp20'=>'https://cp20.tokenscan.io');
     $explorer = $ledger ? $ledger_hosts[$ledger] : 'https://tokenscan.io';
     $selected_currency = neo_stewardship_selected_currency();
-    $currency_is_btc = $selected_currency['id'] === 'btc';
     $received144 = neo_stewardship_form144_received();
     $id = wp_unique_id('neo-stewardship-');
     // Only trusted server-side adapters supply quote inputs. Never use query parameters.
@@ -155,7 +154,7 @@ add_shortcode('neo_stewardship_counter', function () {
         import { mountWalletScanner } from <?php echo wp_json_encode(plugins_url('wallet-scanner.mjs', __FILE__)); ?>;
         const scanRoot = document.querySelector('[data-wallet-scanner]');
         if (scanRoot && scanRoot.querySelector('[data-scan-wallet]')) mountWalletScanner(scanRoot);
-        import { mountStewardship } from <?php echo wp_json_encode(add_query_arg('ver','0.15.0',plugins_url('checkout.mjs', __FILE__)), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+        import { mountStewardship } from <?php echo wp_json_encode(add_query_arg('ver','0.15.1',plugins_url('checkout.mjs', __FILE__)), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
         mountStewardship(
           document.getElementById(<?php echo wp_json_encode($id); ?>),
           <?php echo wp_json_encode($references, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>

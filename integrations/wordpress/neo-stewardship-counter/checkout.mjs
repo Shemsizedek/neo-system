@@ -1,4 +1,4 @@
-import { quoteStewardship } from './pricing.mjs';
+import { quoteStewardship } from './pricing.mjs?ver=0.15.1';
 export function mountStewardship(root, references = {}, clock = Date.now, schedule = setTimeout, unschedule = clearTimeout) {
  const form = root.querySelector('[data-quote-form]');
  let timer;
