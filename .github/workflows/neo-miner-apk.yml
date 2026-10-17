@@ -5,6 +5,11 @@ on:
     paths:
       - 'projects/neo-miner-android/**'
       - '.github/workflows/neo-miner-apk.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'projects/neo-miner-android/**'
+      - '.github/workflows/neo-miner-apk.yml'
   workflow_dispatch:
 jobs:
   build:
