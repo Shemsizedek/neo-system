@@ -27,6 +27,8 @@ export function createStagingServer() {
     let pathname;
     try { pathname = new URL(req.url || '/', 'http://127.0.0.1').pathname; }
     catch { return json(res,400,{error:'invalid_request'}); }
+    if(req.method==='GET' && pathname==='/manifest.webmanifest') {res.writeHead(200,{'content-type':'application/manifest+json','cache-control':'public, max-age=300'});return res.end("{\"id\":\"/\",\"name\":\"Noogle Connect — Device Hub\",\"short_name\":\"Noogle Connect\",\"start_url\":\"/\",\"scope\":\"/\",\"display\":\"standalone\",\"background_color\":\"#071b17\",\"theme_color\":\"#071b17\",\"icons\":[{\"src\":\"/noogle-icon.svg\",\"sizes\":\"any\",\"type\":\"image/svg+xml\",\"purpose\":\"any maskable\"}]}");}
+    if(req.method==='GET' && pathname==='/noogle-icon.svg') {res.writeHead(200,{'content-type':'image/svg+xml','cache-control':'public, max-age=86400','x-content-type-options':'nosniff'});return res.end("<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 192 192\"><rect width=\"192\" height=\"192\" rx=\"40\" fill=\"#071b17\"/><circle cx=\"96\" cy=\"96\" r=\"69\" fill=\"none\" stroke=\"#56e995\" stroke-width=\"12\"/><path d=\"M61 125V66l70 59V66\" fill=\"none\" stroke=\"#e9fff0\" stroke-width=\"12\"/></svg>");}
     // Staging-only protocol simulation: no NEO Pass, real enrollment, or control privileges.
     if(pathname.startsWith('/preview/pair/')) {
       if(req.method !== 'POST') return json(res,405,{error:'method_not_allowed'});
@@ -66,7 +68,7 @@ export function createStagingServer() {
         'x-content-type-options':'nosniff','referrer-policy':'no-referrer',
         'content-security-policy':"default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'"
       });
-      return res.end(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#071b17"><title>Noogle Connect — Device Hub</title>
+      return res.end(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#071b17"><title>Noogle Connect — Device Hub</title><link rel="manifest" href="/manifest.webmanifest"><link rel="icon" href="/noogle-icon.svg" type="image/svg+xml">
 <style>
 :root{font-family:Inter,system-ui,-apple-system,sans-serif;background:#071b17;color:#eff9f3}*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 80% -15%,#1b5840 0,transparent 45%),#071b17;min-height:100vh}button{font:inherit}a{color:#a3ecc0}main{max-width:1100px;margin:auto;padding:24px clamp(18px,4vw,48px) 60px}
 nav{display:flex;align-items:center;justify-content:space-between;gap:15px;padding-bottom:34px;flex-wrap:wrap}.logo{display:flex;gap:12px;align-items:center;font-weight:850;letter-spacing:.02em;font-size:1.3rem}.mark{display:grid;place-items:center;width:39px;height:39px;border-radius:13px;background:#aaf2c4;color:#09251b;font-weight:900}.toplink{font-size:.88rem;color:#c0d4c8;text-decoration:none}
