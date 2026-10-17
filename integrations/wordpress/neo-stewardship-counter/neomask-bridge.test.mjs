@@ -1,0 +1,18 @@
+import assert from 'node:assert/strict';
+import {createNeoMaskBridge,installNeoMaskBridge} from './neomask-bridge.mjs';
+const address='1Ky2wRYYrJzqdQJH64F7TR98fqLxJs7LK8';
+let current={address,network:'mainnet',ledger:'classic'},signCalls=0;
+const provider={name:'Fixture wallet',ledgers:['classic','cp20'],connect:async()=>({...current}),getAccount:async()=>({...current}),signRawTransaction:async(hex,review)=>{assert.equal(review.requireUserApproval,true);signCalls++;return hex;}};
+const config={provider,origin:'https://holytemples.org',ledger:'classic',expectedAddress:address};
+assert.throws(()=>createNeoMaskBridge({...config,origin:'https://evil.example'}));
+assert.throws(()=>createNeoMaskBridge({...config,ledger:'unknown'}));
+const bridge=createNeoMaskBridge(config);
+await assert.rejects(bridge.signRawTransaction('aa'.repeat(100)));
+assert.equal((await bridge.connect()).ledger,'classic');
+await bridge.signRawTransaction('aa'.repeat(100));assert.equal(signCalls,1);
+current.ledger='cp20';await assert.rejects(bridge.signRawTransaction('aa'.repeat(100)));assert.equal(signCalls,1);
+current.ledger='classic';
+const scope={location:{origin:'https://holytemples.org'}};
+const uninstall=installNeoMaskBridge(scope,config);
+assert(scope.neoBitcoinSigner);assert.throws(()=>installNeoMaskBridge(scope,config));await uninstall();assert.equal(scope.neoBitcoinSigner,undefined);
+console.log('PASS: origin, ledger, account continuity, explicit signing review, disconnected rejection and provider registration');
