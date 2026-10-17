@@ -72,3 +72,12 @@ User confirmed BTC treasury and token source address 1Ky2wRYYrJzqdQJH64F7TR98fqL
 The address is not a key and does not grant server signing authority. Existing public Counterparty servers cannot sign on behalf of this Freewallet address without its authorized signer. Freewallet's official site documents separate Counterparty 2.0 and Classic editions/ledgers; confirm the edition actually used before selecting a node or sending tokens. No ledger is silently assumed.
 
 No payment request, payable QR, token transfer, signer connection or fulfillment verification was enabled by this gate. Treasury confirmation is complete; correct ledger and tested signing/settlement remain outstanding.
+
+## Gate 8 — explicit Classic and Counterparty 2.0 support
+Plugin v0.7.0 is installed active. Members explicitly select cp20 or classic before reviewing quotes or preparing checkout. The source map is fixed to cp20.tokenscan.io and classic.tokenscan.io respectively, matching the official Freewallet edition links. No ledger is inferred from the Bitcoin address, and no implicit default is selected.
+
+Server price caches and reference identifiers are ledger-specific. Each supported asset is independently issuer-checked on that ledger. Missing responses do not fall back to tokenscan.io or the other ledger. Form 144 upload requirements apply to both. The server validates ledger selection again at checkout and stores it in the private record for settlement/delivery routing. Browser quote form is explicitly targeted so the ledger selection form cannot intercept quote events.
+
+Quote controller tests passed after adapting the fixture to the dedicated quote form. Public routes were checked for selected explorer identity and absence of cross-ledger price references. Direct API probes returned 403 in the workspace; availability is independently determined by the deployed WordPress server. No token bridge or cross-ledger balance equivalence is assumed.
+
+Support here means isolated selection, source routing and checkout records. Production settlement verification, inventory reservations and signing adapters still need testing separately for each ledger. Payment collection remains disabled. Merchant software does not secure SHA-256 consensus or establish the integrity of Bitcoin installers; package-signature verification and hardened node operations are separate controls.
