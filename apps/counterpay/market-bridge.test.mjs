@@ -1,0 +1,11 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {getDexOrders,getAssetDispensers,composeSendRequest,hashEvidence} from './market-bridge.mjs';
+const source='1BoatSLRHtKNngkdXEeobR76b53LETtpyT',destination='1BitcoinEaterAddressDontSendf59kuE';
+const fake=async url=>({ok:true,status:200,headers:{get:k=>k==='X-COUNTERPARTY-HEIGHT'?'900000':'true'},json:async()=>({result:[{tx_hash:'abc'}],next_cursor:null})});
+test('DEX path and parsed snapshot',async()=>{const x=await getDexOrders({network:'mainnet',fetchImpl:fake});assert.equal(x.records.length,1);assert.equal(x.ledgerHeight,'900000')});
+test('dispensers query returns record',async()=>assert.equal((await getAssetDispensers({network:'mainnet',asset:'XCP',fetchImpl:fake})).records.length,1));
+test('rejects malformed asset',async()=>await assert.rejects(getDexOrders({network:'mainnet',baseAsset:'XCP/evil',fetchImpl:fake})));
+test('compose only returns an unexecuted URL descriptor',()=>{const d=composeSendRequest({network:'mainnet',source,destination,asset:'XCP',quantity:'1.5'});assert.equal(d.execute,false);assert.equal(d.broadcast,false);assert.equal(d.method,'GET');assert.match(d.url,/compose\/send/);});
+test('canonical evidence SHA-256 is deterministic',async()=>{const sample={schema:'neo.crown-chain.evidence.v1',attested:false,anchored:false,asset:'XCP'};const a=await hashEvidence(sample);const b=await hashEvidence({asset:'XCP',anchored:false,attested:false,schema:sample.schema});assert.equal(a.digestHex,b.digestHex);assert.equal(a.digestHex.length,64);assert.equal(a.anchored,false)});
+test('does not hash claimed attestation',async()=>await assert.rejects(hashEvidence({schema:'neo.crown-chain.evidence.v1',attested:true,anchored:false})));
