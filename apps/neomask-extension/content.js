@@ -1,3 +1,5 @@
+(() => {
+if(window.__neoMaskBridgeReady)return;window.__neoMaskBridgeReady=true;
 window.addEventListener('message',async event=>{
  if(event.source!==window || event.origin!==location.origin || event.data?.channel!=='neomask:request')return;
  const {id,method,params}=event.data;
@@ -8,3 +10,4 @@ window.addEventListener('message',async event=>{
  }catch{window.postMessage({channel:'neomask:response',id,error:'NeoMask extension unavailable; reload the page'},location.origin);}
 });
 
+})();

@@ -1,3 +1,4 @@
+import {enableSite} from './site-access.mjs';
 const id=new URLSearchParams(location.search).get('request');
 const status=document.querySelector('#status'),form=document.querySelector('#approval');
 async function send(message){const r=await chrome.runtime.sendMessage(message);if(r.error)throw new Error(r.error);return r.result;}
@@ -21,3 +22,11 @@ form.addEventListener('submit',async e=>{
 document.querySelector('#reject').addEventListener('click',async()=>{try{await send({kind:'decide',id,approve:false});window.close();}catch(e){status.textContent=e.message;}});
 document.querySelector('#revoke').addEventListener('click',async()=>{try{await send({kind:'revoke'});status.textContent='Site permissions revoked.';}catch(e){status.textContent=e.message;}});
 
+const enable=document.querySelector('#enable-site');
+if(id)enable.hidden=true;
+enable.addEventListener('click',async()=>{
+ enable.disabled=true;
+ try{const [tab]=await chrome.tabs.query({active:true,currentWindow:true});const pattern=await enableSite(chrome,tab);status.textContent='NeoMask enabled for '+new URL(tab.url).hostname+'. Reload that page to connect.';}
+ catch(e){status.textContent=e.message;}
+ finally{enable.disabled=false;}
+});

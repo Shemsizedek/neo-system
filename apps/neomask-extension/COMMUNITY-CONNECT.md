@@ -22,5 +22,11 @@ An integrated wallet must expose explicit account permissions, Bitcoin network a
 
 NEOpay, CounterPay and Freewallet compatibility must be implemented and tested for each wallet's supported API. Do not register made-up providers or silently import accounts. Freewallet remains an external wallet until an explicit approved bridge is implemented.
 
-## Current release boundary
-The deployed WordPress connector now uses NeoMask exclusively. The 0.2.0 extension remains a developer installation restricted to holytemples.org. This contract is reusable by the community, but community-wide extension distribution and external-wallet adapters are not released by this change. Do not claim Chrome Web Store availability, verified xcpdex/xcp.io interoperability or production token delivery.
+## 0.3.0 release boundary
+The NeoMask router ships with native-vault and XCP Wallet adapters plus explicit NEOpay provider discovery. Community sites can import the router module, register an adapter, and call connect({walletId,ledger}). Use list(ledger) to show available choices; do not silently select a wallet. Subscribe with onChange to clear UI state after lock, account changes or disconnect. Native signing returns its signed PSBT, while the application remains responsible for checking its exact transaction before broadcast.
+
+The extension now offers optional exact-site HTTPS access from its popup. A site must still implement the NeoMask API, and permissions do not prove that a third-party application supports it. There is no MetaMask or XCP endorsement, Chrome Web Store listing, or verified xcpdex/xcp.io dApp interoperability in this release.
+
+CounterPay and Freewallet remain pending wallet-side adapters. No compatibility is implied by the shared brand. XCP Wallet's adapter follows its published PROVIDER.md API at upstream commit documented during this release; it does not implement plain-Bitcoin payment signing or broadcast.
+
+Upstream reference: https://github.com/XCP/extension/blob/main/PROVIDER.md

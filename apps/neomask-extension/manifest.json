@@ -1,11 +1,13 @@
 {
   "manifest_version": 3,
-  "name": "NeoMask — Bitcoin Wallet",
-  "version": "0.2.0",
+  "name": "NeoMask \u2014 Bitcoin Wallet",
+  "version": "0.3.0",
   "description": "Encrypted local Bitcoin vault, site permissions and reviewed P2PKH PSBT signing.",
   "minimum_chrome_version": "111",
   "permissions": [
-    "storage"
+    "storage",
+    "activeTab",
+    "scripting"
   ],
   "background": {
     "service_worker": "background.mjs",
@@ -13,7 +15,13 @@
   },
   "action": {
     "default_popup": "popup.html",
-    "default_title": "NeoMask"
+    "default_title": "NeoMask",
+    "default_icon": {
+      "16": "icons/neomask-16.png",
+      "32": "icons/neomask-32.png",
+      "48": "icons/neomask-48.png",
+      "128": "icons/neomask-128.png"
+    }
   },
   "content_scripts": [
     {
@@ -35,5 +43,14 @@
       ],
       "run_at": "document_start"
     }
-  ]
+  ],
+  "optional_host_permissions": [
+    "https://*/*"
+  ],
+  "icons": {
+    "16": "icons/neomask-16.png",
+    "32": "icons/neomask-32.png",
+    "48": "icons/neomask-48.png",
+    "128": "icons/neomask-128.png"
+  }
 }

@@ -15,7 +15,7 @@ test('page never falls back to legacy direct signer',async()=>{
  let clicked,calls=0;const button={addEventListener:(name,f)=>clicked=f},status={},install={hidden:true};
  const root={querySelector:s=>({'[data-connect-status]':status,'[data-connect-member]':button,'[data-neomask-install]':install}[s]),closest:()=>({getAttribute:()=> 'classic'})};
  mountWalletConnections(root,{neoBitcoinSigner:{...provider(),connect:async()=>{calls++;return {address,network:'mainnet'}}}});
- await clicked();assert.equal(calls,0);assert.equal(install.hidden,false);assert.match(status.textContent,/NeoMask was not found/);
+ await clicked();assert.equal(calls,0);assert.equal(install.hidden,false);assert.match(status.textContent,/No compatible wallet/);
 });
 
 test('treasury matching and no signing during connection',async()=>{let signed=0;const p={...provider(),signPsbt:()=>{signed++;throw Error('unexpected signing');}};assert.equal((await connectStewardshipWallet(p,address,'classic')).signingTested,false);assert.equal(signed,0);await assert.rejects(connectStewardshipWallet(p,'1BoatSLRHtKNngkdXEeobR76b53LETtpyT','classic'),/treasury/);await assert.rejects(connectStewardshipWallet({...p,signPsbt:undefined},'','classic'),/NeoMask was not found/);});

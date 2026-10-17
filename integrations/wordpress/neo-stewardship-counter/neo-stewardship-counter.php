@@ -2,7 +2,7 @@
 /**
  * Plugin Name: NEO Counter Holy Stewardship
  * Description: Page-specific stewardship checkout review. Itemized market-reference checkout preview.
- * Version: 0.13.0
+ * Version: 0.14.0
  */
 defined('ABSPATH') || exit;
 require_once __DIR__ . '/market.php';
@@ -112,8 +112,10 @@ add_shortcode('neo_stewardship_counter', function () {
  <?php if (current_user_can('manage_options')) : ?>
  <button type="button" data-connect-merchant>Connect treasury via NeoMask</button>
  <?php endif; ?>
+ <div data-neomask-wallets hidden role="group" aria-label="Wallets available through NeoMask"></div>
+ <button type="button" data-neomask-disconnect hidden>Disconnect NeoMask</button>
  <p class="neo-small" data-connect-status role="status">Connect your wallet to continue.</p>
- <p class="neo-small" data-neomask-install hidden>NeoMask is required. <a href="https://github.com/Shemsizedek/neo-system/blob/feat/holy-stewardship-counter-gate1/apps/neomask-extension/README.md" target="_blank" rel="noopener noreferrer">Setup instructions</a></p>
+ <p class="neo-small" data-neomask-install hidden><a download href="<?php echo esc_url(plugins_url('NeoMask-0.3.0-Community-Build.zip', __FILE__)); ?>">Get NeoMask 0.3.0</a> · <a href="https://github.com/Shemsizedek/neo-system/blob/feat/holy-stewardship-counter-gate1/apps/neomask-extension/README.md" target="_blank" rel="noopener noreferrer">Setup instructions</a></p>
 </div>
       <details id="neo-stewardship-gateway" class="neo-card" data-wallet-scanner><summary>Wallet &amp; checkout details</summary>
         
@@ -147,7 +149,7 @@ add_shortcode('neo_stewardship_counter', function () {
         <?php endif; ?>
       </details>
       <script type="module">
-        import { mountWalletConnections } from <?php echo wp_json_encode(add_query_arg('ver','0.13.0',plugins_url('wallet-connect.mjs', __FILE__))); ?>;
+        import { mountWalletConnections } from <?php echo wp_json_encode(add_query_arg('ver','0.14.0',plugins_url('wallet-connect.mjs', __FILE__))); ?>;
         const connectRoot = document.querySelector('[data-wallet-connections]');
         if (connectRoot) mountWalletConnections(connectRoot);
         import { mountWalletScanner } from <?php echo wp_json_encode(plugins_url('wallet-scanner.mjs', __FILE__)); ?>;

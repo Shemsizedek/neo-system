@@ -1,4 +1,5 @@
-import {trustedOrigin,validLedger,permissionKey,readAccount} from '../policy.mjs';
+import {pageOrigin} from './site-access.mjs';
+import {validLedger,permissionKey,readAccount} from '../policy.mjs';
 import {buildBondPsbt} from './counterparty.mjs';
 import {sealWif,openVault,createKey,reviewPsbt,psbtDigest,signReviewedPsbt} from './wallet.mjs';
 const pending=new Map();let vaultRevision=0;
@@ -11,13 +12,13 @@ chrome.windows.onRemoved.addListener(windowId=>{for(const [id,p] of pending)if(p
 chrome.runtime.onMessage.addListener((message,sender,reply)=>{
  (async()=>{
   if(message.kind==='page'){
-   const origin=trustedOrigin(sender),method=message.method;
+   const origin=await pageOrigin(chrome,sender),method=message.method;
    if(method==='getCapabilities'){reply({result:{name:'NeoMask',network:'mainnet',ledgers:['classic','cp20'],signPsbt:true,signRawTransaction:false,counterpartySigning:true}});return;}
    const ledger=validLedger(message.params?.ledger),key=permissionKey(origin,ledger);
    if(method==='disconnect'){await chrome.storage.local.remove(key);for(const[id,p]of pending)if(p.origin===origin&&p.ledger===ledger)expire(id);reply({result:{disconnected:true}});return;}
    if(method==='getAccount'){const account=readAccount((await chrome.storage.local.get(key))[key]);const v=await vault();if(account.address!==v.address)throw new Error('Wallet changed; reconnect');reply({result:{...account,watchOnly:false,signingAvailable:true,psbt:true,counterpartySigning:true}});return;}
    const v=await vault();
-   if(method==='connect'){await prompt({type:'connect',origin,ledger,reply,address:v.address,vaultRevision});return;}
+   if(method==='connect'){await prompt({type:'connect',origin,ledger,reply,address:v.address,vaultRevision,sender});return;}
    if(method==='composeBond'){
     const grant=readAccount((await chrome.storage.local.get(key))[key]);
     if(grant.address!==v.address)throw new Error('Wallet changed; reconnect');
@@ -29,7 +30,7 @@ chrome.runtime.onMessage.addListener((message,sender,reply)=>{
     if(grant.address!==v.address)throw new Error('Wallet changed; reconnect');
     const hex=message.params.hex;
     const summary=reviewPsbt(hex,v.address,ledger),digest=await psbtDigest(hex);
-    await prompt({type:'sign',origin,ledger,key,reply,address:v.address,hex,digest,summary,vaultRevision});return;
+    await prompt({type:'sign',origin,ledger,key,reply,address:v.address,hex,digest,summary,vaultRevision,sender});return;
    }
    throw new Error('Unsupported method');
   }
@@ -51,6 +52,7 @@ chrome.runtime.onMessage.addListener((message,sender,reply)=>{
    if(!message.approve){expire(message.id);reply({result:{closed:true}});return;}
    if(p.processing)throw new Error('Approval is already processing');p.processing=true;
    try{
+    await pageOrigin(chrome,p.sender);
     if(p.vaultRevision!==vaultRevision)throw new Error('Wallet changed');
     if(p.type==='connect'){
      const v=await vault();if(v.address!==p.address)throw new Error('Wallet changed');
@@ -66,6 +68,7 @@ chrome.runtime.onMessage.addListener((message,sender,reply)=>{
      if(grant.address!==p.address||p.vaultRevision!==vaultRevision)throw new Error('Account changed');
      const signed=await signReviewedPsbt({hex:p.hex,wif,approvedDigest:p.digest,ledger:p.ledger});
      readAccount((await chrome.storage.local.get(p.key))[p.key]);
+     await pageOrigin(chrome,p.sender);
      if(pending.get(message.id)!==p||p.expiresAt<=Date.now()||p.vaultRevision!==vaultRevision)throw new Error('Approval expired or revoked');
      pending.delete(message.id);clearTimeout(p.timer);p.reply({result:signed});
     }
@@ -78,4 +81,3 @@ chrome.runtime.onMessage.addListener((message,sender,reply)=>{
  })().catch(error=>reply({error:error.message}));
  return true;
 });
-
