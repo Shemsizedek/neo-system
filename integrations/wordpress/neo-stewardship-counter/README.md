@@ -65,3 +65,10 @@ These records are PREPARED_NOT_PAYABLE with payment NOT_REQUESTED and delivery N
 To activate live collection, confirm a treasury receiving address separately from the token issuer address, connect an authorized funded token signer/delivery service and implement/test authoritative invoice allocation, payment confirmation, inventory reservation, idempotent delivery and recovery/refund handling. Full operative terms must be available before live payment. No private keys belong in the plugin.
 
 Tests passed for wallet QR address parsing, Bitcoin URI extraction and invalid input rejection. Deployed public HTML verified for ordered asset links, membership gate, scanner import and accurate payment status. Actual signed-in order creation, payment observation, signing and fulfillment remain unverified.
+
+## Gate 7 — confirmed treasury and Freewallet handoff
+User confirmed BTC treasury and token source address 1Ky2wRYYrJzqdQJH64F7TR98fqLxJs7LK8 on 2026-10-17. Plugin v0.6.0 records this address, Freewallet as the designated signer, CONNECTION_REQUIRED signing state and UNVERIFIED Counterparty ledger on newly prepared checkout records. Administrator handoff instructions explain the external wallet signing boundary. Public page reflects the confirmed treasury.
+
+The address is not a key and does not grant server signing authority. Existing public Counterparty servers cannot sign on behalf of this Freewallet address without its authorized signer. Freewallet's official site documents separate Counterparty 2.0 and Classic editions/ledgers; confirm the edition actually used before selecting a node or sending tokens. No ledger is silently assumed.
+
+No payment request, payable QR, token transfer, signer connection or fulfillment verification was enabled by this gate. Treasury confirmation is complete; correct ledger and tested signing/settlement remain outstanding.
