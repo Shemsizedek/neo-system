@@ -70,3 +70,9 @@ Upstream references: https://github.com/CounterpartyXCP/counterwallet and https:
 - No external signer, WebAuthn passkey, device approval, Crown Chain attestation, finalization, mainnet broadcast or production wallet UI action is wired to PSBT output.
 - Tests are in `psbt-builder.test.mjs`. CI installs dependencies in this app then runs all `*.test.mjs`. The output MUST be reviewed before merging.
 - A full integration security review is required before offering PSBT output to any external signer: bind trusted chain/network data, validate prevout script and amount against authoritative sources, validate change ownership from authenticated wallet descriptors, and reject policy deviations.
+
+## COUNTERPAY-008 security hardening
+- The existing BIP174 unsigned PSBT builder uses pinned `bitcoinjs-lib` 6.1.7, supports native P2WPKH UTXO input metadata and round-trip output checks, and does not expose signing or broadcasting.
+- **New fail-closed gate:** every PSBT input must be independently attested by caller-supplied async `verifyInput(input)` returning true. Missing or failed verification aborts construction. A permissive verifier in unit tests is a fixture **not suitable for deployment**.
+- The verifier has **not** yet been integrated with an independently trusted Bitcoin node/UTXO proof service or ownership descriptor. This code must remain disabled for mainnet use.
+- A PSBT alone is not device authorization. NEO Pass/WebAuthn and signing contract remain separate, unimplemented security gates.
