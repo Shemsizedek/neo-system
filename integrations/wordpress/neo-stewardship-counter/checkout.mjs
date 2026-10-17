@@ -26,7 +26,6 @@ export function mountStewardship(root, references = {}, clock = Date.now, schedu
     root.querySelector('[data-description]').textContent = symbol === 'TEMPLEBOND'
       ? 'TEMPLEBOND represents an Adept’s deeper commitment to the Temple mission.'
       : 'PLEDGEBOND represents member participation and stewardship pledges.';
-    root.querySelector('[data-protection]').hidden = select.value !== 'apprentice';
     const link = root.querySelector('[data-asset]');
     link.href = 'https://tokenscan.io/asset/' + symbol;
     link.textContent = 'View ' + symbol + ' on TokenScan';
@@ -43,6 +42,10 @@ export function mountStewardship(root, references = {}, clock = Date.now, schedu
     event.preventDefault();
     clear();
     if (!form.reportValidity()) return;
+    if (root.getAttribute('data-form144-received') !== '1') {
+      output.textContent = 'Upload your completed Form 144 before reviewing either bond selection.';
+      return;
+    }
     try {
       const q = calculate();
       const money = v => format(v, q.currency);
