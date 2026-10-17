@@ -1,0 +1,10 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {prepareDeviceReview,verifyAuthorizationReceipt,crownEvidenceForReview} from './device-review.mjs';
+const now=1700000000000,psbt={schema:'counterpay.bip174-unsigned.v1',network:'testnet',unsigned:true,broadcast:false,psbtBase64:'cHNidP8BAAoCAAAAAA==',feeSats:1000,outputs:[{address:'test',value:50000}]};
+const opts={psbt,nonce:'abcdefghijklmnopqrstuvWX',expiresAt:now+120000,origin:'https://counterpay.example',now};
+test('bind unsigned PSBT to review commitment',async()=>{const r=await prepareDeviceReview(opts);assert.equal(r.psbtSha256.length,64);assert.equal(r.authorized,false);assert.equal(r.signingEnabled,false)});
+test('reject expired review',async()=>await assert.rejects(prepareDeviceReview({...opts,expiresAt:now-1}),/expire/));
+test('reject signed or broadcasting PSBT',async()=>await assert.rejects(prepareDeviceReview({...opts,psbt:{...psbt,broadcast:true}}),/Unsigned/));
+test('fail closed on spoofed receipt',async()=>{const r=await prepareDeviceReview(opts);assert.throws(()=>verifyAuthorizationReceipt(r,{schema:'neo.pass.psbt-receipt.v1',nonce:'wrong'}, {now,expectedOrigin:opts.origin}),/mismatch/)});
+test('matching metadata never confers authorization',async()=>{const r=await prepareDeviceReview(opts);const x=verifyAuthorizationReceipt(r,{schema:'neo.pass.psbt-receipt.v1',nonce:r.nonce,psbtSha256:r.psbtSha256,origin:r.origin,network:r.network},{now,expectedOrigin:opts.origin});assert.equal(x.bitcoinAuthorized,false);assert.equal(x.cryptographicallyVerified,false)});
+test('Crown evidence is not anchored',async()=>{const r=await prepareDeviceReview(opts);const e=crownEvidenceForReview(r);assert.equal(e.bitcoinAnchored,false);assert.equal(e.attested,false)});
