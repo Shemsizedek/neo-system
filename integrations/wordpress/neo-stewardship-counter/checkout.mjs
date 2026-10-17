@@ -32,7 +32,7 @@ export function mountStewardship(root, references = {}, clock = Date.now, schedu
     link.textContent = 'View ' + symbol + ' on TokenScan';
     try {
       const q = calculate();
-      priceStatus.textContent = 'Market reference available in ' + q.currency + '. Review to see the full fee breakdown.';
+      priceStatus.textContent = 'TokenScan market snapshot available in ' + q.currency + '. Review to see the full fee breakdown.';
     } catch {
       priceStatus.textContent = 'Pricing unavailable: a current verified market reference and fee schedule are required. No payment is requested.';
     }
@@ -57,7 +57,7 @@ export function mountStewardship(root, references = {}, clock = Date.now, schedu
         'Upward rounding: ' + money(q.roundingAdjustmentMinor),
         'Total preview: ' + money(q.totalMinor),
         'Source: ' + q.source + ' · Reference: ' + q.referenceId,
-        'Observed: ' + new Date(q.observedAt).toISOString(),
+        'Snapshot retrieved: ' + new Date(q.observedAt).toISOString(),
         'Expires: ' + new Date(q.expiresAt).toISOString(),
         'REFERENCE PREVIEW — no payment, token delivery or insurance coverage activated.'
       ].join('\n');
