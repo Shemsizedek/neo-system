@@ -27,6 +27,17 @@ def page(url, marker, assets=False):
                 raise RuntimeError(f'{asset}: missing asset or HTML fallback')
     return {'url': url, 'status': 'PASS'}
 
+
+def redirected_page(url, expected_target):
+    result = subprocess.run(['curl', '--silent', '--show-error', '--max-time', '20', '--output', '/dev/null', '--write-out', '%{http_code}\\n%{redirect_url}', url], capture_output=True, text=True)
+    lines = result.stdout.splitlines()
+    if result.returncode or len(lines) != 2 or lines[0] != '302' or lines[1] != expected_target:
+        raise RuntimeError(f'{url}: expected community redirect missing: {result.stdout!r} {result.stderr.strip()}')
+    body = fetch(expected_target)
+    if len(body.strip()) < 1000 or '<html' not in body.lower():
+        raise RuntimeError(f'{expected_target}: destination content missing')
+    return {'url': url, 'status': 'PASS', 'redirect': expected_target, 'scope': 'public landing page; member workflows not exercised'}
+
 def adsense():
     root = fetch('https://holytemples.org/')
     ads = fetch('https://holytemples.org/ads.txt')
@@ -55,6 +66,11 @@ if __name__ == '__main__':
         lambda: page('https://neo-portal-recovery.onrender.com/', 'NEO System', True),
         lambda: page('https://city.holytemples.org/', 'City of Nu University', True),
         lambda: page('https://university.holytemples.org/', 'Nu University', True),
+        lambda: page('https://office.holytemples.org/', 'Global Religious Family Office', True),
+        lambda: page('https://leaders.holytemples.org/', 'World Leaders Forum'),
+        lambda: page('https://neoteric.holytemples.org/', 'Neoteric Method'),
+        lambda: redirected_page('https://society.holytemples.org/', 'https://neo.dnnr.io/'),
+        lambda: redirected_page('https://lifestyle.holytemples.org/', 'https://neo.dnnr.io/neo/ambassador-application'),
         adsense,
     ]
     failures = 0

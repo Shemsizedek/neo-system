@@ -50,3 +50,21 @@ The next published batch restores the existing public City and University conten
 - Sites accepts a maximum of five custom domains per project. This project now has five; subsequent failed subdomains require separate project groups.
 
 There were 41 failed subdomain entrypoints in the remaining-site audit before this batch. This migration does not restore Google-hosted private databases, payments, account operations or every remaining subdomain.
+
+## Community public-site migration
+
+The next batch publishes five public entrypoints on independent Sites hosting:
+
+- Office: `office.holytemples.org`, preserving the public Shelton Estate & Co / Global Religious Family Office page from `https://sheltonestate.family.blog/`.
+- World Leaders Forum: `leaders.holytemples.org`, preserving its existing home, About, Parliament, Leadership and Contact pages.
+- Neoteric Method: `neoteric.holytemples.org`, preserving the existing public Neoteric Method page.
+- Society: `society.holytemples.org`, preserving the existing 302 redirect to `https://neo.dnnr.io/`.
+- Lifestyle: `lifestyle.holytemples.org`, preserving the existing 302 redirect to `https://neo.dnnr.io/neo/ambassador-application`.
+
+Sites project: `appgprj_6ad3be70093c819181658e0f39c43876`. Public deployment: https://temple-community.shemsizedek.chatgpt.site. Source commit: `a0427b444a683213517010c666c462cb741a079e`. Deployment: `appgdep_6ad3bed1bf0481918d81085c4fbb3c6d` (succeeded).
+
+Only these five failed subdomains' address records and their ownership/TLS verification records were changed. Each previous address record had a 300-second TTL. The original Google endpoints all returned 503 before migration; both external community destination pages returned 200. Existing root and mail records are preserved.
+
+Public Office root content is a versioned snapshot; other public Office pages/assets use a fixed WordPress origin. Upstream cookies are removed, visitors' session credentials are not forwarded, and private/admin/write routes return unavailable. Leaders and Neoteric pages are independent of sleeping backend processes. No private account data, payment services, checkout flows or authenticated community workflows are restored or validated by this batch.
+
+Five gateway tests passed: root/subpage content without origin access, HEAD behavior, established community redirect paths/queries, rejected writes/private routes, and fixed-origin session isolation/redirect rewriting. The availability monitor checks the five additional custom domains; Office assets and exact community redirect destinations are included.
