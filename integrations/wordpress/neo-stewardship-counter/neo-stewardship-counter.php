@@ -41,7 +41,7 @@ add_shortcode('neo_stewardship_counter', function () {
 #<?php echo esc_attr($id); ?> .neo-heading h2{font-size:32px;margin:0;color:#194b36}
 #<?php echo esc_attr($id); ?> .neo-eyebrow{font-size:12px;font-weight:700;letter-spacing:.12em}
 #<?php echo esc_attr($id); ?> .neo-badge{background:#f4e9c9;color:#655018;border-radius:20px;padding:6px 12px;font-size:12px}
-#<?php echo esc_attr($id); ?> .neo-layout{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:18px}
+#<?php echo esc_attr($id); ?> .neo-layout{align-items:start;display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:18px}
 #<?php echo esc_attr($id); ?> .neo-card{background:white;border:1px solid #dce4d7;border-radius:12px;padding:20px;margin-bottom:14px;min-width:0}
 #<?php echo esc_attr($id); ?> .neo-receipt{border-top:4px solid #194b36}
 #<?php echo esc_attr($id); ?> summary{cursor:pointer;font-weight:600;min-height:30px}
@@ -50,11 +50,13 @@ add_shortcode('neo_stewardship_counter', function () {
 #<?php echo esc_attr($id); ?> select,#<?php echo esc_attr($id); ?> input[type=number],#<?php echo esc_attr($id); ?> input[type=text]{border:1px solid #a7b8ac;border-radius:7px;color:#152b20;background:white;max-width:100%;min-height:46px}
 #<?php echo esc_attr($id); ?> p{margin:10px 0} #<?php echo esc_attr($id); ?> a{color:#194b36}
 @media(max-width:680px){#<?php echo esc_attr($id); ?> .neo-layout{grid-template-columns:1fr}}
+#<?php echo esc_attr($id); ?> select[name=purpose]{font-size:14px}
+#<?php echo esc_attr($id); ?> input[type=text]{display:block;width:100%;padding:12px;font:inherit;box-sizing:border-box;margin-top:8px}
       </style>
 <div class="neo-heading"><div><p class="neo-eyebrow">HOLY STEWARDSHIP</p><h2>NEO Counter</h2><p>Choose your bond and see your estimate.</p></div><span class="neo-badge">Payments coming soon</span></div><div class="neo-layout"><div class="neo-card"><form data-quote-form><label>Your bond<select name="purpose"><option value="patronage">PLEDGEBOND: member patronage</option><option value="adept">TEMPLEBOND: Adept commitment</option></select></label><label>Quantity<input name="quantity" type="number" min="1" max="999999" step="1" value="1" required></label></form><details <?php if (!$ledger) echo 'open'; ?>><summary>Currency &amp; wallet settings</summary>      <form method="get" action="<?php echo esc_url(home_url('/holy-stewardship/')); ?>">
         <label>Wallet version
           <select name="neo_ledger" required>
-            <option value="">Select the ledger used by your wallet</option>
+            <option value="">Choose wallet version</option>
             <option value="cp20" <?php selected($ledger,'cp20'); ?>>Counterparty 2.0</option>
             <option value="classic" <?php selected($ledger,'classic'); ?>>Counterparty Classic</option>
           </select>
