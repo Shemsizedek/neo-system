@@ -53,6 +53,8 @@ if __name__ == '__main__':
         lambda: page('https://neo.holytemples.org/', 'Welcome to NEO.'),
         lambda: page('https://hub.holytemples.org/', 'NEO'),
         lambda: page('https://neo-portal-recovery.onrender.com/', 'NEO System', True),
+        lambda: page('https://city.holytemples.org/', 'City of Nu University', True),
+        lambda: page('https://university.holytemples.org/', 'Nu University', True),
         adsense,
     ]
     failures = 0

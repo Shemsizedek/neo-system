@@ -37,3 +37,16 @@ The WordPress root, mail records, AdSense script and publisher ID were preserved
 ## Rollback records
 
 Only the named service DNS records were replaced. The previous eGovernment CNAME was `ghs.googlehosted.com.` (TTL 3600). The previous NEO and Hub A records were `8.232.127.249` (TTL 3600). Restore them only after Google hosting and TLS have been independently verified healthy. Preserve all apex, mail and unrelated service records.
+
+## City and University migration
+
+The next published batch restores the existing public City and University content from their WordPress origins, independently of the failed Google entrypoints. Sites source commit `b0b1b6baebce6aaa95c9f94d8cc0c24047440ddd`, saved version 3, deployment `appgdep_6ad3bce634748191b3272a2fd0f092f0` succeeded.
+
+- `city.holytemples.org`: public origin `https://nuuniversitytxdot.wordpress.com`.
+- `university.holytemples.org`: public origin `https://nuuniversitydot.wordpress.com`, landing path `/the-nu-univ-system/`.
+- Root pages use captured public HTML. Other public pages/assets use fixed-origin GET/HEAD forwarding. Cookies and authorization are never forwarded, response cookies are removed, and member/admin/write routes remain unavailable.
+- DNS CNAME and verification TXT records were applied for these two subdomains only. Previous City DNS TTL was 3600 seconds; University was 300 seconds.
+- Local checks passed for content, HEAD, write rejection and credential isolation, alongside all five existing gateway tests.
+- Sites accepts a maximum of five custom domains per project. This project now has five; subsequent failed subdomains require separate project groups.
+
+There were 41 failed subdomain entrypoints in the remaining-site audit before this batch. This migration does not restore Google-hosted private databases, payments, account operations or every remaining subdomain.
