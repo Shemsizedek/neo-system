@@ -2,7 +2,7 @@
 /**
  * Plugin Name: NEO Counter Holy Stewardship
  * Description: Page-specific stewardship checkout review. Itemized market-reference checkout preview.
- * Version: 0.10.0
+ * Version: 0.11.0
  */
 defined('ABSPATH') || exit;
 require_once __DIR__ . '/market.php';
@@ -123,7 +123,7 @@ add_shortcode('neo_stewardship_counter', function () {
           <p data-connect-status aria-live="polite">No wallet account connected on this page.</p>
           <p><a href="https://freewallet.io/" target="_blank" rel="noopener noreferrer">Freewallet / Freewallet Classic</a> — external signing workflow; browser connection requires a compatible bridge.</p>
         </div>
-        <p>Treasury confirmed: 1Ky2wRYYrJzqdQJH64F7TR98fqLxJs7LK8. Freewallet is the designated signing wallet. Payment collection awaits a tested signing and token-delivery connection; no payable QR code is issued yet.</p>
+        <p>Collection address configured: 18SzD3cfwCcV9p6C38ho4uZPHE8ygVB9iq. Bond delivery source: 1Ky2wRYYrJzqdQJH64F7TR98fqLxJs7LK8. Payment collection awaits verified reconciliation and token delivery; no payment is requested yet.</p>
         <?php
         $prepared_id = isset($_GET['neo_prepared']) ? absint($_GET['neo_prepared']) : 0;
         if ($prepared_id && is_user_logged_in() && get_post_type($prepared_id) === 'neo_steward_order' &&
