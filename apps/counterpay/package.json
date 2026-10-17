@@ -1,0 +1,14 @@
+{
+  "name": "@neo-system/counterpay",
+  "version": "0.0.8",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test *.test.mjs",
+    "preview": "node preview-server.mjs"
+  },
+  "dependencies": {
+    "bitcoinjs-lib": "6.1.7",
+    "@simplewebauthn/server": "14.0.3"
+  }
+}
