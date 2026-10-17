@@ -38,3 +38,11 @@ Upstream references: https://github.com/CounterpartyXCP/counterwallet and https:
 - Run `node --test apps/counterpay/*.test.mjs` from repository root.
 - Public address checks are format-only and are not checksum validation. Do not use this UI to authorize funds.
 - Live DEX orderbook queries, API compose integration, signing, proof hashing, broadcast and network deployment remain **not implemented**.
+
+## COUNTERPAY-005: read-only market bridge and evidence hashing
+- `market-bridge.mjs` adds documented Counterparty API v2 pair-order and asset-dispenser GET requests, with readiness handling.
+- The DEX panel can request public order/dispenser snapshots and show up to 20 raw records. It does not place orders; further pagination and structured market rendering remain to be built.
+- `composeSendRequest` **constructs a URL descriptor without requesting the compose endpoint**. Quantity precision and actual spendability must still be checked against asset metadata and node state.
+- `hashEvidence` creates a deterministic SHA-256 digest of an unattested Crown evidence envelope. A hash is **not** a signature, notarization, Bitcoin anchor, or proof of ownership.
+- Unit tests added for markets, previews and evidence hashing. CI automatically includes `*.test.mjs`; GitHub Actions outcomes and deployed-browser behavior must be inspected separately.
+- Bitcoin fee estimates, verified UTXOs, a signing policy, actual Crown anchors and transaction broadcasting are deliberately not implemented.
