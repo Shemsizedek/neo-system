@@ -32,3 +32,21 @@ JavaScript syntax checked with Node. WordPress/PHP runtime, Block Editor inserti
 
 ## Staging acceptance
 Verify shortcode absent on every other page; all three paths; required checkbox; zero, negative, fractional and excessive quantities rejected; selection edits clear output; keyboard/mobile usability; no network payment request or sensitive data collection.
+
+## Gate 2 — market reference and fee calculation
+pricing.mjs implements integer arithmetic for:
+market subtotal + disclosed spread + fixed fee allowance + percentage fee gross-up + upward rounding.
+Rates, fee allowances and rounding increments are configurable inputs; no production markup or fee value has been assumed. Percentage fees are calculated against the final rounded total. BTC uses satoshis, XCP uses atomic units, USD uses cents. Cross-currency conversion must happen upstream with its own verified reference and conservative rounding. A positive per-token integer reference is required; fractional atomic-unit rates need a future rational-price adapter.
+
+Sources discovered from the actual TokenScan asset page:
+- https://tokenscan.io/api/asset/TEMPLEBOND
+- https://tokenscan.io/api/asset/PLEDGEBOND
+- https://tokenscan.io/api/network (BTC/XCP USD conversion panel)
+The page reads market_info.btc.price, market_info.btc.floor, market_info.xcp.price and market_info.xcp.floor.
+Direct API reads returned HTTP 403 in this environment on 2026-10-17. No current rate was verified or embedded. Static HTML zero placeholders must never be accepted as prices. Do not bypass source access controls.
+
+A future server adapter must verify upstream observation time (retrieval time alone is insufficient), issuer, currency, unit precision and provenance. Do not treat a floor/last-trade reference as an executable offer or guaranteed inventory. Reject unavailable, zero or stale prices. Reference preview expires within five minutes; live quotes must also reserve inventory and persist an authoritative order.
+
+The calculator is built and tested but is not wired into the WordPress shortcode or deployed. All results remain non-payable reference previews.
+Run: node integrations/wordpress/neo-stewardship-counter/pricing.test.mjs
+Validation passed: itemization, rounding, fee gross-up, invalid values, stale references and 100 fee-coverage scenarios. Fixture values are synthetic, never live market rates.
