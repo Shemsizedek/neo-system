@@ -81,3 +81,12 @@ Server price caches and reference identifiers are ledger-specific. Each supporte
 Quote controller tests passed after adapting the fixture to the dedicated quote form. Public routes were checked for selected explorer identity and absence of cross-ledger price references. Direct API probes returned 403 in the workspace; availability is independently determined by the deployed WordPress server. No token bridge or cross-ledger balance equivalence is assumed.
 
 Support here means isolated selection, source routing and checkout records. Production settlement verification, inventory reservations and signing adapters still need testing separately for each ledger. Payment collection remains disabled. Merchant software does not secure SHA-256 consensus or establish the integrity of Bitcoin installers; package-signature verification and hardened node operations are separate controls.
+
+## Gate 9 — NEOpay-compatible wallet connection
+Source inspection found the actual NEO Pay provider contract in src/neopay/signerAdapters.ts and walletProviderRegistry.ts: window.neoBitcoinSigner with connect() and signRawTransaction(). This interface is now consumed by wallet-connect.mjs on the stewardship page; no invented CounterPay-specific global is assumed.
+
+Plugin v0.8.0 is active with a member account connection button and a merchant account connection button visible only to WordPress administrators. Merchant account connection rejects addresses other than the configured treasury. Wallets must explicitly report mainnet; absent network information fails closed. Member delivery address can be filled from the returned account. No wallet secret, persisted connection or automatic transfer is introduced.
+
+NEOpay, CounterPay and other providers can participate when they expose the shared contract in the stewardship page context. Source-level compatibility is not proof that a wallet provider is installed or exposed in the user's current browser. External Freewallet signing is listed separately; it is not falsely marked as a connected browser provider.
+
+Tests passed for fixture connection, missing/incompatible provider, explicit mainnet, treasury mismatch and absence of signing side effects. These are mocked-provider tests. No real wallet account, transaction signature, payment confirmation or token delivery was exercised. Member account connectivity does not authorize merchant inventory signing or establish wallet ownership cryptographically. Payment collection remains disabled.
