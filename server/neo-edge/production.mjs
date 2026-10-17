@@ -1,4 +1,5 @@
 import http from 'node:http';
+import { createTickerService } from '../markets/ticker-service.mjs';
 import { renderSystemHome } from './system-home.mjs';
 import https from 'node:https';
 import { createNeoEdgeServer } from './server.mjs';
@@ -10,6 +11,7 @@ import { renderWorldLeaders } from './leaders-app.mjs';
 import { FAMILY_OFFICE_ADS_REGISTRY, familyOfficeAdsEvidence, renderAdsTxt } from '../holytemples-adapter/ads-txt-registry.mjs';
 
 const PORT=Number(process.env.PORT||8080);
+const fxMarketTickerService=createTickerService();
 const LEGACY_HOST='127.0.0.1';
 const AI_GATEWAY_URL=String(process.env.AI_GATEWAY_URL||'').replace(/\/$/,'');
 const FAMILY_OFFICE_ORIGIN='sheltonestate.family.blog';
@@ -168,6 +170,13 @@ export async function startNeoEdgeProduction(){
   const front=http.createServer(async(req,res)=>{
     const host=hostOf(req);
     const url=new URL(req.url||'/',`https://${host||'neo.holytemples.org'}`);
+    if(host==='neofx.holytemples.org'&&url.pathname==='/api/markets/tickers'){
+      if(req.method!=='GET')return json(res,405,{error:'read_only_endpoint'});
+      const market=url.searchParams.get('market')||'fx';
+      if(!['fx','dex','all'].includes(market))return json(res,400,{error:'invalid_market'});
+      try { return json(res,200,await fxMarketTickerService.tickers({market})); }
+      catch { return json(res,502,{error:'market_reference_upstream_unavailable'}); }
+    }
     if((host==='neofx.holytemples.org'||host==='finance.holytemples.org')&&url.pathname.startsWith('/api/neo-exchange/')){
       const handled=await handleNeoExchangeRequest(req,res,{fallthrough:true});
       if(handled!==false)return handled;
