@@ -1,0 +1,31 @@
+# CounterPay — NEO Systems for the Counterparty community
+
+CounterPay is an independent community wallet initiative by NEO Systems. This implementation is a **read-only preview**, not a secure signing wallet and not a replacement for Counterwallet yet.
+
+## Preview
+Open `index.html` from a local static server (for example `python3 -m http.server 8080` in this directory), then visit http://localhost:8080. Network/API CORS and provider availability depend on the selected endpoint.
+
+## Implemented
+- Responsive, keyboard-accessible wallet navigation (overview, assets, payments, DEX, Crown Chain).
+- Public address lookup of Counterparty asset balances using REST API v2, on a best-effort basis.
+- A local, unsigned payment request preview that **cannot execute**.
+- Network selector and noncustodial/read-only safety messaging.
+- Text-only rendering of returned asset records (no HTML injection).
+
+## Deliberate limitations
+- No wallet creation, import, seed phrase collection, private key management, hardware signing, Bitcoin balance indexer, PSBT, XCP composition, broadcast, swap or escrow.
+- Public-address validation is only a superficial format check, not a checksum or network-specific proof; **never rely on it for sending funds**.
+- The API endpoints and balance response must be verified against current Counterparty documentation and tested on each network; CORS may block browser calls.
+- No portfolio USD value is reported because reliable market quotes and Bitcoin balance providers are not wired up.
+- Crown Chain is a proposed optional application/service layer; the preview does not imply protocol consensus, finality or custody guarantees.
+- Mainnet selection remains read-only. No API key should be inserted in browser code.
+
+## Next implementation checks
+1. Contract tests for Counterparty Core v2 against a controlled indexer/proxy, verify endpoint shapes and network configuration.
+2. Address checksum/network validation; asset precision and pagination.
+3. Independently sourced BTC UTXO indexer and confirmation accounting.
+4. Signing threat model, hardware wallet support, audited compose/PSBT flow; testnet first.
+5. Licensing review of historical Counterwallet code prior to reuse; community feedback.
+6. Security review, browser smoke test, usability/a11y testing, CI and preview deployment.
+
+Upstream references: https://github.com/CounterpartyXCP/counterwallet and https://github.com/CounterpartyXCP/counterparty-core .
