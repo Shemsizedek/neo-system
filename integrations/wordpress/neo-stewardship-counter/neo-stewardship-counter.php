@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name: NEO Counter Holy Stewardship
- * Description: Page-specific stewardship checkout review. Gate 1 sandbox only.
- * Version: 0.1.0
+ * Description: Page-specific stewardship checkout review. Itemized market-reference checkout preview.
+ * Version: 0.2.0
  */
 defined('ABSPATH') || exit;
 add_shortcode('neo_stewardship_counter', function () {
@@ -10,6 +10,12 @@ add_shortcode('neo_stewardship_counter', function () {
         return '';
     }
     $id = wp_unique_id('neo-stewardship-');
+    // Only trusted server-side adapters supply quote inputs. Never use query parameters.
+    $references = apply_filters('neo_stewardship_quote_references', array());
+    if (!is_array($references)) {
+        $references = array();
+    }
+    $references = array_intersect_key($references, array('TEMPLEBOND' => true, 'PLEDGEBOND' => true));
     ob_start();
     ?>
     <section id="<?php echo esc_attr($id); ?>" aria-label="NEO Counter stewardship checkout">
@@ -38,50 +44,18 @@ add_shortcode('neo_stewardship_counter', function () {
         <label>Token quantity to review
           <input name="quantity" type="number" min="1" max="999999" step="1" value="1" required>
         </label>
-        <p>Pricing, fees and payment instructions will appear after the Temple confirms the instrument terms.</p>
+        <p data-price-status aria-live="polite">Loading quote availability…</p>
         <p><a data-asset href="https://tokenscan.io/asset/PLEDGEBOND" target="_blank" rel="noopener noreferrer">View PLEDGEBOND on TokenScan</a></p>
         <label><input name="acknowledge" type="checkbox" required> I understand this is a preview and creates no payment, token holding, membership recognition or insurance coverage.</label>
         <button type="submit">Review stewardship selection</button>
       </form>
       <output aria-live="polite"></output>
-      <script>
-      (() => {
-        const root = document.getElementById(<?php echo wp_json_encode($id); ?>);
-        const form = root.querySelector('form');
-        const output = root.querySelector('output');
-        const select = form.elements.purpose;
-        const asset = () => select.value === 'adept' ? 'TEMPLEBOND' : 'PLEDGEBOND';
-        const update = () => {
-          const symbol = asset();
-          root.querySelector('[data-description]').textContent = symbol === 'TEMPLEBOND'
-            ? 'TEMPLEBOND represents an Adept’s deeper commitment to the Temple mission.'
-            : 'PLEDGEBOND represents member participation and stewardship pledges.';
-          root.querySelector('[data-protection]').hidden = select.value !== 'apprentice';
-          const link = root.querySelector('[data-asset]');
-          link.href = 'https://tokenscan.io/asset/' + symbol;
-          link.textContent = 'View ' + symbol + ' on TokenScan';
-          output.textContent = '';
-        };
-        form.addEventListener('input', () => { output.textContent = ''; });
-        select.addEventListener('change', update);
-        form.addEventListener('submit', event => {
-          event.preventDefault();
-          if (!form.reportValidity()) return;
-          const quantity = Number(form.elements.quantity.value);
-          if (!Number.isSafeInteger(quantity) || quantity < 1 || quantity > 999999) return;
-          output.textContent = [
-            'Stewardship selection preview',
-            'Service: holy-stewardship',
-            'Path: ' + select.options[select.selectedIndex].text,
-            'Instrument: ' + asset(),
-            'Requested quantity: ' + quantity,
-            'Price: awaiting verified Temple terms',
-            'Status: PREVIEW — no order submitted or payment requested',
-            'No insurance coverage or token delivery has been activated.'
-          ].join('\n');
-        });
-        update();
-      })();
+      <script type="module">
+        import { mountStewardship } from <?php echo wp_json_encode(plugins_url('checkout.mjs', __FILE__), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+        mountStewardship(
+          document.getElementById(<?php echo wp_json_encode($id); ?>),
+          <?php echo wp_json_encode($references, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>
+        );
       </script>
     </section>
     <?php
