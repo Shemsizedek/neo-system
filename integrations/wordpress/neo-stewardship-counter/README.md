@@ -6,7 +6,7 @@ Service identifier: holy-stewardship
 Install neo-stewardship-counter.php as a WordPress plugin in a staging environment. Activate it and insert a core Shortcode block containing:
 [neo_stewardship_counter]
 
-The shortcode renders only on the holy-stewardship page. Inline scripts must be permitted by the site's CSP. No external dependencies or network requests are used.
+The shortcode renders only on the holy-stewardship page. Inline module scripts must be permitted by the site's CSP. Install all PHP and .mjs files in this folder together. Serve .mjs with a JavaScript MIME type. The checkout imports its local calculator and controller; there are no third-party browser dependencies.
 
 ## Gate 1 behavior
 - Temple citizens: PLEDGEBOND patronage preview.
@@ -47,6 +47,15 @@ Direct API reads returned HTTP 403 in this environment on 2026-10-17. No current
 
 A future server adapter must verify upstream observation time (retrieval time alone is insufficient), issuer, currency, unit precision and provenance. Do not treat a floor/last-trade reference as an executable offer or guaranteed inventory. Reject unavailable, zero or stale prices. Reference preview expires within five minutes; live quotes must also reserve inventory and persist an authoritative order.
 
-The calculator is built and tested but is not wired into the WordPress shortcode or deployed. All results remain non-payable reference previews.
+The calculator is wired into the WordPress shortcode as of Gate 3; deployment remains pending. All results remain non-payable reference previews.
 Run: node integrations/wordpress/neo-stewardship-counter/pricing.test.mjs
 Validation passed: itemization, rounding, fee gross-up, invalid values, stale references and 100 fee-coverage scenarios. Fixture values are synthetic, never live market rates.
+
+## Gate 3 — connected calculator
+The shortcode now loads checkout.mjs, which imports pricing.mjs. Submit renders the market subtotal, spread, fixed fee allowance, percentage processing fee, rounding adjustment, total, provenance and expiry. Edits clear results; instrument changes select the matching reference; the displayed quote expires automatically.
+
+Trusted server-side adapters provide a keyed array through the WordPress filter neo_stewardship_quote_references, with entries TEMPLEBOND and/or PLEDGEBOND. Each entry must contain currency, unitPriceMinor, feeAllowanceMinor, spreadBps, processorFeeBps, roundingMinor, source, referenceId, observedAt and expiresAt. Integer amounts and basis points are decimal strings. Timestamps are integer Unix milliseconds. The checkout overrides asset and quantity from the current selection.
+
+No default prices, margins or fees are invented. Missing, invalid or expired inputs show a clear unavailable state. No network source was successfully verified, so the default remains unavailable until a trusted server-side adapter supplies data. The filter is an integration seam, not a live market feed. Quote rendering is not settlement authorization.
+
+Validation: node checkout.test.mjs passed for itemized rendering, path changes, edit invalidation, expiry, absent/stale data and invalid quantities. These tests use a DOM stub and synthetic references; full WordPress/PHP and browser rendering remain untested.
