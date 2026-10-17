@@ -18,4 +18,4 @@ jobs:
         with:
           node-version: '22'
       - run: node --check apps/neo-connect-chromebook/agent.mjs
-      - run: node --test apps/neo-connect-chromebook/agent.test.mjs
+      - run: node --test apps/neo-connect-chromebook/*.test.mjs
