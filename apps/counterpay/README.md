@@ -46,3 +46,11 @@ Upstream references: https://github.com/CounterpartyXCP/counterwallet and https:
 - `hashEvidence` creates a deterministic SHA-256 digest of an unattested Crown evidence envelope. A hash is **not** a signature, notarization, Bitcoin anchor, or proof of ownership.
 - Unit tests added for markets, previews and evidence hashing. CI automatically includes `*.test.mjs`; GitHub Actions outcomes and deployed-browser behavior must be inspected separately.
 - Bitcoin fee estimates, verified UTXOs, a signing policy, actual Crown anchors and transaction broadcasting are deliberately not implemented.
+
+## COUNTERPAY-006: Bitcoin observations and fee preview
+- `bitcoin-readonly.mjs` validates Base58Check/SegWit checksums for configured mainnet or testnet addresses, using WebCrypto.
+- A **user-supplied HTTPS Esplora-compatible Bitcoin indexer URL** is required for UTXO observations. The returned list distinguishes confirmed from unconfirmed outputs. Indexer trust, endpoint/network matching and chain-tip consensus are **not independently verified**.
+- A user-supplied HTTPS fee endpoint can return common mempool-style sat/vbyte estimates. No fee is guaranteed; source freshness is not attested.
+- The Overview now exposes read-only UTXO and fee requests and shows the returned provider data.
+- No secure coin selection, transaction serialization, PSBT construction, device signing, NEO Pass authorizations, broadcast, or private credentials are present. No real spend authorization can occur.
+- Checksum validation does not prove address control. Validate provider identity, TLS and network independently before relying on observations.
