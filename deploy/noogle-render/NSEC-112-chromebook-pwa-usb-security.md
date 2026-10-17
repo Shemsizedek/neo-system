@@ -1,0 +1,11 @@
+# Noogle Connect for Chromebook — NSEC-112
+
+**Install:** open the staging Noogle Connect URL in Chrome on Chromebook. Select the browser install icon, or Chrome menu > Cast, save, and share > Install page as app (wording varies). This installs the same responsive Noogle Connect Device Hub as a standalone web app. No downloadable ChromeOS APK or Linux binary is claimed in this gate.
+
+**NEO Mask two-key design:** The phone passkey and Chromebook passkey must be **two different WebAuthn credentials**, created by separate `navigator.credentials.create()` ceremonies against the same verified NEO Pass account and relying-party ID. Every ceremony requires a fresh server-generated challenge; server verifies exact origin/RP ID, challenge, user verification, and attestation, then saves a unique credential ID per device. Device PIN or biometrics authorize each local authenticator. Never export or duplicate private passkey material.
+
+**USB pairing:** Plugging Android into Chromebook by USB can support a physical connection and detection, but it **does not** make Android an arbitrary USB FIDO2/CTAP authenticator. A secure key over USB requires a supported FIDO2 device/transport or a separately engineered, OS-permitted hardware-backed authenticator implementing CTAP and appropriate host interfaces. Browser WebUSB is not itself a general-purpose system security key and cannot be presumed available for a phone-to-Chromebook cable. Until that transport is verified, USB detection may be informational only and creates no account privilege.
+
+**Daybreak security keys:** Both credentials can be independently registered to the same authorized account **only after** NEO Pass login and an appropriate WebAuthn registration backend are live. Their use with Daybreak additionally requires Daybreak to support registration of both credentials for the account. Do not advertise Daybreak enrollment until tested against its actual relying party.
+
+**Safety:** Staging `/connect/*` and `/api/*` remain denied; the demonstration pairing code never authorizes passkey issuance, document signing or remote terminal access. The PWA can be installed offline only if an offline strategy is separately implemented; this gate does not provide one.
