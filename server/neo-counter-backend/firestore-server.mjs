@@ -1,4 +1,5 @@
 import http from 'node:http';
+import { createCompanyCrmReadHandler } from './company-crm-read.mjs';
 import { createFirestoreContext, FirestoreVersionConflictError } from './firestore-context.mjs';
 import { createCounterCrownAuthorizer } from './crown-authorizer.mjs';
 
@@ -9,7 +10,7 @@ function applyCors(res){res.setHeader('Access-Control-Allow-Origin',ALLOWED_ORIG
 function send(res,status,body){applyCors(res);res.writeHead(status,{'content-type':'application/json','cache-control':'no-store'});res.end(JSON.stringify(body));}
 async function readJson(req){const chunks=[];for await(const chunk of req)chunks.push(chunk);return chunks.length?JSON.parse(Buffer.concat(chunks).toString('utf8')):{};}
 
-export function createFirestoreHandler(ctx,{crownAuthorizer=createCounterCrownAuthorizer()}={}){
+export function createFirestoreHandler(ctx,{crownAuthorizer=createCounterCrownAuthorizer(),crmRead=null}={}){
   if(!ctx)throw new Error('neo_counter_firestore_context_required');
   const requireCrown=async(res,scope)=>{const proof=await crownAuthorizer(scope);if(proof?.verified===true)return true;const unavailable=['crown_service_authorizer_unconfigured','crown_service_authorizer_unavailable'].includes(proof?.error);send(res,unavailable?503:403,{error:proof?.error||'crown_capability_denied',required_scope:scope});return false};
   return async(req,res)=>{
@@ -22,6 +23,7 @@ export function createFirestoreHandler(ctx,{crownAuthorizer=createCounterCrownAu
       if(!principal)return send(res,401,{error:'unauthorized'});
       if(url.pathname==='/session/me'&&req.method==='GET')return send(res,200,{merchantId:principal.merchantId,terminalId:principal.terminalId,staffId:principal.staffId,permissions:principal.permissions,expiresAt:principal.expiresAt||null});
       if(url.pathname==='/session'&&req.method==='DELETE'){await ctx.revoke(req);return send(res,200,{ok:true});}
+      if(crmRead){const result=await crmRead({principal,method:req.method,path:url.pathname,query:Object.fromEntries(url.searchParams)});if(result)return send(res,result.status,result.body);}
       const snapshot=url.pathname.match(/^\/merchant\/([^/]+)\/snapshot$/);
       if(snapshot&&req.method==='GET'){
         const merchantId=decodeURIComponent(snapshot[1]);
@@ -54,7 +56,8 @@ export function createFirestoreHandler(ctx,{crownAuthorizer=createCounterCrownAu
 
 export function startFirestoreServer({db,port=PORT,contextOptions={},crownAuthorizer}={}){
   const ctx=createFirestoreContext({db,...contextOptions});
-  const server=http.createServer(createFirestoreHandler(ctx,{crownAuthorizer}));
+  const crmRead=createCompanyCrmReadHandler({db,can:ctx.can});
+  const server=http.createServer(createFirestoreHandler(ctx,{crownAuthorizer,crmRead}));
   server.listen(port,()=>console.log(`NEO Counter Firestore backend listening on :${port}`));
   return {server,context:ctx};
 }
