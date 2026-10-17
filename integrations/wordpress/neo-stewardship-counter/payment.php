@@ -45,6 +45,8 @@ add_action('admin_post_neo_stewardship_prepare', function () {
     if (!is_user_logged_in()) wp_die('Sign in required.', '', array('response'=>403));
     check_admin_referer('neo_stewardship_prepare');
     if (!neo_stewardship_form144_received()) wp_die('Upload completed Form 144 first.', '', array('response'=>403));
+    $ledger = isset($_POST['ledger']) && is_string($_POST['ledger']) ? sanitize_key($_POST['ledger']) : '';
+    if (!in_array($ledger,array('classic','cp20'),true)) wp_die('Select a supported Counterparty ledger.', '', array('response'=>400));
     $asset = isset($_POST['asset']) ? sanitize_text_field(wp_unslash($_POST['asset'])) : '';
     $wallet = isset($_POST['wallet']) ? trim(wp_unslash($_POST['wallet'])) : '';
     $qty = isset($_POST['quantity']) && is_string($_POST['quantity']) ? $_POST['quantity'] : '';
@@ -57,7 +59,7 @@ add_action('admin_post_neo_stewardship_prepare', function () {
     if (!$terms || !hash_equals(hash('sha256',$terms), $expected)) {
         wp_die('The Indenture changed. Reload and review its current version.', '', array('response'=>409));
     }
-    $refs = neo_stewardship_market_references();
+    $refs = neo_stewardship_market_references($ledger);
     if (!isset($refs[$asset]) || $refs[$asset]['expiresAt'] <= time()*1000) {
         wp_die('Market reference unavailable. Refresh and retry.', '', array('response'=>503));
     }
@@ -74,7 +76,7 @@ add_action('admin_post_neo_stewardship_prepare', function () {
     $record = array('state'=>'PREPARED_NOT_PAYABLE','asset'=>$asset,'quantity'=>$qty,
         'delivery_wallet'=>$wallet,'treasury_address'=>NEO_STEWARDSHIP_TREASURY,
         'token_source_address'=>NEO_STEWARDSHIP_TREASURY,'signing_wallet'=>'Freewallet',
-        'signing_status'=>'CONNECTION_REQUIRED','counterparty_ledger'=>'UNVERIFIED',
+        'signing_status'=>'CONNECTION_REQUIRED','counterparty_ledger'=>$ledger,
         'total_sats'=>(string)$total,'market_reference'=>$ref,
         'terms_sha256'=>hash('sha256',$terms),'terms_snapshot'=>$terms,
         'acknowledged_at'=>gmdate('c'),'payment_status'=>'NOT_REQUESTED',
@@ -83,7 +85,7 @@ add_action('admin_post_neo_stewardship_prepare', function () {
         wp_delete_post($id,true);
         wp_die('Checkout record could not be saved.', '', array('response'=>500));
     }
-    wp_safe_redirect(add_query_arg('neo_prepared',$id,home_url('/holy-stewardship/')) . '#neo-stewardship-gateway');
+    wp_safe_redirect(add_query_arg('neo_prepared',$id,add_query_arg('neo_ledger',$ledger,home_url('/holy-stewardship/'))) . '#neo-stewardship-gateway');
     exit;
 });
 add_action('add_meta_boxes_neo_steward_order',function(){
