@@ -116,6 +116,7 @@ export function createNeoPlatformApi({ now=()=>new Date().toISOString(), audit=(
       const {credential}=JSON.parse(body||'{}');if(!credential)return json(res,400,{error:'google_credential_required'});
       try{const result=await authService.login(credential);res.setHeader('set-cookie',sessionCookie(result.token));return json(res,200,{authenticated:true,member:result.member});}catch(error){console.error('NEOpass Google login failed:',error?.code||error?.message||'unknown');if(error?.code==='neopass_registry_unavailable')return json(res,503,{error:'neopass_registry_unavailable',message:'NEOpass could not save the account. Please try again.'});return json(res,401,{error:'google_identity_not_verified',message:'Google could not verify this sign-in.'});}
     }
+    if(req.method==='GET'&&url.pathname==='/api/v1/auth/readiness')return json(res,200,{service:'neopass',authenticatedRuntimeAttached:Boolean(authService),loginAvailable:Boolean(authService && authService.clientId),memberStorageVerified:false,sessionIssuanceVerified:false});
     if(req.method==='GET'&&url.pathname==='/api/v1/auth/session'){const subject=subjectResolver(req);return json(res,200,subject?{authenticated:true,member:authService?await authService.session(subject,req.neopassClaims||{}):{subject,displayName:'NEOpass Member',neopassStatus:'authenticated'}}:{authenticated:false});}
     if(req.method==='POST'&&url.pathname==='/api/v1/crown/attestation'){
       if(rejectCrossSite(req))return json(res,403,{error:'cross_site_request_blocked'});
