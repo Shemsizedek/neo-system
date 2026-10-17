@@ -1,0 +1,40 @@
+name: NEO Realty Escrow Sandbox
+on:
+  pull_request:
+    paths:
+      - 'server/neo-realty/**'
+      - 'apps/neo-realty/rwa-004/**'
+      - '.github/workflows/neo-realty-sandbox.yml'
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Run escrow unit tests
+        run: node --test server/neo-realty/*.test.mjs
+      - name: Verify frontend and API code parses
+        run: |
+          node --check server/neo-realty/api.mjs
+          node --check server/neo-realty/escrow.mjs
+      - name: Smoke test local API and UI
+        env:
+          NEO_REALTY_SANDBOX_TOKEN: ci-test-token
+          NEO_REALTY_DATA_DIR: /tmp/neo-realty-ci
+        run: |
+          node server/neo-realty/api.mjs &
+          pid=$!
+          trap 'kill $pid' EXIT
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8787/ -o /tmp/neo-realty-page; then break; fi
+            sleep 1
+          done
+          grep -q '133 Maple Street' /tmp/neo-realty-page
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8787/api/rwa/pilots)" = 401
+          curl -fsS -H 'Authorization: Bearer ci-test-token' -H 'Content-Type: application/json' -d '{"usd":75000,"usdPerNomni":1,"ownerStake":20}' http://127.0.0.1:8787/api/rwa/pilots > /tmp/neo-realty-case
+          node -e "const p=require('/tmp/neo-realty-case');if(!p.id||!p.sandbox||p.status!=='DRAFT')process.exit(1)"
