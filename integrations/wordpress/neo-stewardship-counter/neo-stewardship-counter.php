@@ -2,7 +2,7 @@
 /**
  * Plugin Name: NEO Counter Holy Stewardship
  * Description: Page-specific stewardship checkout review. Itemized market-reference checkout preview.
- * Version: 0.11.0
+ * Version: 0.12.0
  */
 defined('ABSPATH') || exit;
 require_once __DIR__ . '/market.php';
@@ -29,7 +29,7 @@ add_shortcode('neo_stewardship_counter', function () {
     $references = array_intersect_key($references, array('TEMPLEBOND' => true, 'PLEDGEBOND' => true));
     ob_start();
     ?>
-    <section data-selected-ledger="<?php echo esc_attr($ledger); ?>" data-ledger-explorer="<?php echo esc_url($explorer); ?>" data-form144-received="<?php echo $received144 ? '1' : '0'; ?>" id="<?php echo esc_attr($id); ?>" aria-label="NEO Counter stewardship checkout">
+    <section data-selected-ledger="<?php echo esc_attr($ledger); ?>" data-currency="<?php echo esc_attr($selected_currency['id']); ?>" data-ledger-explorer="<?php echo esc_url($explorer); ?>" data-form144-received="<?php echo $received144 ? '1' : '0'; ?>" id="<?php echo esc_attr($id); ?>" aria-label="NEO Counter stewardship checkout">
       <style>
       #<?php echo esc_attr($id); ?>{background:#edf3e9;color:#152b20;padding:clamp(20px,4vw,40px);border-radius:18px;margin:24px 0}
       #<?php echo esc_attr($id); ?> label{display:block;margin:18px 0}
@@ -37,58 +37,45 @@ add_shortcode('neo_stewardship_counter', function () {
       #<?php echo esc_attr($id); ?> button{background:#194b36;color:white;padding:14px 22px;border:0;border-radius:8px;font:inherit;cursor:pointer}
       #<?php echo esc_attr($id); ?> [hidden]{display:none}
       #<?php echo esc_attr($id); ?> output{display:block;margin-top:24px;white-space:pre-line}
+#<?php echo esc_attr($id); ?> .neo-heading{display:flex;justify-content:space-between;align-items:start;gap:16px;flex-wrap:wrap;margin-bottom:22px}
+#<?php echo esc_attr($id); ?> .neo-heading h2{font-size:32px;margin:0;color:#194b36}
+#<?php echo esc_attr($id); ?> .neo-eyebrow{font-size:12px;font-weight:700;letter-spacing:.12em}
+#<?php echo esc_attr($id); ?> .neo-badge{background:#f4e9c9;color:#655018;border-radius:20px;padding:6px 12px;font-size:12px}
+#<?php echo esc_attr($id); ?> .neo-layout{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:18px}
+#<?php echo esc_attr($id); ?> .neo-card{background:white;border:1px solid #dce4d7;border-radius:12px;padding:20px;margin-bottom:14px;min-width:0}
+#<?php echo esc_attr($id); ?> .neo-receipt{border-top:4px solid #194b36}
+#<?php echo esc_attr($id); ?> summary{cursor:pointer;font-weight:600;min-height:30px}
+#<?php echo esc_attr($id); ?> output{font-size:clamp(20px,3vw,30px);font-weight:700;overflow-wrap:anywhere}
+#<?php echo esc_attr($id); ?> .neo-small{font-size:13px;color:#53645a}
+#<?php echo esc_attr($id); ?> select,#<?php echo esc_attr($id); ?> input[type=number],#<?php echo esc_attr($id); ?> input[type=text]{border:1px solid #a7b8ac;border-radius:7px;color:#152b20;background:white;max-width:100%;min-height:46px}
+#<?php echo esc_attr($id); ?> p{margin:10px 0} #<?php echo esc_attr($id); ?> a{color:#194b36}
+@media(max-width:680px){#<?php echo esc_attr($id); ?> .neo-layout{grid-template-columns:1fr}}
       </style>
-      <p>WORLD TEMPLE · HOLY STEWARDSHIP</p>
-      <h2>NEO Counter</h2>
-      <p>Choose your stewardship instrument and review your participation here.</p>
-      <p><strong>Sandbox preview — payments and token delivery are not active.</strong></p>
-      <form method="get" action="<?php echo esc_url(home_url('/holy-stewardship/')); ?>">
-        <label>Counterparty ledger
+<div class="neo-heading"><div><p class="neo-eyebrow">HOLY STEWARDSHIP</p><h2>NEO Counter</h2><p>Choose your bond and see your estimate.</p></div><span class="neo-badge">Payments coming soon</span></div><div class="neo-layout"><div class="neo-card"><form data-quote-form><label>Your bond<select name="purpose"><option value="patronage">PLEDGEBOND: member patronage</option><option value="adept">TEMPLEBOND: Adept commitment</option></select></label><label>Quantity<input name="quantity" type="number" min="1" max="999999" step="1" value="1" required></label></form><details <?php if (!$ledger) echo 'open'; ?>><summary>Currency &amp; wallet settings</summary>      <form method="get" action="<?php echo esc_url(home_url('/holy-stewardship/')); ?>">
+        <label>Wallet version
           <select name="neo_ledger" required>
             <option value="">Select the ledger used by your wallet</option>
             <option value="cp20" <?php selected($ledger,'cp20'); ?>>Counterparty 2.0</option>
             <option value="classic" <?php selected($ledger,'classic'); ?>>Counterparty Classic</option>
           </select>
         </label>
-        <label>Requested payment currency
+        <label>Currency
           <select name="neo_currency">
             <?php foreach (neo_stewardship_currency_catalog() as $currency) : ?>
               <option value="<?php echo esc_attr($currency['id']); ?>" <?php selected($selected_currency['id'],$currency['id']); ?>><?php echo esc_html($currency['symbol'] . ' — ' . $currency['name']); ?></option>
             <?php endforeach; ?>
           </select>
         </label>
-        <button type="submit">Use ledger and currency</button>
+        <button type="submit">Update estimate</button>
       </form>
-      <p>Bitcoin mainnet payments share the Bitcoin network. Token balances, pricing and delivery are verified separately on the selected Counterparty ledger. No automatic conversion between ledgers occurs.</p>
-      <p><strong>Selected currency: <?php echo esc_html($selected_currency['symbol'] . ' — ' . $selected_currency['name']); ?></strong></p>
-      <?php if (!$currency_is_btc) : ?>
-        <p role="status"><?php echo $selected_currency['counterpartyAsset'] ? 'Asset mapping recorded; verified exchange pricing and settlement routing are still required for this currency.' : 'The on-chain asset mapping for this currency is not yet recorded in the registry.'; ?> No BTC substitution or payment request is made.</p>
-      <?php endif; ?>
-      <p>The 118-entry World Currency catalog is available for selection. Catalog inclusion does not mean live payment acceptance. BTC quotes remain references while payment reconciliation and token delivery are unfinished.</p>
-      <form data-quote-form>
-        <label>Participation path
-          <select name="purpose" required>
-            <option value="patronage">PLEDGEBOND: member patronage</option>
-            <option value="adept">TEMPLEBOND: Adept commitment</option>
-          </select>
-        </label>
-        <p data-description>PLEDGEBOND represents member participation and stewardship pledges.</p>
-        <label>Token quantity to review
-          <input name="quantity" type="number" min="1" max="999999" step="1" value="1" required>
-        </label>
-        <p>Preview pricing: 2% market spread plus a 2,000-satoshi estimated fee reserve, rounded up to the next 1,000 satoshis. Actual fees may differ. TokenScan prices are market references; the time of the underlying trade is unavailable.</p>
-        <p data-price-status aria-live="polite">Loading quote availability…</p>
-        <p><a data-asset href="https://tokenscan.io/asset/PLEDGEBOND" target="_blank" rel="noopener noreferrer">View PLEDGEBOND on TokenScan</a></p>
-        <label><input name="acknowledge" type="checkbox" required> I understand this is a preview and creates no payment, token holding, membership recognition or insurance coverage.</label>
-        <button type="submit" <?php disabled(!$received144 || !$ledger || !$currency_is_btc); ?>>Review stewardship selection</button>
-      </form>
-      <div id="neo-form144">
-        <h3>Required for all members: completed Form 144</h3>
+</details></div><aside class="neo-card neo-receipt"><p class="neo-eyebrow">ESTIMATED TOTAL</p><output data-total aria-live="polite">—</output><p data-price-status>Choose your wallet version to see pricing.</p><details><summary>Price breakdown</summary><p>Bond value: <span data-subtotal>—</span></p><p>Fees &amp; rounding: <span data-fees>—</span></p><p class="neo-small">Includes a 2% spread and a 2,000-satoshi fee allowance, rounded up to 1,000 satoshis. Actual fees may differ. TokenScan prices are market references.</p></details><p class="neo-small">No payment is taken here yet.</p></aside></div>
+      <details id="neo-form144" class="neo-card" <?php if (isset($_GET['form144'])) echo 'open'; ?>><summary>Form 144 — <?php echo $received144 ? 'Received' : 'Required for all members'; ?></summary>
+        
         <p><a href="https://holytemples.org/temple-membership/">Membership instructions</a> · <a href="https://www.dropbox.com/scl/fi/fqk2q8k1w3mf0zkxw3akp/Naturalization-Form-144.pdf?rlkey=f98kc5z3cqcvc3bjryxcv1sy9&amp;dl=0" target="_blank" rel="noopener noreferrer">Download Naturalization Form 144</a></p>
         <?php if ($received144) : ?>
-          <p role="status">Form 144 received — pending review. Receipt does not certify completeness or approve membership.</p>
+          <p role="status">Form 144 received. Membership review is pending.</p>
         <?php else : ?>
-          <p>Upload your completed Form 144 before reviewing either bond selection.</p>
+          <p>Upload your completed Form 144 before continuing.</p>
         <?php endif; ?>
         <?php if (isset($_GET['form144']) && $_GET['form144'] === 'invalid') : ?>
           <p role="alert">Upload unsuccessful. Select a completed PDF up to 2 MB and confirm completion.</p>
@@ -107,15 +94,14 @@ add_shortcode('neo_stewardship_counter', function () {
         <?php else : ?>
           <p><a href="<?php echo esc_url(wp_login_url(home_url('/holy-stewardship/#neo-form144'))); ?>">Sign in to upload Form 144 privately</a></p>
         <?php endif; ?>
-      </div>
-      <output aria-live="polite"></output>
-      <p><a href="https://tokenscan.io/asset/TEMPLEBOND" target="_blank" rel="noopener noreferrer">TEMPLEBOND — TokenScan asset information</a><br>
-      <a href="https://tokenscan.io/asset/PLEDGEBOND" target="_blank" rel="noopener noreferrer">PLEDGEBOND — TokenScan asset information</a></p>
-      <div id="neo-stewardship-gateway" data-wallet-scanner>
-        <h3>NEO Counter — wallet and checkout</h3>
+      </details>
+      <details class="neo-card"><summary>Bond information</summary><p><a href="https://tokenscan.io/asset/TEMPLEBOND" target="_blank" rel="noopener noreferrer">TEMPLEBOND — TokenScan asset information</a><br>
+      <a href="https://tokenscan.io/asset/PLEDGEBOND" target="_blank" rel="noopener noreferrer">PLEDGEBOND — TokenScan asset information</a></p></details>
+      <details id="neo-stewardship-gateway" class="neo-card" data-wallet-scanner><summary>Wallet &amp; checkout details</summary>
+        
         <div data-wallet-connections>
           <h4>Connect a Counterparty wallet</h4>
-          <p>NeoMask connects your local wallet to this page and requests approval for each signing operation. NEOpay, CounterPay and other compatible providers can also connect. Install and configure the wallet on your device before connecting.</p>
+          <p>Connect NeoMask or a compatible NEOpay or CounterPay wallet.</p>
           <button type="button" data-connect-member>Connect member wallet</button>
           <?php if (current_user_can('manage_options')) : ?>
             <button type="button" data-connect-merchant>Connect merchant signing wallet</button>
@@ -123,7 +109,6 @@ add_shortcode('neo_stewardship_counter', function () {
           <p data-connect-status aria-live="polite">No wallet account connected on this page.</p>
           <p><a href="https://freewallet.io/" target="_blank" rel="noopener noreferrer">Freewallet / Freewallet Classic</a> — external signing workflow; browser connection requires a compatible bridge.</p>
         </div>
-        <p>Collection address configured: 18SzD3cfwCcV9p6C38ho4uZPHE8ygVB9iq. Bond delivery source: 1Ky2wRYYrJzqdQJH64F7TR98fqLxJs7LK8. Payment collection awaits verified reconciliation and token delivery; no payment is requested yet.</p>
         <?php
         $prepared_id = isset($_GET['neo_prepared']) ? absint($_GET['neo_prepared']) : 0;
         if ($prepared_id && is_user_logged_in() && get_post_type($prepared_id) === 'neo_steward_order' &&
@@ -138,11 +123,8 @@ add_shortcode('neo_stewardship_counter', function () {
             <input type="hidden" name="ledger" value="<?php echo esc_attr($ledger); ?>">
             <input type="hidden" name="terms_hash" value="<?php echo esc_attr(hash('sha256',neo_stewardship_indenture_snapshot())); ?>">
             <?php wp_nonce_field('neo_stewardship_prepare'); ?>
-            <label>Instrument
-              <select name="asset"><option value="PLEDGEBOND">PLEDGEBOND: member patronage</option><option value="TEMPLEBOND">TEMPLEBOND: Adept commitment</option></select>
-            </label>
-            <label>Whole token quantity<input type="number" name="quantity" min="1" max="999999" step="1" value="1" required></label>
-            <label>Your Counterparty-compatible delivery wallet
+<input type="hidden" name="asset" value="PLEDGEBOND" data-order-asset><input type="hidden" name="quantity" value="1" data-order-quantity>
+            <label>Your receiving wallet
               <input name="wallet" type="text" autocomplete="off" spellcheck="false" required placeholder="Legacy mainnet address beginning with 1">
             </label>
             <button type="button" data-scan-wallet>Scan wallet QR</button>
@@ -150,12 +132,12 @@ add_shortcode('neo_stewardship_counter', function () {
             <video hidden playsinline muted style="max-width:100%"></video>
             <p data-scan-status aria-live="polite">Scan or paste your own receiving address. Never enter a seed phrase or private key.</p>
             <label><input type="checkbox" name="accept_indent" value="1" required> I have read the Indenture above and acknowledge its terms for my selected instrument. Preparing checkout alone does not complete payment or fulfill the Indenture.</label>
-            <button type="submit">Prepare checkout — no payment</button>
+            <button type="submit">Save checkout details</button>
           </form>
         <?php else : ?>
           <p>Select a ledger, sign in and upload completed Form 144 to prepare checkout.</p>
         <?php endif; ?>
-      </div>
+      </details>
       <script type="module">
         import { mountWalletConnections } from <?php echo wp_json_encode(add_query_arg('ver','0.9.0',plugins_url('wallet-connect.mjs', __FILE__))); ?>;
         const connectRoot = document.querySelector('[data-wallet-connections]');
@@ -163,7 +145,7 @@ add_shortcode('neo_stewardship_counter', function () {
         import { mountWalletScanner } from <?php echo wp_json_encode(plugins_url('wallet-scanner.mjs', __FILE__)); ?>;
         const scanRoot = document.querySelector('[data-wallet-scanner]');
         if (scanRoot && scanRoot.querySelector('[data-scan-wallet]')) mountWalletScanner(scanRoot);
-        import { mountStewardship } from <?php echo wp_json_encode(add_query_arg('ver','0.7.0',plugins_url('checkout.mjs', __FILE__)), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+        import { mountStewardship } from <?php echo wp_json_encode(add_query_arg('ver','0.12.0',plugins_url('checkout.mjs', __FILE__)), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
         mountStewardship(
           document.getElementById(<?php echo wp_json_encode($id); ?>),
           <?php echo wp_json_encode($references, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>
