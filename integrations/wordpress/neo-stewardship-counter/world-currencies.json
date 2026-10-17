@@ -11,7 +11,8 @@
       "name": "Nomni",
       "counterpartyAsset": "NOMNI",
       "enabledForCollection": false,
-      "status": "settlement_verification_required"
+      "status": "daily_market_reference_required",
+      "expectedOwner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg"
     },
     {
       "id": "svc",
@@ -25,17 +26,19 @@
       "id": "mrc",
       "symbol": "MRC",
       "name": "Moor Cash",
-      "counterpartyAsset": null,
+      "counterpartyAsset": "MOORCASH",
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "daily_market_reference_required",
+      "expectedOwner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg"
     },
     {
       "id": "mor",
       "symbol": "MOR",
       "name": "Moor Coin",
-      "counterpartyAsset": null,
+      "counterpartyAsset": "MOORCOIN",
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "daily_market_reference_required",
+      "expectedOwner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg"
     },
     {
       "id": "mxc",
@@ -49,9 +52,10 @@
       "id": "neo",
       "symbol": "NEO",
       "name": "Neo Cash",
-      "counterpartyAsset": null,
+      "counterpartyAsset": "NEOCASH",
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "daily_market_reference_required",
+      "expectedOwner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg"
     },
     {
       "id": "btc",
@@ -59,7 +63,8 @@
       "name": "Bitcoin",
       "counterpartyAsset": "BTC",
       "enabledForCollection": false,
-      "status": "settlement_verification_required"
+      "status": "daily_market_reference_required",
+      "expectedOwner": null
     },
     {
       "id": "xcp",
@@ -67,31 +72,35 @@
       "name": "Counterparty",
       "counterpartyAsset": "XCP",
       "enabledForCollection": false,
-      "status": "settlement_verification_required"
+      "status": "daily_market_reference_required",
+      "expectedOwner": null
     },
     {
       "id": "erc",
       "symbol": "ERC",
       "name": "Europa Cash",
-      "counterpartyAsset": null,
+      "counterpartyAsset": "EUROPACASH",
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "daily_market_reference_required",
+      "expectedOwner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg"
     },
     {
       "id": "stc",
       "symbol": "STC",
       "name": "Sterling Cash",
-      "counterpartyAsset": null,
+      "counterpartyAsset": "STERLINGCASH",
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "daily_market_reference_required",
+      "expectedOwner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg"
     },
     {
       "id": "rpc",
       "symbol": "RPC",
       "name": "Rupee Cash",
-      "counterpartyAsset": null,
+      "counterpartyAsset": "RUPEECASH",
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "daily_market_reference_required",
+      "expectedOwner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg"
     },
     {
       "id": "adc",
@@ -105,9 +114,10 @@
       "id": "cdc",
       "symbol": "CDC",
       "name": "Canadia Cash",
-      "counterpartyAsset": null,
+      "counterpartyAsset": "CANADIACASH",
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "daily_market_reference_required",
+      "expectedOwner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg"
     },
     {
       "id": "sgc",
@@ -121,17 +131,19 @@
       "id": "swc",
       "symbol": "SWC",
       "name": "Swiss Cash",
-      "counterpartyAsset": null,
+      "counterpartyAsset": "SWISSCASH",
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "daily_market_reference_required",
+      "expectedOwner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg"
     },
     {
       "id": "olm",
       "symbol": "OLM",
       "name": "Olmec Cash",
-      "counterpartyAsset": null,
+      "counterpartyAsset": "OLMECCASH",
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "daily_market_reference_required",
+      "expectedOwner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg"
     },
     {
       "id": "rgc",
@@ -145,17 +157,19 @@
       "id": "ync",
       "symbol": "YNC",
       "name": "Yen Cash",
-      "counterpartyAsset": null,
+      "counterpartyAsset": "YENCASH",
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "daily_market_reference_required",
+      "expectedOwner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg"
     },
     {
       "id": "rmc",
       "symbol": "RMC",
       "name": "Renminbi Cash",
-      "counterpartyAsset": null,
+      "counterpartyAsset": "RENMINBICASH",
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "daily_market_reference_required",
+      "expectedOwner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg"
     },
     {
       "id": "zlc",
@@ -185,25 +199,28 @@
       "id": "dmc",
       "symbol": "DMC",
       "name": "Dirham Cash",
-      "counterpartyAsset": null,
+      "counterpartyAsset": "DIRHAMCASH",
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "daily_market_reference_required",
+      "expectedOwner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg"
     },
     {
       "id": "hgc",
       "symbol": "HGC",
       "name": "Hong Cash",
-      "counterpartyAsset": null,
+      "counterpartyAsset": "HONGCASH",
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "daily_market_reference_required",
+      "expectedOwner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg"
     },
     {
       "id": "ptn",
       "symbol": "PTN",
       "name": "Peso Cash",
-      "counterpartyAsset": null,
+      "counterpartyAsset": "PESOCASH",
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "daily_market_reference_required",
+      "expectedOwner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg"
     },
     {
       "id": "rdc",
@@ -249,17 +266,19 @@
       "id": "lrc",
       "symbol": "LRC",
       "name": "Lira Cash",
-      "counterpartyAsset": null,
+      "counterpartyAsset": "LIRACASH",
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "daily_market_reference_required",
+      "expectedOwner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg"
     },
     {
       "id": "sgc-2",
       "symbol": "SGC",
       "name": "Shilling Cash",
-      "counterpartyAsset": null,
+      "counterpartyAsset": "SHILLINGCASH",
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "daily_market_reference_required",
+      "expectedOwner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg"
     },
     {
       "id": "wnc",
@@ -273,17 +292,19 @@
       "id": "pdc",
       "symbol": "PDC",
       "name": "Pound Cash",
-      "counterpartyAsset": null,
+      "counterpartyAsset": "POUNDCASH",
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "daily_market_reference_required",
+      "expectedOwner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg"
     },
     {
       "id": "drc",
       "symbol": "DRC",
       "name": "Dinar Cash",
-      "counterpartyAsset": null,
+      "counterpartyAsset": "DINARCASH",
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "daily_market_reference_required",
+      "expectedOwner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg"
     },
     {
       "id": "knc",
@@ -305,9 +326,10 @@
       "id": "slc",
       "symbol": "SLC",
       "name": "Shekel Cash",
-      "counterpartyAsset": null,
+      "counterpartyAsset": "SHEKELCASH",
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "daily_market_reference_required",
+      "expectedOwner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg"
     },
     {
       "id": "zlc-2",
@@ -361,9 +383,10 @@
       "id": "nrc",
       "symbol": "NRC",
       "name": "Naira Cash",
-      "counterpartyAsset": null,
+      "counterpartyAsset": "NAIRACASH",
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "daily_market_reference_required",
+      "expectedOwner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg"
     },
     {
       "id": "luc",
@@ -408,7 +431,7 @@
     {
       "id": "bvc",
       "symbol": "BVC",
-      "name": "Bolívar Cash",
+      "name": "Bol\u00edvar Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
       "status": "asset_mapping_required"
@@ -520,7 +543,7 @@
     {
       "id": "boc",
       "symbol": "BOC",
-      "name": "Bolíviano Cash",
+      "name": "Bol\u00edviano Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
       "status": "asset_mapping_required"
@@ -585,9 +608,10 @@
       "id": "brc",
       "symbol": "BRC",
       "name": "Birr Cash",
-      "counterpartyAsset": null,
+      "counterpartyAsset": "BIRRCASH",
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "daily_market_reference_required",
+      "expectedOwner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg"
     },
     {
       "id": "nac",
@@ -720,7 +744,7 @@
     {
       "id": "pgc",
       "symbol": "PGC",
-      "name": "Pa’anga Cash",
+      "name": "Pa\u2019anga Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
       "status": "asset_mapping_required"
@@ -753,9 +777,10 @@
       "id": "gdc",
       "symbol": "GDC",
       "name": "Gourde Cash",
-      "counterpartyAsset": null,
+      "counterpartyAsset": "GOURDECASH",
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "daily_market_reference_required",
+      "expectedOwner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg"
     },
     {
       "id": "rfc",
@@ -929,9 +954,10 @@
       "id": "syg",
       "symbol": "SYG",
       "name": "Synergy Cash",
-      "counterpartyAsset": null,
+      "counterpartyAsset": "SYNERGYCASH",
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "daily_market_reference_required",
+      "expectedOwner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg"
     },
     {
       "id": "zmc",
@@ -945,9 +971,10 @@
       "id": "gec",
       "symbol": "GEC",
       "name": "Geneih Cash",
-      "counterpartyAsset": null,
+      "counterpartyAsset": "GENEIHCASH",
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "daily_market_reference_required",
+      "expectedOwner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg"
     }
   ],
   "collectionAddress": "18SzD3cfwCcV9p6C38ho4uZPHE8ygVB9iq",

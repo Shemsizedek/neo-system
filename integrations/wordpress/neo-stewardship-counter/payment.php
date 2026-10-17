@@ -49,7 +49,7 @@ add_action('admin_post_neo_stewardship_prepare', function () {
     $ledger = isset($_POST['ledger']) && is_string($_POST['ledger']) ? sanitize_key($_POST['ledger']) : '';
     if (!in_array($ledger,array('classic','cp20'),true)) wp_die('Select a supported Counterparty ledger.', '', array('response'=>400));
     $currency = isset($_POST['currency']) && is_string($_POST['currency']) ? sanitize_key($_POST['currency']) : '';
-    if ($currency !== 'btc') wp_die('This currency does not have a verified payment route. No substitution is permitted.', '', array('response'=>409));
+    if (!neo_stewardship_currency_by_id($currency)) wp_die('Unknown payment currency.', '', array('response'=>400));
     $asset = isset($_POST['asset']) ? sanitize_text_field(wp_unslash($_POST['asset'])) : '';
     $wallet = isset($_POST['wallet']) ? trim(wp_unslash($_POST['wallet'])) : '';
     $qty = isset($_POST['quantity']) && is_string($_POST['quantity']) ? $_POST['quantity'] : '';
@@ -62,25 +62,21 @@ add_action('admin_post_neo_stewardship_prepare', function () {
     if (!$terms || !hash_equals(hash('sha256',$terms), $expected)) {
         wp_die('The Indenture changed. Reload and review its current version.', '', array('response'=>409));
     }
-    $refs = neo_stewardship_market_references($ledger);
+    $refs = neo_stewardship_market_references($ledger,$currency);
     if (!isset($refs[$asset]) || $refs[$asset]['expiresAt'] <= time()*1000) {
         wp_die('Market reference unavailable. Refresh and retry.', '', array('response'=>503));
     }
     $ref = $refs[$asset];
-    $base = (int) $ref['unitPriceMinor'] * (int) $qty;
-    if (!is_int($base) || $base <= 0 || $base > 1000000000) {
-        wp_die('Prepared checkout exceeds the 10 BTC reference limit.', '', array('response'=>400));
-    }
-    $spread = intdiv($base*200 + 9999, 10000);
-    $total = intdiv($base + $spread + 2000 + 999, 1000)*1000;
+    $quote = neo_stewardship_price_order($ref,$qty);
+    if (!$quote) wp_die('The quote is unavailable or exceeds the 10 BTC reference limit.', '', array('response'=>400));
     $id = wp_insert_post(array('post_type'=>'neo_steward_order','post_status'=>'private',
         'post_author'=>get_current_user_id(),'post_title'=>'Prepared checkout — ' . $asset . ' — ' . gmdate('Y-m-d H:i:s')), true);
     if (is_wp_error($id) || !$id) wp_die('Checkout record could not be saved.', '', array('response'=>500));
-    $record = array('state'=>'PREPARED_NOT_PAYABLE','payment_currency'=>'BTC','payment_network'=>'bitcoin-mainnet','asset'=>$asset,'quantity'=>$qty,
+    $record = array('state'=>'PREPARED_NOT_PAYABLE','payment_currency'=>$ref['currencyAsset'],'currency_id'=>$currency,'currency_symbol'=>$ref['currency'],'currency_decimals'=>$ref['currencyDecimals'],'payment_network'=>'bitcoin-mainnet','asset'=>$asset,'quantity'=>$qty,
         'delivery_wallet'=>$wallet,'collection_address'=>NEO_STEWARDSHIP_COLLECTION,'treasury_address'=>NEO_STEWARDSHIP_COLLECTION,
-        'token_source_address'=>NEO_STEWARDSHIP_BOND_SOURCE,'signing_wallet'=>'Freewallet',
+        'token_source_address'=>NEO_STEWARDSHIP_BOND_SOURCE,'signing_wallet'=>'NeoMask',
         'signing_status'=>'CONNECTION_REQUIRED','counterparty_ledger'=>$ledger,
-        'total_sats'=>(string)$total,'market_reference'=>$ref,
+        'total_minor'=>$quote['totalMinor'],'pricing'=>$quote,'market_reference'=>$ref,'markup_bps'=>'900',
         'terms_sha256'=>hash('sha256',$terms),'terms_snapshot'=>$terms,
         'acknowledged_at'=>gmdate('c'),'payment_status'=>'NOT_REQUESTED',
         'token_delivery'=>'NOT_STARTED','note'=>'Acknowledgment recorded; payment and fulfillment have not occurred.');
@@ -88,14 +84,14 @@ add_action('admin_post_neo_stewardship_prepare', function () {
         wp_delete_post($id,true);
         wp_die('Checkout record could not be saved.', '', array('response'=>500));
     }
-    wp_safe_redirect(add_query_arg('neo_prepared',$id,add_query_arg('neo_ledger',$ledger,home_url('/holy-stewardship/'))) . '#neo-stewardship-gateway');
+    wp_safe_redirect(add_query_arg('neo_prepared',$id,add_query_arg(array('neo_ledger'=>$ledger,'neo_currency'=>$currency),home_url('/holy-stewardship/'))) . '#neo-stewardship-gateway');
     exit;
 });
 add_action('add_meta_boxes_neo_steward_order',function(){
     add_meta_box('neo_checkout_record','Checkout record',function($post){
         if (!current_user_can('manage_options')) return;
-        echo '<p>Freewallet signing handoff: after independently verified payment, send the recorded instrument and exact quantity from ' .
-            esc_html(NEO_STEWARDSHIP_BOND_SOURCE) . ' to the recorded delivery wallet. Verify the correct Counterparty ledger, source inventory, destination, amount and network fee inside Freewallet. This record does not authorize or broadcast a transfer.</p>';
+        echo '<p>NeoMask signing handoff: after independently verified payment, send the recorded instrument and exact quantity from ' .
+            esc_html(NEO_STEWARDSHIP_BOND_SOURCE) . ' to the recorded delivery wallet. Verify the correct Counterparty ledger, source inventory, destination, amount and network fee inside the selected NeoMask wallet. This record does not authorize or broadcast a transfer.</p>';
         echo '<pre style="white-space:pre-wrap;overflow-wrap:anywhere">' .
             esc_html(wp_json_encode(get_post_meta($post->ID,'_neo_checkout',true),JSON_PRETTY_PRINT)) . '</pre>';
     },'neo_steward_order');

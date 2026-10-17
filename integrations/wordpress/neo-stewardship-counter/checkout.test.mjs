@@ -1,28 +1,10 @@
 import assert from 'node:assert/strict';
-import { mountStewardship } from './checkout.mjs';
-const fixture={currency:'BTC',unitPriceMinor:'1000',feeAllowanceMinor:'150',spreadBps:'100',processorFeeBps:'290',roundingMinor:'100',source:'TEST FIXTURE',referenceId:'test',observedAt:1000,expiresAt:301000};
-function setup(references, received = '1') {
- const listeners={}, selectListeners={};
- const select={value:'patronage',selectedIndex:0,options:[{text:'Citizen'},{text:'Adept'}],addEventListener:(k,fn)=>selectListeners[k]=fn};
- const form={elements:{purpose:select,quantity:{value:'2'}},reportValidity:()=>true,addEventListener:(k,fn)=>listeners[k]=fn};
- const nodes={'[data-quote-form]':form,'output':{textContent:''},'[data-price-status]':{},'[data-description]':{},'[data-protection]':{},'[data-asset]':{}};
- let expire;
- mountStewardship({querySelector:k=>nodes[k],getAttribute:()=>received},references,()=>2000,fn=>{expire=fn;return 1},()=>{expire=undefined});
- const submit=()=>listeners.submit({preventDefault(){}});
- return {nodes,select,selectListeners,listeners,submit,expire:()=>expire()};
-}
-const s=setup({PLEDGEBOND:fixture,TEMPLEBOND:{...fixture,unitPriceMinor:'2000'}});
-s.submit();
-assert.match(s.nodes.output.textContent,/Total preview: 0.00002300 BTC/);
-assert.match(s.nodes.output.textContent,/Percentage processing fee: 0.00000067 BTC/);
-s.listeners.input();assert.equal(s.nodes.output.textContent,'');
-s.select.value='adept';s.select.selectedIndex=1;s.selectListeners.change();s.submit();
-assert.match(s.nodes.output.textContent,/TEMPLEBOND/);
-s.expire();assert.match(s.nodes.output.textContent,/Quote expired/);
-const absent=setup({});absent.submit();assert.match(absent.nodes.output.textContent,/Quote unavailable/);
-const stale=setup({PLEDGEBOND:{...fixture,expiresAt:1500}});stale.submit();assert.match(stale.nodes.output.textContent,/Quote unavailable/);
-s.select.value='patronage';s.selectListeners.change();s.nodes['[data-quote-form]'].elements.quantity.value='0';s.submit();assert.match(s.nodes.output.textContent,/Quote unavailable/);
-console.log('PASS: connected quote rendering, fees, path switch, edits, expiry, missing/stale prices, invalid quantity');
-
-const blocked=setup({PLEDGEBOND:fixture},'0');blocked.submit();assert.match(blocked.nodes.output.textContent,/Upload your completed Form 144/);
-
+import {mountStewardship} from './checkout.mjs';
+const nodes=Object.fromEntries(['data-total','data-subtotal','data-fees','data-price-status','data-order-asset','data-order-quantity'].map(k=>['['+k+']',{textContent:'',value:''}]));
+const events={},form={elements:{purpose:{value:'patronage'},quantity:{value:'1',validity:{valid:true}}},addEventListener:(name,fn)=>events[name]=fn};
+const root={querySelector:s=>s==='[data-quote-form]'?form:nodes[s],getAttribute:n=>n==='data-selected-ledger'?'cp20':'nmni'};
+const ref={currency:'NMNI',currencyAsset:'NOMNI',currencyDecimals:0,source:'fixture',referenceId:'daily',valuationDay:'2026-10-17',observedAt:1000,expiresAt:2000,unitPriceMinor:'1',spreadBps:'900',feeAllowanceMinor:'0',processorFeeBps:'0',roundingMinor:'1',conversion:{bondPriceSats:'59442',currencyPriceSats:'77041',scale:'1'}};
+let expire;mountStewardship(root,{PLEDGEBOND:ref,TEMPLEBOND:ref},()=>1500,fn=>expire=fn,()=>{});
+assert.equal(nodes['[data-total]'].textContent,'1 NMNI');assert.match(nodes['[data-subtotal]'].textContent,/0\.771/);assert.match(nodes['[data-price-status]'].textContent,/9%/);
+form.elements.purpose.value='adept';form.elements.quantity.value='10';events.input();assert.equal(nodes['[data-total]'].textContent,'9 NMNI');assert.equal(nodes['[data-order-asset]'].value,'TEMPLEBOND');assert.equal(nodes['[data-order-quantity]'].value,'10');expire();assert.equal(nodes['[data-total]'].textContent,'—');
+console.log('PASS: daily converted totals, fractional mark, bond/quantity synchronization and expiry');

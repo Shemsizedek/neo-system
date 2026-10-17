@@ -2,7 +2,7 @@
 /**
  * Plugin Name: NEO Counter Holy Stewardship
  * Description: Page-specific stewardship checkout review. Itemized market-reference checkout preview.
- * Version: 0.14.0
+ * Version: 0.15.0
  */
 defined('ABSPATH') || exit;
 require_once __DIR__ . '/market.php';
@@ -22,14 +22,14 @@ add_shortcode('neo_stewardship_counter', function () {
     $received144 = neo_stewardship_form144_received();
     $id = wp_unique_id('neo-stewardship-');
     // Only trusted server-side adapters supply quote inputs. Never use query parameters.
-    $references = $currency_is_btc ? apply_filters('neo_stewardship_quote_references', neo_stewardship_market_references($ledger)) : array();
+    $references = apply_filters('neo_stewardship_quote_references', neo_stewardship_market_references($ledger,$selected_currency['id']));
     if (!is_array($references)) {
         $references = array();
     }
     $references = array_intersect_key($references, array('TEMPLEBOND' => true, 'PLEDGEBOND' => true));
     ob_start();
     ?>
-    <section data-selected-ledger="<?php echo esc_attr($ledger); ?>" data-currency="<?php echo esc_attr($selected_currency['id']); ?>" data-ledger-explorer="<?php echo esc_url($explorer); ?>" data-form144-received="<?php echo $received144 ? '1' : '0'; ?>" id="<?php echo esc_attr($id); ?>" aria-label="NEO Counter stewardship checkout">
+    <section data-pricing-url="<?php echo esc_url(add_query_arg(array('ledger'=>$ledger,'currency'=>$selected_currency['id']),rest_url('neo-counter/v1/rates'))); ?>" data-selected-ledger="<?php echo esc_attr($ledger); ?>" data-currency="<?php echo esc_attr($selected_currency['id']); ?>" data-ledger-explorer="<?php echo esc_url($explorer); ?>" data-form144-received="<?php echo $received144 ? '1' : '0'; ?>" id="<?php echo esc_attr($id); ?>" aria-label="NEO Counter stewardship checkout">
       <style>
       #<?php echo esc_attr($id); ?>{background:#edf3e9;color:#152b20;padding:clamp(20px,4vw,40px);border-radius:18px;margin:24px 0}
       #<?php echo esc_attr($id); ?> label{display:block;margin:18px 0}
@@ -76,7 +76,7 @@ add_shortcode('neo_stewardship_counter', function () {
         </label>
         <button type="submit">Update estimate</button>
       </form>
-</details></div><aside class="neo-card neo-receipt"><p class="neo-eyebrow">ESTIMATED TOTAL</p><output data-total aria-live="polite">—</output><p data-price-status>Choose your wallet version to see pricing.</p><details><summary>Price breakdown</summary><p>Bond value: <span data-subtotal>—</span></p><p>Fees &amp; rounding: <span data-fees>—</span></p><p class="neo-small">Includes a 2% spread and a 2,000-satoshi fee allowance, rounded up to 1,000 satoshis. Actual fees may differ. TokenScan prices are market references.</p></details><p class="neo-small">No payment is taken here yet.</p></aside></div>
+</details></div><aside class="neo-card neo-receipt"><p class="neo-eyebrow">ESTIMATED TOTAL</p><output data-total aria-live="polite">—</output><p data-price-status>Choose your wallet version to see pricing.</p><details><summary>Price breakdown</summary><p>Bond value: <span data-subtotal>—</span></p><p>Fees &amp; rounding: <span data-fees>—</span></p><p class="neo-small">Daily market reference plus a 9% arbitrage fee. Rounded up to the smallest unit of your selected currency. Market data may reflect older trades.</p></details><p class="neo-small">No payment is taken here yet.</p></aside></div>
       <details id="neo-form144" class="neo-card" <?php if (isset($_GET['form144'])) echo 'open'; ?>><summary>Form 144 — <?php echo $received144 ? 'Received' : 'Required for all members'; ?></summary>
         
         <p><a href="https://holytemples.org/temple-membership/">Membership instructions</a> · <a href="https://www.dropbox.com/scl/fi/fqk2q8k1w3mf0zkxw3akp/Naturalization-Form-144.pdf?rlkey=f98kc5z3cqcvc3bjryxcv1sy9&amp;dl=0" target="_blank" rel="noopener noreferrer">Download Naturalization Form 144</a></p>
@@ -126,10 +126,10 @@ add_shortcode('neo_stewardship_counter', function () {
         ?>
           <p role="status">Checkout prepared. Indenture acknowledgment recorded; payment has not been requested and tokens have not been delivered.</p>
         <?php endif; ?>
-        <?php if ($received144 && $ledger && $currency_is_btc) : ?>
+        <?php if ($received144 && $ledger && !empty($references)) : ?>
           <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
             <input type="hidden" name="action" value="neo_stewardship_prepare">
-            <input type="hidden" name="currency" value="btc">
+            <input type="hidden" name="currency" value="<?php echo esc_attr($selected_currency['id']); ?>">
             <input type="hidden" name="ledger" value="<?php echo esc_attr($ledger); ?>">
             <input type="hidden" name="terms_hash" value="<?php echo esc_attr(hash('sha256',neo_stewardship_indenture_snapshot())); ?>">
             <?php wp_nonce_field('neo_stewardship_prepare'); ?>
@@ -155,7 +155,7 @@ add_shortcode('neo_stewardship_counter', function () {
         import { mountWalletScanner } from <?php echo wp_json_encode(plugins_url('wallet-scanner.mjs', __FILE__)); ?>;
         const scanRoot = document.querySelector('[data-wallet-scanner]');
         if (scanRoot && scanRoot.querySelector('[data-scan-wallet]')) mountWalletScanner(scanRoot);
-        import { mountStewardship } from <?php echo wp_json_encode(add_query_arg('ver','0.12.0',plugins_url('checkout.mjs', __FILE__)), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+        import { mountStewardship } from <?php echo wp_json_encode(add_query_arg('ver','0.15.0',plugins_url('checkout.mjs', __FILE__)), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
         mountStewardship(
           document.getElementById(<?php echo wp_json_encode($id); ?>),
           <?php echo wp_json_encode($references, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>
