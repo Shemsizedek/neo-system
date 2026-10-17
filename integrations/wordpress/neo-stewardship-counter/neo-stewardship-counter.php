@@ -2,11 +2,12 @@
 /**
  * Plugin Name: NEO Counter Holy Stewardship
  * Description: Page-specific stewardship checkout review. Itemized market-reference checkout preview.
- * Version: 0.4.0
+ * Version: 0.5.0
  */
 defined('ABSPATH') || exit;
 require_once __DIR__ . '/market.php';
 require_once __DIR__ . '/form144.php';
+require_once __DIR__ . '/payment.php';
 add_shortcode('neo_stewardship_counter', function () {
     if (!is_page('holy-stewardship')) {
         return '';
@@ -78,7 +79,45 @@ add_shortcode('neo_stewardship_counter', function () {
         <?php endif; ?>
       </div>
       <output aria-live="polite"></output>
+      <p><a href="https://tokenscan.io/asset/TEMPLEBOND" target="_blank" rel="noopener noreferrer">TEMPLEBOND — TokenScan asset information</a><br>
+      <a href="https://tokenscan.io/asset/PLEDGEBOND" target="_blank" rel="noopener noreferrer">PLEDGEBOND — TokenScan asset information</a></p>
+      <div id="neo-stewardship-gateway" data-wallet-scanner>
+        <h3>NEO Counter — wallet and checkout</h3>
+        <p>Payment collection is awaiting a verified treasury destination and connected token-delivery signer. No payable QR code is issued yet.</p>
+        <?php
+        $prepared_id = isset($_GET['neo_prepared']) ? absint($_GET['neo_prepared']) : 0;
+        if ($prepared_id && is_user_logged_in() && get_post_type($prepared_id) === 'neo_steward_order' &&
+            (int) get_post_field('post_author',$prepared_id) === get_current_user_id()) :
+        ?>
+          <p role="status">Checkout prepared. Indenture acknowledgment recorded; payment has not been requested and tokens have not been delivered.</p>
+        <?php endif; ?>
+        <?php if ($received144) : ?>
+          <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
+            <input type="hidden" name="action" value="neo_stewardship_prepare">
+            <input type="hidden" name="terms_hash" value="<?php echo esc_attr(hash('sha256',neo_stewardship_indenture_snapshot())); ?>">
+            <?php wp_nonce_field('neo_stewardship_prepare'); ?>
+            <label>Instrument
+              <select name="asset"><option value="PLEDGEBOND">PLEDGEBOND: member patronage</option><option value="TEMPLEBOND">TEMPLEBOND: Adept commitment</option></select>
+            </label>
+            <label>Whole token quantity<input type="number" name="quantity" min="1" max="999999" step="1" value="1" required></label>
+            <label>Your Counterparty-compatible delivery wallet
+              <input name="wallet" type="text" autocomplete="off" spellcheck="false" required placeholder="Legacy mainnet address beginning with 1">
+            </label>
+            <button type="button" data-scan-wallet>Scan wallet QR</button>
+            <button type="button" data-stop-scan hidden>Stop camera</button>
+            <video hidden playsinline muted style="max-width:100%"></video>
+            <p data-scan-status aria-live="polite">Scan or paste your own receiving address. Never enter a seed phrase or private key.</p>
+            <label><input type="checkbox" name="accept_indent" value="1" required> I have read the Indenture above and acknowledge its terms for my selected instrument. Preparing checkout alone does not complete payment or fulfill the Indenture.</label>
+            <button type="submit">Prepare checkout — no payment</button>
+          </form>
+        <?php else : ?>
+          <p>Sign in and upload completed Form 144 to prepare checkout.</p>
+        <?php endif; ?>
+      </div>
       <script type="module">
+        import { mountWalletScanner } from <?php echo wp_json_encode(plugins_url('wallet-scanner.mjs', __FILE__)); ?>;
+        const scanRoot = document.querySelector('[data-wallet-scanner]');
+        if (scanRoot && scanRoot.querySelector('[data-scan-wallet]')) mountWalletScanner(scanRoot);
         import { mountStewardship } from <?php echo wp_json_encode(plugins_url('checkout.mjs', __FILE__), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
         mountStewardship(
           document.getElementById(<?php echo wp_json_encode($id); ?>),
