@@ -29,3 +29,12 @@ Open `index.html` from a local static server (for example `python3 -m http.serve
 6. Security review, browser smoke test, usability/a11y testing, CI and preview deployment.
 
 Upstream references: https://github.com/CounterpartyXCP/counterwallet and https://github.com/CounterpartyXCP/counterparty-core .
+
+
+## COUNTERPAY-004: transaction inspection preview
+- `transaction-planner.mjs` creates **non-executable transfer intents** and read-only DEX inspection descriptors.
+- `evidenceEnvelope` generates an **unattested, unanchored, unsettled** Crown Chain evidence envelope.
+- The Payments UI displays the intent/evidence package; it does not compose a PSBT or Counterparty payload.
+- Run `node --test apps/counterpay/*.test.mjs` from repository root.
+- Public address checks are format-only and are not checksum validation. Do not use this UI to authorize funds.
+- Live DEX orderbook queries, API compose integration, signing, proof hashing, broadcast and network deployment remain **not implemented**.
