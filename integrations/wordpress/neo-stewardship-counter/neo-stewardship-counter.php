@@ -2,16 +2,17 @@
 /**
  * Plugin Name: NEO Counter Holy Stewardship
  * Description: Page-specific stewardship checkout review. Itemized market-reference checkout preview.
- * Version: 0.2.0
+ * Version: 0.3.0
  */
 defined('ABSPATH') || exit;
+require_once __DIR__ . '/market.php';
 add_shortcode('neo_stewardship_counter', function () {
     if (!is_page('holy-stewardship')) {
         return '';
     }
     $id = wp_unique_id('neo-stewardship-');
     // Only trusted server-side adapters supply quote inputs. Never use query parameters.
-    $references = apply_filters('neo_stewardship_quote_references', array());
+    $references = apply_filters('neo_stewardship_quote_references', neo_stewardship_market_references());
     if (!is_array($references)) {
         $references = array();
     }
@@ -44,6 +45,7 @@ add_shortcode('neo_stewardship_counter', function () {
         <label>Token quantity to review
           <input name="quantity" type="number" min="1" max="999999" step="1" value="1" required>
         </label>
+        <p>Preview pricing: 2% market spread plus a 2,000-satoshi estimated fee reserve, rounded up to the next 1,000 satoshis. Actual fees may differ. TokenScan prices are market references; the time of the underlying trade is unavailable.</p>
         <p data-price-status aria-live="polite">Loading quote availability…</p>
         <p><a data-asset href="https://tokenscan.io/asset/PLEDGEBOND" target="_blank" rel="noopener noreferrer">View PLEDGEBOND on TokenScan</a></p>
         <label><input name="acknowledge" type="checkbox" required> I understand this is a preview and creates no payment, token holding, membership recognition or insurance coverage.</label>
