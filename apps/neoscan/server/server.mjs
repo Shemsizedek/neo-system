@@ -1,4 +1,5 @@
 import http from 'node:http';
+import {createTransactionLookup} from './api/bitcoin-transaction.mjs';
 import {createStatementsService} from './statements-service.mjs';
 
 const DEFAULT_PUBLIC_ORIGIN='https://shemsizedek.github.io';
@@ -32,6 +33,7 @@ if(!envStatus.ok&&import.meta.url===`file://${process.argv[1]}`){
   process.exitCode=1;
 }
 
+const lookupBitcoinTransaction=createTransactionLookup();
 const service=createStatementsService({
   bitcoinApi:process.env.NEOSCAN_BITCOIN_API,
   counterpartyApi:process.env.NEOSCAN_COUNTERPARTY_API,
@@ -83,6 +85,12 @@ const server=http.createServer(async(req,res)=>{
     }
     if(req.method==='GET'&&url.pathname==='/v1/operations/ces'){
       return send(req,res,200,{ok:true,requestId,data:service.cesStatus()});
+    }
+    if(req.method==='GET'&&url.pathname==='/v1/financial/bitcoin/transaction'){
+      const txid=String(url.searchParams.get('txid')||'').trim();
+      const result=await lookupBitcoinTransaction(txid);
+      if(!result.ok)return send(req,res,result.status,errorEnvelope('transaction_lookup_failed',result.error,requestId));
+      return send(req,res,200,{ok:true,requestId,data:result.data});
     }
     if(req.method==='GET'&&url.pathname==='/v1/statements'){
       if(!envStatus.ok)return send(req,res,503,errorEnvelope('service_not_ready','Statement service configuration is invalid',requestId));
