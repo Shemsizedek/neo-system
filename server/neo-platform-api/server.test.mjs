@@ -141,3 +141,14 @@ test('CROWN-036 blocks NEOpass Crown upstream calls when workload capability is 
     fetchImpl:async()=>{upstreamCalled=true;throw new Error('must not call')}
   })
 })
+
+test('NEO Pass readiness accurately reports unauthenticated recovery runtime',async()=>withServer(async base=>{
+ const response=await fetch(base+'/api/v1/auth/readiness');
+ assert.equal(response.status,200);
+ const body=await response.json();
+ assert.equal(body.authenticatedRuntimeAttached,false);
+ assert.equal(body.loginAvailable,false);
+ assert.equal(body.memberStorageVerified,false);
+ assert.equal(body.sessionIssuanceVerified,false);
+ assert.equal(JSON.stringify(body).includes('JWT_SECRET'),false);
+}));
