@@ -1,15 +1,15 @@
 # Holy Stewardship NEO Counter — Gate 4
 Target: https://holytemples.org/holy-stewardship/
 Service: holy-stewardship
-Plugin: neo-stewardship-counter/neo-stewardship-counter.php, version 0.3.0
+Plugin: neo-stewardship-counter/neo-stewardship-counter.php, version 0.4.0
 
 ## Deployment
-Plugin uploaded and activated on holytemples.org on 2026-10-17. A core Shortcode block containing [neo_stewardship_counter] was inserted at index 0 of page 2010 using optimistic locking. Existing sections were preserved. WordPress returned no content warnings.
+Plugin uploaded and activated on holytemples.org on 2026-10-17. A core Shortcode block containing [neo_stewardship_counter] was inserted at index 37 of page 2010, immediately after the Indenture using optimistic locking. Existing sections were preserved. WordPress returned no content warnings.
 
-All four runtime files must be installed together: neo-stewardship-counter.php, market.php, checkout.mjs and pricing.mjs. The shortcode renders only on the holy-stewardship page.
+All five runtime files must be installed together: neo-stewardship-counter.php, market.php, checkout.mjs, pricing.mjs and form144.php. The shortcode renders only on the holy-stewardship page.
 
 ## Member flow
-Citizens select PLEDGEBOND patronage; apprentices select PLEDGEBOND protection information; Adepts select TEMPLEBOND commitment. A whole-token preview quantity and required acknowledgement lead to an itemized non-payable quote. No order, identity collection, token holding, member recognition or insurance activation occurs.
+Exactly two options: PLEDGEBOND: member patronage; TEMPLEBOND: Adept commitment. A whole-token preview quantity and required acknowledgement lead to an itemized non-payable quote. No order, token holding, member recognition or insurance activation occurs. Form 144 submissions contain personal data and are stored privately.
 
 ## Market adapter
 market.php performs server-side HTTPS reads against:
@@ -43,3 +43,12 @@ Browser success parameters are untrusted. The existing NEO Counter gateway in ap
 
 ## Rollback
 Remove the added shortcode block from page 2010 and deactivate only neo-stewardship-counter. Existing page sections remain intact.
+
+## Gate 5 — mandatory Form 144
+Calculator moved below the complete Indenture block. Both options require a received Form 144 submission before quote review. Members use the existing WordPress sign-in; no separate NEO Pass integration is assumed.
+
+The form links to the supplied official Form 144 and membership instructions. Authenticated members submit a PDF (maximum 2 MiB) through a nonce-protected admin-post action. Server checks upload status, actual upload origin, size, extension, PDF header and EOF marker. PDF contents are saved as protected post metadata under a non-public, non-REST private custom post type, never under a public uploads URL or public attachment. No PDF is put on a blockchain. Administrators with manage_options can download via a nonce-protected attachment endpoint. Basic PDF envelope checks do not certify document content or scan it for malware; downloads use attachment disposition and nosniff.
+
+Upload receipt is pending review, not verification of completed fields, authenticity, eligibility or membership approval. The signed-in member's own private submission enables the preview; anonymous visitors see a login link and disabled review button. Live payment remains absent and would need independent server-side membership enforcement.
+
+Validation: controller tests pass with submitted-member fixtures and a missing-submission blocking test. Deployed public HTML confirms the calculator follows the Indenture, exactly two options, official Form 144 links, login prompt and disabled review. WordPress reports v0.4.0 active. Actual signed-in PDF submission and administrator download have not been exercised with a member's document.
