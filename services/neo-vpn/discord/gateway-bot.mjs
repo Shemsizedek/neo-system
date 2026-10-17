@@ -10,7 +10,7 @@ import rolePolicy from './role-policy.json' with { type: 'json' };
 import { createControlRecord } from './control-plane.mjs';
 import { evaluateAcceptance } from './acceptance-probe.mjs';
 import { executeLocalReadOnly } from './local-executor.mjs';
-import { requestApproval } from './approval-store.mjs';
+import { requestApproval, readApproval, decideApproval } from './approval-store.mjs';
 import { readRuntimeState, writeRuntimeState } from './runtime-state.mjs';
 
 const required = ['DISCORD_BOT_TOKEN', 'DISCORD_APPLICATION_ID', 'DISCORD_GUILD_ID'];
@@ -238,6 +238,21 @@ client.on(Events.InteractionCreate, async interaction => {
       return;
     }
 
+    if (command.startsWith('approval-')) {
+      const requestId = interaction.options.getString('request-id', true);
+      const record = command === 'approval-status'
+        ? await readApproval(requestId)
+        : await decideApproval(requestId, {
+            approverId: interaction.user.id, guildId: interaction.guildId,
+            role, approved: command === 'approval-approve'
+          });
+      await interaction.reply({
+        content: `NEO VPN request ${record.correlationId}: ${record.state}. Execution: disabled.`,
+        ephemeral: true
+      });
+      return;
+    }
+
     if (command === 'vpn-audit') {
       await interaction.reply({ content: await vpnAuditMessage(), ephemeral: true });
       return;
@@ -250,6 +265,8 @@ client.on(Events.InteractionCreate, async interaction => {
       channelId: interaction.channelId,
       options: optionsFromInteraction(interaction)
     }, infrastructureLive);
+
+    if (record.state === 'pending-approval') await requestApproval(record);
 
     if (record.state === 'pending-approval') await requestApproval(record);
 
