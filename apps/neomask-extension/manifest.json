@@ -1,0 +1,39 @@
+{
+  "manifest_version": 3,
+  "name": "NeoMask — Bitcoin Wallet Foundation",
+  "version": "0.1.0",
+  "description": "Watch-only Bitcoin and Counterparty site permissions. Transaction signing is not enabled.",
+  "minimum_chrome_version": "111",
+  "permissions": [
+    "storage"
+  ],
+  "background": {
+    "service_worker": "background.mjs",
+    "type": "module"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "NeoMask"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://holytemples.org/*"
+      ],
+      "js": [
+        "provider.js"
+      ],
+      "world": "MAIN",
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://holytemples.org/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_start"
+    }
+  ]
+}
