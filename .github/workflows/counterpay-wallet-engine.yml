@@ -1,0 +1,24 @@
+name: CounterPay wallet engine
+on:
+  pull_request:
+    paths:
+      - 'apps/counterpay/**'
+      - '.github/workflows/counterpay-wallet-engine.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'apps/counterpay/**'
+      - '.github/workflows/counterpay-wallet-engine.yml'
+permissions:
+  contents: read
+jobs:
+  wallet-engine-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Read-only adapter unit tests
+        run: node --test apps/counterpay/wallet-engine.test.mjs
