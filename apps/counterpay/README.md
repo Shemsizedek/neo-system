@@ -54,3 +54,11 @@ Upstream references: https://github.com/CounterpartyXCP/counterwallet and https:
 - The Overview now exposes read-only UTXO and fee requests and shows the returned provider data.
 - No secure coin selection, transaction serialization, PSBT construction, device signing, NEO Pass authorizations, broadcast, or private credentials are present. No real spend authorization can occur.
 - Checksum validation does not prove address control. Validate provider identity, TLS and network independently before relying on observations.
+
+## COUNTERPAY-007: deterministic funding preview (NOT a PSBT)
+- `bitcoin-funding.mjs` selects from confirmed, supplied UTXOs deterministically and calculates a conservative *illustrative* P2WPKH funding, estimated fee and change plan.
+- The current planner does not check recipient/change address checksums, scripts, UTXO provenance or input ownership; only trusted test fixtures should be used. No output is a valid transaction.
+- The device-review object is **display only**. It does not create a passkey challenge, fingerprint assertion, signature, PSBT or spend authorization.
+- The UI permits inspecting an estimated funding plan after UTXO and fee observations, but its output must **never** be supplied to a live broadcaster or signer.
+- For a real PSBT milestone: checksum/network validate both output addresses; obtain verified scriptPubKeys, UTXO amounts and confirmation proofs; apply script-aware weight/dust/fee calculations; serialize BIP174-compliant unsigned PSBT with an audited Bitcoin library; round-trip decode and assert every input, output, change, network and maximum fee; keep external signing disabled pending independent security review.
+- Tests: `node --test apps/counterpay/*.test.mjs` (CI configured, execution outcome not yet confirmed).
