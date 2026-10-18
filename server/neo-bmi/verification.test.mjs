@@ -1,0 +1,12 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { createBitcoinCoreAdapter, createCounterpartyReadOnlyAdapter, verifyWithChainRecheck } from './verification.mjs';
+const genesis='000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f';
+const tx='a'.repeat(64), block='b'.repeat(64), other='c'.repeat(64);
+function rpc(method,args) { if(method==='getblockhash')return args[0]===0?genesis:block; if(method==='getrawtransaction')return {txid:tx,blockhash:block}; if(method==='getblockheader')return {height:100}; if(method==='getblockcount')return 106; throw Error('unexpected'); }
+test('requires genuine Bitcoin mainnet genesis',async()=>{const adapter=createBitcoinCoreAdapter({rpc:(m,p)=>m==='getblockhash'&&p[0]===0?other:rpc(m,p)});await assert.rejects(()=>adapter.getTransaction(tx),/genesis mismatch/);});
+test('canonical Bitcoin anchor satisfies minimum confirmations',async()=>{const adapter=createBitcoinCoreAdapter({rpc});const result=await adapter.getTransaction(tx);assert.equal(result.confirmed,true);assert.equal(result.confirmations,7);});
+test('rejects orphaned transaction anchor',async()=>{const adapter=createBitcoinCoreAdapter({rpc:(m,p)=>m==='getblockhash'&&p[0]===100?other:rpc(m,p)});assert.equal((await adapter.getTransaction(tx)).confirmed,false);});
+test('Counterparty provider filters malformed/mismatched issuance',async()=>{const adapter=createCounterpartyReadOnlyAdapter({retrieve:async()=>({result:[{asset:'OTHER',tx_hash:tx},{asset:'TEST',tx_hash:tx}]})});assert.equal((await adapter.getIssuance('TEST')).tx_hash,tx);assert.equal(await adapter.getIssuance('MISSING'),null);});
+test('correlation does not declare consensus verified or perfected security',async()=>{const bitcoin=createBitcoinCoreAdapter({rpc});const counterparty=createCounterpartyReadOnlyAdapter({retrieve:async()=>({result:[{asset:'TEST',tx_hash:tx}]})});const result=await verifyWithChainRecheck({bitcoinTxid:tx,assetId:'TEST',classification:'BITCOIN_COUNTERPARTY_ASSET'},{bitcoin,counterparty});assert.equal(result.status,'PROVIDER_EVIDENCE_CORRELATED');});
+test('recheck catches reorganization and fails closed',async()=>{const bitcoin={getTransaction:async()=>({confirmed:true,canonical:true,blockhash:block}),recheckAnchor:async()=>({confirmed:false,canonical:false,reorgDetected:true,blockhash:other})};const result=await verifyWithChainRecheck({bitcoinTxid:tx,classification:'BTC_NATIVE'},{bitcoin});assert.equal(result.status,'REORG_RECHECK_REQUIRED');});
