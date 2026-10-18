@@ -28,7 +28,7 @@ export async function verifyPrivate({origin,user,pass,fetcher=fetch}={}){
  assert.match(dashboard.headers.get('content-type')||'',/text\/html/);
  const html=await dashboard.text();
  assert.match(html,/project144-dashboard/i);
- return {pass:true,checkedAt:new Date().toISOString(),origin:base.origin,checks:['anonymous denied','wrong password denied','authorized NEOsync data','dashboard HTML served'],referencePaths:json.git.referencePaths.length};
+ return {pass:true,checkedAt:new Date().toISOString(),target:'private gateway',checks:['anonymous denied','wrong password denied','authorized NEOsync data','dashboard HTML served'],referencePaths:json.git.referencePaths.length};
 }
 if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){
  verifyPrivate({origin,user,pass}).then(result=>{console.log(JSON.stringify(result,null,2));}).catch(err=>{console.error('PRIVATE VERIFICATION FAILED:',err.message);process.exitCode=1;});
