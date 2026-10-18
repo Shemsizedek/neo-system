@@ -1,0 +1,6 @@
+# BMI-006 — Private NEO Scan operator dashboard
+This increment adds a React evidence viewer, a scoped short-lived operator token validator for a private staging fallback, and an append-only PostgreSQL audit schema. Do NOT deploy openly.
+The existing BMI-005 gateway is unauthenticated and must NOT be exposed; a trusted gateway or reverse proxy MUST enforce authentication before forwarding requests, including /health where appropriate. BMI-006 authentication is **not yet wired** into gateway.mjs. The React component requires an injected accessToken from an authenticated session; never embed secrets in frontend assets.
+For production, replace the local HMAC staging-token pattern with verified NEOpass OIDC/JWKS and server-side access control, connect a private dedicated PostgreSQL role with insert-only audit privilege, add event hash chain head serialization under a transaction, retention and repair alerts. Review transaction privacy and audit redaction. The `schema` SQL is not yet migrated to a live database.
+Unit tests: `node --test server/neo-bmi/operator-audit.test.mjs`.
+Requires genuine independent Bitcoin Core and Counterparty verification. The current upstream correlation is NOT legal-credit or consensus certification.
