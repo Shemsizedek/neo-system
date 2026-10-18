@@ -1,0 +1,4 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {readiness} from './gate.mjs';
+test('empty staging env fails closed',()=>{const r=readiness({});assert.equal(r.ready,false);assert.ok(r.problems.includes('dedicated_database_missing'));});
+test('public credentials without authenticated proxy cannot start',()=>{const r=readiness({CASHFLOW_STAGING_ENABLED:'true',DATABASE_URL:'postgresql://redacted',OIDC_ISSUER:'https://id.example',OIDC_AUDIENCE:'desk',OIDC_JWKS_URI:'https://id.example/keys',LIVE_TRANSACTIONS:'false'});assert.equal(r.ready,false);assert.ok(r.problems.includes('private_gateway_not_verified'));});
+test('transactions enabled blocks staging',()=>{const r=readiness({CASHFLOW_STAGING_ENABLED:'true',DATABASE_URL:'postgresql://redacted',OIDC_ISSUER:'https://id.example',OIDC_AUDIENCE:'desk',OIDC_JWKS_URI:'https://id.example/keys',STAGING_ACCESS_PROXY_VERIFIED:'true',LIVE_TRANSACTIONS:'true'});assert.equal(r.ready,false);});
