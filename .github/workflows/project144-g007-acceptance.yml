@@ -5,9 +5,11 @@ permissions:
   contents: read
 jobs:
   acceptance:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, project144-private]
     environment: project144-private-acceptance
     steps:
+      # Runner must be owned by the operator and placed on an approved private route.
+      # Never connect a self-hosted runner with access to secrets to untrusted PR workflows.
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
