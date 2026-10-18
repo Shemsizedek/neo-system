@@ -22,6 +22,7 @@ const routes:{label:string;section:string;desc:string;access:Access;Icon:typeof 
   {label:'TMNLF Counsel Console',section:'counsel',desc:'Matter intake, evidence, authorities, jurisdiction and review controls',access:'PRIVATE',Icon:Scale},
   {label:'NEO CFO',section:'cfo',desc:'Finance, cash flow, credit and investment coordination',access:'PRIVATE',Icon:CircleDollarSign},
   {label:'NEO Treasury',section:'treasury',desc:'Treasury, trust and revenue administration',access:'PRIVATE',Icon:Landmark},
+  {label:'Economics 101',section:'economics-101',desc:'Ausarian economics lesson and monetary system simulator',access:'CONTROLLED',Icon:GraduationCap},
   {label:'Legal Corpus',section:'corpus',desc:'Authorities, instruments, records and provenance',access:'CONTROLLED',Icon:BookOpen}
 ]
 
