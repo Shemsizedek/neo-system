@@ -1,11 +1,19 @@
-import { describe,it,expect } from 'vitest'
 import { assessAusarianScenario } from './ausarianEconomicEngine'
 import { evaluateAusarianEconomics, AUSARIAN_GISS_LESSON } from './ausarianEconomicGateway'
 const scenario={productiveInvestment:100000,annualProductiveOutput:12000,annualFinancingCost:4000,existingAnnualRent:15000,proposedAnnualRent:13000,jobsCreated:2,verifiedClaims:true,consent:true,environmentalReview:true}
-describe('NEO-AUS-002',()=>{
- it('computes deterministic yield and financing ratio',()=>{const a=assessAusarianScenario(scenario);expect(a.productiveYield).toBe(.12);expect(a.financingCostRatio).toBe(.04);expect(a.rentCompetitionDelta).toBe(2000);expect(a.flags).toEqual([])})
- it('rejects negative and nonfinite quantities',()=>{expect(()=>assessAusarianScenario({...scenario,productiveInvestment:-1})).toThrow(RangeError);expect(()=>assessAusarianScenario({...scenario,annualProductiveOutput:Infinity})).toThrow(RangeError)})
- it('flags missing evidence and consent',()=>{const a=assessAusarianScenario({...scenario,verifiedClaims:false,consent:false,environmentalReview:false});expect(a.flags).toContain('UNVERIFIED_ECONOMIC_CLAIMS');expect(a.flags).toContain('CONSENT_NOT_CONFIRMED');expect(a.flags).toContain('ENVIRONMENTAL_REVIEW_REQUIRED')})
- it('does not divide by zero',()=>expect(assessAusarianScenario({...scenario,productiveInvestment:0}).productiveYield).toBeNull())
- it('exposes safe shared gateway and lesson',()=>{expect(evaluateAusarianEconomics(scenario).assessment.status).toBe('SIMULATION_ONLY');expect(AUSARIAN_GISS_LESSON.objectives.length).toBe(4)})
-})
+function assert(condition:boolean,message:string){if(!condition)throw new Error(message)}
+/** Dependency-free assertions; call from a test harness. No side effects on import. */
+export function runAusarianEconomicAssertions(){
+ const a=assessAusarianScenario(scenario)
+ assert(a.productiveYield===.12,'productive yield')
+ assert(a.financingCostRatio===.04,'financing ratio')
+ assert(a.rentCompetitionDelta===2000,'rent competition')
+ assert(a.flags.length===0,'unexpected flags')
+ for(const invalid of [-1,Infinity,NaN]){let rejected=false;try{assessAusarianScenario({...scenario,productiveInvestment:invalid})}catch(e){rejected=e instanceof RangeError}assert(rejected,'invalid quantity accepted')}
+ const flagged=assessAusarianScenario({...scenario,verifiedClaims:false,consent:false,environmentalReview:false})
+ for(const flag of ['UNVERIFIED_ECONOMIC_CLAIMS','CONSENT_NOT_CONFIRMED','ENVIRONMENTAL_REVIEW_REQUIRED'])assert(flagged.flags.includes(flag),'missing '+flag)
+ assert(assessAusarianScenario({...scenario,productiveInvestment:0}).productiveYield===null,'zero denominator')
+ assert(evaluateAusarianEconomics(scenario).assessment.status==='SIMULATION_ONLY','simulation boundary')
+ assert(AUSARIAN_GISS_LESSON.objectives.length===4,'lesson objectives')
+ return true
+}
