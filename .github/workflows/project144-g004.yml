@@ -19,7 +19,7 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Validate protected server
-        run: node --check apps/project144-dashboard/private-server.mjs && node --test apps/project144-dashboard/private-server.test.mjs
+        run: node --check apps/project144-dashboard/private-server.mjs && node --check apps/project144-dashboard/verify-private.mjs && node --test apps/project144-dashboard/private-server.test.mjs
       - name: Build isolated dashboard
         run: npx vite build --config apps/project144-dashboard/vite.config.ts
       - name: Verify artifact
