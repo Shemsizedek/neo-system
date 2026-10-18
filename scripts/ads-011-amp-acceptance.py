@@ -22,11 +22,11 @@ def main():
             if path.endswith("ads.txt") and EXPECTED not in [line.strip() for line in body.splitlines()]:
                 errors.append("ads.txt is missing authorized publisher record")
             if path.endswith("amp/"):
-                if not re.search(r'<html\\b[^>]*(?:\\bamp\\b|⚡)', body, re.I):
+                if not re.search(r'<html\b[^>]*(?:\bamp\b|⚡)', body, re.I):
                     errors.append("AMP route did not produce recognized AMP markup")
-                if len(re.findall(r'<script[^>]+custom-element=[\\x22\\x27]amp-auto-ads',body,re.I)) != 1:
+                if len(re.findall(r'<script[^>]+custom-element=[\x22\x27]amp-auto-ads',body,re.I)) != 1:
                     errors.append("AMP script count must equal 1")
-                if len(re.findall(r'<amp-auto-ads\\b',body,re.I)) != 1:
+                if len(re.findall(r'<amp-auto-ads\b',body,re.I)) != 1:
                     errors.append("AMP body auto-ads count must equal 1")
                 if 'data-ad-client="ca-pub-7219200716649339"' not in body:
                     errors.append("AMP publisher not present")
