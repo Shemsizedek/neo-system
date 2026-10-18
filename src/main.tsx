@@ -52,7 +52,7 @@ function RootRouter(){
   const base=(import.meta.env.BASE_URL||'/').replace(/\/$/,'')
   const publicRoute=(name:string)=>`${base}/${name}/`
   const discordControlRoute=(section:string)=>`${publicRoute('neo-prime')}?module=${encodeURIComponent(section)}&control=discord`
-  const open=(section:string)=>{if(['overview','treasury','tribunal','security','router'].includes(section)){window.location.assign(discordControlRoute(section));return}if(section==='cfo'||section==='books'){window.location.assign(publicRoute('neo-books'));return}if(section==='corpus'){window.location.assign(publicRoute('neo-corpus'));return}window.location.hash=`/${section}`}
+  const open=(section:string)=>{if(['overview','treasury','tribunal','security','router'].includes(section)){window.location.assign(discordControlRoute(section));return}if(section==='economics-101'){window.location.hash='/economics-101';return}if(section==='cfo'||section==='books'){window.location.assign(publicRoute('neo-books'));return}if(section==='corpus'){window.location.assign(publicRoute('neo-corpus'));return}window.location.hash=`/${section}`}
 
   const normalized=route.replace(/\/$/,'')||'/'
   const isHome=normalized==='/'||normalized==='/home'
