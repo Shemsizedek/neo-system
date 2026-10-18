@@ -54,9 +54,7 @@ if (process.argv[1] && import.meta.url === new URL('file://' + process.argv[1]).
           const messages = await latestTitanMessages({config:{...titanConfig(), connectionTimeout:15000, greetingTimeout:15000, socketTimeout:20000},limit:10});
           console.log(JSON.stringify({event:'titan_readonly_probe',result:'authenticated',messageCount:messages.length}));
         } catch (error) {
-          const code = String(error?.code || '').toUpperCase();
-          const diagnostic = String(error?.responseStatus || '') + ' ' + String(error?.message || '');
-          const reason = /AUTHENTICATIONFAILED|AUTHORIZATIONFAILED|EAUTH|INVALID_CREDENTIALS/.test(code) || /authentication failed|login failed|invalid credentials|AUTHENTICATIONFAILED/i.test(diagnostic) ? 'authentication_failed' : /ENOTFOUND|EAI_AGAIN|ECONNREFUSED|ETIMEDOUT|ECONNRESET/.test(code) || /timeout|DNS|certificate|socket/i.test(diagnostic) ? 'network_or_tls_failure' : /NONEXISTENT|mailbox|select failed/i.test(diagnostic) ? 'mailbox_selection_failed' : 'unknown_imap_error';
+          const reason = /^TITAN_(CONNECT|SELECT_INBOX|FETCH_INBOX)_(AUTHENTICATION|TLS|TRANSPORT|PROTOCOL)$/.test(String(error?.code || '')) ? error.code.toLowerCase() : 'unknown_imap_error';
           console.log(JSON.stringify({event:'titan_readonly_probe',result:'failed',reason}));
         }
       }).catch(() => console.log(JSON.stringify({event:'titan_readonly_probe',result:'adapter_unavailable'})));
