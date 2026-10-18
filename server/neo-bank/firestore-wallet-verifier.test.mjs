@@ -4,7 +4,7 @@ import {createFirestoreWalletVerifier} from './firestore-wallet-verifier.mjs';
 const digest='a'.repeat(64);
 function fakeDb(row){
  let current={...row};
- const ref={};
+ const ref={get:async()=>({exists:Boolean(current),data:()=>({...current})})};
  const db={collection:()=>({doc:()=>ref}),runTransaction:async fn=>fn({
   get:async()=>({exists:Boolean(current),data:()=>({...current})}),
   update:(_,data)=>{current={...current,...data}}
