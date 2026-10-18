@@ -37,13 +37,14 @@ export function createApp({username=process.env.COMMAND_USER,password=process.en
  let cached=null;let expiry=0;
  return createServer(async(req,res)=>{
   res.setHeader('Cache-Control','no-store');res.setHeader('X-Content-Type-Options','nosniff');res.setHeader('X-Frame-Options','DENY');res.setHeader('Content-Security-Policy',"default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'");
-  if(!username||!password){res.writeHead(503);res.end('Private dashboard credentials not configured');return;}
+  if(!username||!password||username.length<4||password.length<24){res.writeHead(503);res.end('Private dashboard credentials not configured');return;}
   if(!authenticated(req.headers.authorization,username,password)){res.setHeader('WWW-Authenticate','Basic realm="Project 144 Private"');res.writeHead(401);res.end('Authorization required');return;}
   const path=new URL(req.url||'/', 'http://localhost').pathname;
+  if(path==='/api/neosync'){try{if(Date.now()>expiry){const [github,health]=await Promise.all([githubSnapshot(fetcher),healthSnapshot(targets,fetcher)]);cached={github,health};expiry=Date.now()+300000;}const report={schema:'neo.project144.status.v1',generatedAt:new Date().toISOString(),observer:'PROJECT144-G004',repo:cached.github.repository,git:{branch:cached.github.branch,pushedAt:cached.github.latestPush,referencePaths:cached.github.paths.map(p=>({path:p.path,evidence:p.exists?'source_present':'missing_or_unavailable'}))},endpoints:cached.health.map(h=>({url:h.url,verifiedReachable:h.healthy,httpStatus:h.status,checkedAt:h.checkedAt})),caveat:'Code and endpoint checks are not proof of operational or regulatory readiness'};res.setHeader('Content-Type','application/json');res.end(JSON.stringify(report));}catch{res.writeHead(502,{'Content-Type':'application/json'});res.end(JSON.stringify({error:'status_unavailable'}));}return;}
   if(path==='/api/status'){
    try{if(Date.now()>expiry){const [github,health]=await Promise.all([githubSnapshot(fetcher),healthSnapshot(targets,fetcher)]);cached={github,health};expiry=Date.now()+300000;}
     res.setHeader('Content-Type','application/json');res.end(JSON.stringify(cached));}
-   catch(e){res.writeHead(502,{'Content-Type':'application/json'});res.end(JSON.stringify({error:'upstream_validation_unavailable',message:String(e.message)}));}return;
+   catch(e){res.writeHead(502,{'Content-Type':'application/json'});res.end(JSON.stringify({error:'upstream_validation_unavailable',message:'GitHub or health upstream unavailable'}));}return;
   }
   if(req.method!=='GET'&&req.method!=='HEAD'){res.writeHead(405);res.end();return;}
   let pathname=path==='/'?'/project144-dashboard.html':path;
