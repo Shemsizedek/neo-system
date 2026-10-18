@@ -1,0 +1,32 @@
+name: Project144 G004 private command verification
+on:
+  pull_request:
+    paths:
+      - 'apps/project144-dashboard/**'
+      - 'project144-dashboard.html'
+      - '.github/workflows/project144-g004.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - name: Validate protected server
+        run: node --check apps/project144-dashboard/private-server.mjs && node --test apps/project144-dashboard/private-server.test.mjs
+      - name: Build isolated dashboard
+        run: npx vite build --config apps/project144-dashboard/vite.config.ts
+      - name: Verify artifact
+        run: test -s dist-project144/project144-dashboard.html
+      - name: Upload private build artifact for authorized reviewers
+        uses: actions/upload-artifact@v4
+        with:
+          name: project144-dashboard-review
+          path: dist-project144
+          retention-days: 3
