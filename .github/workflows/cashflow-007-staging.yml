@@ -1,0 +1,25 @@
+name: CASHFLOW-007 Deal Desk Staging Certification
+on:
+  pull_request:
+    paths:
+      - 'server/neo-deal-desk/**'
+      - '.github/workflows/cashflow-007-staging.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  safety-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax and unit certification
+        run: |
+          node --check server/neo-deal-desk/lead-intake.mjs
+          node --check server/neo-deal-desk/lead-storage.mjs
+          node --check server/neo-deal-desk/deal-agent-handoff.mjs
+          node --check server/neo-deal-desk/shared-qualification.mjs
+          node --test server/neo-deal-desk/tests/lead-intake.test.mjs server/neo-deal-desk/tests/lead-storage.test.mjs server/neo-deal-desk/tests/deal-agent-handoff.test.mjs server/neo-deal-desk/tests/shared-qualification.test.mjs server/neo-deal-desk/tests/staging-certification.test.mjs
