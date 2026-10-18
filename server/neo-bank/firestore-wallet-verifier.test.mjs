@@ -13,10 +13,10 @@ function fakeDb(row){
 }
 const input={subject:'member-1',digest,operation:'ces.transfer',approval:{id:'approval-1',assertion:'signed-proof'}};
 test('requires trusted cryptographic assertion verifier',()=>assert.throws(()=>createFirestoreWalletVerifier({db:fakeDb({}).db}),/unconfigured/));
-test('valid pending approval is consumed once',async()=>{
+test('valid approval verifies without premature consumption',async()=>{
  const {db,read}=fakeDb({state:'pending',subject:'member-1',digest,operation:'ces.transfer',expiresAtMs:200});
  const verify=createFirestoreWalletVerifier({db,clock:()=>100,verifyAssertion:async()=>true});
- assert.equal(await verify(input),true);assert.equal(read().state,'consumed');assert.equal(await verify(input),false);
+ assert.equal(await verify(input),true);assert.equal(read().state,'pending');assert.equal(await verify(input),true);
 });
 test('rejects invalid assertion without consuming',async()=>{
  const {db,read}=fakeDb({state:'pending',subject:'member-1',digest,operation:'ces.transfer',expiresAtMs:200});
