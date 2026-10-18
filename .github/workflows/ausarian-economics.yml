@@ -1,0 +1,35 @@
+name: Ausarian Economics G005 validation
+on:
+  pull_request:
+    paths:
+      - 'src/noology/ausarianEconomic*'
+      - 'src/components/AusarianEconomicsDashboard.tsx'
+      - 'src/main.tsx'
+      - '.github/workflows/ausarian-economics.yml'
+  workflow_dispatch:
+jobs:
+  build-and-route-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: Start preview and verify route HTML fallback
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run preview -- --host 127.0.0.1 --port 4173 > /tmp/ausarian-preview.log 2>&1 &
+          pid=$!
+          trap 'kill "$pid" 2>/dev/null || true' EXIT
+          for i in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:4173/ausarian-economics/ > /tmp/ausarian-response.html; then break; fi
+            sleep 1
+          done
+          grep -qi '<html' /tmp/ausarian-response.html
+          curl --fail --silent http://127.0.0.1:4173/economics-101/ | grep -qi '<html'
+          echo 'SPA route fallback verified; browser rendering and authentication not verified.'
