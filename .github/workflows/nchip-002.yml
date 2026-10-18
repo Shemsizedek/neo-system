@@ -1,4 +1,4 @@
-name: NEO Chips NCHIP-002
+name: NEO Chips local validation
 on:
   pull_request:
     paths:
@@ -17,3 +17,17 @@ jobs:
           python-version: '3.12'
       - run: python -m pip install 'cryptography>=42,<48'
       - run: python hardware/neo-chips/nchip002_simulator.py
+  react-local-build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: hardware/neo-chips/studio
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm install --no-audit --no-fund
+      - run: npm run build
