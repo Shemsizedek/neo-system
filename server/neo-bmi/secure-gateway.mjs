@@ -23,7 +23,7 @@ export function createSecureEvidenceGateway({bitcoin,counterparty,authorize,hist
   let evidence;try{evidence=await verifyWithChainRecheck({bitcoinTxid:txid.toLowerCase(),assetId:asset,classification:'BITCOIN_COUNTERPARTY_ASSET'},{bitcoin,counterparty})}
   catch{evidence={status:'NOT_VERIFIED',reason:'verification service unavailable'}}
   const event=makeAuditEvent({operatorId:operator.subject,assetId:asset,txid,evidence});
-  try{await historyStore.append(event)}catch{return reply(res,503,{error:'audit persistence unavailable'})}
-  return reply(res,200,{asset,txid:txid.toLowerCase(),...evidence,legalRights:'NOT_VERIFIED',reserveBacking:'NOT_VERIFIED',auditEventHash:event.eventHash});
+  let persisted;try{persisted=await historyStore.append(event);if(!persisted?.eventHash)throw new Error('missing persisted audit hash')}catch{return reply(res,503,{error:'audit persistence unavailable'})}
+  return reply(res,200,{asset,txid:txid.toLowerCase(),...evidence,legalRights:'NOT_VERIFIED',reserveBacking:'NOT_VERIFIED',auditEventHash:persisted.eventHash});
  });
 }
