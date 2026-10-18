@@ -18,4 +18,4 @@ jobs:
       - name: Syntax validation
         run: node --check deploy/neo-mail-render/server.mjs
       - name: Fail-closed and disconnected-state tests
-        run: node --test deploy/neo-mail-render/server.test.mjs
+        run: node --test deploy/neo-mail-render/*.test.mjs
