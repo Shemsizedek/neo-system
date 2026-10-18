@@ -9,7 +9,8 @@ const initial = { productiveInvestment:100000, annualProductiveOutput:12000, ann
 export default function AusarianEconomicsDashboard() {
  const [scenario,setScenario] = useState(initial)
  const [selected,setSelected] = useState<(typeof classes)[number]>('MB')
- const result = evaluateAusarianEconomics(scenario)
+ const valid = (['productiveInvestment','annualProductiveOutput','annualFinancingCost','existingAnnualRent','proposedAnnualRent','jobsCreated'] as const).every(key=>Number.isFinite(scenario[key]) && scenario[key]>=0)
+ const result = valid ? evaluateAusarianEconomics(scenario) : null
  const setNumber=(key: keyof typeof initial,value:string)=>setScenario(prev=>({...prev,[key]:value.trim()===''?0:Number(value)}))
  return <main style={{maxWidth:960,margin:'auto',padding:24,fontFamily:'system-ui'}}>
   <h1>NEO World Monetary System</h1><p>Ausarian Economic Philosophy — Natural Economic Order</p>
@@ -18,8 +19,9 @@ export default function AusarianEconomicsDashboard() {
   <section><h2>Capital and clearing</h2><p><strong>Reserve capital:</strong> {monetary.reserveCapital}</p><p><strong>Circulatory capital:</strong> {monetary.circulatoryCapital}</p><p><strong>Exchange:</strong> {monetary.exchangeLayer}</p><p><strong>Clearing:</strong> {monetary.clearingLayer}</p></section>
   <section><h2>Productive-capital simulation</h2>{(['productiveInvestment','annualProductiveOutput','annualFinancingCost','existingAnnualRent','proposedAnnualRent','jobsCreated'] as const).map(k=><label key={k} style={{display:'block',margin:'8px 0'}}>{k} <input aria-label={k} type="number" min="0" step="any" value={scenario[k]} onChange={e=>setNumber(k,e.target.value)}/></label>)}
   {(['verifiedClaims','consent','environmentalReview'] as const).map(k=><label key={k} style={{display:'block'}}><input type="checkbox" checked={scenario[k]} onChange={e=>setScenario(prev=>({...prev,[k]:e.target.checked}))}/>{k}</label>)}
-  <p>Productive yield: {result.assessment.productiveYield===null?'N/A':(result.assessment.productiveYield*100).toFixed(2)+'%'}</p><p>Financing cost ratio: {result.assessment.financingCostRatio===null?'N/A':(result.assessment.financingCostRatio*100).toFixed(2)+'%'}</p><p>Annual rent difference: {result.assessment.rentCompetitionDelta.toLocaleString()}</p>
-  <h3>Review flags</h3><ul>{result.assessment.flags.length?result.assessment.flags.map(f=><li key={f}>{f}</li>):<li>No scenario flags detected; not a financial approval.</li>}</ul></section>
-  <section><h2>{AUSARIAN_GISS_LESSON.title}</h2><p>{AUSARIAN_GISS_LESSON.exercise}</p><ul>{AUSARIAN_GISS_LESSON.objectives.map(x=><li key={x}>{x}</li>)}</ul></section><small>{result.disclaimer}</small>
+  {!valid&&<p role="alert">Enter finite, nonnegative numbers before running the simulation.</p>}
+  <p>Gross annual output / invested capital (not net return): {result?.assessment.productiveYield==null?'N/A':(result.assessment.productiveYield*100).toFixed(2)+'%'}</p><p>Annual financing cost / invested capital: {result?.assessment.financingCostRatio==null?'N/A':(result.assessment.financingCostRatio*100).toFixed(2)+'%'}</p><p>Difference between assumed annual rents (not market causation): {result?result.assessment.rentCompetitionDelta.toLocaleString():'N/A'}</p>
+  <h3>Review flags</h3><ul>{result?(result.assessment.flags.length?result.assessment.flags.map(f=><li key={f}>{f}</li>):<li>No scenario flags detected; not a financial approval.</li>):<li>INVALID_SCENARIO_INPUT</li>}</ul></section>
+  <section><h2>{AUSARIAN_GISS_LESSON.title}</h2><p>{AUSARIAN_GISS_LESSON.exercise}</p><ul>{AUSARIAN_GISS_LESSON.objectives.map(x=><li key={x}>{x}</li>)}</ul></section><small>{result?.disclaimer ?? 'Educational simulation only; input validation required.'}</small>
  </main>
 }
