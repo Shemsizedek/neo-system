@@ -18,6 +18,10 @@ jobs:
           node-version: '24'
           cache: npm
       - run: npm ci
+      - name: Execute deterministic economics assertions
+        run: |
+          ./node_modules/.bin/esbuild src/noology/ausarianEconomicEngine.test.ts --bundle --platform=node --format=esm --outfile=/tmp/ausarian-assertions.mjs
+          node --input-type=module -e "import('/tmp/ausarian-assertions.mjs').then(m=>{if(m.runAusarianEconomicAssertions()!==true)process.exit(1)})"
       - run: npm run build
       - name: Start preview and verify route HTML fallback
         shell: bash
