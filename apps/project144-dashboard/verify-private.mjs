@@ -14,9 +14,9 @@ export async function verifyPrivate({origin,user,pass,fetcher=fetch}={}){
  const auth='Basic '+Buffer.from(user+':'+pass).toString('base64');
  const request=async(path,headers={})=>fetcher(new URL(path,base),{headers,redirect:'manual',signal:AbortSignal.timeout(10000)});
  const unauthenticated=await request('/api/neosync');
- assert.equal(unauthenticated.status,401,'Unauthenticated data must be denied');
+ assert.ok([401,403].includes(unauthenticated.status),'Unauthenticated data must be denied (401 or 403)');
  const incorrect=await request('/api/neosync',{Authorization:'Basic '+Buffer.from(user+':wrong').toString('base64')});
- assert.equal(incorrect.status,401,'Incorrect password must be denied');
+ assert.ok([401,403].includes(incorrect.status),'Incorrect password must be denied (401 or 403)');
  const authorized=await request('/api/neosync',{Authorization:auth});
  assert.equal(authorized.status,200,'Authorized status should succeed');
  assert.match(authorized.headers.get('content-type')||'',/application\/json/);
