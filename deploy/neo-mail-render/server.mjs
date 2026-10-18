@@ -48,7 +48,7 @@ export function createPostmasterServer() {
 if (process.argv[1] && import.meta.url === new URL('file://' + process.argv[1]).href) {
   createPostmasterServer().listen(PORT, '0.0.0.0', () => {
     console.log('NEO Mail staging control plane listening');
-    if (process.env.TITAN_IMAP_APP_PASSWORD && process.env.TITAN_IMAP_USER) {
+    if (process.env.NEO_MAIL_PROBE_ON_START === 'true' && process.env.TITAN_IMAP_APP_PASSWORD && process.env.TITAN_IMAP_USER) {
       import('./titan-adapter.mjs').then(async ({titanConfig,latestTitanMessages}) => {
         try {
           const messages = await latestTitanMessages({config:{...titanConfig(), connectionTimeout:15000, greetingTimeout:15000, socketTimeout:20000},limit:10});
@@ -58,6 +58,7 @@ if (process.argv[1] && import.meta.url === new URL('file://' + process.argv[1]).
           console.log(JSON.stringify({event:'titan_readonly_probe',result:'failed',reason}));
         }
       }).catch(() => console.log(JSON.stringify({event:'titan_readonly_probe',result:'adapter_unavailable'})));
-    } else console.log(JSON.stringify({event:'titan_readonly_probe',result:'credentials_missing'}));
+    } else console.log(JSON.stringify({event:'titan_readonly_probe',result:'skipped',reason:'manual_gate_required'}));
+    import('./titan-connectivity.mjs').then(m => m.probeTitanTls(process.env.TITAN_IMAP_HOST || 'imap.titan.email')).then(result => console.log(JSON.stringify({event:'titan_tls_probe',...result}))).catch(() => console.log(JSON.stringify({event:'titan_tls_probe',ok:false,reason:'diagnostic_unavailable'})));
   });
 }
