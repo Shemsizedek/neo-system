@@ -59,6 +59,7 @@ if (process.argv[1] && import.meta.url === new URL('file://' + process.argv[1]).
         }
       }).catch(() => console.log(JSON.stringify({event:'titan_readonly_probe',result:'adapter_unavailable'})));
     } else console.log(JSON.stringify({event:'titan_readonly_probe',result:'skipped',reason:'manual_gate_required'}));
+    import('./titan-connectivity.mjs').then(m => m.probeTitanGreeting(process.env.TITAN_IMAP_HOST || 'imap.titan.email')).then(result => console.log(JSON.stringify({event:'titan_greeting_probe',...result}))).catch(() => console.log(JSON.stringify({event:'titan_greeting_probe',ok:false,reason:'diagnostic_unavailable'})));
     import('./titan-connectivity.mjs').then(m => m.probeTitanTls(process.env.TITAN_IMAP_HOST || 'imap.titan.email')).then(result => console.log(JSON.stringify({event:'titan_tls_probe',...result}))).catch(() => console.log(JSON.stringify({event:'titan_tls_probe',ok:false,reason:'diagnostic_unavailable'})));
   });
 }
