@@ -19,6 +19,7 @@ jobs:
       - run: python hardware/neo-chips/nchip002_simulator.py
       - run: python hardware/neo-chips/oracle_attestation.py
       - run: python -m unittest discover -s hardware/neo-chips/board -p 'test_experiment_schema.py' -v
+      - run: python -m unittest discover -s hardware/neo-chips/board -p 'test_nchip009_capture.py' -v
       - run: python -m unittest discover -s hardware/neo-chips -p 'test_nchip004.py' -v
   react-local-build:
     runs-on: ubuntu-latest
