@@ -1,0 +1,24 @@
+name: Project144 G007 protected acceptance
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  acceptance:
+    runs-on: ubuntu-latest
+    environment: project144-private-acceptance
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Require configured operator secrets
+        env:
+          COMMAND_URL: ${{ secrets.PROJECT144_PRIVATE_GATEWAY_URL }}
+          COMMAND_USER: ${{ secrets.PROJECT144_OPERATOR_USER }}
+          COMMAND_PASSWORD: ${{ secrets.PROJECT144_OPERATOR_PASSWORD }}
+        run: |
+          test -n "$COMMAND_URL"
+          test -n "$COMMAND_USER"
+          test -n "$COMMAND_PASSWORD"
+          node apps/project144-dashboard/verify-private.mjs
