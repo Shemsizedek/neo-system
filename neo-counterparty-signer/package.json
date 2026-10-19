@@ -1,0 +1,16 @@
+{
+  "name": "@neo/counterparty-signer",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./bridge.mjs",
+    "./policy": "./policy.mjs"
+  },
+  "dependencies": {
+    "@xcp/wallet-sdk": "github:XCP/wallet-sdk#v0.5.0",
+    "@scure/base": "2.2.0",
+    "@scure/btc-signer": "2.2.0",
+    "cborg": "4.2.8"
+  }
+}
