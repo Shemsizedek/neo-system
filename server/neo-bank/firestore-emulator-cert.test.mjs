@@ -15,7 +15,7 @@ const enabled=Boolean(host&&admin);
 const hash=x=>createHash('sha256').update(x).digest('hex');
 test('CES atomic posting, replay and insufficient-credit rollback on Firestore emulator',{skip:!enabled},async()=>{
  const app=admin.initializeApp({projectId:'neob021-emulator-'+process.pid},'neob021-cert-'+process.pid);
- const db=app.firestore();
+ const db=admin.firestore(app);
  const seed=async(coll,id,data)=>db.collection(coll).doc(id).set(data);
  const sender='neob021-sender-'+process.pid,receiver='neob021-receiver-'+process.pid;
  const senderKey=hash(sender),receiverKey=hash(receiver);
