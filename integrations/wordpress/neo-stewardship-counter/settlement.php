@@ -3,10 +3,11 @@ defined('ABSPATH') || exit;
 require_once __DIR__.'/settlement-core.php';
 require_once __DIR__.'/token-settlement.php';
 require_once __DIR__.'/inventory.php';
+require_once __DIR__.'/merchant-core.php';
 function neo_counter_tables(){global $wpdb;return array('invoices'=>$wpdb->prefix.'neo_counter_invoices','claims'=>$wpdb->prefix.'neo_counter_claims','jobs'=>$wpdb->prefix.'neo_counter_delivery','stock'=>$wpdb->prefix.'neo_counter_stock','reservations'=>$wpdb->prefix.'neo_counter_reservations');}
 function neo_counter_transactional_tables(){global $wpdb;foreach(neo_counter_tables() as $table){$r=$wpdb->get_row($wpdb->prepare('SHOW TABLE STATUS WHERE Name = %s',$table),ARRAY_A);if(!$r||strtolower($r['Engine'])!=='innodb')return false;}return true;}
 function neo_counter_install_settlement(){
-    if(get_option('neo_counter_settlement_schema')==='2'&&get_option('neo_counter_settlement_selftest')==='passed-v2')return;
+    if(get_option('neo_counter_settlement_schema')==='3'&&get_option('neo_counter_settlement_selftest')==='passed-v3')return;
     global $wpdb;$t=neo_counter_tables();$collate=$wpdb->get_charset_collate();require_once ABSPATH.'wp-admin/includes/upgrade.php';
     dbDelta("CREATE TABLE {$t['invoices']} (
  id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -38,6 +39,7 @@ function neo_counter_install_settlement(){
     dbDelta("CREATE TABLE {$t['jobs']} (
  id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
  invoice_id bigint(20) unsigned NOT NULL,
+ fulfillment_kind varchar(32) NOT NULL DEFAULT 'token_sale',
  state varchar(40) NOT NULL,
  payment_txid char(64) NOT NULL,
  delivery_txid char(64) DEFAULT NULL,
@@ -63,7 +65,7 @@ function neo_counter_install_settlement(){
  PRIMARY KEY  (invoice_id),
  KEY stock_key (stock_key)
 ) ENGINE=InnoDB $collate;");
-    if(neo_counter_transactional_tables()&&neo_counter_storage_selftest()){update_option('neo_counter_settlement_schema','2',false);update_option('neo_counter_settlement_selftest','passed-v2',false);}
+    if(neo_counter_transactional_tables()&&neo_counter_storage_selftest()){update_option('neo_counter_settlement_schema','3',false);update_option('neo_counter_settlement_selftest','passed-v3',false);}
 }
 /** Rollback-only schema probe: no fake invoice, claim or job may survive. */
 function neo_counter_storage_selftest(){
@@ -82,7 +84,7 @@ function neo_counter_storage_selftest(){
         if($wpdb->insert($t['claims'],$duplicate)!==false)throw new RuntimeException('Transaction uniqueness missing.');
         $duplicate=$claim;$duplicate['txid']=hash('sha256',$tx);
         if($wpdb->insert($t['claims'],$duplicate)!==false)throw new RuntimeException('Invoice claim uniqueness missing.');
-        $job=array('invoice_id'=>$first,'state'=>'SCHEMA_PROBE','payment_txid'=>$tx,'updated_at'=>time());
+        $job=array('invoice_id'=>$first,'fulfillment_kind'=>'service_bill','state'=>'SCHEMA_PROBE','payment_txid'=>$tx,'updated_at'=>time());
         if(!$wpdb->insert($t['jobs'],$job)||$wpdb->insert($t['jobs'],$job)!==false)throw new RuntimeException('Job uniqueness missing.');
         if(!$wpdb->insert($t['stock'],array('stock_key'=>$nonce,'reserved'=>1,'observed_at'=>time())))throw new RuntimeException('Stock probe failed.');
         $reservation=array('invoice_id'=>$first,'stock_key'=>$nonce,'quantity'=>1,'state'=>'SCHEMA_PROBE','created_at'=>time());
@@ -104,7 +106,7 @@ function neo_counter_create_locked_invoice($order_id,$record,$request_key){
     if(!preg_match('/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i',$request_key))return new WP_Error('request_key','Reload checkout before continuing.');
     global $wpdb;$t=neo_counter_tables();$now=time();
     if($record['market_reference']['expiresAt']<=$now*1000)return new WP_Error('expired_quote','Refresh the expired quote.');
-    $p=array('version'=>1,'order_id'=>(int)$order_id,'currency_asset'=>$record['payment_currency'],'currency_decimals'=>$record['currency_decimals'],'amount_minor'=>$record['total_minor'],
+    $p=array('version'=>2,'order_kind'=>'token_sale','settlement_method'=>'merchant_inventory','terms_accepted'=>true,'order_id'=>(int)$order_id,'currency_asset'=>$record['payment_currency'],'currency_decimals'=>$record['currency_decimals'],'amount_minor'=>$record['total_minor'],
         'payer'=>$record['delivery_wallet'],'destination'=>$record['collection_address'],'ledger'=>$record['counterparty_ledger'],'delivery_asset'=>$record['asset'],'delivery_quantity'=>$record['quantity'],
         'delivery_wallet'=>$record['delivery_wallet'],'token_source'=>$record['token_source_address'],'reference_id'=>$record['market_reference']['referenceId'],
         'valuation_day'=>$record['market_reference']['valuationDay'],'markup_bps'=>900,'terms_hash'=>$record['terms_sha256'],'quote_expires_at'=>intdiv($record['market_reference']['expiresAt'],1000),
@@ -132,7 +134,7 @@ function neo_counter_record_payment($order_id,$observed){
     try{
         $row=$wpdb->get_row($wpdb->prepare("SELECT * FROM {$t['invoices']} WHERE order_id = %d FOR UPDATE",$order_id),ARRAY_A);
         if(!$row||!hash_equals($row['payload_hash'],hash('sha256',$row['payload'])))throw new RuntimeException('Invoice integrity check failed.');
-        $invoice=json_decode($row['payload'],true);$assessment=$invoice['currency_asset']==='BTC'?neo_counter_assess_btc($invoice,$observed['transaction'],$observed['chain'],time()):neo_counter_assess_token($invoice,$observed,time());$txid=strtolower($observed['transaction']['txid']);
+        $invoice=json_decode($row['payload'],true);$kind=neo_counter_order_kind($invoice);$assessment=$invoice['currency_asset']==='BTC'?neo_counter_assess_btc($invoice,$observed['transaction'],$observed['chain'],time()):neo_counter_assess_token($invoice,$observed,time());$txid=strtolower($observed['transaction']['txid']);
         $claim=$wpdb->get_row($wpdb->prepare("SELECT * FROM {$t['claims']} WHERE txid = %s",$txid),ARRAY_A);
         if($claim&&(int)$claim['invoice_id']!==(int)$row['id'])throw new RuntimeException('This payment is already claimed by another invoice.');
         $existing=$wpdb->get_row($wpdb->prepare("SELECT * FROM {$t['claims']} WHERE invoice_id = %d",$row['id']),ARRAY_A);if($existing&&$existing['txid']!==$txid)throw new RuntimeException('This invoice already has a claimed payment.');
@@ -140,8 +142,9 @@ function neo_counter_record_payment($order_id,$observed){
         if($job&&!empty($job['delivery_txid']))throw new RuntimeException('Delivery already recorded; manual reconciliation required.');
         if(in_array($state,array('PAYMENT_CONFIRMED','LATE_PAYMENT_REVIEW'),true)&&($assessment['confirmations']??0)>=$invoice['confirmations']){
             if(!$claim&&!$wpdb->insert($t['claims'],array('txid'=>$txid,'invoice_id'=>$row['id'],'vout'=>$assessment['vout'],'block_hash'=>$assessment['block_hash'],'claimed_at'=>time())))throw new RuntimeException('Payment claim conflict.');
-            $reserved=isset($observed['inventory'])&&neo_counter_reserve_inventory($row,$observed['inventory']);
-            $state='PAYMENT_REVIEW_REQUIRED';$data=array('state'=>$reserved?'HOLD_TREASURY_SETUP':'HOLD_INVENTORY','payment_txid'=>$txid,'updated_at'=>time());
+            $reserved=$kind==='token_sale'&&isset($observed['inventory'])&&neo_counter_reserve_inventory($row,$observed['inventory']);
+            $plan=neo_counter_fulfillment_plan($invoice,$assessment,$reserved);$state=$plan['invoice_state'];
+            $data=array('state'=>$plan['job_state'],'fulfillment_kind'=>$kind,'payment_txid'=>$txid,'updated_at'=>time());
             if($job){if($wpdb->update($t['jobs'],$data,array('invoice_id'=>$row['id']))===false)throw new RuntimeException('Delivery hold could not be saved.');}
             elseif(!$wpdb->insert($t['jobs'],array_merge($data,array('invoice_id'=>$row['id']))))throw new RuntimeException('Delivery queue could not be saved.');
         }elseif($claim){if($wpdb->update($t['jobs'],array('state'=>'HOLD_PAYMENT_RECHECK','updated_at'=>time()),array('invoice_id'=>$row['id']))===false)throw new RuntimeException('Delivery hold could not be saved.');$state='PAYMENT_RECHECK_REQUIRED';}
@@ -152,7 +155,7 @@ function neo_counter_record_payment($order_id,$observed){
 function neo_counter_verify_order($order,$txid){
     $row=neo_counter_invoice($order);if(!$row||is_wp_error($row))throw new RuntimeException('Checkout not found or invoice integrity failed.');
     $p=$row['invoice'];$o=$p['currency_asset']==='BTC'?neo_counter_read_btc($txid):neo_counter_read_token($p,$txid);
-    try{$o['inventory']=neo_counter_read_inventory($p,$o['chain']['height']);}catch(Throwable $e){$o['inventory_error']='Inventory unavailable; delivery held.';}
+    if(neo_counter_order_kind($p)==='token_sale'){try{$o['inventory']=neo_counter_read_inventory($p,$o['chain']['height']);}catch(Throwable $e){$o['inventory_error']='Inventory unavailable; delivery held.';}}
     $result=neo_counter_record_payment($order,$o);
     if(in_array($result['state'],array('PAYMENT_DETECTED','TOKEN_UNCONFIRMED','NO_EXACT_TOKEN_PAYMENT','PAYMENT_RECHECK_REQUIRED'),true)&&!wp_next_scheduled('neo_counter_watch_payment',array($order,$txid)))wp_schedule_single_event(time()+60,'neo_counter_watch_payment',array($order,$txid));return $result;
 }
@@ -160,5 +163,5 @@ add_action('neo_counter_watch_payment',function($order,$txid){$row=neo_counter_i
 add_action('rest_api_init',function(){
     register_rest_route('neo-counter/v1','/invoices/(?P<order_id>[0-9]+)',array('methods'=>'GET','permission_callback'=>function(){return is_user_logged_in();},'callback'=>function($r){$row=neo_counter_invoice((int)$r['order_id']);if(is_wp_error($row))return $row;if(!$row||((int)$row['user_id']!==get_current_user_id()&&!current_user_can('manage_options')))return new WP_Error('not_found','Checkout not found.',array('status'=>404));$response=new WP_REST_Response(array('state'=>$row['state'],'invoice'=>$row['invoice'],'payable'=>false,'delivery'=>'NOT_SENT'));$response->header('Cache-Control','private, no-store');return $response;}));
     register_rest_route('neo-counter/v1','/invoices/(?P<order_id>[0-9]+)/verify',array('methods'=>'POST','permission_callback'=>function(){return current_user_can('manage_options');},'callback'=>function($r){$txid=strtolower((string)$r->get_param('txid'));if(!preg_match('/^[a-f0-9]{64}$/',$txid))return new WP_Error('invalid_txid','Enter a valid transaction ID.',array('status'=>400));try{return neo_counter_verify_order((int)$r['order_id'],$txid);}catch(Throwable $e){return new WP_Error('verification_hold',$e->getMessage(),array('status'=>409));}}));
-    register_rest_route('neo-counter/v1','/settlement-status',array('methods'=>'GET','permission_callback'=>'__return_true','callback'=>function(){return array('version'=>'0.17.0','invoiceStorageReady'=>neo_counter_transactional_tables(),'storageConstraintsChecked'=>get_option('neo_counter_settlement_selftest')==='passed-v2','btcVerification'=>'dual-index-exact-payment','requiredConfirmations'=>3,'tokenPaymentVerification'=>'ledger-specific-node-and-bitcoin','inventoryReservationsReady'=>neo_counter_transactional_tables(),'inventoryReservationPolicy'=>'confirmed-payment-hold','automaticDelivery'=>false,'paymentsEnabled'=>false);}));
+    register_rest_route('neo-counter/v1','/settlement-status',array('methods'=>'GET','permission_callback'=>'__return_true','callback'=>function(){return array('version'=>'0.18.0','invoiceStorageReady'=>neo_counter_transactional_tables(),'storageConstraintsChecked'=>get_option('neo_counter_settlement_selftest')==='passed-v3','btcVerification'=>'dual-index-exact-payment','requiredConfirmations'=>3,'tokenPaymentVerification'=>'ledger-specific-node-and-bitcoin','inventoryReservationsReady'=>neo_counter_transactional_tables(),'inventoryReservationPolicy'=>'confirmed-payment-hold','automaticDelivery'=>false,'paymentsEnabled'=>false);}));
 });

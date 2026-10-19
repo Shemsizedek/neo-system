@@ -4,7 +4,7 @@ defined('ABSPATH') || exit;
 define('NEO_STEWARDSHIP_COLLECTION', '18SzD3cfwCcV9p6C38ho4uZPHE8ygVB9iq');
 define('NEO_STEWARDSHIP_BOND_SOURCE', '1Ky2wRYYrJzqdQJH64F7TR98fqLxJs7LK8');
 add_action('init', function () {
-    register_post_type('neo_steward_order', array('label'=>'NEO Stewardship Checkouts',
+    register_post_type('neo_steward_order', array('label'=>'NEO Counter Orders',
         'public'=>false, 'show_ui'=>true, 'show_in_rest'=>false, 'supports'=>array('title'),
         'capabilities'=>array('edit_posts'=>'manage_options','edit_others_posts'=>'manage_options',
             'publish_posts'=>'manage_options','read_private_posts'=>'manage_options',
@@ -94,16 +94,19 @@ add_action('admin_post_neo_stewardship_prepare', function () {
 add_action('add_meta_boxes_neo_steward_order',function(){
     add_meta_box('neo_checkout_record','Checkout record',function($post){
         if (!current_user_can('manage_options')) return;
-        echo '<p>NeoMask signing handoff: after independently verified payment, send the recorded instrument and exact quantity from ' .
-            esc_html(NEO_STEWARDSHIP_BOND_SOURCE) . ' to the recorded delivery wallet. Verify the correct Counterparty ledger, source inventory, destination, amount and network fee inside the selected NeoMask wallet. This record does not authorize or broadcast a transfer.</p>';
         $invoice=neo_counter_invoice($post->ID);
         if($invoice&&!is_wp_error($invoice)){
+            $kind=neo_counter_order_kind($invoice['invoice']);
+            $labels=array('token_sale'=>'Token purchase','digital_goods'=>'Digital product','physical_goods'=>'Physical product','service_bill'=>'Service bill');
+            echo '<p><strong>Order type:</strong> '.esc_html($labels[$kind]).'</p>';
+            if($kind==='token_sale')echo '<p>Token inventory and the collection wallet serve different purposes. Delivery remains held until the treasury signer is configured.</p>';
+            else echo '<p>Payment is collected at the merchant wallet. Product fulfillment and service completion are tracked separately from payment.</p>';
             echo '<p><strong>Invoice:</strong> '.esc_html($invoice['state']).' · '.esc_html($invoice['payload_hash']).'</p>';
             if(in_array($invoice['invoice']['ledger'],array('classic','cp20'),true)){
                 $control='neo-payment-'.(int)$post->ID;
                 echo '<div id="'.esc_attr($control).'"><label>Payment transaction ID <input data-payment-txid style="width:100%"></label><p><button type="button" class="button" data-verify-payment>Verify payment</button></p><p data-payment-result role="status"></p></div>';
                 echo '<script>document.getElementById('.wp_json_encode($control).').querySelector("[data-verify-payment]").addEventListener("click",async function(){const root=this.closest("div"),out=root.querySelector("[data-payment-result]"),txid=root.querySelector("[data-payment-txid]").value.trim();if(!/^[a-f0-9]{64}$/i.test(txid)){out.textContent="Enter a valid transaction ID.";return;}this.disabled=true;out.textContent="Checking payment…";try{const r=await fetch('.wp_json_encode(rest_url('neo-counter/v1/invoices/'.$post->ID.'/verify')).',{method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json","X-WP-Nonce":'.wp_json_encode(wp_create_nonce('wp_rest')).'},body:JSON.stringify({txid})});const d=await r.json();out.textContent=r.ok?d.state+" · Delivery not sent":d.message;}catch(e){out.textContent="Verification unavailable. Please retry.";}finally{this.disabled=false;}});</script>';
-                echo '<p>Verification does not authorize delivery. Treasury inventory and signing still require setup.</p>';
+                echo '<p>Verification does not activate this draft or authorize fulfillment.</p>';
             }
         }
         echo '<pre style="white-space:pre-wrap;overflow-wrap:anywhere">' .

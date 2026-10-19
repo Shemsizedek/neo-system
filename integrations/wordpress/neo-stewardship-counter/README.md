@@ -1,3 +1,7 @@
+# NEO Counter merchant extension — 0.18.0
+
+The plugin now includes a NEO Counter operator menu for product/service draft invoices and separate fulfillment routing. See [MERCHANT_PLATFORM_GATE.md](MERCHANT_PLATFORM_GATE.md) for supported flows and remaining activation requirements. Payments and automatic delivery remain disabled.
+
 # Holy Stewardship NEO Counter — Gate 4
 Target: https://holytemples.org/holy-stewardship/
 Service: holy-stewardship

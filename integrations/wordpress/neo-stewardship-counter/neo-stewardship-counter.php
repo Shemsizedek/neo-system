@@ -1,8 +1,8 @@
 <?php
 /**
- * Plugin Name: NEO Counter Holy Stewardship
- * Description: Page-specific stewardship checkout review. Itemized market-reference checkout preview.
- * Version: 0.17.0
+ * Plugin Name: NEO Counter
+ * Description: Bitcoin and Counterparty merchant invoices, payment verification and fulfillment routing.
+ * Version: 0.18.0
  */
 defined('ABSPATH') || exit;
 require_once __DIR__ . '/market.php';
@@ -10,6 +10,7 @@ require_once __DIR__ . '/form144.php';
 require_once __DIR__ . '/payment.php';
 require_once __DIR__ . '/currencies.php';
 require_once __DIR__ . '/settlement.php';
+require_once __DIR__ . '/merchant.php';
 add_shortcode('neo_stewardship_counter', function () {
     if (!is_page('holy-stewardship')) {
         return '';

@@ -18,7 +18,7 @@ class DB {
   $this->db->exec('CREATE TABLE t_neo_counter_claims(txid TEXT PRIMARY KEY,invoice_id INTEGER UNIQUE,vout INTEGER,block_hash TEXT,claimed_at INTEGER)');
   $this->db->exec('CREATE TABLE t_neo_counter_stock(stock_key TEXT PRIMARY KEY,reserved INTEGER,observed_at INTEGER)');
   $this->db->exec('CREATE TABLE t_neo_counter_reservations(invoice_id INTEGER PRIMARY KEY,stock_key TEXT,quantity INTEGER,state TEXT,created_at INTEGER)');
-  $this->db->exec('CREATE TABLE t_neo_counter_delivery(id INTEGER PRIMARY KEY AUTOINCREMENT,invoice_id INTEGER UNIQUE,state TEXT,payment_txid TEXT,delivery_txid TEXT UNIQUE,attempts INTEGER DEFAULT 0,updated_at INTEGER)'); }
+  $this->db->exec('CREATE TABLE t_neo_counter_delivery(id INTEGER PRIMARY KEY AUTOINCREMENT,invoice_id INTEGER UNIQUE,fulfillment_kind TEXT DEFAULT \'token_sale\',state TEXT,payment_txid TEXT,delivery_txid TEXT UNIQUE,attempts INTEGER DEFAULT 0,updated_at INTEGER)'); }
  function prepare($sql,...$args){$i=0;return preg_replace_callback('/%[ds]/',function($m)use(&$i,$args){$v=$args[$i++];return $m[0]==='%d'?(string)(int)$v:$this->db->quote((string)$v);},$sql);}
  function query($sql){$sql=str_replace('INSERT IGNORE','INSERT OR IGNORE',$sql);try{return $this->db->exec($sql==='START TRANSACTION'?'BEGIN':$sql);}catch(Throwable $e){return false;}}
  function get_row($sql,$mode){if(str_starts_with($sql,'SHOW TABLE STATUS'))return array('Engine'=>'InnoDB');return $this->db->query(str_replace(' FOR UPDATE','',$sql))->fetch(PDO::FETCH_ASSOC)?:null;}
