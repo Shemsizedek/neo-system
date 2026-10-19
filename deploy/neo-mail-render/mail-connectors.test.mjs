@@ -16,7 +16,8 @@ test('routing denies missing grants or identity before connector use',async()=>{
 test('routing permits only explicitly injected provider',async()=>{
  const router=createMailRouter({verifyIdentity:async credentials=>credentials?.token==='test-valid-token'?identity:null,connectors:{titan:{readInbox:async()=>[{uid:3}]}}});
  assert.deepEqual(await router.readInbox({provider:'titan',grant,identity:{token:'test-valid-token'}}),{ok:true,provider:'titan',messages:[{uid:3}]});
- assert.equal((await createMailRouter().readInbox({provider:'titan',grant,identity:{token:'test-valid-token'}})).reason,'connector_unavailable');
+ assert.equal((await createMailRouter().readInbox({provider:'titan',grant,identity:{token:'test-valid-token'}})).reason,'identity_not_verified');
+ assert.equal((await createMailRouter({verifyIdentity:async()=>identity}).readInbox({provider:'titan',grant,identity:{token:'test-valid-token'}})).reason,'connector_unavailable');
  assert.equal((await router.readInbox({provider:'wpvibe',grant,identity:{token:'test-valid-token'}})).reason,'unsupported_capability');
 });
 test('Titan mailbox scope refuses cross-tenant access before connect',async()=>{
