@@ -2,13 +2,14 @@
 /**
  * Plugin Name: NEO Counter Holy Stewardship
  * Description: Page-specific stewardship checkout review. Itemized market-reference checkout preview.
- * Version: 0.15.1
+ * Version: 0.16.0
  */
 defined('ABSPATH') || exit;
 require_once __DIR__ . '/market.php';
 require_once __DIR__ . '/form144.php';
 require_once __DIR__ . '/payment.php';
 require_once __DIR__ . '/currencies.php';
+require_once __DIR__ . '/settlement.php';
 add_shortcode('neo_stewardship_counter', function () {
     if (!is_page('holy-stewardship')) {
         return '';
@@ -123,11 +124,12 @@ add_shortcode('neo_stewardship_counter', function () {
         if ($prepared_id && is_user_logged_in() && get_post_type($prepared_id) === 'neo_steward_order' &&
             (int) get_post_field('post_author',$prepared_id) === get_current_user_id()) :
         ?>
-          <p role="status">Checkout prepared. Indenture acknowledgment recorded; payment has not been requested and tokens have not been delivered.</p>
+          <p role="status">Checkout saved with a locked invoice. Payment activation and bond delivery are pending.</p>
         <?php endif; ?>
         <?php if ($received144 && $ledger && !empty($references)) : ?>
           <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
             <input type="hidden" name="action" value="neo_stewardship_prepare">
+            <input type="hidden" name="checkout_request" value="<?php echo esc_attr(wp_generate_uuid4()); ?>">
             <input type="hidden" name="currency" value="<?php echo esc_attr($selected_currency['id']); ?>">
             <input type="hidden" name="ledger" value="<?php echo esc_attr($ledger); ?>">
             <input type="hidden" name="terms_hash" value="<?php echo esc_attr(hash('sha256',neo_stewardship_indenture_snapshot())); ?>">
@@ -164,3 +166,4 @@ add_shortcode('neo_stewardship_counter', function () {
     <?php
     return ob_get_clean();
 });
+

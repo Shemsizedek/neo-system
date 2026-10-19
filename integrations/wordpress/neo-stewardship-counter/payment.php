@@ -84,6 +84,10 @@ add_action('admin_post_neo_stewardship_prepare', function () {
         wp_delete_post($id,true);
         wp_die('Checkout record could not be saved.', '', array('response'=>500));
     }
+    $request_key=isset($_POST['checkout_request'])&&is_string($_POST['checkout_request'])?sanitize_text_field(wp_unslash($_POST['checkout_request'])):'';
+    $invoice_id=neo_counter_create_locked_invoice($id,$record,$request_key);
+    if(is_wp_error($invoice_id)){wp_delete_post($id,true);wp_die(esc_html($invoice_id->get_error_message()),'',array('response'=>409));}
+    add_post_meta($id,'_neo_invoice_id',$invoice_id,true);
     wp_safe_redirect(add_query_arg('neo_prepared',$id,add_query_arg(array('neo_ledger'=>$ledger,'neo_currency'=>$currency),home_url('/holy-stewardship/'))) . '#neo-stewardship-gateway');
     exit;
 });
@@ -92,7 +96,18 @@ add_action('add_meta_boxes_neo_steward_order',function(){
         if (!current_user_can('manage_options')) return;
         echo '<p>NeoMask signing handoff: after independently verified payment, send the recorded instrument and exact quantity from ' .
             esc_html(NEO_STEWARDSHIP_BOND_SOURCE) . ' to the recorded delivery wallet. Verify the correct Counterparty ledger, source inventory, destination, amount and network fee inside the selected NeoMask wallet. This record does not authorize or broadcast a transfer.</p>';
+        $invoice=neo_counter_invoice($post->ID);
+        if($invoice&&!is_wp_error($invoice)){
+            echo '<p><strong>Invoice:</strong> '.esc_html($invoice['state']).' · '.esc_html($invoice['payload_hash']).'</p>';
+            if($invoice['invoice']['currency_asset']==='BTC'){
+                $control='neo-payment-'.(int)$post->ID;
+                echo '<div id="'.esc_attr($control).'"><label>BTC payment transaction ID <input data-payment-txid style="width:100%"></label><p><button type="button" class="button" data-verify-payment>Verify payment</button></p><p data-payment-result role="status"></p></div>';
+                echo '<script>document.getElementById('.wp_json_encode($control).').querySelector("[data-verify-payment]").addEventListener("click",async function(){const root=this.closest("div"),out=root.querySelector("[data-payment-result]"),txid=root.querySelector("[data-payment-txid]").value.trim();if(!/^[a-f0-9]{64}$/i.test(txid)){out.textContent="Enter a valid transaction ID.";return;}this.disabled=true;out.textContent="Checking Bitcoin indexes…";try{const r=await fetch('.wp_json_encode(rest_url('neo-counter/v1/invoices/'.$post->ID.'/verify')).',{method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json","X-WP-Nonce":'.wp_json_encode(wp_create_nonce('wp_rest')).'},body:JSON.stringify({txid})});const d=await r.json();out.textContent=r.ok?d.state+" · Delivery not sent":d.message;}catch(e){out.textContent="Verification unavailable. Please retry.";}finally{this.disabled=false;}});</script>';
+                echo '<p>Verification does not authorize delivery. Treasury inventory and signing still require setup.</p>';
+            }
+        }
         echo '<pre style="white-space:pre-wrap;overflow-wrap:anywhere">' .
             esc_html(wp_json_encode(get_post_meta($post->ID,'_neo_checkout',true),JSON_PRETTY_PRINT)) . '</pre>';
     },'neo_steward_order');
 });
+
