@@ -32,9 +32,9 @@ export function createWalletHost({wallet,approve,ledgers}){
    if(!inputs||Object.keys(inputs).length!==1||!Array.isArray(inputs[a.address])||!inputs[a.address].length||!inputs[a.address].every(i=>Number.isSafeInteger(i)&&i>=0))throw Error('Explicit signing input indices required.');
    // The wallet approval UI must decode outputs, amounts and fees before approving.
    if(!await approve({origin,method,ledger,account:a,hex,signInputs:inputs}))throw Error('Signing declined.');
-   const before=await read(ledger);if(before.address!==a.address)throw Error('Wallet account changed.');
+   const before=await read(ledger);if(before.address!==a.address||sessions.get(key)!==s||s.expires<Date.now())throw Error('Wallet account changed or approval expired.');
    const signed=psbt(await wallet.signPsbt(hex,ledger,{signInputs:inputs,sighashTypes:[1]}));
-   const after=await read(ledger);if(after.address!==a.address){sessions.delete(key);throw Error('Wallet account changed.');}return signed;
+   const after=await read(ledger);if(after.address!==a.address||sessions.get(key)!==s||s.expires<Date.now()){sessions.delete(key);throw Error('Wallet account changed or approval expired.');}return signed;
   }finally{busy=false;}
  };
 }

@@ -1,0 +1,8 @@
+{
+  "name": "@neo-system/neomask-community-bridge",
+  "version": "0.2.0",
+  "type": "module",
+  "private": true,
+  "exports": {".": "./index.mjs", "./neomask-vault": "./neomask-vault.mjs"},
+  "scripts": {"test": "node bridge.test.mjs && node popup.test.mjs && node vault.test.mjs"}
+}

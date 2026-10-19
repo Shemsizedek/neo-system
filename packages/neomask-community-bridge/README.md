@@ -32,3 +32,11 @@ Alternatively inject `registerWalletBridge` from an extension content bridge and
 `connect`, `getAccount`, `signPsbt` and `disconnect` are the only host methods. Signing requires `options.signInputs` mapping the connected address to explicit input indices; SIGHASH_ALL is enforced. The host rejects account changes before and after signing. Account changes are also checked by the NeoMask router before and after each request.
 
 Run `node bridge.test.mjs`. Tests use synthetic PSBT envelopes and mock wallets, not funded wallets; they verify protocol boundaries rather than Bitcoin signature validity. Production activation still requires wallet-side integration, wallet UI review and a real wallet test on a non-funded/test environment. This SDK does not enable merchant payment settlement or automatic inventory delivery.
+
+## 0.2.0 — NEO Pay / Counterpay vault integration
+
+`neomask-vault.mjs` provides the actual adapter for the existing NeoMask extension provider. `apps/neopay/neomask.mjs` and `apps/counterpay/neomask.mjs` export application startup installers. Call the matching installer before wallet discovery, on a site where the member has enabled NeoMask. No extra approval UI or keys are implemented in the website: the installed extension supplies its existing origin-bound permission and PSBT review popups. The extension currently signs all owned PSBT inputs and checks all outputs; this adapter does not promise partial input signing.
+
+These installers are source integration entry points, not changes to a running NEO Pay or Counterpay deployment. They expose the wallet only after installation on the application page. They intentionally cannot register as Freewallet: Freewallet still requires its own companion integration. No invented Freewallet signing API or public wallet endpoint is used.
+
+Tests now include a simulated two-window popup round trip and the complete SDK → owned wallet adapter → existing merchant router flow, including declined signing and account mutation. Provider responses remain test doubles; no installed extension UI or funded transaction was exercised by these tests.
