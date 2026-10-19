@@ -1,0 +1,21 @@
+name: CASHFLOW-015 Staging Runtime Security
+on:
+  pull_request:
+    paths:
+      - 'deploy/deal-desk-staging/**'
+      - 'server/neo-deal-desk/**'
+      - '.github/workflows/cashflow-015-certify.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  synthetic-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run staging security tests without credentials
+        run: node --test deploy/deal-desk-staging/*.test.mjs server/neo-deal-desk/tests/*.test.mjs
