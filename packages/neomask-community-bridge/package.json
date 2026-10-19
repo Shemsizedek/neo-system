@@ -1,8 +1,16 @@
 {
   "name": "@neo-system/neomask-community-bridge",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "type": "module",
   "private": true,
-  "exports": {".": "./index.mjs", "./neomask-vault": "./neomask-vault.mjs"},
-  "scripts": {"test": "node bridge.test.mjs && node popup.test.mjs && node vault.test.mjs"}
+  "exports": {
+    ".": "./index.mjs",
+    "./neomask-vault": "./neomask-vault.mjs",
+    "./freewallet": "./freewallet.mjs"
+  },
+  "scripts": {
+    "test": "node bridge.test.mjs && node popup.test.mjs && node vault.test.mjs && node freewallet.test.mjs",
+    "build:freewallet": "node build-freewallet.mjs",
+    "test:bundle": "node build-freewallet.mjs && node bundle.test.mjs"
+  }
 }

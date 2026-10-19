@@ -40,3 +40,35 @@ Run `node bridge.test.mjs`. Tests use synthetic PSBT envelopes and mock wallets,
 These installers are source integration entry points, not changes to a running NEO Pay or Counterpay deployment. They expose the wallet only after installation on the application page. They intentionally cannot register as Freewallet: Freewallet still requires its own companion integration. No invented Freewallet signing API or public wallet endpoint is used.
 
 Tests now include a simulated two-window popup round trip and the complete SDK → owned wallet adapter → existing merchant router flow, including declined signing and account mutation. Provider responses remain test doubles; no installed extension UI or funded transaction was exercised by these tests.
+
+## 0.3.0 — Freewallet companion
+
+The companion now implements real PSBT signing using the NEO repository's existing reviewed signer. It runs inside a trusted Freewallet build and uses that wallet's existing `FW`, `getWallet`, `getWalletAddressInfo` and `getPrivateKey` APIs. Private keys never cross the bridge or appear in responses. It supports unlocked indexed/imported Legacy mainnet accounts; watch-only and hardware accounts are rejected. A ledger must be explicitly configured to match the wallet installation.
+
+The inspected upstream implementation is [Freewallet Desktop fdb7f2f97eae876fa59ec77bc5dd1707a27a7eb2](https://github.com/jdogresorg/freewallet-desktop/blob/fdb7f2f97eae876fa59ec77bc5dd1707a27a7eb2/js/freewallet-desktop.js). Its `signTransaction` path calls `checkDonate` and assigns version 1 in the Legacy path. This companion deliberately uses the reviewed PSBT signer instead of that mutating function. No upstream files or private keys are copied into this SDK.
+
+From the NEO repository root:
+
+```
+npm --prefix apps/neomask-extension ci
+node packages/neomask-community-bridge/build-freewallet.mjs
+node packages/neomask-community-bridge/freewallet.test.mjs
+```
+
+Install the generated `dist/freewallet-bridge.js` in the trusted wallet page after Freewallet's runtime. Then call:
+
+```js
+NeoMaskFreewallet.startFreewalletCompanion(window, {
+  ledger: 'cp20', // Must match this wallet deployment, never infer from address
+  merchantOrigin: 'https://holytemples.org',
+  allowedMerchants: ['https://holytemples.org']
+});
+```
+
+The wallet's dedicated HTTPS popup route must retain its opener to exchange exact-origin messages. It must initialize the Freewallet runtime and its approved unlocked account. Do not embed an unlock secret or copy sessionStorage from another origin. If the runtime is unavailable, this companion refuses the request. Desktop NW.js installations need a separate native/browser-extension transport; this HTTPS popup transport does not magically connect to a local desktop process.
+
+The included approval UI uses wallet-local native confirmation with the caller's origin, ledger, account, every destination and amount, change, fee, input count and decoded bond transfer. It signs only when all inputs belong to the selected account and have been explicitly requested. Unknown Counterparty messages and unsupported transaction shapes are rejected by the existing signer. It does not implement general-purpose arbitrary-asset signing or broadcast.
+
+`freewallet.test.mjs` creates an unfunded synthetic key, signs a real PSBT, verifies its ECDSA signature and checks exact outputs, fee and transaction version. It also verifies declined approval occurs before key access, plus wallet lock, watch-only and network rejection. This is stronger than a mock signing test, but it is not evidence of an installed Freewallet build or production checkout. The upstream wallet has not been modified or deployed by this commit.
+
+After building, run `node packages/neomask-community-bridge/bundle.test.mjs` to verify the standalone browser artifact loads without Node globals or remote imports. The build injects a bundled Buffer implementation for the Bitcoin dependency. Build output is reproducible from source and excluded from version control.
