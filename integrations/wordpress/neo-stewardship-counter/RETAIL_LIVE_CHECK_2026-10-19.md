@@ -1,0 +1,9 @@
+# Retail correction production check — NEO Counter 0.20.0
+
+Installed active on holytemples.org on 2026-10-19. The normal /holy-stewardship/ URL initially returned the older cached page. Re-saving published page 2010 through WordPress triggered host invalidation. The normal URL then returned a cache MISS and the updated Pledge Bond preview of 0.00054500 BTC, with Pledge Bond and Temple Bond option labels.
+
+The live page has one member connect control, no merchant/treasury connect control, and neither the inventory-source nor World Currency treasury address in its HTML. The site-wide navigation still contains the public institutional World Treasury of Merit link; this is not a wallet connection/control, and this release does not rewrite institutional navigation or deploy changes to NEO Bank.
+
+Fresh public currency and pricing responses contain no owner/issuer/expectedOwner/sourceTreasury/bondMarket/currencyMarket payloads or source wallet addresses. The old public registry JSON URL returns 404. Fresh diagnostic requests return 401 to anonymous clients. An older unversioned diagnostic URL was observed as an Atomic CDN STALE response with legacy non-sensitive readiness flags; the WPVibe cache tool cannot purge the host CDN's arbitrary API URLs. Origin permissions are restricted. The cache flush cleared Elementor/object cache, and the page re-save resolved the retail-page cache specifically.
+
+Tests passed for retail projection, metadata isolation, short labels, descriptions, server-rendered amounts, private diagnostics, merchant/settlement real SQL rollback/replay/reorg, catalog rendering, daily markets and JS wallet/quote/search behavior. No signed-in production browser wallet connection was exercised. No payment, signature or transfer occurred; payment collection and automatic delivery remain disabled.
