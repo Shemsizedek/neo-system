@@ -17,6 +17,8 @@ jobs:
           node-version: '24'
       - name: Install verifier dependencies
         run: npm install --prefix deploy/neo-mail-render --no-audit --no-fund
+      - name: WordPress bridge PHP lint
+        run: php -l wordpress/plugins/neo-mail-bridge/neo-mail-bridge.php
       - name: Syntax validation
         run: node --check deploy/neo-mail-render/server.mjs
       - name: Fail-closed and disconnected-state tests
