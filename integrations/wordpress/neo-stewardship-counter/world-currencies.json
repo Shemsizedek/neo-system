@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "2026-10-17",
+  "schemaVersion": "2026-10-19",
   "source": "data/neo-counter/world-currencies.csv",
   "sourceSha": "a518186bc00acbf1d528b543ddabb609b9ae3f12",
   "sourceTreasury": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
@@ -12,15 +12,36 @@
       "counterpartyAsset": "NOMNI",
       "enabledForCollection": false,
       "status": "daily_market_reference_required",
-      "expectedOwner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg"
+      "expectedOwner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+      "verification": {
+        "classic": {
+          "status": "treasury_verification_pending"
+        },
+        "cp20": {
+          "status": "treasury_asset_verified",
+          "divisible": false,
+          "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "issuer": "1NySA74g62Mr28Unp4uCxwtQv9FkD7AVpk",
+          "verifiedAt": "2026-10-19T20:39:57.617265+00:00"
+        }
+      }
     },
     {
       "id": "svc",
       "symbol": "SVC",
       "name": "Sovereign Coin",
-      "counterpartyAsset": null,
+      "counterpartyAsset": "SOVEREIGNC",
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "daily_market_reference_required",
+      "expectedOwner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+      "verification": {
+        "classic": {
+          "status": "treasury_verification_pending"
+        },
+        "cp20": {
+          "status": "treasury_verification_pending"
+        }
+      }
     },
     {
       "id": "mrc",
@@ -29,7 +50,23 @@
       "counterpartyAsset": "MOORCASH",
       "enabledForCollection": false,
       "status": "daily_market_reference_required",
-      "expectedOwner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg"
+      "expectedOwner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+      "verification": {
+        "classic": {
+          "status": "treasury_asset_verified",
+          "divisible": false,
+          "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "verifiedAt": "2026-10-19T20:39:57.617265+00:00"
+        },
+        "cp20": {
+          "status": "treasury_asset_verified",
+          "divisible": false,
+          "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "verifiedAt": "2026-10-19T20:39:57.617265+00:00"
+        }
+      }
     },
     {
       "id": "mor",
@@ -38,15 +75,48 @@
       "counterpartyAsset": "MOORCOIN",
       "enabledForCollection": false,
       "status": "daily_market_reference_required",
-      "expectedOwner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg"
+      "expectedOwner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+      "verification": {
+        "classic": {
+          "status": "treasury_asset_verified",
+          "divisible": true,
+          "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "verifiedAt": "2026-10-19T20:39:57.617265+00:00"
+        },
+        "cp20": {
+          "status": "treasury_asset_verified",
+          "divisible": true,
+          "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "issuer": "1AssetiB9oec9pmbTThvCLFqBPcLSaQGjB",
+          "verifiedAt": "2026-10-19T20:39:57.617265+00:00"
+        }
+      }
     },
     {
       "id": "mxc",
       "symbol": "MXC",
       "name": "Mexia Coin",
-      "counterpartyAsset": null,
+      "counterpartyAsset": "MEXICACOIN",
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "daily_market_reference_required",
+      "expectedOwner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+      "verification": {
+        "classic": {
+          "status": "treasury_asset_verified",
+          "divisible": true,
+          "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "verifiedAt": "2026-10-19T20:39:57.617265+00:00"
+        },
+        "cp20": {
+          "status": "treasury_asset_verified",
+          "divisible": true,
+          "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "verifiedAt": "2026-10-19T20:39:57.617265+00:00"
+        }
+      }
     },
     {
       "id": "neo",
@@ -55,7 +125,23 @@
       "counterpartyAsset": "NEOCASH",
       "enabledForCollection": false,
       "status": "daily_market_reference_required",
-      "expectedOwner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg"
+      "expectedOwner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+      "verification": {
+        "classic": {
+          "status": "treasury_asset_verified",
+          "divisible": false,
+          "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "verifiedAt": "2026-10-19T20:39:57.617265+00:00"
+        },
+        "cp20": {
+          "status": "treasury_asset_verified",
+          "divisible": false,
+          "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "issuer": "1AssetiB9oec9pmbTThvCLFqBPcLSaQGjB",
+          "verifiedAt": "2026-10-19T20:39:57.617265+00:00"
+        }
+      }
     },
     {
       "id": "btc",
@@ -64,7 +150,17 @@
       "counterpartyAsset": "BTC",
       "enabledForCollection": false,
       "status": "daily_market_reference_required",
-      "expectedOwner": null
+      "expectedOwner": null,
+      "verification": {
+        "classic": {
+          "status": "native_asset",
+          "divisible": true
+        },
+        "cp20": {
+          "status": "native_asset",
+          "divisible": true
+        }
+      }
     },
     {
       "id": "xcp",
@@ -73,7 +169,17 @@
       "counterpartyAsset": "XCP",
       "enabledForCollection": false,
       "status": "daily_market_reference_required",
-      "expectedOwner": null
+      "expectedOwner": null,
+      "verification": {
+        "classic": {
+          "status": "native_asset",
+          "divisible": true
+        },
+        "cp20": {
+          "status": "native_asset",
+          "divisible": true
+        }
+      }
     },
     {
       "id": "erc",
@@ -82,7 +188,23 @@
       "counterpartyAsset": "EUROPACASH",
       "enabledForCollection": false,
       "status": "daily_market_reference_required",
-      "expectedOwner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg"
+      "expectedOwner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+      "verification": {
+        "classic": {
+          "status": "treasury_asset_verified",
+          "divisible": false,
+          "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "verifiedAt": "2026-10-19T20:39:57.617265+00:00"
+        },
+        "cp20": {
+          "status": "treasury_asset_verified",
+          "divisible": false,
+          "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "verifiedAt": "2026-10-19T20:39:57.617265+00:00"
+        }
+      }
     },
     {
       "id": "stc",
@@ -91,7 +213,23 @@
       "counterpartyAsset": "STERLINGCASH",
       "enabledForCollection": false,
       "status": "daily_market_reference_required",
-      "expectedOwner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg"
+      "expectedOwner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+      "verification": {
+        "classic": {
+          "status": "treasury_asset_verified",
+          "divisible": false,
+          "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "verifiedAt": "2026-10-19T20:39:57.617265+00:00"
+        },
+        "cp20": {
+          "status": "treasury_asset_verified",
+          "divisible": false,
+          "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "issuer": "1AssetiB9oec9pmbTThvCLFqBPcLSaQGjB",
+          "verifiedAt": "2026-10-19T20:39:57.617265+00:00"
+        }
+      }
     },
     {
       "id": "rpc",
@@ -100,7 +238,23 @@
       "counterpartyAsset": "RUPEECASH",
       "enabledForCollection": false,
       "status": "daily_market_reference_required",
-      "expectedOwner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg"
+      "expectedOwner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+      "verification": {
+        "classic": {
+          "status": "treasury_asset_verified",
+          "divisible": false,
+          "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "verifiedAt": "2026-10-19T20:39:57.617265+00:00"
+        },
+        "cp20": {
+          "status": "treasury_asset_verified",
+          "divisible": false,
+          "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "issuer": "1AssetiB9oec9pmbTThvCLFqBPcLSaQGjB",
+          "verifiedAt": "2026-10-19T20:39:57.617265+00:00"
+        }
+      }
     },
     {
       "id": "adc",
@@ -108,7 +262,15 @@
       "name": "Eustri Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "cdc",
@@ -117,7 +279,23 @@
       "counterpartyAsset": "CANADIACASH",
       "enabledForCollection": false,
       "status": "daily_market_reference_required",
-      "expectedOwner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg"
+      "expectedOwner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+      "verification": {
+        "classic": {
+          "status": "treasury_asset_verified",
+          "divisible": false,
+          "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "verifiedAt": "2026-10-19T20:39:57.617265+00:00"
+        },
+        "cp20": {
+          "status": "treasury_asset_verified",
+          "divisible": false,
+          "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "verifiedAt": "2026-10-19T20:39:57.617265+00:00"
+        }
+      }
     },
     {
       "id": "sgc",
@@ -125,7 +303,15 @@
       "name": "Singap Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "swc",
@@ -134,7 +320,23 @@
       "counterpartyAsset": "SWISSCASH",
       "enabledForCollection": false,
       "status": "daily_market_reference_required",
-      "expectedOwner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg"
+      "expectedOwner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+      "verification": {
+        "classic": {
+          "status": "treasury_asset_verified",
+          "divisible": false,
+          "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "verifiedAt": "2026-10-19T20:39:57.617265+00:00"
+        },
+        "cp20": {
+          "status": "treasury_asset_verified",
+          "divisible": false,
+          "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "verifiedAt": "2026-10-19T20:39:57.617265+00:00"
+        }
+      }
     },
     {
       "id": "olm",
@@ -143,7 +345,23 @@
       "counterpartyAsset": "OLMECCASH",
       "enabledForCollection": false,
       "status": "daily_market_reference_required",
-      "expectedOwner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg"
+      "expectedOwner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+      "verification": {
+        "classic": {
+          "status": "treasury_asset_verified",
+          "divisible": false,
+          "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "verifiedAt": "2026-10-19T20:39:57.617265+00:00"
+        },
+        "cp20": {
+          "status": "treasury_asset_verified",
+          "divisible": false,
+          "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "verifiedAt": "2026-10-19T20:39:57.617265+00:00"
+        }
+      }
     },
     {
       "id": "rgc",
@@ -151,7 +369,15 @@
       "name": "Ringgit Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "ync",
@@ -160,7 +386,23 @@
       "counterpartyAsset": "YENCASH",
       "enabledForCollection": false,
       "status": "daily_market_reference_required",
-      "expectedOwner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg"
+      "expectedOwner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+      "verification": {
+        "classic": {
+          "status": "treasury_asset_verified",
+          "divisible": false,
+          "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "verifiedAt": "2026-10-19T20:39:57.617265+00:00"
+        },
+        "cp20": {
+          "status": "treasury_asset_verified",
+          "divisible": false,
+          "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "verifiedAt": "2026-10-19T20:39:57.617265+00:00"
+        }
+      }
     },
     {
       "id": "rmc",
@@ -169,7 +411,23 @@
       "counterpartyAsset": "RENMINBICASH",
       "enabledForCollection": false,
       "status": "daily_market_reference_required",
-      "expectedOwner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg"
+      "expectedOwner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+      "verification": {
+        "classic": {
+          "status": "treasury_asset_verified",
+          "divisible": false,
+          "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "verifiedAt": "2026-10-19T20:39:57.617265+00:00"
+        },
+        "cp20": {
+          "status": "treasury_asset_verified",
+          "divisible": false,
+          "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "verifiedAt": "2026-10-19T20:39:57.617265+00:00"
+        }
+      }
     },
     {
       "id": "zlc",
@@ -177,7 +435,15 @@
       "name": "Zeal Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "bhc",
@@ -185,7 +451,15 @@
       "name": "Baht Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "ftc",
@@ -193,7 +467,15 @@
       "name": "Forint Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "dmc",
@@ -202,7 +484,23 @@
       "counterpartyAsset": "DIRHAMCASH",
       "enabledForCollection": false,
       "status": "daily_market_reference_required",
-      "expectedOwner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg"
+      "expectedOwner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+      "verification": {
+        "classic": {
+          "status": "treasury_asset_verified",
+          "divisible": false,
+          "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "verifiedAt": "2026-10-19T20:39:57.617265+00:00"
+        },
+        "cp20": {
+          "status": "treasury_asset_verified",
+          "divisible": false,
+          "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "verifiedAt": "2026-10-19T20:39:57.617265+00:00"
+        }
+      }
     },
     {
       "id": "hgc",
@@ -211,7 +509,23 @@
       "counterpartyAsset": "HONGCASH",
       "enabledForCollection": false,
       "status": "daily_market_reference_required",
-      "expectedOwner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg"
+      "expectedOwner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+      "verification": {
+        "classic": {
+          "status": "treasury_asset_verified",
+          "divisible": false,
+          "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "verifiedAt": "2026-10-19T20:39:57.617265+00:00"
+        },
+        "cp20": {
+          "status": "treasury_asset_verified",
+          "divisible": false,
+          "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "verifiedAt": "2026-10-19T20:39:57.617265+00:00"
+        }
+      }
     },
     {
       "id": "ptn",
@@ -220,7 +534,23 @@
       "counterpartyAsset": "PESOCASH",
       "enabledForCollection": false,
       "status": "daily_market_reference_required",
-      "expectedOwner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg"
+      "expectedOwner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+      "verification": {
+        "classic": {
+          "status": "treasury_asset_verified",
+          "divisible": false,
+          "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "verifiedAt": "2026-10-19T20:39:57.617265+00:00"
+        },
+        "cp20": {
+          "status": "treasury_asset_verified",
+          "divisible": false,
+          "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "verifiedAt": "2026-10-19T20:39:57.617265+00:00"
+        }
+      }
     },
     {
       "id": "rdc",
@@ -228,7 +558,15 @@
       "name": "Rand Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "krc",
@@ -236,7 +574,15 @@
       "name": "Krona Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "rhc",
@@ -244,7 +590,15 @@
       "name": "Rupiah Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "ryc",
@@ -252,7 +606,15 @@
       "name": "Riyal Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "rel",
@@ -260,7 +622,15 @@
       "name": "Real Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "lrc",
@@ -269,7 +639,23 @@
       "counterpartyAsset": "LIRACASH",
       "enabledForCollection": false,
       "status": "daily_market_reference_required",
-      "expectedOwner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg"
+      "expectedOwner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+      "verification": {
+        "classic": {
+          "status": "treasury_asset_verified",
+          "divisible": false,
+          "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "verifiedAt": "2026-10-19T20:39:57.617265+00:00"
+        },
+        "cp20": {
+          "status": "treasury_asset_verified",
+          "divisible": false,
+          "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "verifiedAt": "2026-10-19T20:39:57.617265+00:00"
+        }
+      }
     },
     {
       "id": "sgc-2",
@@ -278,7 +664,23 @@
       "counterpartyAsset": "SHILLINGCASH",
       "enabledForCollection": false,
       "status": "daily_market_reference_required",
-      "expectedOwner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg"
+      "expectedOwner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+      "verification": {
+        "classic": {
+          "status": "treasury_asset_verified",
+          "divisible": false,
+          "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "verifiedAt": "2026-10-19T20:39:57.617265+00:00"
+        },
+        "cp20": {
+          "status": "treasury_asset_verified",
+          "divisible": false,
+          "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "verifiedAt": "2026-10-19T20:39:57.617265+00:00"
+        }
+      }
     },
     {
       "id": "wnc",
@@ -286,7 +688,15 @@
       "name": "Won Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "pdc",
@@ -295,7 +705,23 @@
       "counterpartyAsset": "POUNDCASH",
       "enabledForCollection": false,
       "status": "daily_market_reference_required",
-      "expectedOwner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg"
+      "expectedOwner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+      "verification": {
+        "classic": {
+          "status": "treasury_asset_verified",
+          "divisible": false,
+          "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "verifiedAt": "2026-10-19T20:39:57.617265+00:00"
+        },
+        "cp20": {
+          "status": "treasury_asset_verified",
+          "divisible": false,
+          "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "verifiedAt": "2026-10-19T20:39:57.617265+00:00"
+        }
+      }
     },
     {
       "id": "drc",
@@ -304,7 +730,23 @@
       "counterpartyAsset": "DINARCASH",
       "enabledForCollection": false,
       "status": "daily_market_reference_required",
-      "expectedOwner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg"
+      "expectedOwner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+      "verification": {
+        "classic": {
+          "status": "treasury_asset_verified",
+          "divisible": false,
+          "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "verifiedAt": "2026-10-19T20:39:57.617265+00:00"
+        },
+        "cp20": {
+          "status": "treasury_asset_verified",
+          "divisible": false,
+          "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "verifiedAt": "2026-10-19T20:39:57.617265+00:00"
+        }
+      }
     },
     {
       "id": "knc",
@@ -312,7 +754,15 @@
       "name": "Krone Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "rbc",
@@ -320,7 +770,15 @@
       "name": "Ruble Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "slc",
@@ -329,7 +787,23 @@
       "counterpartyAsset": "SHEKELCASH",
       "enabledForCollection": false,
       "status": "daily_market_reference_required",
-      "expectedOwner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg"
+      "expectedOwner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+      "verification": {
+        "classic": {
+          "status": "treasury_asset_verified",
+          "divisible": false,
+          "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "verifiedAt": "2026-10-19T20:39:57.617265+00:00"
+        },
+        "cp20": {
+          "status": "treasury_asset_verified",
+          "divisible": false,
+          "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "verifiedAt": "2026-10-19T20:39:57.617265+00:00"
+        }
+      }
     },
     {
       "id": "zlc-2",
@@ -337,7 +811,15 @@
       "name": "Zloty Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "ilc",
@@ -345,7 +827,15 @@
       "name": "Rial Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "twc",
@@ -353,7 +843,15 @@
       "name": "Taiwa Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "czk",
@@ -361,7 +859,15 @@
       "name": "Koruna Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "dgc",
@@ -369,7 +875,15 @@
       "name": "Dong Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "hvc",
@@ -377,7 +891,15 @@
       "name": "Hryvnia Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "nrc",
@@ -386,7 +908,23 @@
       "counterpartyAsset": "NAIRACASH",
       "enabledForCollection": false,
       "status": "daily_market_reference_required",
-      "expectedOwner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg"
+      "expectedOwner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+      "verification": {
+        "classic": {
+          "status": "treasury_asset_verified",
+          "divisible": true,
+          "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "verifiedAt": "2026-10-19T20:39:57.617265+00:00"
+        },
+        "cp20": {
+          "status": "treasury_asset_verified",
+          "divisible": true,
+          "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "verifiedAt": "2026-10-19T20:39:57.617265+00:00"
+        }
+      }
     },
     {
       "id": "luc",
@@ -394,7 +932,15 @@
       "name": "Leu Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "tkc",
@@ -402,7 +948,15 @@
       "name": "Taka Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "sch",
@@ -410,7 +964,15 @@
       "name": "Sol Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "lrh",
@@ -418,7 +980,15 @@
       "name": "Lari Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "fjc",
@@ -426,15 +996,31 @@
       "name": "Fiji Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "bvc",
       "symbol": "BVC",
-      "name": "Bol\u00edvar Cash",
+      "name": "Bolívar Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "rbc-2",
@@ -442,7 +1028,15 @@
       "name": "Ruble Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "kuc",
@@ -450,7 +1044,15 @@
       "name": "Kuna Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "smc",
@@ -458,7 +1060,15 @@
       "name": "Som Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "lvc",
@@ -466,7 +1076,15 @@
       "name": "Lev Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "irr",
@@ -474,7 +1092,15 @@
       "name": "Rial Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "crc",
@@ -482,7 +1108,15 @@
       "name": "Colon Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "jmc",
@@ -490,15 +1124,40 @@
       "name": "Jama Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "ghc",
       "symbol": "GHC",
       "name": "Ghana (Cedi) Cash",
-      "counterpartyAsset": null,
+      "counterpartyAsset": "GHANACASH",
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "daily_market_reference_required",
+      "expectedOwner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+      "verification": {
+        "classic": {
+          "status": "treasury_asset_verified",
+          "divisible": true,
+          "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "verifiedAt": "2026-10-19T20:39:57.617265+00:00"
+        },
+        "cp20": {
+          "status": "treasury_asset_verified",
+          "divisible": true,
+          "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "issuer": "1AssetiB9oec9pmbTThvCLFqBPcLSaQGjB",
+          "verifiedAt": "2026-10-19T20:39:57.617265+00:00"
+        }
+      }
     },
     {
       "id": "kzc",
@@ -506,7 +1165,15 @@
       "name": "Kwanza Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "egc",
@@ -514,7 +1181,15 @@
       "name": "Efghani Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "tnc",
@@ -522,7 +1197,15 @@
       "name": "Trin Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "lec",
@@ -530,7 +1213,15 @@
       "name": "Lek Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "qzc",
@@ -538,15 +1229,31 @@
       "name": "Quetzal Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "boc",
       "symbol": "BOC",
-      "name": "Bol\u00edviano Cash",
+      "name": "Bolíviano Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "zwc",
@@ -554,7 +1261,15 @@
       "name": "Zimbabwean Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "bjc",
@@ -562,7 +1277,15 @@
       "name": "Bajan Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "lkc",
@@ -570,7 +1293,15 @@
       "name": "Lao Kip Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "bnc",
@@ -578,7 +1309,15 @@
       "name": "Bruneian Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "pac",
@@ -586,7 +1325,15 @@
       "name": "Pula Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "lpc",
@@ -594,7 +1341,15 @@
       "name": "Lempira Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "grc",
@@ -602,7 +1357,15 @@
       "name": "Guarani Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "brc",
@@ -611,7 +1374,23 @@
       "counterpartyAsset": "BIRRCASH",
       "enabledForCollection": false,
       "status": "daily_market_reference_required",
-      "expectedOwner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg"
+      "expectedOwner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+      "verification": {
+        "classic": {
+          "status": "treasury_asset_verified",
+          "divisible": false,
+          "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "verifiedAt": "2026-10-19T20:39:57.617265+00:00"
+        },
+        "cp20": {
+          "status": "treasury_asset_verified",
+          "divisible": false,
+          "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "verifiedAt": "2026-10-19T20:39:57.617265+00:00"
+        }
+      }
     },
     {
       "id": "nac",
@@ -619,7 +1398,15 @@
       "name": "Namibian Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "kac",
@@ -627,7 +1414,15 @@
       "name": "Kina Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "pca",
@@ -635,7 +1430,15 @@
       "name": "Pataca Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "cbc",
@@ -643,7 +1446,15 @@
       "name": "Cordoba Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "bmc",
@@ -651,7 +1462,15 @@
       "name": "Bermudian Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "tgc",
@@ -659,7 +1478,15 @@
       "name": "Tenge Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "blc",
@@ -667,7 +1494,15 @@
       "name": "Balboa Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "mka",
@@ -675,7 +1510,15 @@
       "name": "Marka Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "gyc",
@@ -683,7 +1526,15 @@
       "name": "Guyanese Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "eyc",
@@ -691,7 +1542,15 @@
       "name": "Eriary Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "mnc",
@@ -699,7 +1558,15 @@
       "name": "Caymanian Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "mtc",
@@ -707,7 +1574,15 @@
       "name": "Metical Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "dmc-2",
@@ -715,7 +1590,15 @@
       "name": "Dram Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "soc",
@@ -723,7 +1606,15 @@
       "name": "Solomon Islander Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "mtc-2",
@@ -731,7 +1622,15 @@
       "name": "Manat Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "lnc",
@@ -739,15 +1638,31 @@
       "name": "Leone Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "pgc",
       "symbol": "PGC",
-      "name": "Pa\u2019anga Cash",
+      "name": "Pa’anga Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "bzc",
@@ -755,7 +1670,15 @@
       "name": "Belizean Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "mwc",
@@ -763,7 +1686,15 @@
       "name": "Kwacha Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "gmc",
@@ -771,7 +1702,15 @@
       "name": "Dalasi Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "gdc",
@@ -780,7 +1719,23 @@
       "counterpartyAsset": "GOURDECASH",
       "enabledForCollection": false,
       "status": "daily_market_reference_required",
-      "expectedOwner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg"
+      "expectedOwner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+      "verification": {
+        "classic": {
+          "status": "treasury_asset_verified",
+          "divisible": false,
+          "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "verifiedAt": "2026-10-19T20:39:57.617265+00:00"
+        },
+        "cp20": {
+          "status": "treasury_asset_verified",
+          "divisible": false,
+          "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "issuer": "1AssetiB9oec9pmbTThvCLFqBPcLSaQGjB",
+          "verifiedAt": "2026-10-19T20:39:57.617265+00:00"
+        }
+      }
     },
     {
       "id": "rfc",
@@ -788,7 +1743,15 @@
       "name": "Rufiyaa Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "tkc-2",
@@ -796,7 +1759,15 @@
       "name": "Tughrik Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "dbc",
@@ -804,7 +1775,15 @@
       "name": "Dobra Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "tjc",
@@ -812,7 +1791,15 @@
       "name": "Tajikistani Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "ktc",
@@ -820,7 +1807,15 @@
       "name": "Kyat Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "lot",
@@ -828,7 +1823,15 @@
       "name": "Loti Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "lrc-2",
@@ -836,7 +1839,15 @@
       "name": "Liberian Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "leu",
@@ -844,7 +1855,15 @@
       "name": "Leu Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "rlc",
@@ -852,7 +1871,15 @@
       "name": "Riel Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "den",
@@ -860,7 +1887,15 @@
       "name": "Denar Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "vuc",
@@ -868,7 +1903,15 @@
       "name": "Vatu Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "oyc",
@@ -876,7 +1919,15 @@
       "name": "Ouguiya Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "grc-2",
@@ -884,7 +1935,15 @@
       "name": "Guilder Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "lgc",
@@ -892,7 +1951,15 @@
       "name": "Lilangeni Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "esc",
@@ -900,7 +1967,15 @@
       "name": "Escudo Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "smc-2",
@@ -908,7 +1983,15 @@
       "name": "Surinamese Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "nlc",
@@ -916,7 +1999,15 @@
       "name": "Ngultrum Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "tlc",
@@ -924,7 +2015,15 @@
       "name": "Tala Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "lug",
@@ -932,7 +2031,15 @@
       "name": "Luigino Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "nfc",
@@ -940,7 +2047,15 @@
       "name": "Nakfa Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "tvc",
@@ -948,7 +2063,15 @@
       "name": "Tuvaluan Cash",
       "counterpartyAsset": null,
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
     },
     {
       "id": "syg",
@@ -957,15 +2080,48 @@
       "counterpartyAsset": "SYNERGYCASH",
       "enabledForCollection": false,
       "status": "daily_market_reference_required",
-      "expectedOwner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg"
+      "expectedOwner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+      "verification": {
+        "classic": {
+          "status": "treasury_asset_verified",
+          "divisible": true,
+          "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "verifiedAt": "2026-10-19T20:39:57.617265+00:00"
+        },
+        "cp20": {
+          "status": "treasury_asset_verified",
+          "divisible": true,
+          "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "issuer": "1AssetiB9oec9pmbTThvCLFqBPcLSaQGjB",
+          "verifiedAt": "2026-10-19T20:39:57.617265+00:00"
+        }
+      }
     },
     {
       "id": "zmc",
       "symbol": "ZMC",
       "name": "Zambia (Kwacha) Cash",
-      "counterpartyAsset": null,
+      "counterpartyAsset": "ZAMBIACASH",
       "enabledForCollection": false,
-      "status": "asset_mapping_required"
+      "status": "daily_market_reference_required",
+      "expectedOwner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+      "verification": {
+        "classic": {
+          "status": "treasury_asset_verified",
+          "divisible": false,
+          "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "verifiedAt": "2026-10-19T20:39:57.617265+00:00"
+        },
+        "cp20": {
+          "status": "treasury_asset_verified",
+          "divisible": false,
+          "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "issuer": "1AssetiB9oec9pmbTThvCLFqBPcLSaQGjB",
+          "verifiedAt": "2026-10-19T20:39:57.617265+00:00"
+        }
+      }
     },
     {
       "id": "gec",
@@ -974,9 +2130,84 @@
       "counterpartyAsset": "GENEIHCASH",
       "enabledForCollection": false,
       "status": "daily_market_reference_required",
-      "expectedOwner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg"
+      "expectedOwner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+      "verification": {
+        "classic": {
+          "status": "treasury_asset_verified",
+          "divisible": false,
+          "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "verifiedAt": "2026-10-19T20:39:57.617265+00:00"
+        },
+        "cp20": {
+          "status": "treasury_asset_verified",
+          "divisible": false,
+          "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "verifiedAt": "2026-10-19T20:39:57.617265+00:00"
+        }
+      }
+    },
+    {
+      "id": "bsc",
+      "symbol": "BSC",
+      "name": "Bahamian Cash",
+      "counterpartyAsset": null,
+      "enabledForCollection": false,
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
+    },
+    {
+      "id": "cpn",
+      "symbol": "CPN",
+      "name": "Credit Profile Number Token",
+      "counterpartyAsset": null,
+      "enabledForCollection": false,
+      "status": "asset_mapping_required",
+      "verification": {
+        "classic": {
+          "status": "asset_mapping_required"
+        },
+        "cp20": {
+          "status": "asset_mapping_required"
+        }
+      }
+    },
+    {
+      "id": "mbt",
+      "symbol": "MBT",
+      "name": "Mobi Token",
+      "counterpartyAsset": "MOBITOKEN",
+      "enabledForCollection": false,
+      "status": "daily_market_reference_required",
+      "expectedOwner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+      "verification": {
+        "classic": {
+          "status": "treasury_asset_verified",
+          "divisible": false,
+          "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "verifiedAt": "2026-10-19T20:39:57.617265+00:00"
+        },
+        "cp20": {
+          "status": "treasury_asset_verified",
+          "divisible": false,
+          "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+          "issuer": "1AssetiB9oec9pmbTThvCLFqBPcLSaQGjB",
+          "verifiedAt": "2026-10-19T20:39:57.617265+00:00"
+        }
+      }
     }
   ],
   "collectionAddress": "18SzD3cfwCcV9p6C38ho4uZPHE8ygVB9iq",
-  "bondSourceAddress": "1Ky2wRYYrJzqdQJH64F7TR98fqLxJs7LK8"
+  "bondSourceAddress": "1Ky2wRYYrJzqdQJH64F7TR98fqLxJs7LK8",
+  "sourceCatalog": "https://worldcurrency.finance.blog/",
+  "verificationSource": "world-currency-audit-2026-10-19.json"
 }

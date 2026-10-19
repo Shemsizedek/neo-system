@@ -18,9 +18,11 @@ function neo_counter_fulfillment_plan($invoice,$assessment,$reserved=false){
         case 'service_bill':return array('invoice_state'=>'PAYMENT_CONFIRMED','job_state'=>'BILL_PAID','kind'=>$kind);
     }
 }
-function neo_counter_merchant_price_to_minor($price){
+function neo_counter_merchant_price_to_minor($price,$decimals=8){
+    if(!in_array($decimals,array(0,8),true))throw new InvalidArgumentException('Unsupported currency precision.');
     if(!is_string($price)||!preg_match('/^(0|[1-9][0-9]{0,6})(?:\.([0-9]{1,8}))?$/',$price,$m))throw new InvalidArgumentException('Enter a price with up to eight decimal places.');
-    $minor=ltrim($m[1].str_pad($m[2]??'',8,'0'),'0');if($minor==='')throw new InvalidArgumentException('The price must be greater than zero.');return $minor;
+    if($decimals===0&&!empty(trim($m[2]??'','0')))throw new InvalidArgumentException('This token uses whole units only.');
+    $minor=ltrim($m[1].($decimals===8?str_pad($m[2]??'',8,'0'):''),'0');if($minor==='')throw new InvalidArgumentException('The price must be greater than zero.');return $minor;
 }
 function neo_counter_merchant_amount($base){
     if(!is_string($base)||!preg_match('/^[1-9][0-9]{0,14}$/',$base))throw new InvalidArgumentException('Enter a positive price in atomic units, up to 15 digits.');

@@ -1,3 +1,7 @@
+# World Currency directory — 0.19.0
+
+The complete current 121-entry catalog is searchable on Holy Stewardship and available in merchant currency setup. Daily positive market pricing and per-ledger treasury checks are required for token quotes. See [WORLD_CURRENCY_ACTIVATION.md](WORLD_CURRENCY_ACTIVATION.md).
+
 # NEO Counter merchant extension — 0.18.0
 
 The plugin now includes a NEO Counter operator menu for product/service draft invoices and separate fulfillment routing. See [MERCHANT_PLATFORM_GATE.md](MERCHANT_PLATFORM_GATE.md) for supported flows and remaining activation requirements. Payments and automatic delivery remain disabled.

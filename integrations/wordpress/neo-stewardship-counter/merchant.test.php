@@ -4,7 +4,14 @@ function get_userdata($id){return in_array($id,array(7,99),true)?(object)array('
 $posts=array();$post_seq=1000;
 function wp_insert_post($data,$errors=false){global $posts,$post_seq;$posts[++$post_seq]=$data;return $post_seq;}
 function wp_delete_post($id,$force){global $posts;unset($posts[$id]);}
-require __DIR__.'/payment.php';require __DIR__.'/merchant.php';
+require __DIR__.'/payment.php';require __DIR__.'/currencies.php';
+function neo_stewardship_currency_by_id($id){foreach(neo_stewardship_currency_catalog() as $e)if($e['id']===$id)return $e;return null;}
+$market_fail=false;
+function neo_stewardship_daily_market($ledger,$asset,$owner=''){
+ global $market_fail;if($market_fail)return false;
+ foreach(neo_stewardship_currency_catalog() as $e)if($e['counterpartyAsset']===$asset){$v=$e['verification'][$ledger]??array();if(!in_array($v['status']??'',array('native_asset','treasury_asset_verified'),true))return false;return array('asset'=>$asset,'owner'=>$owner,'divisible'=>$v['divisible'],'day'=>gmdate('Y-m-d'),'priceSats'=>'1000');}return false;
+}
+require __DIR__.'/merchant.php';
 $admin=true;$uid=7;
 $input=array('order_kind'=>'service_bill','ledger'=>'classic','payment_asset'=>'XCP','base_minor'=>'100000000','payer'=>NEO_STEWARDSHIP_BOND_SOURCE,'member_id'=>99,'item_reference'=>'SERVICE-001','terms'=>'Service bill for the agreed consultation.','payable'=>true,'destination'=>'attacker');
 $order=neo_counter_prepare_merchant($input,request_key(101));check(is_int($order),'Operator prepares merchant invoice');$m=neo_counter_invoice($order);$p=$m['invoice'];
@@ -31,6 +38,12 @@ $x['order_kind']='service_bill';rejects(fn()=>neo_counter_tokenworks_plan($x,'de
 check(neo_counter_merchant_price_to_minor('0.00000001')==='1'&&neo_counter_merchant_price_to_minor('2.5')==='250000000','Human price exact decimal conversion');
 foreach(array('0','1e3','0.000000001','99999999','1,000','-1') as $badprice)rejects(fn()=>neo_counter_merchant_price_to_minor($badprice),'Reject invalid human price');
 $unaccepted=$p;$unaccepted['payable']=true;check(neo_counter_fulfillment_plan($unaccepted,$confirmed)['job_state']==='HOLD_MEMBER_ACCEPTANCE','Member terms acceptance is independent of activation');
+$world=$input;unset($world['payment_asset'],$world['base_minor']);$world['currency_id']='neo';$world['base_price']='2';$worldorder=neo_counter_prepare_merchant($world,request_key(120));check(is_int($worldorder),'World Currency merchant invoice');
+$worldinvoice=neo_counter_invoice($worldorder)['invoice'];check($worldinvoice['currency_asset']==='NEOCASH'&&$worldinvoice['currency_id']==='neo'&&$worldinvoice['currency_decimals']===0&&$worldinvoice['amount_minor']==='3','Indivisible token price plus once-rounded markup');
+$world['base_price']='2.5';check(is_wp_error(neo_counter_prepare_merchant($world,request_key(121))),'Indivisible fractional price blocked');
+$market_fail=true;$world['base_price']='2';check(is_wp_error(neo_counter_prepare_merchant($world,request_key(122))),'Missing daily rate never falls back to BTC');$market_fail=false;
+$world['currency_id']='nmni';check(is_wp_error(neo_counter_prepare_merchant($world,request_key(123))),'Classic NOMNI source mismatch held');
+$world['ledger']='cp20';check(is_int(neo_counter_prepare_merchant($world,request_key(124))),'Verified CP2 identity accepted');
 // Exercise the actual atomic payment writer with a token-denominated service bill.
 $pay=$to;$pay['transaction']['txid']=str_repeat('e',64);$pay['token']['ledger']='classic';$pay['token']['sends'][0]=array('tx_hash'=>str_repeat('e',64),'source'=>$p['payer'],'destination'=>$p['destination'],'asset'=>'XCP','quantity'=>109000000,'status'=>'valid','block_index'=>100);
 $pay['transaction']['status']['block_time']=time()+1;

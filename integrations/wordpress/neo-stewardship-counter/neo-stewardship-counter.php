@@ -2,7 +2,7 @@
 /**
  * Plugin Name: NEO Counter
  * Description: Bitcoin and Counterparty merchant invoices, payment verification and fulfillment routing.
- * Version: 0.18.0
+ * Version: 0.19.0
  */
 defined('ABSPATH') || exit;
 require_once __DIR__ . '/market.php';
@@ -11,6 +11,7 @@ require_once __DIR__ . '/payment.php';
 require_once __DIR__ . '/currencies.php';
 require_once __DIR__ . '/settlement.php';
 require_once __DIR__ . '/merchant.php';
+require_once __DIR__ . '/world-currency-directory.php';
 add_shortcode('neo_stewardship_counter', function () {
     if (!is_page('holy-stewardship')) {
         return '';
@@ -165,6 +166,7 @@ add_shortcode('neo_stewardship_counter', function () {
       </script>
     </section>
     <?php
+    echo neo_counter_world_currency_directory($ledger);
     return ob_get_clean();
 });
 
