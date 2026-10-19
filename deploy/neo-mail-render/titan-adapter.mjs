@@ -38,8 +38,10 @@ export async function latestTitanMessages({ config, clientFactory, limit = 10 })
     } finally { lock.release(); }
   } catch (error) {
     const code = String(error?.code || '').toUpperCase();
-    const msg = String(error?.message || '');
-    const kind = /AUTH|LOGIN|CREDENTIAL|Invalid credentials/i.test(code + ' ' + msg) ? 'authentication' : /CERT|TLS|SSL/i.test(code + ' ' + msg) ? 'tls' : /TIMEOUT|ECONN|ENOTFOUND|EAI_AGAIN|socket/i.test(code + ' ' + msg) ? 'transport' : 'protocol';
+    const status = String(error?.responseStatus || '').toUpperCase();
+    const command = String(error?.executedCommand || '').toUpperCase();
+    // Never log server response text, usernames, passwords, or raw exceptions.
+    const kind = /AUTH|LOGIN|CREDENTIAL|EAUTH/.test(code + ' ' + status) || (/LOGIN|AUTHENTICATE/.test(command) && /NO|BAD/.test(status)) ? 'authentication' : /CERT|TLS|SSL/.test(code) ? 'tls' : /TIMEOUT|ECONN|ENOTFOUND|EAI_AGAIN/.test(code) ? 'transport' : 'protocol';
     const safe = new Error('titan_' + stage + '_' + kind);
     safe.code = 'TITAN_' + stage.toUpperCase() + '_' + kind.toUpperCase();
     throw safe;
