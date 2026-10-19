@@ -120,7 +120,7 @@ add_action('rest_api_init',function(){
     register_rest_route('neo-counter/v1','/rates',array('methods'=>'GET','permission_callback'=>'__return_true','callback'=>function($request){
         $ledger=sanitize_key((string)$request->get_param('ledger'));$currency=sanitize_key((string)$request->get_param('currency'));
         if (!neo_stewardship_market_host($ledger) || !neo_stewardship_currency_by_id($currency)) return new WP_Error('invalid_market','Unknown wallet version or currency.',array('status'=>400));
-        $response=new WP_REST_Response(array('references'=>neo_stewardship_market_references($ledger,$currency),'markupBps'=>900,'valuationDay'=>gmdate('Y-m-d')));
+        $response=new WP_REST_Response(array('references'=>neo_counter_retail_references(neo_stewardship_market_references($ledger,$currency)),'markupBps'=>900,'valuationDay'=>gmdate('Y-m-d')));
         $response->header('Cache-Control','no-store, max-age=0');return $response;
     }));
 });

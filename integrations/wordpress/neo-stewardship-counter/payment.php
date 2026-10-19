@@ -99,7 +99,7 @@ add_action('add_meta_boxes_neo_steward_order',function(){
             $kind=neo_counter_order_kind($invoice['invoice']);
             $labels=array('token_sale'=>'Token purchase','digital_goods'=>'Digital product','physical_goods'=>'Physical product','service_bill'=>'Service bill');
             echo '<p><strong>Order type:</strong> '.esc_html($labels[$kind]).'</p>';
-            if($kind==='token_sale')echo '<p>Token inventory and the collection wallet serve different purposes. Delivery remains held until the treasury signer is configured.</p>';
+            if($kind==='token_sale')echo '<p>Token delivery is managed separately from the retail checkout.</p>';
             else echo '<p>Payment is collected at the merchant wallet. Product fulfillment and service completion are tracked separately from payment.</p>';
             echo '<p><strong>Invoice:</strong> '.esc_html($invoice['state']).' · '.esc_html($invoice['payload_hash']).'</p>';
             if(in_array($invoice['invoice']['ledger'],array('classic','cp20'),true)){
@@ -110,7 +110,7 @@ add_action('add_meta_boxes_neo_steward_order',function(){
             }
         }
         echo '<pre style="white-space:pre-wrap;overflow-wrap:anywhere">' .
-            esc_html(wp_json_encode(get_post_meta($post->ID,'_neo_checkout',true),JSON_PRETTY_PRINT)) . '</pre>';
+            esc_html(wp_json_encode($invoice&&!is_wp_error($invoice)?neo_counter_retail_invoice($invoice['invoice']):array(),JSON_PRETTY_PRINT)) . '</pre>';
     },'neo_steward_order');
 });
 

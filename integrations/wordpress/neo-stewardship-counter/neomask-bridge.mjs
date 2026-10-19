@@ -14,7 +14,7 @@ export function createNeoMaskBridge({provider, ledger, origin, expectedAddress =
     if (!value || !['mainnet','bitcoin','livenet'].includes(String(value.network || '').toLowerCase())) throw new Error('Explicit Bitcoin mainnet account required');
     if (!/^1[1-9A-HJ-NP-Za-km-z]{25,34}$/.test(String(value.address || ''))) throw new Error('Legacy mainnet account required');
     if (value.ledger !== ledger) throw new Error('Wallet account ledger mismatch');
-    if (expectedAddress && value.address !== expectedAddress) throw new Error('Treasury account mismatch');
+    if (expectedAddress && value.address !== expectedAddress) throw new Error('Configured account mismatch');
     return {address:value.address, network:'mainnet', ledger};
   };
   return Object.freeze({

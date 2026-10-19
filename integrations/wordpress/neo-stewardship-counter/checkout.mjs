@@ -32,7 +32,7 @@ export function mountStewardship(root, references = {}, clock = Date.now, schedu
   try {
    const url=new URL(pricingUrl);
    if(url.origin===globalThis.location.origin && root.getAttribute('data-selected-ledger')) {
-    globalThis.fetch(url.href,{cache:'no-store',credentials:'omit'}).then(r=>{if(!r.ok)throw new Error('Pricing unavailable');return r.json();}).then(data=>{if(data?.references && typeof data.references==='object'){references=data.references;update();}}).catch(()=>{references={};update();});
+    globalThis.fetch(url.href,{cache:'no-store',credentials:'omit'}).then(r=>{if(!r.ok)throw new Error('Pricing unavailable');return r.json();}).then(data=>{if(data?.references && typeof data.references==='object'){references=data.references;update();}}).catch(()=>{update();});
    }
   } catch {}
  }

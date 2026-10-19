@@ -11,5 +11,5 @@ check(neo_stewardship_currency_by_id('mbt')['counterpartyAsset']==='MOBITOKEN','
 check(neo_stewardship_currency_by_id('nmni')['verification']['classic']['status']!=='treasury_asset_verified'&&neo_stewardship_currency_by_id('nmni')['verification']['cp20']['status']==='treasury_asset_verified','No cross-ledger treasury verification');
 $html=neo_counter_world_currency_directory('cp20');check(substr_count($html,'data-currency-row')===121,'Directory renders all entries');check(strpos($html,'MOBITOKEN')!==false&&strpos($html,'Find a currency')!==false,'Directory names and search control');
 check(strpos($html,'https://cp20.tokenscan.io/asset/NOMNI')!==false,'Directory uses chosen ledger explorer');
-check(strpos(neo_counter_world_currency_directory('classic'),'Treasury check pending')!==false,'Missing ledger identity stays pending');
+check(strpos(neo_counter_world_currency_directory('classic'),'Asset verification pending')!==false,'Missing ledger identity stays pending');
 echo "PASS: complete World Currency catalog, mapping provenance, ledger separation and directory rendering\n";

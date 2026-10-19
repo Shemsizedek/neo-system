@@ -13,16 +13,16 @@ export async function connectStewardshipWallet(provider, expectedAddress = '', l
   if (!['mainnet','bitcoin','livenet'].includes(network)) throw new Error('The wallet must explicitly report Bitcoin mainnet.');
   const address = String(account?.address || '').trim();
   if (!/^1[1-9A-HJ-NP-Za-km-z]{25,34}$/.test(address)) throw new Error('This checkout currently accepts legacy mainnet Counterparty addresses beginning with 1.');
-  if (expectedAddress && address !== expectedAddress) throw new Error('The connected merchant account does not match the configured treasury.');
+  if (expectedAddress && address !== expectedAddress) throw new Error('The connected wallet does not match the configured account.');
   return {address, network:'mainnet', name:'NeoMask', rawSigningAdvertised:typeof provider.signRawTransaction === 'function', psbtSigningAdvertised:typeof provider.signPsbt === 'function', signingTested:false};
 }
 export function mountWalletConnections(root, scope = window) {
-  const status=root.querySelector('[data-connect-status]'),member=root.querySelector('[data-connect-member]'),merchant=root.querySelector('[data-connect-merchant]');
+  const status=root.querySelector('[data-connect-status]'),member=root.querySelector('[data-connect-member]');
   const install=root.querySelector('[data-neomask-install]'),picker=root.querySelector('[data-neomask-wallets]'),disconnect=root.querySelector('[data-neomask-disconnect]');
   let router=null,working=false;
   const ledger=()=>root.closest('section')?.getAttribute('data-selected-ledger');
   const input=()=>root.closest('section')?.querySelector('[name=wallet]');
-  const reset=()=>{if(input())input().value='';if(disconnect)disconnect.hidden=true;status.textContent='Wallet changed or disconnected. Connect NeoMask again.';};
+  const reset=()=>{if(input())input().value='';if(disconnect)disconnect.hidden=true;if(member)member.hidden=false;status.textContent='Wallet changed or disconnected. Connect NeoMask again.';};
   const choose=async(id,expected)=>{
     if(working)return;working=true;
     if(picker)picker.hidden=true;
@@ -32,7 +32,7 @@ export function mountWalletConnections(root, scope = window) {
       const session=await connectStewardshipWallet(provider,expected,ledger());
       if(!expected && input())input().value=session.address;
       status.textContent='NeoMask connected · '+(await router.getAccount()).walletName+' · '+session.address;
-      if(disconnect)disconnect.hidden=false;
+      if(disconnect)disconnect.hidden=false;if(member)member.hidden=true;
     }catch(e){await router.disconnect().catch(()=>{});status.textContent=e.message || 'Connection cancelled. Try again.';}
     finally{working=false;}
   };
@@ -56,6 +56,5 @@ export function mountWalletConnections(root, scope = window) {
     }catch(e){status.textContent=e.message || 'NeoMask could not open.';}
   };
   member?.addEventListener('click',()=>open(''));
-  merchant?.addEventListener('click',()=>open('1Ky2wRYYrJzqdQJH64F7TR98fqLxJs7LK8'));
   disconnect?.addEventListener('click',async()=>{if(working)return;try{await router?.disconnect();}catch(e){status.textContent=e.message;}});
 }

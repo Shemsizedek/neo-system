@@ -2,9 +2,10 @@
 /**
  * Plugin Name: NEO Counter
  * Description: Bitcoin and Counterparty merchant invoices, payment verification and fulfillment routing.
- * Version: 0.19.0
+ * Version: 0.20.0
  */
 defined('ABSPATH') || exit;
+require_once __DIR__ . '/retail.php';
 require_once __DIR__ . '/market.php';
 require_once __DIR__ . '/form144.php';
 require_once __DIR__ . '/payment.php';
@@ -16,7 +17,7 @@ add_shortcode('neo_stewardship_counter', function () {
     if (!is_page('holy-stewardship')) {
         return '';
     }
-    $ledger = isset($_GET['neo_ledger']) && is_string($_GET['neo_ledger']) ? sanitize_key($_GET['neo_ledger']) : '';
+    $ledger = isset($_GET['neo_ledger']) && is_string($_GET['neo_ledger']) ? sanitize_key($_GET['neo_ledger']) : 'cp20';
     if (!in_array($ledger,array('classic','cp20'),true)) $ledger = '';
     $ledger_hosts = array('classic'=>'https://classic.tokenscan.io','cp20'=>'https://cp20.tokenscan.io');
     $explorer = $ledger ? $ledger_hosts[$ledger] : 'https://tokenscan.io';
@@ -29,6 +30,10 @@ add_shortcode('neo_stewardship_counter', function () {
         $references = array();
     }
     $references = array_intersect_key($references, array('TEMPLEBOND' => true, 'PLEDGEBOND' => true));
+    $preview=isset($references['PLEDGEBOND'])?neo_stewardship_price_order($references['PLEDGEBOND'],'1'):false;
+    $initial_total=$preview?neo_counter_display_amount($preview['totalMinor'],$references['PLEDGEBOND']['currency'],$preview['currencyDecimals']):'Rate unavailable';
+    $initial_subtotal=$preview?neo_counter_display_amount($preview['marketSubtotalMinor'],$references['PLEDGEBOND']['currency'],$preview['currencyDecimals']):'—';
+    $initial_fees=$preview?neo_counter_display_amount((string)((int)$preview['totalMinor']-(int)$preview['marketSubtotalMinor']),$references['PLEDGEBOND']['currency'],$preview['currencyDecimals']):'—';
     ob_start();
     ?>
     <section data-pricing-url="<?php echo esc_url(add_query_arg(array('ledger'=>$ledger,'currency'=>$selected_currency['id']),rest_url('neo-counter/v1/rates'))); ?>" data-selected-ledger="<?php echo esc_attr($ledger); ?>" data-currency="<?php echo esc_attr($selected_currency['id']); ?>" data-ledger-explorer="<?php echo esc_url($explorer); ?>" data-form144-received="<?php echo $received144 ? '1' : '0'; ?>" id="<?php echo esc_attr($id); ?>" aria-label="NEO Counter stewardship checkout">
@@ -61,7 +66,7 @@ add_shortcode('neo_stewardship_counter', function () {
 #<?php echo esc_attr($id); ?> .neomask-connect button{margin:4px 6px 4px 0}
 #<?php echo esc_attr($id); ?> [data-connect-status]{overflow-wrap:anywhere}
       </style>
-<div class="neo-heading"><div><p class="neo-eyebrow">HOLY STEWARDSHIP</p><h2>NEO Counter</h2><p>Choose your bond and see your estimate.</p></div><span class="neo-badge">Payments coming soon</span></div><div class="neo-layout"><div class="neo-card"><form data-quote-form><label>Your bond<select name="purpose"><option value="patronage">PLEDGEBOND: member patronage</option><option value="adept">TEMPLEBOND: Adept commitment</option></select></label><label>Quantity<input name="quantity" type="number" min="1" max="999999" step="1" value="1" required></label></form><details <?php if (!$ledger) echo 'open'; ?>><summary>Currency &amp; wallet settings</summary>      <form method="get" action="<?php echo esc_url(home_url('/holy-stewardship/')); ?>">
+<div class="neo-heading"><div><p class="neo-eyebrow">HOLY STEWARDSHIP</p><h2>NEO Counter</h2><p>Choose your bond and see your estimate.</p></div><span class="neo-badge">Payments coming soon</span></div><div class="neo-layout"><div class="neo-card"><form data-quote-form><label>Your bond<select name="purpose"><option value="patronage">Pledge Bond</option><option value="adept">Temple Bond</option></select></label><label>Quantity<input name="quantity" type="number" min="1" max="999999" step="1" value="1" required></label></form><details <?php if (!$ledger) echo 'open'; ?>><summary>Currency &amp; wallet settings</summary>      <form method="get" action="<?php echo esc_url(home_url('/holy-stewardship/')); ?>">
         <label>Wallet version
           <select name="neo_ledger" required>
             <option value="">Choose wallet version</option>
@@ -78,7 +83,8 @@ add_shortcode('neo_stewardship_counter', function () {
         </label>
         <button type="submit">Update estimate</button>
       </form>
-</details></div><aside class="neo-card neo-receipt"><p class="neo-eyebrow">ESTIMATED TOTAL</p><output data-total aria-live="polite">—</output><p data-price-status>Choose your wallet version to see pricing.</p><details><summary>Price breakdown</summary><p>Bond value: <span data-subtotal>—</span></p><p>Fees &amp; rounding: <span data-fees>—</span></p><p class="neo-small">Daily market reference plus a 9% arbitrage fee. Rounded up to the smallest unit of your selected currency. Market data may reflect older trades.</p></details><p class="neo-small">No payment is taken here yet.</p></aside></div>
+</details></div><aside class="neo-card neo-receipt"><p class="neo-eyebrow">ESTIMATED TOTAL</p><output data-total aria-live="polite"><?php echo esc_html($initial_total); ?></output><p data-price-status><?php echo $preview ? 'Includes 9% · Daily rate '.esc_html($references['PLEDGEBOND']['valuationDay']) : 'A current market rate is unavailable for this currency.'; ?></p><details><summary>Price breakdown</summary><p>Bond value: <span data-subtotal><?php echo esc_html($initial_subtotal); ?></span></p><p>Fees &amp; rounding: <span data-fees><?php echo esc_html($initial_fees); ?></span></p><p class="neo-small">Daily market reference plus a 9% arbitrage fee. Rounded up to the smallest unit of your selected currency. Market data may reflect older trades.</p></details><p class="neo-small">No payment is taken here yet.</p></aside></div>
+      <details class="neo-card" open><summary>Asset information</summary><p><strong>Pledge Bond:</strong> Member patronage.</p><p><a href="https://tokenscan.io/asset/PLEDGEBOND" target="_blank" rel="noopener noreferrer">Pledge Bond asset information</a></p><p><strong>Temple Bond:</strong> Adept commitment.</p><p><a href="https://tokenscan.io/asset/TEMPLEBOND" target="_blank" rel="noopener noreferrer">Temple Bond asset information</a></p></details>
       <details id="neo-form144" class="neo-card" <?php if (isset($_GET['form144'])) echo 'open'; ?>><summary>Form 144 — <?php echo $received144 ? 'Received' : 'Required for all members'; ?></summary>
         
         <p><a href="https://holytemples.org/temple-membership/">Membership instructions</a> · <a href="https://www.dropbox.com/scl/fi/fqk2q8k1w3mf0zkxw3akp/Naturalization-Form-144.pdf?rlkey=f98kc5z3cqcvc3bjryxcv1sy9&amp;dl=0" target="_blank" rel="noopener noreferrer">Download Naturalization Form 144</a></p>
@@ -105,15 +111,12 @@ add_shortcode('neo_stewardship_counter', function () {
           <p><a href="<?php echo esc_url(wp_login_url(home_url('/holy-stewardship/#neo-form144'))); ?>">Sign in to upload Form 144 privately</a></p>
         <?php endif; ?>
       </details>
-      <details class="neo-card"><summary>Bond information</summary><p><a href="https://tokenscan.io/asset/TEMPLEBOND" target="_blank" rel="noopener noreferrer">TEMPLEBOND — TokenScan asset information</a><br>
-      <a href="https://tokenscan.io/asset/PLEDGEBOND" target="_blank" rel="noopener noreferrer">PLEDGEBOND — TokenScan asset information</a></p></details>
+
 <div class="neo-card neomask-connect" data-wallet-connections>
  <div class="neomask-brand"><svg class="neomask-mark" viewBox="0 0 64 64" aria-hidden="true" focusable="false"><path fill="#194b36" d="M32 2 58 17v30L32 62 6 47V17Z"/><path fill="none" stroke="#d9b55b" stroke-width="5" stroke-linejoin="round" d="M20 44V20l24 24V20"/><path fill="#d9b55b" d="m32 6 4 7-4-2-4 2Z"/></svg><div><h3>NeoMask</h3><p class="neo-small">Bitcoin. Connected.</p></div></div>
  <p>Your connection to Bitcoin &amp; Counterparty.</p>
  <button type="button" data-connect-member>Connect NeoMask</button>
- <?php if (current_user_can('manage_options')) : ?>
- <button type="button" data-connect-merchant>Connect treasury via NeoMask</button>
- <?php endif; ?>
+
  <div data-neomask-wallets hidden role="group" aria-label="Wallets available through NeoMask"></div>
  <button type="button" data-neomask-disconnect hidden>Disconnect NeoMask</button>
  <p class="neo-small" data-connect-status role="status">Connect your wallet to continue.</p>
@@ -152,16 +155,18 @@ add_shortcode('neo_stewardship_counter', function () {
         <?php endif; ?>
       </details>
       <script type="module">
-        import { mountWalletConnections } from <?php echo wp_json_encode(add_query_arg('ver','0.14.0',plugins_url('wallet-connect.mjs', __FILE__))); ?>;
+        import { mountWalletConnections } from <?php echo wp_json_encode(add_query_arg('ver','0.20.0',plugins_url('wallet-connect.mjs', __FILE__))); ?>;
         const connectRoot = document.querySelector('[data-wallet-connections]');
         if (connectRoot) mountWalletConnections(connectRoot);
         import { mountWalletScanner } from <?php echo wp_json_encode(plugins_url('wallet-scanner.mjs', __FILE__)); ?>;
         const scanRoot = document.querySelector('[data-wallet-scanner]');
         if (scanRoot && scanRoot.querySelector('[data-scan-wallet]')) mountWalletScanner(scanRoot);
-        import { mountStewardship } from <?php echo wp_json_encode(add_query_arg('ver','0.15.1',plugins_url('checkout.mjs', __FILE__)), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+      </script>
+      <script type="module">
+        import { mountStewardship } from <?php echo wp_json_encode(add_query_arg('ver','0.20.0',plugins_url('checkout.mjs', __FILE__)), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
         mountStewardship(
           document.getElementById(<?php echo wp_json_encode($id); ?>),
-          <?php echo wp_json_encode($references, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>
+          <?php echo wp_json_encode(neo_counter_retail_references($references), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>
         );
       </script>
     </section>
