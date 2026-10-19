@@ -13,6 +13,7 @@ export function createNeoMaskChallengeIssuer({db,clock=()=>Date.now(),ttlMs=1200
       operation!=='ces.transfer'||typeof approvalId!=='string'||approvalId.length<8)
     throw Error('challenge_identity_or_intent_rejected');
    const now=clock(),nonce=randomBytes(32).toString('base64url');
+   let expiresAtMs;
    const ref=challenges.doc(hash(nonce)),approvalRef=approvals.doc(hash(approvalId));
    await db.runTransaction(async tx=>{
     const approval=await tx.get(approvalRef);
@@ -20,10 +21,11 @@ export function createNeoMaskChallengeIssuer({db,clock=()=>Date.now(),ttlMs=1200
     if(!a||a.state!=='pending'||a.subject!==subject||a.digest!==digest||
        a.operation!==operation||!Number.isFinite(a.expiresAtMs)||a.expiresAtMs<=now)
      throw Error('challenge_approval_unavailable');
+    expiresAtMs=Math.min(a.expiresAtMs,now+ttlMs);
     tx.create(ref,{subject,digest,operation,approvalId,challenge:nonce,
-      expiresAtMs:Math.min(a.expiresAtMs,now+ttlMs),createdAtMs:now,status:'pending'});
+      expiresAtMs,createdAtMs:now,status:'pending'});
    });
-   return {challenge:nonce,expiresAtMs:Math.min(now+ttlMs,now+ttlMs)};
+   return {challenge:nonce,expiresAtMs};
   },
   async lookup({subject,digest,operation,approvalId,challenge}){
    if(typeof challenge!=='string'||!challenge)return null;
