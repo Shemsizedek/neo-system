@@ -29,26 +29,39 @@ test('CES atomic posting, replay and insufficient-credit rollback on Firestore e
   const key='neob021-once-'+process.pid,approval='neob021-approval-'+process.pid,digest='a'.repeat(64);
   const permit=async(id,d,expiry=Date.now()+120000)=>seed('neoBankWalletApprovals',hash(id),{subject:sender,digest:d,operation:'ces.transfer',expiresAtMs:expiry,state:'pending'});
   await permit(approval,digest);
+  const challenge='neob029-challenge-'+String(process.pid).padEnd(40,'q'),credentialId='neob029-credential-'+process.pid;
+  await seed('neoBankWalletChallenges',hash(challenge),{subject:sender,digest,operation:'ces.transfer',approvalId:approval,challenge,expiresAtMs:Date.now()+120000,status:'pending'});
+  await seed('neoMaskCredentials',hash(credentialId),{subject:sender,status:'active',rpId:'connect.holytemples.org',counter:5});
+  const walletProof={verified:true,subject:sender,digest,approvalId:approval,challenge,credentialId,expectedCounter:5,newCounter:6};
   const input={toAccount:toNumber,amount:10,memo:'synthetic test',idempotencyKey:key};
-  const attempts=await Promise.allSettled([store.transfer(sender,input,{approvalId:approval,digest}),store.transfer(sender,input,{approvalId:approval,digest})]);
+  const attempts=await Promise.allSettled([store.transfer(sender,input,{approvalId:approval,digest,walletProof}),store.transfer(sender,input,{approvalId:approval,digest,walletProof})]);
   assert(attempts.some(v=>v.status==='fulfilled'));
   const acctA=(await db.collection('neoBankCesAccounts').doc(senderKey).get()).data();
   const acctB=(await db.collection('neoBankCesAccounts').doc(receiverKey).get()).data();
   assert.equal(acctA.balance,-10);assert.equal(acctB.balance,10);
   const consumed=(await db.collection('neoBankWalletApprovals').doc(hash(approval)).get()).data();
   assert.equal(consumed.state,'consumed');
-  await assert.rejects(store.transfer(sender,{...input,idempotencyKey:key+'x',amount:999},{approvalId:approval,digest}),/wallet_approval_rejected|insufficient_credit/);
+  assert.equal((await db.collection('neoBankWalletChallenges').doc(hash(challenge)).get()).data().status,'consumed');
+  assert.equal((await db.collection('neoMaskCredentials').doc(hash(credentialId)).get()).data().counter,6);
+  await assert.rejects(store.transfer(sender,{...input,idempotencyKey:key+'x',amount:999},{approvalId:approval,digest,walletProof}),/wallet_approval_rejected|insufficient_credit/);
   const after=(await db.collection('neoBankCesAccounts').doc(senderKey).get()).data();
   assert.equal(after.balance,-10);
   const other='neob021-approval-other-'+process.pid,otherKey='neob021-other-key-'+process.pid,otherDigest='b'.repeat(64);
   await permit(other,otherDigest);
-  await assert.rejects(store.transfer(sender,{...input,idempotencyKey:otherKey,amount:100},{approvalId:other,digest:otherDigest}),/insufficient_credit/);
+  const challenge2='neob029-other-challenge-'+String(process.pid).padEnd(40,'q'),credential2='neob029-other-credential-'+process.pid;
+  await seed('neoBankWalletChallenges',hash(challenge2),{subject:sender,digest:otherDigest,operation:'ces.transfer',approvalId:other,challenge:challenge2,expiresAtMs:Date.now()+120000,status:'pending'});
+  await seed('neoMaskCredentials',hash(credential2),{subject:sender,status:'active',rpId:'connect.holytemples.org',counter:9});
+  const otherProof={verified:true,subject:sender,digest:otherDigest,approvalId:other,challenge:challenge2,credentialId:credential2,expectedCounter:9,newCounter:10};
+  await assert.rejects(store.transfer(sender,{...input,idempotencyKey:otherKey,amount:100},{approvalId:other,digest:otherDigest,walletProof:otherProof}),/insufficient_credit/);
   assert.equal((await db.collection('neoBankWalletApprovals').doc(hash(other)).get()).data().state,'pending');
+  assert.equal((await db.collection('neoBankWalletChallenges').doc(hash(challenge2)).get()).data().status,'pending');
+  assert.equal((await db.collection('neoMaskCredentials').doc(hash(credential2)).get()).data().counter,9);
+  await assert.rejects(store.transfer(sender,{...input,idempotencyKey:'no-proof-'+process.pid},{approvalId:approval,digest}),/wallet_authentication_required/);
   // NEOB-025: the same approval must not authorize a different idempotency
   // key after successful settlement, even when the client changes fields.
   const reusedKey='neob025-replay-'+process.pid;
   await assert.rejects(
-    store.transfer(sender,{...input,idempotencyKey:reusedKey},{approvalId:approval,digest}),
+    store.transfer(sender,{...input,idempotencyKey:reusedKey},{approvalId:approval,digest,walletProof}),
     /wallet_approval_rejected/
   );
   assert.equal((await db.collection('neoBankCesAccounts').doc(senderKey).get()).data().balance,-10);
