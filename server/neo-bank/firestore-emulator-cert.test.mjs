@@ -10,6 +10,7 @@ const require=createRequire(import.meta.url);
 const host=process.env.FIRESTORE_EMULATOR_HOST;
 let admin=null;
 if(host){try{admin=require('firebase-admin')}catch{}}
+if(host&&!admin)throw new Error('firebase_admin_required_for_emulator_certification');
 const enabled=Boolean(host&&admin);
 const hash=x=>createHash('sha256').update(x).digest('hex');
 test('CES atomic posting, replay and insufficient-credit rollback on Firestore emulator',{skip:!enabled},async()=>{
