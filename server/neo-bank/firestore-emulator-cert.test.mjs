@@ -8,14 +8,14 @@ import {createRequire} from 'node:module';
 import {createNeoBankFirestoreStore} from './firestore-store.mjs';
 const require=createRequire(import.meta.url);
 const host=process.env.FIRESTORE_EMULATOR_HOST;
-let admin=null;
-if(host){try{admin=require('firebase-admin')}catch{}}
-if(host&&!admin)throw new Error('firebase_admin_required_for_emulator_certification');
-const enabled=Boolean(host&&admin);
+let firebaseApp=null,firestoreApi=null;
+if(host){try{firebaseApp=require('firebase-admin/app');firestoreApi=require('firebase-admin/firestore')}catch{}}
+if(host&&(!firebaseApp||!firestoreApi))throw new Error('firebase_admin_required_for_emulator_certification');
+const enabled=Boolean(host&&firebaseApp&&firestoreApi);
 const hash=x=>createHash('sha256').update(x).digest('hex');
 test('CES atomic posting, replay and insufficient-credit rollback on Firestore emulator',{skip:!enabled},async()=>{
- const app=admin.initializeApp({projectId:'neob021-emulator-'+process.pid},'neob021-cert-'+process.pid);
- const db=admin.firestore(app);
+ const app=firebaseApp.initializeApp({projectId:'demo-neob022'},'neob021-cert-'+process.pid);
+ const db=firestoreApi.getFirestore(app);
  const seed=async(coll,id,data)=>db.collection(coll).doc(id).set(data);
  const sender='neob021-sender-'+process.pid,receiver='neob021-receiver-'+process.pid;
  const senderKey=hash(sender),receiverKey=hash(receiver);
