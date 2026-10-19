@@ -2,7 +2,7 @@
 /**
  * Plugin Name: NEO Counter Holy Stewardship
  * Description: Page-specific stewardship checkout review. Itemized market-reference checkout preview.
- * Version: 0.16.0
+ * Version: 0.17.0
  */
 defined('ABSPATH') || exit;
 require_once __DIR__ . '/market.php';
