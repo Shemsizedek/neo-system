@@ -44,5 +44,16 @@ test('CES atomic posting, replay and insufficient-credit rollback on Firestore e
   await permit(other,otherDigest);
   await assert.rejects(store.transfer(sender,{...input,idempotencyKey:otherKey,amount:100},{approvalId:other,digest:otherDigest}),/insufficient_credit/);
   assert.equal((await db.collection('neoBankWalletApprovals').doc(hash(other)).get()).data().state,'pending');
+  // NEOB-025: the same approval must not authorize a different idempotency
+  // key after successful settlement, even when the client changes fields.
+  const reusedKey='neob025-replay-'+process.pid;
+  await assert.rejects(
+    store.transfer(sender,{...input,idempotencyKey:reusedKey},{approvalId:approval,digest}),
+    /wallet_approval_rejected/
+  );
+  assert.equal((await db.collection('neoBankCesAccounts').doc(senderKey).get()).data().balance,-10);
+  assert.equal((await db.collection('neoBankCesAccounts').doc(receiverKey).get()).data().balance,10);
+  // A failed balance check must not consume or journal the new approval.
+  assert.equal((await db.collection('neoBankWalletApprovals').doc(hash(other)).get()).data().state,'pending');
  } finally {await app.delete();}
 });
