@@ -1,0 +1,16 @@
+import assert from 'node:assert/strict';
+import {horizonWalletAdapter,createNeoMaskRouter,discoverNeoMaskWallets,neoMaskWalletChoices} from './neomask-router.mjs';
+const address='1BoatSLRHtKNngkdXEeobR76b53LETtpyT',hex='70736274ff0000';let signed=0,calls=[];
+const provider={request:async(method,params)=>{calls.push({method,params});if(method==='getAddresses')return {result:{addresses:[{address,type:'p2pkh'}]}};if(method==='signPsbt'){signed++;return {result:{hex}};}throw Error('Unknown method');}};
+const router=discoverNeoMaskWallets({HorizonWalletProvider:provider},createNeoMaskRouter());
+assert.equal(neoMaskWalletChoices(router,'cp20').find(w=>w.id==='horizon').available,true);
+for(const id of ['freewallet','counterpay','neopay'])assert.equal(neoMaskWalletChoices(router,'cp20').find(w=>w.id===id).available,false);
+await router.connect({ledger:'cp20',walletId:'horizon'});assert.equal((await router.getAccount()).address,address);assert.equal(signed,0);
+await assert.rejects(router.signPsbt(hex,'cp20'),/input indices/);
+assert.equal(await router.signPsbt(hex,'cp20',{signInputs:{[address]:[0]}}),hex);assert.equal(signed,1);assert.deepEqual(calls.find(c=>c.method==='signPsbt').params.sighashTypes,[1]);
+await router.disconnect();await assert.rejects(router.connect({ledger:'classic',walletId:'horizon'}),/supports this version/);
+const adapter=horizonWalletAdapter({request:async()=>({result:{addresses:[{address:'mtestnet'}]}})});await assert.rejects(adapter.connect(),/mainnet/);
+const bridge={neoMaskAdapterVersion:1,ledgers:['classic'],connect:async()=>({address,network:'mainnet',ledger:'classic'}),getAccount:async()=>({address,network:'mainnet',ledger:'classic'}),disconnect:async()=>{},signPsbt:async()=>hex};
+const connected=discoverNeoMaskWallets({neoMaskWalletAdapters:{counterpay:bridge,freewallet:bridge,neopay:bridge}},createNeoMaskRouter());
+assert(neoMaskWalletChoices(connected,'classic').filter(w=>['counterpay','freewallet','neopay'].includes(w.id)).every(w=>w.available));
+console.log('PASS: documented Horizon request/envelope, Legacy/mainnet guard, explicit inputs, no signing at connect, five wallet choices and declared bridge registration');

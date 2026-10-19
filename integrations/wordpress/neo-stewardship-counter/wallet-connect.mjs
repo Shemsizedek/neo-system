@@ -1,4 +1,4 @@
-import {createNeoMaskRouter, discoverNeoMaskWallets} from './neomask-router.mjs';
+import {createNeoMaskRouter, discoverNeoMaskWallets, neoMaskWalletChoices} from './neomask-router.mjs?ver=0.21.0';
 // Uses the same injected provider contract as src/neopay/signerAdapters.ts.
 // Account connection is not proof of signing authority or settlement readiness.
 export async function connectStewardshipWallet(provider, expectedAddress = '', ledger) {
@@ -44,17 +44,18 @@ export function mountWalletConnections(root, scope = window) {
         router=discoverNeoMaskWallets(scope,createNeoMaskRouter());
         router.onChange(reset);
       }
-      const wallets=router.list(ledger()).filter(w=>w.available);
-      if(!wallets.length){router=null;status.textContent='No compatible wallet found for this version.';if(install)install.hidden=false;return;}
-      if(install)install.hidden=true;
+      const wallets=neoMaskWalletChoices(router,ledger());
+      if(install)install.hidden=wallets.some(w=>w.available);
+      if(!picker&&!wallets.some(w=>w.available)){status.textContent='No compatible wallet connection found.';return;}
       await router.disconnect();
-      if(!picker){await choose(wallets[0].id,expected);return;}
+      if(!picker){const available=wallets.find(w=>w.available);if(available)await choose(available.id,expected);return;}
       picker.replaceChildren();
       const title=root.ownerDocument.createElement('p');title.textContent='Choose a wallet through NeoMask';picker.append(title);
-      for(const wallet of wallets){const button=root.ownerDocument.createElement('button');button.type='button';button.textContent=wallet.name;button.addEventListener('click',()=>choose(wallet.id,expected));picker.append(button);}
+      for(const wallet of wallets){const row=root.ownerDocument.createElement('div'),button=root.ownerDocument.createElement('button');button.type='button';button.textContent=wallet.name;button.disabled=!wallet.available;if(wallet.available)button.addEventListener('click',()=>choose(wallet.id,expected));row.append(button);if(!wallet.available){const note=root.ownerDocument.createElement('span');note.textContent=' — '+(router.list(ledger()).some(w=>w.id===wallet.id)?'Choose a supported wallet version':'Browser connection not detected');row.append(note);if(wallet.url){const link=root.ownerDocument.createElement('a');link.href=wallet.url;link.target='_blank';link.rel='noopener noreferrer';link.textContent=' Open wallet';row.append(link);}}picker.append(row);}
       picker.hidden=false;status.textContent='Your wallet will ask you to approve the connection.';
     }catch(e){status.textContent=e.message || 'NeoMask could not open.';}
   };
+  root.closest('section')?.addEventListener?.('neo:context-change',async()=>{try{await router?.disconnect();}finally{router=null;reset();if(picker)picker.hidden=true;}});
   member?.addEventListener('click',()=>open(''));
   disconnect?.addEventListener('click',async()=>{if(working)return;try{await router?.disconnect();}catch(e){status.textContent=e.message;}});
 }

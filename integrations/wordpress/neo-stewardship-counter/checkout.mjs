@@ -27,13 +27,30 @@ export function mountStewardship(root, references = {}, clock = Date.now, schedu
  form.addEventListener('change',update);
  form.addEventListener('submit',event=>event.preventDefault());
  update();
- const pricingUrl=root.getAttribute('data-pricing-url');
- if (pricingUrl && globalThis.location && typeof globalThis.fetch==='function') {
-  try {
-   const url=new URL(pricingUrl);
-   if(url.origin===globalThis.location.origin && root.getAttribute('data-selected-ledger')) {
-    globalThis.fetch(url.href,{cache:'no-store',credentials:'omit'}).then(r=>{if(!r.ok)throw new Error('Pricing unavailable');return r.json();}).then(data=>{if(data?.references && typeof data.references==='object'){references=data.references;update();}}).catch(()=>{update();});
-   }
-  } catch {}
- }
+ const settings=root.querySelector('[data-estimate-settings]');
+ let requestId=0;
+ const fetchPricing=async (ledger,currency,manual=false)=>{
+  const pricingUrl=root.getAttribute('data-pricing-url');
+  if(!pricingUrl||!globalThis.location||typeof globalThis.fetch!=='function')return;
+  const url=new URL(pricingUrl,globalThis.location.href);if(url.origin!==globalThis.location.origin)return;
+  const current=++requestId;const button=settings?.querySelector('[type=submit]');
+  if(manual){
+   references={};root.setAttribute('data-selected-ledger',ledger);root.setAttribute('data-currency',currency);
+   root.setAttribute('data-ledger-explorer',ledger==='classic'?'https://classic.tokenscan.io':'https://cp20.tokenscan.io');
+   for(const [name,value] of [['ledger',ledger],['currency',currency]]){const el=root.querySelector('[data-order-'+name+']');if(el)el.value=value;}
+   if(typeof root.dispatchEvent==='function'&&typeof CustomEvent==='function')root.dispatchEvent(new CustomEvent('neo:context-change'));
+   update();put('[data-price-status]','Updating estimate…');if(button)button.disabled=true;
+  }
+  url.searchParams.set('ledger',ledger);url.searchParams.set('currency',currency);url.searchParams.set('v','0.21.0');
+  try{
+   const response=await globalThis.fetch(url.href,{cache:'no-store',credentials:'omit'});if(!response.ok)throw new Error('Pricing unavailable');const data=await response.json();
+   if(current!==requestId)return;if(!data?.references||typeof data.references!=='object'||Array.isArray(data.references))throw new Error('Invalid pricing');
+   references=data.references;update();
+   if(manual&&globalThis.history?.replaceState){const page=new URL(globalThis.location.href);page.searchParams.set('neo_ledger',ledger);page.searchParams.set('neo_currency',currency);globalThis.history.replaceState(null,'',page.href);}
+  }catch{if(current===requestId){update();if(manual)put('[data-price-status]','Could not update the estimate. Please try again.');}}
+  finally{if(current===requestId&&button)button.disabled=false;}
+ };
+ settings?.addEventListener('submit',event=>{event.preventDefault();const ledger=settings.elements.neo_ledger.value,currency=settings.elements.neo_currency.value;if(!['classic','cp20'].includes(ledger)){put('[data-price-status]','Choose your wallet version.');return;}void fetchPricing(ledger,currency,true);});
+ void fetchPricing(root.getAttribute('data-selected-ledger'),root.getAttribute('data-currency'));
+ return {update,refresh:(ledger,currency)=>fetchPricing(ledger,currency,true)};
 }

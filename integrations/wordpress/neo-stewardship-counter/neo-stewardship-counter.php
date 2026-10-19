@@ -2,7 +2,7 @@
 /**
  * Plugin Name: NEO Counter
  * Description: Bitcoin and Counterparty merchant invoices, payment verification and fulfillment routing.
- * Version: 0.20.0
+ * Version: 0.21.0
  */
 defined('ABSPATH') || exit;
 require_once __DIR__ . '/retail.php';
@@ -66,7 +66,7 @@ add_shortcode('neo_stewardship_counter', function () {
 #<?php echo esc_attr($id); ?> .neomask-connect button{margin:4px 6px 4px 0}
 #<?php echo esc_attr($id); ?> [data-connect-status]{overflow-wrap:anywhere}
       </style>
-<div class="neo-heading"><div><p class="neo-eyebrow">HOLY STEWARDSHIP</p><h2>NEO Counter</h2><p>Choose your bond and see your estimate.</p></div><span class="neo-badge">Payments coming soon</span></div><div class="neo-layout"><div class="neo-card"><form data-quote-form><label>Your bond<select name="purpose"><option value="patronage">Pledge Bond</option><option value="adept">Temple Bond</option></select></label><label>Quantity<input name="quantity" type="number" min="1" max="999999" step="1" value="1" required></label></form><details <?php if (!$ledger) echo 'open'; ?>><summary>Currency &amp; wallet settings</summary>      <form method="get" action="<?php echo esc_url(home_url('/holy-stewardship/')); ?>">
+<div class="neo-heading"><div><p class="neo-eyebrow">HOLY STEWARDSHIP</p><h2>NEO Counter</h2><p>Choose your bond and see your estimate.</p></div><span class="neo-badge">Payments coming soon</span></div><div class="neo-layout"><div class="neo-card"><form data-quote-form><label>Your bond<select name="purpose"><option value="patronage">Pledge Bond</option><option value="adept">Temple Bond</option></select></label><label>Quantity<input name="quantity" type="number" min="1" max="999999" step="1" value="1" required></label></form><details <?php if (!$ledger) echo 'open'; ?>><summary>Currency &amp; wallet settings</summary>      <form data-estimate-settings method="get" action="<?php echo esc_url(home_url('/holy-stewardship/')); ?>">
         <label>Wallet version
           <select name="neo_ledger" required>
             <option value="">Choose wallet version</option>
@@ -135,8 +135,8 @@ add_shortcode('neo_stewardship_counter', function () {
           <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
             <input type="hidden" name="action" value="neo_stewardship_prepare">
             <input type="hidden" name="checkout_request" value="<?php echo esc_attr(wp_generate_uuid4()); ?>">
-            <input type="hidden" name="currency" value="<?php echo esc_attr($selected_currency['id']); ?>">
-            <input type="hidden" name="ledger" value="<?php echo esc_attr($ledger); ?>">
+            <input type="hidden" name="currency" data-order-currency value="<?php echo esc_attr($selected_currency['id']); ?>">
+            <input type="hidden" name="ledger" data-order-ledger value="<?php echo esc_attr($ledger); ?>">
             <input type="hidden" name="terms_hash" value="<?php echo esc_attr(hash('sha256',neo_stewardship_indenture_snapshot())); ?>">
             <?php wp_nonce_field('neo_stewardship_prepare'); ?>
 <input type="hidden" name="asset" value="PLEDGEBOND" data-order-asset><input type="hidden" name="quantity" value="1" data-order-quantity>
@@ -155,7 +155,7 @@ add_shortcode('neo_stewardship_counter', function () {
         <?php endif; ?>
       </details>
       <script type="module">
-        import { mountWalletConnections } from <?php echo wp_json_encode(add_query_arg('ver','0.20.0',plugins_url('wallet-connect.mjs', __FILE__))); ?>;
+        import { mountWalletConnections } from <?php echo wp_json_encode(add_query_arg('ver','0.21.0',plugins_url('wallet-connect.mjs', __FILE__))); ?>;
         const connectRoot = document.querySelector('[data-wallet-connections]');
         if (connectRoot) mountWalletConnections(connectRoot);
         import { mountWalletScanner } from <?php echo wp_json_encode(plugins_url('wallet-scanner.mjs', __FILE__)); ?>;
@@ -163,7 +163,7 @@ add_shortcode('neo_stewardship_counter', function () {
         if (scanRoot && scanRoot.querySelector('[data-scan-wallet]')) mountWalletScanner(scanRoot);
       </script>
       <script type="module">
-        import { mountStewardship } from <?php echo wp_json_encode(add_query_arg('ver','0.20.0',plugins_url('checkout.mjs', __FILE__)), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+        import { mountStewardship } from <?php echo wp_json_encode(add_query_arg('ver','0.21.0',plugins_url('checkout.mjs', __FILE__)), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
         mountStewardship(
           document.getElementById(<?php echo wp_json_encode($id); ?>),
           <?php echo wp_json_encode(neo_counter_retail_references($references), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>

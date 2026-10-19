@@ -55,13 +55,13 @@ export function createNeoMaskRouter() {
       return {...next,walletName:session.wallet.name};
     },
     async disconnect() {const session=active;invalidate();if(session)await session.wallet.provider.disconnect({ledger:session.account.ledger});},
-    async signPsbt(hex,ledger) {
+    async signPsbt(hex,ledger,options={}) {
       if(busy)throw new Error('Finish the current wallet request first.');
       if(!hexPsbt(hex))throw new Error('Invalid PSBT.');
       if(!active || active.account.ledger!==ledger)throw new Error('Connect the selected wallet version first.');
       busy=true;const session=active,current=revision;
       const check=async()=>{const next=account(await session.wallet.provider.getAccount({ledger}),ledger);if(current!==revision||next.address!==session.account.address){invalidate();throw new Error('Wallet changed. Connect again.');}};
-      try {await check();const signed=await session.wallet.provider.signPsbt(hex,ledger);await check();if(!hexPsbt(signed))throw new Error('Wallet returned an invalid signed PSBT.');return signed;}
+      try {await check();const signed=await session.wallet.provider.signPsbt(hex,ledger,options);await check();if(!hexPsbt(signed))throw new Error('Wallet returned an invalid signed PSBT.');return signed;}
       finally {busy=false;}
     }
   });
@@ -71,9 +71,35 @@ export function discoverNeoMaskWallets(scope, router) {
     const p=scope.neoMask;
     router.register('vault','NeoMask vault',{ledgers:['classic','cp20'],connect:p.connect.bind(p),getAccount:p.getAccount.bind(p),disconnect:p.disconnect.bind(p),async signPsbt(hex,ledger){const r=await p.signPsbt(hex,ledger);return typeof r==='string'?r:r?.psbtHex;}});
   }
+  if(typeof scope.HorizonWalletProvider?.request==='function')router.register('horizon','Horizon Wallet',horizonWalletAdapter(scope.HorizonWalletProvider));
   if(typeof scope.xcpwallet?.request==='function')router.register('xcp-wallet','XCP Wallet',xcpWalletAdapter(scope.xcpwallet));
   // The owned NEOpay contract must explicitly declare supported ledgers.
   const p=scope.neoBitcoinSigner;
   if(p?.getAccount && p?.signPsbt && p?.disconnect && p?.ledgers)router.register('neopay',p.name || 'NEOpay',p);
+  for(const id of ['freewallet','counterpay','neopay']){
+    const bridge=scope.neoMaskWalletAdapters?.[id];
+    if(bridge?.neoMaskAdapterVersion===1&&!router.list('cp20').some(w=>w.id===id))router.register(id,NEO_MASK_WALLET_CHOICES.find(w=>w.id===id).name,bridge);
+  }
   return router;
 }
+// Horizon's published provider uses request(method, params), not XCP's object envelope.
+export function horizonWalletAdapter(provider) {
+ const unwrap=value=>{let out=value;for(let i=0;i<3&&out?.result;i++)out=out.result;if(out?.error)throw new Error('Horizon declined the wallet request.');return out;};
+ const read=async()=>{const value=unwrap(await provider.request('getAddresses',{}));const addresses=Array.isArray(value)?value:value?.addresses;
+  const selected=addresses?.find(a=>/^1[1-9A-HJ-NP-Za-km-z]{25,34}$/.test(a.address||''));
+  if(!selected)throw new Error('Choose a Legacy Bitcoin mainnet account in Horizon.');
+  return {address:selected.address,network:'mainnet',ledger:'cp20',signingAvailable:true};};
+ return {name:'Horizon Wallet',ledgers:['cp20'],connect:read,getAccount:read,disconnect:async()=>{},
+  async signPsbt(hex,ledger,options={}){const current=await read();const inputs=options.signInputs;
+   if(!inputs||Object.keys(inputs).length!==1||!Array.isArray(inputs[current.address])||!inputs[current.address].length||!inputs[current.address].every(x=>Number.isInteger(x)&&x>=0))throw new Error('Horizon signing requires reviewed input indices for the connected account.');
+   const result=unwrap(await provider.request('signPsbt',{hex,signInputs:inputs,sighashTypes:[1]}));return result?.hex;
+  },on:provider.on?.bind(provider),removeListener:provider.removeListener?.bind(provider)};
+}
+export const NEO_MASK_WALLET_CHOICES=Object.freeze([
+ {id:'horizon',name:'Horizon Wallet',url:'https://horizon.market/wallet'},
+ {id:'xcp-wallet',name:'XCP Wallet',url:'https://xcp.io/'},
+ {id:'freewallet',name:'Freewallet.io',url:'https://freewallet.io/'},
+ {id:'counterpay',name:'Counterpay'},
+ {id:'neopay',name:'NEO Pay'}
+]);
+export function neoMaskWalletChoices(router,ledger){const found=router.list(ledger);return [...NEO_MASK_WALLET_CHOICES.map(choice=>({...choice,...found.find(x=>x.id===choice.id),available:!!found.find(x=>x.id===choice.id)?.available})),...found.filter(x=>!NEO_MASK_WALLET_CHOICES.some(c=>c.id===x.id))];}
