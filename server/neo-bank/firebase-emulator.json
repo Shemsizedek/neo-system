@@ -9,6 +9,6 @@
     }
   },
   "firestore": {
-    "rules": "server/neo-bank/firestore-emulator.rules"
+    "rules": "firestore-emulator.rules"
   }
 }
