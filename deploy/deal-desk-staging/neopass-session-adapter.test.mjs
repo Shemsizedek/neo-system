@@ -1,0 +1,15 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {issueNeopassToken} from '../../server/neo-platform-api/neopass-google-auth.mjs';
+import {createNeopassStagingIdentity} from './neopass-session-adapter.mjs';
+const secret='synthetic-long-secret-for-only-this-unit-test-1234';
+const now=()=>Date.UTC(2026,9,19,17);
+const token=(opts={})=>issueNeopassToken({subject:'google:synthetic-operator',secret,now,ttlSeconds:opts.ttlSeconds??600,claims:{role:'executive-admin'}});
+const mk=(member={status:'active',permissions:['neo_sales_operator']})=>createNeopassStagingIdentity({secret,now,registry:{getNEOpassCredential:async()=>member}});
+const req=t=>({headers:{cookie:'neo_pass_session='+t}});
+test('signed session and explicit registry permission pass',async()=>{const result=await mk()(req(token()));assert.equal(result.verified,true)});
+test('signed elevated claim cannot grant operator permission',async()=>{await assert.rejects(mk({status:'active',permissions:[]})(req(token())),/operator_permission_denied/)});
+test('expired signed session rejected',async()=>{await assert.rejects(mk()(req(token({ttlSeconds:-10}))),/invalid_neopass_session/)});
+test('forged signature rejected',async()=>{const good=token(),segments=good.split('.');segments[2]='AA'+segments[2].slice(2);await assert.rejects(mk()(req(segments.join('.'))),/invalid_neopass_session/)});
+test('unavailable registry fails closed',async()=>{const verifier=createNeopassStagingIdentity({secret,now,registry:{getNEOpassCredential:async()=>{throw Error('offline')}}});await assert.rejects(verifier(req(token())),/offline/)});
+test('duplicate session cookie rejected',async()=>{await assert.rejects(mk()({headers:{cookie:'neo_pass_session='+token()+'; neo_pass_session='+token()}}),/invalid_neopass_session/)});
