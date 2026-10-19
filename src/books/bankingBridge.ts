@@ -47,7 +47,7 @@ export function mapBankEvent(event: ExternalBankEvent, policy?: VDollarPolicy): 
   if (!event.provider || !event.providerEventId || !event.organizationId || !event.evidenceReference || !event.bankAccountReference) {
     throw new Error("Banking event missing source identity, entity, or evidence");
   }
-  if (!/^-?\\d+$/.test(event.amountMinor)) throw new Error("Amount must be integer minor units");
+  if (!/^-?\d+$/.test(event.amountMinor)) throw new Error("Amount must be integer minor units");
   if (policy && policy.organizationId !== event.organizationId) throw new Error("Cross-organization policy forbidden");
   const posted = event.status === "posted";
   const eligible = posted && Boolean(policy?.approved) && policy?.backingType !== undefined;
