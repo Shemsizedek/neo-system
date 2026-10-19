@@ -2,7 +2,8 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "imapflow": "^1.0.195"
+    "imapflow": "^1.0.195",
+    "jose": "^6.1.0"
   },
   "scripts": {
     "test": "node --test *.test.mjs",
