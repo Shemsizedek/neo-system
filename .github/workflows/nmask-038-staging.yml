@@ -1,0 +1,32 @@
+name: NMASK-038 wallet staging checks
+on:
+  pull_request:
+    paths:
+      - 'src/neopay/neoMask*'
+      - 'apps/neo-counter/src/neomask/**'
+      - 'server/neo-counter-backend/neomask-*'
+      - '.github/workflows/nmask-038-staging.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Check NeoMask JavaScript syntax
+        run: |
+          for file in src/neopay/neoMask*.mjs server/neo-counter-backend/neomask-*.mjs apps/neo-counter/src/neomask/*.mjs; do
+            test -f "$file" || continue
+            node --check "$file"
+          done
+      - name: Execute cumulative NeoMask focused tests
+        run: |
+          node --test src/neopay/neoMask*.test.mjs server/neo-counter-backend/neomask-*.test.mjs apps/neo-counter/src/neomask/*.test.mjs
+      - name: Assert production signing remains disabled
+        run: |
+          node --input-type=module -e "import {certifyNeoMaskStaging} from './server/neo-counter-backend/neomask-certification.mjs'; const result=certifyNeoMaskStaging({}); if(result.status!=='blocked'||result.mainnetSigningEnabled||result.productionSettlementEnabled) process.exit(1)"
