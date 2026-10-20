@@ -13,7 +13,7 @@ const FIRESTORE_PROJECT_ID = process.env.GOOGLE_CLOUD_PROJECT || process.env.GCP
 const FIRESTORE_DATABASE_ID = process.env.FIRESTORE_DATABASE_ID || '(default)';
 const TOKENSCAN_NOMNI_URL = 'https://tokenscan.io/api/asset/NOMNI';
 const HOLY_KEYS_FAVICON_URL = 'https://holytemples.org/wp-content/uploads/2026/09/holy-keys-transparent-master.png';
-const NOMNI_FALLBACK_VALUE = Object.freeze({ usd: '20.72', xcp: '13.03076220', btc: null });
+const NOMNI_UNAVAILABLE_VALUE = Object.freeze({ usd: null, xcp: null, btc: null });
 const BRIDGE_ASSET_PATH = fileURLToPath(new URL('./assets/neo-bridge.js', import.meta.url));
 const SUITE_ASSET_PATH = fileURLToPath(new URL('./assets/neo-suite.js', import.meta.url));
 const AI_ASSET_PATH = fileURLToPath(new URL('./assets/neo-ai.js', import.meta.url));
@@ -235,27 +235,38 @@ function serviceSnapshot(host) {
 async function getNomniValuation() {
   const now = Date.now();
   if (nomniValueCache && now - nomniValueCache.cachedAt < 60_000) return nomniValueCache.value;
+  const unavailable = (status) => ({
+    asset: 'NOMNI', symbol: '∞', unit: '1 NOMNI', ...NOMNI_UNAVAILABLE_VALUE,
+    mode: 'unavailable', fallback: false, source: null, observedAt: null,
+    checkedAt: new Date().toISOString(), guaranteedPeg: false, upstreamStatus: status
+  });
   let value;
   try {
-    const response = await fetch(TOKENSCAN_NOMNI_URL, { signal: AbortSignal.timeout(4500), headers: { accept: 'application/json' } });
+    const response = await fetch(TOKENSCAN_NOMNI_URL, {
+      signal: AbortSignal.timeout(4500), headers: { accept: 'application/json' }
+    });
     if (!response.ok) throw new Error(`tokenscan_http_${response.status}`);
     const asset = await response.json();
-    const estimated = asset?.estimated_value || {};
-    value = {
+    if (!asset || typeof asset !== 'object' || Array.isArray(asset)) throw new Error('invalid_asset_payload');
+    const estimated = asset.estimated_value;
+    const safePrice = (price) => {
+      if (price === undefined || price === null || price === '') return null;
+      const candidate = Number(price);
+      return Number.isFinite(candidate) && candidate > 0 ? String(price) : null;
+    };
+    const usd = safePrice(estimated?.usd);
+    const xcp = safePrice(estimated?.xcp);
+    const btc = safePrice(estimated?.btc);
+    const hasObservation = Boolean(usd || xcp || btc);
+    value = hasObservation ? {
       asset: 'NOMNI', symbol: '∞', unit: '1 NOMNI',
-      usd: String(estimated.usd ?? NOMNI_FALLBACK_VALUE.usd),
-      xcp: estimated.xcp == null ? NOMNI_FALLBACK_VALUE.xcp : String(estimated.xcp),
-      btc: estimated.btc == null ? NOMNI_FALLBACK_VALUE.btc : String(estimated.btc),
-      mode: 'market-observed', source: TOKENSCAN_NOMNI_URL,
-      observedAt: new Date().toISOString(), guaranteedPeg: false
-    };
+      usd, xcp, btc, mode: 'market-observed', fallback: false,
+      source: TOKENSCAN_NOMNI_URL, observedAt: null,
+      checkedAt: new Date().toISOString(), guaranteedPeg: false,
+      provenanceNote: 'Third-party estimate received; trade timestamp and liquidity unverified'
+    } : unavailable('no_valid_market_estimate');
   } catch (error) {
-    value = {
-      asset: 'NOMNI', symbol: '∞', unit: '1 NOMNI', ...NOMNI_FALLBACK_VALUE,
-      mode: 'market-observed-fallback', source: 'CoinDaddy/TokenScan last-known snapshot',
-      observedAt: new Date().toISOString(), guaranteedPeg: false,
-      upstreamStatus: String(error?.message || error)
-    };
+    value = unavailable(String(error?.message || error));
   }
   nomniValueCache = { cachedAt: now, value };
   return value;
