@@ -1,0 +1,10 @@
+import test from 'node:test';import assert from 'node:assert/strict';import{certifyNeoMaskStaging,REQUIRED_CHECKS}from './neomask-certification.mjs';
+const filled=Object.fromEntries(REQUIRED_CHECKS.map(k=>[k,{status:'passed',environment:'staging',artifact:'sha256:abc123456'}]));
+test('rejects absent evidence',()=>assert.throws(()=>certifyNeoMaskStaging(null)));
+test('empty evidence is blocked',()=>assert.equal(certifyNeoMaskStaging({}).status,'blocked'));
+test('requires independently recorded staging artifacts',()=>assert.equal(certifyNeoMaskStaging(filled).status,'staging_evidence_complete'));
+test('cannot authorize mainnet signing',()=>assert.equal(certifyNeoMaskStaging(filled).mainnetSigningEnabled,false));
+test('cannot certify production',()=>assert.equal(certifyNeoMaskStaging(filled).productionCertified,false));
+test('refuses skipped integration tests',()=>assert.equal(certifyNeoMaskStaging({...filled,integration_tests:{status:'skipped'}}).status,'blocked'));
+test('rejects production-labelled artifact in staging gate',()=>assert.equal(certifyNeoMaskStaging({...filled,bitcoin_node:{...filled.bitcoin_node,environment:'production'}}).status,'blocked'));
+test('rejects short evidence strings',()=>assert.equal(certifyNeoMaskStaging({...filled,neo_pass_oidc:{...filled.neo_pass_oidc,artifact:'ok'}}).status,'blocked'));
