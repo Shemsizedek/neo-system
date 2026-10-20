@@ -1,0 +1,4 @@
+import test from 'node:test';import assert from 'node:assert/strict';import{readFileSync}from'node:fs';const source=readFileSync(new URL('../../../server/neo-edge/server.mjs',import.meta.url),'utf8');
+test('historical fabricated NOMNI price constants are absent',()=>{assert.doesNotMatch(source,/NOMNI_FALLBACK_VALUE/);assert.doesNotMatch(source,/13\.03076220/);assert.doesNotMatch(source,/20\.72/);});
+test('unavailable state explicitly clears all quote values',()=>{assert.match(source,/NOMNI_UNAVAILABLE_VALUE\s*=\s*Object\.freeze\(\{ usd: null, xcp: null, btc: null \}\)/);assert.match(source,/mode: 'unavailable'/);});
+test('market estimates are finite positive numbers with provenance disclaimer',()=>{assert.match(source,/Number\.isFinite\(candidate\) && candidate > 0/);assert.match(source,/trade timestamp and liquidity unverified/);});
