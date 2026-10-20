@@ -1,0 +1,28 @@
+name: NOMNI dashboard staging checks
+on:
+  pull_request:
+    paths:
+      - 'apps/nomni-dashboard/**'
+      - 'server/neo-edge/server.mjs'
+      - '.github/workflows/nomni-dashboard-check.yml'
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check NEO Edge syntax
+        run: node --check server/neo-edge/server.mjs
+      - name: Check valuation regression
+        run: node --test apps/nomni-dashboard/tests/valuation-source.test.mjs
+      - name: Install dashboard dependencies
+        working-directory: apps/nomni-dashboard
+        run: npm install --no-audit --no-fund
+      - name: Build static dashboard
+        working-directory: apps/nomni-dashboard
+        run: npm run build
