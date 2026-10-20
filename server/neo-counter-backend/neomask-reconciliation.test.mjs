@@ -1,0 +1,12 @@
+import test from 'node:test';import assert from 'node:assert/strict';import{reconcileChain,reconcileAssets,classifyTransactions}from './neomask-reconciliation.mjs';
+const hash='a'.repeat(64),bitcoin={authenticated:true,network:'regtest',height:120,tipHash:hash},counterparty={...bitcoin},chain=reconcileChain({bitcoin,counterparty});
+test('matching tips reconcile',()=>assert.equal(chain.verified,true));
+test('untrusted node refused',()=>assert.throws(()=>reconcileChain({bitcoin:{...bitcoin,authenticated:false},counterparty})));
+test('different network refused',()=>assert.throws(()=>reconcileChain({bitcoin,counterparty:{...counterparty,network:'bitcoin'}})));
+test('different hash refused',()=>assert.throws(()=>reconcileChain({bitcoin,counterparty:{...counterparty,tipHash:'b'.repeat(64)}})));
+test('index lag refuses verified label',()=>assert.throws(()=>reconcileChain({bitcoin,counterparty:{...counterparty,height:119}})));
+test('valid balance verified with asset registry',()=>assert.equal(reconcileAssets({chain,address:'addr',balances:[{asset:'BTC',atomicUnits:'123',address:'addr'}],registry:[{asset:'BTC',divisibility:8,verified:true}]}).length,1));
+test('NOMNI requires issuer provenance',()=>assert.throws(()=>reconcileAssets({chain,address:'addr',balances:[{asset:'NOMNI',atomicUnits:'1',address:'addr'}],registry:[{asset:'NOMNI',divisibility:8,verified:true}]})));
+test('wrong owner address refused',()=>assert.throws(()=>reconcileAssets({chain,address:'addr',balances:[{asset:'BTC',atomicUnits:'1',address:'other'}],registry:[{asset:'BTC',divisibility:8,verified:true}]})));
+test('pending confirmation classification',()=>assert.equal(classifyTransactions({chain,transactions:[{txid:hash,height:0}]} )[0].status,'pending'));
+test('mature confirmation classification',()=>assert.equal(classifyTransactions({chain,transactions:[{txid:hash,height:100}]} )[0].status,'confirmed'));
