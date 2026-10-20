@@ -1,0 +1,13 @@
+import test from 'node:test';import assert from 'node:assert/strict';import{inspectNeoMaskProvider,createNeoMaskReadSession,requestNeoMaskAccounts,NEO_MASK_PROTOCOL}from './neoMaskBridge.mjs';
+const provider={protocol:NEO_MASK_PROTOCOL,request:async()=>({network:'regtest',accounts:[{address:'bcrt1q12345678901234567890'}]})};
+const base={provider,origin:'https://holytemples.org',network:'regtest',permissions:['read_accounts'],identity:{subject:'member_1',verified:true}};
+test('absent provider is not present',()=>assert.equal(inspectNeoMaskProvider(undefined).compatible,false));
+test('wrong protocol rejected',()=>assert.equal(inspectNeoMaskProvider({...provider,protocol:'different'}).compatible,false));
+test('valid provider discovered',()=>assert.equal(inspectNeoMaskProvider(provider).compatible,true));
+test('requires verified identity',()=>assert.throws(()=>createNeoMaskReadSession({...base,identity:{subject:'1',verified:false}})));
+test('rejects insecure origin',()=>assert.throws(()=>createNeoMaskReadSession({...base,origin:'http://example.com'})));
+test('rejects unknown network',()=>assert.throws(()=>createNeoMaskReadSession({...base,network:'ethereum'})));
+test('denies signing permission',()=>assert.throws(()=>createNeoMaskReadSession({...base,permissions:['sign_psbt']})));
+test('enforces read account authorization',async()=>{const s=createNeoMaskReadSession({...base,permissions:['read_balances']});await assert.rejects(requestNeoMaskAccounts(s))});
+test('reads account only on selected network',async()=>{const s=createNeoMaskReadSession(base);assert.equal((await requestNeoMaskAccounts(s)).length,1);assert.equal(s.canSign,false)});
+test('rejects network substitution',async()=>{const s=createNeoMaskReadSession({...base,provider:{...provider,request:async()=>({network:'bitcoin',accounts:[]})}});await assert.rejects(requestNeoMaskAccounts(s))});
