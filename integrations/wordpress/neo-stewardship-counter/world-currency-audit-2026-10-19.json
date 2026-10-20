@@ -1,0 +1,507 @@
+{
+  "retrievedAt": "2026-10-19T20:39:57.617265+00:00",
+  "sourceTreasury": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+  "sourceCatalog": "https://worldcurrency.finance.blog/",
+  "ledgers": {
+    "classic": {
+      "BIRRCASH": {
+        "asset": "BIRRCASH",
+        "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "divisible": false,
+        "btcPrice": "0.00000000",
+        "source": "https://classic.tokenscan.io/api/asset/BIRRCASH"
+      },
+      "CANADIACASH": {
+        "asset": "CANADIACASH",
+        "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "divisible": false,
+        "btcPrice": "0.00000000",
+        "source": "https://classic.tokenscan.io/api/asset/CANADIACASH"
+      },
+      "DINARCASH": {
+        "asset": "DINARCASH",
+        "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "divisible": false,
+        "btcPrice": "0.00000000",
+        "source": "https://classic.tokenscan.io/api/asset/DINARCASH"
+      },
+      "DIRHAMCASH": {
+        "asset": "DIRHAMCASH",
+        "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "divisible": false,
+        "btcPrice": "0.00000000",
+        "source": "https://classic.tokenscan.io/api/asset/DIRHAMCASH"
+      },
+      "EUROPACASH": {
+        "asset": "EUROPACASH",
+        "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "divisible": false,
+        "btcPrice": "0.00000000",
+        "source": "https://classic.tokenscan.io/api/asset/EUROPACASH"
+      },
+      "GENEIHCASH": {
+        "asset": "GENEIHCASH",
+        "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "divisible": false,
+        "btcPrice": "0.00000000",
+        "source": "https://classic.tokenscan.io/api/asset/GENEIHCASH"
+      },
+      "GHANACASH": {
+        "asset": "GHANACASH",
+        "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "divisible": true,
+        "btcPrice": "0.00000000",
+        "source": "https://classic.tokenscan.io/api/asset/GHANACASH"
+      },
+      "GOURDECASH": {
+        "asset": "GOURDECASH",
+        "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "divisible": false,
+        "btcPrice": "0.00000000",
+        "source": "https://classic.tokenscan.io/api/asset/GOURDECASH"
+      },
+      "HONGCASH": {
+        "asset": "HONGCASH",
+        "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "divisible": false,
+        "btcPrice": "0.00000000",
+        "source": "https://classic.tokenscan.io/api/asset/HONGCASH"
+      },
+      "LIRACASH": {
+        "asset": "LIRACASH",
+        "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "divisible": false,
+        "btcPrice": "0.00000000",
+        "source": "https://classic.tokenscan.io/api/asset/LIRACASH"
+      },
+      "MEXICACOIN": {
+        "asset": "MEXICACOIN",
+        "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "divisible": true,
+        "btcPrice": "0.00000000",
+        "source": "https://classic.tokenscan.io/api/asset/MEXICACOIN"
+      },
+      "MOBITOKEN": {
+        "asset": "MOBITOKEN",
+        "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "divisible": false,
+        "btcPrice": "0.00000000",
+        "source": "https://classic.tokenscan.io/api/asset/MOBITOKEN"
+      },
+      "MOORCASH": {
+        "asset": "MOORCASH",
+        "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "divisible": false,
+        "btcPrice": "0.00000000",
+        "source": "https://classic.tokenscan.io/api/asset/MOORCASH"
+      },
+      "MOORCOIN": {
+        "asset": "MOORCOIN",
+        "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "divisible": true,
+        "btcPrice": "0.00028267",
+        "source": "https://classic.tokenscan.io/api/asset/MOORCOIN"
+      },
+      "NAIRACASH": {
+        "asset": "NAIRACASH",
+        "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "divisible": true,
+        "btcPrice": "0.00000000",
+        "source": "https://classic.tokenscan.io/api/asset/NAIRACASH"
+      },
+      "NEOCASH": {
+        "asset": "NEOCASH",
+        "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "divisible": false,
+        "btcPrice": "0.00000002",
+        "source": "https://classic.tokenscan.io/api/asset/NEOCASH"
+      },
+      "NOMNI": {
+        "asset": "NOMNI",
+        "owner": "1NySA74g62Mr28Unp4uCxwtQv9FkD7AVpk",
+        "issuer": "1NySA74g62Mr28Unp4uCxwtQv9FkD7AVpk",
+        "divisible": false,
+        "btcPrice": "0.00077041",
+        "source": "https://classic.tokenscan.io/api/asset/NOMNI"
+      },
+      "OLMECCASH": {
+        "asset": "OLMECCASH",
+        "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "divisible": false,
+        "btcPrice": "0.00000000",
+        "source": "https://classic.tokenscan.io/api/asset/OLMECCASH"
+      },
+      "PESOCASH": {
+        "asset": "PESOCASH",
+        "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "divisible": false,
+        "btcPrice": "0.00000000",
+        "source": "https://classic.tokenscan.io/api/asset/PESOCASH"
+      },
+      "POUNDCASH": {
+        "asset": "POUNDCASH",
+        "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "divisible": false,
+        "btcPrice": "0.00000000",
+        "source": "https://classic.tokenscan.io/api/asset/POUNDCASH"
+      },
+      "RENMINBICASH": {
+        "asset": "RENMINBICASH",
+        "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "divisible": false,
+        "btcPrice": "0.00000000",
+        "source": "https://classic.tokenscan.io/api/asset/RENMINBICASH"
+      },
+      "RUPEECASH": {
+        "asset": "RUPEECASH",
+        "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "divisible": false,
+        "btcPrice": "0.00000000",
+        "source": "https://classic.tokenscan.io/api/asset/RUPEECASH"
+      },
+      "SHEKELCASH": {
+        "asset": "SHEKELCASH",
+        "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "divisible": false,
+        "btcPrice": "0.00000000",
+        "source": "https://classic.tokenscan.io/api/asset/SHEKELCASH"
+      },
+      "SHILLINGCASH": {
+        "asset": "SHILLINGCASH",
+        "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "divisible": false,
+        "btcPrice": "0.00000000",
+        "source": "https://classic.tokenscan.io/api/asset/SHILLINGCASH"
+      },
+      "SOVEREIGNC": {
+        "asset": "SOVEREIGNC",
+        "owner": "1NySA74g62Mr28Unp4uCxwtQv9FkD7AVpk",
+        "issuer": "1NySA74g62Mr28Unp4uCxwtQv9FkD7AVpk",
+        "divisible": true,
+        "btcPrice": "0.01000000",
+        "source": "https://classic.tokenscan.io/api/asset/SOVEREIGNC"
+      },
+      "STERLINGCASH": {
+        "asset": "STERLINGCASH",
+        "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "divisible": false,
+        "btcPrice": "0.00000000",
+        "source": "https://classic.tokenscan.io/api/asset/STERLINGCASH"
+      },
+      "SWISSCASH": {
+        "asset": "SWISSCASH",
+        "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "divisible": false,
+        "btcPrice": "0.00000000",
+        "source": "https://classic.tokenscan.io/api/asset/SWISSCASH"
+      },
+      "SYNERGYCASH": {
+        "asset": "SYNERGYCASH",
+        "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "divisible": true,
+        "btcPrice": "0.00000000",
+        "source": "https://classic.tokenscan.io/api/asset/SYNERGYCASH"
+      },
+      "XCP": {
+        "asset": "XCP",
+        "owner": null,
+        "issuer": null,
+        "divisible": true,
+        "btcPrice": "0.00022000",
+        "source": "https://classic.tokenscan.io/api/asset/XCP"
+      },
+      "YENCASH": {
+        "asset": "YENCASH",
+        "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "divisible": false,
+        "btcPrice": "0.00000000",
+        "source": "https://classic.tokenscan.io/api/asset/YENCASH"
+      },
+      "ZAMBIACASH": {
+        "asset": "ZAMBIACASH",
+        "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "divisible": false,
+        "btcPrice": "0.00000000",
+        "source": "https://classic.tokenscan.io/api/asset/ZAMBIACASH"
+      }
+    },
+    "cp20": {
+      "BIRRCASH": {
+        "asset": "BIRRCASH",
+        "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "divisible": false,
+        "btcPrice": "0.00000000",
+        "source": "https://cp20.tokenscan.io/api/asset/BIRRCASH"
+      },
+      "CANADIACASH": {
+        "asset": "CANADIACASH",
+        "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "divisible": false,
+        "btcPrice": "0.00000000",
+        "source": "https://cp20.tokenscan.io/api/asset/CANADIACASH"
+      },
+      "DINARCASH": {
+        "asset": "DINARCASH",
+        "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "divisible": false,
+        "btcPrice": "0.00000000",
+        "source": "https://cp20.tokenscan.io/api/asset/DINARCASH"
+      },
+      "DIRHAMCASH": {
+        "asset": "DIRHAMCASH",
+        "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "divisible": false,
+        "btcPrice": "0.00000000",
+        "source": "https://cp20.tokenscan.io/api/asset/DIRHAMCASH"
+      },
+      "EUROPACASH": {
+        "asset": "EUROPACASH",
+        "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "divisible": false,
+        "btcPrice": "0.00000000",
+        "source": "https://cp20.tokenscan.io/api/asset/EUROPACASH"
+      },
+      "GENEIHCASH": {
+        "asset": "GENEIHCASH",
+        "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "divisible": false,
+        "btcPrice": "0.00000000",
+        "source": "https://cp20.tokenscan.io/api/asset/GENEIHCASH"
+      },
+      "GHANACASH": {
+        "asset": "GHANACASH",
+        "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "issuer": "1AssetiB9oec9pmbTThvCLFqBPcLSaQGjB",
+        "divisible": true,
+        "btcPrice": "0.00000000",
+        "source": "https://cp20.tokenscan.io/api/asset/GHANACASH"
+      },
+      "GOURDECASH": {
+        "asset": "GOURDECASH",
+        "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "issuer": "1AssetiB9oec9pmbTThvCLFqBPcLSaQGjB",
+        "divisible": false,
+        "btcPrice": "0.00000000",
+        "source": "https://cp20.tokenscan.io/api/asset/GOURDECASH"
+      },
+      "HONGCASH": {
+        "asset": "HONGCASH",
+        "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "divisible": false,
+        "btcPrice": "0.00000000",
+        "source": "https://cp20.tokenscan.io/api/asset/HONGCASH"
+      },
+      "LIRACASH": {
+        "asset": "LIRACASH",
+        "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "divisible": false,
+        "btcPrice": "0.00000000",
+        "source": "https://cp20.tokenscan.io/api/asset/LIRACASH"
+      },
+      "MEXICACOIN": {
+        "asset": "MEXICACOIN",
+        "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "divisible": true,
+        "btcPrice": "0.00000000",
+        "source": "https://cp20.tokenscan.io/api/asset/MEXICACOIN"
+      },
+      "MOBITOKEN": {
+        "asset": "MOBITOKEN",
+        "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "issuer": "1AssetiB9oec9pmbTThvCLFqBPcLSaQGjB",
+        "divisible": false,
+        "btcPrice": "0.00000000",
+        "source": "https://cp20.tokenscan.io/api/asset/MOBITOKEN"
+      },
+      "MOORCASH": {
+        "asset": "MOORCASH",
+        "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "divisible": false,
+        "btcPrice": "0.00000000",
+        "source": "https://cp20.tokenscan.io/api/asset/MOORCASH"
+      },
+      "MOORCOIN": {
+        "asset": "MOORCOIN",
+        "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "issuer": "1AssetiB9oec9pmbTThvCLFqBPcLSaQGjB",
+        "divisible": true,
+        "btcPrice": "0.00028267",
+        "source": "https://cp20.tokenscan.io/api/asset/MOORCOIN"
+      },
+      "NAIRACASH": {
+        "asset": "NAIRACASH",
+        "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "divisible": true,
+        "btcPrice": "0.00000000",
+        "source": "https://cp20.tokenscan.io/api/asset/NAIRACASH"
+      },
+      "NEOCASH": {
+        "asset": "NEOCASH",
+        "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "issuer": "1AssetiB9oec9pmbTThvCLFqBPcLSaQGjB",
+        "divisible": false,
+        "btcPrice": "0.00000002",
+        "source": "https://cp20.tokenscan.io/api/asset/NEOCASH"
+      },
+      "NOMNI": {
+        "asset": "NOMNI",
+        "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "issuer": "1NySA74g62Mr28Unp4uCxwtQv9FkD7AVpk",
+        "divisible": false,
+        "btcPrice": "0.00077041",
+        "source": "https://cp20.tokenscan.io/api/asset/NOMNI"
+      },
+      "OLMECCASH": {
+        "asset": "OLMECCASH",
+        "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "divisible": false,
+        "btcPrice": "0.00000000",
+        "source": "https://cp20.tokenscan.io/api/asset/OLMECCASH"
+      },
+      "PESOCASH": {
+        "asset": "PESOCASH",
+        "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "divisible": false,
+        "btcPrice": "0.00000000",
+        "source": "https://cp20.tokenscan.io/api/asset/PESOCASH"
+      },
+      "POUNDCASH": {
+        "asset": "POUNDCASH",
+        "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "divisible": false,
+        "btcPrice": "0.00000000",
+        "source": "https://cp20.tokenscan.io/api/asset/POUNDCASH"
+      },
+      "RENMINBICASH": {
+        "asset": "RENMINBICASH",
+        "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "divisible": false,
+        "btcPrice": "0.00000000",
+        "source": "https://cp20.tokenscan.io/api/asset/RENMINBICASH"
+      },
+      "RUPEECASH": {
+        "asset": "RUPEECASH",
+        "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "issuer": "1AssetiB9oec9pmbTThvCLFqBPcLSaQGjB",
+        "divisible": false,
+        "btcPrice": "0.00000000",
+        "source": "https://cp20.tokenscan.io/api/asset/RUPEECASH"
+      },
+      "SHEKELCASH": {
+        "asset": "SHEKELCASH",
+        "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "divisible": false,
+        "btcPrice": "0.00000000",
+        "source": "https://cp20.tokenscan.io/api/asset/SHEKELCASH"
+      },
+      "SHILLINGCASH": {
+        "asset": "SHILLINGCASH",
+        "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "divisible": false,
+        "btcPrice": "0.00000000",
+        "source": "https://cp20.tokenscan.io/api/asset/SHILLINGCASH"
+      },
+      "SOVEREIGNC": {
+        "asset": "SOVEREIGNC",
+        "owner": "1NySA74g62Mr28Unp4uCxwtQv9FkD7AVpk",
+        "issuer": "1NySA74g62Mr28Unp4uCxwtQv9FkD7AVpk",
+        "divisible": true,
+        "btcPrice": "0.11890930",
+        "source": "https://cp20.tokenscan.io/api/asset/SOVEREIGNC"
+      },
+      "STERLINGCASH": {
+        "asset": "STERLINGCASH",
+        "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "issuer": "1AssetiB9oec9pmbTThvCLFqBPcLSaQGjB",
+        "divisible": false,
+        "btcPrice": "0.00000000",
+        "source": "https://cp20.tokenscan.io/api/asset/STERLINGCASH"
+      },
+      "SWISSCASH": {
+        "asset": "SWISSCASH",
+        "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "divisible": false,
+        "btcPrice": "0.00000000",
+        "source": "https://cp20.tokenscan.io/api/asset/SWISSCASH"
+      },
+      "SYNERGYCASH": {
+        "asset": "SYNERGYCASH",
+        "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "issuer": "1AssetiB9oec9pmbTThvCLFqBPcLSaQGjB",
+        "divisible": true,
+        "btcPrice": "0.00000000",
+        "source": "https://cp20.tokenscan.io/api/asset/SYNERGYCASH"
+      },
+      "XCP": {
+        "asset": "XCP",
+        "owner": null,
+        "issuer": null,
+        "divisible": true,
+        "btcPrice": "0.00006900",
+        "source": "https://cp20.tokenscan.io/api/asset/XCP"
+      },
+      "YENCASH": {
+        "asset": "YENCASH",
+        "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "divisible": false,
+        "btcPrice": "0.00000000",
+        "source": "https://cp20.tokenscan.io/api/asset/YENCASH"
+      },
+      "ZAMBIACASH": {
+        "asset": "ZAMBIACASH",
+        "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+        "issuer": "1AssetiB9oec9pmbTThvCLFqBPcLSaQGjB",
+        "divisible": false,
+        "btcPrice": "0.00000000",
+        "source": "https://cp20.tokenscan.io/api/asset/ZAMBIACASH"
+      }
+    }
+  }
+}

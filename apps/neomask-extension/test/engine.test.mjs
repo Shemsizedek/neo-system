@@ -1,0 +1,41 @@
+import assert from 'node:assert/strict';
+import {bitcoin,ECPair,sealWif,openVault,reviewPsbt,psbtDigest,signReviewedPsbt,createKey} from '../src/wallet.mjs';
+import {assessBitcoinPayment} from '../src/settlement.mjs';
+import {Buffer} from 'buffer';
+const pair=ECPair.fromPrivateKey(Buffer.alloc(32,1)),other=ECPair.fromPrivateKey(Buffer.alloc(32,2));
+const source=bitcoin.payments.p2pkh({pubkey:pair.publicKey}).address;
+const destination=bitcoin.payments.p2pkh({pubkey:other.publicKey}).address;
+const password='fixture password with sufficient length';
+const vault=await sealWif(pair.toWIF(),password);
+assert(!JSON.stringify(vault).includes(pair.toWIF()));
+assert.equal(await openVault(vault,password),pair.toWIF());
+await assert.rejects(openVault(vault,'wrong long password'));
+await assert.rejects(openVault({...vault,address:destination},password));
+assert.equal(createKey().address[0],'1');
+const prev=new bitcoin.Transaction();prev.addInput(Buffer.alloc(32),0xffffffff);prev.addOutput(bitcoin.address.toOutputScript(source),100000n);
+function transaction(){
+ const psbt=new bitcoin.Psbt();
+ psbt.addInput({hash:prev.getId(),index:0,nonWitnessUtxo:prev.toBuffer()});
+ psbt.addOutput({address:destination,value:50000n});psbt.addOutput({address:source,value:49000n});
+ return psbt;
+}
+const psbt=transaction(),hex=psbt.toHex();
+const review=reviewPsbt(hex,source);assert.equal(review.feeSats,'1000');
+const digest=await psbtDigest(hex);
+const signed=await signReviewedPsbt({hex,wif:pair.toWIF(),approvedDigest:digest});
+const tx=bitcoin.Transaction.fromHex(signed.rawTx);
+assert.equal(tx.getId(),signed.txid);assert.equal(tx.outs[0].value,50000n);assert(tx.ins[0].script.length>0);
+await assert.rejects(signReviewedPsbt({hex,wif:pair.toWIF(),approvedDigest:'0'.repeat(64)}));
+assert.throws(()=>reviewPsbt(hex,destination));
+const altered=transaction();altered.updateInput(0,{sighashType:bitcoin.Transaction.SIGHASH_NONE});assert.throws(()=>reviewPsbt(altered.toHex(),source));
+const unknown=transaction();unknown.addOutput({script:bitcoin.script.compile([bitcoin.opcodes.OP_RETURN,Buffer.from('CNTRPRTY')]),value:0n});assert.throws(()=>reviewPsbt(unknown.toHex(),source));
+const invoice={id:'order1',network:'mainnet',ledger:'classic',createdHeight:100,expiresAt:200000,confirmations:2,address:source,sats:'50000'};
+const payment={txid:'a'.repeat(64),vout:[{scriptpubkey_address:source,value:50000}],status:{confirmed:true,block_height:100,block_time:150,block_hash:'block'}};
+const chain={height:101,canonicalBlockHash:'block'};
+assert.equal(assessBitcoinPayment(invoice,payment,chain).state,'SETTLED');
+assert.equal(assessBitcoinPayment(invoice,payment,{...chain,claimedBy:'another'}).state,'REPLAY_REJECTED');
+assert.equal(assessBitcoinPayment(invoice,payment,{...chain,canonicalBlockHash:'other'}).state,'REORG_HOLD');
+assert.equal(assessBitcoinPayment(invoice,{...payment,status:{...payment.status,block_time:201}},chain).state,'LATE_PAYMENT_REVIEW');
+assert.equal(assessBitcoinPayment(invoice,{...payment,vout:[{scriptpubkey_address:source,value:49999}]},chain).state,'NO_MATCH');
+console.log('PASS: AES-GCM vault, wrong password/tamper rejection, real secp256k1 PSBT signing, intent mutation and wrong-account rejection, unsafe sighash/data-output rejection, payment match, replay, confirmations, reorg and expiry checks');
+

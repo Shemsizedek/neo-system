@@ -1,0 +1,164 @@
+{
+  "retrievedAt": "2026-10-17T23:04:20.879413+00:00",
+  "ledger": "cp20",
+  "ownerIndex": "https://cp20.tokenscan.io/explorer/assets/18FyntJG9hdXYvanm67mGgbyo1P7adckvg?start=0&length=100",
+  "assetEndpoint": "https://cp20.tokenscan.io/api/asset/{asset}",
+  "assets": [
+    {
+      "asset": "BIRRCASH",
+      "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+      "price": "0.00000000",
+      "divisible": false
+    },
+    {
+      "asset": "CANADIACASH",
+      "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+      "price": "0.00000000",
+      "divisible": false
+    },
+    {
+      "asset": "DINARCASH",
+      "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+      "price": "0.00000000",
+      "divisible": false
+    },
+    {
+      "asset": "DIRHAMCASH",
+      "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+      "price": "0.00000000",
+      "divisible": false
+    },
+    {
+      "asset": "EUROPACASH",
+      "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+      "price": "0.00000000",
+      "divisible": false
+    },
+    {
+      "asset": "GENEIHCASH",
+      "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+      "price": "0.00000000",
+      "divisible": false
+    },
+    {
+      "asset": "GOURDECASH",
+      "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+      "price": "0.00000000",
+      "divisible": false
+    },
+    {
+      "asset": "HONGCASH",
+      "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+      "price": "0.00000000",
+      "divisible": false
+    },
+    {
+      "asset": "LIRACASH",
+      "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+      "price": "0.00000000",
+      "divisible": false
+    },
+    {
+      "asset": "MOORCASH",
+      "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+      "price": "0.00000000",
+      "divisible": false
+    },
+    {
+      "asset": "MOORCOIN",
+      "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+      "price": "0.00028267",
+      "divisible": true
+    },
+    {
+      "asset": "NAIRACASH",
+      "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+      "price": "0.00000000",
+      "divisible": true
+    },
+    {
+      "asset": "NEOCASH",
+      "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+      "price": "0.00000002",
+      "divisible": false
+    },
+    {
+      "asset": "NOMNI",
+      "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+      "price": "0.00077041",
+      "divisible": false
+    },
+    {
+      "asset": "OLMECCASH",
+      "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+      "price": "0.00000000",
+      "divisible": false
+    },
+    {
+      "asset": "PESOCASH",
+      "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+      "price": "0.00000000",
+      "divisible": false
+    },
+    {
+      "asset": "POUNDCASH",
+      "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+      "price": "0.00000000",
+      "divisible": false
+    },
+    {
+      "asset": "RENMINBICASH",
+      "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+      "price": "0.00000000",
+      "divisible": false
+    },
+    {
+      "asset": "RUPEECASH",
+      "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+      "price": "0.00000000",
+      "divisible": false
+    },
+    {
+      "asset": "SHEKELCASH",
+      "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+      "price": "0.00000000",
+      "divisible": false
+    },
+    {
+      "asset": "SHILLINGCASH",
+      "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+      "price": "0.00000000",
+      "divisible": false
+    },
+    {
+      "asset": "STERLINGCASH",
+      "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+      "price": "0.00000000",
+      "divisible": false
+    },
+    {
+      "asset": "SWISSCASH",
+      "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+      "price": "0.00000000",
+      "divisible": false
+    },
+    {
+      "asset": "SYNERGYCASH",
+      "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+      "price": "0.00000000",
+      "divisible": true
+    },
+    {
+      "asset": "XCP",
+      "owner": null,
+      "price": "0.00007000",
+      "divisible": true
+    },
+    {
+      "asset": "YENCASH",
+      "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+      "price": "0.00000000",
+      "divisible": false
+    }
+  ]
+}

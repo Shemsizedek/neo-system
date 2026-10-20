@@ -1,0 +1,26 @@
+import assert from 'node:assert/strict';
+import {webcrypto} from 'node:crypto';
+import {createWalletHost,registerWalletBridge,popupTransport,servePopupBridge} from './index.mjs';
+const handlers={merchant:new Set(),wallet:new Set()};
+const dispatch=(side,event)=>{for(const f of handlers[side])queueMicrotask(()=>f(event));};
+let sends=0,signs=0;
+const walletWindow={closed:false,close(){this.closed=true;},postMessage(data,target){assert.equal(target,'https://wallet.example');sends++;dispatch('wallet',{source:opener,origin:'https://merchant.example',data});}};
+const opener={postMessage(data,target){assert.equal(target,'https://merchant.example');dispatch('merchant',{source:walletWindow,origin:'https://wallet.example',data});}};
+const merchant={crypto:webcrypto,location:{origin:'https://merchant.example'},addEventListener(_,fn){handlers.merchant.add(fn);},removeEventListener(_,fn){handlers.merchant.delete(fn);},open(){return walletWindow;}};
+const walletScope={opener,addEventListener(_,fn){handlers.wallet.add(fn);},removeEventListener(_,fn){handlers.wallet.delete(fn);}};
+const account={address:'1Ky2wRYYrJzqdQJH64F7TR98fqLxJs7LK8',network:'mainnet',ledger:'cp20',signingAvailable:true};
+const host=createWalletHost({wallet:{connect:async()=>{},getAccount:async()=>account,disconnect:async()=>{},signPsbt:async hex=>{signs++;return hex;}},ledgers:['cp20'],approve:async()=>true});
+const stop=servePopupBridge(walletScope,{merchantOrigin:merchant.location.origin,request:host});
+const transport=popupTransport(merchant,{url:'https://wallet.example/neomask',timeout:30});
+const adapter=registerWalletBridge(merchant,{id:'freewallet',ledgers:['cp20'],request:transport.request});
+assert.equal((await adapter.connect({ledger:'cp20'})).address,account.address);assert.equal(signs,0);
+assert.equal(await adapter.signPsbt('70736274ff00','cp20',{signInputs:{[account.address]:[0]}}),'70736274ff00');assert.equal(signs,1);
+await adapter.disconnect({ledger:'cp20'});
+await assert.rejects(()=>adapter.getAccount({ledger:'cp20'}),/declined or unavailable/);
+stop();
+// A hostile origin cannot satisfy a pending call, even with a captured correlation ID.
+walletWindow.postMessage=(data)=>dispatch('merchant',{source:walletWindow,origin:'https://evil.example',data:{protocol:'neomask-v1',id:data.id,result:account}});
+await assert.rejects(()=>transport.request({method:'getAccount'}),/timed out/);
+transport.dispose();assert.equal(handlers.merchant.size,0);assert(walletWindow.closed);
+assert(sends>=5);
+console.log('Popup transport round trip, wallet host, sign approval, disconnect, hostile response and cleanup passed.');

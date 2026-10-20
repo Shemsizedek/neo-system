@@ -1,0 +1,12 @@
+import assert from 'node:assert/strict';
+import {trustedOrigin,validAddress,validLedger,permissionKey,readAccount} from './policy.mjs';
+assert.equal(trustedOrigin({tab:{id:1},frameId:0,url:'https://holytemples.org/holy-stewardship/'}),'https://holytemples.org');
+assert.throws(()=>trustedOrigin({tab:{},frameId:1,url:'https://holytemples.org/'}));
+assert.throws(()=>trustedOrigin({tab:{},frameId:0,url:'https://evil.example/'}));
+assert.throws(()=>validLedger('unknown'));
+assert.notEqual(permissionKey('https://holytemples.org','classic'),permissionKey('https://holytemples.org','cp20'));
+assert(await validAddress('1Ky2wRYYrJzqdQJH64F7TR98fqLxJs7LK8'));
+assert(!await validAddress('1Ky2wRYYrJzqdQJH64F7TR98fqLxJs7LK9'));
+assert.throws(()=>readAccount({expiresAt:1},2));
+assert.equal(readAccount({address:'fixture',ledger:'classic',expiresAt:3},2).signingAvailable,false);
+console.log('PASS: merchant origin, top frame, ledger isolation, Base58Check, expiry and truthful watch-only capabilities');

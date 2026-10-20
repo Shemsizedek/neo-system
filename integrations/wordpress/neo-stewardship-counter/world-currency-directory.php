@@ -1,0 +1,14 @@
+<?php
+defined('ABSPATH') || exit;
+function neo_counter_world_currency_directory($ledger=''){
+    $rows=neo_stewardship_currency_catalog();$id=wp_unique_id('neo-world-currencies-');$host=neo_stewardship_market_host($ledger);ob_start();
+    ?><details data-world-currencies class="neo-world-currencies"><summary>World Currency — <?php echo count($rows); ?> entries</summary><p>World Currency tokens use daily market prices plus the 9% fee.</p><p><a href="https://worldcurrency.finance.blog/" target="_blank" rel="noopener noreferrer">World Currency catalog</a></p><label for="<?php echo esc_attr($id); ?>">Find a currency</label><input id="<?php echo esc_attr($id); ?>" data-currency-search type="search" placeholder="Name, symbol or token" style="width:100%;margin:8px 0"><p data-currency-count role="status"><?php echo count($rows); ?> currencies</p><div style="overflow-x:auto;max-height:420px"><table style="width:100%;border-collapse:collapse;text-align:left"><thead><tr><th scope="col">Currency</th><th scope="col">Token</th><th scope="col">Status</th></tr></thead><tbody><?php
+    foreach($rows as $entry){$asset=$entry['counterpartyAsset'];$v=$entry['verification'][$ledger]['status']??'';$verified=in_array($v,array('native_asset','treasury_asset_verified'),true);
+        $status=!$asset?'Token mapping pending':(!$host?'Choose wallet version':($verified?'Asset verified; daily rate required':'Asset verification pending'));
+        echo '<tr data-currency-row><td style="padding:10px 6px;border-bottom:1px solid #ddd">'.esc_html($entry['symbol'].' — '.$entry['name']).'</td><td style="padding:10px 6px;border-bottom:1px solid #ddd">';
+        if($asset&&$host)echo '<a href="'.esc_url($host.'/asset/'.rawurlencode($asset)).'" target="_blank" rel="noopener noreferrer">'.esc_html($asset).'</a>';else echo esc_html($asset?:'—');
+        echo '</td><td style="padding:10px 6px;border-bottom:1px solid #ddd">'.esc_html($status).'</td></tr>';
+    }?></tbody></table></div><p>Collection starts only after checkout activation. An asset listing alone does not provide a payment quote.</p></details><script type="module">import {mountWorldCurrencies} from <?php echo wp_json_encode(plugins_url('world-currencies.mjs',__FILE__)); ?>;document.querySelectorAll('[data-world-currencies]').forEach(mountWorldCurrencies);</script><?php return ob_get_clean();
+}
+add_shortcode('neo_world_currencies',function(){ $ledger=isset($_GET['neo_ledger'])&&is_string($_GET['neo_ledger'])?sanitize_key($_GET['neo_ledger']):'';return neo_counter_world_currency_directory($ledger);});
+add_action('rest_api_init',function(){register_rest_route('neo-counter/v1','/currencies',array('methods'=>'GET','permission_callback'=>'__return_true','callback'=>function(){return array('version'=>'0.21.0','source'=>'https://worldcurrency.finance.blog/','currencies'=>array_map('neo_counter_retail_currency',neo_stewardship_currency_catalog()),'paymentsEnabled'=>false); }));});

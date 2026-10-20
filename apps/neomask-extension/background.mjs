@@ -1,0 +1,1 @@
+import './dist/background.mjs';

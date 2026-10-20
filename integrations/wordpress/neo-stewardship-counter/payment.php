@@ -1,0 +1,116 @@
+<?php
+defined('ABSPATH') || exit;
+// User-confirmed on 2026-10-17. This is a public address, never signing material.
+define('NEO_STEWARDSHIP_COLLECTION', '18SzD3cfwCcV9p6C38ho4uZPHE8ygVB9iq');
+define('NEO_STEWARDSHIP_BOND_SOURCE', '1Ky2wRYYrJzqdQJH64F7TR98fqLxJs7LK8');
+add_action('init', function () {
+    register_post_type('neo_steward_order', array('label'=>'NEO Counter Orders',
+        'public'=>false, 'show_ui'=>true, 'show_in_rest'=>false, 'supports'=>array('title'),
+        'capabilities'=>array('edit_posts'=>'manage_options','edit_others_posts'=>'manage_options',
+            'publish_posts'=>'manage_options','read_private_posts'=>'manage_options',
+            'delete_posts'=>'manage_options','create_posts'=>'do_not_allow'), 'map_meta_cap'=>true));
+});
+/** Validate legacy mainnet P2PKH wallet addresses including Base58Check checksum. */
+function neo_stewardship_wallet_valid($address) {
+    if (!is_string($address) || !preg_match('/^1[1-9A-HJ-NP-Za-km-z]{25,34}$/', $address)) return false;
+    $alphabet = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+    $bytes = array(0);
+    foreach (str_split($address) as $char) {
+        $carry = strpos($alphabet, $char);
+        if ($carry === false) return false;
+        for ($i=0; $i<count($bytes); $i++) {
+            $carry += $bytes[$i] * 58;
+            $bytes[$i] = $carry & 255;
+            $carry >>= 8;
+        }
+        while ($carry > 0) { $bytes[] = $carry & 255; $carry >>= 8; }
+    }
+    $raw = '';
+    foreach (array_reverse($bytes) as $byte) $raw .= chr($byte);
+    for ($i=0; $i<strlen($address) && $address[$i] === '1'; $i++) $raw = chr(0) . $raw;
+    if (strlen($raw) !== 25 || ord($raw[0]) !== 0) return false;
+    $body = substr($raw,0,21);
+    return hash_equals(substr(hash('sha256', hash('sha256',$body,true),true),0,4), substr($raw,21));
+}
+function neo_stewardship_indenture_snapshot() {
+    $page = get_page_by_path('holy-stewardship');
+    if (!$page) return '';
+    foreach (parse_blocks($page->post_content) as $block) {
+        if ($block['blockName'] === 'core/details' && strpos($block['innerHTML'],'The Indenture') !== false) {
+            return serialize_block($block);
+        }
+    }
+    return '';
+}
+add_action('admin_post_neo_stewardship_prepare', function () {
+    if (!is_user_logged_in()) wp_die('Sign in required.', '', array('response'=>403));
+    check_admin_referer('neo_stewardship_prepare');
+    if (!neo_stewardship_form144_received()) wp_die('Upload completed Form 144 first.', '', array('response'=>403));
+    $ledger = isset($_POST['ledger']) && is_string($_POST['ledger']) ? sanitize_key($_POST['ledger']) : '';
+    if (!in_array($ledger,array('classic','cp20'),true)) wp_die('Select a supported Counterparty ledger.', '', array('response'=>400));
+    $currency = isset($_POST['currency']) && is_string($_POST['currency']) ? sanitize_key($_POST['currency']) : '';
+    if (!neo_stewardship_currency_by_id($currency)) wp_die('Unknown payment currency.', '', array('response'=>400));
+    $asset = isset($_POST['asset']) ? sanitize_text_field(wp_unslash($_POST['asset'])) : '';
+    $wallet = isset($_POST['wallet']) ? trim(wp_unslash($_POST['wallet'])) : '';
+    $qty = isset($_POST['quantity']) && is_string($_POST['quantity']) ? $_POST['quantity'] : '';
+    if (!in_array($asset,array('TEMPLEBOND','PLEDGEBOND'),true) || !preg_match('/^[1-9][0-9]{0,5}$/',$qty) ||
+        !neo_stewardship_wallet_valid($wallet) || !isset($_POST['accept_indent'])) {
+        wp_die('Select a bond, a positive whole quantity, a valid mainnet legacy wallet and acknowledge the Indenture.', '', array('response'=>400));
+    }
+    $terms = neo_stewardship_indenture_snapshot();
+    $expected = isset($_POST['terms_hash']) ? sanitize_text_field(wp_unslash($_POST['terms_hash'])) : '';
+    if (!$terms || !hash_equals(hash('sha256',$terms), $expected)) {
+        wp_die('The Indenture changed. Reload and review its current version.', '', array('response'=>409));
+    }
+    $refs = neo_stewardship_market_references($ledger,$currency);
+    if (!isset($refs[$asset]) || $refs[$asset]['expiresAt'] <= time()*1000) {
+        wp_die('Market reference unavailable. Refresh and retry.', '', array('response'=>503));
+    }
+    $ref = $refs[$asset];
+    $quote = neo_stewardship_price_order($ref,$qty);
+    if (!$quote) wp_die('The quote is unavailable or exceeds the 10 BTC reference limit.', '', array('response'=>400));
+    $id = wp_insert_post(array('post_type'=>'neo_steward_order','post_status'=>'private',
+        'post_author'=>get_current_user_id(),'post_title'=>'Prepared checkout — ' . $asset . ' — ' . gmdate('Y-m-d H:i:s')), true);
+    if (is_wp_error($id) || !$id) wp_die('Checkout record could not be saved.', '', array('response'=>500));
+    $record = array('state'=>'PREPARED_NOT_PAYABLE','payment_currency'=>$ref['currencyAsset'],'currency_id'=>$currency,'currency_symbol'=>$ref['currency'],'currency_decimals'=>$ref['currencyDecimals'],'payment_network'=>'bitcoin-mainnet','asset'=>$asset,'quantity'=>$qty,
+        'delivery_wallet'=>$wallet,'collection_address'=>NEO_STEWARDSHIP_COLLECTION,'treasury_address'=>NEO_STEWARDSHIP_COLLECTION,
+        'token_source_address'=>NEO_STEWARDSHIP_BOND_SOURCE,'signing_wallet'=>'NeoMask',
+        'signing_status'=>'CONNECTION_REQUIRED','counterparty_ledger'=>$ledger,
+        'total_minor'=>$quote['totalMinor'],'pricing'=>$quote,'market_reference'=>$ref,'markup_bps'=>'900',
+        'terms_sha256'=>hash('sha256',$terms),'terms_snapshot'=>$terms,
+        'acknowledged_at'=>gmdate('c'),'payment_status'=>'NOT_REQUESTED',
+        'token_delivery'=>'NOT_STARTED','note'=>'Acknowledgment recorded; payment and fulfillment have not occurred.');
+    if (!add_post_meta($id,'_neo_checkout',$record,true)) {
+        wp_delete_post($id,true);
+        wp_die('Checkout record could not be saved.', '', array('response'=>500));
+    }
+    $request_key=isset($_POST['checkout_request'])&&is_string($_POST['checkout_request'])?sanitize_text_field(wp_unslash($_POST['checkout_request'])):'';
+    $invoice_id=neo_counter_create_locked_invoice($id,$record,$request_key);
+    if(is_wp_error($invoice_id)){wp_delete_post($id,true);wp_die(esc_html($invoice_id->get_error_message()),'',array('response'=>409));}
+    add_post_meta($id,'_neo_invoice_id',$invoice_id,true);
+    wp_safe_redirect(add_query_arg('neo_prepared',$id,add_query_arg(array('neo_ledger'=>$ledger,'neo_currency'=>$currency),home_url('/holy-stewardship/'))) . '#neo-stewardship-gateway');
+    exit;
+});
+add_action('add_meta_boxes_neo_steward_order',function(){
+    add_meta_box('neo_checkout_record','Checkout record',function($post){
+        if (!current_user_can('manage_options')) return;
+        $invoice=neo_counter_invoice($post->ID);
+        if($invoice&&!is_wp_error($invoice)){
+            $kind=neo_counter_order_kind($invoice['invoice']);
+            $labels=array('token_sale'=>'Token purchase','digital_goods'=>'Digital product','physical_goods'=>'Physical product','service_bill'=>'Service bill');
+            echo '<p><strong>Order type:</strong> '.esc_html($labels[$kind]).'</p>';
+            if($kind==='token_sale')echo '<p>Token delivery is managed separately from the retail checkout.</p>';
+            else echo '<p>Payment is collected at the merchant wallet. Product fulfillment and service completion are tracked separately from payment.</p>';
+            echo '<p><strong>Invoice:</strong> '.esc_html($invoice['state']).' · '.esc_html($invoice['payload_hash']).'</p>';
+            if(in_array($invoice['invoice']['ledger'],array('classic','cp20'),true)){
+                $control='neo-payment-'.(int)$post->ID;
+                echo '<div id="'.esc_attr($control).'"><label>Payment transaction ID <input data-payment-txid style="width:100%"></label><p><button type="button" class="button" data-verify-payment>Verify payment</button></p><p data-payment-result role="status"></p></div>';
+                echo '<script>document.getElementById('.wp_json_encode($control).').querySelector("[data-verify-payment]").addEventListener("click",async function(){const root=this.closest("div"),out=root.querySelector("[data-payment-result]"),txid=root.querySelector("[data-payment-txid]").value.trim();if(!/^[a-f0-9]{64}$/i.test(txid)){out.textContent="Enter a valid transaction ID.";return;}this.disabled=true;out.textContent="Checking payment…";try{const r=await fetch('.wp_json_encode(rest_url('neo-counter/v1/invoices/'.$post->ID.'/verify')).',{method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json","X-WP-Nonce":'.wp_json_encode(wp_create_nonce('wp_rest')).'},body:JSON.stringify({txid})});const d=await r.json();out.textContent=r.ok?d.state+" · Delivery not sent":d.message;}catch(e){out.textContent="Verification unavailable. Please retry.";}finally{this.disabled=false;}});</script>';
+                echo '<p>Verification does not activate this draft or authorize fulfillment.</p>';
+            }
+        }
+        echo '<pre style="white-space:pre-wrap;overflow-wrap:anywhere">' .
+            esc_html(wp_json_encode($invoice&&!is_wp_error($invoice)?neo_counter_retail_invoice($invoice['invoice']):array(),JSON_PRETTY_PRINT)) . '</pre>';
+    },'neo_steward_order');
+});
+
