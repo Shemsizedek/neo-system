@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
+import NeoMaskPanel from './neomask/NeoMaskPanel';
 import GitHubRuntimeBanner from './platform/GitHubRuntimeBanner';
 import './styles.css';
 import './merchant/merchant.css';
@@ -20,5 +21,6 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <GitHubRuntimeBanner />
     <App />
+    <NeoMaskPanel />
   </React.StrictMode>,
 );
