@@ -1,0 +1,14 @@
+import test from 'node:test';import assert from 'node:assert/strict';import{generateKeyPairSync,createSign}from 'node:crypto';import{verifyNeoPassJwt,verifyNeoPassWithRevocation}from './neomask-oidc.mjs';
+const {privateKey,publicKey}=generateKeyPairSync('rsa',{modulusLength:2048});
+const jwk={...publicKey.export({format:'jwk'}),kid:'k1',alg:'RS256',use:'sig'};
+const now=1730000000;
+const config={issuer:'https://pass.example.org',audience:'neomask',jwks:{keys:[jwk]},now};
+const make=(patch={})=>{const h=Buffer.from(JSON.stringify({alg:'RS256',kid:'k1'})).toString('base64url');const p=Buffer.from(JSON.stringify({iss:config.issuer,aud:config.audience,sub:'person1',sid:'session1',scope:'wallet:read',iat:now-20,exp:now+500,...patch})).toString('base64url');const s=createSign('RSA-SHA256').update(h+'.'+p).end().sign(privateKey).toString('base64url');return h+'.'+p+'.'+s;};
+test('verifies signed scoped token',()=>assert.equal(verifyNeoPassJwt(make(),config).subject,'person1'));
+test('rejects tampered signature',()=>assert.throws(()=>verifyNeoPassJwt(make().slice(0,-2)+'xx',config)));
+test('rejects incorrect audience',()=>assert.throws(()=>verifyNeoPassJwt(make({aud:'another'}),config)));
+test('rejects expired',()=>assert.throws(()=>verifyNeoPassJwt(make({exp:now-1}),config)));
+test('rejects missing scope',()=>assert.throws(()=>verifyNeoPassJwt(make({scope:'other'}),config)));
+test('requires revocation backend',async()=>await assert.rejects(verifyNeoPassWithRevocation(make(),config)));
+test('rejects revoked session',async()=>await assert.rejects(verifyNeoPassWithRevocation(make(),{...config,isRevoked:async()=>true})));
+test('accepts unrevoked session',async()=>assert.equal((await verifyNeoPassWithRevocation(make(),{...config,isRevoked:async()=>false})).sessionId,'session1'));
