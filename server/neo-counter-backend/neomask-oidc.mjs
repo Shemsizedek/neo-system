@@ -4,7 +4,7 @@ const decode=(part)=>{if(!/^[A-Za-z0-9_-]+$/.test(part))throw Error('malformed_t
 export function verifyNeoPassJwt(token,{issuer,audience,jwks,now=Math.floor(Date.now()/1000)}){
  if(typeof token!=='string'||token.length>12000)throw Error('invalid_token');
  const parts=token.split('.');if(parts.length!==3)throw Error('invalid_token');
- const [header,payload]=parts.map(decode);
+ const header=decode(parts[0]);const payload=decode(parts[1]);
  if(header.alg!=='RS256'||typeof header.kid!=='string'||!header.kid)throw Error('unsupported_signature');
  const candidates=jwks?.keys?.filter(k=>k.kid===header.kid&&k.kty==='RSA'&&k.use!=='enc'&&(!k.alg||k.alg==='RS256'))||[];
  if(candidates.length!==1)throw Error('untrusted_signing_key');
