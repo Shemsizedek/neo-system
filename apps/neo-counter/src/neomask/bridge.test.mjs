@@ -1,0 +1,10 @@
+import test from 'node:test';import assert from 'node:assert/strict';import{walletStatus,checkReceiveClaim,reviewOnlyPayment}from './bridge.mjs';
+const session={merchantId:'m1',permissions:['register']};
+test('requires merchant session',()=>assert.equal(walletStatus({providerAvailable:true}).ready,false));
+test('provider absent fails closed',()=>assert.equal(walletStatus({session}).reason,'neomask_provider_not_installed'));
+test('unsupported network fails closed',()=>assert.equal(walletStatus({session,network:'ethereum',providerAvailable:true}).ready,false));
+test('trusted provider can enter review',()=>assert.equal(walletStatus({session,providerAvailable:true}).ready,true));
+test('receive refuses merchant mismatch',()=>assert.throws(()=>checkReceiveClaim({merchantId:'m2',network:'bitcoin',address:'bc1q12345678901234567890',verified:true,provenance:'node'},session)));
+test('receive requires verification',()=>assert.throws(()=>checkReceiveClaim({merchantId:'m1',network:'bitcoin',address:'bc1q12345678901234567890'},session)));
+test('review cannot settle or broadcast',()=>{const a=reviewOnlyPayment({merchantId:'m1',network:'regtest',rail:'BTC',atomicUnits:'1000',destination:'bcrt1q12345678901234567890',intentId:'i1'},session);assert.equal(a.canBroadcast,false);assert.equal(a.canSettle,false)});
+test('rejects scientific notation',()=>assert.throws(()=>reviewOnlyPayment({merchantId:'m1',network:'regtest',rail:'BTC',atomicUnits:'1e8',destination:'bcrt1q12345678901234567890'},session)));
