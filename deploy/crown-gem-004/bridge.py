@@ -106,4 +106,8 @@ class Handler(BaseHTTPRequestHandler):
     do_DELETE=do_POST
 
 if __name__=="__main__":
+    if os.environ.get("CROWN_VERIFY_GEMINI_ON_BOOT") == "1":
+        from verify_gemini import verify
+        outcome = verify()
+        print("CROWN_GEMINI_AUTH_CHECK " + json.dumps(outcome), flush=True)
     ThreadingHTTPServer(("0.0.0.0",int(os.environ.get("PORT","8080"))),Handler).serve_forever()
