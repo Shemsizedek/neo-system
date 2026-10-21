@@ -1,4 +1,33 @@
 {
-  "generatedAt": "2026-10-20T21:39:38.112Z",
-  "items": []
+  "generatedAt": "2026-10-21T04:52:51.564Z",
+  "items": [
+    {
+      "type": "REVISION",
+      "sourceId": "SRC-WORLD-TEMPLE-WEB",
+      "url": "https://holytemples.org/",
+      "title": "World Temple - Omniversal Church",
+      "previousHash": "bd7c2e69d2a91d3aa667dc33c3c0c3621f46a63bc76b876b96303811e425bfee",
+      "currentHash": "9c6ab06fa4ec252de1b09b3d520e11c9de80e438234237e31a8bbda10d444d14",
+      "previousExcerpt": "World Temple - Omniversal Church Skip to content World Temple N.U.T &#8211; Omniversal Church Home Holy Ministries Holy Ordainment Holy Charter Holy Palace Holy Tablets Holy See World Temple City World Library World Mission Statement World Ministries World Committees World Parliament World Education World Treasury of Merit World Police World Interfaith Court World Bulletin Global District Templist Portal Contact The ",
+      "currentExcerpt": "World Temple - Omniversal Church Skip to content World Temple N.U.T &#8211; Omniversal Church Home Holy Ministries Holy Ordainment Holy Charter Holy Palace Holy Tablets Holy See World Temple City World Library World Mission Statement World Ministries World Committees World Parliament World Education World Treasury of Merit World Police World Interfaith Court World Bulletin Global District Templist Portal Contact The ",
+      "quality": {
+        "dimensions": {
+          "provenance": 9,
+          "truthfulness": 8,
+          "soundRightReason": 7,
+          "coherence": 7,
+          "ethics": 9,
+          "reciprocity": 7,
+          "natureAlignment": 6,
+          "craftsmanship": 8,
+          "consequence": 8
+        },
+        "average": 7.666666666666667,
+        "potency": "9_ETHER_COHERENT",
+        "gate": "PASS",
+        "note": "Heuristic artifact-quality assessment only; not a score of persons, identities or protected characteristics."
+      },
+      "decision": "REVIEW_REQUIRED"
+    }
+  ]
 }
