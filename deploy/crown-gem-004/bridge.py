@@ -53,7 +53,7 @@ def upstream(env, route):
 
 def dispatch(path):
     if path == "/health":
-        return 200, {"service":"neo-crown-gem","mode":"read-only","configured":{k:bool(os.getenv(k)) for k in ("BITCOIN_API_BASE","COUNTERPARTY_API_BASE","CROWN_API_BASE")}}
+        return 200, {"service":"neo-crown-gem","mode":"read-only","gemini_key_present":bool(os.getenv("GEMINI_API_KEY")), "gemini_execution_enabled":False,"configured":{k:bool(os.getenv(k)) for k in ("BITCOIN_API_BASE","COUNTERPARTY_API_BASE","CROWN_API_BASE")}}
     chunks=path.split("/")
     if len(chunks)==5 and chunks[:4]==["","v1","bitcoin","tx"] and TX.fullmatch(chunks[4]):
         return upstream("BITCOIN_API_BASE","/tx/"+chunks[4])
