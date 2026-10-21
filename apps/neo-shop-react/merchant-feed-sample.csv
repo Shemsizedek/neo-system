@@ -1,4 +1,0 @@
-id,title,link,price,availability,image_link
-good-001,"Crest, Premium Tee",https://shop.holytemples.org/products/crest-premium-tee,26.99 USD,in_stock,https://example.com/crest.jpg
-bad-002,Missing fields,https://shop.holytemples.org/,,"", 
-bad-002,Duplicate on external shop,https://Shemsizedek.myspreadshop.com/#!/,29.99 USD,in_stock,https://example.com/a.jpg
