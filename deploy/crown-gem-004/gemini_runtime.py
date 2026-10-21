@@ -11,7 +11,7 @@ import urllib.parse
 
 from gemini_adapter import TOOL_DECLARATIONS, call_crown_tool
 
-MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+MODEL = os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite")
 API_KEY = os.getenv("GEMINI_API_KEY", "")
 
 def generate(contents, tools=True):
