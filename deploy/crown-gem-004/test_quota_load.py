@@ -43,6 +43,18 @@ class SharedQuotaLoadTests(unittest.TestCase):
         with ThreadPoolExecutor(max_workers=12) as pool:
             results=list(pool.map(lambda _:quota.allowed(store,"same-peer",30,60),range(120)))
         self.assertEqual(sum(results),30)
+    def test_isolated_certification_identity_does_not_affect_normal_peer(self):
+        store=AtomicValkey()
+        for _ in range(30):
+            self.assertTrue(quota.allowed(store,"crown-certification-only",30,60))
+        self.assertFalse(quota.allowed(store,"crown-certification-only",30,60))
+        self.assertTrue(quota.allowed(store,"normal-client",30,60))
+    def test_backend_rejection_is_fail_closed(self):
+        class FailingStore:
+            def eval(self,*args):
+                raise ConnectionError("unavailable")
+        self.assertFalse(quota.allowed(FailingStore(),"crown-certification-only"))
+
     def test_independent_principals(self):
         store=AtomicValkey()
         self.assertTrue(quota.allowed(store,"peer-a",1,60))
