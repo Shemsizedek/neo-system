@@ -35,10 +35,13 @@ function onGoogleCredential(result){api('/gemini/google',{credential:result.cred
 window.onGoogleCredential=onGoogleCredential;
 const clientId=document.querySelector('meta[name="google-signin-client-id"]')?.content;
 if(clientId){const script=document.createElement('script');script.src='https://accounts.google.com/gsi/client';script.async=true;script.onload=()=>{google.accounts.id.initialize({client_id:clientId,callback:onGoogleCredential});google.accounts.id.renderButton($('googleSignIn'),{theme:'outline',size:'large',text:'signin_with'})};document.head.append(script)}
+fetch('/gemini/session',{credentials:'same-origin'}).then(r=>r.json()).then(x=>{if(x.authenticated){$('login').hidden=true;$('chat').hidden=false;status.textContent='Signed in with Google'}}).catch(()=>{});
 $('send').onclick=async()=>{const btn=$('send');btn.disabled=true;status.textContent='Querying Gemini';try{const res=await api('/gemini/ask',{message:$('prompt').value});$('answer').textContent=res.response||'No text returned';status.textContent='Completed · tools: '+(res.tools_used||[]).join(', ')}catch(e){status.textContent=e.message}finally{btn.disabled=false}};
 $('logout').onclick=async()=>{await api('/gemini/logout',{}).catch(()=>{});$('login').hidden=false;$('chat').hidden=true;$('answer').textContent='';status.textContent='Signed out'};
 </script></html>'''
 def get(handler):
+    if handler.path.split('?',1)[0]=='/gemini/session':
+        return handler.respond(200,{'authenticated':bool(configured() and session(handler))})
     ready=configured()
     if ready:
         body=HTML.replace("__NEO_GOOGLE_CLIENT_ID__",html.escape(os.environ["NEO_GEM_GOOGLE_CLIENT_ID"],quote=True)).encode()
