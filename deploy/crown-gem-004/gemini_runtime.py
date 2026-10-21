@@ -47,19 +47,29 @@ def run(prompt):
     contents.append(model_content)
     responses=[]
     names=[]
+    evidence=[]
     for call in calls:
         name=call.get("name","")
         if name not in {x["name"] for x in TOOL_DECLARATIONS}:
             raise RuntimeError("Unapproved function call")
         names.append(name)
         result=call_crown_tool(name,call.get("args",{}))
+        record=result.get("data") if isinstance(result,dict) else None
+        requested=call.get("args",{}).get("asset")
+        identity_match=(
+            name=="neo_crown_counterparty_asset" and isinstance(requested,str) and
+            (isinstance(record,dict) and (record.get("asset")==requested or
+             isinstance(record.get("result"),dict) and record["result"].get("asset")==requested))
+        )
+        evidence.append({"tool":name,"asset_identity_match":bool(identity_match),
+                         "independent_verification":False})
         response={"name":name,"response":{"result":result}}
         if call.get("id"):
             response["id"]=call["id"]
         responses.append({"functionResponse":response})
     contents.append({"role":"user","parts":responses})
     final=generate(contents,tools=False)
-    return {"used_tools":names,"response":(final.get("candidates") or [{}])[0].get("content",{}),"certified":False}
+    return {"used_tools":names,"tool_evidence":evidence,"response":(final.get("candidates") or [{}])[0].get("content",{}),"certified":False}
 
 if __name__=="__main__":
     if len(sys.argv)!=2 or not sys.argv[1].strip():
