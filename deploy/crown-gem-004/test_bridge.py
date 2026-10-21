@@ -56,7 +56,8 @@ class BridgeTests(unittest.TestCase):
             bridge.RATE_STATE.clear()
         for _ in range(30):
             self.assertTrue(bridge.rate_allowed("rate-test",now=bridge.time.monotonic()))
-        bridge.Handler.do_GET(stub)
+        with patch.object(bridge, "quota_allowed", return_value=False):
+            bridge.Handler.do_GET(stub)
         self.assertEqual(responses[0][0],429)
 
     def test_rate_limit_memory_capacity_and_expiry(self):
