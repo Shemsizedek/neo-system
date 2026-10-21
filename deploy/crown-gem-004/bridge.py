@@ -27,10 +27,10 @@ def base_url(key):
         return None
     parsed = urlparse(value)
     hosts = {s.strip().lower() for s in os.environ.get("CROWN_ALLOWED_HOSTS", "").split(",") if s.strip()}
-    if parsed.scheme != "https" or not parsed.hostname or parsed.hostname.lower() not in hosts or parsed.port not in (None, 443) or parsed.username or parsed.password or parsed.query or parsed.fragment:
+    if parsed.scheme != "https" or not parsed.hostname or parsed.hostname.lower() not in hosts or (parsed.port not in (None, 443) and not (key == "COUNTERPARTY_API_BASE" and parsed.hostname.lower() == "api.counterparty.io" and parsed.port == 4000)) or parsed.username or parsed.password or parsed.query or parsed.fragment:
         raise ValueError("upstream URL is not approved")
     # DNS resolution precheck is defense in depth only. Production egress must enforce public IPs independently.
-    for record in socket.getaddrinfo(parsed.hostname, 443, type=socket.SOCK_STREAM):
+    for record in socket.getaddrinfo(parsed.hostname, parsed.port or 443, type=socket.SOCK_STREAM):
         if not ipaddress.ip_address(record[4][0]).is_global:
             raise ValueError("nonpublic upstream IP")
     return value
