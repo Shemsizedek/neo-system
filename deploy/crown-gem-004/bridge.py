@@ -136,6 +136,9 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(payload)
     def do_GET(self):
+        if self.path == "/gemini":
+            from gemini_private_web import get
+            return get(self)
         if not quota_allowed(self.client_address[0]):
             return self.respond(429, {"error":"rate limited"})
         token=os.environ.get("CROWN_BRIDGE_TOKEN","")
@@ -151,6 +154,11 @@ class Handler(BaseHTTPRequestHandler):
             status,data=503,{"error":"invalid upstream configuration"}
         return self.respond(status,data)
     def do_POST(self):
+        if self.path in ("/gemini/login","/gemini/ask","/gemini/logout"):
+            if not quota_allowed(self.client_address[0]):
+                return self.respond(429,{"error":"rate limited"})
+            from gemini_private_web import post
+            return post(self)
         if not quota_allowed(self.client_address[0]):
             return self.respond(429, {"error":"rate limited"})
         token=os.environ.get("CROWN_BRIDGE_TOKEN","")
