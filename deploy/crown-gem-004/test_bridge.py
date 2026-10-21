@@ -25,6 +25,21 @@ class BridgeTests(unittest.TestCase):
         self.assertIn('/v1/gemini/verify',code)
         self.assertIn('compare_digest',code)
         self.assertIn('request body prohibited',code)
+    def test_unified_invalid_identifier(self):
+        code, value = bridge.dispatch("/v1/intelligence/bitcoin/invalid")
+        self.assertEqual(code,400)
+    def test_unified_bitcoin_mismatch_not_certified(self):
+        with patch.object(bridge,"upstream",return_value=(200,{"data":{"txid":"b"*64}})):
+            code,value=bridge.dispatch("/v1/intelligence/bitcoin/"+"a"*64)
+        self.assertEqual(code,200)
+        self.assertFalse(value["identity_match"])
+        self.assertFalse(value["independently_certified"])
+    def test_unified_xcp_identity(self):
+        with patch.object(bridge,"upstream",return_value=(200,{"data":{"asset":"XCP"}})):
+            code,value=bridge.dispatch("/v1/intelligence/counterparty/XCP")
+        self.assertEqual(code,200)
+        self.assertTrue(value["identity_match"])
+        self.assertFalse(value["verified"])
     def test_unknown_route(self):
         self.assertEqual(bridge.dispatch("/v1/bitcoin/tx/not-a-transaction")[0],404)
     def test_no_upstream(self):
