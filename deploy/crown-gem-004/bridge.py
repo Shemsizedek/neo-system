@@ -5,6 +5,8 @@ import json
 import os
 import re
 import socket
+import time
+import threading
 import urllib.error
 import urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -14,6 +16,20 @@ TX = re.compile(r"^[0-9a-fA-F]{64}$")
 ASSET = re.compile(r"^[A-Z][A-Z0-9.]{0,31}$")
 ADDRESS = re.compile(r"^[A-Za-z0-9]{14,90}$")
 LIMIT = 512000
+RATE_LOCK = threading.Lock()
+RATE_STATE = {}
+
+def rate_allowed(peer, now=None):
+    now = time.monotonic() if now is None else now
+    with RATE_LOCK:
+        start, count = RATE_STATE.get(peer, (now, 0))
+        if now - start >= 60:
+            start, count = now, 0
+        if count >= 30:
+            return False
+        RATE_STATE[peer] = (start, count + 1)
+        return True
+
 
 class DenyRedirect(urllib.request.HTTPRedirectHandler):
     def redirect_request(self, *args):
@@ -95,6 +111,8 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(payload)
     def do_GET(self):
+        if not rate_allowed(self.client_address[0]):
+            return self.respond(429, {"error":"rate limited"})
         token=os.environ.get("CROWN_BRIDGE_TOKEN","")
         if len(token)<32:
             return self.respond(503,{"error":"authentication not configured"})
@@ -108,6 +126,8 @@ class Handler(BaseHTTPRequestHandler):
             status,data=503,{"error":"invalid upstream configuration"}
         return self.respond(status,data)
     def do_POST(self):
+        if not rate_allowed(self.client_address[0]):
+            return self.respond(429, {"error":"rate limited"})
         token=os.environ.get("CROWN_BRIDGE_TOKEN","")
         if len(token)<32:
             return self.respond(503,{"error":"authentication not configured"})
