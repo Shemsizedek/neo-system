@@ -116,4 +116,7 @@ if __name__=="__main__":
         from verify_gemini import verify
         outcome = verify()
         print("CROWN_GEMINI_AUTH_CHECK " + json.dumps(outcome), flush=True)
+    if os.environ.get("CROWN_PROBE_GEMINI_ON_BOOT") == "1":
+        from probe_gemini import probe
+        print("CROWN_GEMINI_GENERATION_CHECK " + json.dumps(probe()), flush=True)
     ThreadingHTTPServer(("0.0.0.0",int(os.environ.get("PORT","8080"))),Handler).serve_forever()
