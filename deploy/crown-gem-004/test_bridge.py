@@ -48,6 +48,17 @@ class BridgeTests(unittest.TestCase):
         self.assertFalse(bridge.rate_allowed("test-peer", now=10.0))
         self.assertTrue(bridge.rate_allowed("test-peer", now=71.0))
 
+    def test_http_rate_limit_returns_429(self):
+        from types import SimpleNamespace
+        responses=[]
+        stub=SimpleNamespace(client_address=("rate-test",1234),respond=lambda code,value:responses.append((code,value)))
+        with bridge.RATE_LOCK:
+            bridge.RATE_STATE.clear()
+        for _ in range(30):
+            self.assertTrue(bridge.rate_allowed("rate-test",now=bridge.time.monotonic()))
+        bridge.Handler.do_GET(stub)
+        self.assertEqual(responses[0][0],429)
+
     def test_unknown_route(self):
         self.assertEqual(bridge.dispatch("/v1/bitcoin/tx/not-a-transaction")[0],404)
     def test_no_upstream(self):
