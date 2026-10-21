@@ -19,6 +19,12 @@ class BridgeTests(unittest.TestCase):
             self.assertTrue(data["gemini_key_present"])
             self.assertFalse(data["gemini_execution_enabled"])
             self.assertNotIn("test-placeholder-do-not-use", str(data))
+    def test_gemini_verification_route_is_restricted(self):
+        import inspect
+        code=inspect.getsource(bridge.Handler.do_POST)
+        self.assertIn('/v1/gemini/verify',code)
+        self.assertIn('compare_digest',code)
+        self.assertIn('request body prohibited',code)
     def test_unknown_route(self):
         self.assertEqual(bridge.dispatch("/v1/bitcoin/tx/not-a-transaction")[0],404)
     def test_no_upstream(self):
