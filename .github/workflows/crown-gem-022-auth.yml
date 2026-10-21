@@ -1,0 +1,37 @@
+name: Crown Gemini Authentication Check
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    environment: crown-staging
+    timeout-minutes: 5
+    steps:
+      - name: Verify Gemini credential through protected NEO Crown bridge
+        env:
+          CROWN_BRIDGE_URL: ${{ vars.CROWN_BRIDGE_URL }}
+          CROWN_BRIDGE_TOKEN: ${{ secrets.CROWN_BRIDGE_TOKEN }}
+        run: |
+          python - <<'PY'
+          import json, os, sys, urllib.request, urllib.error
+          base=os.getenv("CROWN_BRIDGE_URL","").rstrip("/")
+          token=os.getenv("CROWN_BRIDGE_TOKEN","")
+          if not base.startswith("https://") or len(token)<32:
+              print("BLOCKED: staging endpoint or bridge credential missing")
+              sys.exit(2)
+          request=urllib.request.Request(base+"/v1/gemini/verify",data=b"",method="POST",headers={"Authorization":"Bearer "+token,"Accept":"application/json"})
+          try:
+              with urllib.request.urlopen(request,timeout=25) as response:
+                  data=json.load(response)
+                  print("Gemini authentication:",data.get("status","unknown"))
+                  print("Models returned:",data.get("models_returned","unknown"))
+                  sys.exit(0 if data.get("ok") is True and data.get("status")=="authenticated" else 1)
+          except urllib.error.HTTPError as e:
+              print("Verification failed with HTTP status",e.code)
+              sys.exit(1)
+          except (OSError,ValueError):
+              print("Verification request failed")
+              sys.exit(1)
+          PY
