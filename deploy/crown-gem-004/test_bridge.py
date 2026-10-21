@@ -77,6 +77,11 @@ class BridgeTests(unittest.TestCase):
             with patch.object(bridge,"rate_allowed",return_value=True) as local:
                 self.assertTrue(bridge.quota_allowed("synthetic-peer"))
                 local.assert_called_once_with("synthetic-peer")
+    def test_quota_readiness_refuses_missing_private_url(self):
+        with patch.dict("os.environ", {}, clear=True):
+            code, value = bridge.dispatch("/v1/security/quota-readiness")
+        self.assertEqual(code,503)
+        self.assertEqual(value["reason"],"private_url_missing")
     def test_unknown_route(self):
         self.assertEqual(bridge.dispatch("/v1/bitcoin/tx/not-a-transaction")[0],404)
     def test_no_upstream(self):
