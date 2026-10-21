@@ -23,7 +23,7 @@ class RuntimeTests(unittest.TestCase):
         self.assertEqual(gen.call_count,2)
         bridge.assert_called_once_with("neo_crown_counterparty_asset",{"asset":"XCP"})
     def test_unapproved_call_fails_closed(self):
-        initial={"candidates":[{"content":{"role":"model","parts":[{"functionCall":{"name":"send_bitcoin","args":{}}]}}]}
+        initial={"candidates":[{"content":{"role":"model","parts":[{"functionCall":{"name":"send_bitcoin","args":{}}}]}}]}
         with patch.object(runtime,"generate",return_value=initial), patch.object(runtime,"call_crown_tool") as bridge:
             with self.assertRaises(RuntimeError):
                 runtime.run("Send bitcoin")
