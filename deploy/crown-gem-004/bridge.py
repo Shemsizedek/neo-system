@@ -88,7 +88,19 @@ class Handler(BaseHTTPRequestHandler):
         except ValueError:
             status,data=503,{"error":"invalid upstream configuration"}
         return self.respond(status,data)
-    def do_POST(self): self.respond(405,{"error":"read-only"})
+    def do_POST(self):
+        token=os.environ.get("CROWN_BRIDGE_TOKEN","")
+        if len(token)<32:
+            return self.respond(503,{"error":"authentication not configured"})
+        if not hmac.compare_digest(self.headers.get("Authorization",""),"Bearer "+token):
+            return self.respond(401,{"error":"unauthorized"})
+        if self.path != "/v1/gemini/verify":
+            return self.respond(405,{"error":"read-only"})
+        if self.headers.get("Content-Length","0") not in ("","0"):
+            return self.respond(400,{"error":"request body prohibited"})
+        from verify_gemini import verify
+        result=verify()
+        return self.respond(200 if result.get("ok") else 502,result)
     do_PUT=do_POST
     do_PATCH=do_POST
     do_DELETE=do_POST
