@@ -69,6 +69,14 @@ class BridgeTests(unittest.TestCase):
             self.assertEqual(len(bridge.RATE_STATE),1)
             bridge.RATE_STATE.clear()
 
+    def test_shared_quota_missing_url_fails_closed(self):
+        with patch.dict("os.environ", {"CROWN_SHARED_QUOTA_ENABLED":"1","CROWN_VALKEY_URL":""},clear=True):
+            self.assertFalse(bridge.quota_allowed("synthetic-peer"))
+    def test_disabled_shared_quota_uses_local_staging_limiter(self):
+        with patch.dict("os.environ", {"CROWN_SHARED_QUOTA_ENABLED":"0"},clear=True):
+            with patch.object(bridge,"rate_allowed",return_value=True) as local:
+                self.assertTrue(bridge.quota_allowed("synthetic-peer"))
+                local.assert_called_once_with("synthetic-peer")
     def test_unknown_route(self):
         self.assertEqual(bridge.dispatch("/v1/bitcoin/tx/not-a-transaction")[0],404)
     def test_no_upstream(self):
