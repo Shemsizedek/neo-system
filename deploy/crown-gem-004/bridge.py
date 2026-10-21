@@ -54,6 +54,25 @@ def upstream(env, route):
 def dispatch(path):
     if path == "/health":
         return 200, {"service":"neo-crown-gem","mode":"read-only","gemini_key_present":bool(os.getenv("GEMINI_API_KEY")), "gemini_execution_enabled":False,"configured":{k:bool(os.getenv(k)) for k in ("BITCOIN_API_BASE","COUNTERPARTY_API_BASE","CROWN_API_BASE")}}
+    # Unified public-evidence interface; downstream API records are not independent certification.
+    if path.startswith("/v1/intelligence/"):
+        parts=path.split("/")
+        if len(parts)!=5:
+            return 404, {"error":"not found"}
+        kind, identifier=parts[3],parts[4]
+        if kind=="bitcoin" and TX.fullmatch(identifier):
+            code, result=upstream("BITCOIN_API_BASE","/tx/"+identifier)
+            record=result.get("data")
+            matches=code==200 and isinstance(record,dict) and record.get("txid","").lower()==identifier.lower()
+        elif kind=="counterparty" and ASSET.fullmatch(identifier):
+            code, result=upstream("COUNTERPARTY_API_BASE","/assets/"+identifier)
+            record=result.get("data")
+            matches=code==200 and (isinstance(record,dict) and (record.get("asset")==identifier or isinstance(record.get("result"),dict) and record["result"].get("asset")==identifier) or isinstance(record,list) and any(isinstance(v,dict) and v.get("asset")==identifier for v in record))
+        else:
+            return 400, {"error":"invalid identifier or network"}
+        if code!=200:
+            return code, {"ok":False,"source":kind,"verified":False,"error":result.get("error","upstream unavailable")}
+        return 200, {"ok":matches,"source":kind,"requested_identifier":identifier,"identity_match":matches,"independently_certified":False,"verified":False,"data":record}
     chunks=path.split("/")
     if len(chunks)==5 and chunks[:4]==["","v1","bitcoin","tx"] and TX.fullmatch(chunks[4]):
         return upstream("BITCOIN_API_BASE","/tx/"+chunks[4])
