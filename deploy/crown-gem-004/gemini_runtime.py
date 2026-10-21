@@ -53,7 +53,10 @@ def run(prompt):
             raise RuntimeError("Unapproved function call")
         names.append(name)
         result=call_crown_tool(name,call.get("args",{}))
-        responses.append({"functionResponse":{"name":name,"response":{"result":result}}})
+        response={"name":name,"response":{"result":result}}
+        if call.get("id"):
+            response["id"]=call["id"]
+        responses.append({"functionResponse":response})
     contents.append({"role":"user","parts":responses})
     final=generate(contents,tools=False)
     return {"used_tools":names,"response":(final.get("candidates") or [{}])[0].get("content",{}),"certified":False}
