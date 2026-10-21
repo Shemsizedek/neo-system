@@ -136,7 +136,7 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(payload)
     def do_GET(self):
-        if getattr(self,"path","") == "/gemini":
+        if getattr(self,"path","").split("?",1)[0] == "/gemini":
             from gemini_private_web import get
             return get(self)
         if not quota_allowed(self.client_address[0]):
