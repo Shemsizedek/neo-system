@@ -233,4 +233,11 @@ if __name__=="__main__":
     if os.environ.get("CROWN_VALKEY_PREFLIGHT_ON_BOOT") == "1":
         from valkey_preflight import check
         print("CROWN_VALKEY_PREFLIGHT " + json.dumps(check()), flush=True)
-    ThreadingHTTPServer(("0.0.0.0",int(os.environ.get("PORT","8080"))),Handler).serve_forever()
+    server=ThreadingHTTPServer(("0.0.0.0",int(os.environ.get("PORT","8080"))),Handler)
+    if os.environ.get("CROWN_GEMINI_POSTSTART_DIAGNOSTIC") == "1":
+        def poststart_diagnostic():
+            time.sleep(2)
+            from gemini_diagnostic import main
+            main()
+        threading.Thread(target=poststart_diagnostic,daemon=True,name="gemini-one-shot-diagnostic").start()
+    server.serve_forever()
