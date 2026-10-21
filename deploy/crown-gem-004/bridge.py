@@ -174,4 +174,15 @@ if __name__=="__main__":
             print("CROWN_GEMINI_BTC_CHECK " + json.dumps({"tool_called":"neo_crown_bitcoin_transaction" in names}), flush=True)
         except Exception as err:
             print("CROWN_GEMINI_BTC_CHECK " + json.dumps({"ok":False,"error_type":type(err).__name__}), flush=True)
+    if os.environ.get("CROWN_UNIFIED_SMOKE_ON_BOOT") == "1":
+        samples = [
+            ("bitcoin", "4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b"),
+            ("counterparty", "XCP"),
+        ]
+        for network, identifier in samples:
+            try:
+                code, outcome = dispatch("/v1/intelligence/" + network + "/" + identifier)
+                print("CROWN_UNIFIED_SMOKE " + json.dumps({"network":network,"http_status":code,"identity_match":outcome.get("identity_match") is True,"independently_certified":outcome.get("independently_certified") is True}), flush=True)
+            except (ValueError, OSError):
+                print("CROWN_UNIFIED_SMOKE " + json.dumps({"network":network,"status":"network_or_configuration_error"}), flush=True)
     ThreadingHTTPServer(("0.0.0.0",int(os.environ.get("PORT","8080"))),Handler).serve_forever()
