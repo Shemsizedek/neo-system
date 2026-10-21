@@ -38,5 +38,18 @@ footer{padding:32px 22px;background:#092f23;color:#e8f2eb;text-align:center}foot
 <footer><strong>NEO Shop · House of Negus</strong><div class="small"><a href="https://holytemples.org">World Temple</a><a href="https://holytemples.org/contact/">Contact</a><a href="https://neo.holytemples.org">NEO</a></div></footer>
 <script>
 window.spread_shop_config={shopName:'Shemsizedek',locale:'us_US',prefix:'https://Shemsizedek.myspreadshop.com',baseId:'myShop'};
-(function(){const status=document.getElementById('shopStatus');const script=document.createElement('script');script.src='https://Shemsizedek.myspreadshop.com/js/shopclient.nocache.js';script.async=true;script.onload=()=>{status.textContent='';setTimeout(()=>{const panel=document.getElementById('myShop');if(panel && !panel.querySelector('iframe,article,[class*=product],a[href*=product]'))status.textContent='If the collection does not appear, use the catalog link inside this section.';},9000);};script.onerror=()=>{status.textContent='Catalog is temporarily unavailable. You can use the merchandise catalog link above.';};document.body.appendChild(script);})();
+(function(){
+ const status=document.getElementById('shopStatus');
+ const host=document.getElementById('myShop');
+ const link='<a href="https://Shemsizedek.myspreadshop.com" rel="noopener noreferrer">Open the merchandise catalog ↗</a>';
+ const fallback=(msg)=>{if(status)status.textContent=msg;if(host&&!host.querySelector('a[href]'))host.insertAdjacentHTML('beforeend',link);};
+ const hasProducts=()=>host&&!!host.querySelector('iframe,article,[class*=product],a[href*=product],a[href*=article]');
+ const script=document.createElement('script');
+ script.src='https://Shemsizedek.myspreadshop.com/js/shopclient.nocache.js';
+ script.async=true;
+ script.onload=()=>{if(status)status.textContent='';setTimeout(()=>{if(!hasProducts())fallback('The collection is not visible yet. Open the merchandise catalog using the link below.');},10000);};
+ script.onerror=()=>fallback('The embedded collection is unavailable. Use the direct catalog link below.');
+ document.body.appendChild(script);
+ setTimeout(()=>{if(status&&status.textContent.includes('Loading'))fallback('The collection is taking longer than expected. Use the direct catalog link below.');},15000);
+})();
 </script></body></html>
