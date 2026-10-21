@@ -94,6 +94,12 @@ class Handler(BaseHTTPRequestHandler):
             return self.respond(503,{"error":"authentication not configured"})
         if not hmac.compare_digest(self.headers.get("Authorization",""),"Bearer "+token):
             return self.respond(401,{"error":"unauthorized"})
+        if self.path == "/v1/gemini/probe":
+            if self.headers.get("Content-Length","0") not in ("","0"):
+                return self.respond(400,{"error":"request body prohibited"})
+            from probe_gemini import probe
+            outcome=probe()
+            return self.respond(200 if outcome.get("ok") else 502,outcome)
         if self.path != "/v1/gemini/verify":
             return self.respond(405,{"error":"read-only"})
         if self.headers.get("Content-Length","0") not in ("","0"):
