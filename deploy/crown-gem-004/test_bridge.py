@@ -59,6 +59,16 @@ class BridgeTests(unittest.TestCase):
         bridge.Handler.do_GET(stub)
         self.assertEqual(responses[0][0],429)
 
+    def test_rate_limit_memory_capacity_and_expiry(self):
+        with bridge.RATE_LOCK:
+            bridge.RATE_STATE.clear()
+            bridge.RATE_STATE.update({str(i):(10.0,1) for i in range(4096)})
+        self.assertFalse(bridge.rate_allowed("new-peer",now=20.0))
+        self.assertTrue(bridge.rate_allowed("new-peer",now=71.0))
+        with bridge.RATE_LOCK:
+            self.assertEqual(len(bridge.RATE_STATE),1)
+            bridge.RATE_STATE.clear()
+
     def test_unknown_route(self):
         self.assertEqual(bridge.dispatch("/v1/bitcoin/tx/not-a-transaction")[0],404)
     def test_no_upstream(self):
