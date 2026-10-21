@@ -21,9 +21,12 @@ if len(txid)==64 and all(c in "0123456789abcdefABCDEF" for c in txid):
     ok=status==200 and isinstance(result,dict) and result.get("txid","").lower()==txid.lower()
     print("bitcoin",status,"transaction_match",ok)
     if not ok:sys.exit(1)
-else:print("bitcoin SKIPPED - sample transaction missing")
+else:
+    print("BLOCKED: valid Bitcoin sample transaction required"); sys.exit(2)
 if asset and asset.replace(".","").isalnum():
     status,data=read("/v1/counterparty/asset/"+asset)
     print("counterparty",status,"returned_json",isinstance(data.get("data"),(dict,list)))
-    if status!=200:sys.exit(1)
-else:print("counterparty SKIPPED - asset missing")
+    if status!=200 or not isinstance(data.get("data"), (dict,list)):
+        sys.exit(1)
+else:
+    print("BLOCKED: valid Counterparty sample asset required"); sys.exit(2)
