@@ -8,8 +8,8 @@ def probe():
     key = os.environ.get("GEMINI_API_KEY", "")
     if not key:
         return {"ok": False, "status": "missing_credential"}
-    model = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
-    if model not in {"gemini-2.5-flash", "gemini-2.5-flash-lite"}:
+    model = os.environ.get("GEMINI_MODEL", "gemini-3.5-flash-lite")
+    if model not in {"gemini-3.5-flash-lite", "gemini-3.8-flash"}:
         return {"ok": False, "status": "unsupported_model"}
     payload = json.dumps({"contents": [{"parts": [{"text": "Reply with READY."}]}],
                           "generationConfig": {"maxOutputTokens": 24}}).encode()
