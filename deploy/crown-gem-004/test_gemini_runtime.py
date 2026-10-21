@@ -20,6 +20,8 @@ class RuntimeTests(unittest.TestCase):
             result=runtime.run("Lookup XCP")
         self.assertEqual(result["used_tools"],["neo_crown_counterparty_asset"])
         self.assertFalse(result["certified"])
+        self.assertTrue(result["tool_evidence"][0]["asset_identity_match"])
+        self.assertFalse(result["tool_evidence"][0]["independent_verification"])
         self.assertEqual(gen.call_count,2)
         bridge.assert_called_once_with("neo_crown_counterparty_asset",{"asset":"XCP"})
     def test_unapproved_call_fails_closed(self):
