@@ -29,5 +29,13 @@ class RuntimeTests(unittest.TestCase):
                 runtime.run("Send bitcoin")
             bridge.assert_not_called()
 
+    def test_function_call_id_is_preserved(self):
+        initial={"candidates":[{"content":{"role":"model","parts":[{"functionCall":{"id":"call-123","name":"neo_crown_counterparty_asset","args":{"asset":"XCP"}}}]}}]}
+        final={"candidates":[{"content":{"role":"model","parts":[{"text":"Done"}]}}]}
+        with patch.object(runtime,"generate",side_effect=[initial,final]) as gen, patch.object(runtime,"call_crown_tool",return_value={"verified":False,"data":{"asset":"XCP"}}):
+            runtime.run("Lookup XCP")
+        sent=gen.call_args_list[1].args[0]
+        self.assertEqual(sent[-1]["parts"][0]["functionResponse"]["id"],"call-123")
+
 if __name__=="__main__":
     unittest.main()
