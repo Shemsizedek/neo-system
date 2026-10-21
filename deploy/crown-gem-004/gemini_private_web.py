@@ -39,9 +39,12 @@ $('send').onclick=async()=>{const btn=$('send');btn.disabled=true;status.textCon
 $('logout').onclick=async()=>{await api('/gemini/logout',{}).catch(()=>{});$('login').hidden=false;$('chat').hidden=true;$('answer').textContent='';status.textContent='Signed out'};
 </script></html>'''
 def get(handler):
-    if not configured():return handler.respond(503,{"error":"private chat is not configured"})
-    body=HTML.replace("__NEO_GOOGLE_CLIENT_ID__",html.escape(os.environ["NEO_GEM_GOOGLE_CLIENT_ID"],quote=True)).encode()
-    handler.send_response(200)
+    ready=configured()
+    if ready:
+        body=HTML.replace("__NEO_GOOGLE_CLIENT_ID__",html.escape(os.environ["NEO_GEM_GOOGLE_CLIENT_ID"],quote=True)).encode()
+    else:
+        body=b'<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>NEO Gemini Setup</title><style>body{font:16px system-ui;background:#091711;color:#e8f5ec;max-width:650px;margin:48px auto;padding:20px}p{line-height:1.65;color:#b9d6c2}</style><h1>NEO Gemini</h1><p>Google sign-in is not configured for this site yet. Configure the authorized Google OAuth client ID and account identity in the private server settings. Do not enter your Google password here.</p></html>'
+    handler.send_response(200 if ready else 503)
     handler.send_header("Content-Type","text/html; charset=utf-8")
     handler.send_header("Cache-Control","no-store")
     handler.send_header("Content-Security-Policy","default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline' https://accounts.google.com; frame-src https://accounts.google.com; connect-src 'self' https://accounts.google.com; base-uri 'none'; form-action 'none'; frame-ancestors 'none'")
