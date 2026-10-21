@@ -2,7 +2,7 @@
 const api='https://api.counterparty.io:4000/v2';
 const btc='https://mempool.space/api';
 const $=id=>document.getElementById(id);
-async function read(url){const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),7500);try{const r=await fetch(url,{headers:{accept:'application/json'},signal:ctrl.signal});if(!r.ok)throw Error('Provider HTTP '+r.status);return await r.json()}finally{clearTimeout(timer)}}
+async function read(url){const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),7500);try{const r=await fetch(url,{headers:{accept:'application/json'},signal:ctrl.signal});if(!r.ok)throw Error('Provider HTTP '+r.status);const type=r.headers.get('content-type')||'';return type.includes('json')?await r.json():await r.text()}finally{clearTimeout(timer)}}
 function line(parent,title,value){const dt=document.createElement('dt'),dd=document.createElement('dd');dt.textContent=title;dd.textContent=value??'Unavailable';parent.append(dt,dd)}
 async function lookup(){
 const input=$('crownAssetInput'),target=$('crownLiveResult');
