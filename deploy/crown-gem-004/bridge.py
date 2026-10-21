@@ -147,4 +147,12 @@ if __name__=="__main__":
         payload = record.get("data")
         ok = status == 200 and isinstance(payload, dict) and payload.get("txid", "").lower() == sample
         print("CROWN_BTC_SMOKE " + json.dumps({"http_status":status, "txid_match":ok}), flush=True)
+    if os.environ.get("CROWN_GEMINI_BTC_ON_BOOT") == "1":
+        try:
+            from gemini_runtime import run
+            out = run("Use neo_crown_bitcoin_transaction to retrieve Bitcoin transaction 4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b.")
+            names = out.get("used_tools", [])
+            print("CROWN_GEMINI_BTC_CHECK " + json.dumps({"tool_called":"neo_crown_bitcoin_transaction" in names}), flush=True)
+        except Exception as err:
+            print("CROWN_GEMINI_BTC_CHECK " + json.dumps({"ok":False,"error_type":type(err).__name__}), flush=True)
     ThreadingHTTPServer(("0.0.0.0",int(os.environ.get("PORT","8080"))),Handler).serve_forever()
