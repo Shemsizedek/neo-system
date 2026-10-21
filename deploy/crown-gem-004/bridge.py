@@ -125,9 +125,8 @@ def dispatch(path):
 
 class Handler(BaseHTTPRequestHandler):
     def respond(self,status,value):
-        route = self.path.split("?",1)[0]
-        safe_route = "/".join(route.split("/")[:4])
-        print(json.dumps({"event":"crown_request","method":self.command,"route_family":safe_route,"http_status":status,"time":int(time.time())}),flush=True)
+        from audit_event import serialized
+        print(serialized(self.command, self.path, status), flush=True)
         payload=json.dumps(value).encode()
         self.send_response(status)
         self.send_header("Content-Type","application/json")
