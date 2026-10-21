@@ -231,4 +231,7 @@ if __name__=="__main__":
                 print("CROWN_UNIFIED_SMOKE " + json.dumps({"network":network,"http_status":code,"identity_match":outcome.get("identity_match") is True,"independently_certified":outcome.get("independently_certified") is True}), flush=True)
             except (ValueError, OSError):
                 print("CROWN_UNIFIED_SMOKE " + json.dumps({"network":network,"status":"network_or_configuration_error"}), flush=True)
+    if os.environ.get("CROWN_VALKEY_PREFLIGHT_ON_BOOT") == "1":
+        from valkey_preflight import check
+        print("CROWN_VALKEY_PREFLIGHT " + json.dumps(check()), flush=True)
     ThreadingHTTPServer(("0.0.0.0",int(os.environ.get("PORT","8080"))),Handler).serve_forever()
