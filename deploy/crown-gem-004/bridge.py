@@ -22,9 +22,13 @@ RATE_STATE = {}
 def rate_allowed(peer, now=None):
     now = time.monotonic() if now is None else now
     with RATE_LOCK:
+        # Bound memory under many distinct clients. Deny new peers at capacity.
+        expired = [key for key, value in RATE_STATE.items() if now - value[0] >= 60]
+        for key in expired:
+            del RATE_STATE[key]
+        if peer not in RATE_STATE and len(RATE_STATE) >= 4096:
+            return False
         start, count = RATE_STATE.get(peer, (now, 0))
-        if now - start >= 60:
-            start, count = now, 0
         if count >= 30:
             return False
         RATE_STATE[peer] = (start, count + 1)
