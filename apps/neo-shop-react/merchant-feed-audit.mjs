@@ -21,6 +21,9 @@ const rows=parseCSV(raw),head=(rows.shift()||[]).map(v=>v.trim().toLowerCase().r
 const pos=(...keys)=>keys.map(k=>head.indexOf(k)).find(i=>i>=0)??-1;
 const cols={id:pos('id','offer_id','product_id'),link:pos('link','product_link','url'),price:pos('price'),availability:pos('availability'),title:pos('title'),image:pos('image_link')};
 const findings=[],ids=new Map();let checked=0;
+const missing_columns=Object.entries(cols).filter(([,idx])=>idx<0).map(([name])=>name);
+if(missing_columns.length)console.error('Feed schema incomplete: missing columns '+missing_columns.join(', '));
+const hostname_counts={};
 for(const [idx,row] of rows.entries()){const n=idx+2;checked++;
  const val=k=>cols[k]<0?'':(row[cols[k]]||'').trim();
  if(!val('id'))findings.push([n,'missing_id']);
@@ -29,6 +32,9 @@ for(const [idx,row] of rows.entries()){const n=idx+2;checked++;
  if(!val('title'))findings.push([n,'missing_title']);
  const link=val('link');if(!link)findings.push([n,'missing_link']);else {
   try{const u=new URL(link);if(u.protocol!=='https:')findings.push([n,'non_https_link']);
+   hostname_counts[u.hostname]=(hostname_counts[u.hostname]||0)+1;
+   if(u.hostname==='shop.holytemples.org'&&u.pathname==='/'&&!u.hash.includes('!/'))findings.push([n,'not_distinct_product_destination']);
+   if(u.hostname.endsWith('.myspreadshop.com'))findings.push([n,'external_shop_domain_verify_claimed_website',u.hostname]);
    if(u.hash.startsWith('#!'))findings.push([n,'hash_routed_product_link']);
    if(u.pathname==='/'&&!u.search&&!u.hash)findings.push([n,'homepage_instead_of_product_link']);
   }catch{findings.push([n,'invalid_link'])}
@@ -38,4 +44,5 @@ for(const [idx,row] of rows.entries()){const n=idx+2;checked++;
  else if(!/^\d+(\.\d{1,2})?\s+[A-Z]{3}$/.test(val('price')))findings.push([n,'check_price_format',val('price')]);
  if(!val('availability'))findings.push([n,'missing_availability']);
 }
-console.log(JSON.stringify({rows_checked:checked,available_columns:cols,issue_counts:Object.fromEntries([...new Set(findings.map(x=>x[1]))].map(k=>[k,findings.filter(x=>x[1]===k).length])),sample_findings:findings.slice(0,100),note:'Offline syntax and completeness checks only. Does not confirm product reachability, Google policy status, checkout, or seller identity.'},null,2));
+if(missing_columns.length)process.exitCode=1;
+console.log(JSON.stringify({rows_checked:checked,available_columns:cols,missing_columns,landing_hosts:hostname_counts,issue_counts:Object.fromEntries([...new Set(findings.map(x=>x[1]))].map(k=>[k,findings.filter(x=>x[1]===k).length])),sample_findings:findings.slice(0,100),note:'Offline syntax and completeness checks only. Does not confirm product reachability, Google policy status, checkout, or seller identity.'},null,2));
