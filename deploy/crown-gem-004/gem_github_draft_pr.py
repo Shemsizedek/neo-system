@@ -16,8 +16,8 @@ def validated_request(repository,head,base,title,approved):
         raise ValueError("head branch must be dedicated to Gemini review")
     if not isinstance(title,str) or not 1<=len(title.strip())<=120:
         raise ValueError("invalid PR title")
-    if approved is not True:
-        raise PermissionError("explicit draft PR creation approval required")
+    # Caller-provided approval booleans are never an authorization credential.
+    raise PermissionError("draft PR writes require a separate authenticated approval service")
     return {"title":title.strip(),"head":head,"base":base,"draft":True,
             "maintainer_can_modify":False}
 
