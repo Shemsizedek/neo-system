@@ -141,4 +141,10 @@ if __name__=="__main__":
             print("CROWN_GEMINI_TOOL_CHECK " + json.dumps({"ok":"neo_crown_counterparty_asset" in names,"tool_called":"neo_crown_counterparty_asset" in names}), flush=True)
         except Exception as error:
             print("CROWN_GEMINI_TOOL_CHECK " + json.dumps({"ok":False,"error_type":type(error).__name__}), flush=True)
+    if os.environ.get("CROWN_BTC_SMOKE_ON_BOOT") == "1":
+        sample = "4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b"
+        status, record = dispatch("/v1/bitcoin/tx/" + sample)
+        payload = record.get("data")
+        ok = status == 200 and isinstance(payload, dict) and payload.get("txid", "").lower() == sample
+        print("CROWN_BTC_SMOKE " + json.dumps({"http_status":status, "txid_match":ok}), flush=True)
     ThreadingHTTPServer(("0.0.0.0",int(os.environ.get("PORT","8080"))),Handler).serve_forever()
