@@ -133,4 +133,12 @@ if __name__=="__main__":
             print("CROWN_XCP_LOOKUP_CHECK " + json.dumps({"http_status":status, "asset_identity_verified":bool(status == 200 and matches)}), flush=True)
         except (ValueError, OSError) as error:
             print("CROWN_XCP_LOOKUP_CHECK " + json.dumps({"ok":False,"status":"upstream_config_or_network_error"}), flush=True)
+    if os.environ.get("CROWN_GEMINI_TOOL_ON_BOOT") == "1":
+        try:
+            from gemini_runtime import run
+            result = run("Use the neo_crown_counterparty_asset tool to look up XCP. Do not guess.")
+            names = result.get("used_tools", [])
+            print("CROWN_GEMINI_TOOL_CHECK " + json.dumps({"ok":"neo_crown_counterparty_asset" in names,"tool_called":"neo_crown_counterparty_asset" in names}), flush=True)
+        except Exception as error:
+            print("CROWN_GEMINI_TOOL_CHECK " + json.dumps({"ok":False,"error_type":type(error).__name__}), flush=True)
     ThreadingHTTPServer(("0.0.0.0",int(os.environ.get("PORT","8080"))),Handler).serve_forever()
