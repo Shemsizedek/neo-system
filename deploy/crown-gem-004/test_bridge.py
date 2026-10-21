@@ -27,4 +27,12 @@ class BridgeTests(unittest.TestCase):
                 bridge.base_url("BITCOIN_API_BASE")
     def test_no_redirect(self):
         self.assertIsNone(bridge.DenyRedirect().redirect_request(None,None,302,"",None,"https://example.org"))
+
+    def test_counterparty_port_requires_exact_host(self):
+        from unittest.mock import patch
+        public_dns=[(None,None,None,None,("1.1.1.1",4000))]
+        with patch.dict("os.environ",{"COUNTERPARTY_API_BASE":"https://api.counterparty.io:4000/v2","CROWN_ALLOWED_HOSTS":"api.counterparty.io"},clear=True),patch.object(bridge.socket,"getaddrinfo",return_value=public_dns):
+            self.assertEqual(bridge.base_url("COUNTERPARTY_API_BASE"),"https://api.counterparty.io:4000/v2")
+        with patch.dict("os.environ",{"COUNTERPARTY_API_BASE":"https://evil.example:4000/v2","CROWN_ALLOWED_HOSTS":"evil.example"},clear=True):
+            with self.assertRaises(ValueError): bridge.base_url("COUNTERPARTY_API_BASE")
 if __name__=="__main__": unittest.main()
