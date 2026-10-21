@@ -12,6 +12,13 @@ class BridgeTests(unittest.TestCase):
         status, data = bridge.dispatch("/health")
         self.assertEqual(status,200)
         self.assertEqual(data["mode"],"read-only")
+    def test_gemini_secret_readiness_does_not_disclose_key(self):
+        with patch.dict("os.environ", {"GEMINI_API_KEY":"test-placeholder-do-not-use"}, clear=True):
+            status, data = bridge.dispatch("/health")
+            self.assertEqual(status, 200)
+            self.assertTrue(data["gemini_key_present"])
+            self.assertFalse(data["gemini_execution_enabled"])
+            self.assertNotIn("test-placeholder-do-not-use", str(data))
     def test_unknown_route(self):
         self.assertEqual(bridge.dispatch("/v1/bitcoin/tx/not-a-transaction")[0],404)
     def test_no_upstream(self):
