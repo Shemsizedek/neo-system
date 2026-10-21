@@ -30,6 +30,20 @@ def payload(handler,maxsize=4096):
     return out
 HTML='''<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>NEO Gemini Private Chat</title><meta name="google-signin-client-id" content="__NEO_GOOGLE_CLIENT_ID__"><style>body{font:16px system-ui;background:#091711;color:#e8f5ec;max-width:740px;margin:30px auto;padding:20px}input,textarea,button{font:inherit;padding:12px;border-radius:8px;border:1px solid #597565;background:#15281e;color:inherit}textarea{display:block;width:100%;box-sizing:border-box;min-height:90px}button{cursor:pointer;margin:10px 0}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#14271d;border-radius:10px;padding:20px}label{display:block;margin-top:20px}</style><h1>NEO Gemini</h1><p>Private, read-only Gemini Developer API assistant for NEO data.</p><section id="login"><div id="googleSignIn"></div></section><section id="chat" hidden><label>Ask Gemini<textarea id="prompt" maxlength="2000"></textarea></label><button id="send">Send</button><button id="logout">Sign out</button><pre id="answer" aria-live="polite"></pre></section><p id="status" role="status"></p><script>
 const $=id=>document.getElementById(id),status=$('status');
+// A Gem may prepare #prompt=<URL-encoded text>; fragments are not sent to the gateway.
+// Never automatically execute handoff text. User must press Send after signing in.
+function loadHandoff(){
+ const fragment=location.hash.slice(1);
+ if(!fragment||fragment.length>6500)return;
+ const params=new URLSearchParams(fragment);
+ const draft=params.get('prompt');
+ if(typeof draft==='string'&&draft.length>0&&draft.length<=2000){
+   $('prompt').value=draft;
+   status.textContent='Draft received from Gemini Gem. Review it and press Send.';
+ }
+ history.replaceState(null,'',location.pathname+location.search);
+}
+loadHandoff();
 async function api(path,data){const r=await fetch(path,{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});const result=await r.json();if(!r.ok)throw Error(result.error||'Request unavailable');return result}
 function onGoogleCredential(result){api('/gemini/google',{credential:result.credential}).then(()=>{$('login').hidden=true;$('chat').hidden=false;status.textContent='Signed in with Google'}).catch(e=>status.textContent=e.message)}
 window.onGoogleCredential=onGoogleCredential;
