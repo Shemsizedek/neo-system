@@ -119,4 +119,18 @@ if __name__=="__main__":
     if os.environ.get("CROWN_PROBE_GEMINI_ON_BOOT") == "1":
         from probe_gemini import probe
         print("CROWN_GEMINI_GENERATION_CHECK " + json.dumps(probe()), flush=True)
+    if os.environ.get("CROWN_VERIFY_XCP_ON_BOOT") == "1":
+        try:
+            status, result = dispatch("/v1/counterparty/asset/XCP")
+            record = result.get("data")
+            if isinstance(record, list):
+                matches = any(isinstance(item, dict) and item.get("asset") == "XCP" for item in record)
+            else:
+                matches = isinstance(record, dict) and (
+                    record.get("asset") == "XCP" or
+                    isinstance(record.get("result"), dict) and record["result"].get("asset") == "XCP"
+                )
+            print("CROWN_XCP_LOOKUP_CHECK " + json.dumps({"http_status":status, "asset_identity_verified":bool(status == 200 and matches)}), flush=True)
+        except (ValueError, OSError) as error:
+            print("CROWN_XCP_LOOKUP_CHECK " + json.dumps({"ok":False,"status":"upstream_config_or_network_error"}), flush=True)
     ThreadingHTTPServer(("0.0.0.0",int(os.environ.get("PORT","8080"))),Handler).serve_forever()
