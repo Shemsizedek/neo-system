@@ -164,6 +164,10 @@ class Handler(BaseHTTPRequestHandler):
             from probe_gemini import probe
             outcome=probe()
             return self.respond(200 if outcome.get("ok") else 502,outcome)
+        if self.path == "/v1/gemini/chat":
+            from gemini_chat import handle_chat
+            status,body=handle_chat(self)
+            return self.respond(status,body)
         if self.path != "/v1/gemini/verify":
             return self.respond(405,{"error":"read-only"})
         if self.headers.get("Content-Length","0") not in ("","0"):
