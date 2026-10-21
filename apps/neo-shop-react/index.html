@@ -40,6 +40,20 @@ footer{padding:32px 22px;background:#092f23;color:#e8f2eb;text-align:center}foot
 window.spread_shop_config={shopName:'Shemsizedek',locale:'us_US',prefix:'https://Shemsizedek.myspreadshop.com',baseId:'myShop'};
 (function(){
  const status=document.getElementById('shopStatus');
+ const diagnostics=new URLSearchParams(location.search).get('diagnostics')==='1';
+ let diagnosticBox;
+ function report(phase,message){
+   if(!diagnostics)return;
+   if(!diagnosticBox){
+     diagnosticBox=document.createElement('pre');
+     diagnosticBox.id='shopDiagnostics';diagnosticBox.setAttribute('role','status');
+     diagnosticBox.style.cssText='white-space:pre-wrap;word-break:break-word;background:#0d3225;color:#f0f9f3;padding:18px;border-radius:12px;margin:20px auto;max-width:1100px;font:13px/1.5 monospace';
+     document.querySelector('#collection')?.appendChild(diagnosticBox);
+   }
+   diagnosticBox.textContent += '['+new Date().toISOString()+'] '+phase+': '+message+'\n';
+ }
+ report('document','Static storefront loaded; origin '+location.origin);
+
  const host=document.getElementById('myShop');
  const link='<a href="https://Shemsizedek.myspreadshop.com" rel="noopener noreferrer">Open the merchandise catalog ↗</a>';
  const fallback=(msg)=>{if(status)status.textContent=msg;if(host&&!host.querySelector('a[href]'))host.insertAdjacentHTML('beforeend',link);};
@@ -47,9 +61,9 @@ window.spread_shop_config={shopName:'Shemsizedek',locale:'us_US',prefix:'https:/
  const script=document.createElement('script');
  script.src='https://Shemsizedek.myspreadshop.com/js/shopclient.nocache.js';
  script.async=true;
- script.onload=()=>{if(status)status.textContent='';setTimeout(()=>{if(!hasProducts())fallback('The collection is not visible yet. Open the merchandise catalog using the link below.');},10000);};
- script.onerror=()=>fallback('The embedded collection is unavailable. Use the direct catalog link below.');
+ script.onload=()=>{report('embed','Merchant loader script fetched');if(status)status.textContent='';setTimeout(()=>{if(!hasProducts()){report('catalog','No catalog nodes detected after loader');fallback('The collection is not visible yet. Open the merchandise catalog using the link below.');}else report('catalog','Catalog nodes detected');},10000);};
+ script.onerror=()=>{report('embed','Merchant loader failed to fetch');fallback('The embedded collection is unavailable. Use the direct catalog link below.');};
  document.body.appendChild(script);
- setTimeout(()=>{if(status&&status.textContent.includes('Loading'))fallback('The collection is taking longer than expected. Use the direct catalog link below.');},15000);
+ setTimeout(()=>{if(status&&status.textContent.includes('Loading')){report('timeout','Catalog remained in loading state');fallback('The collection is taking longer than expected. Use the direct catalog link below.');}},15000);
 })();
 </script></body></html>
