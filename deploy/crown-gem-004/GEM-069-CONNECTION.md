@@ -18,3 +18,6 @@ Render web service: neo-crown-gem-staging, service srv-dbc19n1srm7s739a1br0; man
 
 ## Gate outcomes
 A successful Gemini API round trip proves the developer app bridge, not direct consumer Gem execution. Direct consumer Gem connectivity must not be claimed without an actual supported integration and independent end-to-end test.
+
+## Fresh 2026-10-21 execution result
+Staging build passed 63 automated tests. The opt-in startup Gemini-to-XCP function-call check returned `{\"ok\":false,\"error_type\":\"TimeoutError\"}`. This does **not** certify a fresh API round trip. The BTC test did not produce a confirmed success result when last checked. Startup test flags were set back to 0 via Render environment update (deployment status requires verification). Do not treat this as a consumer Gem connection. Next technical fix: decouple live Gemini probes from web-service startup, use a protected post-start request/one-shot job with bounded timeout and sanitized status, then retest.
