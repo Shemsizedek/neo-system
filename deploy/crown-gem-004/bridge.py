@@ -35,6 +35,21 @@ def rate_allowed(peer, now=None):
         return True
 
 
+def quota_allowed(peer):
+    """Opt-in shared quota mode; never fall back to local counters on error."""
+    if os.environ.get("CROWN_SHARED_QUOTA_ENABLED") != "1":
+        return rate_allowed(peer)
+    import shared_quota
+    try:
+        import redis
+        address = os.environ.get("CROWN_VALKEY_URL", "")
+        if not address.startswith(("redis://", "rediss://")):
+            return False
+        client = redis.Redis.from_url(address, socket_connect_timeout=2, socket_timeout=2)
+        return shared_quota.allowed(client, peer)
+    except Exception:
+        return False
+
 class DenyRedirect(urllib.request.HTTPRedirectHandler):
     def redirect_request(self, *args):
         return None
@@ -118,7 +133,7 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(payload)
     def do_GET(self):
-        if not rate_allowed(self.client_address[0]):
+        if not quota_allowed(self.client_address[0]):
             return self.respond(429, {"error":"rate limited"})
         token=os.environ.get("CROWN_BRIDGE_TOKEN","")
         if len(token)<32:
@@ -133,7 +148,7 @@ class Handler(BaseHTTPRequestHandler):
             status,data=503,{"error":"invalid upstream configuration"}
         return self.respond(status,data)
     def do_POST(self):
-        if not rate_allowed(self.client_address[0]):
+        if not quota_allowed(self.client_address[0]):
             return self.respond(429, {"error":"rate limited"})
         token=os.environ.get("CROWN_BRIDGE_TOKEN","")
         if len(token)<32:
