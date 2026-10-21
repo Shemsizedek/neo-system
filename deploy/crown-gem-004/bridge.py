@@ -87,6 +87,10 @@ def upstream(env, route):
         return 502, {"error":"upstream failed"}
 
 def dispatch(path):
+    if path == "/v1/security/quota-readiness":
+        from valkey_preflight import check
+        result = check()
+        return (200 if result.get("ok") else 503), result
     if path == "/health":
         return 200, {"service":"neo-crown-gem","mode":"read-only","gemini_key_present":bool(os.getenv("GEMINI_API_KEY")), "gemini_execution_enabled":False,"configured":{k:bool(os.getenv(k)) for k in ("BITCOIN_API_BASE","COUNTERPARTY_API_BASE","CROWN_API_BASE")}}
     # Unified public-evidence interface; downstream API records are not independent certification.
