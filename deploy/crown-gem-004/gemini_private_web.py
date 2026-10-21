@@ -3,7 +3,7 @@ import hashlib,hmac,html,json,os,secrets,time
 from http.cookies import SimpleCookie
 PATH="/gemini"
 def configured():
-    return bool(os.getenv("NEO_GEM_GOOGLE_CLIENT_ID","") and os.getenv("NEO_GEM_GOOGLE_ALLOWED_SUB","")) and len(os.getenv("CROWN_BRIDGE_TOKEN",""))>=32
+    return bool(os.getenv("NEO_GEM_GOOGLE_CLIENT_ID","") and (os.getenv("NEO_GEM_GOOGLE_ALLOWED_SUB","") or os.getenv("NEO_GEM_GOOGLE_ALLOWED_EMAIL",""))) and len(os.getenv("CROWN_BRIDGE_TOKEN",""))>=32
 def signature(timestamp,nonce):
     key=os.environ["CROWN_BRIDGE_TOKEN"].encode()
     return hmac.new(key,("gem-chat:"+timestamp+":"+nonce).encode(),hashlib.sha256).hexdigest()
