@@ -40,6 +40,14 @@ class BridgeTests(unittest.TestCase):
         self.assertEqual(code,200)
         self.assertTrue(value["identity_match"])
         self.assertFalse(value["verified"])
+    def test_staging_rate_limit(self):
+        with bridge.RATE_LOCK:
+            bridge.RATE_STATE.clear()
+        for n in range(30):
+            self.assertTrue(bridge.rate_allowed("test-peer", now=10.0))
+        self.assertFalse(bridge.rate_allowed("test-peer", now=10.0))
+        self.assertTrue(bridge.rate_allowed("test-peer", now=71.0))
+
     def test_unknown_route(self):
         self.assertEqual(bridge.dispatch("/v1/bitcoin/tx/not-a-transaction")[0],404)
     def test_no_upstream(self):
