@@ -1,0 +1,11 @@
+{
+  "schema_version":1,
+  "gate":119,
+  "name":"NEO Sovereign Observability and Infrastructure Operations Fabric",
+  "signals":["METRIC","LOG","TRACE","AUDIT","SLO","CAPACITY","ALERT"],
+  "retention_days":{"metric":90,"log":30,"trace":14,"audit":2555},
+  "slo":{"default_target":0.999,"windows":["1h","24h","30d"]},
+  "alerts":{"critical_burn_rate":10,"high_burn_rate":4,"capacity_warning_percent":75,"capacity_critical_percent":90},
+  "rules":{"telemetry_loss_is_unknown":true,"root_cause_candidate_is_not_proof":true,"public_noc_read_only":true,"automatic_remediation_requires_existing_authority":true},
+  "estate_identity":{"name":"Global Vast Estate","designation":"Feodous Oprum Trust","holy_see_designation":"Holy See of Noble Drew Ali"}
+}

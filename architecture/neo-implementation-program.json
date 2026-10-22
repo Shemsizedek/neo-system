@@ -350,6 +350,16 @@
         "server/neo-continuity/server.mjs",
         ".github/workflows/gate-118-sovereign-continuity.yml"
       ]
+    },
+    {
+      "capability_id": "GATE-119-SOVEREIGN-OBSERVABILITY-NOC",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "architecture/neo-observability-policy.json",
+        "server/neo-observability/fabric.mjs",
+        "server/neo-observability/server.mjs",
+        ".github/workflows/gate-119-sovereign-observability.yml"
+      ]
     }
   ],
   "autopilot": {
