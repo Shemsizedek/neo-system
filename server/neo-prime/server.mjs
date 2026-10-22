@@ -3,6 +3,7 @@ import { evaluatePrimeAccess } from './access-policy.mjs'
 import { createRequestLimiter } from './request-limiter.mjs'
 import { createConcurrencyLimiter } from './concurrency-limiter.mjs'
 import { evaluateRequestBudget } from './request-budget.mjs'
+import { enforceOutputTokenCeiling } from './token-ceiling.mjs'
 import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { createNeoRouter } from '../neo-router/router.mjs'
@@ -83,7 +84,7 @@ function normalizeMission(body) {
     actions: Array.isArray(body.actions) ? body.actions : [],
     preferredProviders: Array.isArray(body.preferredProviders) ? body.preferredProviders : undefined,
     excludedProviders: Array.isArray(body.excludedProviders) ? body.excludedProviders : undefined,
-    maxTokens: Number.isFinite(Number(body.maxTokens)) ? Number(body.maxTokens) : undefined,
+    maxTokens: body.maxTokens,
     system: body.system,
   }
 }
@@ -147,6 +148,9 @@ export function createPrimeHttpServer({ env = process.env, providers, now = () =
       try {
         const body = await readJson(req)
         const mission = normalizeMission(body)
+        const tokenCeiling = enforceOutputTokenCeiling(mission.maxTokens)
+        if (!tokenCeiling.allowed) return json(res, 400, { ok: false, error: tokenCeiling.reason }, cors)
+        mission.maxTokens = tokenCeiling.maxTokens
         const budget = evaluateRequestBudget({ objective: mission.objective, actions: mission.actions })
         if (!budget.allowed) return json(res, 413, { ok: false, error: budget.reason }, cors)
         const cycle = body.cycle === 'angelic' ? 'angelic' : 'human'
