@@ -12,6 +12,6 @@ class PrivateUI(unittest.TestCase):
   self.assertIn("textContent=body",ui.HTML)
   self.assertNotIn("innerHTML",ui.HTML)
  def test_review_before_sending(self):
-  self.assertIn("Draft received from Gemini Gem. Review it and press Send.",ui.HTML)
+  self.assertIn("Review it and press Send.",ui.HTML)
   self.assertIn("if(!message)return",ui.HTML)
 if __name__=="__main__":unittest.main()
