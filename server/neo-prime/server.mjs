@@ -124,7 +124,13 @@ export function createPrimeHttpServer({ env = process.env, providers, now = () =
       const health = router.health()
       return json(res, health.ok ? 200 : 503, { ok: health.ok, service: 'neo-prime-runtime', prime: 'active', oracle: 'active', guard: 'enforced', configuredProviders: health.configured, providers: health.providers, capabilities: health.capabilities, timestamp: now() }, cors)
     }
-    if (req.method === 'POST' && (req.url === '/api/prime' || req.url === '/prime' || req.url === '/api/oracle')) {
+    if (req.method === 'POST' && req.url === '/api/oracle/private') {
+      const bridgeToken = env.NEO_ORACLE_BRIDGE_TOKEN || ''
+      if (bridgeToken.length < 32 || !operatorAuthorized(req, bridgeToken)) {
+        return json(res, 401, { ok: false, error: 'service_auth_required' })
+      }
+    }
+    if (req.method === 'POST' && (req.url === '/api/prime' || req.url === '/prime' || req.url === '/api/oracle' || req.url === '/api/oracle/private')) {
       if (origin && !allowedOrigins.has(origin)) return json(res, 403, { ok: false, error: 'origin_not_allowed' })
       try {
         const body = await readJson(req)
