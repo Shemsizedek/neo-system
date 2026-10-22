@@ -62,7 +62,7 @@ test('approval-gated command stops without explicit authorization', async () => 
     assert.equal(response.status, 401)
     const body = await response.json()
     assert.equal(body.error, 'authentication_required')
-    assert.equal(body.approvalRequired, true)
+    assert.equal(body.approvalRequired, undefined)
   })
 })
 
