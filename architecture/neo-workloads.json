@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "gate": 111,
+  "workloads": [
+    {"workload_id":"neo-edge","service":"neo-system","containerfile":"deploy/neo-edge/Dockerfile","port":8080,"health_path":"/health","current_provider":"google-cloud-run","portable":true,"state_class":"stateless-gateway","data_dependencies":["firestore","external-http"],"secret_mode":"runtime-only","self_host_candidate":true},
+    {"workload_id":"neo-ai-gateway","service":"neo-ai-gateway","containerfile":"server/neo-router/Dockerfile.ai-gateway","port":8080,"health_path":"/health","current_provider":"google-cloud-run","portable":true,"state_class":"stateless-with-external-stores","data_dependencies":["firestore","ai-providers"],"secret_mode":"runtime-only","self_host_candidate":true},
+    {"workload_id":"holytemples-adapter","service":"holytemples-adapter","containerfile":"deploy/holytemples-readonly/Dockerfile","port":8080,"health_path":"/health","current_provider":"google-cloud-run","portable":true,"state_class":"read-only-adapter","data_dependencies":["external-http"],"secret_mode":"runtime-only","self_host_candidate":true},
+    {"workload_id":"neo-bank","service":"neo-bank","containerfile":"deploy/neo-bank/Dockerfile","port":8080,"health_path":"/health","current_provider":"google-cloud-run","portable":true,"state_class":"stateful-service","data_dependencies":["firestore"],"secret_mode":"runtime-only","self_host_candidate":false}
+  ]
+}
