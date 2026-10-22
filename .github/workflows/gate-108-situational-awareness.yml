@@ -1,0 +1,37 @@
+name: Gate 108 Situational Awareness
+
+on:
+  pull_request:
+    paths:
+      - 'architecture/neo-situational-awareness-policy.json'
+      - 'server/neo-router/situational-awareness.mjs'
+      - 'server/neo-router/situational-awareness.test.mjs'
+      - 'server/neo-router/index.mjs'
+      - 'package.json'
+      - '.github/workflows/gate-108-situational-awareness.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'architecture/neo-situational-awareness-policy.json'
+      - 'server/neo-router/situational-awareness.mjs'
+      - 'server/neo-router/situational-awareness.test.mjs'
+      - 'server/neo-router/index.mjs'
+      - 'package.json'
+      - '.github/workflows/gate-108-situational-awareness.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  awareness:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Validate situational-state engine
+        run: npm run neo-awareness:test
+      - name: Verify reliability and command-center regressions
+        run: node --test server/neo-router/*.test.mjs
