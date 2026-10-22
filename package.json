@@ -86,7 +86,8 @@
     "neo-selfdev:run": "node scripts/neo-self-development.mjs",
     "neo-selfdev:test": "node --test scripts/neo-self-development.test.mjs",
     "neo-learning:report": "node scripts/neo-operational-learning.mjs",
-    "neo-learning:test": "node --test scripts/neo-operational-learning.test.mjs"
+    "neo-learning:test": "node --test scripts/neo-operational-learning.test.mjs",
+    "neo-comms:test": "node --test server/neo-router/communication-fabric.test.mjs"
   },
   "dependencies": {
     "@composio/core": "^0.18.1",
