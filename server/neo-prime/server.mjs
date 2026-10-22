@@ -2,6 +2,7 @@ import http from 'node:http'
 import { evaluatePrimeAccess } from './access-policy.mjs'
 import { createRequestLimiter } from './request-limiter.mjs'
 import { createConcurrencyLimiter } from './concurrency-limiter.mjs'
+import { evaluateRequestBudget } from './request-budget.mjs'
 import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { createNeoRouter } from '../neo-router/router.mjs'
@@ -146,6 +147,8 @@ export function createPrimeHttpServer({ env = process.env, providers, now = () =
       try {
         const body = await readJson(req)
         const mission = normalizeMission(body)
+        const budget = evaluateRequestBudget({ objective: mission.objective, actions: mission.actions })
+        if (!budget.allowed) return json(res, 413, { ok: false, error: budget.reason }, cors)
         const cycle = body.cycle === 'angelic' ? 'angelic' : 'human'
         const plan = prime.plan(mission, { cycle })
         const access = evaluatePrimeAccess({ method: req.method, path: req.url, approvalRequired: plan.approvalRequired, authorization: req.headers.authorization, operatorToken, apiToken, approved: body.approved, approvalHeader: req.headers['x-neo-prime-approval'] })
