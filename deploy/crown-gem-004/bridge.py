@@ -136,7 +136,7 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(payload)
     def do_GET(self):
-        if self.path == "/gemini/pr-status":
+        if getattr(self,"path",None) == "/gemini/pr-status":
             from gemini_private_web import configured, session
             if not configured() or not session(self):
                 return self.respond(401,{"error":"Google login required"})
