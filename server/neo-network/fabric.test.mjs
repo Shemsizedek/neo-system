@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import {createNetworkRegistry,buildPeerPlan,buildDnsZone,routeWithFailover,networkSnapshot} from './fabric.mjs'
+import {createNetworkRegistry,buildPeerPlan,buildDnsZone,routeWithFailover,networkSnapshot,renderWireGuardConfig} from './fabric.mjs'
 
 const node=(id,key,endpoint)=>({node_id:id,public_key:key,attested:true,endpoint})
 
@@ -47,4 +47,14 @@ test('network snapshot includes internal dns and estate identity',()=>{
   const snap=networkSnapshot(r)
   assert.equal(snap.estate,'Global Vast Estate')
   assert.equal(buildDnsZone({services:r.services()}).records[0].value,r.node('a').overlay_ip)
+})
+
+test('wireguard config references runtime private key and attested peers',()=>{
+  const r=createNetworkRegistry()
+  const a=r.enrollNode(node('a','public-a','198.51.100.1:51820'))
+  r.enrollNode(node('b','public-b','198.51.100.2:51820'))
+  const config=renderWireGuardConfig({node:a,peerPlan:buildPeerPlan(r.nodes())})
+  assert.match(config,/PrivateKey = <runtime-secret:/)
+  assert.match(config,/expected fingerprint:/)
+  assert.equal(config.includes('public-a'),false)
 })
