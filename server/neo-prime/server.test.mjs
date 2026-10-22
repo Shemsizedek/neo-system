@@ -26,14 +26,15 @@ async function withServer(fn, options = {}) {
   }
 }
 
-test('health exposes Prime and configured provider state', async () => {
+test('public liveness exposes minimal status without provider details', async () => {
   await withServer(async (base) => {
     const response = await fetch(`${base}/healthz`)
     assert.equal(response.status, 200)
     const body = await response.json()
     assert.equal(body.ok, true)
-    assert.equal(body.prime, 'active')
-    assert.deepEqual(body.configuredProviders, ['openai'])
+    assert.equal(body.service, 'neo-prime-runtime')
+    assert.equal(Object.hasOwn(body, 'configuredProviders'), false)
+    assert.equal(Object.hasOwn(body, 'providers'), false)
   })
 })
 
