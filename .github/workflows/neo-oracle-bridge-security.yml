@@ -1,0 +1,23 @@
+name: NEO Oracle Bridge Security
+on:
+  pull_request:
+    paths:
+      - 'server/neo-prime/**'
+      - 'server/neo-router/**'
+      - '.github/workflows/neo-oracle-bridge-security.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  oracle-security:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Oracle bridge security and runtime tests
+        run: node --test server/neo-prime/*.test.mjs server/neo-router/providers.test.mjs server/neo-router/vertex-provider.test.mjs
