@@ -281,6 +281,17 @@
         "server/neo-edge/estate-app.mjs",
         ".github/workflows/deploy-neo-compute-cloud-run.yml"
       ]
+    },
+    {
+      "capability_id": "GATE-113-SOVEREIGN-STORAGE-FABRIC",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "architecture/neo-storage-fabric-policy.json",
+        "server/neo-storage/fabric.mjs",
+        "server/neo-storage/server.mjs",
+        "deploy/neo-storage/Dockerfile",
+        ".github/workflows/gate-113-sovereign-storage.yml"
+      ]
     }
   ],
   "autopilot": {
