@@ -103,7 +103,9 @@
     "neo-pki:server": "node server/neo-pki/server.mjs",
     "neo-pki:test": "node --test server/neo-pki/*.test.mjs",
     "neo-secrets:server": "node server/neo-secrets/server.mjs",
-    "neo-secrets:test": "node --test server/neo-secrets/*.test.mjs"
+    "neo-secrets:test": "node --test server/neo-secrets/*.test.mjs",
+    "neo-state:server": "node server/neo-state/server.mjs",
+    "neo-state:test": "node --test server/neo-state/*.test.mjs"
   },
   "dependencies": {
     "@composio/core": "^0.18.1",
