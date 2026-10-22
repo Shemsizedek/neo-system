@@ -8,6 +8,7 @@ class MockHandler:
   self.headers={"Authorization":auth,"Content-Length":str(len(payload))}
   self.rfile=io.BytesIO(payload);self.wfile=io.BytesIO();self.calls=[];self.response_headers={}
  def respond(self,status,data):self.calls.append((status,data))
+ def mcp_auth_required(self):return bridge.Handler.mcp_auth_required(self)
  def send_response(self,status):self.calls.append((status,None))
  def send_header(self,key,value):self.response_headers[key]=value
  def end_headers(self):pass
@@ -18,6 +19,7 @@ class EndpointTests(unittest.TestCase):
   with patch.object(bridge,"quota_allowed",return_value=True),patch.dict(bridge.os.environ,{"CROWN_BRIDGE_TOKEN":"z"*32,"NEO_MCP_ACCESS_TOKEN":"k"*32}):
    bridge.Handler.do_POST(h)
   self.assertEqual(h.calls[0][0],401)
+  self.assertIn("resource_metadata=",h.response_headers["WWW-Authenticate"])
  def test_crown_token_cannot_access_mcp(self):
   payload=json.dumps({"jsonrpc":"2.0","id":1,"method":"tools/list"}).encode()
   h=MockHandler(payload,"Bearer "+"z"*32)
