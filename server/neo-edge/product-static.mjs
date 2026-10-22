@@ -712,6 +712,17 @@ async function serveNeoScan(req,res,url) {
   try {path=decodeURIComponent(url.pathname);}catch {json(res,400,{error:'invalid_path'});return true;}
   if(path==='/'||path==='/ui')path='/index.html';
   if(!/^\/[A-Za-z0-9_.-]+$/.test(path)){json(res,404,{error:'not_found'});return true;}
+  if(path==='/index.html'){
+    const served=await serveText(req,res,resolve(NEOSCAN_ROOT,'index.html'),body=>body
+      .replaceAll('../markets/neo-market-tape.js','https://shemsizedek.github.io/neo-system/markets/neo-market-tape.js')
+      .replaceAll('href="../neo-hub/"','href="https://hub.holytemples.org/"')
+      .replaceAll('href="../neopay/"','href="https://pay.holytemples.org/"')
+      .replaceAll('href="../noogle/"','href="https://noogle.holytemples.org/"'));
+    if(!served)json(res,503,{error:'neoscan_ui_unavailable'});return true;
+  }
+  if(path==='/runtime-config.js'){
+    try{let body=await readFile(resolve(NEOSCAN_ROOT,'runtime-config.js'),'utf8');body=body.replaceAll("'../api/neoscan/statements'","'https://shemsizedek.github.io/neo-system/api/neoscan/statements'");res.writeHead(200,{'content-type':'text/javascript; charset=utf-8','cache-control':'no-store','x-content-type-options':'nosniff'});res.end(req.method==='HEAD'?undefined:body);return true;}catch{json(res,503,{error:'neoscan_config_unavailable'});return true;}
+  }
   const type=CONTENT_TYPES[extname(path)];
   if(!type){json(res,404,{error:'not_found'});return true;}
   if(!await serveFile(req,res,resolve(NEOSCAN_ROOT,'.'+path),type))json(res,404,{error:'not_found'});
