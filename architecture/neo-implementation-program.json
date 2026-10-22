@@ -303,6 +303,18 @@
         "deploy/neo-network/Dockerfile",
         ".github/workflows/gate-114-sovereign-network.yml"
       ]
+    },
+    {
+      "capability_id": "GATE-115-SOVEREIGN-IDENTITY-CA",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "architecture/neo-sovereign-identity-policy.json",
+        "server/neo-pki/fabric.mjs",
+        "server/neo-pki/server.mjs",
+        "deploy/neo-pki/Dockerfile",
+        "infra/neo-pki/README.md",
+        ".github/workflows/gate-115-sovereign-identity.yml"
+      ]
     }
   ],
   "autopilot": {
