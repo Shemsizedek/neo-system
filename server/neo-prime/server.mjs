@@ -1,6 +1,7 @@
 import http from 'node:http'
 import { evaluatePrimeAccess } from './access-policy.mjs'
 import { createRequestLimiter } from './request-limiter.mjs'
+import { createConcurrencyLimiter } from './concurrency-limiter.mjs'
 import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { createNeoRouter } from '../neo-router/router.mjs'
@@ -113,6 +114,7 @@ export function createPrimeHttpServer({ env = process.env, providers, now = () =
   const operatorToken = env.NEO_PRIME_OPERATOR_TOKEN || ''
   const apiToken = env.NEO_PRIME_API_TOKEN || ''
   const requestLimiter = createRequestLimiter()
+  const concurrencyLimiter = createConcurrencyLimiter()
   const allowedOrigins = new Set(String(env.NEO_PRIME_ALLOWED_ORIGINS || DEFAULT_ALLOWED_ORIGINS.join(',')).split(',').map((value) => value.trim()).filter(Boolean))
 
   return http.createServer(async (req, res) => {
@@ -139,6 +141,8 @@ export function createPrimeHttpServer({ env = process.env, providers, now = () =
       const identity = createHash('sha256').update(String(req.headers.authorization)).digest('hex')
       const admission = requestLimiter.check(identity)
       if (!admission.allowed) return json(res, 429, { ok: false, error: 'rate_limited' }, cors)
+      const slot = concurrencyLimiter.acquire(identity)
+      if (!slot.allowed) return json(res, 429, { ok: false, error: 'concurrency_exceeded' }, cors)
       try {
         const body = await readJson(req)
         const mission = normalizeMission(body)
@@ -154,6 +158,8 @@ export function createPrimeHttpServer({ env = process.env, providers, now = () =
         return json(res, status, { ok: result.status === 'completed', status: result.status, text: responseText(result), missionId: mission.missionId, route: result.route || null, approvalRequired: Boolean(result.approvalRequired), risk: result.neoAlgo?.risk || null, neoAlgo: result.neoAlgo, failures: result.failures || [] }, cors)
       } catch (error) {
         return json(res, error.statusCode || 500, { ok: false, error: error.statusCode ? 'bad_request' : 'prime_runtime_error', message: error instanceof Error ? error.message : String(error) }, cors)
+      } finally {
+        slot.release()
       }
     }
     return json(res, 404, { ok: false, error: 'not_found' }, cors)
