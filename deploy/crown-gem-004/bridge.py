@@ -136,6 +136,15 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(payload)
     def do_GET(self):
+        if self.path == "/gemini/pr-status":
+            from gemini_private_web import configured, session
+            if not configured() or not session(self):
+                return self.respond(401,{"error":"Google login required"})
+            if not quota_allowed(self.client_address[0]):
+                return self.respond(429,{"error":"rate limited"})
+            from gem_pr_status import fetch_status
+            status,data=fetch_status()
+            return self.respond(status,data)
         if getattr(self,"path","").split("?",1)[0] in ("/gemini","/gemini/session"):
             from gemini_private_web import get
             return get(self)
