@@ -88,7 +88,9 @@
     "neo-learning:report": "node scripts/neo-operational-learning.mjs",
     "neo-learning:test": "node --test scripts/neo-operational-learning.test.mjs",
     "neo-comms:test": "node --test server/neo-router/communication-fabric.test.mjs",
-    "neo-awareness:test": "node --test server/neo-router/situational-awareness.test.mjs"
+    "neo-awareness:test": "node --test server/neo-router/situational-awareness.test.mjs",
+    "neo-security-autopilot:test": "node --test server/neo-router/autonomous-security-posture.test.mjs",
+    "neo-edge-autopilot:test": "node --test server/neo-edge/autopilot-app.test.mjs"
   },
   "dependencies": {
     "@composio/core": "^0.18.1",
