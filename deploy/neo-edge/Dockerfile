@@ -19,6 +19,7 @@ COPY server/neo-counter-backend/firestore-rest-db.mjs ./server/neo-counter-backe
 COPY server/neo-edge ./server/neo-edge
 COPY server/neo-teller-backend ./server/neo-teller-backend
 COPY api/neo-exchange ./api/neo-exchange
+COPY apps/neoscan/web ./apps/neoscan/web
 COPY apps/neo-relations/site ./apps/neo-relations/site
 COPY apps/noogle/web/finance.html ./apps/noogle/web/finance.html
 COPY public/neo-teller ./public/neo-teller

@@ -703,7 +703,23 @@ async function serveRealty(req, res, url, host, prefix = '/realty') {
   return true;
 }
 
+
+const NEOSCAN_ROOT = fileURLToPath(new URL('../../apps/neoscan/web/', import.meta.url));
+async function serveNeoScan(req,res,url) {
+  if(!['GET','HEAD'].includes(req.method)){json(res,405,{error:'method_not_allowed',service:'neoscan'});return true;}
+  if(url.pathname==='/health'){json(res,200,{ok:true,service:'neoscan',mode:'PUBLIC_READ_ONLY',mediaOrigin:'https://crown.holytemples.org'});return true;}
+  let path;
+  try {path=decodeURIComponent(url.pathname);}catch {json(res,400,{error:'invalid_path'});return true;}
+  if(path==='/'||path==='/ui')path='/index.html';
+  if(!/^\/[A-Za-z0-9_.-]+$/.test(path)){json(res,404,{error:'not_found'});return true;}
+  const type=CONTENT_TYPES[extname(path)];
+  if(!type){json(res,404,{error:'not_found'});return true;}
+  if(!await serveFile(req,res,resolve(NEOSCAN_ROOT,'.'+path),type))json(res,404,{error:'not_found'});
+  return true;
+}
+
 export async function serveProductStatic(req, res, url, host) {
+  if(host==='scan.holytemples.org')return serveNeoScan(req,res,url);
   if (host === 'neo.holytemples.org' && url.pathname === '/corpus') {
     res.writeHead(308, { location: '/corpus/', 'cache-control': 'no-store' });
     res.end();

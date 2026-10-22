@@ -99,8 +99,13 @@ jobs:
       - name: Publish NEOscan explorer
         run: |
           test -f apps/neoscan/web/index.html
+          test -f apps/neoscan/web/crown-media.js
+          node --check apps/neoscan/web/crown-media.js
+          grep -q 'id="crownAssetFrame"' apps/neoscan/web/index.html
           mkdir -p dist/neoscan
           cp -R apps/neoscan/web/. dist/neoscan/
+          grep -q 'id="crownAssetFrame"' dist/neoscan/index.html
+          test -f dist/neoscan/crown-media.js
       - name: Build NEOscan GitHub-native statement snapshots
         env:
           NEOSCAN_STATEMENT_ACCOUNTS: ${{ vars.NEOSCAN_STATEMENT_ACCOUNTS }}
