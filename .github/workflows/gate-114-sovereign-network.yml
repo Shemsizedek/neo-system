@@ -1,0 +1,23 @@
+name: Gate 114 Sovereign Network Fabric
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['architecture/neo-network-fabric-policy.json','server/neo-network/**','deploy/neo-network/**','package.json','.github/workflows/gate-114-sovereign-network.yml']
+  pull_request:
+    paths: ['architecture/neo-network-fabric-policy.json','server/neo-network/**','deploy/neo-network/**','package.json','.github/workflows/gate-114-sovereign-network.yml']
+permissions:
+  contents: read
+jobs:
+  network-fabric:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 24}
+      - name: Test network control plane
+        run: npm run neo-network:test
+      - name: Syntax-check service
+        run: node --check server/neo-network/server.mjs
+      - name: Validate network container
+        run: docker build -f deploy/neo-network/Dockerfile -t neo-network:gate114 .

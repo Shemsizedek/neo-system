@@ -292,6 +292,17 @@
         "deploy/neo-storage/Dockerfile",
         ".github/workflows/gate-113-sovereign-storage.yml"
       ]
+    },
+    {
+      "capability_id": "GATE-114-SOVEREIGN-NETWORK-FABRIC",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "architecture/neo-network-fabric-policy.json",
+        "server/neo-network/fabric.mjs",
+        "server/neo-network/server.mjs",
+        "deploy/neo-network/Dockerfile",
+        ".github/workflows/gate-114-sovereign-network.yml"
+      ]
     }
   ],
   "autopilot": {
