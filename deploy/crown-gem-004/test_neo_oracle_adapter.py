@@ -27,7 +27,8 @@ class OracleTests(unittest.TestCase):
  def test_approval_not_bypassed(self):
   class Resp:
    status=202
-   def __enter__(self):return io.BytesIO(b'{"text":"approval needed"}')
+   def __enter__(self):return self
+   def read(self,n):return b'{"text":"approval needed"}'
    def __exit__(self,*args):pass
   with patch.dict(os.environ,{"NEO_ORACLE_API_URL":"https://example.org/api/oracle","NEO_ORACLE_SERVICE_TOKEN":"s"*32},clear=True):
    with self.assertRaises(RuntimeError):oracle.run("hi",opener=lambda request,timeout:Resp())
