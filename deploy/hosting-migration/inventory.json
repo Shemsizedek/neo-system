@@ -357,9 +357,9 @@
     },
     {
       "hostname": "msta.holytemples.org",
-      "target": "chatgpt-sites",
+      "target": "render",
       "status": "source-discovered-not-cutover",
-      "classification": "requires-runtime-and-content-audit"
+      "classification": "public-preservation-runtime-source-archive-blocked"
     },
     {
       "hostname": "neobank.holytemples.org",
@@ -489,7 +489,7 @@
       "url": "https://neo-edge-render.onrender.com",
       "provider": "render",
       "dns_cutover": false,
-      "status": "replacement-runtime-under-verification"
+      "status": "migration-preview-protected-operations-disabled"
     },
     {
       "name": "neo-msta-preservation",

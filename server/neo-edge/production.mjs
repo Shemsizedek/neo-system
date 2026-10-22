@@ -1,5 +1,5 @@
 import http from 'node:http';
-import { normalizeRenderHost } from './render-host.mjs';
+import { normalizeRenderHost, migrationPreviewBlocks } from './render-host.mjs';
 import { renderSystemHome } from './system-home.mjs';
 import { renderEstateApp, estateRoute } from './estate-app.mjs';
 import https from 'node:https';
@@ -331,6 +331,10 @@ export async function startNeoEdgeProduction(){
     normalizeRenderHost(req,process.env.RENDER_EXTERNAL_HOSTNAME);
     const host=hostOf(req);
     const url=new URL(req.url||'/',`https://${host||'neo.holytemples.org'}`);
+    if(process.env.NEO_HOSTING_MIGRATION_SHADOW==='true'){
+      if(migrationPreviewBlocks(req,host))return json(res,503,{error:'migration_preview_only',productionReady:false});
+      if(url.pathname==='/health')return json(res,200,{ok:true,service:'neo-edge',mode:'migration-preview',productionReady:false,recordsMigrated:false,protectedOperations:'disabled'});
+    }
     if((host==='neofx.holytemples.org'||host==='finance.holytemples.org')&&url.pathname.startsWith('/api/neo-exchange/')){
       const handled=await handleNeoExchangeRequest(req,res,{fallthrough:true});
       if(handled!==false)return handled;

@@ -7,3 +7,9 @@ export function normalizeRenderHost(req, renderHostname) {
  req.headers.host='neo.holytemples.org';
  req.headers['x-forwarded-host']='neo.holytemples.org';
 }
+
+export function migrationPreviewBlocks(req,host){
+ const path=new URL(req.url||'/', 'https://neo.holytemples.org').pathname;
+ return !['GET','HEAD'].includes(req.method) || path.startsWith('/api/') ||
+  /^(neopass|neobank|wallet|treasury|court|desk|gateway|neodash)\.holytemples\.org$/.test(host);
+}

@@ -47,3 +47,5 @@ This migration adds no automatic Google resource deletion and no primary databas
 - `neo-msta-preservation`: service `srv-dbd93s8473hc73ebuqd0`, https://neo-msta-preservation.onrender.com. Initial deploy is live and `/health` returned 200. The original archive returns 403, so the content is not verified and the custom domain must remain uncut.
 - Render dashboard authentication was declined. Do not retry browser sign-in unless the owner asks. Connector access remains available for supported operations.
 - Full WordPress backup `20261022_worldtemple`, ID 1, completed at the source with no exclusions (reported size 482.2 MB). It has not been downloaded or restored to Render.
+
+The replacement edge is explicitly a migration preview (`NEO_HOSTING_MIGRATION_SHADOW=true`). It blocks writes, API routes and identity/bank/treasury/court/operator hosts, and its health response reports `productionReady=false` and `recordsMigrated=false`. The existing production services remain in place. Twenty targeted tests passed after this restriction was added.
