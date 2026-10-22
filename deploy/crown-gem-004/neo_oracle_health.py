@@ -3,7 +3,7 @@ import json,os,urllib.parse,urllib.request
 def check(opener=None):
     url=os.getenv("NEO_ORACLE_API_URL","")
     parsed=urllib.parse.urlsplit(url)
-    if parsed.scheme!="https" or parsed.path!="/api/oracle" or not parsed.hostname or parsed.query or parsed.fragment or parsed.username or parsed.password:
+    if parsed.scheme!="https" or parsed.path not in ("/api/oracle", "/api/oracle/private") or not parsed.hostname or parsed.query or parsed.fragment or parsed.username or parsed.password:
         return {"configured":False,"reachable":False,"reason":"invalid_endpoint"}
     health=urllib.parse.urlunsplit(("https",parsed.netloc,"/healthz","",""))
     try:
