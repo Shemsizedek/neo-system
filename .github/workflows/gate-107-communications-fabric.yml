@@ -1,0 +1,37 @@
+name: Gate 107 Communications Fabric
+
+on:
+  pull_request:
+    paths:
+      - 'architecture/neo-communications-policy.json'
+      - 'server/neo-router/communication-fabric.mjs'
+      - 'server/neo-router/communication-fabric.test.mjs'
+      - 'server/neo-router/index.mjs'
+      - 'package.json'
+      - '.github/workflows/gate-107-communications-fabric.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'architecture/neo-communications-policy.json'
+      - 'server/neo-router/communication-fabric.mjs'
+      - 'server/neo-router/communication-fabric.test.mjs'
+      - 'server/neo-router/index.mjs'
+      - 'package.json'
+      - '.github/workflows/gate-107-communications-fabric.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  communications:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Validate communication routing
+        run: npm run neo-comms:test
+      - name: Verify router regression suite
+        run: node --test server/neo-router/*.test.mjs

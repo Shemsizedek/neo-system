@@ -228,6 +228,16 @@
         "data/neo-operational-experience.jsonl",
         ".github/workflows/gate-106-operational-learning.yml"
       ]
+    },
+    {
+      "capability_id": "GATE-107-COMMUNICATIONS-FABRIC",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "architecture/neo-communications-policy.json",
+        "server/neo-router/communication-fabric.mjs",
+        "server/neo-router/communication-fabric.test.mjs",
+        ".github/workflows/gate-107-communications-fabric.yml"
+      ]
     }
   ],
   "autopilot": {
