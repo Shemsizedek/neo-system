@@ -1,0 +1,42 @@
+name: Gate 109 Autonomous Security and Site Autopilot
+
+on:
+  pull_request:
+    paths:
+      - 'architecture/neo-autonomous-security-policy.json'
+      - 'server/neo-router/autonomous-security-posture.mjs'
+      - 'server/neo-router/autonomous-security-posture.test.mjs'
+      - 'server/neo-router/ai-gateway-server.mjs'
+      - 'server/neo-router/index.mjs'
+      - 'server/neo-edge/autopilot-app.mjs'
+      - 'server/neo-edge/autopilot-app.test.mjs'
+      - 'server/neo-edge/production.mjs'
+      - 'package.json'
+      - '.github/workflows/gate-109-autonomous-security-site-autopilot.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'architecture/neo-autonomous-security-policy.json'
+      - 'server/neo-router/**'
+      - 'server/neo-edge/**'
+      - 'package.json'
+      - '.github/workflows/gate-109-autonomous-security-site-autopilot.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  security-and-site-autopilot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Validate Gate 109 autonomous security
+        run: npm run neo-security-autopilot:test
+      - name: Validate neo.holytemples.org autopilot surface
+        run: npm run neo-edge-autopilot:test
+      - name: Run NEO Router regression suite
+        run: node --test server/neo-router/*.test.mjs
