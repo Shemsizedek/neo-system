@@ -35,3 +35,9 @@ test('explorer retrieves JSON, card and 48x48 PNG over HTTP without writes',asyn
  const png=await fetch(base+new URL(record.enhanced.image).pathname);const bytes=Buffer.from(await png.arrayBuffer());assert.equal(bytes.readUInt32BE(16),48);assert.equal(bytes.readUInt32BE(20),48);
  assert.equal((await fetch(base+'/assets/KNOWINDEX/card.svg')).status,200);assert.equal((await fetch(base+'/assets/MISSING/info.json')).status,404);assert.equal((await fetch(base+'/assets/KNOWINDEX/info.json',{method:'POST'})).status,405);
 });
+test('attachment pages, collectible JSON and individual icons preserve read-only delivery',async t=>{
+ const record=createAssetRecord(raw,{},opts);record.manifest.attachments=[{kind:'document',title:'<script>bad</script>',url:'https://example.org/a.pdf'},{kind:'app',title:'bad',url:'javascript:alert(1)'}];
+ const server=createMetadataServer({store:{get:async()=>record}});await new Promise(r=>server.listen(0,'127.0.0.1',r));t.after(()=>server.close());const base=`http://127.0.0.1:${server.address().port}/assets/KNOWINDEX`;
+ const page=await (await fetch(base+'/index.html')).text();assert.ok(page.includes('https://example.org/a.pdf'));assert.ok(!page.includes('javascript:'));assert.ok(!page.includes('<script>'));
+ const metadata=await (await fetch(base+'/card.json')).json();assert.equal(metadata.properties.crown.ledger.asset,'KNOWINDEX');assert.equal((await fetch(base+'/icon.png')).headers.get('content-type'),'image/png');
+});
