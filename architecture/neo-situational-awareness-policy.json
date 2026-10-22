@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "gate": 108,
+  "name": "NEO Situational Awareness Policy",
+  "signal_classes": ["RUNTIME","SECURITY","DEPLOYMENT","RECOVERY","IMPLEMENTATION","CUSTOMER","FINANCIAL","AGENT","LEARNING","DEPENDENCY"],
+  "situation_states": ["NORMAL","WATCH","DEGRADED","CRITICAL","UNKNOWN"],
+  "attention": {
+    "critical_weight": 100,
+    "high_weight": 60,
+    "normal_weight": 25,
+    "low_weight": 10,
+    "cross_source_bonus": 20,
+    "blast_radius_weight": 5,
+    "recurrence_weight": 8
+  },
+  "truth_rules": {
+    "telemetry_loss_is_unknown": true,
+    "correlation_is_not_causation": true,
+    "model_inference_must_be_labeled": true,
+    "no_consciousness_claim_from_telemetry": true
+  }
+}
