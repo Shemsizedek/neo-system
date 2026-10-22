@@ -1,0 +1,53 @@
+name: Gate 101 Implementation Autopilot
+
+on:
+  pull_request:
+    paths:
+      - 'architecture/**'
+      - 'apps/**'
+      - 'server/**'
+      - 'services/**'
+      - 'agents/**'
+      - 'orchestration/**'
+      - 'registry/**'
+      - 'scripts/neo-implementation-*'
+      - 'package.json'
+      - '.github/workflows/gate-101-implementation-autopilot.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'architecture/**'
+      - 'apps/**'
+      - 'server/**'
+      - 'services/**'
+      - 'agents/**'
+      - 'orchestration/**'
+      - 'registry/**'
+      - 'scripts/neo-implementation-*'
+      - 'package.json'
+      - '.github/workflows/gate-101-implementation-autopilot.yml'
+  schedule:
+    - cron: '17 9 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  implementation-truth:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Validate Gate 101 implementation registry
+        run: npm run neo-implementation:test
+      - name: Generate implementation truth report
+        run: npm run neo-implementation:audit -- --write
+      - name: Publish Gate 101 audit artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-101-implementation-report
+          path: artifacts/implementation/gate-101-report.json
+          if-no-files-found: error
