@@ -158,7 +158,8 @@ class Handler(BaseHTTPRequestHandler):
             return get(self)
         if not quota_allowed(self.client_address[0]):
             return self.respond(429, {"error":"rate limited"})
-        token=os.environ.get("CROWN_BRIDGE_TOKEN","")
+        # MCP clients must never receive the internal Crown bridge credential.
+        token=os.environ.get("NEO_MCP_ACCESS_TOKEN","") if self.path=="/mcp" else os.environ.get("CROWN_BRIDGE_TOKEN","")
         if len(token)<32:
             return self.respond(503,{"error":"authentication not configured"})
         if not hmac.compare_digest(self.headers.get("Authorization",""),"Bearer "+token):
