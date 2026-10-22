@@ -1,0 +1,18 @@
+name: Gate 119 Sovereign Observability and NOC
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['architecture/neo-observability-policy.json','server/neo-observability/**','package.json','.github/workflows/gate-119-sovereign-observability.yml']
+  pull_request:
+    paths: ['architecture/neo-observability-policy.json','server/neo-observability/**','package.json','.github/workflows/gate-119-sovereign-observability.yml']
+permissions: {contents: read}
+jobs:
+  observability:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 24}
+      - run: npm run neo-observability:test
+      - run: node --check server/neo-observability/server.mjs
