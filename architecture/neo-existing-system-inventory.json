@@ -1,0 +1,100 @@
+{
+  "schema_version": 1,
+  "gate": 102,
+  "name": "NEO Existing-System Inventory",
+  "classification_model": ["EXISTING", "PARTIAL", "MISSING", "UNKNOWN"],
+  "runtime_truth_rule": "deployment configuration is not runtime verification",
+  "systems": [
+    {
+      "system_id": "NEO-COUNTER",
+      "kind": "transaction-service",
+      "evidence": ["server/neo-counter-backend", "apps/neo-counter", "public/neopay/transaction-compose.mjs"],
+      "tests": ["server/neo-counter-backend"],
+      "deployment_workflows": [".github/workflows/deploy-neo-counter-firestore-cloud-run.yml"]
+    },
+    {
+      "system_id": "NEO-BANK",
+      "kind": "financial-service",
+      "evidence": ["server/neo-bank"],
+      "tests": ["server/neo-bank"],
+      "deployment_workflows": [".github/workflows/deploy-neo-bank-cloud-run.yml"]
+    },
+    {
+      "system_id": "NEO-ENTERPRISE",
+      "kind": "enterprise-control",
+      "evidence": ["server/neo-enterprise", "registry/enterprise"],
+      "tests": ["server/neo-enterprise"],
+      "deployment_workflows": []
+    },
+    {
+      "system_id": "NEO-PLATFORM-API",
+      "kind": "platform-api",
+      "evidence": ["server/neo-platform-api"],
+      "tests": ["server/neo-platform-api"],
+      "deployment_workflows": []
+    },
+    {
+      "system_id": "NEO-IDENTITY",
+      "kind": "identity",
+      "evidence": ["server/neo-identity"],
+      "tests": ["server/neo-identity"],
+      "deployment_workflows": []
+    },
+    {
+      "system_id": "NEO-ROUTER",
+      "kind": "routing",
+      "evidence": ["server/neo-router", "scripts/neo-router-worker.mjs"],
+      "tests": ["server/neo-router"],
+      "deployment_workflows": [".github/workflows/deploy-ai-gateway-cloud-run.yml"]
+    },
+    {
+      "system_id": "NEO-TOKENWORKS",
+      "kind": "asset-service",
+      "evidence": ["server/neo-tokenworks"],
+      "tests": ["server/neo-tokenworks"],
+      "deployment_workflows": []
+    },
+    {
+      "system_id": "NEO-EVIDENCE-VAULT",
+      "kind": "evidence-service",
+      "evidence": ["server/neo-evidence-vault"],
+      "tests": ["server/neo-evidence-vault"],
+      "deployment_workflows": []
+    },
+    {
+      "system_id": "NEO-SCAN",
+      "kind": "observability",
+      "evidence": ["apps/neoscan"],
+      "tests": ["apps/neoscan"],
+      "deployment_workflows": []
+    },
+    {
+      "system_id": "NEO-DASH",
+      "kind": "dashboard",
+      "evidence": ["apps/neo-dash"],
+      "tests": ["apps/neo-dash"],
+      "deployment_workflows": []
+    },
+    {
+      "system_id": "GISS",
+      "kind": "education",
+      "evidence": ["apps/gisd"],
+      "tests": [],
+      "deployment_workflows": [".github/workflows/deploy-giss-cloud-run.yml"]
+    },
+    {
+      "system_id": "NEOTHERAPY",
+      "kind": "service",
+      "evidence": ["server/neotherapy"],
+      "tests": ["server/neotherapy"],
+      "deployment_workflows": [".github/workflows/neotherapy-production.yml"]
+    },
+    {
+      "system_id": "NEO-DEAL-DESK",
+      "kind": "commercial",
+      "evidence": ["server/neo-deal-desk", "agents/deal-desk"],
+      "tests": ["server/neo-deal-desk"],
+      "deployment_workflows": []
+    }
+  ]
+}
