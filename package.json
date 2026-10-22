@@ -74,7 +74,9 @@
     "neotherapy:test": "node --test server/neotherapy/*.test.mjs",
     "merch:spreadshop:merchant-feed": "node scripts/spreadshop-google-merchant-feed.mjs",
     "merch:spreadshop:merchant-feed:test": "node --test scripts/spreadshop-google-merchant-feed.test.mjs",
-    "neo-deal-desk:test": "node --test server/neo-deal-desk/*.test.mjs"
+    "neo-deal-desk:test": "node --test server/neo-deal-desk/*.test.mjs",
+    "neo-implementation:audit": "node scripts/neo-implementation-audit.mjs --check",
+    "neo-implementation:test": "node --test scripts/neo-implementation-audit.test.mjs"
   },
   "dependencies": {
     "@composio/core": "^0.18.1",
