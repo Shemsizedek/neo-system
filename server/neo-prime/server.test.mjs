@@ -37,11 +37,11 @@ test('health exposes Prime and configured provider state', async () => {
   })
 })
 
-test('green reasoning command executes without operator token', async () => {
+test('green reasoning command executes with operator token', async () => {
   await withServer(async (base) => {
     const response = await fetch(`${base}/api/prime`, {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
+      headers: { 'content-type': 'application/json', authorization: 'Bearer test-secret' },
       body: JSON.stringify({ missionId: 'T-1', objective: 'Analyze priorities', capability: 'reasoning' }),
     })
     assert.equal(response.status, 200)
@@ -49,7 +49,7 @@ test('green reasoning command executes without operator token', async () => {
     assert.equal(body.status, 'completed')
     assert.equal(body.text, 'Prime response: Analyze priorities')
     assert.equal(body.risk, 'green')
-  })
+  }, { env: { NEO_PRIME_OPERATOR_TOKEN: 'test-secret' } })
 })
 
 test('approval-gated command stops without explicit authorization', async () => {
@@ -59,9 +59,9 @@ test('approval-gated command stops without explicit authorization', async () => 
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ missionId: 'T-2', objective: 'Deploy production', capability: 'orchestration', actions: ['production_deployment'] }),
     })
-    assert.equal(response.status, 202)
+    assert.equal(response.status, 401)
     const body = await response.json()
-    assert.equal(body.status, 'awaiting_approval')
+    assert.equal(body.error, 'authentication_required')
     assert.equal(body.approvalRequired, true)
   })
 })
