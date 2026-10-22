@@ -47,7 +47,9 @@ function loadHandoff(){
  const draft=params.get('prompt');
  if(typeof draft==='string'&&draft.length>0&&draft.length<=2000){
    $('prompt').value=draft;
-   status.textContent='Draft received from Gemini Gem. Review it and press Send.';
+   const source=params.get('source');
+   const sourceLabel=typeof source==='string'&&/^[A-Za-z0-9 _.-]{1,60}$/.test(source)?source:'Google Gem';
+   status.textContent='Draft from '+sourceLabel+'. Review it and press Send.';
  }
  history.replaceState(null,'',location.pathname+location.search);
 }
