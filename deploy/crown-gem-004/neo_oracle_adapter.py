@@ -6,7 +6,7 @@ def run(prompt,opener=None):
     endpoint=os.getenv("NEO_ORACLE_API_URL","")
     token=os.getenv("NEO_ORACLE_SERVICE_TOKEN","")
     parsed=urllib.parse.urlparse(endpoint)
-    if parsed.scheme!="https" or parsed.path!="/api/oracle" or parsed.query or parsed.fragment or not parsed.hostname:
+    if parsed.scheme!="https" or parsed.path!="/api/oracle/private" or parsed.query or parsed.fragment or not parsed.hostname:
         raise RuntimeError("NEO Oracle endpoint not configured")
     if len(token)<32:raise RuntimeError("NEO Oracle service authorization not configured")
     if not isinstance(prompt,str) or not 1<=len(prompt.strip())<=2000:raise ValueError("invalid prompt")
