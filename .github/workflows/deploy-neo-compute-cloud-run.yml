@@ -1,0 +1,63 @@
+name: Deploy NEO Compute Fabric
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['server/neo-compute/**','deploy/neo-compute/**','architecture/neo-compute-fabric-policy.json','.github/workflows/deploy-neo-compute-cloud-run.yml']
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: neo-compute-cloud-run
+  cancel-in-progress: false
+jobs:
+  test-and-deploy:
+    runs-on: ubuntu-latest
+    environment: holytemples-production
+    timeout-minutes: 30
+    env:
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID || secrets.GCP_PROJECT_ID }}
+      GCP_REGION: ${{ vars.GCP_REGION || secrets.GCP_REGION }}
+      GCP_WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER || secrets.GCP_WIF_PROVIDER }}
+      GCP_CLOUD_RUN_SERVICE_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_SERVICE_ACCOUNT || secrets.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+      GCP_CLOUD_RUN_RUNTIME_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_RUNTIME_ACCOUNT || secrets.GCP_CLOUD_RUN_RUNTIME_ACCOUNT }}
+      GCP_ARTIFACT_REGISTRY: ${{ vars.GCP_ARTIFACT_REGISTRY || secrets.GCP_ARTIFACT_REGISTRY }}
+      SERVICE_NAME: neo-compute-fabric
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v4
+        with: {node-version: 24}
+      - name: Test compute fabric
+        run: node --test server/neo-compute/*.test.mjs
+      - name: Validate deployment configuration
+        run: |
+          set -euo pipefail
+          for name in GCP_PROJECT_ID GCP_REGION GCP_WIF_PROVIDER GCP_CLOUD_RUN_SERVICE_ACCOUNT GCP_CLOUD_RUN_RUNTIME_ACCOUNT GCP_ARTIFACT_REGISTRY; do
+            test -n "${!name:-}" || { echo "::error::Missing $name"; exit 1; }
+          done
+      - uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@v3
+      - name: Build and push image
+        env: {IMAGE: "${{ env.GCP_ARTIFACT_REGISTRY }}/neo-compute-fabric:${{ github.sha }}"}
+        run: |
+          set -euo pipefail
+          gcloud auth configure-docker "${GCP_REGION}-docker.pkg.dev" --quiet
+          docker build -f deploy/neo-compute/Dockerfile -t "$IMAGE" .
+          docker push "$IMAGE"
+      - name: Deploy control plane
+        env: {IMAGE: "${{ env.GCP_ARTIFACT_REGISTRY }}/neo-compute-fabric:${{ github.sha }}"}
+        run: |
+          set -euo pipefail
+          gcloud run deploy "$SERVICE_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --image="$IMAGE" --service-account="$GCP_CLOUD_RUN_RUNTIME_ACCOUNT" --port=8080 --allow-unauthenticated --set-secrets="NEO_COMPUTE_OPERATOR_TOKEN=neo-compute-operator-token:latest" --quiet
+      - name: Verify origin
+        run: |
+          set -euo pipefail
+          SERVICE_URL="$(gcloud run services describe "$SERVICE_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format='value(status.url)')"
+          test -n "$SERVICE_URL"
+          test "$(curl --retry 5 --retry-delay 3 -sS -o /tmp/compute-health.json -w '%{http_code}' "$SERVICE_URL/health")" = 200
+          test "$(curl --retry 5 --retry-delay 3 -sS -o /tmp/estate.json -w '%{http_code}' "$SERVICE_URL/v1/estate")" = 200
+          echo "NEO Compute origin: $SERVICE_URL" >> "$GITHUB_STEP_SUMMARY"
