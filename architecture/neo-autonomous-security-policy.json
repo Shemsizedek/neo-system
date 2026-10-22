@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "gate": 109,
+  "name": "NEO Autonomous Security Posture Policy",
+  "signal_classes": [
+    "IDENTITY",
+    "RUNTIME",
+    "NETWORK",
+    "APPLICATION",
+    "API",
+    "WALLET",
+    "AGENT",
+    "SUPPLY_CHAIN",
+    "DATA",
+    "CONFIGURATION"
+  ],
+  "containment": {
+    "auto_safe": [
+      "preserve-evidence",
+      "open-incident-case",
+      "increase-observation",
+      "rate-limit-suspect-flow",
+      "open-circuit"
+    ],
+    "approval_required": [
+      "isolate-connector",
+      "quarantine-workload",
+      "propagate-key-revocation",
+      "rollback-deployment",
+      "disable-account",
+      "rotate-credential"
+    ],
+    "never_from_suspicion_alone": [
+      "move-funds",
+      "seize-assets",
+      "delete-data",
+      "destroy-keys"
+    ]
+  },
+  "decision": {
+    "minimum_auto_confidence": 0.8,
+    "require_corroboration_for_high_impact": true,
+    "unknown_policy": "OBSERVE_AND_ESCALATE"
+  },
+  "site_autopilot": {
+    "host": "neo.holytemples.org",
+    "operator_surface": "/autopilot/",
+    "ai_gateway_prefix": "/api/ai/",
+    "status_endpoint": "/api/ai/autopilot/status",
+    "security_assessment_endpoint": "/api/ai/autopilot/security/assess",
+    "mission_endpoint": "/api/ai/execute",
+    "public_privileged_execution": false,
+    "requires_trusted_neopass_identity": true
+  }
+}
