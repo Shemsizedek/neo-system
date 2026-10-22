@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "gate": 107,
+  "name": "NEO Autonomous Communications and Coordination Policy",
+  "priorities": ["LOW","NORMAL","HIGH","CRITICAL"],
+  "recipients": ["NEO-ROUTER","NEO-GUARDIAN","NEO-SYNC","NEO-ORACLE","NEO-SCAN","NEO-SELFDEV","NEO-LEARNING","OPERATOR"],
+  "routes": [
+    {"event_type":"RUNTIME_FAILURE","recipients":["NEO-ROUTER","NEO-GUARDIAN","NEO-SCAN"],"priority":"CRITICAL"},
+    {"event_type":"RECOVERY_FAILED","recipients":["NEO-GUARDIAN","NEO-SCAN","OPERATOR"],"priority":"CRITICAL"},
+    {"event_type":"RECOVERY_SUCCEEDED","recipients":["NEO-SCAN","NEO-LEARNING"],"priority":"NORMAL"},
+    {"event_type":"RECURRING_FAILURE_PATTERN","recipients":["NEO-SELFDEV","NEO-LEARNING","NEO-SCAN"],"priority":"HIGH"},
+    {"event_type":"IMPLEMENTATION_GAP","recipients":["NEO-SELFDEV","NEO-SCAN"],"priority":"HIGH"},
+    {"event_type":"SECURITY_EVENT","recipients":["NEO-GUARDIAN","NEO-SCAN"],"priority":"CRITICAL"},
+    {"event_type":"CUSTOMER_IMPACT","recipients":["NEO-SCAN","OPERATOR"],"priority":"HIGH"}
+  ],
+  "rules": {
+    "deduplicate_by_event_id": true,
+    "require_correlation_id": true,
+    "sensitive_payload_minimization": true,
+    "unknown_events": "ROUTE_TO_NEO_SCAN_ONLY",
+    "broadcast_all": false
+  }
+}
