@@ -218,6 +218,16 @@
         "scripts/neo-self-development.mjs",
         ".github/workflows/gate-105-self-development.yml"
       ]
+    },
+    {
+      "capability_id": "GATE-106-OPERATIONAL-LEARNING",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "architecture/neo-operational-learning-policy.json",
+        "scripts/neo-operational-learning.mjs",
+        "data/neo-operational-experience.jsonl",
+        ".github/workflows/gate-106-operational-learning.yml"
+      ]
     }
   ],
   "autopilot": {
