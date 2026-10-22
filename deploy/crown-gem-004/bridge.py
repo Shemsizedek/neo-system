@@ -136,6 +136,10 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(payload)
     def do_GET(self):
+        if self.path == "/.well-known/oauth-protected-resource/mcp":
+            from neo_mcp_oauth_discovery import metadata
+            status,body=metadata()
+            return self.respond(status,body)
         if getattr(self,"path",None) == "/gemini/oracle-health":
             from gemini_private_web import configured, session
             if not configured() or not session(self):
