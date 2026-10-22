@@ -1,0 +1,21 @@
+name: Gate 118 Sovereign Continuity Fabric
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '19 11 * * 0'
+  push:
+    branches: [main]
+    paths: ['architecture/neo-continuity-fabric-policy.json','server/neo-continuity/**','package.json','.github/workflows/gate-118-sovereign-continuity.yml']
+permissions:
+  contents: read
+jobs:
+  continuity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 24}
+      - name: Test continuity fabric
+        run: npm run neo-continuity:test
+      - name: Syntax-check continuity service
+        run: node --check server/neo-continuity/server.mjs
