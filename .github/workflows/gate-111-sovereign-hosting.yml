@@ -1,0 +1,29 @@
+name: Gate 111 Sovereign Hosting Portability
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['architecture/neo-sovereign-hosting-policy.json','architecture/neo-workloads.json','scripts/neo-sovereign-hosting*','infra/neo-owned/**','package.json','.github/workflows/gate-111-sovereign-hosting.yml']
+  pull_request:
+    paths: ['architecture/neo-sovereign-hosting-policy.json','architecture/neo-workloads.json','scripts/neo-sovereign-hosting*','infra/neo-owned/**','package.json','.github/workflows/gate-111-sovereign-hosting.yml']
+permissions:
+  contents: read
+jobs:
+  portability:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 24}
+      - name: Validate sovereign-hosting contracts
+        run: npm run neo-hosting:test
+      - name: Generate portability report
+        run: npm run neo-hosting:audit -- --write --check
+      - name: Validate self-host compose
+        run: docker compose -f infra/neo-owned/docker-compose.yml config >/dev/null
+      - name: Publish Gate 111 evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-111-hosting-portability
+          path: artifacts/implementation/gate-111-hosting-portability.json
+          if-no-files-found: error
