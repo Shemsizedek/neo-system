@@ -1,0 +1,25 @@
+{
+  "schema_version":1,
+  "gate":118,
+  "name":"NEO Sovereign Backup, Disaster Recovery and Continuity Fabric",
+  "objectives":{
+    "critical":{"rto_minutes":30,"rpo_minutes":15,"replicas":2,"offsite_copies":1},
+    "high":{"rto_minutes":120,"rpo_minutes":60,"replicas":2,"offsite_copies":1},
+    "standard":{"rto_minutes":480,"rpo_minutes":240,"replicas":1,"offsite_copies":1}
+  },
+  "requirements":{
+    "encrypted_backup":true,
+    "digest_verification":true,
+    "pitr_for_stateful_databases":true,
+    "offsite_replication":true,
+    "restore_test_required":true,
+    "automatic_failover_allowed_for_preapproved_routes":true,
+    "database_primary_promotion_requires_authority":true,
+    "dns_cutover_requires_authority":true
+  },
+  "estate_identity":{
+    "name":"Global Vast Estate",
+    "designation":"Feodous Oprum Trust",
+    "holy_see_designation":"Holy See of Noble Drew Ali"
+  }
+}

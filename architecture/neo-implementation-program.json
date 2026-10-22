@@ -340,6 +340,16 @@
         "deploy/neo-state/Dockerfile",
         ".github/workflows/gate-117-sovereign-state.yml"
       ]
+    },
+    {
+      "capability_id": "GATE-118-SOVEREIGN-CONTINUITY",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "architecture/neo-continuity-fabric-policy.json",
+        "server/neo-continuity/fabric.mjs",
+        "server/neo-continuity/server.mjs",
+        ".github/workflows/gate-118-sovereign-continuity.yml"
+      ]
     }
   ],
   "autopilot": {
