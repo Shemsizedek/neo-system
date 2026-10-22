@@ -41,3 +41,5 @@ export { scoreChangeRisk, predictBlastRadius, createRolloutPlan, evaluateRelease
 export { createCommunicationEnvelope, routeCommunication, minimizePayload, createMemoryCommunicationStore, communicate, buildEscalation } from './communication-fabric.mjs'
 
 export { normalizeSignal, correlateSituation, scoreAttention, buildSituationalState } from './situational-awareness.mjs'
+
+export { confidenceForSignals, buildAutonomousSecurityDecision, buildSecurityAutopilotStatus } from './autonomous-security-posture.mjs'
