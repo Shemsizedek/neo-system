@@ -1,0 +1,8 @@
+import test from 'node:test'
+import assert from 'node:assert/strict'
+import {loadHostingPolicy,loadWorkloads,validateWorkload,providerCandidates,choosePlacement,buildPortabilityReport,buildSelfHostManifest} from './neo-sovereign-hosting.mjs'
+test('registered workloads reference portable container contracts',()=>{for(const workload of loadWorkloads().workloads){const r=validateWorkload(workload);assert.equal(r.valid,true,r.issues.join(','))}})
+test('neo-owned placement requires capital and readiness gates',()=>{const p=loadHostingPolicy(),w=loadWorkloads().workloads.find(x=>x.self_host_candidate);assert.equal(providerCandidates(w,p,{capitalApproved:false,selfHostReady:true}).find(x=>x.provider==='neo-owned').eligible,false);assert.equal(providerCandidates(w,p,{capitalApproved:true,selfHostReady:false}).find(x=>x.provider==='neo-owned').eligible,false);assert.equal(providerCandidates(w,p,{capitalApproved:true,selfHostReady:true}).find(x=>x.provider==='neo-owned').eligible,true)})
+test('current production provider remains preferred until explicit migration',()=>{const p=loadHostingPolicy(),w=loadWorkloads().workloads[0],x=choosePlacement({workload:w,policy:p,capitalApproved:true,selfHostReady:true});assert.equal(x.selected,w.current_provider);assert.equal(x.migration,false)})
+test('self-host manifest preserves health contract',()=>{const w=loadWorkloads().workloads.find(x=>x.workload_id==='neo-edge'),m=buildSelfHostManifest(w);assert.match(m.services['neo-edge'].healthcheck.test[1],/\/health/)})
+test('portability report authorizes no migration by itself',()=>{const r=buildPortabilityReport();assert.equal(r.summary.migrations_authorized,0);assert.match(r.policy_boundary,/do not authorize production migration/)})
