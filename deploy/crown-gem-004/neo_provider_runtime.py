@@ -2,9 +2,13 @@
 import os
 def available():
     return {"gemini":bool(os.getenv("GEMINI_API_KEY")),
-            "openai":False,"neo-oracle":False}
+            "openai":bool(os.getenv("NEO_OPENAI_API_KEY") and os.getenv("NEO_OPENAI_MODEL")),"neo-oracle":False}
 def execute(provider,prompt):
-    if provider!="gemini":raise ValueError("provider not connected")
-    if not available()["gemini"]:raise RuntimeError("Gemini unavailable")
-    from gemini_runtime import run
-    return run(prompt)
+    if provider not in available() or not available()[provider]:raise ValueError("provider not connected")
+    if provider=="gemini":
+        from gemini_runtime import run
+        return run(prompt)
+    if provider=="openai":
+        from neo_openai_adapter import run
+        return run(prompt)
+    raise ValueError("provider not connected")
