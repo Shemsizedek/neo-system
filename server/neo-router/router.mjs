@@ -1,3 +1,4 @@
+import { normalizeProviderUsage } from './provider-usage.mjs'
 import { DOCTRINE_PROFILE, EMERGING_INTERFACE_PROFILE, HUMAN_APPROVAL_ACTIONS, PROVIDER_ROLES } from './policy.mjs'
 import { buildNeoPerspectiveInstructions } from './neo-perspective.mjs'
 
@@ -131,7 +132,7 @@ export function createNeoRouter({
         state.lastError = null
         state.circuitOpenUntil = null
         await telemetryRecorder({ provider: providerId, event: 'success', latencyMs: state.lastLatencyMs }).catch(() => {})
-        return { status: 'completed', route: providerId, result, failures, ...routePlan }
+        return { status: 'completed', route: providerId, result, usage: normalizeProviderUsage(providerId, result?.raw), failures, ...routePlan }
       } catch (error) {
         const state = stateFor(providerId)
         const message = error instanceof Error ? error.message : String(error)
