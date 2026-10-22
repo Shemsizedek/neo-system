@@ -190,6 +190,15 @@
         "scripts/neo-system-inventory.mjs",
         ".github/workflows/gate-102-existing-system-inventory.yml"
       ]
+    },
+    {
+      "capability_id": "GATE-103-RUNTIME-TRUTH",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "architecture/neo-runtime-targets.json",
+        "scripts/neo-runtime-truth.mjs",
+        ".github/workflows/gate-103-runtime-truth.yml"
+      ]
     }
   ],
   "autopilot": {

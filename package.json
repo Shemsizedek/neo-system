@@ -78,7 +78,9 @@
     "neo-implementation:audit": "node scripts/neo-implementation-audit.mjs --check",
     "neo-implementation:test": "node --test scripts/neo-implementation-audit.test.mjs",
     "neo-inventory:audit": "node scripts/neo-system-inventory.mjs --check",
-    "neo-inventory:test": "node --test scripts/neo-system-inventory.test.mjs"
+    "neo-inventory:test": "node --test scripts/neo-system-inventory.test.mjs",
+    "neo-runtime:probe": "node scripts/neo-runtime-truth.mjs",
+    "neo-runtime:test": "node --test scripts/neo-runtime-truth.test.mjs"
   },
   "dependencies": {
     "@composio/core": "^0.18.1",

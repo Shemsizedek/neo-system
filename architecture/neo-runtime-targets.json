@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "gate": 103,
+  "name": "NEO Runtime Truth Registry",
+  "states": [
+    "RUNTIME_UNKNOWN",
+    "NOT_DEPLOYED",
+    "DEPLOYMENT_FAILED",
+    "LIVE_UNHEALTHY",
+    "LIVE_HEALTHY",
+    "FUNCTIONAL_TEST_FAILED",
+    "PRODUCTION_VALIDATED"
+  ],
+  "truth_rules": [
+    "deployment_configuration_is_not_runtime_proof",
+    "http_200_is_not_functional_validation",
+    "missing_telemetry_is_unknown_not_healthy",
+    "self_healing_may_retry_safe_checks_but_must_not_invent_success"
+  ],
+  "targets": [
+    {"system_id":"NEO-SYSTEM","url":"https://neo.holytemples.org/health","expected_http":[200],"expect_json_ok":true,"critical":true},
+    {"system_id":"NEO-ROUTER","url":"https://router.holytemples.org/health","expected_http":[200],"expect_json_ok":true,"critical":true},
+    {"system_id":"NEO-ALGO","url":"https://algo.holytemples.org/health","expected_http":[200],"expect_json_ok":true,"critical":false},
+    {"system_id":"NEO-PRIME","url":"https://prime.holytemples.org/health","expected_http":[200],"expect_json_ok":true,"critical":true},
+    {"system_id":"NEO-PAY","url":"https://pay.holytemples.org/health","expected_http":[200],"expect_json_ok":true,"critical":true},
+    {"system_id":"NEO-BANK","url":"https://neobank.holytemples.org/health","expected_http":[200],"expect_json_ok":true,"critical":true},
+    {"system_id":"NEO-HUB","url":"https://hub.holytemples.org/health","expected_http":[200],"expect_json_ok":true,"critical":false},
+    {"system_id":"NEO-COUNTER","url":"https://counter.holytemples.org/health","expected_http":[200],"expect_json_ok":true,"critical":true},
+    {"system_id":"NEO-WIRE","url":"https://wire.holytemples.org/health","expected_http":[200],"expect_json_ok":true,"critical":false},
+    {"system_id":"NEOGRAM","url":"https://neogram.holytemples.org/health","expected_http":[200],"expect_json_ok":true,"critical":false},
+    {"system_id":"NEO-FX","url":"https://neofx.holytemples.org/health","expected_http":[200],"expect_json_ok":true,"critical":false},
+    {"system_id":"NEO-SCAN","url":"https://scan.holytemples.org/health","expected_http":[200],"expect_json_ok":true,"critical":true}
+  ],
+  "autopilot": {
+    "probe_interval": "15 minutes",
+    "retry_count": 3,
+    "retry_delay_ms": 3000,
+    "safe_self_healing": [
+      "retry_transient_probe",
+      "reclassify_runtime_state_after_recovery",
+      "publish_runtime_truth_artifact"
+    ],
+    "requires_separate_authority": [
+      "redeploy_service",
+      "change_dns",
+      "rotate_credentials",
+      "modify_database",
+      "move_funds",
+      "disable_customer_access"
+    ]
+  }
+}
