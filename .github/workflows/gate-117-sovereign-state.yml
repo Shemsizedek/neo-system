@@ -1,0 +1,25 @@
+name: Gate 117 Sovereign Database and State Fabric
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['architecture/neo-state-fabric-policy.json','server/neo-state/**','infra/neo-state/**','package.json','.github/workflows/gate-117-sovereign-state.yml']
+  pull_request:
+    paths: ['architecture/neo-state-fabric-policy.json','server/neo-state/**','infra/neo-state/**','package.json','.github/workflows/gate-117-sovereign-state.yml']
+permissions:
+  contents: read
+jobs:
+  state-fabric:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 24}
+      - name: Test logical state fabric
+        run: npm run neo-state:test
+      - name: Syntax-check adapters
+        run: |
+          node --check server/neo-state/fabric.mjs
+          node --check server/neo-state/postgres-adapter.mjs
+      - name: Verify PostgreSQL contract exists
+        run: test -s server/neo-state/postgres-contract.sql
