@@ -1,4 +1,5 @@
 import http from 'node:http'
+import { evaluatePrimeAccess } from './access-policy.mjs'
 import { readFileSync } from 'node:fs'
 import { createNeoRouter } from '../neo-router/router.mjs'
 import { providersFromEnv } from '../neo-router/providers.mjs'
@@ -121,6 +122,8 @@ export function createPrimeHttpServer({ env = process.env, providers, now = () =
       return html(res, 200, ORACLE_HTML)
     }
     if (req.method === 'GET' && (req.url === '/health' || req.url === '/healthz')) {
+      const access = evaluatePrimeAccess({ method: req.method, path: req.url, authorization: req.headers.authorization, operatorToken })
+      if (!access.allowed) return json(res, 401, { ok: false, error: 'authentication_required' }, cors)
       const health = router.health()
       return json(res, health.ok ? 200 : 503, { ok: health.ok, service: 'neo-prime-runtime', prime: 'active', oracle: 'active', guard: 'enforced', configuredProviders: health.configured, providers: health.providers, capabilities: health.capabilities, timestamp: now() }, cors)
     }
@@ -131,6 +134,9 @@ export function createPrimeHttpServer({ env = process.env, providers, now = () =
         const mission = normalizeMission(body)
         const cycle = body.cycle === 'angelic' ? 'angelic' : 'human'
         const plan = prime.plan(mission, { cycle })
+        const access = evaluatePrimeAccess({ method: req.method, path: req.url, approvalRequired: plan.approvalRequired, authorization: req.headers.authorization, operatorToken, approved: body.approved, approvalHeader: req.headers['x-neo-prime-approval'] })
+        if (!access.allowed && access.reason === 'authentication_required') return json(res, 401, { ok: false, error: 'authentication_required' }, cors)
+        if (!access.allowed && access.reason === 'approval_required') return json(res, 202, { ok: true, status: 'awaiting_approval', approvalRequired: true, missionId: mission.missionId }, cors)
         const approved = body.approved === true && operatorAuthorized(req, operatorToken) && req.headers['x-neo-prime-approval'] === 'approved'
         if (plan.approvalRequired && !approved) return json(res, 202, { ok: true, status: 'awaiting_approval', text: 'NEO Guard halted this command pending explicit operator authorization.', missionId: mission.missionId, approvalRequired: true, risk: plan.neoAlgo?.risk || 'yellow', candidates: plan.candidates, neoAlgo: plan.neoAlgo }, cors)
         const result = await prime.execute(mission, { approved, cycle })
