@@ -1,0 +1,181 @@
+{
+  "schema_version": 1,
+  "program_id": "NEO-G101",
+  "name": "NEO Architecture Implementation Program",
+  "architecture_baseline": "NEO-100",
+  "source_gate": 101,
+  "source_of_truth": "github:Shemsizedek/neo-system",
+  "production_standard": {
+    "source_control": "github",
+    "frontend": "github-pages",
+    "runtime": "google-cloud-run",
+    "data": "firestore",
+    "ci_cd": "github-actions"
+  },
+  "status_model": [
+    "NOT_ASSESSED",
+    "NOT_BUILT",
+    "PLANNED",
+    "IN_PROGRESS",
+    "PARTIAL",
+    "IMPLEMENTED",
+    "DEPLOYED",
+    "VALIDATED",
+    "DEPRECATED",
+    "BLOCKED",
+    "NOT_APPLICABLE"
+  ],
+  "truth_rules": [
+    "documented_capability_is_not_existing_capability",
+    "implemented_is_not_validated",
+    "validated_in_test_is_not_production_live",
+    "unknown_is_preferred_to_unverified_completion",
+    "public_capability_claims_require_current_evidence"
+  ],
+  "requirements": [
+    {
+      "requirement_id": "G101-001",
+      "section": "101.1",
+      "title": "Canonical implementation requirement registry",
+      "priority": "P0",
+      "status": "VALIDATED",
+      "evidence": ["architecture/neo-implementation-program.json"],
+      "tests": ["scripts/neo-implementation-audit.test.mjs"]
+    },
+    {
+      "requirement_id": "G101-006",
+      "section": "101.6",
+      "title": "Gate-to-code traceability",
+      "priority": "P0",
+      "status": "VALIDATED",
+      "evidence": ["scripts/neo-implementation-audit.mjs"],
+      "tests": ["scripts/neo-implementation-audit.test.mjs"]
+    },
+    {
+      "requirement_id": "G101-021",
+      "section": "101.21",
+      "title": "Governed implementation backlog derivation",
+      "priority": "P1",
+      "status": "IMPLEMENTED",
+      "evidence": ["scripts/neo-implementation-audit.mjs"]
+    },
+    {
+      "requirement_id": "G101-037",
+      "section": "101.37",
+      "title": "Validation matrix generation",
+      "priority": "P1",
+      "status": "IMPLEMENTED",
+      "evidence": ["scripts/neo-implementation-audit.mjs"]
+    },
+    {
+      "requirement_id": "G101-073",
+      "section": "101.73",
+      "title": "Requirement health and regression state",
+      "priority": "P1",
+      "status": "IMPLEMENTED",
+      "evidence": ["scripts/neo-implementation-audit.mjs"]
+    },
+    {
+      "requirement_id": "G101-094",
+      "section": "101.94",
+      "title": "Implementation command-center report",
+      "priority": "P1",
+      "status": "PARTIAL",
+      "evidence": ["scripts/neo-implementation-audit.mjs"]
+    },
+    {
+      "requirement_id": "G101-100",
+      "section": "101.100",
+      "title": "Implementation API surface",
+      "priority": "P2",
+      "status": "NOT_BUILT",
+      "evidence": []
+    },
+    {
+      "requirement_id": "G101-102",
+      "section": "101.102",
+      "title": "Requirement provenance API endpoint",
+      "priority": "P2",
+      "status": "NOT_BUILT",
+      "evidence": []
+    },
+    {
+      "requirement_id": "G101-106",
+      "section": "101.106",
+      "title": "Automated first-pass architecture audit",
+      "priority": "P0",
+      "status": "VALIDATED",
+      "evidence": [
+        "scripts/neo-implementation-audit.mjs",
+        ".github/workflows/gate-101-implementation-autopilot.yml"
+      ],
+      "tests": ["scripts/neo-implementation-audit.test.mjs"]
+    },
+    {
+      "requirement_id": "G101-108",
+      "section": "101.108",
+      "title": "Build-before-expand enforcement",
+      "priority": "P1",
+      "status": "IMPLEMENTED",
+      "evidence": [".github/workflows/gate-101-implementation-autopilot.yml"]
+    }
+  ],
+  "capabilities": [
+    {
+      "capability_id": "NEO-SERVICES-ARCHITECTURE",
+      "status": "VALIDATED",
+      "evidence": [
+        "architecture/neo-services-platform.json",
+        "architecture/neo-services-normalization.json",
+        ".github/workflows/neo-services-architecture.yml"
+      ]
+    },
+    {
+      "capability_id": "NEO-COUNTER",
+      "status": "PARTIAL",
+      "evidence": [
+        "server/neo-counter-backend",
+        "apps/neo-counter",
+        "public/neopay/transaction-compose.mjs"
+      ]
+    },
+    {
+      "capability_id": "NEO-BANK",
+      "status": "PARTIAL",
+      "evidence": [
+        "server/neo-bank",
+        ".github/workflows/deploy-neo-bank-cloud-run.yml"
+      ]
+    },
+    {
+      "capability_id": "NEO-ENTERPRISE",
+      "status": "PARTIAL",
+      "evidence": ["server/neo-enterprise"]
+    },
+    {
+      "capability_id": "NEO-ORCHESTRATION",
+      "status": "PARTIAL",
+      "evidence": ["orchestration", "agents"]
+    }
+  ],
+  "autopilot": {
+    "enabled": true,
+    "mode": "evidence_first",
+    "schedule": "daily_and_on_change",
+    "writes_to_production": false,
+    "automatic_actions": [
+      "inventory_repository_components",
+      "validate_claimed_evidence",
+      "derive_gap_backlog",
+      "generate_validation_matrix",
+      "publish_ci_report"
+    ],
+    "requires_separate_authority": [
+      "production_deployment",
+      "funds_movement",
+      "credential_rotation",
+      "legal_or_regulatory_claim",
+      "irreversible_external_action"
+    ]
+  }
+}
