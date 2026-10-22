@@ -327,6 +327,19 @@
         "infra/neo-secrets/README.md",
         ".github/workflows/gate-116-sovereign-secrets.yml"
       ]
+    },
+    {
+      "capability_id": "GATE-117-SOVEREIGN-DATABASE-STATE",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "architecture/neo-state-fabric-policy.json",
+        "server/neo-state/fabric.mjs",
+        "server/neo-state/postgres-contract.sql",
+        "server/neo-state/postgres-adapter.mjs",
+        "server/neo-state/server.mjs",
+        "deploy/neo-state/Dockerfile",
+        ".github/workflows/gate-117-sovereign-state.yml"
+      ]
     }
   ],
   "autopilot": {
