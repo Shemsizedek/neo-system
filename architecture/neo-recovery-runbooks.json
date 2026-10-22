@@ -1,0 +1,110 @@
+{
+  "schema_version": 1,
+  "gate": 104,
+  "name": "NEO Autonomous Recovery Runbooks",
+  "failure_classes": [
+    "TRANSIENT",
+    "CONFIGURATION_DRIFT",
+    "BAD_RELEASE",
+    "DEPENDENCY_FAILURE",
+    "DATABASE_FAILURE",
+    "CREDENTIAL_FAILURE",
+    "DNS_FAILURE",
+    "CAPACITY_FAILURE",
+    "UNKNOWN"
+  ],
+  "runbooks": [
+    {
+      "runbook_id": "G104-RB-TRANSIENT",
+      "failure_class": "TRANSIENT",
+      "autonomy": "AUTO_SAFE",
+      "actions": ["retry_probe","recheck_dependency","reclassify_runtime"],
+      "max_attempts": 3,
+      "rollback_required": false
+    },
+    {
+      "runbook_id": "G104-RB-DEPENDENCY",
+      "failure_class": "DEPENDENCY_FAILURE",
+      "autonomy": "AUTO_SAFE",
+      "actions": ["retry_probe","open_circuit","recheck_dependency","close_circuit_if_recovered"],
+      "max_attempts": 3,
+      "rollback_required": false
+    },
+    {
+      "runbook_id": "G104-RB-BAD-RELEASE",
+      "failure_class": "BAD_RELEASE",
+      "autonomy": "APPROVAL_REQUIRED",
+      "actions": ["identify_previous_known_good","rollback_deployment","health_probe","functional_smoke_test"],
+      "max_attempts": 1,
+      "rollback_required": true
+    },
+    {
+      "runbook_id": "G104-RB-CONFIG",
+      "failure_class": "CONFIGURATION_DRIFT",
+      "autonomy": "APPROVAL_REQUIRED",
+      "actions": ["compare_desired_state","restore_approved_configuration","health_probe","functional_smoke_test"],
+      "max_attempts": 1,
+      "rollback_required": true
+    },
+    {
+      "runbook_id": "G104-RB-DATABASE",
+      "failure_class": "DATABASE_FAILURE",
+      "autonomy": "ESCALATE",
+      "actions": ["preserve_evidence","verify_backup_state","escalate_operator"],
+      "max_attempts": 0,
+      "rollback_required": false
+    },
+    {
+      "runbook_id": "G104-RB-CREDENTIAL",
+      "failure_class": "CREDENTIAL_FAILURE",
+      "autonomy": "ESCALATE",
+      "actions": ["preserve_evidence","revoke_if_confirmed_compromise","escalate_operator"],
+      "max_attempts": 0,
+      "rollback_required": false
+    },
+    {
+      "runbook_id": "G104-RB-DNS",
+      "failure_class": "DNS_FAILURE",
+      "autonomy": "ESCALATE",
+      "actions": ["compare_expected_dns","preserve_evidence","escalate_operator"],
+      "max_attempts": 0,
+      "rollback_required": false
+    },
+    {
+      "runbook_id": "G104-RB-CAPACITY",
+      "failure_class": "CAPACITY_FAILURE",
+      "autonomy": "ESCALATE",
+      "actions": ["collect_capacity_metrics","preserve_evidence","escalate_operator"],
+      "max_attempts": 0,
+      "rollback_required": false
+    },
+    {
+      "runbook_id": "G104-RB-UNKNOWN",
+      "failure_class": "UNKNOWN",
+      "autonomy": "ESCALATE",
+      "actions": ["preserve_evidence","freeze_unsafe_automation","escalate_operator"],
+      "max_attempts": 0,
+      "rollback_required": false
+    }
+  ],
+  "safety": {
+    "auto_safe_actions": [
+      "retry_probe",
+      "recheck_dependency",
+      "reclassify_runtime",
+      "open_circuit",
+      "close_circuit_if_recovered",
+      "preserve_evidence"
+    ],
+    "never_auto_without_separate_authority": [
+      "rollback_deployment",
+      "restore_approved_configuration",
+      "change_dns",
+      "rotate_credentials",
+      "modify_database",
+      "move_funds",
+      "disable_customer_access"
+    ],
+    "unknown_failure_policy": "ESCALATE"
+  }
+}
