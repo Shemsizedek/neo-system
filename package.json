@@ -99,7 +99,9 @@
     "neo-storage:server": "node server/neo-storage/server.mjs",
     "neo-storage:test": "node --test server/neo-storage/*.test.mjs",
     "neo-network:server": "node server/neo-network/server.mjs",
-    "neo-network:test": "node --test server/neo-network/*.test.mjs"
+    "neo-network:test": "node --test server/neo-network/*.test.mjs",
+    "neo-pki:server": "node server/neo-pki/server.mjs",
+    "neo-pki:test": "node --test server/neo-pki/*.test.mjs"
   },
   "dependencies": {
     "@composio/core": "^0.18.1",

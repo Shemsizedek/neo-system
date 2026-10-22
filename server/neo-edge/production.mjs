@@ -16,6 +16,7 @@ const AI_GATEWAY_URL=String(process.env.AI_GATEWAY_URL||'').replace(/\/$/,'');
 const NEO_COMPUTE_URL=String(process.env.NEO_COMPUTE_URL||'').replace(/\/$/,'');
 const NEO_STORAGE_URL=String(process.env.NEO_STORAGE_URL||'').replace(/\/$/,'');
 const NEO_NETWORK_URL=String(process.env.NEO_NETWORK_URL||'').replace(/\/$/,'');
+const NEO_PKI_URL=String(process.env.NEO_PKI_URL||'').replace(/\/$/,'');
 const FAMILY_OFFICE_ORIGIN='sheltonestate.family.blog';
 const NEO_PLATFORM_API_ORIGIN=String(process.env.NEO_PLATFORM_API_ORIGIN||'https://egov.holytemples.org').replace(/\/$/,'');
 
@@ -78,6 +79,25 @@ function serviceConsole(host){
   </script></body></html>`;
 }
 
+
+function proxyPkiFabric(req,res){
+  if(!NEO_PKI_URL)return json(res,503,{error:'neo_pki_unconfigured'});
+  let target;
+  try{
+    const suffix=String(req.url||'/').replace(/^\/api\/identity/,'');
+    target=new URL(suffix||'/',NEO_PKI_URL);
+  }catch{return json(res,502,{error:'neo_pki_invalid_origin'})}
+  const transport=target.protocol==='https:'?https:http;
+  const headers={...req.headers,host:target.host,'x-forwarded-host':'neo.holytemples.org'};
+  const upstream=transport.request(target,{method:req.method,headers},reply=>{
+    const responseHeaders={...reply.headers};
+    delete responseHeaders['access-control-allow-origin'];
+    res.writeHead(reply.statusCode||502,responseHeaders);
+    reply.pipe(res);
+  });
+  upstream.on('error',error=>json(res,502,{error:'neo_pki_unavailable',detail:error.message}));
+  req.pipe(upstream);
+}
 
 function proxyNetworkFabric(req,res){
   if(!NEO_NETWORK_URL)return json(res,503,{error:'neo_network_unconfigured'});
@@ -241,6 +261,7 @@ export async function startNeoEdgeProduction(){
     if(host==='neo.holytemples.org'&&url.pathname.startsWith('/api/compute/'))return proxyComputeFabric(req,res);
     if(host==='neo.holytemples.org'&&url.pathname.startsWith('/api/storage/'))return proxyStorageFabric(req,res);
     if(host==='neo.holytemples.org'&&url.pathname.startsWith('/api/network/'))return proxyNetworkFabric(req,res);
+    if(host==='neo.holytemples.org'&&url.pathname.startsWith('/api/identity/'))return proxyPkiFabric(req,res);
     if(host==='neo.holytemples.org'&&url.pathname.startsWith('/api/ai/'))return proxyAiGateway(req,res);
     if(host==='desk.holytemples.org')return proxyDealDesk(req,res,url);
     if(host==='office.holytemples.org'&&req.method==='GET'&&url.pathname==='/health')return json(res,200,{ok:true,service:'shelton-estate-family-office',surface:'legacy-mirror',origin:FAMILY_OFFICE_ORIGIN});
