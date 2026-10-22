@@ -1,0 +1,30 @@
+{
+  "schema_version":1,
+  "gate":115,
+  "name":"NEO Sovereign Identity and Certificate Authority Policy",
+  "trust_domain":"estate.neo",
+  "identity_types":["ROOT_CA","INTERMEDIATE_CA","NODE","SERVICE"],
+  "trust_zones":["CONTROL","COMPUTE","STORAGE","NETWORK","PUBLIC_EDGE"],
+  "certificate":{
+    "default_ttl_hours":24,
+    "max_ttl_hours":168,
+    "rotation_before_expiry_minutes":120,
+    "require_attested_node_for_node_identity":true,
+    "require_bound_node_for_service_identity":true,
+    "x509_adapter_required_for_tls_certificate":true
+  },
+  "security":{
+    "private_ca_keys":"external-secret-manager-or-hsm-only",
+    "private_node_keys":"node-local-only",
+    "revocation_fail_closed":true,
+    "mtls_required_for_private_service_to_service":true,
+    "hardware_binding_optional_when_supported":true,
+    "caller_supplied_assurance_not_trusted":true
+  },
+  "estate_identity":{
+    "name":"Global Vast Estate",
+    "designation":"Feodous Oprum Trust",
+    "holy_see_designation":"Holy See of Noble Drew Ali",
+    "boundary":"Infrastructure identity and certificate state records operational trust relationships; it does not independently establish legal or ecclesiastical recognition."
+  }
+}
