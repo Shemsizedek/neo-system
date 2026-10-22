@@ -39,8 +39,12 @@
       "title": "Canonical implementation requirement registry",
       "priority": "P0",
       "status": "VALIDATED",
-      "evidence": ["architecture/neo-implementation-program.json"],
-      "tests": ["scripts/neo-implementation-audit.test.mjs"]
+      "evidence": [
+        "architecture/neo-implementation-program.json"
+      ],
+      "tests": [
+        "scripts/neo-implementation-audit.test.mjs"
+      ]
     },
     {
       "requirement_id": "G101-006",
@@ -48,8 +52,12 @@
       "title": "Gate-to-code traceability",
       "priority": "P0",
       "status": "VALIDATED",
-      "evidence": ["scripts/neo-implementation-audit.mjs"],
-      "tests": ["scripts/neo-implementation-audit.test.mjs"]
+      "evidence": [
+        "scripts/neo-implementation-audit.mjs"
+      ],
+      "tests": [
+        "scripts/neo-implementation-audit.test.mjs"
+      ]
     },
     {
       "requirement_id": "G101-021",
@@ -57,7 +65,9 @@
       "title": "Governed implementation backlog derivation",
       "priority": "P1",
       "status": "IMPLEMENTED",
-      "evidence": ["scripts/neo-implementation-audit.mjs"]
+      "evidence": [
+        "scripts/neo-implementation-audit.mjs"
+      ]
     },
     {
       "requirement_id": "G101-037",
@@ -65,7 +75,9 @@
       "title": "Validation matrix generation",
       "priority": "P1",
       "status": "IMPLEMENTED",
-      "evidence": ["scripts/neo-implementation-audit.mjs"]
+      "evidence": [
+        "scripts/neo-implementation-audit.mjs"
+      ]
     },
     {
       "requirement_id": "G101-073",
@@ -73,7 +85,9 @@
       "title": "Requirement health and regression state",
       "priority": "P1",
       "status": "IMPLEMENTED",
-      "evidence": ["scripts/neo-implementation-audit.mjs"]
+      "evidence": [
+        "scripts/neo-implementation-audit.mjs"
+      ]
     },
     {
       "requirement_id": "G101-094",
@@ -81,7 +95,9 @@
       "title": "Implementation command-center report",
       "priority": "P1",
       "status": "PARTIAL",
-      "evidence": ["scripts/neo-implementation-audit.mjs"]
+      "evidence": [
+        "scripts/neo-implementation-audit.mjs"
+      ]
     },
     {
       "requirement_id": "G101-100",
@@ -109,7 +125,9 @@
         "scripts/neo-implementation-audit.mjs",
         ".github/workflows/gate-101-implementation-autopilot.yml"
       ],
-      "tests": ["scripts/neo-implementation-audit.test.mjs"]
+      "tests": [
+        "scripts/neo-implementation-audit.test.mjs"
+      ]
     },
     {
       "requirement_id": "G101-108",
@@ -117,7 +135,9 @@
       "title": "Build-before-expand enforcement",
       "priority": "P1",
       "status": "IMPLEMENTED",
-      "evidence": [".github/workflows/gate-101-implementation-autopilot.yml"]
+      "evidence": [
+        ".github/workflows/gate-101-implementation-autopilot.yml"
+      ]
     }
   ],
   "capabilities": [
@@ -150,12 +170,26 @@
     {
       "capability_id": "NEO-ENTERPRISE",
       "status": "PARTIAL",
-      "evidence": ["server/neo-enterprise"]
+      "evidence": [
+        "server/neo-enterprise"
+      ]
     },
     {
       "capability_id": "NEO-ORCHESTRATION",
       "status": "PARTIAL",
-      "evidence": ["orchestration", "agents"]
+      "evidence": [
+        "orchestration",
+        "agents"
+      ]
+    },
+    {
+      "capability_id": "GATE-102-SYSTEM-INVENTORY",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "architecture/neo-existing-system-inventory.json",
+        "scripts/neo-system-inventory.mjs",
+        ".github/workflows/gate-102-existing-system-inventory.yml"
+      ]
     }
   ],
   "autopilot": {
