@@ -125,10 +125,13 @@ export function createPrimeHttpServer({ env = process.env, providers, now = () =
       const access = evaluatePrimeAccess({ method: req.method, path: req.url, authorization: req.headers.authorization, operatorToken })
       if (!access.allowed) return json(res, 401, { ok: false, error: 'authentication_required' }, cors)
       const health = router.health()
+      if (req.url === '/healthz') return json(res, health.ok ? 200 : 503, { ok: health.ok, service: 'neo-prime-runtime' }, cors)
       return json(res, health.ok ? 200 : 503, { ok: health.ok, service: 'neo-prime-runtime', prime: 'active', oracle: 'active', guard: 'enforced', configuredProviders: health.configured, providers: health.providers, capabilities: health.capabilities, timestamp: now() }, cors)
     }
     if (req.method === 'POST' && (req.url === '/api/prime' || req.url === '/prime' || req.url === '/api/oracle')) {
       if (origin && !allowedOrigins.has(origin)) return json(res, 403, { ok: false, error: 'origin_not_allowed' })
+      const earlyAccess = evaluatePrimeAccess({ method: req.method, path: req.url, authorization: req.headers.authorization, operatorToken })
+      if (!earlyAccess.allowed) return json(res, 401, { ok: false, error: 'authentication_required' }, cors)
       try {
         const body = await readJson(req)
         const mission = normalizeMission(body)
