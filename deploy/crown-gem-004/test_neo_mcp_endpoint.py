@@ -6,10 +6,10 @@ class MockHandler:
  def __init__(self,payload,auth):
   self.path="/mcp";self.client_address=("127.0.0.1",1234)
   self.headers={"Authorization":auth,"Content-Length":str(len(payload))}
-  self.rfile=io.BytesIO(payload);self.calls=[]
+  self.rfile=io.BytesIO(payload);self.wfile=io.BytesIO();self.calls=[];self.response_headers={}
  def respond(self,status,data):self.calls.append((status,data))
  def send_response(self,status):self.calls.append((status,None))
- def send_header(self,*a):pass
+ def send_header(self,key,value):self.response_headers[key]=value
  def end_headers(self):pass
 class EndpointTests(unittest.TestCase):
  def test_missing_bearer_rejected(self):
@@ -30,6 +30,7 @@ class EndpointTests(unittest.TestCase):
   with patch.object(bridge,"quota_allowed",return_value=True),patch.dict(bridge.os.environ,{"CROWN_BRIDGE_TOKEN":"z"*32,"NEO_MCP_ACCESS_TOKEN":"k"*32}):
    bridge.Handler.do_POST(h)
   self.assertEqual(h.calls[0][0],200)
-  names=[x["name"] for x in h.calls[0][1]["result"]["tools"]]
+  names=[x["name"] for x in json.loads(h.wfile.getvalue())["result"]["tools"]]
+  self.assertEqual(h.response_headers["MCP-Protocol-Version"],"2025-06-18")
   self.assertEqual(names,["neo_status","neo_prepare_development"])
 if __name__=="__main__":unittest.main()
