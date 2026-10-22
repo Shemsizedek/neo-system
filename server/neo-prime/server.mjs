@@ -1,5 +1,7 @@
 import http from 'node:http'
 import { evaluatePrimeAccess } from './access-policy.mjs'
+import { createRequestLimiter } from './request-limiter.mjs'
+import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { createNeoRouter } from '../neo-router/router.mjs'
 import { providersFromEnv } from '../neo-router/providers.mjs'
@@ -110,6 +112,7 @@ export function createPrimeHttpServer({ env = process.env, providers, now = () =
   const prime = createNeoPrimeRuntime({ router })
   const operatorToken = env.NEO_PRIME_OPERATOR_TOKEN || ''
   const apiToken = env.NEO_PRIME_API_TOKEN || ''
+  const requestLimiter = createRequestLimiter()
   const allowedOrigins = new Set(String(env.NEO_PRIME_ALLOWED_ORIGINS || DEFAULT_ALLOWED_ORIGINS.join(',')).split(',').map((value) => value.trim()).filter(Boolean))
 
   return http.createServer(async (req, res) => {
@@ -133,6 +136,9 @@ export function createPrimeHttpServer({ env = process.env, providers, now = () =
       if (origin && !allowedOrigins.has(origin)) return json(res, 403, { ok: false, error: 'origin_not_allowed' })
       const earlyAccess = evaluatePrimeAccess({ method: req.method, path: req.url, authorization: req.headers.authorization, operatorToken, apiToken })
       if (!earlyAccess.allowed) return json(res, 401, { ok: false, error: 'authentication_required' }, cors)
+      const identity = createHash('sha256').update(String(req.headers.authorization)).digest('hex')
+      const admission = requestLimiter.check(identity)
+      if (!admission.allowed) return json(res, 429, { ok: false, error: 'rate_limited' }, cors)
       try {
         const body = await readJson(req)
         const mission = normalizeMission(body)
