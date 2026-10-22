@@ -113,6 +113,7 @@ export function createNeoRouter({
     }
 
     const failures = []
+    const attempts = []
     for (const providerId of routePlan.candidates.slice(0, maxHops)) {
       try {
         const provider = providerMap.get(providerId)
@@ -133,7 +134,9 @@ export function createNeoRouter({
         state.lastError = null
         state.circuitOpenUntil = null
         await telemetryRecorder({ provider: providerId, event: 'success', latencyMs: state.lastLatencyMs }).catch(() => {})
-        return { status: 'completed', route: providerId, result, usage: normalizeProviderUsage(providerId, result?.raw), failures, ...routePlan }
+        const usage = normalizeProviderUsage(providerId, result?.raw)
+        attempts.push({ provider: providerId, status: 'completed', usage })
+        return { status: 'completed', route: providerId, result, usage, attempts, failures, ...routePlan }
       } catch (error) {
         const state = stateFor(providerId)
         const message = error instanceof Error ? error.message : String(error)
@@ -146,9 +149,10 @@ export function createNeoRouter({
         }
         await telemetryRecorder({ provider: providerId, event: 'failure', error: message }).catch(() => {})
         failures.push({ provider: providerId, message })
+        attempts.push({ provider: providerId, status: 'failed', usage: normalizeProviderUsage(providerId, error?.providerBody) })
       }
     }
-    return { status: 'blocked', reason: 'All eligible providers failed', failures, ...routePlan }
+    return { status: 'blocked', reason: 'All eligible providers failed', failures, attempts, ...routePlan }
   }
 
   return { plan, execute, health, providerRoles: PROVIDER_ROLES }
