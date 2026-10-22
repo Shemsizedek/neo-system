@@ -1,5 +1,6 @@
 import http from 'node:http';
 import { renderSystemHome } from './system-home.mjs';
+import { renderEstateApp, estateRoute } from './estate-app.mjs';
 import https from 'node:https';
 import { createNeoEdgeServer } from './server.mjs';
 import { isWirePlatformPath, proxyWirePlatform, serveWireApp, wireServiceManifest } from './wire-app.mjs';
@@ -12,6 +13,7 @@ import { FAMILY_OFFICE_ADS_REGISTRY, familyOfficeAdsEvidence, renderAdsTxt } fro
 const PORT=Number(process.env.PORT||8080);
 const LEGACY_HOST='127.0.0.1';
 const AI_GATEWAY_URL=String(process.env.AI_GATEWAY_URL||'').replace(/\/$/,'');
+const NEO_COMPUTE_URL=String(process.env.NEO_COMPUTE_URL||'').replace(/\/$/,'');
 const FAMILY_OFFICE_ORIGIN='sheltonestate.family.blog';
 const NEO_PLATFORM_API_ORIGIN=String(process.env.NEO_PLATFORM_API_ORIGIN||'https://egov.holytemples.org').replace(/\/$/,'');
 
@@ -74,6 +76,25 @@ function serviceConsole(host){
   </script></body></html>`;
 }
 
+
+function proxyComputeFabric(req,res){
+  if(!NEO_COMPUTE_URL)return json(res,503,{error:'neo_compute_unconfigured'});
+  let target;
+  try{
+    const suffix=String(req.url||'/').replace(/^\/api\/compute/,'');
+    target=new URL(suffix||'/',NEO_COMPUTE_URL);
+  }catch{return json(res,502,{error:'neo_compute_invalid_origin'})}
+  const transport=target.protocol==='https:'?https:http;
+  const headers={...req.headers,host:target.host,'x-forwarded-host':'neo.holytemples.org'};
+  const upstream=transport.request(target,{method:req.method,headers},reply=>{
+    const responseHeaders={...reply.headers};
+    delete responseHeaders['access-control-allow-origin'];
+    res.writeHead(reply.statusCode||502,responseHeaders);
+    reply.pipe(res);
+  });
+  upstream.on('error',error=>json(res,502,{error:'neo_compute_unavailable',detail:error.message}));
+  req.pipe(upstream);
+}
 
 function proxyAiGateway(req,res){
   if(!AI_GATEWAY_URL)return json(res,503,{error:'neo_ai_gateway_unconfigured'});
@@ -176,6 +197,8 @@ export async function startNeoEdgeProduction(){
       const handled=await handleNeoTellerRequest(req,res,{fallthrough:true});
       if(handled!==false)return handled;
     }
+    if(host==='neo.holytemples.org'&&req.method==='GET'&&estateRoute(url))return html(res,200,renderEstateApp());
+    if(host==='neo.holytemples.org'&&url.pathname.startsWith('/api/compute/'))return proxyComputeFabric(req,res);
     if(host==='neo.holytemples.org'&&url.pathname.startsWith('/api/ai/'))return proxyAiGateway(req,res);
     if(host==='desk.holytemples.org')return proxyDealDesk(req,res,url);
     if(host==='office.holytemples.org'&&req.method==='GET'&&url.pathname==='/health')return json(res,200,{ok:true,service:'shelton-estate-family-office',surface:'legacy-mirror',origin:FAMILY_OFFICE_ORIGIN});
