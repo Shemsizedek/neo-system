@@ -315,6 +315,18 @@
         "infra/neo-pki/README.md",
         ".github/workflows/gate-115-sovereign-identity.yml"
       ]
+    },
+    {
+      "capability_id": "GATE-116-SOVEREIGN-SECRETS-KMS",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "architecture/neo-secrets-fabric-policy.json",
+        "server/neo-secrets/fabric.mjs",
+        "server/neo-secrets/server.mjs",
+        "deploy/neo-secrets/Dockerfile",
+        "infra/neo-secrets/README.md",
+        ".github/workflows/gate-116-sovereign-secrets.yml"
+      ]
     }
   ],
   "autopilot": {
