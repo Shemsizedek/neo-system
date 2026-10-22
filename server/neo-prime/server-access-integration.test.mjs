@@ -23,8 +23,22 @@ test('unauthenticated green command cannot invoke provider', async () => {
 
 test('public liveness remains accessible and detailed health is protected', async () => {
   await run(async base => {
-    assert.equal((await fetch(`${base}/healthz`)).status, 200)
+    const publicHealth = await fetch(`${base}/healthz`)
+    assert.equal(publicHealth.status, 200)
+    const publicBody = await publicHealth.json()
+    assert.equal(publicBody.ok, true)
+    assert.equal(Object.hasOwn(publicBody, 'providers'), false)
+    assert.equal(Object.hasOwn(publicBody, 'configuredProviders'), false)
     assert.equal((await fetch(`${base}/health`)).status, 401)
     assert.equal((await fetch(`${base}/health`, { headers: { authorization: 'Bearer test-only' } })).status, 200)
+  })
+})
+
+
+test('unauthenticated malformed requests are rejected before JSON parsing', async () => {
+  await run(async (base, calls) => {
+    const response = await fetch(`${base}/api/oracle`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{not-json' })
+    assert.equal(response.status, 401)
+    assert.equal(calls(), 0)
   })
 })
