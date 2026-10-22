@@ -1,0 +1,36 @@
+name: Gate 106 Operational Learning
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '23 10 * * *'
+  push:
+    branches: [main]
+    paths:
+      - 'architecture/neo-operational-learning-policy.json'
+      - 'scripts/neo-operational-learning*'
+      - 'data/neo-operational-experience.jsonl'
+      - 'package.json'
+      - '.github/workflows/gate-106-operational-learning.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  learning:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Validate learning and policy boundaries
+        run: npm run neo-learning:test
+      - name: Generate operational learning report
+        run: npm run neo-learning:report -- --write
+      - name: Publish Gate 106 learning evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-106-operational-learning
+          path: artifacts/implementation/gate-106-operational-learning.json
+          if-no-files-found: error
