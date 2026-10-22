@@ -258,6 +258,17 @@
         ".github/workflows/gate-110-autonomous-site-operations.yml",
         "server/wordpress-stewardship"
       ]
+    },
+    {
+      "capability_id": "GATE-111-SOVEREIGN-HOSTING",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "architecture/neo-sovereign-hosting-policy.json",
+        "architecture/neo-workloads.json",
+        "scripts/neo-sovereign-hosting.mjs",
+        "infra/neo-owned/docker-compose.yml",
+        ".github/workflows/gate-111-sovereign-hosting.yml"
+      ]
     }
   ],
   "autopilot": {

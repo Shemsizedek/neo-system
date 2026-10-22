@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "gate": 111,
+  "name": "NEO Sovereign Hosting and Infrastructure Independence Policy",
+  "principles": ["workload_identity_survives_provider_change","build_once_promote_portably","provider_is_runtime_not_institution","self_hosting_requires_tested_cutover_and_rollback","dns_change_is_separate_from_runtime_readiness"],
+  "providers": {
+    "google-cloud-run": {"class":"external-managed","enabled":true,"production":true},
+    "github-pages": {"class":"external-static","enabled":true,"production":true},
+    "render": {"class":"external-managed","enabled":true,"production":true},
+    "oci": {"class":"external-vm","enabled":true,"production":false},
+    "neo-owned": {"class":"sovereign-owned","enabled":false,"production":false}
+  },
+  "placement": {
+    "prefer_current_production": true,
+    "allow_shadow_self_host": true,
+    "allow_automatic_provider_migration": false,
+    "require_capital_gate_for_neo_owned": true,
+    "require_runtime_equivalence": true,
+    "require_backup_restore_validation": true,
+    "require_security_validation": true,
+    "require_dns_cutover_approval": true
+  },
+  "protected": ["dns_cutover","database_primary_switch","secret_migration","financial_workload_migration","identity_authority_migration"]
+}
