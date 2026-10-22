@@ -59,7 +59,7 @@ function onGoogleCredential(result){api('/gemini/google',{credential:result.cred
 window.onGoogleCredential=onGoogleCredential;
 const clientId=document.querySelector('meta[name="google-signin-client-id"]')?.content;
 if(clientId){const script=document.createElement('script');script.src='https://accounts.google.com/gsi/client';script.async=true;script.onload=()=>{google.accounts.id.initialize({client_id:clientId,callback:onGoogleCredential});google.accounts.id.renderButton($('googleSignIn'),{theme:'outline',size:'large',text:'signin_with'})};document.head.append(script)}
-fetch('/gemini/session',{credentials:'same-origin'}).then(r=>r.json()).then(x=>{if(x.authenticated){$('login').hidden=true;$('chat').hidden=false;status.textContent='Signed in with Google'}}).catch(()=>{});
+fetch('/gemini/session',{credentials:'same-origin'}).then(r=>r.json()).then(x=>{if(x.authenticated){$('login').hidden=true;$('chat').hidden=false;status.textContent='Signed in with Google';const option=$('provider').querySelector('option[value="openai"]');if(option&&x.providers?.openai){option.disabled=false;option.textContent='OpenAI'}}}).catch(()=>{});
 function addEntry(kind,body,tools){const el=document.createElement('div');el.className='entry '+kind;if(kind==='assistant'){for(const line of String(body).split('\\n')){const p=document.createElement('div');const heading=line.match(/^(#{1,3})\\s+(.+)$/);const bullet=line.match(/^\\s*[-*]\\s+(.+)$/);if(heading){const h=document.createElement('strong');h.textContent=heading[2];p.append(h);p.style.marginTop='12px'}else if(bullet){p.textContent='• '+bullet[1];p.style.paddingLeft='12px'}else{p.textContent=line||'\\u00a0'}el.append(p)}}else{el.textContent=body}if(tools&&tools.length){const t=document.createElement('p');t.className='meta';t.textContent='NEO tools: '+tools.join(', ');el.append(t)}$('conversation').append(el);el.scrollIntoView({block:'nearest'})}
 $('send').onclick=async()=>{const btn=$('send'),message=$('prompt').value.trim();if(!message)return;btn.disabled=true;status.textContent='Working...';addEntry('user',message);$('prompt').value='';try{const res=await api('/gemini/ask',{message,provider:$('provider').value});addEntry('assistant',res.response||'No response',res.tools_used||[]);status.textContent='Ready'}catch(e){addEntry('assistant','Request failed: '+e.message);status.textContent='Unable to complete request'}finally{btn.disabled=false}};
 $('prompt').addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){$('send').click()}});
@@ -67,7 +67,9 @@ $('logout').onclick=async()=>{await api('/gemini/logout',{}).catch(()=>{});$('lo
 </script></html>'''
 def get(handler):
     if handler.path.split('?',1)[0]=='/gemini/session':
-        return handler.respond(200,{'authenticated':bool(configured() and session(handler))})
+        from neo_provider_runtime import available
+        signed_in=bool(configured() and session(handler))
+        return handler.respond(200,{'authenticated':signed_in,'providers':available() if signed_in else {}})
     ready=configured()
     if ready:
         body=HTML.replace("__NEO_GOOGLE_CLIENT_ID__",html.escape(os.environ["NEO_GEM_GOOGLE_CLIENT_ID"],quote=True)).encode()
@@ -99,7 +101,8 @@ def post(handler):
     if handler.path!="/gemini/ask":return handler.respond(404,{"error":"not found"})
     if not session(handler):return handler.respond(401,{"error":"login required"})
     provider=data.get("provider","gemini")
-    if provider!="gemini":return handler.respond(400,{"error":"provider not connected"})
+    from neo_provider_runtime import available
+    if not available().get(provider,False):return handler.respond(400,{"error":"provider not connected"})
     msg=data.get("message")
     if not isinstance(msg,str) or not 1<=len(msg.strip())<=2000:return handler.respond(400,{"error":"invalid message"})
     try:
