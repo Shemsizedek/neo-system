@@ -1,0 +1,23 @@
+name: Gate 115 Sovereign Identity and CA Fabric
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['architecture/neo-sovereign-identity-policy.json','server/neo-pki/**','deploy/neo-pki/**','infra/neo-pki/**','package.json','.github/workflows/gate-115-sovereign-identity.yml']
+  pull_request:
+    paths: ['architecture/neo-sovereign-identity-policy.json','server/neo-pki/**','deploy/neo-pki/**','infra/neo-pki/**','package.json','.github/workflows/gate-115-sovereign-identity.yml']
+permissions:
+  contents: read
+jobs:
+  pki:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 24}
+      - name: Test Estate PKI
+        run: npm run neo-pki:test
+      - name: Syntax-check PKI service
+        run: node --check server/neo-pki/server.mjs
+      - name: Validate PKI container
+        run: docker build -f deploy/neo-pki/Dockerfile -t neo-pki:gate115 .
