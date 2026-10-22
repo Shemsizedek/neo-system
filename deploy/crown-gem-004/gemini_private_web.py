@@ -98,8 +98,11 @@ def post(handler):
         handler.send_response(200);handler.send_header("Set-Cookie",cookie);handler.send_header("Content-Type","application/json");handler.send_header("Cache-Control","no-store");handler.send_header("Content-Length",str(len(body)));handler.end_headers();handler.wfile.write(body);return
     if handler.path=="/gemini/logout":
         body=b'{"ok":true}';handler.send_response(200);handler.send_header("Set-Cookie","neo_gem_session=; Path=/gemini; HttpOnly; Secure; SameSite=Strict; Max-Age=0");handler.send_header("Content-Type","application/json");handler.send_header("Content-Length",str(len(body)));handler.end_headers();handler.wfile.write(body);return
-    if handler.path!="/gemini/ask":return handler.respond(404,{"error":"not found"})
+    if handler.path not in ("/gemini/ask","/gemini/provider-diagnostic"):return handler.respond(404,{"error":"not found"})
     if not session(handler):return handler.respond(401,{"error":"login required"})
+    if handler.path=="/gemini/provider-diagnostic":
+        from neo_provider_diagnostic import diagnose
+        return handler.respond(200,diagnose(data.get("provider","")))
     provider=data.get("provider","gemini")
     from neo_provider_runtime import available
     if not available().get(provider,False):return handler.respond(400,{"error":"provider not connected"})
