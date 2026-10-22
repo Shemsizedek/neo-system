@@ -238,6 +238,16 @@
         "server/neo-router/communication-fabric.test.mjs",
         ".github/workflows/gate-107-communications-fabric.yml"
       ]
+    },
+    {
+      "capability_id": "GATE-108-SITUATIONAL-AWARENESS",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "architecture/neo-situational-awareness-policy.json",
+        "server/neo-router/situational-awareness.mjs",
+        "server/neo-router/situational-awareness.test.mjs",
+        ".github/workflows/gate-108-situational-awareness.yml"
+      ]
     }
   ],
   "autopilot": {
