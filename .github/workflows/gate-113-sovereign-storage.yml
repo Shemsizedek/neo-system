@@ -1,0 +1,23 @@
+name: Gate 113 Sovereign Storage Fabric
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['architecture/neo-storage-fabric-policy.json','server/neo-storage/**','deploy/neo-storage/**','package.json','.github/workflows/gate-113-sovereign-storage.yml']
+  pull_request:
+    paths: ['architecture/neo-storage-fabric-policy.json','server/neo-storage/**','deploy/neo-storage/**','package.json','.github/workflows/gate-113-sovereign-storage.yml']
+permissions:
+  contents: read
+jobs:
+  storage-fabric:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 24}
+      - name: Test encrypted content-addressed storage
+        run: npm run neo-storage:test
+      - name: Syntax-check storage service
+        run: node --check server/neo-storage/server.mjs
+      - name: Validate storage container
+        run: docker build -f deploy/neo-storage/Dockerfile -t neo-storage:gate113 .
