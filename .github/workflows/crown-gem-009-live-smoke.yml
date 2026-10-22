@@ -1,0 +1,32 @@
+name: Crown Bridge Live Verification
+on:
+  workflow_dispatch:
+    inputs:
+      bitcoin_txid:
+        description: "Public Bitcoin transaction ID (64 hex characters)"
+        required: true
+        type: string
+      counterparty_asset:
+        description: "Public Counterparty asset (e.g. XCP)"
+        required: true
+        default: "XCP"
+        type: string
+permissions:
+  contents: read
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    environment: crown-staging
+    timeout-minutes: 5
+    steps:
+      - name: Checkout read-only verification code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Run authenticated verification
+        env:
+          CROWN_BRIDGE_URL: ${{ vars.CROWN_BRIDGE_URL }}
+          CROWN_BRIDGE_TOKEN: ${{ secrets.CROWN_BRIDGE_TOKEN }}
+          CROWN_SAMPLE_TXID: ${{ inputs.bitcoin_txid }}
+          CROWN_SAMPLE_ASSET: ${{ inputs.counterparty_asset }}
+        run: python deploy/crown-gem-004/smoke_check.py
