@@ -105,7 +105,9 @@
     "neo-secrets:server": "node server/neo-secrets/server.mjs",
     "neo-secrets:test": "node --test server/neo-secrets/*.test.mjs",
     "neo-state:server": "node server/neo-state/server.mjs",
-    "neo-state:test": "node --test server/neo-state/*.test.mjs"
+    "neo-state:test": "node --test server/neo-state/*.test.mjs",
+    "neo-continuity:server": "node server/neo-continuity/server.mjs",
+    "neo-continuity:test": "node --test server/neo-continuity/*.test.mjs"
   },
   "dependencies": {
     "@composio/core": "^0.18.1",
