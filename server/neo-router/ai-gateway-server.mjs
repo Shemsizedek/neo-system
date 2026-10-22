@@ -1,4 +1,5 @@
 import http from 'node:http'
+import fs from 'node:fs'
 import { randomUUID } from 'node:crypto'
 import { createNeoRouter } from './router.mjs'
 import { providersFromEnv } from './providers.mjs'
@@ -6,6 +7,9 @@ import { buildKnowledgeContext } from './knowledge-context.mjs'
 import { parseMuseHandoff } from './muse-handoff.mjs'
 import { buildMuseBrief } from './muse-brief.mjs'
 import { libraryAsset } from '../holytemples-adapter/adapter.mjs'
+import { buildAutonomousSecurityDecision, buildSecurityAutopilotStatus } from './autonomous-security-posture.mjs'
+
+const AUTOPILOT_SECURITY_POLICY = JSON.parse(fs.readFileSync(new URL('../../architecture/neo-autonomous-security-policy.json', import.meta.url), 'utf8'))
 
 const MAX_BODY_BYTES = 64 * 1024
 
@@ -238,6 +242,24 @@ export function createNeoAiGatewayServer({
         const deleted = await conversationStore.deleteThread({ subjectId, threadId: decodeURIComponent(threadMatch[1]) })
         if (!deleted) return respond(res, 404, { error: 'thread_not_found' })
         return respond(res, 200, { subjectId, deleted: true })
+      }
+
+      if (req.method === 'GET' && url.pathname === '/api/ai/autopilot/status') {
+        if (typeof resolveTrustedIdentity !== 'function') return respond(res, 401, { error: 'neopass_identity_required' })
+        const subjectId = trustedSubject(await resolveTrustedIdentity(req))
+        return respond(res, 200, { subjectId, ...buildSecurityAutopilotStatus({ routerHealth: router.health(), policy: AUTOPILOT_SECURITY_POLICY }) })
+      }
+
+      if (req.method === 'POST' && url.pathname === '/api/ai/autopilot/security/assess') {
+        if (typeof resolveTrustedIdentity !== 'function') return respond(res, 401, { error: 'neopass_identity_required' })
+        const subjectId = trustedSubject(await resolveTrustedIdentity(req))
+        const body = await readJson(req)
+        const decision = buildAutonomousSecurityDecision({
+          signals: Array.isArray(body.signals) ? body.signals : [],
+          approved: body.approved === true,
+          policy: AUTOPILOT_SECURITY_POLICY,
+        })
+        return respond(res, decision.escalation_required ? 202 : 200, { subjectId, ...decision })
       }
 
       if (req.method === 'GET' && url.pathname === '/api/ai/providers') {
