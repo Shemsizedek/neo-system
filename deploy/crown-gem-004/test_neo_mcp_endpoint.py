@@ -27,7 +27,7 @@ class EndpointTests(unittest.TestCase):
  def test_authorized_tools_are_read_only(self):
   payload=json.dumps({"jsonrpc":"2.0","id":1,"method":"tools/list"}).encode()
   h=MockHandler(payload,"Bearer "+"k"*32)
-  with patch.object(bridge,"quota_allowed",return_value=True),patch.dict(bridge.os.environ,{"CROWN_BRIDGE_TOKEN":"k"*32}):
+  with patch.object(bridge,"quota_allowed",return_value=True),patch.dict(bridge.os.environ,{"CROWN_BRIDGE_TOKEN":"z"*32,"NEO_MCP_ACCESS_TOKEN":"k"*32}):
    bridge.Handler.do_POST(h)
   self.assertEqual(h.calls[0][0],200)
   names=[x["name"] for x in h.calls[0][1]["result"]["tools"]]
