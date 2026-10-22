@@ -209,6 +209,15 @@
         "server/neo-router/autonomous-operations.mjs",
         ".github/workflows/gate-104-autonomous-recovery.yml"
       ]
+    },
+    {
+      "capability_id": "GATE-105-SELF-DEVELOPMENT",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "architecture/neo-self-development-policy.json",
+        "scripts/neo-self-development.mjs",
+        ".github/workflows/gate-105-self-development.yml"
+      ]
     }
   ],
   "autopilot": {

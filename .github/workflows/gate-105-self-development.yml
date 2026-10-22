@@ -1,0 +1,39 @@
+name: Gate 105 Self-Development Autopilot
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '7 10 * * *'
+  push:
+    branches: [main]
+    paths:
+      - 'architecture/neo-implementation-program.json'
+      - 'architecture/neo-self-development-policy.json'
+      - 'scripts/neo-self-development*'
+      - 'package.json'
+      - '.github/workflows/gate-105-self-development.yml'
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  self-development:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Validate Gate 105 self-development controls
+        run: npm run neo-selfdev:test
+      - name: Generate work packages and create/refresh governed engineering issues
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run neo-selfdev:run -- --write --publish-issues
+      - name: Publish self-development evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-105-self-development
+          path: artifacts/implementation/gate-105-self-development.json
+          if-no-files-found: error

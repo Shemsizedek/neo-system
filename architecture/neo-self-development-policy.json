@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "gate": 105,
+  "name": "NEO Self-Development Policy",
+  "loop": [
+    "OBSERVE_GAP",
+    "NORMALIZE_REQUIREMENT",
+    "BUILD_WORK_PACKAGE",
+    "CREATE_OR_REFRESH_ISSUE",
+    "PROPOSE_CODE_AND_TESTS",
+    "OPEN_PULL_REQUEST",
+    "VALIDATE",
+    "LEARN"
+  ],
+  "sources": [
+    "architecture/neo-implementation-program.json",
+    "architecture/neo-existing-system-inventory.json",
+    "artifacts/implementation/gate-103-runtime-truth.json"
+  ],
+  "autonomy": {
+    "auto_issue_priorities": ["P0","P1"],
+    "auto_issue_statuses": ["NOT_ASSESSED","NOT_BUILT","PLANNED","IN_PROGRESS","PARTIAL","BLOCKED"],
+    "may_auto_create_issue": true,
+    "may_auto_refresh_issue": true,
+    "may_auto_generate_work_package": true,
+    "may_auto_commit_code": false,
+    "may_auto_merge_pull_request": false,
+    "may_auto_deploy_production": false
+  },
+  "safety": {
+    "dedupe_marker_prefix": "<!-- neo-selfdev:",
+    "unknown_gap_policy": "PROPOSE_ONLY",
+    "protected_actions": [
+      "merge_pull_request",
+      "deploy_production",
+      "rotate_credentials",
+      "change_dns",
+      "modify_database",
+      "move_funds",
+      "change_legal_or_regulatory_claim"
+    ]
+  }
+}

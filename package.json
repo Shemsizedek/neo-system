@@ -82,7 +82,9 @@
     "neo-runtime:probe": "node scripts/neo-runtime-truth.mjs",
     "neo-runtime:test": "node --test scripts/neo-runtime-truth.test.mjs",
     "neo-recovery:plan": "node scripts/neo-autonomous-recovery.mjs",
-    "neo-recovery:test": "node --test scripts/neo-autonomous-recovery.test.mjs"
+    "neo-recovery:test": "node --test scripts/neo-autonomous-recovery.test.mjs",
+    "neo-selfdev:run": "node scripts/neo-self-development.mjs",
+    "neo-selfdev:test": "node --test scripts/neo-self-development.test.mjs"
   },
   "dependencies": {
     "@composio/core": "^0.18.1",
