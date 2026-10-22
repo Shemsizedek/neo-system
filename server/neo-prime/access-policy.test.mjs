@@ -34,3 +34,18 @@ test('privileged execution needs bearer and explicit approval factors', () => {
 test('credentials cannot authorize unrecognized routes', () => {
   assert.equal(request({ method: 'PATCH', authorization: `Bearer ${token}`, approved: true, approvalHeader: 'approved' }).allowed, false)
 })
+
+
+test('least-privilege client token permits green but never privileged execution', () => {
+  const client = 'test-client-only'
+  const ordinary = request({ operatorToken: token, apiToken: client, authorization: `Bearer ${client}` })
+  assert.equal(ordinary.allowed, true)
+  const privileged = request({ operatorToken: token, apiToken: client, authorization: `Bearer ${client}`, approvalRequired: true, approved: true, approvalHeader: 'approved' })
+  assert.equal(privileged.allowed, false)
+  assert.equal(privileged.reason, 'authentication_required')
+})
+
+test('unconfigured API token cannot grant access', () => {
+  const denied = request({ operatorToken: '', apiToken: '', authorization: 'Bearer anything' })
+  assert.equal(denied.allowed, false)
+})
