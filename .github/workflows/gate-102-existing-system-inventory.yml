@@ -1,0 +1,49 @@
+name: Gate 102 Existing-System Inventory
+
+on:
+  pull_request:
+    paths:
+      - 'apps/**'
+      - 'server/**'
+      - 'services/**'
+      - 'agents/**'
+      - 'architecture/neo-existing-system-inventory.json'
+      - 'scripts/neo-system-inventory*'
+      - 'package.json'
+      - '.github/workflows/gate-102-existing-system-inventory.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'apps/**'
+      - 'server/**'
+      - 'services/**'
+      - 'agents/**'
+      - 'architecture/neo-existing-system-inventory.json'
+      - 'scripts/neo-system-inventory*'
+      - 'package.json'
+      - '.github/workflows/gate-102-existing-system-inventory.yml'
+  schedule:
+    - cron: '31 9 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inventory:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Test Gate 102 inventory
+        run: npm run neo-inventory:test
+      - name: Generate Existing / Partial / Missing / Unknown matrix
+        run: npm run neo-inventory:audit -- --write
+      - name: Publish Gate 102 inventory artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-102-existing-system-inventory
+          path: artifacts/implementation/gate-102-inventory.json
+          if-no-files-found: error
