@@ -1,0 +1,33 @@
+{
+  "asset": "KNOWINDEX",
+  "name": "NEO Knowledge — KNOWINDEX",
+  "description": "KNOWINDEX is the initial 1,000-share issuance identified by the issuer for NEO Knowledge: the partnership described by the project sponsor between Shelton Estate & Co. and the James A. Stanback Family Trust and its Free World Knowledge Foundation. The initiative connects the World Library with Moorish and Indigenous knowledge contributions, provenance, preservation, learning and documented knowledge-economy activity through NEO Crown Chain and NEO Nous OS. Specific share rights remain subject to governing documents. NEO measurements are independently defined; references to the UNDP/MBRF Global Knowledge Index are attributed external benchmarks.",
+  "image": "https://crown.holytemples.org/assets/KNOWINDEX/icon.png",
+  "website": "https://holytemples.org/world-library/",
+  "images": [
+    {
+      "type": "icon",
+      "size": "48x48",
+      "data": "https://crown.holytemples.org/assets/KNOWINDEX/icon.png",
+      "name": "KNOWINDEX token icon"
+    },
+    {
+      "type": "standard",
+      "data": "https://crown.holytemples.org/assets/KNOWINDEX/card.svg",
+      "name": "Existing Crown card — replacement knowledge-specific design pending"
+    }
+  ],
+  "files": [
+    {
+      "type": "other",
+      "name": "World Library — Hall of Knowledge",
+      "data": "https://holytemples.org/world-library/"
+    },
+    {
+      "type": "other",
+      "name": "Global Knowledge Index 2025 — UNDP / MBRF external reference",
+      "data": "https://www.undp.org/arab-states/publications/global-knowledge-index-2025"
+    }
+  ],
+  "html": "<section><h2>NEO Knowledge</h2><p>World Library, knowledge contributions and the knowledge economy.</p><p><a href=\"https://holytemples.org/world-library/\">Explore the Hall of Knowledge World Library</a></p><p>NEO methodology: draft 0.1.0. Independent measurements; external GKI sources retain their attribution.</p></section>"
+}
