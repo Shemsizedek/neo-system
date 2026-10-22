@@ -248,6 +248,17 @@
         "server/neo-router/situational-awareness.test.mjs",
         ".github/workflows/gate-108-situational-awareness.yml"
       ]
+    },
+    {
+      "capability_id": "GATE-109-AUTONOMOUS-SECURITY-SITE-AUTOPILOT",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "architecture/neo-autonomous-security-policy.json",
+        "server/neo-router/autonomous-security-posture.mjs",
+        "server/neo-router/ai-gateway-server.mjs",
+        "server/neo-edge/autopilot-app.mjs",
+        "server/neo-edge/production.mjs"
+      ]
     }
   ],
   "autopilot": {
