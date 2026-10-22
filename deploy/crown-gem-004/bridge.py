@@ -136,6 +136,14 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(payload)
     def do_GET(self):
+        if getattr(self,"path",None) == "/gemini/oracle-health":
+            from gemini_private_web import configured, session
+            if not configured() or not session(self):
+                return self.respond(401,{"error":"Google login required"})
+            if not quota_allowed(self.client_address[0]):
+                return self.respond(429,{"error":"rate limited"})
+            from neo_oracle_health import check
+            return self.respond(200,check())
         if getattr(self,"path",None) == "/gemini/pr-status":
             from gemini_private_web import configured, session
             if not configured() or not session(self):
