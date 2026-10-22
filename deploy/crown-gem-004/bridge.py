@@ -201,7 +201,7 @@ class Handler(BaseHTTPRequestHandler):
         if len(token)<32:
             return self.respond(503,{"error":"authentication not configured"})
         if not hmac.compare_digest(self.headers.get("Authorization",""),"Bearer "+token):
-            return self.respond(401,{"error":"unauthorized"})
+            return self.mcp_auth_required() if self.path == "/mcp" else self.respond(401,{"error":"unauthorized"})
         if self.path == "/mcp":
             length = self.headers.get("Content-Length", "")
             if not length.isdecimal() or not 1 <= int(length) <= 16384:
