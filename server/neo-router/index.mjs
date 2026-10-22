@@ -39,3 +39,5 @@ export { proposeRemediation, simulateRemediation, authorizeRemediation, executeR
 export { scoreChangeRisk, predictBlastRadius, createRolloutPlan, evaluateReleaseWindow, sequenceDeployments, evaluateRollbackThresholds, createReleaseEvidence, releaseGovernanceDecision } from './change-intelligence.mjs'
 
 export { createCommunicationEnvelope, routeCommunication, minimizePayload, createMemoryCommunicationStore, communicate, buildEscalation } from './communication-fabric.mjs'
+
+export { normalizeSignal, correlateSituation, scoreAttention, buildSituationalState } from './situational-awareness.mjs'
