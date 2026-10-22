@@ -1,0 +1,36 @@
+name: Gate 103 Runtime Truth Autopilot
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '*/15 * * * *'
+  push:
+    branches: [main]
+    paths:
+      - 'architecture/neo-runtime-targets.json'
+      - 'scripts/neo-runtime-truth*'
+      - '.github/workflows/gate-103-runtime-truth.yml'
+      - 'package.json'
+
+permissions:
+  contents: read
+
+jobs:
+  runtime-truth:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Test runtime truth engine
+        run: npm run neo-runtime:test
+      - name: Probe live NEO runtime targets with bounded retry
+        run: npm run neo-runtime:probe -- --write --check-critical
+      - name: Publish Gate 103 runtime evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-103-runtime-truth
+          path: artifacts/implementation/gate-103-runtime-truth.json
+          if-no-files-found: warn
