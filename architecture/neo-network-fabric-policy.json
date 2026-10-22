@@ -1,0 +1,36 @@
+{
+  "schema_version":1,
+  "gate":114,
+  "name":"NEO Sovereign Network Fabric Policy",
+  "estate_identity":{
+    "name":"Global Vast Estate",
+    "designation":"Feodous Oprum Trust",
+    "holy_see_designation":"Holy See of Noble Drew Ali"
+  },
+  "overlay":{
+    "cidr":"10.144.0.0/16",
+    "dns_suffix":"estate.neo",
+    "transport":"wireguard-compatible-overlay",
+    "mutual_authentication":"node-attestation-plus-key-fingerprint",
+    "private_keys":"node-local-only"
+  },
+  "routing":{
+    "health_aware":true,
+    "automatic_failover":true,
+    "cross_provider_bridges_allowed":true,
+    "public_ingress_default":"deny",
+    "production_route_change_requires_authority":true
+  },
+  "service_discovery":{
+    "ttl_seconds":30,
+    "require_healthy_endpoint":true,
+    "internal_dns_authoritative":true
+  },
+  "security":{
+    "require_attested_node":true,
+    "require_unique_overlay_ip":true,
+    "quarantine_on_identity_mismatch":true,
+    "never_store_private_keys":true,
+    "never_trust_dns_without_node_identity":true
+  }
+}
