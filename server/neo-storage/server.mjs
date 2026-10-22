@@ -1,4 +1,6 @@
 import http from 'node:http'
+import fs from 'node:fs'
+import path from 'node:path'
 import crypto from 'node:crypto'
 import {createFilesystemStorage,createStorageObject,verifyStoredObject,addReplica,replicationState,verifyExportBundle} from './fabric.mjs'
 import policy from '../../architecture/neo-storage-fabric-policy.json' with {type:'json'}
