@@ -480,6 +480,12 @@
       "target": "render",
       "status": "source-discovered-not-cutover",
       "classification": "requires-runtime-and-content-audit"
+    },
+    {
+      "hostname": "crown.holytemples.org",
+      "target": "render",
+      "status": "live-source-node-inventoried-not-cutover",
+      "classification": "requires-persistent-volume-records-and-secret-transfer"
     }
   ],
   "replacement_runtimes": [
@@ -489,7 +495,16 @@
       "url": "https://neo-edge-render.onrender.com",
       "provider": "render",
       "dns_cutover": false,
-      "status": "migration-preview-protected-operations-disabled"
+      "status": "migration-preview-protected-operations-disabled",
+      "verification": {
+        "deploy_id": "dep-dbd96hr7uolc73avjfi0",
+        "commit": "8644726db13247b9c9ca17f30940a9e24afebd73",
+        "status": "live",
+        "health_http": 200,
+        "mode": "migration-preview",
+        "protected_api_http": 503,
+        "production_ready": false
+      }
     },
     {
       "name": "neo-msta-preservation",
@@ -498,6 +513,30 @@
       "provider": "render",
       "dns_cutover": false,
       "status": "runtime-live-source-archive-returns-403"
+    }
+  ],
+  "source_nodes": [
+    {
+      "host_id": "host_50699ac8024b4dfa",
+      "hostname": "crown-node-001",
+      "provider": "google-compute-engine",
+      "public_hostname": "crown.holytemples.org",
+      "containers": [
+        {
+          "name": "crown",
+          "image": "crown-chain:crown031",
+          "persistent_storage": "crown_state volume mounted at /var/lib/crown"
+        },
+        {
+          "name": "crown-metadata",
+          "image": "node:24-alpine",
+          "read_only_sources": [
+            "/opt/crown-metadata/code",
+            "/opt/crown-metadata/records"
+          ]
+        }
+      ],
+      "migration_status": "not-migrated-destination-storage-and-restore-required"
     }
   ]
 }

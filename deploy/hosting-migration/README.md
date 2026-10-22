@@ -6,7 +6,7 @@ The owner authorized migration of holytemples.org and NEO sites to Render or Cha
 
 - Retain the nine existing Sites projects and their current audiences. Eighteen custom domains are active there. Public HTML, compatible Worker portals, explorer interfaces and read-only catalogs fit Sites.
 - Retain fourteen existing Render services and two databases. Use Render for persistent Node/Python processes, backend APIs, workers, databases and WordPress PHP/MariaDB.
-- `inventory.json` records those resources and 27 additional source-declared hostnames. It is a source inventory, not a complete authoritative DNS-zone export. Do not treat a discovered hostname as proof of a live service.
+- `inventory.json` records those resources and 28 additional hostnames from source and live-node inspection. It is a source inventory, not a complete authoritative DNS-zone export. Do not treat a discovered hostname as proof of a live service.
 
 ## Replacement runtimes
 
@@ -43,9 +43,13 @@ This migration adds no automatic Google resource deletion and no primary databas
 
 ## Replacement deployment evidence
 
-- `neo-edge-render`: service `srv-dbd93p5g1s2s73al65v0`, https://neo-edge-render.onrender.com. Initial deploy was live; external verification exposed a 421 on Render's default hostname. The follow-up maps only the configured Render hostname to the existing public NEO gateway, preserving custom-host routing. Local startup returned health 200; 19 targeted tests passed. Follow-up deployment requires external verification.
+- `neo-edge-render`: service `srv-dbd93p5g1s2s73al65v0`, https://neo-edge-render.onrender.com. Initial deploy was live; external verification exposed a 421 on Render's default hostname. The follow-up maps only the configured Render hostname to the existing public NEO gateway, preserving custom-host routing. Local startup returned health 200; 20 targeted tests passed. Final deployment `dep-dbd96hr7uolc73avjfi0` is live at commit `8644726db13247b9c9ca17f30940a9e24afebd73`; external `/health` returned 200 with migration-preview metadata and `/api/treasury` returned 503.
 - `neo-msta-preservation`: service `srv-dbd93s8473hc73ebuqd0`, https://neo-msta-preservation.onrender.com. Initial deploy is live and `/health` returned 200. The original archive returns 403, so the content is not verified and the custom domain must remain uncut.
 - Render dashboard authentication was declined. Do not retry browser sign-in unless the owner asks. Connector access remains available for supported operations.
 - Full WordPress backup `20261022_worldtemple`, ID 1, completed at the source with no exclusions (reported size 482.2 MB). It has not been downloaded or restored to Render.
 
 The replacement edge is explicitly a migration preview (`NEO_HOSTING_MIGRATION_SHADOW=true`). It blocks writes, API routes and identity/bank/treasury/court/operator hosts, and its health response reports `productionReady=false` and `recordsMigrated=false`. The existing production services remain in place. Twenty targeted tests passed after this restriction was added.
+
+## Crown source node
+
+Read-only SentinelX inspection confirmed `crown-node-001` on Google Compute Engine. Nginx serves `crown.holytemples.org`. Container `crown` uses image `crown-chain:crown031` and the persistent `crown_state` volume mounted at `/var/lib/crown`. Container `crown-metadata` uses `node:24-alpine` with read-only `/opt/crown-metadata/code` and `/opt/crown-metadata/records` bind mounts. Do not stop these services or discard the volume. A consistent data export, required secret transfer, persistent Render destination and restore verification are still required. No private volume content or secrets were printed or copied during inventory.
