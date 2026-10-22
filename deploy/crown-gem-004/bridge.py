@@ -199,7 +199,15 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_header("Content-Length", "0")
                 self.end_headers()
                 return
-            return self.respond(200, response)
+            self.send_response(200)
+            body=json.dumps(response).encode()
+            self.send_header("Content-Type","application/json")
+            self.send_header("Cache-Control","no-store")
+            self.send_header("MCP-Protocol-Version","2025-06-18")
+            self.send_header("Content-Length",str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+            return
         if self.path == "/v1/gemini/probe":
             if self.headers.get("Content-Length","0") not in ("","0"):
                 return self.respond(400,{"error":"request body prohibited"})
