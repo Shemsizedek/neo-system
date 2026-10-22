@@ -481,5 +481,23 @@
       "status": "source-discovered-not-cutover",
       "classification": "requires-runtime-and-content-audit"
     }
+  ],
+  "replacement_runtimes": [
+    {
+      "name": "neo-edge-render",
+      "service_id": "srv-dbd93p5g1s2s73al65v0",
+      "url": "https://neo-edge-render.onrender.com",
+      "provider": "render",
+      "dns_cutover": false,
+      "status": "replacement-runtime-under-verification"
+    },
+    {
+      "name": "neo-msta-preservation",
+      "service_id": "srv-dbd93s8473hc73ebuqd0",
+      "url": "https://neo-msta-preservation.onrender.com",
+      "provider": "render",
+      "dns_cutover": false,
+      "status": "runtime-live-source-archive-returns-403"
+    }
   ]
 }

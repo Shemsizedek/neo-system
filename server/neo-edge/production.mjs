@@ -1,4 +1,5 @@
 import http from 'node:http';
+import { normalizeRenderHost } from './render-host.mjs';
 import { renderSystemHome } from './system-home.mjs';
 import { renderEstateApp, estateRoute } from './estate-app.mjs';
 import https from 'node:https';
@@ -327,6 +328,7 @@ export async function startNeoEdgeProduction(){
   await new Promise((resolve,reject)=>{legacy.once('error',reject);legacy.listen(0,LEGACY_HOST,resolve)});
   const legacyPort=legacy.address().port;
   const front=http.createServer(async(req,res)=>{
+    normalizeRenderHost(req,process.env.RENDER_EXTERNAL_HOSTNAME);
     const host=hostOf(req);
     const url=new URL(req.url||'/',`https://${host||'neo.holytemples.org'}`);
     if((host==='neofx.holytemples.org'||host==='finance.holytemples.org')&&url.pathname.startsWith('/api/neo-exchange/')){

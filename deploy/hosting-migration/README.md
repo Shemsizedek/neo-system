@@ -40,3 +40,10 @@ MSTA preservation uses `node server/msta-legacy-proxy/server.mjs`, with `node --
 Run `node --test server/msta-legacy-proxy/server.test.mjs server/neo-edge/*.test.mjs`. Before each DNS cutover record current DNS and TTL, target deployment and commit, data-backup hash, restore test, TLS state and application checks. A deploy that returns 200 is not proof that member data or protected workflows work. Preserve source resources and rollback records until the replacement is verified.
 
 This migration adds no automatic Google resource deletion and no primary database or signing-key switch.
+
+## Replacement deployment evidence
+
+- `neo-edge-render`: service `srv-dbd93p5g1s2s73al65v0`, https://neo-edge-render.onrender.com. Initial deploy was live; external verification exposed a 421 on Render's default hostname. The follow-up maps only the configured Render hostname to the existing public NEO gateway, preserving custom-host routing. Local startup returned health 200; 19 targeted tests passed. Follow-up deployment requires external verification.
+- `neo-msta-preservation`: service `srv-dbd93s8473hc73ebuqd0`, https://neo-msta-preservation.onrender.com. Initial deploy is live and `/health` returned 200. The original archive returns 403, so the content is not verified and the custom domain must remain uncut.
+- Render dashboard authentication was declined. Do not retry browser sign-in unless the owner asks. Connector access remains available for supported operations.
+- Full WordPress backup `20261022_worldtemple`, ID 1, completed at the source with no exclusions (reported size 482.2 MB). It has not been downloaded or restored to Render.
