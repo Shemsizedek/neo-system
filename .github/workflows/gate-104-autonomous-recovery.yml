@@ -1,0 +1,37 @@
+name: Gate 104 Autonomous Recovery Policy
+
+on:
+  pull_request:
+    paths:
+      - 'architecture/neo-recovery-runbooks.json'
+      - 'scripts/neo-autonomous-recovery*'
+      - 'server/neo-router/autonomous-operations.mjs'
+      - 'package.json'
+      - '.github/workflows/gate-104-autonomous-recovery.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'architecture/neo-recovery-runbooks.json'
+      - 'scripts/neo-autonomous-recovery*'
+      - 'server/neo-router/autonomous-operations.mjs'
+      - 'package.json'
+      - '.github/workflows/gate-104-autonomous-recovery.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  recovery-policy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Validate autonomous recovery policy
+        run: npm run neo-recovery:test
+      - name: Verify Gate 103 runtime truth remains compatible
+        run: npm run neo-runtime:test
+      - name: Verify NEO Router autonomous-operation controls
+        run: node --test server/neo-router/*.test.mjs
