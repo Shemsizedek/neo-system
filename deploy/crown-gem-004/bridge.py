@@ -183,6 +183,22 @@ class Handler(BaseHTTPRequestHandler):
             return self.respond(503,{"error":"authentication not configured"})
         if not hmac.compare_digest(self.headers.get("Authorization",""),"Bearer "+token):
             return self.respond(401,{"error":"unauthorized"})
+        if self.path == "/mcp":
+            length = self.headers.get("Content-Length", "")
+            if not length.isdecimal() or not 1 <= int(length) <= 16384:
+                return self.respond(400, {"error": "invalid MCP size"})
+            try:
+                from neo_gem_mcp import respond as protocol_response
+                request = json.loads(self.rfile.read(int(length)))
+                response = protocol_response(request)
+            except (ValueError, UnicodeError):
+                return self.respond(400, {"error": "invalid MCP JSON"})
+            if response is None:
+                self.send_response(202)
+                self.send_header("Content-Length", "0")
+                self.end_headers()
+                return
+            return self.respond(200, response)
         if self.path == "/v1/gemini/probe":
             if self.headers.get("Content-Length","0") not in ("","0"):
                 return self.respond(400,{"error":"request body prohibited"})
