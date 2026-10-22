@@ -80,7 +80,9 @@
     "neo-inventory:audit": "node scripts/neo-system-inventory.mjs --check",
     "neo-inventory:test": "node --test scripts/neo-system-inventory.test.mjs",
     "neo-runtime:probe": "node scripts/neo-runtime-truth.mjs",
-    "neo-runtime:test": "node --test scripts/neo-runtime-truth.test.mjs"
+    "neo-runtime:test": "node --test scripts/neo-runtime-truth.test.mjs",
+    "neo-recovery:plan": "node scripts/neo-autonomous-recovery.mjs",
+    "neo-recovery:test": "node --test scripts/neo-autonomous-recovery.test.mjs"
   },
   "dependencies": {
     "@composio/core": "^0.18.1",
