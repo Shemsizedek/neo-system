@@ -21,12 +21,13 @@ const DEFAULT_ROUTES = Object.freeze({
 
 export function createNeoRouter({
   providers,
-  maxHops = 6,
+  maxHops = 2,
   routes = DEFAULT_ROUTES,
   circuitBreaker = { failureThreshold: 3, cooldownMs: 60_000 },
   now = () => Date.now(),
   telemetryRecorder = async () => {},
 } = {}) {
+  if (!Number.isSafeInteger(maxHops) || maxHops < 1 || maxHops > 2) throw new TypeError('invalid_provider_attempt_ceiling')
   const providerMap = new Map((providers ?? []).map((provider) => [provider.id, provider]))
   const telemetry = new Map([...providerMap.keys()].map((id) => [id, {
     attempts: 0,
