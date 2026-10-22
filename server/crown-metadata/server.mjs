@@ -10,16 +10,19 @@ export function createMetadataServer({store}) {
     try {
       const path=new URL(req.url,'http://localhost').pathname;
       if(/^\/icons\/[a-f0-9]{16}\.png$/.test(path))return send(200,icon,'image/png');
-      const match=path.match(/^\/assets\/([^/]+)\/(info\.json|manifest\.json|card\.svg|card\.json|icon\.png|index\.html)$/);
+      if(path==='/assets/commitment.json'){const root=await store.get('_commitment');return root?send(200,root):send(404,{error:'commitment_unavailable'});}
+      const match=path.match(/^\/assets\/([^/]+)\/(info\.json|manifest\.json|card\.svg|card\.json|icon\.png|index\.html|verification\.json|methodology\.txt)$/);
       if(!match)return send(404,{error:'not_found'});
       const asset=decodeURIComponent(match[1]);
       if(!/^[A-Za-z0-9_.-]{1,255}$/.test(asset))return send(400,{error:'invalid_asset'});
       const record=await store.get(asset);
       if(!record)return send(404,{error:'asset_not_published'});
+      if(match[2]==='verification.json')return record.verification?send(200,record.verification):send(404,{error:'verification_unavailable'});
+      if(match[2]==='methodology.txt')return record.methodology_text?send(200,record.methodology_text,'text/plain; charset=utf-8'):send(404,{error:'methodology_unavailable'});
       if(match[2]==='icon.png')return send(200,record.icon_base64?Buffer.from(record.icon_base64,'base64'):icon,'image/png');
       if(match[2]==='card.json')return send(200,{name:record.manifest.card.primary_title,description:record.enhanced.description,image:record.manifest.image,external_url:record.enhanced.website,properties:{crown:record.manifest}});
       if(match[2]==='index.html')return send(200,renderAssetPage(record),'text/html; charset=utf-8');
-      if(match[2]==='card.svg')return send(200,renderCard(record.manifest),'image/svg+xml');
+      if(match[2]==='card.svg')return send(200,record.card_svg||renderCard(record.manifest),'image/svg+xml');
       return send(200,match[2]==='info.json'?record.enhanced:record.manifest);
     } catch {return send(503,{error:'metadata_unavailable'});}
   });
