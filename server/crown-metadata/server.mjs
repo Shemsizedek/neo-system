@@ -1,14 +1,18 @@
 import http from 'node:http';
 const icon=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAIAAADYYG7QAAAAUElEQVR4nO3V0QkAEBRAUUsoZTDDmcR2RlCKR526A5y/m0ZvT5XCBf+AcqmBAQEBAQEB3QFtLxMICAgICAgICAgoBnQuICAgIKAPQY8EtGoCuotp2bnuzpcAAAAASUVORK5CYII=','base64');
 import {renderCard} from './engine.mjs';
+import {createAssetResolver,renderResolvedAsset} from './resolver.mjs';
 /** Inject a durable read-only store: { get(asset): Promise<{manifest,enhanced}|null> }. */
-export function createMetadataServer({store}) {
+export function createMetadataServer({store,resolveAsset=createAssetResolver()}) {
   return http.createServer(async(req,res)=>{
-    const send=(status,body,type='application/json')=>{res.writeHead(status,{'content-type':type,'access-control-allow-origin':'*','cache-control':'public, max-age=60','x-content-type-options':'nosniff','content-security-policy':"default-src 'none'; style-src 'unsafe-inline'; img-src 'self'"});res.end(Buffer.isBuffer(body)||typeof body === 'string'?body:JSON.stringify(body));};
+    const send=(status,body,type='application/json')=>{res.writeHead(status,{'content-type':type,'access-control-allow-origin':'*','cache-control':'public, max-age=60','x-content-type-options':'nosniff','content-security-policy':"default-src 'none'; style-src 'unsafe-inline'; img-src 'self' https:; media-src https:; frame-src https: about:; form-action 'self'; base-uri 'none'"});res.end(Buffer.isBuffer(body)||typeof body === 'string'?body:JSON.stringify(body));};
     if(req.method==='OPTIONS'){res.writeHead(204,{'access-control-allow-origin':'*','access-control-allow-methods':'GET,OPTIONS'});return res.end();}
     if(req.method!=='GET')return send(405,{error:'read_only'});
     try {
-      const path=new URL(req.url,'http://localhost').pathname;
+      const requestUrl=new URL(req.url,'http://localhost'),path=requestUrl.pathname;
+      if(path==='/assets/explore'){const asset=requestUrl.searchParams.get('asset')||'KNOWINDEX';if(!/^[A-Za-z0-9_.-]{1,255}$/.test(asset))return send(400,{error:'invalid_asset'});res.writeHead(302,{location:'/assets/'+encodeURIComponent(asset)+'/explore.html'});return res.end();}
+      const resolved=path.match(/^\/assets\/([^/]+)\/(resolve\.json|explore\.html)$/);
+      if(resolved){const asset=decodeURIComponent(resolved[1]);if(!/^[A-Za-z0-9_.-]{1,255}$/.test(asset))return send(400,{error:'invalid_asset'});const data=await resolveAsset(asset);const crown=await store.get(data.canonical_asset)||await store.get(asset);return resolved[2]==='resolve.json'?send(200,{...data,crown_enrichment:crown?{url:'https://crown.holytemples.org/assets/'+encodeURIComponent(crown.manifest.ledger.asset)+'/manifest.json',on_chain_description_points_to_crown:String(data.ledger.description).startsWith('https://crown.holytemples.org/assets/')}:null}):send(200,renderResolvedAsset(data,crown),'text/html; charset=utf-8');}
       if(/^\/icons\/[a-f0-9]{16}\.png$/.test(path))return send(200,icon,'image/png');
       if(path==='/assets/commitment.json'){const root=await store.get('_commitment');return root?send(200,root):send(404,{error:'commitment_unavailable'});}
       const match=path.match(/^\/assets\/([^/]+)\/(info\.json|manifest\.json|card\.svg|card\.json|icon\.png|index\.html|verification\.json|methodology\.txt)$/);
