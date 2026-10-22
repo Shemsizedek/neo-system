@@ -248,6 +248,16 @@
         "server/neo-router/situational-awareness.test.mjs",
         ".github/workflows/gate-108-situational-awareness.yml"
       ]
+    },
+    {
+      "capability_id": "GATE-110-AUTONOMOUS-SITE-OPERATIONS",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "architecture/neo-site-operations-policy.json",
+        "scripts/neo-site-operations.mjs",
+        ".github/workflows/gate-110-autonomous-site-operations.yml",
+        "server/wordpress-stewardship"
+      ]
     }
   ],
   "autopilot": {

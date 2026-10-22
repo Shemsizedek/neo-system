@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "gate": 110,
+  "name": "NEO Autonomous Site Operations Policy",
+  "estate": {
+    "canonical_root": "https://holytemples.org",
+    "system_gateway": "https://neo.holytemples.org",
+    "hosting_model": "provider-neutral-now-self-host-capable-later"
+  },
+  "checks": [
+    "HTTP_STATUS",
+    "TLS",
+    "ROBOTS",
+    "SITEMAP",
+    "CANONICAL",
+    "TITLE",
+    "META_DESCRIPTION",
+    "STRUCTURED_DATA",
+    "VISIBLE_TEXT",
+    "BROKEN_LINKS",
+    "CRAWLER_ACCESS",
+    "ADS_TXT",
+    "MOBILE_UX"
+  ],
+  "autonomy": {
+    "may_auto_observe": true,
+    "may_auto_generate_repair_work": true,
+    "may_auto_prepare_content_patch": true,
+    "may_auto_prepare_seo_patch": true,
+    "may_auto_publish_low_risk_machine_generated_status": false,
+    "may_auto_publish_editorial_content": false,
+    "may_auto_change_dns": false,
+    "may_auto_change_hosting_provider": false,
+    "may_auto_change_canonical_legal_or_financial_claim": false
+  },
+  "publishing": {
+    "draft_first": true,
+    "public_publish_requires_authority": true,
+    "wordpress_is_adapter_not_authority": true,
+    "source_of_truth_must_be_preserved": true
+  },
+  "self_hosting": {
+    "target_state": "OPTIONAL_NEO_OWNED_RUNTIME",
+    "requirements": [
+      "portable_application_artifacts",
+      "portable_datastores",
+      "provider_independent_dns_and_tls_plan",
+      "backup_and_restore",
+      "observability",
+      "security_hardening",
+      "capacity_model",
+      "cost_model",
+      "tested_cutover_and_rollback"
+    ],
+    "capital_gate_required": true
+  }
+}

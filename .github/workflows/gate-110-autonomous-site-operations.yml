@@ -1,0 +1,38 @@
+name: Gate 110 Autonomous Site Operations
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '41 10 * * *'
+  push:
+    branches: [main]
+    paths:
+      - 'architecture/neo-site-operations-policy.json'
+      - 'architecture/neo-hosts.json'
+      - 'scripts/neo-site-operations*'
+      - 'content/seo/**'
+      - 'server/wordpress-stewardship/**'
+      - 'package.json'
+      - '.github/workflows/gate-110-autonomous-site-operations.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  site-operations:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Validate Gate 110 site operations
+        run: npm run neo-siteops:test
+      - name: Inspect canonical digital estate surfaces
+        run: npm run neo-siteops:audit -- --write --limit=8
+      - name: Publish Gate 110 site-operations evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-110-site-operations
+          path: artifacts/implementation/gate-110-site-operations.json
+          if-no-files-found: error
