@@ -134,3 +134,27 @@ export function networkSnapshot(registry){
     generated_at:now()
   }
 }
+
+
+export function renderWireGuardConfig({node,peerPlan,privateKeyRef='NEO_NODE_WIREGUARD_PRIVATE_KEY',listenPort=51820}={}){
+  if(!node?.overlay_ip)throw new TypeError('node required')
+  const plan=(peerPlan||[]).find(x=>x.node_id===node.node_id)
+  if(!plan)throw new Error('peer_plan_missing')
+  const lines=[
+    '[Interface]',
+    `Address = ${node.overlay_ip}/32`,
+    `ListenPort = ${Number(listenPort)}`,
+    `PrivateKey = <runtime-secret:${privateKeyRef}>`,
+    ''
+  ]
+  for(const peer of plan.peers){
+    lines.push('[Peer]')
+    lines.push(`# Node: ${peer.node_id}; expected fingerprint: ${peer.public_key_fingerprint}`)
+    lines.push('PublicKey = <resolved-from-attested-node-registry>')
+    if(peer.endpoint)lines.push(`Endpoint = ${peer.endpoint}`)
+    lines.push(`AllowedIPs = ${peer.allowed_ips.join(', ')}`)
+    lines.push('PersistentKeepalive = 25')
+    lines.push('')
+  }
+  return lines.join('\n')
+}
