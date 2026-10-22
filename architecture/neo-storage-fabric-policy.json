@@ -1,0 +1,34 @@
+{
+  "schema_version":1,
+  "gate":113,
+  "name":"NEO Sovereign Storage Fabric Policy",
+  "estate_identity":{
+    "name":"Global Vast Estate",
+    "designation":"Feodous Oprum Trust",
+    "holy_see_designation":"Holy See of Noble Drew Ali",
+    "legal_boundary":"Operational metadata records user-designated institutional and trust identity; it does not independently establish legal or ecclesiastical recognition."
+  },
+  "classes":{
+    "APPLICATION_DATA":{"retention_days":365,"replicas":2},
+    "BACKUP":{"retention_days":2555,"replicas":3},
+    "ARCHIVE":{"retention_days":0,"replicas":3},
+    "EVIDENCE":{"retention_days":0,"replicas":3},
+    "MEDIA":{"retention_days":3650,"replicas":2},
+    "CROWN_RECORD":{"retention_days":0,"replicas":3},
+    "OPERATIONAL_MEMORY":{"retention_days":730,"replicas":2},
+    "DATABASE_REPLICA":{"retention_days":30,"replicas":2}
+  },
+  "crypto":{
+    "content_digest":"SHA-256",
+    "encryption":"AES-256-GCM",
+    "keys":"runtime-only",
+    "plaintext_private_objects":"prohibited"
+  },
+  "rules":{
+    "provider_independent_export":true,
+    "restore_must_verify_digest":true,
+    "replica_count_is_policy_not_proof":true,
+    "deletion_requires_retention_and_authority":true,
+    "private_keys_never_in_object_metadata":true
+  }
+}
