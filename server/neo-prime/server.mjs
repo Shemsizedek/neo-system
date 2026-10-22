@@ -109,6 +109,7 @@ export function createPrimeHttpServer({ env = process.env, providers, now = () =
   const router = createNeoRouter({ providers: activeProviders })
   const prime = createNeoPrimeRuntime({ router })
   const operatorToken = env.NEO_PRIME_OPERATOR_TOKEN || ''
+  const apiToken = env.NEO_PRIME_API_TOKEN || ''
   const allowedOrigins = new Set(String(env.NEO_PRIME_ALLOWED_ORIGINS || DEFAULT_ALLOWED_ORIGINS.join(',')).split(',').map((value) => value.trim()).filter(Boolean))
 
   return http.createServer(async (req, res) => {
@@ -122,7 +123,7 @@ export function createPrimeHttpServer({ env = process.env, providers, now = () =
       return html(res, 200, ORACLE_HTML)
     }
     if (req.method === 'GET' && (req.url === '/health' || req.url === '/healthz')) {
-      const access = evaluatePrimeAccess({ method: req.method, path: req.url, authorization: req.headers.authorization, operatorToken })
+      const access = evaluatePrimeAccess({ method: req.method, path: req.url, authorization: req.headers.authorization, operatorToken, apiToken })
       if (!access.allowed) return json(res, 401, { ok: false, error: 'authentication_required' }, cors)
       const health = router.health()
       if (req.url === '/healthz') return json(res, health.ok ? 200 : 503, { ok: health.ok, service: 'neo-prime-runtime' }, cors)
@@ -130,14 +131,14 @@ export function createPrimeHttpServer({ env = process.env, providers, now = () =
     }
     if (req.method === 'POST' && (req.url === '/api/prime' || req.url === '/prime' || req.url === '/api/oracle')) {
       if (origin && !allowedOrigins.has(origin)) return json(res, 403, { ok: false, error: 'origin_not_allowed' })
-      const earlyAccess = evaluatePrimeAccess({ method: req.method, path: req.url, authorization: req.headers.authorization, operatorToken })
+      const earlyAccess = evaluatePrimeAccess({ method: req.method, path: req.url, authorization: req.headers.authorization, operatorToken, apiToken })
       if (!earlyAccess.allowed) return json(res, 401, { ok: false, error: 'authentication_required' }, cors)
       try {
         const body = await readJson(req)
         const mission = normalizeMission(body)
         const cycle = body.cycle === 'angelic' ? 'angelic' : 'human'
         const plan = prime.plan(mission, { cycle })
-        const access = evaluatePrimeAccess({ method: req.method, path: req.url, approvalRequired: plan.approvalRequired, authorization: req.headers.authorization, operatorToken, approved: body.approved, approvalHeader: req.headers['x-neo-prime-approval'] })
+        const access = evaluatePrimeAccess({ method: req.method, path: req.url, approvalRequired: plan.approvalRequired, authorization: req.headers.authorization, operatorToken, apiToken, approved: body.approved, approvalHeader: req.headers['x-neo-prime-approval'] })
         if (!access.allowed && access.reason === 'authentication_required') return json(res, 401, { ok: false, error: 'authentication_required' }, cors)
         if (!access.allowed && access.reason === 'approval_required') return json(res, 202, { ok: true, status: 'awaiting_approval', approvalRequired: true, missionId: mission.missionId }, cors)
         const approved = body.approved === true && operatorAuthorized(req, operatorToken) && req.headers['x-neo-prime-approval'] === 'approved'
