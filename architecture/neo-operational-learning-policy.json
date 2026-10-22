@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "gate": 106,
+  "name": "NEO Operational Learning Memory Policy",
+  "experience_types": [
+    "RUNTIME_FAILURE",
+    "RECOVERY_ATTEMPT",
+    "RECOVERY_SUCCESS",
+    "RECOVERY_FAILURE",
+    "REGRESSION",
+    "IMPLEMENTATION_GAP",
+    "DEVELOPMENT_ACTION",
+    "POLICY_EXCEPTION"
+  ],
+  "learning_loop": [
+    "INGEST_EVENT",
+    "NORMALIZE_EXPERIENCE",
+    "CORRELATE",
+    "DETECT_RECURRENCE",
+    "GENERATE_LESSON",
+    "RECOMMEND_POLICY_CHANGE",
+    "VALIDATE_RECOMMENDATION"
+  ],
+  "confidence": {
+    "minimum_recurrence_for_pattern": 3,
+    "minimum_successes_for_runbook_trust": 3,
+    "minimum_failures_for_runbook_review": 2
+  },
+  "autonomy": {
+    "may_auto_record_experience": true,
+    "may_auto_detect_patterns": true,
+    "may_auto_rank_runbooks": true,
+    "may_auto_recommend_policy_change": true,
+    "may_auto_apply_policy_change": false,
+    "may_auto_change_authority": false,
+    "may_auto_change_security_boundary": false
+  },
+  "safety": {
+    "model_output_is_not_policy": true,
+    "correlation_is_not_causation": true,
+    "unknown_is_preserved": true,
+    "protected_change_classes": [
+      "AUTHORITY",
+      "SECURITY",
+      "FINANCIAL",
+      "IDENTITY",
+      "DNS",
+      "CREDENTIALS",
+      "PRODUCTION_DEPLOYMENT"
+    ]
+  }
+}
