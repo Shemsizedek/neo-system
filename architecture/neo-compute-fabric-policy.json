@@ -1,0 +1,29 @@
+{
+  "schema_version":1,
+  "gate":112,
+  "name":"NEO Compute Fabric Policy",
+  "estate_identity":{
+    "name":"Global Vast Estate",
+    "designation":"Feodous Oprum Trust",
+    "legal_boundary":"Software may administer and represent user-designated trust operations, but runtime state does not itself establish or validate legal trust status."
+  },
+  "node_states":["PENDING","ATTESTED","ELIGIBLE","DEGRADED","QUARANTINED","RETIRED"],
+  "scheduler":{
+    "require_attested_node":true,
+    "require_capacity_fit":true,
+    "prefer_healthy_nodes":true,
+    "automatic_production_placement":false,
+    "financial_workloads_require_explicit_authority":true
+  },
+  "enrollment":{
+    "challenge_ttl_seconds":300,
+    "require_operator_auth":true,
+    "require_ed25519_attestation":true,
+    "never_store_private_keys":true
+  },
+  "estate_surface":{
+    "host":"neo.holytemples.org",
+    "path":"/estate/",
+    "public_mode":"READ_ONLY"
+  }
+}
