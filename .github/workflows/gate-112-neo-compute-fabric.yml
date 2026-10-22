@@ -1,0 +1,23 @@
+name: Gate 112 NEO Compute Fabric
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['architecture/neo-compute-fabric-policy.json','server/neo-compute/**','server/neo-edge/estate-app*','package.json','.github/workflows/gate-112-neo-compute-fabric.yml']
+  pull_request:
+    paths: ['architecture/neo-compute-fabric-policy.json','server/neo-compute/**','server/neo-edge/estate-app*','package.json','.github/workflows/gate-112-neo-compute-fabric.yml']
+permissions:
+  contents: read
+jobs:
+  compute-fabric:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 24}
+      - name: Validate compute fabric
+        run: npm run neo-compute:test
+      - name: Validate estate surface
+        run: npm run neo-estate:test
+      - name: Syntax-check compute server
+        run: node --check server/neo-compute/server.mjs

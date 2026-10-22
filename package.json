@@ -92,7 +92,10 @@
     "neo-siteops:audit": "node scripts/neo-site-operations.mjs",
     "neo-siteops:test": "node --test scripts/neo-site-operations.test.mjs",
     "neo-hosting:audit": "node scripts/neo-sovereign-hosting.mjs",
-    "neo-hosting:test": "node --test scripts/neo-sovereign-hosting.test.mjs"
+    "neo-hosting:test": "node --test scripts/neo-sovereign-hosting.test.mjs",
+    "neo-compute:server": "node server/neo-compute/server.mjs",
+    "neo-compute:test": "node --test server/neo-compute/*.test.mjs",
+    "neo-estate:test": "node --test server/neo-edge/estate-app.test.mjs"
   },
   "dependencies": {
     "@composio/core": "^0.18.1",

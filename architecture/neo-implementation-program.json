@@ -269,6 +269,18 @@
         "infra/neo-owned/docker-compose.yml",
         ".github/workflows/gate-111-sovereign-hosting.yml"
       ]
+    },
+    {
+      "capability_id": "GATE-112-NEO-COMPUTE-FABRIC",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "architecture/neo-compute-fabric-policy.json",
+        "server/neo-compute/fabric.mjs",
+        "server/neo-compute/server.mjs",
+        "deploy/neo-compute/Dockerfile",
+        "server/neo-edge/estate-app.mjs",
+        ".github/workflows/deploy-neo-compute-cloud-run.yml"
+      ]
     }
   ],
   "autopilot": {
