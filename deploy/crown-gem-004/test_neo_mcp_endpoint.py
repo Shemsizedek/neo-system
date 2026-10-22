@@ -15,7 +15,13 @@ class EndpointTests(unittest.TestCase):
  def test_missing_bearer_rejected(self):
   payload=json.dumps({"jsonrpc":"2.0","id":1,"method":"tools/list"}).encode()
   h=MockHandler(payload,"")
-  with patch.object(bridge,"quota_allowed",return_value=True),patch.dict(bridge.os.environ,{"CROWN_BRIDGE_TOKEN":"k"*32}):
+  with patch.object(bridge,"quota_allowed",return_value=True),patch.dict(bridge.os.environ,{"CROWN_BRIDGE_TOKEN":"z"*32,"NEO_MCP_ACCESS_TOKEN":"k"*32}):
+   bridge.Handler.do_POST(h)
+  self.assertEqual(h.calls[0][0],401)
+ def test_crown_token_cannot_access_mcp(self):
+  payload=json.dumps({"jsonrpc":"2.0","id":1,"method":"tools/list"}).encode()
+  h=MockHandler(payload,"Bearer "+"z"*32)
+  with patch.object(bridge,"quota_allowed",return_value=True),patch.dict(bridge.os.environ,{"CROWN_BRIDGE_TOKEN":"z"*32,"NEO_MCP_ACCESS_TOKEN":"k"*32}):
    bridge.Handler.do_POST(h)
   self.assertEqual(h.calls[0][0],401)
  def test_authorized_tools_are_read_only(self):
