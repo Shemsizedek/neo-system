@@ -167,6 +167,8 @@ class Handler(BaseHTTPRequestHandler):
         if len(token)<32:
             return self.respond(503,{"error":"authentication not configured"})
         if not hmac.compare_digest(self.headers.get("Authorization",""),"Bearer "+token):
+            if self.path == "/mcp":
+                return self.mcp_auth_required()
             return self.respond(401,{"error":"unauthorized"})
         if "?" in self.path or "#" in self.path:
             return self.respond(400,{"error":"query parameters not supported"})
@@ -175,6 +177,18 @@ class Handler(BaseHTTPRequestHandler):
         except ValueError:
             status,data=503,{"error":"invalid upstream configuration"}
         return self.respond(status,data)
+    def mcp_auth_required(self):
+        # RFC 9728 protected resource discovery for MCP authorization clients.
+        challenge='Bearer resource_metadata="https://neo-crown-gem-staging.onrender.com/.well-known/oauth-protected-resource/mcp"'
+        payload=json.dumps({"error":"MCP authorization required"}).encode()
+        self.send_response(401)
+        self.send_header("WWW-Authenticate",challenge)
+        self.send_header("Content-Type","application/json")
+        self.send_header("Cache-Control","no-store")
+        self.send_header("Content-Length",str(len(payload)))
+        self.end_headers()
+        self.wfile.write(payload)
+
     def do_POST(self):
         if self.path in ("/gemini/google","/gemini/ask","/gemini/logout","/gemini/provider-diagnostic"):
             if not quota_allowed(self.client_address[0]):
