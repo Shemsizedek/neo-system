@@ -79,6 +79,13 @@ jobs:
           test -n "$AI_GATEWAY_URL"
           echo "AI_GATEWAY_URL=$AI_GATEWAY_URL" >> "$GITHUB_ENV"
 
+      - name: Resolve NEO Compute Fabric origin
+        run: |
+          set -euo pipefail
+          NEO_COMPUTE_URL="$(gcloud run services describe neo-compute-fabric --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format='value(status.url)')"
+          test -n "$NEO_COMPUTE_URL"
+          echo "NEO_COMPUTE_URL=$NEO_COMPUTE_URL" >> "$GITHUB_ENV"
+
       - name: Resolve NEO Realty origin
         run: |
           set -euo pipefail
@@ -126,7 +133,7 @@ jobs:
             --region="$GCP_REGION" \
             --image="$IMAGE" \
             --service-account="$GCP_CLOUD_RUN_RUNTIME_ACCOUNT" \
-            --set-env-vars="GCP_PROJECT_ID=$GCP_PROJECT_ID,FIRESTORE_DATABASE_ID=(default),NEO_PLATFORM_API_ORIGIN=https://egov.holytemples.org,AI_GATEWAY_URL=$AI_GATEWAY_URL,NEO_REALTY_ORIGIN=$NEO_REALTY_ORIGIN,NEO_GENERATOR_ORIGIN=$NEO_GENERATOR_ORIGIN,NEO_DEX_CROWN_AGENT_URL=$NEO_DEX_CROWN_AGENT_URL" \
+            --set-env-vars="GCP_PROJECT_ID=$GCP_PROJECT_ID,FIRESTORE_DATABASE_ID=(default),NEO_PLATFORM_API_ORIGIN=https://egov.holytemples.org,AI_GATEWAY_URL=$AI_GATEWAY_URL,NEO_COMPUTE_URL=$NEO_COMPUTE_URL,NEO_REALTY_ORIGIN=$NEO_REALTY_ORIGIN,NEO_GENERATOR_ORIGIN=$NEO_GENERATOR_ORIGIN,NEO_DEX_CROWN_AGENT_URL=$NEO_DEX_CROWN_AGENT_URL" \
             --set-secrets="NEO_DEX_CROWN_OPERATOR_TOKEN=$NEO_DEX_CROWN_OPERATOR_SECRET:latest" \
             --port=8080 \
             --allow-unauthenticated \
@@ -251,6 +258,12 @@ jobs:
             'https://neo.holytemples.org/' -o /tmp/neo-system-public-home.html
           grep -q 'Welcome to NEO.' /tmp/neo-system-public-home.html
           grep -q 'library-form' /tmp/neo-system-public-home.html
+          curl --connect-timeout 10 --max-time 30 --retry 3 --retry-delay 5 --retry-all-errors -fsS \
+            'https://neo.holytemples.org/estate/' -o /tmp/neo-estate.html
+          grep -q 'Global Vast Estate' /tmp/neo-estate.html
+          curl --connect-timeout 10 --max-time 30 --retry 3 --retry-delay 5 --retry-all-errors -fsS \
+            'https://neo.holytemples.org/api/compute/v1/estate' -o /tmp/neo-estate-state.json
+          node --input-type=module -e 'import fs from "node:fs";const state=JSON.parse(fs.readFileSync("/tmp/neo-estate-state.json","utf8"));if(state.estate!=="Global Vast Estate")throw new Error("estate_compute_state_missing")'
           curl --connect-timeout 10 --max-time 30 --retry 3 --retry-delay 5 --retry-all-errors -fsS \
             'https://neo.holytemples.org/health' -o /tmp/neo-system-public-health.json
           node --input-type=module -e 'import fs from "node:fs";const health=JSON.parse(fs.readFileSync("/tmp/neo-system-public-health.json","utf8"));if(health.ok!==true)throw new Error("public_gateway_not_healthy");'
