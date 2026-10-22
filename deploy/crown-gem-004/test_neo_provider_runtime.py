@@ -13,5 +13,5 @@ class ProviderTests(unittest.TestCase):
   self.assertIn('value="openai" disabled',gemini_private_web.HTML)
   self.assertIn('value="neo-oracle" disabled',gemini_private_web.HTML)
  def test_authenticated_route_rejects_other_provider(self):
-  self.assertIn('if provider!="gemini":return handler.respond(400',pathlib.Path(gemini_private_web.__file__).read_text())
+  self.assertIn('if not available().get(provider,False):return handler.respond(400',pathlib.Path(gemini_private_web.__file__).read_text())
 if __name__=="__main__":unittest.main()
