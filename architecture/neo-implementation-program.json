@@ -199,6 +199,16 @@
         "scripts/neo-runtime-truth.mjs",
         ".github/workflows/gate-103-runtime-truth.yml"
       ]
+    },
+    {
+      "capability_id": "GATE-104-AUTONOMOUS-RECOVERY",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "architecture/neo-recovery-runbooks.json",
+        "scripts/neo-autonomous-recovery.mjs",
+        "server/neo-router/autonomous-operations.mjs",
+        ".github/workflows/gate-104-autonomous-recovery.yml"
+      ]
     }
   ],
   "autopilot": {
