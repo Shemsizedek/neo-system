@@ -1,0 +1,31 @@
+{
+  "schema_version":1,
+  "gate":117,
+  "name":"NEO Sovereign Database and State Fabric Policy",
+  "logical_state_contract":{
+    "version":1,
+    "primary_model":"document-plus-journal",
+    "portable_backends":["firestore","postgresql-compatible"],
+    "migration_modes":["FIRESTORE_PRIMARY","DUAL_WRITE","POSTGRES_PRIMARY","FIRESTORE_READ_ONLY","CUTOVER_COMPLETE"]
+  },
+  "database":{
+    "target":"postgresql-compatible",
+    "pitr_required":true,
+    "wal_or_equivalent_required":true,
+    "encrypted_backup_required":true,
+    "schema_versioning_required":true,
+    "primary_switch_requires_authority":true
+  },
+  "migration":{
+    "dual_write_before_cutover":true,
+    "read_compare_required":true,
+    "cutover_requires_zero_critical_drift":true,
+    "automatic_cutover":false,
+    "rollback_required":true
+  },
+  "estate_identity":{
+    "name":"Global Vast Estate",
+    "designation":"Feodous Oprum Trust",
+    "holy_see_designation":"Holy See of Noble Drew Ali"
+  }
+}
