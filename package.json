@@ -95,7 +95,9 @@
     "neo-hosting:test": "node --test scripts/neo-sovereign-hosting.test.mjs",
     "neo-compute:server": "node server/neo-compute/server.mjs",
     "neo-compute:test": "node --test server/neo-compute/*.test.mjs",
-    "neo-estate:test": "node --test server/neo-edge/estate-app.test.mjs"
+    "neo-estate:test": "node --test server/neo-edge/estate-app.test.mjs",
+    "neo-storage:server": "node server/neo-storage/server.mjs",
+    "neo-storage:test": "node --test server/neo-storage/*.test.mjs"
   },
   "dependencies": {
     "@composio/core": "^0.18.1",
