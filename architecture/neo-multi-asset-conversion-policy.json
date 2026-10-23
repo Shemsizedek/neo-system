@@ -1,0 +1,27 @@
+{
+  "schema_version":1,
+  "gate":128,
+  "name":"NEO Multi-Asset Conversion & Merchant Liquidity Engine",
+  "supported_assets":["BTC","XCP","NOMNI","COUNTERPARTY_ASSET"],
+  "quote_rules":{
+    "freshness_required":true,
+    "explicit_source_required":true,
+    "median_reference_allowed":true,
+    "invented_price":"PROHIBITED",
+    "balances_counts_volume_as_price":"PROHIBITED"
+  },
+  "execution_rules":{
+    "self_trade_prevention":true,
+    "wash_trading":"PROHIBITED",
+    "slippage_limit_required":true,
+    "spread_limit_required":true,
+    "execution_adapter_required":true,
+    "merchant_authorization_required":true,
+    "settlement_evidence_required":true
+  },
+  "merchant_preferences":["HOLD_AS_RECEIVED","SETTLE_TO_BTC","SETTLE_TO_XCP","SETTLE_TO_NOMNI","SETTLE_TO_COUNTERPARTY_ASSET"],
+  "governance":{
+    "internal_model":"NEO_SELF_REGULATED_COMMUNITY_UNDER_NATURAL_LAW_DOCTRINE",
+    "external_interface_rule":"External venue, banking, tax, custody, acquiring, market, or jurisdictional requirements apply only at the relevant interface."
+  }
+}
