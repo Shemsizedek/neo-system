@@ -3,6 +3,7 @@ import React,{useEffect,useState} from 'react'
 import ReactDOM from 'react-dom/client'
 import { HomeBase } from './home/HomeBase'
 import { MinerApp } from './miner/MinerApp'
+import { MobileFleetApp } from './miner/MobileFleetApp'
 import { GeneratorApp } from './miner/GeneratorApp'
 import { ProductionStatusApp } from './miner/ProductionStatusApp'
 import { CloudMiningOperationsApp } from './miner/CloudMiningOperationsApp'
@@ -62,6 +63,7 @@ function RootRouter(){
   const isCloudMining=normalized==='/cloud-mining'||normalized.startsWith('/cloud-mining/')
   const isInfrastructure=normalized==='/infrastructure-onboarding'||normalized.startsWith('/infrastructure-onboarding/')
   const isFleet=normalized==='/miner-fleet'||normalized.startsWith('/miner-fleet/')
+  const isMobileMiner=normalized==='/miner-mobile'||normalized.startsWith('/miner-mobile/')
   const isHashVault=normalized==='/hashvault'||normalized.startsWith('/hashvault/')
   const isReceipts=normalized==='/settlement-receipts'||normalized.startsWith('/settlement-receipts/')
   const isTreasury=normalized==='/miner-treasury'||normalized.startsWith('/miner-treasury/')
@@ -95,6 +97,7 @@ function RootRouter(){
   if(isMinerStore) return <CheckoutShell serviceId="neo-miner" serviceName="NEO Miner"><StorefrontApp/></CheckoutShell>
   if(isProduction) return <ProductionStatusApp/>
   if(isInfrastructure) return <InfrastructureOnboardingApp/>
+  if(isMobileMiner) return <MobileFleetApp/>
   if(isFleet) return <FleetEnrollmentApp/>
   if(isHashVault) return <HashVaultApp/>
   if(isReceipts) return <SettlementReceiptsApp/>

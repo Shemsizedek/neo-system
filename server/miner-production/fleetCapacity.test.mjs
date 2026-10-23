@@ -24,7 +24,7 @@ test('signed fresh telemetry is verified, but physical attestation remains a sep
   const signed=registerSignedTelemetry(enrolled(),envelope())
   assert.equal(signed.telemetryVerified,true)
   assert.equal(fleetCapacitySnapshot([signed]).eligibleHashrateTh,0)
-  const attested={...signed,hardwareVerified:true}
+  const attested={...signed,hardwareVerified:true,consentVerified:true}
   const verified=fleetCapacitySnapshot([attested])
   assert.equal(verified.status,'VERIFIED')
   assert.equal(verified.eligibleHashrateTh,90)
