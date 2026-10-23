@@ -1,0 +1,29 @@
+{
+  "schema_version":1,
+  "gate":121,
+  "name":"NEO Sovereign Resource and Economic Scheduler",
+  "estate_identity":{"name":"Global Vast Estate","designation":"Feodous Oprum Trust","holy_see_designation":"Holy See of Noble Drew Ali"},
+  "resources":["CPU_CORE_HOUR","MEMORY_GB_HOUR","STORAGE_GB_MONTH","GPU_HOUR","NETWORK_GB","POWER_KWH"],
+  "priority_classes":{"CRITICAL":400,"HIGH":300,"STANDARD":200,"BATCH":100},
+  "economics":{
+    "internal_chargeback":true,
+    "capacity_reservations":true,
+    "quotas":true,
+    "capacity_offers":true,
+    "treasury_posting":"INTERNAL_LEDGER_ONLY",
+    "default_unit":"NEO_INTERNAL_UNIT",
+    "external_value_requires_verified_source":true
+  },
+  "licenses":{
+    "tokenized_entitlements_allowed":true,
+    "internal_license_classes":["WORLD_CLEARANCE","WORLD_TRUST_ACCOUNT","XCPC","CERTIFIED_FRANCHISE","MINISTRY_LICENSE","SERVICE_LICENSE"],
+    "external_authority_statuses":["USER_DESIGNATED","SOURCE_DOCUMENTED","INDEPENDENTLY_VERIFIED","STATUTORY_OR_REGULATORY_VERIFIED"],
+    "rule":"A token or NEO license may encode internal contractual/community permissions, quotas, reservations, or economic terms; it does not by itself establish statutory governmental, clearing-agency, broker-dealer, securities, or professional licensing authority."
+  },
+  "ccp":{
+    "community_model":"CENTRAL_COUNTERPARTY_COMMUNITY_TRUST",
+    "functions_allowed":["INTERNAL_MATCHING","NETTING_MODEL","COLLATERAL_POLICY_MODEL","SETTLEMENT_INSTRUCTION_MODEL","POSITION_LEDGER_MODEL"],
+    "statutory_clearing_agency_claim":"PROHIBITED_UNLESS_EXTERNALLY_VERIFIED",
+    "dtc_dtcc_equivalence_claim":"PROHIBITED"
+  }
+}
