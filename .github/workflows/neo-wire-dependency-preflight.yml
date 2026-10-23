@@ -1,0 +1,40 @@
+name: NEO Wire WebAuthn Dependency Preflight
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  dependency-preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install locked baseline
+        run: npm ci --ignore-scripts
+      - name: Install WebAuthn with exact version
+        run: npm install @simplewebauthn/server --save-exact --ignore-scripts --no-audit --no-fund
+      - name: Confirm exact manifest and lockfile
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const pkg=JSON.parse(fs.readFileSync('package.json','utf8'));
+          const lock=JSON.parse(fs.readFileSync('package-lock.json','utf8'));
+          const version=pkg.dependencies?.['@simplewebauthn/server'];
+          if(!/^\d+\.\d+\.\d+$/.test(version||'')) throw Error('exact_webauthn_version_required');
+          if(lock.packages?.['']?.dependencies?.['@simplewebauthn/server']!==version) throw Error('lockfile_mismatch');
+          if(!lock.packages?.['node_modules/@simplewebauthn/server']?.integrity) throw Error('missing_dependency_integrity');
+          console.log('WebAuthn version and lockfile integrity metadata present:',version);
+          NODE
+      - name: Run platform API tests
+        run: npm run neo-platform:test
+      - name: Export manifest and lockfile for review
+        uses: actions/upload-artifact@v4
+        with:
+          name: neo-wire-webauthn-lockfile
+          path: |
+            package.json
+            package-lock.json
+          retention-days: 7
