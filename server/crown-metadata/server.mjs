@@ -1,4 +1,5 @@
 import http from 'node:http';
+import {readFile} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
 import {buildShowcase} from './showcase-intelligence-v1.mjs';
 const icon=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAIAAADYYG7QAAAAUElEQVR4nO3V0QkAEBRAUUsoZTDDmcR2RlCKR526A5y/m0ZvT5XCBf+AcqmBAQEBAQEB3QFtLxMICAgICAgICAgoBnQuICAgIKAPQY8EtGoCuotp2bnuzpcAAAAASUVORK5CYII=','base64');
@@ -12,6 +13,7 @@ export function createMetadataServer({store,resolveAsset=createAssetResolver()})
     if(req.method!=='GET')return send(405,{error:'read_only'});
     try {
       const requestUrl=new URL(req.url,'http://localhost'),path=requestUrl.pathname;
+      if(path==='/assets/NOMNI/tokenscan.json')return send(200,await readFile(new URL('./nomni-tokenscan.json',import.meta.url),'utf8'));
       if(path==='/assets/explore'){const asset=requestUrl.searchParams.get('asset')||'KNOWINDEX';if(!/^[A-Za-z0-9_.-]{1,255}$/.test(asset))return send(400,{error:'invalid_asset'});res.writeHead(302,{location:'/assets/'+encodeURIComponent(asset)+'/explore.html'});return res.end();}
       const showcase=path.match(/^\/assets\/([^/]+)\/showcase\.json$/);
       if(showcase){const asset=decodeURIComponent(showcase[1]);if(!/^[A-Za-z0-9_.-]{1,255}$/.test(asset))return send(400,{error:'invalid_asset'});const data=await resolveAsset(asset);const payload=buildShowcase(asset,data);const sha256=createHash('sha256').update(JSON.stringify(payload),'utf8').digest('hex');return send(200,{payload,integrity:{algorithm:'SHA-256',sha256,encoding:'UTF-8 JSON.stringify(payload)',blockchain_anchor_verified:false}});}
