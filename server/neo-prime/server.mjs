@@ -22,7 +22,7 @@ function json(res, status, body, headers = {}) {
 function html(res, status, body) {
   res.writeHead(status, {
     'content-type': 'text/html; charset=utf-8',
-    'cache-control': 'public, max-age=300',
+    'cache-control': 'no-store, max-age=0',
     'content-security-policy': "default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self'; img-src 'self' data:; base-uri 'none'; frame-ancestors 'none'",
     'x-content-type-options': 'nosniff',
     'referrer-policy': 'strict-origin-when-cross-origin',
