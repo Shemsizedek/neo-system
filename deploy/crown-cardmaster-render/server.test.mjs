@@ -82,3 +82,29 @@ test('NCC-008 evidence route separates empty market, failure and read-only metho
   const bad=await fetch(fail+'/api/crown/order-evidence');
   assert.equal(bad.status,503);
 });
+
+
+test('NCC-009 Artwork Studio serves allowlisted local design files under restrictive CSP',async t=>{
+  const url=await withServer(t,{apiHandler:dummyHandler});
+  const page=await fetch(url+'/studio/');
+  assert.equal(page.status,200);
+  assert.match(page.headers.get('content-type'),/text\/html/);
+  assert.match(page.headers.get('content-security-policy'),/script-src 'self'/);
+  assert.match(page.headers.get('content-security-policy'),/img-src 'self' blob:/);
+  const html=await page.text();
+  assert.match(html,/CARDMASTER STUDIO|CARDMASTER <span class="brand-soft">STUDIO/);
+  assert.match(html,/noindex,nofollow/);
+  const scripts=['/studio/studio-core.mjs','/studio/studio-app.mjs'];
+  for(const path of scripts){
+    const r=await fetch(url+path);
+    assert.equal(r.status,200);
+    assert.match(r.headers.get('content-type'),/text\/javascript/);
+    assert.ok((await r.text()).length>250);
+  }
+  const css=await fetch(url+'/studio/studio.css');
+  assert.equal(css.status,200);
+  assert.match(css.headers.get('content-type'),/text\/css/);
+  assert.equal((await fetch(url+'/studio',{method:'POST'})).status,405);
+  assert.equal((await fetch(url+'/studio/../../.env')).status,404);
+  assert.equal((await fetch(url+'/studio/manifest.json')).status,404);
+});
