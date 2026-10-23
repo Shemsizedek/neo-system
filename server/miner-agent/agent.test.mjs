@@ -12,6 +12,8 @@ test('signed envelope verifies and tampering fails',()=>{
   const {signature,...body}=env
   assert.equal(verifyEvent(body,signature,publicPem),true)
   assert.equal(verifyEvent({...body,minerId:'M2'},signature,publicPem),false)
+  assert.equal(verifyEvent({...body,payload:{hashrateTh:999}},signature,publicPem),false)
+  assert.equal(verifyEvent({...body,payload:{hashrateTh:100,powerW:999}},signature,publicPem),false)
 })
 
 test('gateway transport refuses insecure HTTP',async()=>{
