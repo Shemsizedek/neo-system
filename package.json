@@ -146,7 +146,9 @@
     "neo-credit-reporting:server": "node server/neo-credit-reporting/server.mjs",
     "neo-credit-reporting:test": "node --test server/neo-credit-reporting/*.test.mjs",
     "neo-credit-reconciliation:server": "node server/neo-credit-reconciliation/server.mjs",
-    "neo-credit-reconciliation:test": "node --test server/neo-credit-reconciliation/*.test.mjs"
+    "neo-credit-reconciliation:test": "node --test server/neo-credit-reconciliation/*.test.mjs",
+    "neo-credit-compliance:server": "node server/neo-credit-compliance/server.mjs",
+    "neo-credit-compliance:test": "node --test server/neo-credit-compliance/*.test.mjs"
   },
   "dependencies": {
     "@composio/core": "^0.18.1",
