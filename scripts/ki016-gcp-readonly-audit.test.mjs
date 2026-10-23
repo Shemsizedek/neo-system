@@ -57,3 +57,14 @@ test('KI-016 metadata success does not claim active curator, restore or live wri
   assert.equal(checked.actualTokenIssuedAndVerified, false);
   assert.equal(checked.liveWriteAuthorization, false);
 });
+
+
+test('KI-021 does not certify a Cloud Run signing binding without an explicit JWT issuer', () => {
+  const omitted = service([binding[0], binding[1]]);
+  const result = inspectNeopassCloudRunMetadata(omitted);
+  assert.equal(result.signingSecretBoundToSecretManager, true);
+  assert.equal(result.issuerExplicitlyConfigured, false);
+  assert.equal(result.metadataReady, false);
+  assert.equal(result.actualTokenIssuedAndVerified, false);
+  assert.equal(result.liveWriteAuthorization, false);
+});
