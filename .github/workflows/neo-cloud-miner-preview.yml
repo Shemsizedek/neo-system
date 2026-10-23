@@ -44,6 +44,11 @@ jobs:
           node --check public/neo-cloud-miner/app.js
           node --check public/neo-cloud-miner/core.js
           node --test --test-reporter=tap server/miner-generator/cloudRetail.test.mjs | tee build/neo-generator-preview/cloud-retail-tests.tap
+      - name: Exercise desktop and phone layouts in a real browser
+        run: |
+          export CHROME_BINARY="$(command -v google-chrome || command -v chromium)"
+          test -n "$CHROME_BINARY"
+          node apps/neo-generator-android/browser-smoke.mjs
       - name: Verify Android SDK tools
         run: |
           SDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-}}"
