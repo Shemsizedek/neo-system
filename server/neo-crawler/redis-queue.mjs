@@ -3,7 +3,10 @@ import { randomUUID } from 'node:crypto';
 const enc=v=>encodeURIComponent(String(v));
 async function cmd(url,token,parts){const r=await fetch(`${url}/${parts.map(enc).join('/')}`,{headers:{Authorization:`Bearer ${token}`}});if(!r.ok)throw new Error(`Redis command failed: ${r.status}`);return r.json();}
 export function createRedisCrawlQueue({url=process.env.UPSTASH_REDIS_REST_URL,token=process.env.UPSTASH_REDIS_REST_TOKEN,key='neo:crawler:queue',maxAttempts=3}={}){
+  url=String(url||'').trim().replace(/\\/+$/,''); token=String(token||'').trim();
   if(!url||!token) throw new Error('crawler_redis_not_configured');
+  let parsed; try{parsed=new URL(url)}catch{throw new Error('crawler_redis_invalid_url')}
+  if(parsed.protocol!=='https:') throw new Error('crawler_redis_invalid_url');
   const item=id=>`${key}:item:${id}`, queued=`${key}:queued`, dead=`${key}:dead`;
   async function save(job){await cmd(url,token,['set',item(job.id),JSON.stringify(job)]);return job}
   async function get(id){const r=await cmd(url,token,['get',item(id)]);return r?.result?JSON.parse(r.result):null}
