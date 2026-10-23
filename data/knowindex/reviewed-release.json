@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "sourceId": "world-library-knowindex",
+  "sourceUrl": "https://holytemples.org/hy/world-library/",
+  "publicationApproved": true,
+  "scope": "One reviewed public World Library landing page; no private or restricted collections.",
+  "reviewedDate": "2026-10-23",
+  "reviewedEvidence": "GitHub Actions controlled crawl and locally inspected archived provenance",
+  "runUrl": "https://github.com/Shemsizedek/neo-system/actions/runs/39923538252",
+  "artifactId": 12488163091,
+  "artifactSha256": "197c2f83092539957bb5115b1e70b698516188b49d9c76cc5e92a9c62fde524b",
+  "reportSha256": "28c5f7f528a8f8691d66dcb6f522db6da5327ffdc2a1eb4fcb5849162cb2b8dd",
+  "documentsSha256": "9a161bfb68901ac333954ecf7b34f5ad085dace303504811294e6ce9643745d0",
+  "documentCount": 1,
+  "conditions": "Fail closed on missing, modified or inconsistent provenance; never enable unrestricted site crawling or blockchain writes."
+}

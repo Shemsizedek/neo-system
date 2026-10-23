@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-10-23T08:18:05.410Z",
+  "sourceId": "world-library-knowindex",
+  "documents": [
+    {
+      "summary": "World Library - World Temple Skip to content World Temple N.U.T &#8211; Omniversal Church Home Holy Ministries Holy Ordainment Holy Charter Holy Palace Holy Tablets Holy See World Temple City World Library World Mission Statement World Ministries World Committees World Parliament World Education World Treasury of Merit World Police World Interfaith Court World Bulletin Global District Templist Portal NEO NEO Society NEO Houses NOMNI &amp; World Currency NOMNI NEO Wealth Temple Store Site Directory Contact All Eyes On Ethiopia Home Site Directory World Education Holy Tablets World Bulletin ▤ The Hall of Knowledge World Library Holy See Global District Library | Tel: 678 948 6096 Temple Store Visit the Temple Store for official Temple apparel, regalia, and #NEO products. Noogle Library Power",
+      "httpStatus": 200,
+      "contentType": "text/html; charset=UTF-8",
+      "contentBytes": 263030,
+      "id": "1edd61cf8f225df01279d95c",
+      "url": "https://holytemples.org/hy/world-library/",
+      "canonicalUrl": "https://holytemples.org/hy/world-library/",
+      "title": "World Library - World Temple",
+      "contentHash": "31070d6d92eeadab1c7c3a036e9caf0eb032100e4c3fe07b8695dc0aec632696",
+      "publisher": "Holy Temples World Library — KNOWINDEX",
+      "communities": [
+        "Indigenous and Moorish knowledge collections"
+      ],
+      "evidenceState": "reference",
+      "retrievedAt": "2026-10-23T08:18:08.987Z"
+    }
+  ]
+}

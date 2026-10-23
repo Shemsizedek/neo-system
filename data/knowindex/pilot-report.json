@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-10-23T08:18:05.410Z",
+  "status": "READY_FOR_REVIEW",
+  "sourceId": "world-library-knowindex",
+  "sourceUrl": "https://holytemples.org/hy/world-library/",
+  "sourceRegistrySha256": "f45213f87866cce1e9f18811c85ebc38f79d709d4d2f2d25d05b07b4ed364ea6",
+  "robots": {
+    "url": "https://holytemples.org/robots.txt",
+    "status": 200,
+    "retrievedAt": "2026-10-23T08:18:05.412Z",
+    "sha256": "ad4216f49e7327f28fe6cb013f68fa4a758a4cb400fb89ff3e4651947afa07ee"
+  },
+  "scope": {
+    "maxDepth": 1,
+    "maxPages": 10,
+    "delayMs": 1500
+  },
+  "attemptedPages": 1,
+  "crawled": 1,
+  "errors": [],
+  "records": [
+    {
+      "id": "1edd61cf8f225df01279d95c",
+      "url": "https://holytemples.org/hy/world-library/",
+      "canonicalUrl": "https://holytemples.org/hy/world-library/",
+      "title": "World Library - World Temple",
+      "contentHash": "31070d6d92eeadab1c7c3a036e9caf0eb032100e4c3fe07b8695dc0aec632696",
+      "contentBytes": 263030,
+      "contentType": "text/html; charset=UTF-8",
+      "httpStatus": 200,
+      "retrievedAt": "2026-10-23T08:18:08.987Z",
+      "publisher": "Holy Temples World Library — KNOWINDEX",
+      "evidenceState": "reference"
+    }
+  ],
+  "publicationAuthorized": false,
+  "note": "Read-only crawl evidence; no production index or Noogle publication was modified."
+}
