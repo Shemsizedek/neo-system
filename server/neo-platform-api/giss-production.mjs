@@ -13,6 +13,7 @@ import { createGissAuthorizationBridge, createFirestoreGissCodeStore } from './g
 import { createCrownServiceAuthorizer } from './crown-service-authorizer.mjs';
 import { createFirestoreDealDeskOutbox } from '../neo-deal-desk/firestore-outbox.mjs';
 import { createTitanImapReader, createTitanMailAdapter } from '../neo-deal-desk/titan-mail.mjs';
+import { createKnowindexNeopassAuthority } from '../neo-knowindex/neopass-authority.mjs';
 
 export function createGissProductionServer({
   projectId = process.env.GOOGLE_CLOUD_PROJECT || process.env.GCP_PROJECT_ID,
@@ -23,6 +24,10 @@ export function createGissProductionServer({
   executiveAdminEmail = process.env.NEO_EXECUTIVE_ADMIN_EMAIL,
   executiveAdminUsername = process.env.NEO_EXECUTIVE_ADMIN_USERNAME || 'Shemsizedek',
   crownServiceAuthorizer = null,
+  knowindexContributionLedger = null,
+  knowindexWriteEnabled = false,
+  knowindexApprovedCurators = [],
+  knowindexApprovedExecutives = [],
   now = () => new Date().toISOString()
 } = {}) {
   if (!projectId) throw new Error('gcp_project_required');
@@ -43,6 +48,12 @@ export function createGissProductionServer({
     return ticket.getPayload();
   };
   const authService = createGoogleNeopassAuth({ clientId: googleClientId, jwtSecret, jwtIssuer, registry, verifyGoogleCredential, executiveAdminEmail, executiveAdminUsername });
+  const knowindexAuthService = createKnowindexNeopassAuthority({
+    registry,
+    approvedCurators: knowindexApprovedCurators,
+    approvedExecutives: knowindexApprovedExecutives,
+    executiveEmail: executiveAdminEmail
+  });
   const serviceAuthorizer = crownServiceAuthorizer || createCrownServiceAuthorizer({agents:{
     neopass:{url:process.env.NEOPASS_CROWN_AGENT_URL,operatorToken:process.env.NEOPASS_CROWN_OPERATOR_TOKEN},
     'neo-pay':{url:process.env.NEO_PAY_CROWN_AGENT_URL,operatorToken:process.env.NEO_PAY_CROWN_OPERATOR_TOKEN},
@@ -50,7 +61,10 @@ export function createGissProductionServer({
     'nous-os':{url:process.env.NOUS_OS_CROWN_AGENT_URL,operatorToken:process.env.NOUS_OS_CROWN_OPERATOR_TOKEN}
   }});
 
-  const server = createNeoPlatformApi({ templeGissRuntime, subjectResolver, authService, crmStore, schoolStore, dealDeskOutbox, dealDeskMailAdapter, dealDeskInboundReader, crownServiceAuthorizer:serviceAuthorizer, now });
+  // No production startup path supplies a KNOWINDEX ledger or turns on writes.
+  // Future activation requires separately authorized durable storage and
+  // independent registry-bound curator identity certification.
+  const server = createNeoPlatformApi({ templeGissRuntime, subjectResolver, authService, knowindexAuthService, knowindexContributionLedger, knowindexWriteEnabled, knowindexJwtSecret:jwtSecret, knowindexJwtIssuer:jwtIssuer || 'neo-pass', crmStore, schoolStore, dealDeskOutbox, dealDeskMailAdapter, dealDeskInboundReader, crownServiceAuthorizer:serviceAuthorizer, now });
   const gissBridge = authService ? createGissAuthorizationBridge({codeStore:createFirestoreGissCodeStore({db}),authService,subjectResolver,gissService:templeGissRuntime.service,jwtSecret,jwtIssuer,now}) : null;
   const coreHandler = server.listeners('request')[0];
   const schoolActions = createSchoolActionHandler({ schoolStore, subjectResolver });
