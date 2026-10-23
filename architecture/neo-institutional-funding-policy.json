@@ -1,0 +1,24 @@
+{
+  "schema_version":1,
+  "gate":134,
+  "name":"NEO Institutional Funding & Credit Execution Fabric",
+  "states":{
+    "draw":["REQUESTED","RESERVED","AUTHORIZED","SIGNATURE_PENDING","SIGNED","SUBMITTED","SETTLED","REJECTED","CANCELLED"],
+    "repayment":["SCHEDULED","DUE","PARTIALLY_PAID","PAID","LATE","WAIVED"],
+    "collateral_release":["BLOCKED","ELIGIBLE","AUTHORIZED","RELEASED"]
+  },
+  "controls":{
+    "gate133_credit_approval_required":true,
+    "credit_reservation_required":true,
+    "funding_signature":"EXTERNAL_OR_MULTISIGNATURE_SIGNER",
+    "private_keys":"NEVER_STORED",
+    "settlement_evidence_required":true,
+    "interest_accrual":"RECORD_ONLY",
+    "automatic_disbursement":"DISABLED",
+    "automatic_collateral_release":"DISABLED",
+    "clearing_integration":"GATE122",
+    "account_integration":"GATE132",
+    "credit_control_integration":"GATE133"
+  },
+  "authority_boundary":"This fabric records and controls internal/community funding instructions and balances. It does not by itself establish externally regulated lending, banking, broker-dealer, or securities-financing authority."
+}

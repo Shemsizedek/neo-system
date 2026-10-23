@@ -1,0 +1,12 @@
+import test from 'node:test'
+import assert from 'node:assert/strict'
+import {registerFurnisher,buildMetro2Record,validateMetro2Record,createReportingBatch,suppressTradeline,correctTradeline,validateBatch,authorizeTransmission,recordDelivery,createDisputeIntake,reportingSnapshot} from './fabric.mjs'
+
+test('unverified furnisher cannot transmit',()=>{const f=registerFurnisher({furnisher_id:'f',name:'F'});assert.equal(f.reporting_enabled,false)})
+test('Metro 2 validation fails closed',()=>{assert.equal(validateMetro2Record({tradeline_id:'t'}).valid,false)})
+test('suppression removes row from active batch',()=>{const f=registerFurnisher({furnisher_id:'f',name:'F'}),r=buildMetro2Record({tradeline_id:'t',account_type:'INSTALLMENT',payment_status:'CURRENT',status:'OPEN'});let b=createReportingBatch({batch_id:'b',furnisher:f,records:[r]});b=suppressTradeline(b,{tradeline_id:'t'});assert.equal(validateBatch(b).active_records,0)})
+test('corrections preserve lineage',()=>{const f=registerFurnisher({furnisher_id:'f',name:'F'}),r=buildMetro2Record({tradeline_id:'t',account_type:'INSTALLMENT',payment_status:'CURRENT',status:'OPEN'});let b=createReportingBatch({batch_id:'b',furnisher:f,records:[r]});b=correctTradeline(b,{tradeline_id:'t',replacement:{...r,tradeline_id:'t2'}});assert.equal(b.rows.at(-1).correction_of,'t')})
+test('authorization blocks missing external credentials',()=>{const f=registerFurnisher({furnisher_id:'f',name:'F'}),r=buildMetro2Record({tradeline_id:'t',account_type:'INSTALLMENT',payment_status:'CURRENT',status:'OPEN'}),b=createReportingBatch({batch_id:'b',furnisher:f,records:[r]});assert.equal(authorizeTransmission(b,{furnisher:f,approved:true}).state,'BLOCKED_EXTERNAL_CREDENTIALS_REQUIRED')})
+test('delivery requires verified receipt',()=>{const f=registerFurnisher({furnisher_id:'f',name:'F',credential_status:'VERIFIED',external_endpoint_ref:'ep'}),r=buildMetro2Record({tradeline_id:'t',account_type:'INSTALLMENT',payment_status:'CURRENT',status:'OPEN'});let b=createReportingBatch({batch_id:'b',furnisher:f,records:[r]});b=authorizeTransmission(b,{furnisher:f,approved:true});assert.throws(()=>recordDelivery(b,{delivery_receipt_id:'d',endpoint_ref:'ep'}),/verified delivery receipt required/)})
+test('dispute intake records source without implying e-OSCAR',()=>{const d=createDisputeIntake({dispute_id:'d',tradeline_id:'t',subject_id:'s',reason:'x'});assert.equal(d.source,'INTERNAL')})
+test('snapshot exposes external state',()=>{assert.equal(reportingSnapshot({}).external_reporting_enabled,false)})

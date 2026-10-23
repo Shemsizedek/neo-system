@@ -4,6 +4,7 @@ import { createNeoRouter } from '../neo-router/router.mjs'
 import { providersFromEnv } from '../neo-router/providers.mjs'
 import { createVertexGeminiAdapter } from '../neo-router/vertex-provider.mjs'
 import { createNeoPrimeRuntime } from './runtime.mjs'
+import { oracleEvidenceReceipt, classifyOracleEvidence } from './evidence.mjs'
 
 const ORACLE_HTML = readFileSync(new URL('./oracle.html', import.meta.url), 'utf8')
 
@@ -22,7 +23,7 @@ function json(res, status, body, headers = {}) {
 function html(res, status, body) {
   res.writeHead(status, {
     'content-type': 'text/html; charset=utf-8',
-    'cache-control': 'public, max-age=300',
+    'cache-control': 'no-store, max-age=0',
     'content-security-policy': "default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self'; img-src 'self' data:; base-uri 'none'; frame-ancestors 'none'",
     'x-content-type-options': 'nosniff',
     'referrer-policy': 'strict-origin-when-cross-origin',
@@ -123,6 +124,19 @@ export function createPrimeHttpServer({ env = process.env, providers, now = () =
     if (req.method === 'GET' && (req.url === '/health' || req.url === '/healthz')) {
       const health = router.health()
       return json(res, health.ok ? 200 : 503, { ok: health.ok, service: 'neo-prime-runtime', prime: 'active', oracle: 'active', guard: 'enforced', configuredProviders: health.configured, providers: health.providers, capabilities: health.capabilities, timestamp: now() }, cors)
+    }
+    if (req.url === '/api/oracle/evidence' && req.method === 'POST') {
+      if (origin && !allowedOrigins.has(origin)) return json(res, 403, { ok: false, error: 'origin_not_allowed' }, cors)
+      if (!operatorAuthorized(req, operatorToken)) return json(res, 401, { ok: false, error: 'operator_auth_required' }, cors)
+      try {
+        const input = await readJson(req, 16 * 1024)
+        const receipt = oracleEvidenceReceipt(input)
+        // This API cannot upgrade source reports to independently verified chain evidence.
+        const assessment = classifyOracleEvidence(receipt)
+        return json(res, 200, { ok: true, receipt, assessment, networkVerification: 'not-connected' }, cors)
+      } catch (error) {
+        return json(res, 400, { ok: false, error: 'invalid_evidence' }, cors)
+      }
     }
     if (req.method === 'POST' && (req.url === '/api/prime' || req.url === '/prime' || req.url === '/api/oracle')) {
       if (origin && !allowedOrigins.has(origin)) return json(res, 403, { ok: false, error: 'origin_not_allowed' })

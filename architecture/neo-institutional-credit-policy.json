@@ -1,0 +1,20 @@
+{
+  "schema_version":1,
+  "gate":133,
+  "name":"NEO Institutional Collateral, Credit & Financing Control",
+  "domains":["CREDIT_LIMIT","COLLATERAL_ELIGIBILITY","HAIRCUT","MARGIN_AGREEMENT","UTILIZATION","CONCENTRATION","FINANCING_TERMS","CREDIT_EVIDENCE"],
+  "controls":{
+    "credit_limit_required":true,
+    "collateral_eligibility_required":true,
+    "haircut_schedule_required":true,
+    "margin_agreement_required_for_secured_credit":true,
+    "concentration_limits_required":true,
+    "execution":"DISABLED_WITHOUT_SEPARATE_AUTHORIZED_ADAPTER",
+    "disbursement":"DISABLED_WITHOUT_SEPARATE_AUTHORIZED_ADAPTER",
+    "private_keys":"NEVER_STORED",
+    "account_integration":"GATE132",
+    "risk_integration":"GATE131",
+    "asset_registry":"GATE123"
+  },
+  "authority_boundary":"This fabric records and evaluates internal/community credit policies and agreements. It does not itself originate, disburse, or prove externally regulated lending, banking, broker-dealer, or securities-financing authority."
+}

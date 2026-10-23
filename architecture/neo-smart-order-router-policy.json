@@ -1,0 +1,20 @@
+{
+  "schema_version":1,
+  "gate":129,
+  "name":"NEO Liquidity Venue & Smart Order Router",
+  "venues":["XCP_DEX","NEO_EXCHANGE","NEO_FX","EXTERNAL_ADAPTER"],
+  "order_types":["MARKETABLE_LIMIT","LIMIT","RFQ"],
+  "routing_rules":{
+    "source_attribution_required":true,
+    "venue_health_required":true,
+    "self_trade_prevention":true,
+    "wash_trading":"PROHIBITED",
+    "best_execution_scoring":true,
+    "execution_reconciliation_required":true,
+    "synthetic_liquidity_without_source":"PROHIBITED"
+  },
+  "governance":{
+    "internal_model":"NEO_SELF_REGULATED_COMMUNITY_UNDER_NATURAL_LAW_DOCTRINE",
+    "external_interface_rule":"External venue, broker, custodian, tax, market, or jurisdictional requirements apply only at the relevant interface."
+  }
+}

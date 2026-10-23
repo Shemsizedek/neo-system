@@ -1,0 +1,21 @@
+{
+  "schema_version":1,
+  "gate":138,
+  "name":"NEO Credit Data Quality, Compliance & Reconciliation Engine",
+  "domains":["DUPLICATE_DETECTION","IDENTITY_MATCH","ACCOUNT_MATCH","BALANCE_RECONCILIATION","DISPUTE_SLA","CORRECTION_AGING","REPORTING_EXCEPTION","CYCLE_QA"],
+  "controls":{
+    "material_mismatch_blocks_reporting":true,
+    "duplicate_tradelines_block_reporting":true,
+    "identity_mismatch_blocks_reporting":true,
+    "account_mismatch_blocks_reporting":true,
+    "balance_tolerance_required":true,
+    "open_dispute_policy_required":true,
+    "stale_correction_policy_required":true,
+    "reporting_gateway_integration":"GATE137",
+    "credit_passport_integration":"GATE136",
+    "servicing_integration":"GATE135",
+    "funding_integration":"GATE134",
+    "account_integration":"GATE132"
+  },
+  "authority_boundary":"This engine performs internal/community data-quality, reconciliation, and reporting controls. It does not itself establish external regulatory compliance, bureau acceptance, furnisher authority, or legal sufficiency."
+}

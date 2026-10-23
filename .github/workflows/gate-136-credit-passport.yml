@@ -1,0 +1,18 @@
+name: Gate 136 Credit Passport
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['architecture/neo-credit-passport-policy.json','server/neo-credit-passport/**','docs/NEO-G136-CREDIT-PASSPORT.md','package.json','.github/workflows/gate-136-credit-passport.yml']
+  pull_request:
+    paths: ['architecture/neo-credit-passport-policy.json','server/neo-credit-passport/**','docs/NEO-G136-CREDIT-PASSPORT.md','package.json','.github/workflows/gate-136-credit-passport.yml']
+permissions: {contents: read}
+jobs:
+  credit-passport:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 24}
+      - run: npm run neo-credit-passport:test
+      - run: node --check server/neo-credit-passport/server.mjs

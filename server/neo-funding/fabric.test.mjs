@@ -1,0 +1,11 @@
+import test from 'node:test'
+import assert from 'node:assert/strict'
+import {createDrawRequest,reserveCredit,authorizeFunding,createFundingInstruction,recordFundingSignature,submitFunding,settleFunding,createAdvanceLedgerEntry,accrueInterest,createRepaymentSchedule,recordRepayment,evaluateCollateralRelease,fundingSnapshot} from './fabric.mjs'
+
+test('draw cannot exceed approved credit',()=>{const d=createDrawRequest({draw_id:'d',facility_id:'f',account_id:'a',amount:100});assert.equal(reserveCredit(d,{approved_credit:50}).state,'REJECTED')})
+test('funding instruction stores no private keys',()=>{let d=createDrawRequest({draw_id:'d',facility_id:'f',account_id:'a',amount:10});d=reserveCredit(d,{approved_credit:100});d=authorizeFunding(d,{approved:true});const i=createFundingInstruction(d,{instruction_id:'i',signer_policy:{m:2,n:3}});assert.equal(i.private_keys_stored,false)})
+test('funding requires verified settlement evidence',()=>{let d=createDrawRequest({draw_id:'d',facility_id:'f',account_id:'a',amount:10});d=reserveCredit(d,{approved_credit:100});d=authorizeFunding(d,{approved:true});let i=createFundingInstruction(d,{instruction_id:'i',signer_policy:{m:1,n:1}});i=recordFundingSignature(i,{signature_ref:'sig',signer_ids:['s']});i=submitFunding(i,{settlement_instruction_id:'s1'});assert.equal(settleFunding(i,{settlement_evidence_ref:'x',verified:false}).state,'SUBMITTED');assert.equal(settleFunding(i,{settlement_evidence_ref:'x',verified:true}).state,'SETTLED')})
+test('interest accrual is record only',()=>{const a=createAdvanceLedgerEntry({facility_id:'f',draw_id:'d',principal:365,rate_bps:1000});const x=accrueInterest(a,{days:10});assert(x.accrued_interest>0)})
+test('repayment evidence reduces outstanding balance',()=>{const a=createAdvanceLedgerEntry({facility_id:'f',draw_id:'d',principal:10});assert.equal(recordRepayment(a,{amount:10,evidence_ref:'tx',verified:true}).status,'REPAID')})
+test('collateral release is never automatic',()=>{const a={outstanding_principal:0};assert.equal(evaluateCollateralRelease({advance:a,required_collateral_value:0,eligible_collateral_value:0}).automatic_release,false)})
+test('snapshot preserves non-automatic posture',()=>{const s=fundingSnapshot({});assert.equal(s.automatic_disbursement,false);assert.equal(s.private_keys_stored,false)})

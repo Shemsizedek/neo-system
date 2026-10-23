@@ -1,0 +1,18 @@
+name: Gate 134 Institutional Funding
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['architecture/neo-institutional-funding-policy.json','server/neo-funding/**','docs/NEO-G134-INSTITUTIONAL-FUNDING.md','package.json','.github/workflows/gate-134-institutional-funding.yml']
+  pull_request:
+    paths: ['architecture/neo-institutional-funding-policy.json','server/neo-funding/**','docs/NEO-G134-INSTITUTIONAL-FUNDING.md','package.json','.github/workflows/gate-134-institutional-funding.yml']
+permissions: {contents: read}
+jobs:
+  funding:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 24}
+      - run: npm run neo-funding:test
+      - run: node --check server/neo-funding/server.mjs

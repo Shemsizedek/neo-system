@@ -29,6 +29,18 @@ const NEOMASK_SIGNER_URL=String(process.env.NEOMASK_SIGNER_URL||'').replace(/\/$
 const NEO_MERCHANT_NETWORK_URL=String(process.env.NEO_MERCHANT_NETWORK_URL||'').replace(/\/$/,'');
 const NEO_MERCHANT_TREASURY_URL=String(process.env.NEO_MERCHANT_TREASURY_URL||'').replace(/\/$/,'');
 const NEO_CONVERSION_URL=String(process.env.NEO_CONVERSION_URL||'').replace(/\/$/,'');
+const NEO_MARKET_ROUTER_URL=String(process.env.NEO_MARKET_ROUTER_URL||'').replace(/\/$/,'');
+const NEO_OMS_URL=String(process.env.NEO_OMS_URL||'').replace(/\/$/,'');
+const NEO_RISK_URL=String(process.env.NEO_RISK_URL||'').replace(/\/$/,'');
+const NEO_PRIME_ACCOUNTS_URL=String(process.env.NEO_PRIME_ACCOUNTS_URL||'').replace(/\/$/,'');
+const NEO_CREDIT_CONTROL_URL=String(process.env.NEO_CREDIT_CONTROL_URL||'').replace(/\/$/,'');
+const NEO_FUNDING_URL=String(process.env.NEO_FUNDING_URL||'').replace(/\/$/,'');
+const NEO_SERVICING_URL=String(process.env.NEO_SERVICING_URL||'').replace(/\/$/,'');
+const NEO_CREDIT_PASSPORT_URL=String(process.env.NEO_CREDIT_PASSPORT_URL||'').replace(/\/$/,'');
+const NEO_CREDIT_REPORTING_URL=String(process.env.NEO_CREDIT_REPORTING_URL||'').replace(/\/$/,'');
+const NEO_CREDIT_RECONCILIATION_URL=String(process.env.NEO_CREDIT_RECONCILIATION_URL||'').replace(/\/$/,'');
+const NEO_CREDIT_COMPLIANCE_URL=String(process.env.NEO_CREDIT_COMPLIANCE_URL||'').replace(/\/$/,'');
+const NEO_CREDIT_MODEL_RISK_URL=String(process.env.NEO_CREDIT_MODEL_RISK_URL||'').replace(/\/$/,'');
 const FAMILY_OFFICE_ORIGIN='sheltonestate.family.blog';
 const NEO_PLATFORM_API_ORIGIN=String(process.env.NEO_PLATFORM_API_ORIGIN||'https://egov.holytemples.org').replace(/\/$/,'');
 
@@ -91,6 +103,168 @@ function serviceConsole(host){
   </script></body></html>`;
 }
 
+
+function proxyCreditModelRisk(req,res){
+  if(!NEO_CREDIT_MODEL_RISK_URL)return json(res,503,{error:'neo_credit_model_risk_unconfigured'});
+  let target; try{const suffix=String(req.url||'/').replace(/^\/api\/credit-model-risk/,'');target=new URL(suffix||'/',NEO_CREDIT_MODEL_RISK_URL)}catch{return json(res,502,{error:'neo_credit_model_risk_invalid_origin'})}
+  const transport=target.protocol==='https:'?https:http; const headers={...req.headers,host:target.host,'x-forwarded-host':'neo.holytemples.org'};
+  const upstream=transport.request(target,{method:req.method,headers},reply=>{const h={...reply.headers};delete h['access-control-allow-origin'];res.writeHead(reply.statusCode||502,h);reply.pipe(res)});
+  upstream.on('error',error=>json(res,502,{error:'neo_credit_model_risk_unavailable',detail:error.message}));req.pipe(upstream);
+}
+
+function proxyCreditCompliance(req,res){
+  if(!NEO_CREDIT_COMPLIANCE_URL)return json(res,503,{error:'neo_credit_compliance_unconfigured'});
+  let target; try{const suffix=String(req.url||'/').replace(/^\/api\/credit-compliance/,'');target=new URL(suffix||'/',NEO_CREDIT_COMPLIANCE_URL)}catch{return json(res,502,{error:'neo_credit_compliance_invalid_origin'})}
+  const transport=target.protocol==='https:'?https:http; const headers={...req.headers,host:target.host,'x-forwarded-host':'neo.holytemples.org'};
+  const upstream=transport.request(target,{method:req.method,headers},reply=>{const h={...reply.headers};delete h['access-control-allow-origin'];res.writeHead(reply.statusCode||502,h);reply.pipe(res)});
+  upstream.on('error',error=>json(res,502,{error:'neo_credit_compliance_unavailable',detail:error.message}));req.pipe(upstream);
+}
+
+function proxyCreditReconciliation(req,res){
+  if(!NEO_CREDIT_RECONCILIATION_URL)return json(res,503,{error:'neo_credit_reconciliation_unconfigured'});
+  let target; try{const suffix=String(req.url||'/').replace(/^\/api\/credit-reconciliation/,'');target=new URL(suffix||'/',NEO_CREDIT_RECONCILIATION_URL)}catch{return json(res,502,{error:'neo_credit_reconciliation_invalid_origin'})}
+  const transport=target.protocol==='https:'?https:http; const headers={...req.headers,host:target.host,'x-forwarded-host':'neo.holytemples.org'};
+  const upstream=transport.request(target,{method:req.method,headers},reply=>{const h={...reply.headers};delete h['access-control-allow-origin'];res.writeHead(reply.statusCode||502,h);reply.pipe(res)});
+  upstream.on('error',error=>json(res,502,{error:'neo_credit_reconciliation_unavailable',detail:error.message}));req.pipe(upstream);
+}
+
+function proxyCreditReporting(req,res){
+  if(!NEO_CREDIT_REPORTING_URL)return json(res,503,{error:'neo_credit_reporting_unconfigured'});
+  let target; try{const suffix=String(req.url||'/').replace(/^\/api\/credit-reporting/,'');target=new URL(suffix||'/',NEO_CREDIT_REPORTING_URL)}catch{return json(res,502,{error:'neo_credit_reporting_invalid_origin'})}
+  const transport=target.protocol==='https:'?https:http; const headers={...req.headers,host:target.host,'x-forwarded-host':'neo.holytemples.org'};
+  const upstream=transport.request(target,{method:req.method,headers},reply=>{const h={...reply.headers};delete h['access-control-allow-origin'];res.writeHead(reply.statusCode||502,h);reply.pipe(res)});
+  upstream.on('error',error=>json(res,502,{error:'neo_credit_reporting_unavailable',detail:error.message}));req.pipe(upstream);
+}
+
+function proxyCreditPassport(req,res){
+  if(!NEO_CREDIT_PASSPORT_URL)return json(res,503,{error:'neo_credit_passport_unconfigured'});
+  let target; try{const suffix=String(req.url||'/').replace(/^\/api\/credit-passport/,'');target=new URL(suffix||'/',NEO_CREDIT_PASSPORT_URL)}catch{return json(res,502,{error:'neo_credit_passport_invalid_origin'})}
+  const transport=target.protocol==='https:'?https:http; const headers={...req.headers,host:target.host,'x-forwarded-host':'neo.holytemples.org'};
+  const upstream=transport.request(target,{method:req.method,headers},reply=>{const h={...reply.headers};delete h['access-control-allow-origin'];res.writeHead(reply.statusCode||502,h);reply.pipe(res)});
+  upstream.on('error',error=>json(res,502,{error:'neo_credit_passport_unavailable',detail:error.message}));req.pipe(upstream);
+}
+
+function proxyServicing(req,res){
+  if(!NEO_SERVICING_URL)return json(res,503,{error:'neo_servicing_unconfigured'});
+  let target; try{const suffix=String(req.url||'/').replace(/^\/api\/servicing/,'');target=new URL(suffix||'/',NEO_SERVICING_URL)}catch{return json(res,502,{error:'neo_servicing_invalid_origin'})}
+  const transport=target.protocol==='https:'?https:http; const headers={...req.headers,host:target.host,'x-forwarded-host':'neo.holytemples.org'};
+  const upstream=transport.request(target,{method:req.method,headers},reply=>{const h={...reply.headers};delete h['access-control-allow-origin'];res.writeHead(reply.statusCode||502,h);reply.pipe(res)});
+  upstream.on('error',error=>json(res,502,{error:'neo_servicing_unavailable',detail:error.message}));req.pipe(upstream);
+}
+
+function proxyFunding(req,res){
+  if(!NEO_FUNDING_URL)return json(res,503,{error:'neo_funding_unconfigured'});
+  let target;
+  try{
+    const suffix=String(req.url||'/').replace(/^\/api\/funding/,'');
+    target=new URL(suffix||'/',NEO_FUNDING_URL);
+  }catch{return json(res,502,{error:'neo_funding_invalid_origin'})}
+  const transport=target.protocol==='https:'?https:http;
+  const headers={...req.headers,host:target.host,'x-forwarded-host':'neo.holytemples.org'};
+  const upstream=transport.request(target,{method:req.method,headers},reply=>{
+    const responseHeaders={...reply.headers};
+    delete responseHeaders['access-control-allow-origin'];
+    res.writeHead(reply.statusCode||502,responseHeaders);
+    reply.pipe(res);
+  });
+  upstream.on('error',error=>json(res,502,{error:'neo_funding_unavailable',detail:error.message}));
+  req.pipe(upstream);
+}
+
+function proxyCreditControl(req,res){
+  if(!NEO_CREDIT_CONTROL_URL)return json(res,503,{error:'neo_credit_control_unconfigured'});
+  let target;
+  try{
+    const suffix=String(req.url||'/').replace(/^\/api\/credit-control/,'');
+    target=new URL(suffix||'/',NEO_CREDIT_CONTROL_URL);
+  }catch{return json(res,502,{error:'neo_credit_control_invalid_origin'})}
+  const transport=target.protocol==='https:'?https:http;
+  const headers={...req.headers,host:target.host,'x-forwarded-host':'neo.holytemples.org'};
+  const upstream=transport.request(target,{method:req.method,headers},reply=>{
+    const responseHeaders={...reply.headers};
+    delete responseHeaders['access-control-allow-origin'];
+    res.writeHead(reply.statusCode||502,responseHeaders);
+    reply.pipe(res);
+  });
+  upstream.on('error',error=>json(res,502,{error:'neo_credit_control_unavailable',detail:error.message}));
+  req.pipe(upstream);
+}
+
+function proxyPrimeAccounts(req,res){
+  if(!NEO_PRIME_ACCOUNTS_URL)return json(res,503,{error:'neo_prime_accounts_unconfigured'});
+  let target;
+  try{
+    const suffix=String(req.url||'/').replace(/^\/api\/prime-accounts/,'');
+    target=new URL(suffix||'/',NEO_PRIME_ACCOUNTS_URL);
+  }catch{return json(res,502,{error:'neo_prime_accounts_invalid_origin'})}
+  const transport=target.protocol==='https:'?https:http;
+  const headers={...req.headers,host:target.host,'x-forwarded-host':'neo.holytemples.org'};
+  const upstream=transport.request(target,{method:req.method,headers},reply=>{
+    const responseHeaders={...reply.headers};
+    delete responseHeaders['access-control-allow-origin'];
+    res.writeHead(reply.statusCode||502,responseHeaders);
+    reply.pipe(res);
+  });
+  upstream.on('error',error=>json(res,502,{error:'neo_prime_accounts_unavailable',detail:error.message}));
+  req.pipe(upstream);
+}
+
+function proxyRisk(req,res){
+  if(!NEO_RISK_URL)return json(res,503,{error:'neo_risk_unconfigured'});
+  let target;
+  try{
+    const suffix=String(req.url||'/').replace(/^\/api\/risk/,'');
+    target=new URL(suffix||'/',NEO_RISK_URL);
+  }catch{return json(res,502,{error:'neo_risk_invalid_origin'})}
+  const transport=target.protocol==='https:'?https:http;
+  const headers={...req.headers,host:target.host,'x-forwarded-host':'neo.holytemples.org'};
+  const upstream=transport.request(target,{method:req.method,headers},reply=>{
+    const responseHeaders={...reply.headers};
+    delete responseHeaders['access-control-allow-origin'];
+    res.writeHead(reply.statusCode||502,responseHeaders);
+    reply.pipe(res);
+  });
+  upstream.on('error',error=>json(res,502,{error:'neo_risk_unavailable',detail:error.message}));
+  req.pipe(upstream);
+}
+
+function proxyOms(req,res){
+  if(!NEO_OMS_URL)return json(res,503,{error:'neo_oms_unconfigured'});
+  let target;
+  try{
+    const suffix=String(req.url||'/').replace(/^\/api\/oms/,'');
+    target=new URL(suffix||'/',NEO_OMS_URL);
+  }catch{return json(res,502,{error:'neo_oms_invalid_origin'})}
+  const transport=target.protocol==='https:'?https:http;
+  const headers={...req.headers,host:target.host,'x-forwarded-host':'neo.holytemples.org'};
+  const upstream=transport.request(target,{method:req.method,headers},reply=>{
+    const responseHeaders={...reply.headers};
+    delete responseHeaders['access-control-allow-origin'];
+    res.writeHead(reply.statusCode||502,responseHeaders);
+    reply.pipe(res);
+  });
+  upstream.on('error',error=>json(res,502,{error:'neo_oms_unavailable',detail:error.message}));
+  req.pipe(upstream);
+}
+
+function proxyMarketRouter(req,res){
+  if(!NEO_MARKET_ROUTER_URL)return json(res,503,{error:'neo_market_router_unconfigured'});
+  let target;
+  try{
+    const suffix=String(req.url||'/').replace(/^\/api\/market-router/,'');
+    target=new URL(suffix||'/',NEO_MARKET_ROUTER_URL);
+  }catch{return json(res,502,{error:'neo_market_router_invalid_origin'})}
+  const transport=target.protocol==='https:'?https:http;
+  const headers={...req.headers,host:target.host,'x-forwarded-host':'neo.holytemples.org'};
+  const upstream=transport.request(target,{method:req.method,headers},reply=>{
+    const responseHeaders={...reply.headers};
+    delete responseHeaders['access-control-allow-origin'];
+    res.writeHead(reply.statusCode||502,responseHeaders);
+    reply.pipe(res);
+  });
+  upstream.on('error',error=>json(res,502,{error:'neo_market_router_unavailable',detail:error.message}));
+  req.pipe(upstream);
+}
 
 function proxyConversion(req,res){
   if(!NEO_CONVERSION_URL)return json(res,503,{error:'neo_conversion_unconfigured'});
@@ -514,6 +688,18 @@ export async function startNeoEdgeProduction(){
     if(host==='neo.holytemples.org'&&url.pathname.startsWith('/api/merchant-network/'))return proxyMerchantNetwork(req,res);
     if(host==='neo.holytemples.org'&&url.pathname.startsWith('/api/merchant-treasury/'))return proxyMerchantTreasury(req,res);
     if(host==='neo.holytemples.org'&&url.pathname.startsWith('/api/conversion/'))return proxyConversion(req,res);
+    if(host==='neo.holytemples.org'&&url.pathname.startsWith('/api/market-router/'))return proxyMarketRouter(req,res);
+    if(host==='neo.holytemples.org'&&url.pathname.startsWith('/api/oms/'))return proxyOms(req,res);
+    if(host==='neo.holytemples.org'&&url.pathname.startsWith('/api/risk/'))return proxyRisk(req,res);
+    if(host==='neo.holytemples.org'&&url.pathname.startsWith('/api/prime-accounts/'))return proxyPrimeAccounts(req,res);
+    if(host==='neo.holytemples.org'&&url.pathname.startsWith('/api/credit-control/'))return proxyCreditControl(req,res);
+    if(host==='neo.holytemples.org'&&url.pathname.startsWith('/api/funding/'))return proxyFunding(req,res);
+    if(host==='neo.holytemples.org'&&url.pathname.startsWith('/api/servicing/'))return proxyServicing(req,res);
+    if(host==='neo.holytemples.org'&&url.pathname.startsWith('/api/credit-passport/'))return proxyCreditPassport(req,res);
+    if(host==='neo.holytemples.org'&&url.pathname.startsWith('/api/credit-reporting/'))return proxyCreditReporting(req,res);
+    if(host==='neo.holytemples.org'&&url.pathname.startsWith('/api/credit-reconciliation/'))return proxyCreditReconciliation(req,res);
+    if(host==='neo.holytemples.org'&&url.pathname.startsWith('/api/credit-compliance/'))return proxyCreditCompliance(req,res);
+    if(host==='neo.holytemples.org'&&url.pathname.startsWith('/api/credit-model-risk/'))return proxyCreditModelRisk(req,res);
     if(host==='neo.holytemples.org'&&url.pathname.startsWith('/api/ai/'))return proxyAiGateway(req,res);
     if(host==='desk.holytemples.org')return proxyDealDesk(req,res,url);
     if(host==='office.holytemples.org'&&req.method==='GET'&&url.pathname==='/health')return json(res,200,{ok:true,service:'shelton-estate-family-office',surface:'legacy-mirror',origin:FAMILY_OFFICE_ORIGIN});

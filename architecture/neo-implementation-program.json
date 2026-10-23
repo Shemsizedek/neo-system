@@ -465,6 +465,138 @@
         "docs/NEO-G128-MULTI-ASSET-CONVERSION.md",
         ".github/workflows/gate-128-multi-asset-conversion.yml"
       ]
+    },
+    {
+      "capability_id": "GATE-129-LIQUIDITY-VENUE-SMART-ORDER-ROUTER",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "architecture/neo-smart-order-router-policy.json",
+        "server/neo-router-market/fabric.mjs",
+        "server/neo-router-market/server.mjs",
+        "docs/NEO-G129-LIQUIDITY-VENUE-ROUTER.md",
+        ".github/workflows/gate-129-smart-order-router.yml"
+      ]
+    },
+    {
+      "capability_id": "GATE-130-INSTITUTIONAL-OMS-EMS",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "architecture/neo-institutional-oms-ems-policy.json",
+        "server/neo-oms/fabric.mjs",
+        "server/neo-oms/server.mjs",
+        "docs/NEO-G130-INSTITUTIONAL-OMS-EMS.md",
+        ".github/workflows/gate-130-institutional-oms.yml"
+      ]
+    },
+    {
+      "capability_id": "GATE-131-INSTITUTIONAL-RISK-PORTFOLIO-CONTROL",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "architecture/neo-institutional-risk-policy.json",
+        "server/neo-risk/fabric.mjs",
+        "server/neo-risk/server.mjs",
+        "docs/NEO-G131-INSTITUTIONAL-RISK.md",
+        ".github/workflows/gate-131-institutional-risk.yml"
+      ]
+    },
+    {
+      "capability_id": "GATE-132-PRIME-BROKERAGE-INSTITUTIONAL-ACCOUNT-FABRIC",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "architecture/neo-prime-account-fabric-policy.json",
+        "server/neo-prime-accounts/fabric.mjs",
+        "server/neo-prime-accounts/server.mjs",
+        "docs/NEO-G132-PRIME-ACCOUNT-FABRIC.md",
+        ".github/workflows/gate-132-prime-account-fabric.yml"
+      ]
+    },
+    {
+      "capability_id": "GATE-133-INSTITUTIONAL-CREDIT-COLLATERAL-CONTROL",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "architecture/neo-institutional-credit-policy.json",
+        "server/neo-credit-control/fabric.mjs",
+        "server/neo-credit-control/server.mjs",
+        "docs/NEO-G133-INSTITUTIONAL-CREDIT-CONTROL.md",
+        ".github/workflows/gate-133-institutional-credit.yml"
+      ]
+    },
+    {
+      "capability_id": "GATE-134-INSTITUTIONAL-FUNDING-CREDIT-EXECUTION",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "architecture/neo-institutional-funding-policy.json",
+        "server/neo-funding/fabric.mjs",
+        "server/neo-funding/server.mjs",
+        "docs/NEO-G134-INSTITUTIONAL-FUNDING.md",
+        ".github/workflows/gate-134-institutional-funding.yml"
+      ]
+    },
+    {
+      "capability_id": "GATE-135-SERVICING-CREDIT-PERFORMANCE",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "architecture/neo-servicing-credit-performance-policy.json",
+        "server/neo-servicing/fabric.mjs",
+        "server/neo-servicing/server.mjs",
+        "docs/NEO-G135-SERVICING-CREDIT-PERFORMANCE.md",
+        ".github/workflows/gate-135-servicing-credit-performance.yml"
+      ]
+    },
+    {
+      "capability_id": "GATE-136-CREDIT-BUREAU-PASSPORT",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "architecture/neo-credit-passport-policy.json",
+        "server/neo-credit-passport/fabric.mjs",
+        "server/neo-credit-passport/server.mjs",
+        "docs/NEO-G136-CREDIT-PASSPORT.md",
+        ".github/workflows/gate-136-credit-passport.yml"
+      ]
+    },
+    {
+      "capability_id": "GATE-137-CREDIT-REPORTING-FURNISHER-OPS",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "architecture/neo-credit-reporting-gateway-policy.json",
+        "server/neo-credit-reporting/fabric.mjs",
+        "server/neo-credit-reporting/server.mjs",
+        "docs/NEO-G137-CREDIT-REPORTING-GATEWAY.md",
+        ".github/workflows/gate-137-credit-reporting.yml"
+      ]
+    },
+    {
+      "capability_id": "GATE-138-CREDIT-DATA-QUALITY-RECONCILIATION",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "architecture/neo-credit-data-quality-policy.json",
+        "server/neo-credit-reconciliation/fabric.mjs",
+        "server/neo-credit-reconciliation/server.mjs",
+        "docs/NEO-G138-CREDIT-DATA-QUALITY.md",
+        ".github/workflows/gate-138-credit-data-quality.yml"
+      ]
+    },
+    {
+      "capability_id": "GATE-139-CREDIT-COMPLIANCE-CASE-MANAGEMENT",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "architecture/neo-credit-compliance-case-policy.json",
+        "server/neo-credit-compliance/fabric.mjs",
+        "server/neo-credit-compliance/server.mjs",
+        "docs/NEO-G139-CREDIT-COMPLIANCE-CASES.md",
+        ".github/workflows/gate-139-credit-compliance-cases.yml"
+      ]
+    },
+    {
+      "capability_id": "GATE-140-CREDIT-MODEL-RISK-CONTROL",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "architecture/neo-credit-model-governance-policy.json",
+        "server/neo-credit-model-risk/fabric.mjs",
+        "server/neo-credit-model-risk/server.mjs",
+        "docs/NEO-G140-CREDIT-MODEL-RISK.md",
+        ".github/workflows/gate-140-credit-model-risk.yml"
+      ]
     }
   ],
   "autopilot": {

@@ -1,0 +1,18 @@
+name: Gate 140 Credit Model Risk
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['architecture/neo-credit-model-governance-policy.json','server/neo-credit-model-risk/**','docs/NEO-G140-CREDIT-MODEL-RISK.md','package.json','.github/workflows/gate-140-credit-model-risk.yml']
+  pull_request:
+    paths: ['architecture/neo-credit-model-governance-policy.json','server/neo-credit-model-risk/**','docs/NEO-G140-CREDIT-MODEL-RISK.md','package.json','.github/workflows/gate-140-credit-model-risk.yml']
+permissions: {contents: read}
+jobs:
+  model-risk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 24}
+      - run: npm run neo-credit-model-risk:test
+      - run: node --check server/neo-credit-model-risk/server.mjs
