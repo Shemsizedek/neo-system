@@ -21,14 +21,14 @@ jobs:
           echo '| Service | HTTP | Content type | Result |' >> "$GITHUB_STEP_SUMMARY"
           echo '| --- | --- | --- | --- |' >> "$GITHUB_STEP_SUMMARY"
           failures=0
-          for spec in 'GISD|https://school.holytemples.org/' 'NEOpass|https://neopass.holytemples.org/' 'Render platform API|https://neo-platform-api-recovery.onrender.com/'; do
+          for spec in 'GISD|https://school.holytemples.org/' 'NEOpass|https://neopass.holytemples.org/' 'Render platform API|https://neo-platform-api-recovery.onrender.com/' 'Platform health|https://neo-platform-api-recovery.onrender.com/health' 'School storage health|https://neo-platform-api-recovery.onrender.com/health/school'; do
             IFS='|' read -r label url <<< "$spec"
             headers="$(mktemp)"
             body="$(mktemp)"
             code="$(curl --location --silent --show-error --connect-timeout 10 --max-time 35 --retry 1 --dump-header "$headers" --output "$body" --write-out '%{http_code}' "$url" 2>curl-error.txt || true)"
             ctype="$(grep -i '^content-type:' "$headers" | tail -1 | tr -d '\r' | cut -d' ' -f2 || true)"
             verdict=PASS
-            if [[ ! "$code" =~ ^2[0-9][0-9]$ ]] || [[ ! "$ctype" =~ ^text/html ]] || [[ ! -s "$body" ]]; then
+            if [[ ! "$code" =~ ^2[0-9][0-9]$ ]] || [[ ! "$ctype" =~ ^(text/html|application/json) ]] || [[ ! -s "$body" ]]; then
               verdict=FAIL
               failures=$((failures+1))
             fi
