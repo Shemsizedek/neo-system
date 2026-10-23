@@ -63,7 +63,7 @@ export function createGeneratorServer({env=process.env,fetchImpl=fetch,now=()=>D
     });
     if(url.pathname==='/capacity'){
       return void readGeneratorCapacity({env,fetchImpl,nowMs:now()})
-        .then(body=>send(res,body.available?200:503,body))
+        .then(body=>send(res,200,body))
         .catch(()=>send(res,503,{mode:'PUBLIC_READ_ONLY',available:false,status:'CAPACITY_BRIDGE_UNAVAILABLE',contractActivationEnabled:false}))
     }
     if(url.pathname==='/hashpower-quotes') return send(res,200,{
