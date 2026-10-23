@@ -1,5 +1,7 @@
 name: Crown CARDMASTER staging HTTP smoke
 on:
+  push:
+    branches: [feat/ncc-007-render-runtime-hardening]
   pull_request:
     branches: [feat/ncc-005-cardmaster-gallery]
     paths:
