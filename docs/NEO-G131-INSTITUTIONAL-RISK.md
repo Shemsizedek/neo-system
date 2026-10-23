@@ -6,6 +6,4 @@ It tracks marked positions, gross/net exposure, concentration, realized/unrealiz
 
 Missing prices or volatility are not silently estimated. Risk becomes unavailable or blocks new risk where policy requires.
 
-The kill switch blocks new risk-taking before any liquidation logic is considered.
-
-Liquidation remains a recommendation and authorization workflow. Automatic liquidation is disabled unless a future gate adds an explicitly authorized execution policy and verified routing/settlement path.
+The kill switch blocks new risk-taking. Position reduction remains a manual review and separately authorized execution concern; Gate 131 does not automatically trade or reduce positions.
