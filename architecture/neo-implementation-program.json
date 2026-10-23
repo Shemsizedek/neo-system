@@ -454,6 +454,17 @@
         "docs/NEO-G127-MERCHANT-TREASURY.md",
         ".github/workflows/gate-127-merchant-treasury.yml"
       ]
+    },
+    {
+      "capability_id": "GATE-128-MULTI-ASSET-CONVERSION-LIQUIDITY",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "architecture/neo-multi-asset-conversion-policy.json",
+        "server/neo-conversion/fabric.mjs",
+        "server/neo-conversion/server.mjs",
+        "docs/NEO-G128-MULTI-ASSET-CONVERSION.md",
+        ".github/workflows/gate-128-multi-asset-conversion.yml"
+      ]
     }
   ],
   "autopilot": {
