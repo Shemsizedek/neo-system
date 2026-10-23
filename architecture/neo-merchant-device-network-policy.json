@@ -1,0 +1,20 @@
+{
+  "schema_version":1,
+  "gate":126,
+  "name":"NEO Counter + ETHA Universal Merchant & Device Network",
+  "merchant_roles":["PLATFORM_ADMIN","COMPANY_ADMIN","MANAGER","CASHIER","VIEWER"],
+  "device_types":["NEO_COUNTER_TERMINAL","ETHA_CARD","ETHA_TERMINAL","ETHA_DEVICE","PHYSICAL_VAULT","BANK_VAULT_SECURITY_DEVICE"],
+  "payment_assets":["BTC","XCP","COUNTERPARTY_ASSET","NOMNI"],
+  "security":{
+    "private_keys_at_terminal":"PROHIBITED",
+    "signing":"NEOMASK_OR_PAIRED_SIGNER",
+    "guardian_firewall_required":true,
+    "device_identity":"ETHA_OR_GATE115_IDENTITY",
+    "settlement_finality":"GATE122_VERIFIED_EVIDENCE",
+    "asset_registry_update":"GATE123_VERIFIED_TRANSFER"
+  },
+  "governance":{
+    "internal_model":"NEO_SELF_REGULATED_COMMUNITY_UNDER_NATURAL_LAW_DOCTRINE",
+    "external_interface_rule":"External merchant/acquirer, bank, network, custodian, venue, tax, or jurisdictional requirements apply at the relevant interface."
+  }
+}

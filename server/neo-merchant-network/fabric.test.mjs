@@ -1,0 +1,9 @@
+import test from 'node:test'
+import assert from 'node:assert/strict'
+import {createMerchant,registerDevice,createPaymentIntent,reviewPaymentIntent,attachSignature,createSettlementHandoff,finalizeMerchantPayment,createAssetAwareReceipt,merchantNetworkSnapshot} from './fabric.mjs'
+
+test('merchant device never stores private keys',()=>{assert.equal(registerDevice({device_id:'d',merchant_id:'m',device_type:'ETHA_TERMINAL'}).private_key_storage,false)})
+test('Counterparty payments require asset registry and Guardian approval',()=>{const i=createPaymentIntent({intent_id:'i',merchant_id:'m',amount:1,asset:'XCP'}),d=registerDevice({device_id:'d',merchant_id:'m',device_type:'NEO_COUNTER_TERMINAL'});assert.equal(reviewPaymentIntent(i,{guardian:{allowed:true},device:d}).state,'BLOCKED');assert.equal(reviewPaymentIntent(i,{guardian:{allowed:true},device:d,assetRecord:{asset_id:'XCP'}}).state,'READY_FOR_SIGNATURE')})
+test('finality requires clearing and registry evidence for Counterparty assets',()=>{let i=createPaymentIntent({intent_id:'i',merchant_id:'m',amount:1,asset:'XCP'}),d=registerDevice({device_id:'d',merchant_id:'m',device_type:'NEO_COUNTER_TERMINAL'});i=reviewPaymentIntent(i,{guardian:{allowed:true},device:d,assetRecord:{asset_id:'XCP'}});i=attachSignature(i,{signature_ref:'sig',signer_id:'s'});i=createSettlementHandoff(i,{instruction_id:'set1'});assert.equal(finalizeMerchantPayment(i,{settlementFinal:true,registryUpdated:false}).state,'PENDING_REGISTER_UPDATE');assert.equal(finalizeMerchantPayment(i,{settlementFinal:true,registryUpdated:true}).state,'FINAL')})
+test('receipt emits only after final payment',()=>{const m=createMerchant({merchant_id:'m',name:'Shop'});assert.throws(()=>createAssetAwareReceipt({payment:{state:'SIGNED'},merchant:m}),/final_payment_required/)})
+test('snapshot exposes merchant/device posture',()=>{assert.equal(merchantNetworkSnapshot({}).private_keys_at_terminal,false)})

@@ -432,6 +432,17 @@
         "docs/NEO-G125-LIVE-SIGNER-GUARDIAN.md",
         ".github/workflows/gate-125-neomask-live-signer.yml"
       ]
+    },
+    {
+      "capability_id": "GATE-126-NEO-COUNTER-ETHA-MERCHANT-NETWORK",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "architecture/neo-merchant-device-network-policy.json",
+        "server/neo-merchant-network/fabric.mjs",
+        "server/neo-merchant-network/server.mjs",
+        "docs/NEO-G126-MERCHANT-DEVICE-NETWORK.md",
+        ".github/workflows/gate-126-merchant-device-network.yml"
+      ]
     }
   ],
   "autopilot": {

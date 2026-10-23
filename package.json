@@ -120,7 +120,9 @@
     "neo-assets:test": "node --test server/neo-assets/*.test.mjs",
     "neomask:test": "node --test apps/neomask-extension/*.test.mjs",
     "neomask-signer:server": "node server/neomask-signer/server.mjs",
-    "neomask-signer:test": "node --test server/neomask-signer/*.test.mjs"
+    "neomask-signer:test": "node --test server/neomask-signer/*.test.mjs",
+    "neo-merchant-network:server": "node server/neo-merchant-network/server.mjs",
+    "neo-merchant-network:test": "node --test server/neo-merchant-network/*.test.mjs"
   },
   "dependencies": {
     "@composio/core": "^0.18.1",

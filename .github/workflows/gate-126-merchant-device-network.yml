@@ -1,0 +1,18 @@
+name: Gate 126 NEO Counter ETHA Merchant Device Network
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['architecture/neo-merchant-device-network-policy.json','server/neo-merchant-network/**','docs/NEO-G126-MERCHANT-DEVICE-NETWORK.md','package.json','.github/workflows/gate-126-merchant-device-network.yml']
+  pull_request:
+    paths: ['architecture/neo-merchant-device-network-policy.json','server/neo-merchant-network/**','docs/NEO-G126-MERCHANT-DEVICE-NETWORK.md','package.json','.github/workflows/gate-126-merchant-device-network.yml']
+permissions: {contents: read}
+jobs:
+  merchant-network:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 24}
+      - run: npm run neo-merchant-network:test
+      - run: node --check server/neo-merchant-network/server.mjs
