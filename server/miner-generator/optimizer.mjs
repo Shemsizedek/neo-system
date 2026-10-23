@@ -10,12 +10,13 @@ export function minerScore(miner,{electricityUsdPerKwh=0.08,contractPriority=1}=
   const energyCostPerHour=(powerW/1000)*electricityUsdPerKwh
   const thermalPenalty=temp>=85?40:temp>=78?20:temp>=72?8:0
   const rejectPenalty=rejected*3
-  const statusPenalty=miner.status==='OFFLINE'||miner.status==='CRITICAL'?100:miner.status==='WARNING'?10:0
+  const eligibleStatus=miner.status==='MINING'||miner.status==='WARNING'
+  const statusPenalty=!eligibleStatus?100:miner.status==='WARNING'?10:0
   const efficiencyScore=clamp(100-(efficiency-15)*2.5,0,100)
   const healthScore=clamp(uptime-thermalPenalty-rejectPenalty-statusPenalty,0,100)
   const priorityBoost=clamp(contractPriority,0,5)*4
   const score=clamp((efficiencyScore*0.42)+(healthScore*0.43)+(clamp(hashrate/2,0,100)*0.15)+priorityBoost,0,100)
-  return {score,efficiencyJTh:efficiency,healthScore,energyCostPerHour,eligible:statusPenalty<100&&hashrate>0}
+  return {score,efficiencyJTh:efficiency,healthScore,energyCostPerHour,eligible:eligibleStatus&&hashrate>0&&Number.isFinite(Number(miner.hashrateTh))}
 }
 
 export function optimizeHashpower({miners,contracts=[],electricityUsdPerKwh=0.08,reservePct=7}){
@@ -24,7 +25,8 @@ export function optimizeHashpower({miners,contracts=[],electricityUsdPerKwh=0.08
     .sort((a,b)=>b.score-a.score||a.efficiencyJTh-b.efficiencyJTh)
 
   const totalHashrateTh=ranked.reduce((sum,x)=>sum+x.miner.hashrateTh,0)
-  const reserveTargetTh=totalHashrateTh*(reservePct/100)
+  const safeReservePct=clamp(Number.isFinite(Number(reservePct))?Number(reservePct):100,0,100)
+  const reserveTargetTh=totalHashrateTh*(safeReservePct/100)
   let usableTh=Math.max(0,totalHashrateTh-reserveTargetTh)
   const allocations=[]
 

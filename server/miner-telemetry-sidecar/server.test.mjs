@@ -56,3 +56,37 @@ test('internal failures stay fail-closed',async()=>{
     assert.equal((await response.json()).error,'INTERNAL_SNAPSHOT_UNAVAILABLE')
   })
 })
+
+test('read-only capacity view requires token and strips miner and wallet secrets',async()=>{
+  let upstream
+  await withServer(async(url,options)=>{
+    upstream={url,options}
+    return new Response(JSON.stringify({
+      source:'SIGNED_AGENT_FLEET',status:'VERIFIED',eligibleMiners:1,
+      eligibleHashrateTh:80,generatedAt:new Date().toISOString(),
+      miners:[{identityKey:'NEVER-FORWARD'}],wallet:{key:'NEVER-FORWARD'}
+    }),{status:200})
+  },async base=>{
+    assert.equal((await fetch(base+'/capacity')).status,401)
+    const response=await fetch(base+'/capacity',{headers:{authorization:`Bearer ${token}`}})
+    assert.equal(response.status,200)
+    const capacity=await response.json()
+    assert.equal(capacity.eligibleHashrateTh,80)
+    assert.equal('miners' in capacity,false)
+    assert.equal('wallet' in capacity,false)
+    assert.equal(upstream.url,'http://127.0.0.1:8890/fleet/capacity')
+    assert.equal(upstream.options.headers.authorization,'Bearer internal-only')
+  })
+})
+
+test('sidecar rejects fabricated capacity and invalid internal capacity target',async()=>{
+  assert.throws(()=>validateConfig({...env,NEO_MINER_INTERNAL_CAPACITY_URL:'https://remote.example/fleet/capacity'}),/LOOPBACK/)
+  await withServer(async()=>new Response(JSON.stringify({
+    source:'SIGNED_AGENT_FLEET',status:'VERIFIED',eligibleMiners:2,
+    eligibleHashrateTh:-100,generatedAt:new Date().toISOString()
+  }),{status:200}),async base=>{
+    const response=await fetch(base+'/capacity',{headers:{authorization:`Bearer ${token}`}})
+    assert.equal(response.status,503)
+    assert.equal((await response.json()).error,'INTERNAL_CAPACITY_INVALID')
+  })
+})
