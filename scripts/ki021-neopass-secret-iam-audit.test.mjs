@@ -93,7 +93,7 @@ test('KI-021 detects overprivileged secret policy even with direct accessor gran
 
 test('KI-021 empty, unreadable, or malformed policy is blocked', () => {
   for (const candidate of [undefined, null, {}, [], { bindings: null }, { bindings: [] }]) {
-    assert.equal(inspect(cloudRun(), candidate).status, 'BLOCKED');
+    assert.equal(inspectGissSecretIamPolicy({ service: cloudRun(), policy: candidate, projectId: PROJECT }).status, 'BLOCKED');
   }
 });
 
