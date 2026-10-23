@@ -25,7 +25,8 @@ test('KI-021 production audit reads policies and never accesses secret values or
   assert.doesNotMatch(yaml, /gcloud run services (update|replace|deploy|delete)/);
   assert.doesNotMatch(yaml, /upload-artifact/);
   assert.match(yaml, /if: always\(\)/);
-  assert.match(yaml, /rm -f "\$RUNNER_TEMP\/ki021-secret-policy\.json"/);
+  assert.match(yaml, /rm -f "\$RUNNER_TEMP\/ki021-giss\.json"/);
+  assert.match(yaml, /"\$RUNNER_TEMP\/ki021-secret-policy\.json"/);
 });
 
 test('KI-021 diagnostics remain redacted when Google Cloud denies IAM access or billing', async () => {
