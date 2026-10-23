@@ -1,0 +1,40 @@
+{
+  "id": "GISS-ECONOMICS-101-AUS-001",
+  "courseId": "ECONOMICS-101",
+  "title": "Economics 101: Natural Economic Order",
+  "status": "DRAFT_NOT_ENROLLED",
+  "doctrineId": "NEO-AUSARIAN-ECONOMIC-DOCTRINE-001",
+  "route": "/economics-101",
+  "modules": [
+    {
+      "id": "AUS-101-01",
+      "title": "Macroeconomics and microeconomics"
+    },
+    {
+      "id": "AUS-101-02",
+      "title": "NEO World Monetary System MB–M9"
+    },
+    {
+      "id": "AUS-101-03",
+      "title": "Productive capital and financing costs"
+    },
+    {
+      "id": "AUS-101-04",
+      "title": "CES, mutual credit, reserve and circulatory capital"
+    },
+    {
+      "id": "AUS-101-05",
+      "title": "Stewardship, consent and evidence"
+    }
+  ],
+  "assessment": {
+    "type": "SIMULATED_CASE_STUDY",
+    "automaticGrading": false,
+    "studentRecordWrites": false
+  },
+  "access": {
+    "requiresGissEnrollmentBeforePrivateRelease": true,
+    "identityGateway": "NOT_CONFIGURED"
+  },
+  "source": "docs/AUSARIAN_ECONOMIC_PHILOSOPHY.md"
+}

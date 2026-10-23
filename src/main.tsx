@@ -25,6 +25,7 @@ import { NeotherapyApp } from './neotherapy/NeotherapyApp'
 import { NeoCheckoutLauncher } from './checkout/NeoCheckoutLauncher'
 import { SettlementResultBanner } from './checkout/SettlementResultBanner'
 import { ShemsiCommentAssistantApp } from './social/ShemsiCommentAssistantApp'
+import AusarianEconomicsDashboard from './components/AusarianEconomicsDashboard'
 import './styles.css'
 import './home/home.css'
 import './explorer/explorer.css'
@@ -51,7 +52,7 @@ function RootRouter(){
   const base=(import.meta.env.BASE_URL||'/').replace(/\/$/,'')
   const publicRoute=(name:string)=>`${base}/${name}/`
   const discordControlRoute=(section:string)=>`${publicRoute('neo-prime')}?module=${encodeURIComponent(section)}&control=discord`
-  const open=(section:string)=>{if(['overview','treasury','tribunal','security','router'].includes(section)){window.location.assign(discordControlRoute(section));return}if(section==='cfo'||section==='books'){window.location.assign(publicRoute('neo-books'));return}if(section==='corpus'){window.location.assign(publicRoute('neo-corpus'));return}window.location.hash=`/${section}`}
+  const open=(section:string)=>{if(['overview','treasury','tribunal','security','router'].includes(section)){window.location.assign(discordControlRoute(section));return}if(section==='economics-101'){window.location.hash='/economics-101';return}if(section==='cfo'||section==='books'){window.location.assign(publicRoute('neo-books'));return}if(section==='corpus'){window.location.assign(publicRoute('neo-corpus'));return}window.location.hash=`/${section}`}
 
   const normalized=route.replace(/\/$/,'')||'/'
   const isHome=normalized==='/'||normalized==='/home'
@@ -83,6 +84,7 @@ function RootRouter(){
   useEffect(()=>{if(isCommand) window.location.replace(discordControlRoute('command'))},[isCommand])
   if(isCommand) return <main style={{padding:24,color:'#d9ffe3',background:'#010503',minHeight:'100vh'}}>Opening NEO Prime — Discord is the server/API control plane…</main>
   if(isPrime) return <CheckoutShell serviceId="neo-prime" serviceName="NEO Prime"><HomeBase onOpen={open}/></CheckoutShell>
+  if(normalized==='/ausarian-economics'||normalized==='/economics-101') return <AusarianEconomicsDashboard/>
   if(isHome) return <HomeBase onOpen={open}/>
   if(isNeotherapy) return <NeotherapyApp/>
   if(isShemsi) return <ShemsiCommentAssistantApp/>
