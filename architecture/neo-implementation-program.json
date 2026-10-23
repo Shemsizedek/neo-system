@@ -370,6 +370,17 @@
         "server/neo-autopilot/server.mjs",
         ".github/workflows/gate-120-sovereign-autopilot.yml"
       ]
+    },
+    {
+      "capability_id": "GATE-121-SOVEREIGN-RESOURCE-ECONOMICS",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "architecture/neo-economic-scheduler-policy.json",
+        "server/neo-economics/fabric.mjs",
+        "server/neo-economics/server.mjs",
+        "docs/NEO-G121-GLOBAL-LICENSES-AND-COMMUNITY-CCP.md",
+        ".github/workflows/gate-121-sovereign-economics.yml"
+      ]
     }
   ],
   "autopilot": {
