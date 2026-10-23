@@ -520,6 +520,17 @@
         "docs/NEO-G133-INSTITUTIONAL-CREDIT-CONTROL.md",
         ".github/workflows/gate-133-institutional-credit.yml"
       ]
+    },
+    {
+      "capability_id": "GATE-134-INSTITUTIONAL-FUNDING-CREDIT-EXECUTION",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "architecture/neo-institutional-funding-policy.json",
+        "server/neo-funding/fabric.mjs",
+        "server/neo-funding/server.mjs",
+        "docs/NEO-G134-INSTITUTIONAL-FUNDING.md",
+        ".github/workflows/gate-134-institutional-funding.yml"
+      ]
     }
   ],
   "autopilot": {
