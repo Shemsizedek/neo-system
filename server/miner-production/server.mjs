@@ -5,7 +5,7 @@ import {collectLiveProbe} from './liveClients.mjs'
 import {liveProviderSnapshot} from './providers.mjs'
 import {createContract,confirmPayment,reserveCapacity,activateContract,markSettlementPending,settleContract} from './contracts.mjs'
 import {createInfrastructureRecord,markInfrastructureVerified,onboardingSummary} from './onboarding.mjs'
-import {createEnrollmentChallenge,verifyEnrollmentChallenge,enrollMiner,registerTelemetry,verifyStratumShare,applyShareResult,fleetSnapshot} from './fleet.mjs'
+import {createEnrollmentChallenge,verifyEnrollmentChallenge,enrollMiner,registerTelemetry,registerSignedTelemetry,fleetCapacitySnapshot,verifyStratumShare,applyShareResult,fleetSnapshot} from './fleet.mjs'
 import {reconcilePoolPayout,createHashVaultCredit,hashVaultSnapshot,assertNoDuplicateCredit} from './hashvault.mjs'
 import {createPayoutRequest,approvePayout,markBroadcast,confirmPayout,createSettlementReceipt,publicReceipt} from './payouts.mjs'
 import {treasuryPolicy,evaluateTreasuryPayout,buildUnsignedPayout,assertExternalSignerResult,coldReserveAction} from './treasury.mjs'
@@ -109,11 +109,12 @@ export const server=http.createServer(async(req,res)=>{
   const receiptMatch=req.url?.match(/^\/receipts\/([^/]+)$/)
   if(req.method==='GET'&&receiptMatch){const receipt=receipts.get(receiptMatch[1]);if(!receipt)return json(res,404,{error:'RECEIPT_NOT_FOUND'});return json(res,200,publicReceipt(receipt))}
 
+  if(req.method==='GET'&&req.url==='/fleet/capacity'){if(!authorized(req))return json(res,401,{error:'unauthorized'});return json(res,200,fleetCapacitySnapshot([...fleet.values()]))}
   if(req.method==='GET'&&req.url==='/fleet'){if(!authorized(req))return json(res,401,{error:'unauthorized'});return json(res,200,{summary:fleetSnapshot([...fleet.values()]),miners:[...fleet.values()]})}
   if(req.method==='POST'&&req.url==='/fleet/challenge'){if(!authorized(req))return json(res,401,{error:'unauthorized'});try{const c=createEnrollmentChallenge(await readBody(req));challenges.set(c.challengeId,c);return json(res,201,c)}catch(error){return json(res,400,{error:error.message})}}
   if(req.method==='POST'&&req.url==='/fleet/enroll'){if(!authorized(req))return json(res,401,{error:'unauthorized'});try{const body=await readBody(req);const pending=challenges.get(body.challengeId);if(!pending)throw new Error('CHALLENGE_NOT_FOUND');const verified=verifyEnrollmentChallenge(pending,{signature:body.signature,verifySignature:verifyMinerSignature});const miner=enrollMiner({challenge:verified,model:body.model,serial:body.serial,firmware:body.firmware,siteId:body.siteId});challenges.set(verified.challengeId,verified);fleet.set(miner.id,miner);return json(res,201,miner)}catch(error){return json(res,409,{error:error.message})}}
   const telemetryMatch=req.url?.match(/^\/fleet\/([^/]+)\/telemetry$/)
-  if(req.method==='POST'&&telemetryMatch){if(!authorized(req))return json(res,401,{error:'unauthorized'});try{const miner=fleet.get(telemetryMatch[1]);if(!miner)throw new Error('MINER_NOT_FOUND');const updated=registerTelemetry(miner,await readBody(req));fleet.set(updated.id,updated);return json(res,200,updated)}catch(error){return json(res,409,{error:error.message})}}
+  if(req.method==='POST'&&telemetryMatch){if(!authorized(req))return json(res,401,{error:'unauthorized'});try{const miner=fleet.get(telemetryMatch[1]);if(!miner)throw new Error('MINER_NOT_FOUND');const body=await readBody(req);const updated=body?.signature?registerSignedTelemetry(miner,body):registerTelemetry(miner,body);fleet.set(updated.id,updated);return json(res,200,updated)}catch(error){return json(res,409,{error:error.message})}}
   if(req.method==='POST'&&req.url==='/fleet/shares/verify'){if(!authorized(req))return json(res,401,{error:'unauthorized'});try{const body=await readBody(req);const miner=fleet.get(body.share?.minerId);if(!miner)throw new Error('MINER_NOT_FOUND');const result=verifyStratumShare({miner,share:body.share,poolReceipt:body.poolReceipt});if(verifiedShares.has(result.shareId))throw new Error('SHARE_ALREADY_VERIFIED');fleet.set(miner.id,applyShareResult(miner,result));setPersistent(verifiedShares,'verified_share',result.shareId,result,'STRATUM_SHARE_VERIFIED');return json(res,200,result)}catch(error){return json(res,409,{error:error.message,accountingEligible:false})}}
 
   if(req.method==='GET'&&req.url==='/infrastructure'){if(!authorized(req))return json(res,401,{error:'unauthorized'});const records=[...infrastructure.values()];return json(res,200,{summary:onboardingSummary(records),records})}
