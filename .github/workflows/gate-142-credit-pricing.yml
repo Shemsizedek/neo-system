@@ -1,0 +1,18 @@
+name: Gate 142 Credit Pricing
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['architecture/neo-credit-product-pricing-policy.json','server/neo-credit-pricing/**','docs/NEO-G142-CREDIT-PRODUCT-PRICING.md','package.json','.github/workflows/gate-142-credit-pricing.yml']
+  pull_request:
+    paths: ['architecture/neo-credit-product-pricing-policy.json','server/neo-credit-pricing/**','docs/NEO-G142-CREDIT-PRODUCT-PRICING.md','package.json','.github/workflows/gate-142-credit-pricing.yml']
+permissions: {contents: read}
+jobs:
+  pricing:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 24}
+      - run: npm run neo-credit-pricing:test
+      - run: node --check server/neo-credit-pricing/server.mjs

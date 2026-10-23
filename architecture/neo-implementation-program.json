@@ -608,6 +608,17 @@
         "docs/NEO-G141-CREDIT-UNDERWRITING.md",
         ".github/workflows/gate-141-credit-underwriting.yml"
       ]
+    },
+    {
+      "capability_id": "GATE-142-CREDIT-PRODUCT-PRICING",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "architecture/neo-credit-product-pricing-policy.json",
+        "server/neo-credit-pricing/fabric.mjs",
+        "server/neo-credit-pricing/server.mjs",
+        "docs/NEO-G142-CREDIT-PRODUCT-PRICING.md",
+        ".github/workflows/gate-142-credit-pricing.yml"
+      ]
     }
   ],
   "autopilot": {

@@ -1,0 +1,16 @@
+{
+  "schema_version":1,
+  "gate":142,
+  "name":"NEO Credit Product & Pricing Engine",
+  "domains":["PRODUCT_CATALOG","ELIGIBILITY_BAND","BASE_RATE","RISK_PRICING","FEES","TERM_STRUCTURE","APR","EFFECTIVE_COST","OFFER_VERSION","PRICING_OVERRIDE","PRODUCT_EVIDENCE"],
+  "controls":{
+    "product_version_required":true,
+    "pricing_inputs_required":true,
+    "override_requires_actor_reason_evidence":true,
+    "jurisdiction_disclosure_rules":"SEPARATE_VERIFIED_POLICY_REQUIRED",
+    "underwriting_integration":"GATE141",
+    "model_governance_integration":"GATE140",
+    "funding_integration":"GATE134"
+  },
+  "authority_boundary":"Internal/community pricing and product configuration do not by themselves establish compliance with external lending, APR, fee, disclosure, usury, licensing, or consumer-credit requirements."
+}
