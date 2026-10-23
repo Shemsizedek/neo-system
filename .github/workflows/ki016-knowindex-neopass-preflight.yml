@@ -5,7 +5,11 @@ on:
     branches: [main]
     paths:
       - 'server/neo-knowindex/**'
+      - 'server/neo-platform-api/server.mjs'
+      - 'server/neo-platform-api/giss-production.mjs'
       - 'scripts/ki016-live-readonly-smoke.mjs'
+      - 'scripts/ki016-gcp-readonly-audit.mjs'
+      - 'scripts/ki016-gcp-readonly-audit.test.mjs'
       - '.github/workflows/ki016-knowindex-neopass-preflight.yml'
       - 'data/knowindex/**'
   workflow_dispatch:
@@ -23,7 +27,7 @@ jobs:
         with:
           node-version: '24'
       - name: Verify NEOpass authoritative roles and disabled-by-default moderation
-        run: node --test server/neo-knowindex/neopass-authority.test.mjs server/neo-knowindex/http.test.mjs server/neo-knowindex/platform-integration.test.mjs
+        run: node --test server/neo-knowindex/neopass-authority.test.mjs server/neo-knowindex/http.test.mjs server/neo-knowindex/platform-integration.test.mjs scripts/ki016-gcp-readonly-audit.test.mjs
   production-fail-closed-smoke:
     runs-on: ubuntu-latest
     timeout-minutes: 8
