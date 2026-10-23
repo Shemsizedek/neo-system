@@ -1,0 +1,18 @@
+name: Gate 144 Credit Lifecycle
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['architecture/neo-credit-lifecycle-orchestrator-policy.json','server/neo-credit-lifecycle/**','docs/NEO-G144-CREDIT-LIFECYCLE.md','package.json','.github/workflows/gate-144-credit-lifecycle.yml']
+  pull_request:
+    paths: ['architecture/neo-credit-lifecycle-orchestrator-policy.json','server/neo-credit-lifecycle/**','docs/NEO-G144-CREDIT-LIFECYCLE.md','package.json','.github/workflows/gate-144-credit-lifecycle.yml']
+permissions: {contents: read}
+jobs:
+  lifecycle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 24}
+      - run: npm run neo-credit-lifecycle:test
+      - run: node --check server/neo-credit-lifecycle/server.mjs

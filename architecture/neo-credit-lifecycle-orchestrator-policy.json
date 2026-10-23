@@ -1,0 +1,24 @@
+{
+  "schema_version":1,
+  "gate":144,
+  "name":"NEO Credit Lifecycle Orchestrator",
+  "domains":["STATE_MACHINE","EVENT_BUS","IDEMPOTENCY","SAGA","RECOVERY","EXCEPTION_ROUTING","TIMELINE","LIFECYCLE_EVIDENCE"],
+  "controls":{
+    "cross_service_bypass":"PROHIBITED",
+    "idempotency_required":true,
+    "explicit_success_evidence_required":true,
+    "automatic_compensation":"DISABLED_UNLESS_SAFE_AND_PREAUTHORIZED",
+    "manual_recovery_supported":true,
+    "underwriting":"GATE141",
+    "pricing":"GATE142",
+    "origination":"GATE143",
+    "credit_control":"GATE133",
+    "funding":"GATE134",
+    "servicing":"GATE135",
+    "credit_passport":"GATE136",
+    "reporting":"GATE137",
+    "reconciliation":"GATE138",
+    "compliance":"GATE139"
+  },
+  "authority_boundary":"This orchestrator coordinates lifecycle state and evidence. It does not replace or override approval, pricing, signing, settlement, servicing, reporting, compliance, or external legal authority in the underlying services."
+}
