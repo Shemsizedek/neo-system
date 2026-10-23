@@ -564,6 +564,17 @@
         "docs/NEO-G137-CREDIT-REPORTING-GATEWAY.md",
         ".github/workflows/gate-137-credit-reporting.yml"
       ]
+    },
+    {
+      "capability_id": "GATE-138-CREDIT-DATA-QUALITY-RECONCILIATION",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "architecture/neo-credit-data-quality-policy.json",
+        "server/neo-credit-reconciliation/fabric.mjs",
+        "server/neo-credit-reconciliation/server.mjs",
+        "docs/NEO-G138-CREDIT-DATA-QUALITY.md",
+        ".github/workflows/gate-138-credit-data-quality.yml"
+      ]
     }
   ],
   "autopilot": {
