@@ -19,4 +19,4 @@ jobs:
         with:
           node-version: '22'
       - name: NOMNI isolated fixture tests
-        run: node --test apps/neoscan/nomni-constituent-adapter.test.mjs apps/neoscan/nomni-scan-crawler.test.mjs apps/neoscan/nomni-secure-fetcher.test.mjs apps/neoscan/nomni-counterparty-observation.test.mjs apps/neoscan/nomni-scan-integration.test.mjs apps/neoscan/nomni-crown-evidence.test.mjs apps/neoscan/nomni-crown-registry.test.mjs apps/neoscan/nomni-evidence-journal.test.mjs apps/neoscan/nomni-market-status.test.mjs apps/neoscan/web/nomni-verification-panel.test.mjs
+        run: node --test apps/neoscan/nomni-constituent-adapter.test.mjs apps/neoscan/nomni-scan-crawler.test.mjs apps/neoscan/nomni-secure-fetcher.test.mjs apps/neoscan/nomni-counterparty-observation.test.mjs apps/neoscan/nomni-scan-integration.test.mjs apps/neoscan/nomni-crown-evidence.test.mjs apps/neoscan/nomni-crown-registry.test.mjs apps/neoscan/nomni-evidence-journal.test.mjs apps/neoscan/nomni-market-status.test.mjs apps/neoscan/web/nomni-verification-panel.test.mjs apps/neoscan/nomni-crown-trust-registry.test.mjs
