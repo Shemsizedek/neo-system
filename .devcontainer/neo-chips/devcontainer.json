@@ -1,0 +1,27 @@
+{
+  "name": "NEO Chips · Codespaces",
+  "image": "mcr.microsoft.com/devcontainers/python:3.12",
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "20"
+    }
+  },
+  "postCreateCommand": "python -m pip install 'cryptography>=42,<48' && cd hardware/neo-chips/studio && npm install --no-audit --no-fund",
+  "forwardPorts": [
+    5173
+  ],
+  "portsAttributes": {
+    "5173": {
+      "label": "NEO Chips React Studio",
+      "onAutoForward": "notify"
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "esbenp.prettier-vscode"
+      ]
+    }
+  }
+}
