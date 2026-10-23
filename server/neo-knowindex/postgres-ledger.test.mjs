@@ -57,6 +57,23 @@ test('KI-015 Postgres durable ledger: isolated persistence, audit and disaster-r
         await assert.rejects(writerPool.query('CREATE TABLE knowindex.unauthorized_runtime_ddl(id integer)'), /permission denied/);
         await assert.rejects(writerPool.query('DELETE FROM knowindex.events'), /permission denied/);
       });
+      await t.test('KI-017 checks least-privilege database runtime without exposing identities', async () => {
+        const posture = await store.inspectRuntimeSecurity();
+        assert.equal(posture.leastPrivilegeVerified, true);
+        assert.equal(posture.productionDatabaseEligible, false, 'disposable CI DB is NOT production-certified');
+        assert.equal(posture.auditChainVerified, true);
+        assert.equal(posture.checks.appendOnlyEvents, true);
+        assert.equal(posture.checks.notAuditOwner, true);
+        assert.equal(posture.checks.auditTriggersActive, true);
+        assert.equal(posture.offHostBackupVerified, false);
+        assert.equal(posture.actualProductionRestoreVerified, false);
+        assert.equal(posture.liveIdentityVerified, false);
+        assert.equal(JSON.stringify(posture).includes('knowindex_ci_writer'), false);
+        const owner = createKnowindexPostgresLedger({ pool: ownerPool });
+        const overprivileged = await owner.inspectRuntimeSecurity();
+        assert.equal(overprivileged.leastPrivilegeVerified, false,
+          'DDL-owning role must never pass least-privilege certification');
+      });
       await t.test('idempotent submission, distinct reviewer and hash audit', async () => {
         const record = await store.submit(input(), contributor, 'ci-request-0000001');
         assert.equal(record.state, 'submitted');
@@ -122,6 +139,7 @@ test('KI-015 Postgres durable ledger: isolated persistence, audit and disaster-r
         try {
           await ownerPool.query("UPDATE knowindex.events SET previous_hash='tampered' WHERE seq=1");
           assert.equal((await store.verifyAuditChain()).valid, false);
+          assert.equal((await store.inspectRuntimeSecurity()).leastPrivilegeVerified, false);
           await assert.rejects(store.submit(input({ url: 'https://example.org/after-tamper' }), contributor, 'after-tamper-0001'), code('audit_integrity_failed'));
         } finally {
           await ownerPool.query('UPDATE knowindex.events SET previous_hash=$1 WHERE seq=1', [original.rows[0].previous_hash]);

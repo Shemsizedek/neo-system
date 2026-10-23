@@ -186,6 +186,81 @@ export function createKnowindexPostgresLedger({
     return result.rows?.[0]?.contributions === 'knowindex.contributions' && result.rows?.[0]?.events === 'knowindex.events';
   }
 
+  // Read-only runtime introspection. Never returns role names, account IDs,
+  // connection strings, secret references, or user contributions.
+  async function inspectRuntimeSecurity() {
+    if (!await checkSchema()) return {
+      leastPrivilegeVerified: false, productionDatabaseEligible: false,
+      auditChainVerified: false, checks: { schemaPresent: false }
+    };
+
+    const result = await pool.query(String.raw`
+      SELECT
+        current_database() AS database_name,
+        pg_is_in_recovery() AS read_replica,
+        (SELECT rolsuper OR rolcreatedb OR rolcreaterole OR rolreplication OR rolbypassrls
+           FROM pg_roles WHERE rolname=current_user) AS elevated_role,
+        has_database_privilege(current_database(), 'CREATE') AS database_create,
+        has_schema_privilege('knowindex','USAGE') AS schema_usage,
+        has_schema_privilege('knowindex','CREATE') AS schema_create,
+        has_table_privilege('knowindex.contributions','SELECT') AS contributions_read,
+        has_table_privilege('knowindex.contributions','INSERT') AS contributions_insert,
+        has_table_privilege('knowindex.contributions','UPDATE') AS contributions_update,
+        has_table_privilege('knowindex.contributions','DELETE') AS contributions_delete,
+        has_table_privilege('knowindex.contributions','TRUNCATE') AS contributions_truncate,
+        has_table_privilege('knowindex.events','SELECT') AS events_read,
+        has_table_privilege('knowindex.events','INSERT') AS events_insert,
+        has_table_privilege('knowindex.events','UPDATE') AS events_update,
+        has_table_privilege('knowindex.events','DELETE') AS events_delete,
+        has_table_privilege('knowindex.events','TRUNCATE') AS events_truncate,
+        has_table_privilege('knowindex.events','TRIGGER') AS events_trigger,
+        has_sequence_privilege('knowindex.events_seq_seq','USAGE') AS event_sequence_usage,
+        (SELECT pg_has_role(current_user, pg_get_userbyid(relowner), 'MEMBER')
+         FROM pg_class WHERE oid='knowindex.events'::regclass) AS member_of_audit_owner,
+        (SELECT COUNT(*)=2 FROM pg_trigger
+         WHERE tgrelid='knowindex.events'::regclass AND NOT tgisinternal
+           AND tgname IN ('knowindex_events_no_update','knowindex_events_no_delete')
+           AND tgenabled='O') AS audit_triggers_active
+    `);
+    const row = result.rows?.[0] || {};
+    const checks = {
+      schemaPresent: true,
+      primaryDatabase: row.read_replica === false,
+      unprivilegedRole: row.elevated_role === false,
+      noDatabaseCreate: row.database_create === false,
+      scopedSchema: row.schema_usage === true && row.schema_create === false,
+      contributionPermissions: row.contributions_read === true &&
+        row.contributions_insert === true && row.contributions_update === true &&
+        row.contributions_delete === false && row.contributions_truncate === false,
+      appendOnlyEvents: row.events_read === true && row.events_insert === true &&
+        row.events_update === false && row.events_delete === false &&
+        row.events_truncate === false && row.events_trigger === false,
+      sequenceUsage: row.event_sequence_usage === true,
+      notAuditOwner: row.member_of_audit_owner === false,
+      auditTriggersActive: row.audit_triggers_active === true
+    };
+    const chain = await scan(pool);
+    checks.auditChainValid = chain.valid === true;
+    const unsafeNames = new Set([
+      'postgres','template0','template1','noogle-connect-dev',
+      'noogle_connect_dev','neo-pads-production','neo_pads_production',
+      'knowindex_ci_test','knowindex_ci_restore'
+    ]);
+    const productionDatabaseEligible = typeof row.database_name === 'string' &&
+      !unsafeNames.has(row.database_name.toLowerCase());
+    return {
+      leastPrivilegeVerified: Object.values(checks).every(value => value === true),
+      productionDatabaseEligible,
+      auditChainVerified: chain.valid === true,
+      auditEventsChecked: chain.checked,
+      // Off-host backups and human approvals CANNOT be established from DB grants.
+      offHostBackupVerified: false,
+      actualProductionRestoreVerified: false,
+      liveIdentityVerified: false,
+      checks: Object.freeze(checks)
+    };
+  }
+
   // The calling production runtime owns the pool and its lifecycle. No auto-migrate.
-  return Object.freeze({ submit, read, list, change, audit, verifyAuditChain, checkSchema });
+  return Object.freeze({ submit, read, list, change, audit, verifyAuditChain, checkSchema, inspectRuntimeSecurity });
 }
