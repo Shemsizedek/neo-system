@@ -7,7 +7,16 @@ const sleep=(ms)=>new Promise(r=>setTimeout(r,ms))
 const now=()=>new Date().toISOString()
 
 export function canonicalPayload(payload){
-  return JSON.stringify(payload,Object.keys(payload).sort())
+  // Recursively canonicalize every nested field. A top-level JSON replacer list
+  // silently omits unlisted nested fields and cannot authenticate telemetry.
+  const normalize=value=>{
+    if(Array.isArray(value))return value.map(normalize)
+    if(value&&typeof value==='object'){
+      return Object.fromEntries(Object.keys(value).sort().map(key=>[key,normalize(value[key])]))
+    }
+    return value
+  }
+  return JSON.stringify(normalize(payload))
 }
 
 export function signEvent(payload,privateKeyPem){
