@@ -619,6 +619,17 @@
         "docs/NEO-G142-CREDIT-PRODUCT-PRICING.md",
         ".github/workflows/gate-142-credit-pricing.yml"
       ]
+    },
+    {
+      "capability_id": "GATE-143-CREDIT-ORIGINATION-CONTRACTING",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "architecture/neo-credit-origination-policy.json",
+        "server/neo-origination/fabric.mjs",
+        "server/neo-origination/server.mjs",
+        "docs/NEO-G143-CREDIT-ORIGINATION.md",
+        ".github/workflows/gate-143-credit-origination.yml"
+      ]
     }
   ],
   "autopilot": {

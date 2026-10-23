@@ -1,0 +1,18 @@
+name: Gate 143 Credit Origination
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['architecture/neo-credit-origination-policy.json','server/neo-origination/**','docs/NEO-G143-CREDIT-ORIGINATION.md','package.json','.github/workflows/gate-143-credit-origination.yml']
+  pull_request:
+    paths: ['architecture/neo-credit-origination-policy.json','server/neo-origination/**','docs/NEO-G143-CREDIT-ORIGINATION.md','package.json','.github/workflows/gate-143-credit-origination.yml']
+permissions: {contents: read}
+jobs:
+  origination:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 24}
+      - run: npm run neo-origination:test
+      - run: node --check server/neo-origination/server.mjs
