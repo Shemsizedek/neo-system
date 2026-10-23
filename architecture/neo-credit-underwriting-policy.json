@@ -1,0 +1,20 @@
+{
+  "schema_version":1,
+  "gate":141,
+  "name":"NEO Credit Decision Engine & Underwriting Policy Fabric",
+  "domains":["APPLICATION","ELIGIBILITY","CAPACITY","CREDIT_POLICY","MODEL_INVOCATION","MANUAL_REVIEW","DECISION_REASON","OFFER_TERMS","EXPIRATION","UNDERWRITING_EVIDENCE"],
+  "controls":{
+    "approved_model_required":true,
+    "verified_input_data_required":true,
+    "model_output_is_advisory_input":true,
+    "policy_decision_required":true,
+    "manual_review_available":true,
+    "decision_reason_codes_required":true,
+    "offer_expiration_required":true,
+    "automatic_funding":"DISABLED",
+    "model_governance_integration":"GATE140",
+    "credit_control_integration":"GATE133",
+    "funding_integration":"GATE134"
+  },
+  "authority_boundary":"This fabric performs internal/community underwriting and decision control. It does not itself establish external lending authority, legal eligibility, fair-lending compliance, or consumer-credit compliance absent separately verified requirements."
+}
