@@ -1,0 +1,13 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {makeFundingManifest,deviceAuthorizationChallenge} from './bitcoin-funding.mjs';
+const coin=(value,vout=0)=>({txid:'a'.repeat(64),vout,satoshis:value,confirmed:true});
+const base={network:'testnet',recipient:'tb1-example-recipient',changeAddress:'tb1-example-change',amountSats:50000,satPerVbyte:2};
+test('deterministic funding manifest conserves satoshis',()=>{const p=makeFundingManifest({...base,utxos:[coin(100000)]});assert.equal(p.amountSats+p.feeSats+p.changeSats,100000);assert.equal(p.psbt,null);assert.equal(p.broadcast,false);assert.equal(p.outputs.length,2)});
+test('insufficient funds are rejected',()=>assert.throws(()=>makeFundingManifest({...base,utxos:[coin(40000)]}),/Insufficient/));
+test('unconfirmed inputs rejected',()=>assert.throws(()=>makeFundingManifest({...base,utxos:[{...coin(100000),confirmed:false}]}),/Confirmed/));
+test('duplicate outpoints rejected',()=>assert.throws(()=>makeFundingManifest({...base,utxos:[coin(100000),coin(100000)]}),/Duplicate/));
+test('dust change is added to fee',()=>{const p=makeFundingManifest({...base,utxos:[coin(50250)]});assert.equal(p.changeSats,0);assert.equal(p.outputs.length,1);assert.equal(p.amountSats+p.feeSats,50250)});
+test('rejects unreasonable fee rates',()=>assert.throws(()=>makeFundingManifest({...base,utxos:[coin(100000)],satPerVbyte:1001}),/fee rate/));
+test('device review cannot authorize or sign',()=>{const p=makeFundingManifest({...base,utxos:[coin(100000)]});const c=deviceAuthorizationChallenge(p);assert.equal(c.status,'NOT_AUTHORIZED');assert.equal(c.signature,null)});
+test('fails closed on modified PSBT state',()=>{const p=makeFundingManifest({...base,utxos:[coin(100000)]});assert.throws(()=>deviceAuthorizationChallenge({...p,psbt:'signed'}),/Unsafe/)});

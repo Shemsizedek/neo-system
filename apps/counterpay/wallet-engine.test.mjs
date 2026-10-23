@@ -1,0 +1,12 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {parseBalances,ensurePublicAddress,fetchBalances} from './wallet-engine.mjs';
+const ADDR='1BoatSLRHtKNngkdXEeobR76b53LETtpyT';
+test('mainnet address accepts traditional public address',()=>assert.equal(ensurePublicAddress(ADDR,'mainnet'),ADDR));
+test('network mismatch rejected',()=>assert.throws(()=>ensurePublicAddress(ADDR,'testnet'),/network/));
+test('unsafe address rejected',()=>assert.throws(()=>ensurePublicAddress('not a public address','mainnet')));
+test('typed balance response',()=>assert.deepEqual(parseBalances({result:[{asset:'XCP',quantity_normalized:'2.001'}]}),[{asset:'XCP',quantity:'2.001'}]));
+test('invalid quantities rejected',()=>assert.throws(()=>parseBalances({result:[{asset:'XCP',quantity:'Infinity'}]})));
+test('pagination and readiness checks',async()=>{let calls=0;const fake=async()=>({ok:true,status:200,headers:{get:()=> 'true'},json:async()=>++calls===1?{result:[{asset:'XCP',quantity_normalized:'1'}],next_cursor:'c1'}:{result:[{asset:'FOO',quantity_normalized:'2'}]}});const result=await fetchBalances({address:ADDR,network:'mainnet',fetchImpl:fake});assert.equal(result.assets.length,2);assert.equal(result.partial,false);assert.equal(calls,2)});
+test('refuse unsynchronized node',async()=>{const fake=async()=>({ok:true,status:200,headers:{get:()=> 'false'}});await assert.rejects(fetchBalances({address:ADDR,network:'mainnet',fetchImpl:fake}),/not synchronized/)});
+test('refuse HTTP 503',async()=>{const fake=async()=>({ok:false,status:503});await assert.rejects(fetchBalances({address:ADDR,network:'mainnet',fetchImpl:fake}),/synchronizing/)});

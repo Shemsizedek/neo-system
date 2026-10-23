@@ -1,0 +1,11 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {validateBitcoinAddress,normalizeUtxos,fetchBitcoinSnapshot,fetchFeeEstimates} from './bitcoin-readonly.mjs';
+const addr='1BoatSLRHtKNngkdXEeobR76b53LETtpyT';
+test('accepts valid mainnet base58 checksum',async()=>assert.equal(await validateBitcoinAddress(addr,'mainnet'),addr));
+test('rejects mainnet address on testnet',async()=>await assert.rejects(validateBitcoinAddress(addr,'testnet')));
+test('rejects corrupted checksum',async()=>await assert.rejects(validateBitcoinAddress(addr.slice(0,-1)+'U','mainnet')));
+test('rejects malformed UTXO',()=>assert.throws(()=>normalizeUtxos([{txid:'invalid',vout:0,value:12}])));
+test('reads validated public UTXO response',async()=>{const fake=async()=>({ok:true,json:async()=>[{txid:'a'.repeat(64),vout:0,value:1000,status:{confirmed:true}}]});const result=await fetchBitcoinSnapshot({network:'mainnet',address:addr,baseUrl:'https://example.org/api',fetchImpl:fake});assert.equal(result.confirmedSatoshis,1000);assert.equal(result.readOnly,true)});
+test('accepts positive fee feed',async()=>{const fake=async()=>({ok:true,json:async()=>({fastestFee:9,hourFee:3})});assert.equal((await fetchFeeEstimates({baseUrl:'https://example.org',fetchImpl:fake})).satPerVbyte.hourFee,3)});
+test('rejects bad fee feed',async()=>{const fake=async()=>({ok:true,json:async()=>({fastestFee:-1})});await assert.rejects(fetchFeeEstimates({baseUrl:'https://example.org',fetchImpl:fake}))});
