@@ -112,7 +112,7 @@ export function createKnowindexContributionHttpHandler({
       if (route === base && req.method === 'POST') {
         const data = await parseJson(req);
         const key = req.headers['idempotency-key'];
-        const record = ledger.submit(data, actor, key == null ? undefined : String(key));
+        const record = await ledger.submit(data, actor, key == null ? undefined : String(key));
         response(res, record.idempotentReplay ? 200 : 201, { contribution: record, reviewRequired: true, published: false }, origin);
         return true;
       }
@@ -121,7 +121,7 @@ export function createKnowindexContributionHttpHandler({
         return true;
       }
       if (route === '/api/v1/noogle/knowledge/moderation' && req.method === 'GET') {
-        const records = ledger.list(actor, { state: url.searchParams.get('state') || 'submitted', limit: Number(url.searchParams.get('limit') || 30) });
+        const records = await ledger.list(actor, { state: url.searchParams.get('state') || 'submitted', limit: Number(url.searchParams.get('limit') || 30) });
         response(res, 200, { records, readOnly: true }, origin);
         return true;
       }
@@ -129,16 +129,16 @@ export function createKnowindexContributionHttpHandler({
       if (match) {
         const [, id, operation] = match;
         if (!operation && req.method === 'GET') {
-          response(res, 200, { contribution: ledger.read(id, actor), readOnly: true }, origin);
+          response(res, 200, { contribution: await ledger.read(id, actor), readOnly: true }, origin);
           return true;
         }
         if (operation === 'audit' && req.method === 'GET') {
-          response(res, 200, { events: ledger.audit(id, actor), integrity: ledger.verifyAuditChain(), readOnly: true }, origin);
+          response(res, 200, { events: await ledger.audit(id, actor), integrity: await ledger.verifyAuditChain(), readOnly: true }, origin);
           return true;
         }
         if ((operation === 'review' || operation === 'withdraw') && req.method === 'POST') {
           const data = await parseJson(req);
-          const change = ledger.change(id, actor, {
+          const change = await ledger.change(id, actor, {
             action: operation === 'withdraw' ? 'withdraw' : data.action,
             note: data.note,
             expectedVersion: data.expectedVersion
