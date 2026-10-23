@@ -1,0 +1,18 @@
+name: Gate 139 Credit Compliance Cases
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['architecture/neo-credit-compliance-case-policy.json','server/neo-credit-compliance/**','docs/NEO-G139-CREDIT-COMPLIANCE-CASES.md','package.json','.github/workflows/gate-139-credit-compliance-cases.yml']
+  pull_request:
+    paths: ['architecture/neo-credit-compliance-case-policy.json','server/neo-credit-compliance/**','docs/NEO-G139-CREDIT-COMPLIANCE-CASES.md','package.json','.github/workflows/gate-139-credit-compliance-cases.yml']
+permissions: {contents: read}
+jobs:
+  compliance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 24}
+      - run: npm run neo-credit-compliance:test
+      - run: node --check server/neo-credit-compliance/server.mjs
