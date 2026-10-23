@@ -120,7 +120,8 @@ export function registerDeviceConsent(miner,envelope,{nowMs=Date.now(),maxAgeMs=
   const issuedAt=Date.parse(envelope.occurredAt)
   if(!Number.isFinite(issuedAt)||issuedAt<nowMs-maxAgeMs||issuedAt>nowMs+5_000)throw new Error('DEVICE_CONSENT_STALE_OR_FUTURE')
   if(miner.consentVerified)throw new Error('DEVICE_CONSENT_ALREADY_RECORDED')
-  const {signature,...message}=envelope
+  // The operator BFF appends operatorId as transport context; it is not part of the device's signed statement.
+  const message={type:envelope.type,minerId:envelope.minerId,scope:envelope.scope,accepted:envelope.accepted,nonce:envelope.nonce,occurredAt:envelope.occurredAt}
   let verified=false
   try{verified=crypto.verify(null,Buffer.from(canonicalPayload(message)),miner.identityKey,Buffer.from(signature,'base64'))}catch{verified=false}
   if(!verified)throw new Error('DEVICE_CONSENT_SIGNATURE_INVALID')
