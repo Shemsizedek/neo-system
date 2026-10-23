@@ -586,6 +586,17 @@
         "docs/NEO-G139-CREDIT-COMPLIANCE-CASES.md",
         ".github/workflows/gate-139-credit-compliance-cases.yml"
       ]
+    },
+    {
+      "capability_id": "GATE-140-CREDIT-MODEL-RISK-CONTROL",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "architecture/neo-credit-model-governance-policy.json",
+        "server/neo-credit-model-risk/fabric.mjs",
+        "server/neo-credit-model-risk/server.mjs",
+        "docs/NEO-G140-CREDIT-MODEL-RISK.md",
+        ".github/workflows/gate-140-credit-model-risk.yml"
+      ]
     }
   ],
   "autopilot": {
