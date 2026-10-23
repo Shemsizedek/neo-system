@@ -56,7 +56,8 @@ export async function crawlKnowindex(source, { fetcher = fetch, sleep = ms => ne
       const html = await response.text();
       const hash = crypto.createHash('sha256').update(html).digest('hex');
       const title = (html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] || url).replace(/<[^>]*>/g, '').trim().slice(0, 240);
-      const summary = html.replace(/<script[\\s\\S]*?<\\/script>/gi, ' ').replace(/<style[\\s\\S]*?<\\/style>/gi, ' ').replace(/<[^>]+>/g, ' ').replace(/\\s+/g, ' ').trim().slice(0, 800);\n      records.push({ summary, id: crypto.createHash('sha256').update(url).digest('hex').slice(0, 24), url, canonicalUrl: url, title, contentHash: hash, publisher: source.name, communities: [source.community], evidenceState: 'reference', retrievedAt: new Date().toISOString() });
+      const summary = html.replace(/<script[\s\S]*?<\/script>/gi, ' ').replace(/<style[\s\S]*?<\/style>/gi, ' ').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 800);
+      records.push({ summary, id: crypto.createHash('sha256').update(url).digest('hex').slice(0, 24), url, canonicalUrl: url, title, contentHash: hash, publisher: source.name, communities: [source.community], evidenceState: 'reference', retrievedAt: new Date().toISOString() });
       if (url === root.href && Number(source.crawl?.maxDepth) > 0) {
         for (const match of html.matchAll(/<a\b[^>]*href=["']([^"'#]+)["']/gi)) {
           try { const next = new URL(match[1], url); next.hash = ''; if (permittedUrl(next.href, root.href) && !seen.has(next.href) && !queue.includes(next.href)) queue.push(next.href); } catch {}
