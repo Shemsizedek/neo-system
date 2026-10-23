@@ -1,0 +1,22 @@
+name: Gate 124 NeoMask Universal Security
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['architecture/neomask-universal-security-policy.json','apps/neomask-extension/**','packages/neomask-sdk/**','docs/NEO-G124-NEOMASK-UNIVERSAL-SECURITY.md','package.json','.github/workflows/gate-124-neomask-universal-security.yml']
+  pull_request:
+    paths: ['architecture/neomask-universal-security-policy.json','apps/neomask-extension/**','packages/neomask-sdk/**','docs/NEO-G124-NEOMASK-UNIVERSAL-SECURITY.md','package.json','.github/workflows/gate-124-neomask-universal-security.yml']
+permissions: {contents: read}
+jobs:
+  neomask:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 24}
+      - run: npm run neomask:test
+      - run: |
+          node --check apps/neomask-extension/background.js
+          node --check apps/neomask-extension/rpc.js
+          node --check apps/neomask-extension/security.js
+          node --check packages/neomask-sdk/index.js

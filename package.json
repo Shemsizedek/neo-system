@@ -117,7 +117,8 @@
     "neo-clearing:server": "node server/neo-clearing/server.mjs",
     "neo-clearing:test": "node --test server/neo-clearing/*.test.mjs",
     "neo-assets:server": "node server/neo-assets/server.mjs",
-    "neo-assets:test": "node --test server/neo-assets/*.test.mjs"
+    "neo-assets:test": "node --test server/neo-assets/*.test.mjs",
+    "neomask:test": "node --test apps/neomask-extension/*.test.mjs"
   },
   "dependencies": {
     "@composio/core": "^0.18.1",

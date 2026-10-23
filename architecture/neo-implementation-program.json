@@ -403,6 +403,22 @@
         "docs/NEO-G123-ASSET-DEPOSITORY-REGISTRY.md",
         ".github/workflows/gate-123-sovereign-assets.yml"
       ]
+    },
+    {
+      "capability_id": "GATE-124-NEOMASK-UNIVERSAL-SECURITY",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "architecture/neomask-universal-security-policy.json",
+        "apps/neomask-extension/manifest.json",
+        "apps/neomask-extension/inpage.js",
+        "apps/neomask-extension/content.js",
+        "apps/neomask-extension/background.js",
+        "apps/neomask-extension/rpc.js",
+        "apps/neomask-extension/security.js",
+        "packages/neomask-sdk/index.js",
+        "docs/NEO-G124-NEOMASK-UNIVERSAL-SECURITY.md",
+        ".github/workflows/gate-124-neomask-universal-security.yml"
+      ]
     }
   ],
   "autopilot": {
