@@ -392,6 +392,17 @@
         "docs/NEO-G122-COMMUNITY-CLEARING-SETTLEMENT.md",
         ".github/workflows/gate-122-community-clearing.yml"
       ]
+    },
+    {
+      "capability_id": "GATE-123-SOVEREIGN-ASSET-DEPOSITORY-REGISTRY",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "architecture/neo-asset-depository-policy.json",
+        "server/neo-assets/fabric.mjs",
+        "server/neo-assets/server.mjs",
+        "docs/NEO-G123-ASSET-DEPOSITORY-REGISTRY.md",
+        ".github/workflows/gate-123-sovereign-assets.yml"
+      ]
     }
   ],
   "autopilot": {
