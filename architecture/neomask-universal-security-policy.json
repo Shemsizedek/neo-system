@@ -1,0 +1,35 @@
+{
+  "schema_version":1,
+  "gate":124,
+  "name":"NeoMask Universal Bitcoin Security & Web3 Extension",
+  "networks":["BITCOIN_MAINNET","COUNTERPARTY_XCP","NEO_CROWN_CHAIN"],
+  "principles":{
+    "self_custody":true,
+    "private_keys_exposed_to_sites":false,
+    "signing_boundary":"EXTERNAL_OR_DEVICE_LOCAL_SIGNER",
+    "site_permissions":"EXPLICIT_ORIGIN_SCOPED",
+    "guardian_required_for_signing":true,
+    "transaction_simulation_required":true
+  },
+  "provider_methods":[
+    "neo_requestAccounts",
+    "neo_getAccounts",
+    "neo_getAssets",
+    "neo_getBalances",
+    "neo_requestPermissions",
+    "neo_getPermissions",
+    "neo_revokePermissions",
+    "neo_simulateTransaction",
+    "neo_signPsbt",
+    "neo_signCounterpartyTransaction",
+    "neo_signMessage"
+  ],
+  "security":{
+    "phishing_domain_checks":true,
+    "transaction_intent_checks":true,
+    "counterparty_asset_awareness":true,
+    "hardware_signers_supported":true,
+    "broadcast_requires_separate_user_action":true,
+    "remote_private_key_export":"PROHIBITED"
+  }
+}
