@@ -20,7 +20,7 @@ const safeText = (value, field, max, min = 1) => {
   if (clean.length < min || clean.length > max || clean.includes('\0')) throw new KnowledgeWriteError('invalid_' + field);
   return clean;
 };
-const eventHash = (previousHash, row) => sha256(JSON.stringify([
+export const eventHash = (previousHash, row) => sha256(JSON.stringify([
   previousHash, row.contributionId, row.action, row.actorSubject, row.fromState || null,
   row.toState, row.payloadJson, row.occurredAt
 ]));
@@ -64,14 +64,14 @@ export function normalizeContribution(input) {
   return { title, url: url.href, description, attribution, community, sourceClass, rightsBasis, rightsStatement, consentToIndex: true };
 }
 
-function assertActor(actor) {
+export function assertActor(actor) {
   if (!actor || actor.neopassStatus !== 'active' || typeof actor.subject !== 'string' ||
       !actor.subject.trim() || actor.subject.length > 256 || typeof actor.role !== 'string') {
     throw new KnowledgeWriteError('active_verified_neopass_required', 401);
   }
   return actor.subject;
 }
-const reviewer = actor => REVIEWERS.has(actor.role);
+export const reviewer = actor => REVIEWERS.has(actor.role);
 
 function fromRow(row) {
   if (!row) return null;
