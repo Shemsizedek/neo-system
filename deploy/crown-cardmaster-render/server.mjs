@@ -20,9 +20,12 @@ const FILES = new Map([
   ['/studio/index.html', ['studio/index.html','text/html; charset=utf-8']],
   ['/studio/studio-core.mjs', ['studio/studio-core.mjs','text/javascript; charset=utf-8']],
   ['/studio/studio-app.mjs', ['studio/studio-app.mjs','text/javascript; charset=utf-8']],
-  ['/studio/studio.css', ['studio/studio.css','text/css; charset=utf-8']]
+  ['/studio/studio.css', ['studio/studio.css','text/css; charset=utf-8']],
+  ['/studio/media-core.mjs', ['studio/media-core.mjs','text/javascript; charset=utf-8']],
+  ['/studio/media-store.mjs', ['studio/media-store.mjs','text/javascript; charset=utf-8']],
+  ['/studio/media-ui.mjs', ['studio/media-ui.mjs','text/javascript; charset=utf-8']]
 ]);
-const BASE_CSP = "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' blob:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'";
+const BASE_CSP = "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' blob: data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'";
 
 function commonHeaders(res) {
   res.setHeader('X-Content-Type-Options','nosniff');
