@@ -1,0 +1,10 @@
+import test from 'node:test'
+import assert from 'node:assert/strict'
+import {normalizeQuote,buildVerifiedReference,evaluateRoute,chooseLiquidityRoute,createConversionIntent,quoteConversion,authorizeConversion,recordExecution,applyMerchantPreference,conversionSnapshot} from './fabric.mjs'
+
+test('reference price uses fresh explicit median quotes',()=>{const q=[normalizeQuote({source_id:'a',base_asset:'BTC',quote_asset:'XCP',price:100}),normalizeQuote({source_id:'b',base_asset:'BTC',quote_asset:'XCP',price:102})];const r=buildVerifiedReference({quotes:q,baseAsset:'BTC',quoteAsset:'XCP'});assert.equal(r.price,101)})
+test('self trade is always rejected',()=>{const ref={available:true,price:100};assert.equal(evaluateRoute({reference:ref,offer:{price:100,authorized:true,executable:true,self_trade:true}}).reason,'self_trade_prohibited')})
+test('route requires executable authorized source within limits',()=>{const ref={available:true,price:100};const route=chooseLiquidityRoute({reference:ref,offers:[{offer_id:'o',price:100.5,expected_execution_price:100.6,authorized:true,executable:true}]});assert.equal(route.selected.offer.offer_id,'o')})
+test('conversion settles only with execution evidence and acceptable actual slippage',()=>{const ref={available:true,price:10,source_ids:['s']},route={selected:{offer:{offer_id:'o',price:10,expected_execution_price:10,authorized:true,executable:true},evaluation:{eligible:true}}};let i=createConversionIntent({intent_id:'i',merchant_id:'m',from_asset:'XCP',to_asset:'BTC',amount:2});i=quoteConversion(i,{reference:ref,route});i=authorizeConversion(i,{approved:true});i=recordExecution(i,{execution_id:'e',actual_price:10.01,actual_to_amount:20.02,trade_reference:'tx',settlement_evidence_ref:'settle'});assert.equal(i.state,'SETTLED')})
+test('merchant preferences determine hold or conversion target',()=>{assert.equal(applyMerchantPreference({receivedAsset:'XCP',preference:'SETTLE_TO_BTC'}).target_asset,'BTC')})
+test('snapshot keeps price and self-trade protections explicit',()=>{const s=conversionSnapshot({});assert.equal(s.protections.self_trade_prevention,true);assert.equal(s.protections.invented_price,false)})
