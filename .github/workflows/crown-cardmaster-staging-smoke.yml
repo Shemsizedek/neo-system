@@ -45,6 +45,16 @@ jobs:
           assert status==200 and b'CARDMASTER' in body and b'noindex,nofollow' in body
           assert "script-src 'self'" in headers.get('Content-Security-Policy','')
           print('Gallery and CSP: OK')
+          status,headers,body=fetch('/studio/')
+          assert status==200 and b'CROWN MEDIA LIBRARY' in body and b'mediaConsent' in body
+          assert "img-src 'self' blob: data:" in headers.get('Content-Security-Policy','')
+          print('Local Crown media vault HTML / CSP: OK')
+          for name in ('media-core.mjs','media-store.mjs','media-ui.mjs'):
+              status,headers,body=fetch('/studio/'+name)
+              assert status==200 and b'import' in body
+          status,_,_=fetch('/api/crown/media/upload',method='POST')
+          assert status==405,status
+          print('Media modules and server upload denial: OK')
           status,headers,body=fetch('/art/NEO-CARD-000001-front.svg')
           assert status==200 and b'<svg' in body and b'MARKET STATUS IN GALLERY' in body
           assert 'image/svg' in headers.get('Content-Type','')

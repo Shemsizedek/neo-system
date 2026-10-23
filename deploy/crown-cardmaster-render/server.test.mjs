@@ -108,3 +108,23 @@ test('NCC-009 Artwork Studio serves allowlisted local design files under restric
   assert.equal((await fetch(url+'/studio/../../.env')).status,404);
   assert.equal((await fetch(url+'/studio/manifest.json')).status,404);
 });
+
+
+test('NCC-010 media modules are allowlisted while server-side uploads stay disabled',async t=>{
+  const url=await withServer(t,{apiHandler:dummyHandler});
+  for(const module of ['media-core.mjs','media-store.mjs','media-ui.mjs']){
+    const resp=await fetch(url+'/studio/'+module);
+    assert.equal(resp.status,200,module);
+    assert.match(resp.headers.get('content-type'),/text\/javascript/);
+    assert.ok((await resp.text()).length>900);
+  }
+  const studio=await fetch(url+'/studio/');
+  assert.equal(studio.status,200);
+  assert.match(studio.headers.get('content-security-policy'),/img-src 'self' blob: data:/);
+  const html=await studio.text();
+  assert.match(html,/CROWN MEDIA LIBRARY/);
+  assert.match(html,/rights.*permission|permission.*rights/i);
+  assert.equal((await fetch(url+'/api/crown/media/upload',{method:'POST'})).status,405);
+  assert.equal((await fetch(url+'/studio/media-config.json')).status,404);
+  assert.equal((await fetch(url+'/studio/media-core.mjs',{method:'PUT'})).status,405);
+});

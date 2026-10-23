@@ -1,9 +1,12 @@
 import {STUDIO_CARDS,studioConfig,renderStudioSvg,studioManifest,studioPrompt} from './studio-core.mjs';
+import {imageAttachmentSvg,attachMediaManifest} from './media-core.mjs';
+import {setupMediaUI} from './media-ui.mjs';
 
 const $=id=>document.getElementById(id);
 const controls=$('studioControls'),asset=$('asset'),heading=$('heading'),edition=$('edition'),variant=$('variant');
 const preview=$('artPreview'),notice=$('renderStatus');
 const STORAGE_KEY='neo-crown-studio-local-revisions-v1';
+const media=setupMediaUI({notice});
 let history=[],active=null,face='front',previewUrl=null,renderSeq=0;
 
 function loadSaved(){
@@ -56,12 +59,18 @@ function display(record){
   $('recordHash').textContent=record.manifest.assets.front.sha256;
   $('recordBackHash').textContent=record.manifest.assets.back.sha256;
   $('artPrompt').textContent=studioPrompt(record.config);
+  $('recordMedia').textContent=record.manifest.media_artwork ? 'User-declared '+record.manifest.media_artwork.provider_user_declared+' · '+record.manifest.media_artwork.media_id.slice(-8) : 'None (vector only)';
   updatePreview();historyView();
 }
-async function prepare(config,{createdAt=new Date().toISOString(),previousFrontHash=null}={}){
-  const front=renderStudioSvg(config,'front'),back=renderStudioSvg(config,'back');
+async function prepare(config,{createdAt=new Date().toISOString(),previousFrontHash=null,mediaId=''}={}){
+  // Imported binary remains exclusively in the browser's private media vault.
+  let front=renderStudioSvg(config,'front');
+  const back=renderStudioSvg(config,'back');
+  const imported=await media.mediaFor(mediaId);
+  if(imported)front=imageAttachmentSvg(front,imported.dataUri);
   const [frontHash,backHash]=await Promise.all([digest(front),digest(back)]);
-  const manifest=studioManifest(config,{frontHash,backHash,createdAt,previousFrontHash});
+  let manifest=studioManifest(config,{frontHash,backHash,createdAt,previousFrontHash});
+  if(imported)manifest=attachMediaManifest(manifest,imported.record);
   return {config,manifest,svg:{front,back}};
 }
 async function generate(){
@@ -69,7 +78,7 @@ async function generate(){
   try {
     const config=currentInputs(nextRevision(asset.value));
     const previous=active?.config.card_id===config.card_id?active.manifest.assets.front.sha256:null;
-    const record=await prepare(config,{previousFrontHash:previous});
+    const record=await prepare(config,{previousFrontHash:previous,mediaId:media.selectedId()});
     if(seq!==renderSeq)return;
     history.unshift({config:record.config,manifest:record.manifest});history=history.slice(0,12);persist();
     display(record);
@@ -81,18 +90,20 @@ async function restore(item){
   const seq=++renderSeq;notice.textContent='Validating stored artwork digest…';
   try {
     const cfg=studioConfig(item.config);
-    const reconstructed=await prepare(cfg,{createdAt:item.manifest.rendered_at_client_clock,previousFrontHash:item.manifest.parent_front_sha256});
+    const linkedId=item.manifest.media_artwork?.media_id||'';
+    const reconstructed=await prepare(cfg,{createdAt:item.manifest.rendered_at_client_clock,previousFrontHash:item.manifest.parent_front_sha256,mediaId:linkedId});
     if(reconstructed.manifest.assets.front.sha256!==item.manifest.assets.front.sha256||reconstructed.manifest.assets.back.sha256!==item.manifest.assets.back.sha256)throw Error('Local artwork digest mismatch');
     if(seq!==renderSeq)return;
-    syncForm(cfg);display(reconstructed);
+    syncForm(cfg);await media.select(linkedId);display(reconstructed);
     notice.textContent='Opened local revision '+cfg.revision+'. Revalidated both SHA-256 digests.';
-  }catch(error){notice.textContent='Revision unavailable: '+(error instanceof Error?error.message:'corrupt local data');}
+    return true;
+  }catch(error){notice.textContent='Revision unavailable: '+(error instanceof Error?error.message:'corrupt local data');return false;}
 }
 function downloadBytes(bytes,filename,type){
   const href=URL.createObjectURL(new Blob([bytes],{type}));const a=document.createElement('a');a.href=href;a.download=filename;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(href),1500);
 }
 function basename(){return active.config.card_id+'-e'+String(active.config.edition).padStart(4,'0')+'-v'+String(active.config.revision).padStart(2,'0');}
-function exportSvg(){if(!active)return;downloadBytes(active.svg[face],basename()+'-'+face+'.svg','image/svg+xml');notice.textContent='SVG downloaded. Off-chain art only; not a token or certificate.';}
+function exportSvg(){if(!active)return;downloadBytes(active.svg[face],basename()+'-'+face+'.svg','image/svg+xml');notice.textContent=active.manifest.media_artwork?'Mixed-media SVG downloaded with a locally embedded sanitized image; no independent rights certification.':'SVG downloaded. Off-chain art only; not a token or certificate.';}
 async function exportPng(){
   if(!active)return;
   const button=$('downloadPng');button.disabled=true;notice.textContent='Rendering PNG at 1440 × 2080…';
@@ -137,5 +148,12 @@ $('frontTab').addEventListener('click',()=>{face='front';updatePreview();});
 $('backTab').addEventListener('click',()=>{face='back';updatePreview();});
 $('downloadSvg').addEventListener('click',exportSvg);$('downloadPng').addEventListener('click',exportPng);
 $('downloadManifest').addEventListener('click',exportManifest);$('copyPrompt').addEventListener('click',copyPrompt);$('checkMarket').addEventListener('click',evidence);
-history=loadSaved();
-if(history.length){restore(history[0]);}else{generate();}
+async function initialize(){
+  await media.ready;
+  history=loadSaved();
+  if(history.length){
+    const restored=await restore(history[0]);
+    if(!restored){await media.select('');await generate();notice.textContent='A saved revision could not be restored; opened a new procedural-only version. Export stored artwork and reimport any missing images.';}
+  }else await generate();
+}
+initialize();
