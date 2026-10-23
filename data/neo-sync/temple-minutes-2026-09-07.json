@@ -1,0 +1,104 @@
+{
+  "id": "temple-minutes-2026-09-07",
+  "recordType": "TEMPLE_TRUST_MINUTES",
+  "version": "0.1.0",
+  "status": "DRAFT_PRE_MEETING",
+  "classification": "INTERNAL_GOVERNANCE",
+  "meeting": {
+    "title": "Temple Roundtable",
+    "scheduledStart": "2026-09-07T17:00:00-05:00",
+    "scheduledEnd": "2026-09-07T18:00:00-05:00",
+    "timezone": "America/Chicago",
+    "conveningBody": "World Temple of Karast",
+    "presidingOfficer": "H.I.M. Dr. Lawiy Zodok Shamu-El"
+  },
+  "canonicalSource": "docs/governance/temple-minutes/2026-09-07-temple-roundtable.md",
+  "sourceArtifact": "Temple_Minutes_2026-09-07.docx",
+  "systems": [
+    "NEO System",
+    "NEO Algo",
+    "NEO Oracle",
+    "GISS NEO LMS",
+    "NEOsync",
+    "NEO Law",
+    "NEO Society Internal Social Norms",
+    "NEO Trust / Estate Administration",
+    "NEO Gateway / NEOpass",
+    "Temple Store",
+    "World Library",
+    "Backend Alignment Registry"
+  ],
+  "decisionPoints": [
+    {
+      "id": "TM-2026-09-07-01",
+      "title": "Governance baseline",
+      "status": "PROPOSED",
+      "approvalRequired": true
+    },
+    {
+      "id": "TM-2026-09-07-02",
+      "title": "Store and library release gate",
+      "status": "PROPOSED",
+      "approvalRequired": true
+    },
+    {
+      "id": "TM-2026-09-07-03",
+      "title": "Backend alignment gate",
+      "status": "PROPOSED",
+      "approvalRequired": true
+    }
+  ],
+  "controls": {
+    "defaultIntegrationMode": "READ_ONLY",
+    "inferApprovalFromDiscussion": false,
+    "requireAuthenticatedIdentity": true,
+    "requireLeastPrivilege": true,
+    "separateDraftFromPublish": true,
+    "separateSettlementObservationFromConfirmation": true,
+    "payoutExecutionEnabled": false,
+    "custodyEnabled": false,
+    "productionWritesEnabled": false,
+    "secretsAllowedInRecord": false,
+    "acceptanceEvidenceRequiredForLiveStatus": true
+  },
+  "lms": {
+    "objectType": "GOVERNANCE_LEARNING_OBJECT",
+    "topics": [
+      "meeting minutes",
+      "motions and resolutions",
+      "quorum",
+      "provenance",
+      "delegated authority",
+      "approval gates",
+      "system of record",
+      "access classification",
+      "acceptance evidence",
+      "accountability"
+    ],
+    "doNotTeachProposalsAsAdoptedFacts": true
+  },
+  "promotionGate": {
+    "targetStatus": "CERTIFIED_FINAL",
+    "requiredFields": [
+      "attendance",
+      "quorum",
+      "agendaApproval",
+      "motionsAsPresented",
+      "dispositions",
+      "voteOrConsent",
+      "objectionsAndRecusals",
+      "incorporatedDocuments",
+      "actionOwners",
+      "deadlines",
+      "acceptanceEvidence",
+      "adjournmentTime",
+      "certifications",
+      "trustRecordIdentifier"
+    ]
+  },
+  "provenance": {
+    "sourceClass": "USER_DIRECTED_CONVERSATION_AND_CALENDAR_EVENT",
+    "recordedAt": "2026-09-13",
+    "preserveAmendmentHistory": true
+  }
+}
