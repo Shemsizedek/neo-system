@@ -95,7 +95,9 @@ export function createKnowindexContributionHttpHandler({
     }
     let actor;
     try {
-      const member = await authService.session(claims.sub, claims);
+      // KI-016: never forward signed token role/email claims into a generic
+      // NEOpass bootstrap path. The live registry must establish authority.
+      const member = await authService.session(claims.sub);
       if (!member || member.subject !== claims.sub || member.neopassStatus !== 'active') {
         throw new KnowledgeWriteError('active_verified_neopass_required', 403);
       }
