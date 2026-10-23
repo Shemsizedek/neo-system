@@ -43,6 +43,7 @@ export function createAntminerAdapter(config={}){
         rejectedShares:Number(s.Rejected||0),
         uptimeSeconds:Number(s.Elapsed||0),
         pool:String(p.URL||''),
+        poolConnected:String(p.Status||'').toLowerCase()==='alive',
         worker:String(p.User||''),
         firmware:String(st['Miner Version']||st['miner_version']||''),
         source:'ANTMINER_STYLE'
