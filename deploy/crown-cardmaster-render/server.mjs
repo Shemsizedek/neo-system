@@ -4,6 +4,7 @@ import {dirname, resolve, join} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {createCardmasterHandler} from '../../api/crown/cardmaster.mjs';
 import {CARDMASTER_SEEDS} from '../../server/crown-metadata/cardmaster-gallery.mjs';
+import {createCounterpartyEvidenceService} from '../../server/crown-metadata/counterparty-order-evidence.mjs';
 
 const baseDir = dirname(fileURLToPath(import.meta.url));
 const DEFAULT_STATIC_ROOT = resolve(baseDir, '../../apps/neoscan/web/cardmaster');
@@ -43,7 +44,7 @@ function fileRoute(pathname) {
   return match && CARDS.has(match[1]) ? [`art/${match[1]}-${match[2]}.svg`,'image/svg+xml; charset=utf-8'] : null;
 }
 
-export function createCrownRenderServer({apiHandler=createCardmasterHandler(),staticRoot=DEFAULT_STATIC_ROOT}={}) {
+export function createCrownRenderServer({apiHandler=createCardmasterHandler(),evidenceService=createCounterpartyEvidenceService(),staticRoot=DEFAULT_STATIC_ROOT}={}) {
   let inflight=0;
   const server=createServer(async (req,res)=>{
     commonHeaders(res);
@@ -62,6 +63,18 @@ export function createCrownRenderServer({apiHandler=createCardmasterHandler(),st
     if(path==='/robots.txt'){
       res.setHeader('Content-Type','text/plain; charset=utf-8');
       return res.end('User-agent: *\nDisallow: /\n');
+    }
+    if(path==='/api/crown/order-evidence') {
+      if(req.method!=='GET') {
+        res.setHeader('Allow','GET');return json(res,405,{error:'read_only_endpoint'});
+      }
+      if(inflight>=2)return json(res,503,{error:'gateway_busy'});
+      inflight++;
+      try {
+        const result=await evidenceService.observe();
+        return json(res,200,result);
+      } catch {return json(res,503,{error:'order_evidence_unavailable'});}
+      finally {inflight--;}
     }
     if(path==='/api/crown/cardmaster') {
       if(req.method !== 'GET' && req.method !== 'OPTIONS') {res.setHeader('Allow','GET,OPTIONS');return json(res,405,{error:'read_only_endpoint'});}
