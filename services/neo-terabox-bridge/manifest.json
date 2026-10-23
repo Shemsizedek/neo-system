@@ -1,0 +1,54 @@
+{
+  "schema_version": "1.0",
+  "id": "neo-terabox-bridge",
+  "name": "NEO TeraBox Bridge",
+  "version": "1.0.0",
+  "mode": "production",
+  "parent_system": "NEO System",
+  "purpose": "Production bridge between TeraBox storage and authorized NEO System services.",
+  "runtime": {
+    "type": "node",
+    "version": "24.x",
+    "entrypoint": "server.mjs",
+    "port_env": "PORT",
+    "health_path": "/health"
+  },
+  "security": {
+    "oauth2": true,
+    "secrets_in_environment_only": true,
+    "deny_client_secret_to_browser": true,
+    "signed_state_required": true,
+    "least_privilege": true,
+    "write_operations_require_server_side_authorization": true
+  },
+  "terabox": {
+    "api_base_env": "TERABOX_API_BASE",
+    "authorize_url_env": "TERABOX_AUTHORIZE_URL",
+    "token_url_env": "TERABOX_TOKEN_URL",
+    "client_id_env": "TERABOX_CLIENT_ID",
+    "client_secret_env": "TERABOX_CLIENT_SECRET",
+    "private_secret_env": "TERABOX_PRIVATE_SECRET",
+    "redirect_uri_env": "TERABOX_REDIRECT_URI",
+    "scopes_env": "TERABOX_SCOPES"
+  },
+  "neo": {
+    "gateway_url_env": "NEO_GATEWAY_URL",
+    "router_url_env": "NEO_ROUTER_URL",
+    "sync_url_env": "NEOSYNC_URL",
+    "oracle_url_env": "NEO_ORACLE_URL",
+    "api_key_env": "NEO_INTERNAL_API_KEY"
+  },
+  "routes": [
+    {"method":"GET","path":"/health","auth":"public"},
+    {"method":"GET","path":"/v1/terabox/connect","auth":"operator"},
+    {"method":"GET","path":"/v1/terabox/callback","auth":"oauth-callback"},
+    {"method":"GET","path":"/v1/terabox/me","auth":"session"},
+    {"method":"POST","path":"/v1/bridge/dispatch","auth":"internal"}
+  ],
+  "policy": {
+    "system_of_record": "github",
+    "storage_role": "artifact_and_backup_bridge",
+    "production_writes": "approval_gated",
+    "financial_or_custodial_actions": "disabled"
+  }
+}
