@@ -56,8 +56,8 @@ export function normalizeContribution(input) {
   let url;
   try { url = new URL(source); } catch { throw new KnowledgeWriteError('invalid_url'); }
   if (url.protocol !== 'https:' || url.username || url.password || url.port ||
-      !url.hostname.includes('.') || /^(localhost|.*\.localhost|.*\.local|.*\.internal|0\.|10\.|127\.|169\.254\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|::1|fc|fd|fe80)/i.test(url.hostname) ||
-      [...url.searchParams.keys()].some(key => /^(token|key|secret|password|auth|signature|credential)$/i.test(key))) {
+      !url.hostname.includes('.') || /^(localhost|.*\.localhost|.*\.local|.*\.internal|0\.|10\.|127\.|169\.254\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|::1)/i.test(url.hostname) ||
+      [...url.searchParams.keys()].some(key => /(token|key|secret|pass|auth|signature|credential|jwt|session)/i.test(key))) {
     throw new KnowledgeWriteError('unapproved_source_url');
   }
   url.hash = '';
@@ -112,7 +112,12 @@ export function createKnowindexContributionLedger({ file = ':memory:', now = () 
 
   function inTransaction(fn) {
     db.exec('BEGIN IMMEDIATE');
-    try { const result = fn(); db.exec('COMMIT'); return result; }
+    try {
+      if (!verifyAuditChain().valid) throw new KnowledgeWriteError('audit_integrity_failed', 503);
+      const result = fn();
+      db.exec('COMMIT');
+      return result;
+    }
     catch (error) { db.exec('ROLLBACK'); throw error; }
   }
 
