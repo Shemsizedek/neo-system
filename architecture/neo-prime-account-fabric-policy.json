@@ -1,0 +1,19 @@
+{
+  "schema_version":1,
+  "gate":132,
+  "name":"NEO Prime Brokerage & Institutional Account Fabric",
+  "account_types":["MASTER","SUBACCOUNT","PORTFOLIO","COLLATERAL","FINANCING","SETTLEMENT"],
+  "custody_modes":["SELF_CUSTODY","COMMUNITY_CUSTODY","EXTERNAL_CUSTODIAN"],
+  "controls":{
+    "segregation_required":true,
+    "cross_margin_view_only":true,
+    "borrow_lend_execution":"DISABLED_WITHOUT_SEPARATE_AUTHORIZED_ADAPTER",
+    "financing_execution":"DISABLED_WITHOUT_SEPARATE_AUTHORIZED_ADAPTER",
+    "private_keys":"NEVER_STORED_IN_ACCOUNT_FABRIC",
+    "risk_integration":"GATE131",
+    "asset_registry":"GATE123",
+    "clearing":"GATE122",
+    "treasury":"GATE127"
+  },
+  "authority_boundary":"This is an internal institutional account and coordination fabric. It does not by itself establish broker-dealer, prime-broker, bank-custody, securities-lending, clearing-agency, or other external regulated status."
+}
