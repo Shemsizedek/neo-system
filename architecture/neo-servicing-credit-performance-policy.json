@@ -1,0 +1,24 @@
+{
+  "schema_version":1,
+  "gate":135,
+  "name":"NEO Institutional Servicing, Collections & Credit Performance Fabric",
+  "states":{
+    "account":["CURRENT","GRACE","DELINQUENT","CURED","RESTRUCTURED","DEFAULT_RECORDED","CLOSED"],
+    "payment":["RECEIVED","VERIFIED","POSTED","REVERSED"],
+    "covenant":["COMPLIANT","WARNING","BREACH","CURED"],
+    "recovery":["OPEN","PARTIAL","RECOVERED","CLOSED"]
+  },
+  "controls":{
+    "verified_payment_evidence_required":true,
+    "principal_interest_allocation_required":true,
+    "delinquency_is_recorded_not_inferred":true,
+    "default_event_requires_policy_and_evidence":true,
+    "restructuring_requires_explicit_terms":true,
+    "external_enforcement":"OUT_OF_SCOPE",
+    "coercive_collection_actions":"PROHIBITED",
+    "credit_history_integration":"WCA_NEO_METRO_2",
+    "proof_of_payment_integration":"WCA_016",
+    "funding_integration":"GATE134"
+  },
+  "authority_boundary":"This fabric records internal/community servicing and credit-performance facts. It does not itself create external debt-collection, credit-reporting, banking, lending, or enforcement authority."
+}
