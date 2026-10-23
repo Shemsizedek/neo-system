@@ -158,5 +158,6 @@ test('tamper-evident audit checks detect broken hash linkage', () => {
     store.db.exec('DROP TRIGGER knowindex_audit_no_update');
     store.db.prepare("UPDATE knowindex_events SET previous_hash='corrupted' WHERE seq=1").run();
     assert.equal(store.verifyAuditChain().valid, false);
+    assert.throws(() => store.submit(input({ url: 'https://example.org/after-tamper' }), member), errorCode('audit_integrity_failed'));
   } finally { store.close(); }
 });
