@@ -1,0 +1,53 @@
+{
+  "version": "0.1.0",
+  "status": "initialized",
+  "id": "neo-digital-capital",
+  "name": "NEO Digital Capital",
+  "parent": "NEO System / Project 144",
+  "institutional_interface": ["Shelton Estate Capital", "NEO Investments"],
+  "rails": ["Bitcoin", "Counterparty XCP"],
+  "principles": {
+    "bitcoin_role": "reserve and settlement rail",
+    "counterparty_role": "bitcoin-native asset and protocol layer",
+    "neo_role": "application, intelligence and institutional operating layer",
+    "default_signing": "user-controlled",
+    "claim_policy": "distinguish NEO doctrine and assumptions from independently verified facts"
+  },
+  "modules": [
+    {"id":"neoscan","role":"asset intelligence and Orange Chip registry"},
+    {"id":"neopay","role":"wallet, payments and treasury interface"},
+    {"id":"neobooks","role":"accounting and wealth-management ledger"},
+    {"id":"neolegals","role":"legal-structuring intelligence and document workflow"},
+    {"id":"neohomes","role":"real-estate operating system"},
+    {"id":"neobanker","role":"treasury and banking software infrastructure"},
+    {"id":"neowriter","role":"asset underwriting and analytical reports"},
+    {"id":"neodex","role":"marketplace and professional trading-terminal infrastructure"},
+    {"id":"neo-investments","role":"institutional RWA advisory and execution"},
+    {"id":"neo-oracle","role":"risk, valuation, provenance and synthetic-intelligence analysis"}
+  ],
+  "orange_chip": {
+    "definition": "NEO category for eligible Bitcoin/Counterparty representations of documented economic interests",
+    "classes": ["Orange Equity", "Orange Interest", "Orange Credit", "Orange Realty", "Orange Fund", "Orange Commodity", "Orange Utility", "Orange Metal"],
+    "legal_rule": "the underlying enforceable instrument defines rights; tokenization alone does not create ownership, compliance or liquidity"
+  },
+  "world_monetary_system": {
+    "classification": "NEO-proposed taxonomy; not official central-bank monetary aggregates",
+    "reserve_capital": ["SVC", "XCP"],
+    "circulatory_capital": ["NOMNI", "XCP"],
+    "layers": {
+      "MB": "Bitcoin / Mutual Credits",
+      "M0": "Cryptographic Commercial Paper / Metallic Instrument",
+      "M1": "XCP / XCPC Index — CES transaction accounts",
+      "M2": "NOMNI Index — CES trade/share/money-market accounts",
+      "M3": "WOME Index — CES institutional/government accounts",
+      "M4": "Bond Index",
+      "M5": "Home Index",
+      "M6": "Bank / e-wallet Index",
+      "M7": "Hemp Index",
+      "M8": "Utility Index",
+      "M9": "Metal Index — gold/silver market accounts"
+    }
+  },
+  "integrations": ["NEO Algo", "NEO Oracle SI", "NEOsync", "NEO Router", "NEO Crawler", "NEO Lingo/Lexicon", "GISS NEO LMS", "NEO Law", "Internal NEO Society", "N.I.A. / Project 144"],
+  "lifecycle": ["asset", "structure", "underwrite", "legal-compliance", "issue", "account", "wallet-treasury", "intelligence", "eligible-market-infrastructure"]
+}
