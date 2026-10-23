@@ -134,7 +134,9 @@
     "neo-risk:server": "node server/neo-risk/server.mjs",
     "neo-risk:test": "node --test server/neo-risk/*.test.mjs",
     "neo-prime-accounts:server": "node server/neo-prime-accounts/server.mjs",
-    "neo-prime-accounts:test": "node --test server/neo-prime-accounts/*.test.mjs"
+    "neo-prime-accounts:test": "node --test server/neo-prime-accounts/*.test.mjs",
+    "neo-credit-control:server": "node server/neo-credit-control/server.mjs",
+    "neo-credit-control:test": "node --test server/neo-credit-control/*.test.mjs"
   },
   "dependencies": {
     "@composio/core": "^0.18.1",
