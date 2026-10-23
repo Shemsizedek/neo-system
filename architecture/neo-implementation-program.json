@@ -575,6 +575,17 @@
         "docs/NEO-G138-CREDIT-DATA-QUALITY.md",
         ".github/workflows/gate-138-credit-data-quality.yml"
       ]
+    },
+    {
+      "capability_id": "GATE-139-CREDIT-COMPLIANCE-CASE-MANAGEMENT",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "architecture/neo-credit-compliance-case-policy.json",
+        "server/neo-credit-compliance/fabric.mjs",
+        "server/neo-credit-compliance/server.mjs",
+        "docs/NEO-G139-CREDIT-COMPLIANCE-CASES.md",
+        ".github/workflows/gate-139-credit-compliance-cases.yml"
+      ]
     }
   ],
   "autopilot": {
