@@ -1,0 +1,9 @@
+import test from 'node:test'; import assert from 'node:assert/strict';
+import { classifyAsset, prepareIssuanceRecord, prepareSecuredClaim, verifyIssuance } from './registry.mjs';
+const tx='a'.repeat(64);
+const example={assetId:'EXAMPLE',issuer:'test-issuer',classification:'BITCOIN_COUNTERPARTY_ASSET',network:'bitcoin-mainnet',protocol:'counterparty',bitcoinTxid:tx};
+test('requires Bitcoin linkage for Counterparty provenance',()=>{assert.throws(()=>classifyAsset({...example,bitcoinTxid:'broken'}));assert.throws(()=>classifyAsset({...example,network:'ethereum'}));});
+test('prepares stable evidence hash without claiming verification',()=>{const a=prepareIssuanceRecord(example);assert.equal(a.evidenceHash,prepareIssuanceRecord(example).evidenceHash);assert.equal(a.verification.bitcoin,'NOT_CHECKED');});
+test('secured claim never creates legal priority merely from ledger data',()=>{const r=prepareSecuredClaim({claimId:'1',assetId:'EXAMPLE',obligor:'A',securedParty:'B',agreementRef:'agreement',jurisdiction:'US-NC',collateralEvidenceRef:'evidence'});assert.equal(r.priorityStatus,'NOT_DETERMINED');assert.equal(r.transferable,false);});
+test('checks Bitcoin and Counterparty matching provenance',async()=>{const r=prepareIssuanceRecord(example);const bitcoin={getTransaction:async()=>({txid:tx,network:'bitcoin-mainnet',confirmed:true})};const counterparty={getIssuance:async()=>({asset:'EXAMPLE',tx_hash:tx})};assert.equal((await verifyIssuance(r,{bitcoin,counterparty})).status,'CHAIN_EVIDENCE_MATCHED');assert.equal((await verifyIssuance(r,{bitcoin,counterparty:{getIssuance:async()=>({asset:'OTHER',tx_hash:tx})}})).status,'NOT_VERIFIED');});
+test('rejects unconfirmed or untrusted Bitcoin evidence',async()=>{const r=prepareIssuanceRecord(example);assert.equal((await verifyIssuance(r,{bitcoin:{getTransaction:async()=>({txid:tx,network:'bitcoin-mainnet',confirmed:false})}})).status,'NOT_VERIFIED');});
