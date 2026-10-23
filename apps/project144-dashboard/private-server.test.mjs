@@ -1,0 +1,31 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {authenticated,parseTargets,githubSnapshot,healthSnapshot,createApp} from './private-server.mjs';
+test('private auth fails closed',()=>{assert.equal(authenticated(undefined,'a','b'),false);assert.equal(authenticated('Basic '+Buffer.from('a:wrong').toString('base64'),'a','b'),false);assert.equal(authenticated('Basic '+Buffer.from('a:b').toString('base64'),'a','b'),true)});
+test('configured targets require https valid hosts',()=>{assert.deepEqual(parseTargets('http://example.com,https://localhost,https://example.org/health,https://user:pw@foo.com'),[{url:'https://example.org/health'}])});
+test('github scan reports file evidence only',async()=>{const stub=async url=>url.endsWith('/neo-system')?{ok:true,json:async()=>({default_branch:'main',pushed_at:'2026-10-18',open_issues_count:3})}:{ok:true,status:200};const data=await githubSnapshot(stub);assert.equal(data.paths.length,10);assert.equal(data.paths[0].exists,true);assert.match(data.note,/not deployment/)});
+test('health checks do not treat errors as healthy',async()=>{const results=await healthSnapshot([{url:'https://example.org/health'}],async()=>({status:500}));assert.equal(results[0].healthy,false)});
+test('unconfigured service denies all access',async()=>{const server=createApp({username:'',password:''});await new Promise(r=>server.listen(0,'127.0.0.1',r));try{const result=await fetch('http://127.0.0.1:'+server.address().port);assert.equal(result.status,503)}finally{server.close()}});
+
+test('authenticated API returns scoped NEOsync evidence; unauthorized API is denied',async()=>{
+ const stub=async url=>url.endsWith('/neo-system')?{ok:true,json:async()=>({default_branch:'main',pushed_at:'2026-10-18',open_issues_count:2})}:{ok:true,status:200};
+ const server=createApp({username:'operator',password:'test-credential-with-at-least-24-characters',fetcher:stub,targets:[]});
+ await new Promise(r=>server.listen(0,'127.0.0.1',r));
+ try{
+  const root='http://127.0.0.1:'+server.address().port;
+  const denied=await fetch(root+'/api/neosync');
+  assert.equal(denied.status,401);
+  const header='Basic '+Buffer.from('operator:test-credential-with-at-least-24-characters').toString('base64');
+  const allowed=await fetch(root+'/api/neosync',{headers:{Authorization:header}});
+  assert.equal(allowed.status,200);
+  const body=await allowed.json();
+  assert.equal(body.schema,'neo.project144.status.v1');
+  assert.equal(body.git.referencePaths.length,10);
+  assert.equal(body.git.referencePaths[0].evidence,'source_present');
+  assert.equal(allowed.headers.get('cache-control'),'no-store');
+ }finally{server.close()}
+});
+test('too-short runtime credentials fail closed',async()=>{
+ const server=createApp({username:'operator',password:'short'});
+ await new Promise(r=>server.listen(0,'127.0.0.1',r));
+ try{const r=await fetch('http://127.0.0.1:'+server.address().port);assert.equal(r.status,503)}finally{server.close()}
+});

@@ -1,0 +1,25 @@
+# PROJECT144-G005 — private-only Render Blueprint template
+# This is a deploy template, NOT an activated service.
+# Use a Render private service (pserv), never web or static.
+services:
+  - type: pserv
+    name: project144-command-private
+    runtime: node
+    region: virginia
+    plan: starter
+    repo: https://github.com/Shemsizedek/neo-system
+    branch: feature/project144-g002-command-dashboard
+    autoDeployTrigger: off
+    buildCommand: npm ci && npx vite build --config apps/project144-dashboard/vite.config.ts && node --test apps/project144-dashboard/private-server.test.mjs
+    startCommand: node apps/project144-dashboard/private-server.mjs
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: COMMAND_USER
+        sync: false
+      - key: COMMAND_PASSWORD
+        sync: false
+      - key: GITHUB_TOKEN
+        sync: false
+      - key: HEALTH_TARGETS
+        value: ""
