@@ -138,7 +138,9 @@
     "neo-credit-control:server": "node server/neo-credit-control/server.mjs",
     "neo-credit-control:test": "node --test server/neo-credit-control/*.test.mjs",
     "neo-funding:server": "node server/neo-funding/server.mjs",
-    "neo-funding:test": "node --test server/neo-funding/*.test.mjs"
+    "neo-funding:test": "node --test server/neo-funding/*.test.mjs",
+    "neo-servicing:server": "node server/neo-servicing/server.mjs",
+    "neo-servicing:test": "node --test server/neo-servicing/*.test.mjs"
   },
   "dependencies": {
     "@composio/core": "^0.18.1",
