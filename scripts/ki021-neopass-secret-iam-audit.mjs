@@ -26,6 +26,11 @@ function safeReference(resource, projectId) {
 export function extractGissIamTarget(service, { projectId } = {}) {
   if (!PROJECT_ID.test(projectId || '') ||
       (service?.metadata?.name || service?.name) !== EXPECTED_SERVICE) return null;
+  // When Cloud Run exposes the project ID as its namespace, require it to
+  // match the project selected for both the service and secret IAM query.
+  // Numeric project namespaces cannot be inferred to match a project ID here.
+  const namespace = service?.metadata?.namespace;
+  if (typeof namespace === 'string' && PROJECT_ID.test(namespace) && namespace !== projectId) return null;
   const containers = service?.spec?.template?.spec?.containers ||
     service?.template?.containers || [];
   if (!Array.isArray(containers)) return null;
