@@ -75,4 +75,42 @@
   }
   render(deck.cards);
   refresh.addEventListener('click',loadMarket);
+
+  const evidenceButton=document.getElementById('checkEvidence');
+  const evidencePanel=document.getElementById('evidencePanel');
+  const evidenceNote=document.getElementById('evidenceNote');
+  const evidenceResults=document.getElementById('evidenceResults');
+  async function inspectEvidence(){
+    evidencePanel.hidden=false;
+    evidenceButton.disabled=true;
+    evidenceNote.textContent='Checking the public Counterparty order books…';
+    evidenceResults.replaceChildren();
+    const abort=new AbortController(),timer=setTimeout(()=>abort.abort(),35000);
+    try{
+      const resp=await fetch('/api/crown/order-evidence',{credentials:'omit',cache:'no-store',signal:abort.signal,headers:{accept:'application/json'}});
+      if(!resp.ok)throw new Error('upstream');
+      const evidence=await resp.json();
+      if(evidence?.schema!=='neo.crown.counterparty.order-evidence.v1'||!Array.isArray(evidence.pairs)||evidence.pairs.length!==2)throw new Error('invalid_schema');
+      evidenceNote.textContent=evidence.source_status==='observed'?'Counterparty order-book status retrieved; no price or valuation is asserted.':'Some source evidence is unavailable. No quote can be established.';
+      for(const pair of evidence.pairs) {
+        const section=el('section','evidence-pair');
+        section.append(el('strong','',pair.pair));
+        const state=pair.status==='no_open_orders'?'No open orders returned':pair.status==='open_listings_present'?'Open listings returned; not executed trades':'Order-book information unavailable';
+        section.append(el('p','',state));
+        if(Number.isSafeInteger(pair.open_order_count))section.append(el('p','','Open orders reported: '+pair.open_order_count));
+        if(Array.isArray(pair.orders)&&pair.orders.length)for(const order of pair.orders.slice(0,5)) {
+          const item=el('p','', 'Order '+String(order.tx_hash).slice(0,14)+'… at block '+String(order.block_index)+(order.order_creation_block_time?' · block timestamp '+order.order_creation_block_time:' · block time not verified'));
+          section.append(item);
+        }
+        const raw=typeof pair.source_url==='string'?pair.source_url:'';
+        if(/^https:\/\/api\.counterparty\.io:4000\/v2\/orders\/NOMNI\/(XCP|BTC)\?status=open&limit=20$/.test(raw)){
+          const link=el('a','','Inspect official order source');link.href=raw;link.target='_blank';link.rel='noopener noreferrer';section.append(link);
+        }
+        evidenceResults.append(section);
+      }
+    }catch{evidenceNote.textContent='Public order evidence is not currently available. No market price is established.';}
+    finally{clearTimeout(timer);evidenceButton.disabled=false;}
+  }
+  evidenceButton?.addEventListener('click',inspectEvidence);
+
 })();

@@ -68,3 +68,17 @@ test('SVG API remains script-free and rejects writes or unknown cards',async t=>
   const evil=await fetch(url+'/api/crown/cardmaster',{headers:{Origin:'https://untrusted.example'}});
   assert.equal(evil.headers.get('access-control-allow-origin'),null);
 });
+
+test('NCC-008 evidence route separates empty market, failure and read-only methods',async t=>{
+  const evidenceService={async observe(){return {schema:'neo.crown.counterparty.order-evidence.v1',price:null,market_quote_verified:false,source_status:'observed',pairs:[{pair:'NOMNI/XCP',status:'no_open_orders',open_order_count:0},{pair:'NOMNI/BTC',status:'no_open_orders',open_order_count:0}]};}};
+  const url=await withServer(t,{apiHandler:dummyHandler,evidenceService});
+  const r=await fetch(url+'/api/crown/order-evidence');
+  assert.equal(r.status,200);
+  assert.match(r.headers.get('content-type'),/application\/json/);
+  assert.equal((await r.json()).pairs[0].open_order_count,0);
+  assert.equal((await fetch(url+'/api/crown/order-evidence',{method:'POST'})).status,405);
+  assert.equal((await fetch(url+'/api/crown/order-evidence',{method:'HEAD'})).status,405);
+  const fail=await withServer(t,{apiHandler:dummyHandler,evidenceService:{async observe(){throw new Error('upstream');}}});
+  const bad=await fetch(fail+'/api/crown/order-evidence');
+  assert.equal(bad.status,503);
+});
