@@ -1,5 +1,6 @@
 import http from 'node:http';
 import { listMiningSources, MINING_SOURCE_TYPES } from './sourceRegistry.mjs';
+import {readGeneratorCapacity} from './capacityBridge.mjs';
 
 const PORT=Number(process.env.PORT||8080);
 
@@ -28,7 +29,7 @@ function snapshot(){
   };
 }
 
-export function createGeneratorServer(){
+export function createGeneratorServer({env=process.env,fetchImpl=fetch,now=()=>Date.now()}={}){
   return http.createServer((req,res)=>{
     const url=new URL(req.url||'/','http://neo-generator.local');
     if(req.method!=='GET'){
@@ -60,15 +61,11 @@ export function createGeneratorServer(){
       status:'NO_PUBLIC_CONTRACTS',
       note:'Contract activation and settlement require authenticated backend execution and approved commercial terms.'
     });
-    if(url.pathname==='/capacity') return send(res,200,{
-      mode:'PUBLIC_READ_ONLY',
-      available:false,
-      totalHashrateTh:null,
-      reserveHashrateTh:null,
-      allocatableHashrateTh:null,
-      status:'LIVE_MINER_TELEMETRY_NOT_CONNECTED',
-      note:'Authoritative capacity is unavailable until verified NEO Miner telemetry is bound to Generator.'
-    });
+    if(url.pathname==='/capacity'){
+      return void readGeneratorCapacity({env,fetchImpl,nowMs:now()})
+        .then(body=>send(res,body.available?200:503,body))
+        .catch(()=>send(res,503,{mode:'PUBLIC_READ_ONLY',available:false,status:'CAPACITY_BRIDGE_UNAVAILABLE',contractActivationEnabled:false}))
+    }
     if(url.pathname==='/hashpower-quotes') return send(res,200,{
       mode:'PUBLIC_READ_ONLY',
       available:false,
