@@ -1,0 +1,18 @@
+name: Gate 135 Servicing Credit Performance
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['architecture/neo-servicing-credit-performance-policy.json','server/neo-servicing/**','docs/NEO-G135-SERVICING-CREDIT-PERFORMANCE.md','package.json','.github/workflows/gate-135-servicing-credit-performance.yml']
+  pull_request:
+    paths: ['architecture/neo-servicing-credit-performance-policy.json','server/neo-servicing/**','docs/NEO-G135-SERVICING-CREDIT-PERFORMANCE.md','package.json','.github/workflows/gate-135-servicing-credit-performance.yml']
+permissions: {contents: read}
+jobs:
+  servicing:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 24}
+      - run: npm run neo-servicing:test
+      - run: node --check server/neo-servicing/server.mjs
