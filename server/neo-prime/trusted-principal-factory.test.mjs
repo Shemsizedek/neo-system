@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { createPrincipalFactory } from './trusted-principal-factory.mjs'
-import { resolveAuthenticatedTenant } from './authenticated-tenant-context.mjs'
+import { createAuthenticatedTenantResolver } from './authenticated-tenant-context.mjs'
 
 test('only verifier-produced identity creates a frozen principal', async () => {
   const factory = createPrincipalFactory(async credential =>
@@ -10,7 +10,8 @@ test('only verifier-produced identity creates a frozen principal', async () => {
   assert.equal(good.ok, true)
   assert.equal(factory.isMinted(good.principal), true)
   assert.equal(Object.isFrozen(good.principal), true)
-  assert.deepEqual(resolveAuthenticatedTenant({ verifiedPrincipal: good.principal }), { ok: true, authenticatedTenant: 'tenant-A' })
+  assert.deepEqual(createAuthenticatedTenantResolver(factory)({ verifiedPrincipal: good.principal }),
+    { ok: true, authenticatedTenant: 'tenant-A' })
 })
 
 test('forged object cannot pass factory provenance check', async () => {
