@@ -1,0 +1,41 @@
+name: KNOWINDEX World Library controlled pilot
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'apps/noogle/index/knowindex-pilot.mjs'
+      - 'apps/noogle/index/knowindex-pilot.test.mjs'
+      - 'apps/noogle/index/sources.json'
+      - 'scripts/run-knowindex-pilot.mjs'
+      - '.github/workflows/knowindex-pilot.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  controlled-crawl:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Verify KNOWINDEX crawler safety tests
+        run: node --test apps/noogle/index/knowindex-pilot.test.mjs
+      - name: Crawl only the approved public World Library subtree
+        env:
+          KNOWINDEX_PILOT_APPROVED: 'true'
+        run: node scripts/run-knowindex-pilot.mjs
+      - name: Upload read-only crawl evidence (never publish to Pages)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: knowindex-pilot-evidence
+          path: |
+            data/knowindex/pilot-report.json
+            data/knowindex/pilot-documents.json
+          if-no-files-found: error
+          retention-days: 14

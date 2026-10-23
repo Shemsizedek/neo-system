@@ -10,7 +10,12 @@
       "evidenceState": "reference",
       "community": null,
       "enabled": true,
-      "crawl": {"maxDepth": 2, "maxPages": 20, "delayMs": 700, "intervalHours": 6}
+      "crawl": {
+        "maxDepth": 2,
+        "maxPages": 20,
+        "delayMs": 700,
+        "intervalHours": 6
+      }
     },
     {
       "id": "counterparty",
@@ -21,7 +26,12 @@
       "evidenceState": "reference",
       "community": null,
       "enabled": true,
-      "crawl": {"maxDepth": 1, "maxPages": 12, "delayMs": 1000, "intervalHours": 12}
+      "crawl": {
+        "maxDepth": 1,
+        "maxPages": 12,
+        "delayMs": 1000,
+        "intervalHours": 12
+      }
     },
     {
       "id": "mempool-space",
@@ -32,7 +42,12 @@
       "evidenceState": "reference",
       "community": null,
       "enabled": true,
-      "crawl": {"maxDepth": 1, "maxPages": 8, "delayMs": 1000, "intervalHours": 12}
+      "crawl": {
+        "maxDepth": 1,
+        "maxPages": 8,
+        "delayMs": 1000,
+        "intervalHours": 12
+      }
     },
     {
       "id": "openalex",
@@ -43,7 +58,12 @@
       "evidenceState": "scholarly",
       "community": null,
       "enabled": true,
-      "crawl": {"maxDepth": 1, "maxPages": 8, "delayMs": 1200, "intervalHours": 24}
+      "crawl": {
+        "maxDepth": 1,
+        "maxPages": 8,
+        "delayMs": 1200,
+        "intervalHours": 24
+      }
     },
     {
       "id": "internet-archive",
@@ -54,7 +74,28 @@
       "evidenceState": "archival",
       "community": null,
       "enabled": true,
-      "crawl": {"maxDepth": 1, "maxPages": 8, "delayMs": 1200, "intervalHours": 24}
+      "crawl": {
+        "maxDepth": 1,
+        "maxPages": 8,
+        "delayMs": 1200,
+        "intervalHours": 24
+      }
+    },
+    {
+      "id": "world-library-knowindex",
+      "name": "Holy Temples World Library — KNOWINDEX",
+      "url": "https://holytemples.org/hy/world-library/",
+      "type": "first-party",
+      "sourceClass": "community-archive",
+      "evidenceState": "reference",
+      "community": "Indigenous and Moorish knowledge collections",
+      "enabled": false,
+      "crawl": {
+        "maxDepth": 1,
+        "maxPages": 10,
+        "delayMs": 1500,
+        "intervalHours": 24
+      }
     }
   ],
   "policy": {
