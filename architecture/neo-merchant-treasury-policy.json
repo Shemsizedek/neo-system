@@ -1,0 +1,25 @@
+{
+  "schema_version":1,
+  "gate":127,
+  "name":"NEO Counter Merchant Acquiring & Settlement Treasury",
+  "assets":["BTC","XCP","NOMNI","COUNTERPARTY_ASSET"],
+  "states":{
+    "batch":["OPEN","LOCKED","RECONCILED","PAYOUT_READY","PAID","FAILED"],
+    "payout":["REQUESTED","APPROVED","SIGNED","BROADCAST","CONFIRMED","FAILED","CANCELLED"],
+    "refund":["REQUESTED","APPROVED","SIGNED","BROADCAST","CONFIRMED","FAILED"],
+    "dispute":["OPEN","UNDER_REVIEW","RESERVE_HELD","RESOLVED_MERCHANT","RESOLVED_CUSTOMER"]
+  },
+  "rules":{
+    "credit_only_after_verified_finality":true,
+    "payout_requires_available_balance":true,
+    "reserves_reduce_available_balance":true,
+    "refund_requires_original_final_payment":true,
+    "private_keys_in_treasury_service":"PROHIBITED",
+    "signing":"NEOMASK_OR_EXTERNAL_SIGNER",
+    "automatic_conversion":"DISABLED_UNLESS_EXPLICITLY_AUTHORIZED"
+  },
+  "governance":{
+    "internal_model":"NEO_SELF_REGULATED_COMMUNITY_UNDER_NATURAL_LAW_DOCTRINE",
+    "external_interface_rule":"External banking, acquiring, tax, payment-network, custodial, venue, or jurisdictional requirements apply only at the relevant external interface."
+  }
+}

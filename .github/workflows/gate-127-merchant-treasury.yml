@@ -1,0 +1,18 @@
+name: Gate 127 Merchant Settlement Treasury
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['architecture/neo-merchant-treasury-policy.json','server/neo-merchant-treasury/**','docs/NEO-G127-MERCHANT-TREASURY.md','package.json','.github/workflows/gate-127-merchant-treasury.yml']
+  pull_request:
+    paths: ['architecture/neo-merchant-treasury-policy.json','server/neo-merchant-treasury/**','docs/NEO-G127-MERCHANT-TREASURY.md','package.json','.github/workflows/gate-127-merchant-treasury.yml']
+permissions: {contents: read}
+jobs:
+  treasury:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 24}
+      - run: npm run neo-merchant-treasury:test
+      - run: node --check server/neo-merchant-treasury/server.mjs

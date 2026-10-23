@@ -443,6 +443,17 @@
         "docs/NEO-G126-MERCHANT-DEVICE-NETWORK.md",
         ".github/workflows/gate-126-merchant-device-network.yml"
       ]
+    },
+    {
+      "capability_id": "GATE-127-MERCHANT-ACQUIRING-SETTLEMENT-TREASURY",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "architecture/neo-merchant-treasury-policy.json",
+        "server/neo-merchant-treasury/fabric.mjs",
+        "server/neo-merchant-treasury/server.mjs",
+        "docs/NEO-G127-MERCHANT-TREASURY.md",
+        ".github/workflows/gate-127-merchant-treasury.yml"
+      ]
     }
   ],
   "autopilot": {
