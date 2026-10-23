@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "gate": "KI-019",
+  "createdAt": "2026-10-23T15:42:00Z",
+  "productionWritesApproved": false,
+  "proofs": {
+    "cloudRunIssuerAndIam": {
+      "state": "blocked",
+      "reason": "Protected Cloud Run audit not executed; historical IAM audit billing-disabled"
+    },
+    "liveContributorIdentity": {
+      "state": "unverified",
+      "reason": "No consenting production contributor verified"
+    },
+    "independentCuratorRole": {
+      "state": "unverified",
+      "reason": "No independently authorized curator verified"
+    },
+    "dedicatedDatabaseOwnership": {
+      "state": "blocked",
+      "reason": "No separate approved KNOWINDEX database in Render"
+    },
+    "offHostBackupRestore": {
+      "state": "unverified",
+      "reason": "CI-only backup and restore is not production recovery evidence"
+    },
+    "emergencyDisableDrill": {
+      "state": "unverified",
+      "reason": "No authorized production pilot or off-host audit certificate"
+    }
+  },
+  "separation": {
+    "independentApproversConfirmed": false,
+    "contributorAndCuratorDistinct": false,
+    "actualRuntimeCredentialsChecked": false,
+    "productionDatabaseBackupRestored": false,
+    "billingChangeApprovedOrNotRequired": false
+  },
+  "storage": {
+    "workstream": "knowindex",
+    "dedicatedPersistent": false,
+    "offHostRestoreVerified": false,
+    "roleLeastPrivilegeVerified": false
+  }
+}
