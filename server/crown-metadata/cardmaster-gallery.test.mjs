@@ -6,7 +6,7 @@ import {attributeTickerMarket, createCardmasterCollection, renderCardmasterSvg} 
 const NOW = '2026-10-23T05:00:00.000Z';
 const packet = (overrides={}) => ({
   generatedAt: NOW, quotes: [{pair:'NOMNI/USD',status:'live',mid:1.17,last:null,
-    source:'Counterparty DEX x CoinGecko XCP/USD',confidence:'derived-from-dex'}],
+    source:'Counterparty DEX x CoinGecko XCP/USD',confidence:'derived-from-dex',source_observed_at:'2026-10-23T04:59:40.000Z',source_observation_verified:true}],
   ...overrides
 });
 
@@ -23,7 +23,7 @@ test('NOMNI DEX cross rate is indicative, not a last trade', () => {
   assert.equal(view.quote.price,'1.17');
   assert.equal(view.quote.price_kind,'derived_indicative');
   assert.equal(view.quote.trade_execution_verified,false);
-  assert.equal(view.quote.upstream_observation_time_verified,false);
+  assert.equal(view.quote.upstream_observation_time_verified,true);
   assert.match(view.label,/NOT A LAST TRADE/);
   assert.equal(view.quote.source_url,'https://api.counterparty.io:4000/v2/orders');
 });
@@ -40,7 +40,7 @@ test('missing, future, stale and invalid snapshot values fail closed', () => {
   for (const example of cases) assert.equal(attributeTickerMarket(example,'NOMNI/USD',{now:new Date(NOW)}).quote,null);
 });
 test('reference quotes are not valuations', () => {
-  const view=attributeTickerMarket(packet({quotes:[{pair:'BTC/USD',status:'live',last:98123,source:'mempool.space',confidence:'reference'}]}), 'BTC/USD',{now:new Date(NOW)});
+  const view=attributeTickerMarket(packet({quotes:[{pair:'BTC/USD',status:'live',last:98123,source:'mempool.space',confidence:'reference',source_observed_at:'2026-10-23T04:59:30.000Z',source_observation_verified:true}]}), 'BTC/USD',{now:new Date(NOW)});
   assert.equal(view.quote.price,'98123');
   assert.match(view.label,/NOT A VALUATION/);
 });
@@ -81,3 +81,16 @@ test('SVG escapes malicious submitted strings', () => {
   }
 });
 test('invalid SVG face is rejected',()=>assert.throws(()=>renderCardmasterSvg(createCardmasterCollection({now:NOW}).cards[0],{face:'unknown'})));
+
+test('retrieval time without verified upstream observation is not a quote',()=>{
+  const p=packet({quotes:[{pair:'NOMNI/USD',status:'live',mid:16,source:'Counterparty DEX',confidence:'derived-from-dex'}]});
+  const market=attributeTickerMarket(p,'NOMNI/USD',{now:new Date(NOW)});
+  assert.equal(market.state,'unavailable');
+  assert.match(market.reason,/timestamp not independently verified/);
+});
+test('future or stale source observation fails closed',()=>{
+  for(const timestamp of ['2026-10-23T04:48:00.000Z','2026-10-23T05:03:00.000Z','invalid']){
+    const p=packet({quotes:[{pair:'NOMNI/USD',status:'live',mid:16,source:'Counterparty DEX',confidence:'derived-from-dex',source_observed_at:timestamp,source_observation_verified:true}]});
+    assert.equal(attributeTickerMarket(p,'NOMNI/USD',{now:new Date(NOW)}).quote,null);
+  }
+});

@@ -1,0 +1,95 @@
+name: Crown CARDMASTER staging HTTP smoke
+on:
+  push:
+    branches: [feat/ncc-007-render-runtime-hardening]
+  pull_request:
+    branches: [feat/ncc-005-cardmaster-gallery]
+    paths:
+      - 'deploy/crown-cardmaster-render/**'
+      - 'apps/neoscan/web/cardmaster/**'
+      - 'server/crown-metadata/cardmaster-gallery.mjs'
+      - 'api/crown/cardmaster.mjs'
+      - '.github/workflows/crown-cardmaster-staging-smoke.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  http-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Test public Render gallery, read-only API and security responses
+        env:
+          BASE: https://neo-crown-cardmaster-runtime.onrender.com
+        run: |
+          python3 - <<'PY'
+          import json, os, time, urllib.request, urllib.error
+          base=os.environ['BASE'].rstrip('/')
+          def fetch(path,method='GET'):
+              request=urllib.request.Request(base+path,method=method,headers={'User-Agent':'NEO-CARDMASTER-CI/1.0'})
+              for attempt in range(3):
+                  try:
+                      with urllib.request.urlopen(request,timeout=100) as response:
+                          return response.status,response.headers,response.read()
+                  except urllib.error.HTTPError as ex:
+                      return ex.code,ex.headers,ex.read()
+                  except (urllib.error.URLError, TimeoutError, ConnectionError) as ex:
+                      if attempt==2: raise
+                      time.sleep(12)
+          status,headers,body=fetch('/healthz')
+          assert status==200,(status,body[:180])
+          health=json.loads(body)
+          assert health['service']=='neo-crown-cardmaster' and health['read_only'] is True
+          print('Health: OK')
+          status,headers,body=fetch('/')
+          assert status==200 and b'CARDMASTER' in body and b'noindex,nofollow' in body
+          assert "script-src 'self'" in headers.get('Content-Security-Policy','')
+          print('Gallery and CSP: OK')
+          status,headers,body=fetch('/studio/')
+          assert status==200 and b'CROWN MEDIA LIBRARY' in body and b'mediaConsent' in body
+          assert "img-src 'self' blob: data:" in headers.get('Content-Security-Policy','')
+          print('Local Crown media vault HTML / CSP: OK')
+          for name in ('media-core.mjs','media-store.mjs','media-ui.mjs'):
+              status,headers,body=fetch('/studio/'+name)
+              assert status==200 and len(body)>900 and b'export' in body
+          status,_,_=fetch('/api/crown/media/upload',method='POST')
+          assert status==405,status
+          print('Media modules and server upload denial: OK')
+          status,headers,body=fetch('/art/NEO-CARD-000001-front.svg')
+          assert status==200 and b'<svg' in body and b'MARKET STATUS IN GALLERY' in body
+          assert 'image/svg' in headers.get('Content-Type','')
+          print('Static SVG: OK')
+          status,headers,body=fetch('/api/crown/cardmaster?format=svg&card_id=NEO-CARD-000002&face=back')
+          assert status==200 and b'<svg' in body and b'<script' not in body
+          print('SVG API: OK')
+          status,headers,body=fetch('/api/crown/order-evidence')
+          assert status==200,(status,body[:200])
+          evidence=json.loads(body)
+          assert evidence['schema']=='neo.crown.counterparty.order-evidence.v1'
+          assert evidence['market_quote_verified'] is False and evidence['price'] is None
+          assert evidence['read_only'] is True and len(evidence['pairs'])==2
+          for entry in evidence['pairs']:
+              assert entry['pair'] in ('NOMNI/XCP','NOMNI/BTC')
+              assert entry['status'] in ('no_open_orders','open_listings_present','unavailable')
+              assert entry['price'] is None and entry['price_verified'] is False
+              if entry['status']=='no_open_orders':
+                  assert entry['open_order_count']==0 and entry['orders']==[]
+          print('Counterparty order evidence and no fabricated price: OK')
+          status,headers,body=fetch('/api/crown/cardmaster')
+          assert status==200,(status,body[:300])
+          deck=json.loads(body)
+          assert deck['schema']=='NEO-CARDMASTER-COLLECTION-V1' and deck['read_only'] is True
+          assert len(deck['cards'])==3
+          for card in deck['cards']:
+              market=card['market_data'];quote=market.get('quote')
+              if quote is not None:
+                  assert quote.get('upstream_observation_time_verified') is True
+                  assert quote.get('source_observed_at') and quote.get('source_url')
+              assert card['provenance']['financial_claims_verified'] is False
+          print('Source-attributed market policy: OK')
+          status,_,_=fetch('/api/crown/cardmaster',method='POST')
+          assert status==405,status
+          status,_,_=fetch('/.git/config')
+          assert status==404,status
+          print('Write/path safety: OK')
+          PY
