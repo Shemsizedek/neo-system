@@ -1,11 +1,12 @@
 import http from 'node:http';
+import { pathToFileURL } from 'node:url';
 
 const PUBLIC_ORIGIN = 'https://msta.holytemples.org';
 const SERVICE_NAME = 'neo-msta-legacy';
 const LEGACY_PAGES = Object.freeze({
   '/': 'https://www.im-creator.com/free/noonesociety/moorish_parliament',
   '/moorish-parliament': 'https://www.im-creator.com/free/noonesociety/moorish_parliament',
-  '/noone-society': 'http://www.im-creator.com/free/noonesociety/noone-society',
+  '/noone-society': 'https://www.im-creator.com/free/noonesociety/noone-society',
 });
 
 const HOP_BY_HOP = new Set([
@@ -21,7 +22,7 @@ function send(res, status, body, headers = {}) {
     'referrer-policy': 'strict-origin-when-cross-origin',
     ...headers,
   });
-  res.end(payload);
+  res.end(res.req?.method === 'HEAD' ? undefined : payload);
 }
 
 function escapeHtml(value = '') {
@@ -35,9 +36,9 @@ function escapeHtml(value = '') {
 
 function copyRequestHeaders(req, target) {
   const headers = new Headers();
-  for (const [key, value] of Object.entries(req.headers)) {
-    if (value == null || HOP_BY_HOP.has(key.toLowerCase())) continue;
-    headers.set(key, Array.isArray(value) ? value.join(', ') : value);
+  for (const key of ['accept', 'accept-language']) {
+    const value = req.headers[key];
+    if (value != null) headers.set(key, Array.isArray(value) ? value.join(', ') : value);
   }
   headers.set('host', target.host);
   headers.set('x-forwarded-host', 'msta.holytemples.org');
@@ -67,6 +68,7 @@ function legacyNavigation(source) {
       <a href="${PUBLIC_ORIGIN}/noone-society">Noone Society</a>
       <a class="neo-legacy-nav__source" href="${escapedSource}" target="_blank" rel="noopener noreferrer external">Original Legacy Source ↗</a>
       <a href="https://holytemples.org/">World Temple of Karast</a>
+      <a href="https://holytemples.org/site-directory/">Site Directory</a>
     </div>
     <p class="neo-legacy-nav__note">Preserved legacy navigation. Original-source access is clearly labeled and kept separate from the NEO-hosted preservation routes.</p>
   </section>`;
@@ -83,8 +85,9 @@ function unavailablePage(source) {
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>MSTA Legacy Preservation | World Temple of Karast</title><style>body{margin:0;background:#080a09;color:#f3efe1;font:16px/1.55 Georgia,serif}.wrap{max-width:760px;margin:10vh auto;padding:2rem}.mark{letter-spacing:.16em;text-transform:uppercase;color:#d6b665;font:700 12px/1.2 system-ui}h1{font-size:clamp(2.4rem,7vw,4.8rem);line-height:1;margin:.7rem 0 1rem}p{color:#c7c0af}code{word-break:break-all;color:#d6b665}.box{border:1px solid #373b36;padding:1.2rem;margin-top:1.5rem;background:#111512}</style></head><body><main class="wrap"><div class="mark">MSTA Legacy Preservation</div><h1>Source archive temporarily unavailable.</h1><p>The NEO preservation service has the original Noone Society / IM Creator address registered, but the legacy host did not answer this request. The source is not being replaced with invented content.</p><div class="box"><strong>Registered source</strong><br><code>${escaped}</code></div><p>When an IM Creator export, saved HTML, screenshot set, or archival snapshot is supplied, this route can serve the faithful preserved version directly from NEO infrastructure.</p></main>${legacyNavigation(source)}</body></html>`;
 }
 
-async function proxy(req, res) {
+async function proxy(req, res, fetchImpl) {
   const incoming = new URL(req.url || '/', PUBLIC_ORIGIN);
+  if (!['GET', 'HEAD'].includes(req.method)) return send(res, 405, 'Read-only preservation service', {'allow':'GET, HEAD','cache-control':'no-store'});
   if (incoming.pathname === '/health') {
     return send(res, 200, JSON.stringify({
       service: SERVICE_NAME,
@@ -95,13 +98,13 @@ async function proxy(req, res) {
     }), { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' });
   }
 
-  const source = LEGACY_PAGES[incoming.pathname] || LEGACY_PAGES['/'];
+  const source = LEGACY_PAGES[incoming.pathname];
+  if (!source) return send(res, 404, 'Page not found', {'content-type':'text/plain; charset=utf-8','cache-control':'no-store'});
   const target = new URL(source);
-  if (incoming.search) target.search = incoming.search;
 
   let upstream;
   try {
-    upstream = await fetch(target, {
+    upstream = await fetchImpl(target, {
       method: req.method,
       headers: copyRequestHeaders(req, target),
       redirect: 'manual',
@@ -109,7 +112,7 @@ async function proxy(req, res) {
     });
   } catch (error) {
     console.error('MSTA legacy upstream unavailable', error?.message || error);
-    return send(res, 200, unavailablePage(source), {
+    return send(res, 503, unavailablePage(source), {
       'content-type': 'text/html; charset=utf-8',
       'cache-control': 'no-store',
       'x-neo-preservation-source': source,
@@ -156,8 +159,13 @@ async function proxy(req, res) {
   return send(res, upstream.status, Buffer.from(await upstream.arrayBuffer()), headers);
 }
 
-const port = Number(process.env.PORT || 8080);
-http.createServer((req, res) => proxy(req, res).catch(error => {
+export function createPreservationServer(fetchImpl = fetch) {
+return http.createServer((req, res) => proxy(req, res, fetchImpl).catch(error => {
   console.error('MSTA preservation proxy failure', error);
   send(res, 502, 'MSTA preservation proxy failure', { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'no-store' });
-})).listen(port, () => console.log(`NEO MSTA legacy preservation proxy listening on :${port}`));
+}));
+}
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+ const port = Number(process.env.PORT || 8080);
+ createPreservationServer().listen(port, '0.0.0.0', () => console.log(`NEO MSTA legacy preservation proxy listening on :${port}`));
+}
