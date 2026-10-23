@@ -487,6 +487,17 @@
         "docs/NEO-G130-INSTITUTIONAL-OMS-EMS.md",
         ".github/workflows/gate-130-institutional-oms.yml"
       ]
+    },
+    {
+      "capability_id": "GATE-131-INSTITUTIONAL-RISK-PORTFOLIO-CONTROL",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "architecture/neo-institutional-risk-policy.json",
+        "server/neo-risk/fabric.mjs",
+        "server/neo-risk/server.mjs",
+        "docs/NEO-G131-INSTITUTIONAL-RISK.md",
+        ".github/workflows/gate-131-institutional-risk.yml"
+      ]
     }
   ],
   "autopilot": {
