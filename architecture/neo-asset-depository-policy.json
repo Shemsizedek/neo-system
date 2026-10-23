@@ -1,0 +1,19 @@
+{
+  "schema_version":1,
+  "gate":123,
+  "name":"NEO Sovereign Asset Depository, Registry and Transfer Fabric",
+  "operator_model":"COMMUNITY_DEPOSITORY_AND_TRANSFER_REGISTRY",
+  "asset_models":["BITCOIN_NATIVE","COUNTERPARTY_ASSET","CROWN_RECORD","OFFCHAIN_REGISTERED_ASSET"],
+  "ownership_layers":["ISSUER_REGISTER","REGISTERED_HOLDER","BENEFICIAL_OWNER","CUSTODY_ACCOUNT","SELF_CUSTODY_ADDRESS"],
+  "transfer_states":["INITIATED","ELIGIBILITY_CHECKED","AUTHORIZED","INSTRUCTED","OBSERVED","REGISTER_UPDATED","FINAL"],
+  "corporate_actions":["ISSUANCE","TRANSFER","DIVIDEND","DISTRIBUTION","REDEMPTION","SPLIT","CONSOLIDATION","VOTE","FREEZE","UNFREEZE"],
+  "device_bindings":["NEOMASK","NEO_COUNTER_TERMINAL","ETHA_CARD","ETHA_TERMINAL","ETHA_DEVICE","PHYSICAL_VAULT","BANK_VAULT_SECURITY_DEVICE"],
+  "security":{
+    "private_keys":"NEVER_STORED_IN_REGISTRY",
+    "self_custody_preserved":true,
+    "neomask_signing":"EXTERNAL_SIGNER_BOUNDARY",
+    "guardian_integration":"SECURITY_POLICY_AND_RISK_SIGNALS",
+    "device_identity":"NEOPASS_AND_GATE115_IDENTITY"
+  },
+  "authority_boundary":"This fabric is a community asset registry/depository/transfer architecture. It does not by itself establish statutory securities-depository, transfer-agent, bank-custody, broker-dealer, or governmental authority."
+}
