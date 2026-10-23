@@ -3,6 +3,7 @@ import { NoogleIndexStore } from '../apps/noogle/index/store.mjs';
 import { crawlDomain } from '../apps/noogle/index/domain-crawler.mjs';
 import { extractKnowledgeGraph } from '../apps/noogle/index/knowledge-graph.mjs';
 import { extractClaimGraph } from '../apps/noogle/index/claim-graph.mjs';
+import { applyReviewedKnowindex } from '../apps/noogle/index/reviewed-snapshot.mjs';
 
 const registry = JSON.parse(await fs.readFile('apps/noogle/index/sources.json', 'utf8'));
 const store = new NoogleIndexStore('data/noogle-index.json');
@@ -19,6 +20,8 @@ for (const source of registry.sources.filter(item => item.enabled)) {
     console.warn(`Skipped ${source.url}: ${error.message}`);
   }
 }
+const reviewed = await applyReviewedKnowindex({ store, reports, registry });
+if (reviewed.indexed) console.log('Noogle applied ' + reviewed.count + ' reviewed KNOWINDEX document(s)');
 await store.save();
 await fs.mkdir('public/api/noogle',{recursive:true});
 const snapshot=JSON.parse(await fs.readFile('data/noogle-index.json','utf8'));
