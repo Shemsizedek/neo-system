@@ -553,6 +553,17 @@
         "docs/NEO-G136-CREDIT-PASSPORT.md",
         ".github/workflows/gate-136-credit-passport.yml"
       ]
+    },
+    {
+      "capability_id": "GATE-137-CREDIT-REPORTING-FURNISHER-OPS",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "architecture/neo-credit-reporting-gateway-policy.json",
+        "server/neo-credit-reporting/fabric.mjs",
+        "server/neo-credit-reporting/server.mjs",
+        "docs/NEO-G137-CREDIT-REPORTING-GATEWAY.md",
+        ".github/workflows/gate-137-credit-reporting.yml"
+      ]
     }
   ],
   "autopilot": {
