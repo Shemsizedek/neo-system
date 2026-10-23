@@ -1,0 +1,25 @@
+name: NEO Mail staging certification
+on:
+  pull_request:
+    paths:
+      - 'deploy/neo-mail-render/**'
+      - '.github/workflows/neo-mail-staging.yml'
+  workflow_dispatch:
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install verifier dependencies
+        run: npm install --prefix deploy/neo-mail-render --no-audit --no-fund
+      - name: WordPress bridge PHP lint
+        run: php -l wordpress/plugins/neo-mail-bridge/neo-mail-bridge.php
+      - name: Syntax validation
+        run: node --check deploy/neo-mail-render/server.mjs
+      - name: Fail-closed and disconnected-state tests
+        run: node --test deploy/neo-mail-render/*.test.mjs
