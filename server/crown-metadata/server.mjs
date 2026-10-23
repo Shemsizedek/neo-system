@@ -14,6 +14,7 @@ export function createMetadataServer({store,resolveAsset=createAssetResolver()})
     if(req.method!=='GET')return send(405,{error:'read_only'});
     try {
       const requestUrl=new URL(req.url,'http://localhost'),path=requestUrl.pathname;
+      if(path==='/assets/investment-card.schema.json')return send(200,await readFile(new URL('./investment-card.schema.json',import.meta.url),'utf8'));
       if(path==='/assets/NOMNI/tokenscan.json')return send(200,await readFile(new URL('./nomni-tokenscan.json',import.meta.url),'utf8'));
       if(path==='/assets/explore'){const asset=requestUrl.searchParams.get('asset')||'KNOWINDEX';if(!/^[A-Za-z0-9_.-]{1,255}$/.test(asset))return send(400,{error:'invalid_asset'});res.writeHead(302,{location:'/assets/'+encodeURIComponent(asset)+'/explore.html'});return res.end();}
       const investment=path.match(/^\/assets\/([^/]+)\/investment-card\.json$/);
