@@ -14,9 +14,15 @@ const FILES = new Map([
   ['/index.html', ['index.html','text/html; charset=utf-8']],
   ['/app.js', ['app.js','text/javascript; charset=utf-8']],
   ['/catalog.js', ['catalog.js','text/javascript; charset=utf-8']],
-  ['/styles.css', ['styles.css','text/css; charset=utf-8']]
+  ['/styles.css', ['styles.css','text/css; charset=utf-8']],
+  ['/studio', ['studio/index.html','text/html; charset=utf-8']],
+  ['/studio/', ['studio/index.html','text/html; charset=utf-8']],
+  ['/studio/index.html', ['studio/index.html','text/html; charset=utf-8']],
+  ['/studio/studio-core.mjs', ['studio/studio-core.mjs','text/javascript; charset=utf-8']],
+  ['/studio/studio-app.mjs', ['studio/studio-app.mjs','text/javascript; charset=utf-8']],
+  ['/studio/studio.css', ['studio/studio.css','text/css; charset=utf-8']]
 ]);
-const BASE_CSP = "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'";
+const BASE_CSP = "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' blob:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'";
 
 function commonHeaders(res) {
   res.setHeader('X-Content-Type-Options','nosniff');
