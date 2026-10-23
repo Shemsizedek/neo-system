@@ -1,5 +1,6 @@
 import { verifyNeopassToken } from '../neo-platform-api/neopass-google-auth.mjs';
 import { KnowledgeWriteError } from './ledger.mjs';
+import { verifyKnowindexPilotActivation, sha256Hex } from './production-activation.mjs';
 
 export const KNOWINDEX_ALLOWED_ORIGINS = new Set([
   'https://shemsizedek.github.io',
@@ -56,6 +57,7 @@ export function createKnowindexContributionHttpHandler({
   jwtSecret = '',
   jwtIssuer = 'neo-pass',
   enabled = false,
+  pilotActivation = null,
   allowedOrigins = KNOWINDEX_ALLOWED_ORIGINS,
   now = () => Date.now()
 } = {}) {
@@ -70,6 +72,20 @@ export function createKnowindexContributionHttpHandler({
     if (!enabled || !ledger || !authService || typeof authService.session !== 'function' ||
         typeof jwtSecret !== 'string' || jwtSecret.length < 32) {
       response(res, 503, { error: 'knowindex_writes_not_configured', writesEnabled: false }, origin);
+      return true;
+    }
+    // A Boolean flag alone is never permission to write knowledge records.
+    // Signatures, expiry, precise DB identity, immutable audit and one-record
+    // limit are rechecked even after a runtime has requested activation.
+    const activation = await verifyKnowindexPilotActivation({
+      envelope: pilotActivation?.envelope,
+      trustKeys: pilotActivation?.trustKeys,
+      deploymentSha: pilotActivation?.deploymentSha,
+      ledger,
+      now
+    });
+    if (!activation.authorized) {
+      response(res, 503, { error: 'knowindex_activation_not_certified', writesEnabled: false }, origin);
       return true;
     }
     if (req.method === 'OPTIONS') {
@@ -102,6 +118,13 @@ export function createKnowindexContributionHttpHandler({
         throw new KnowledgeWriteError('active_verified_neopass_required', 403);
       }
       actor = { subject: member.subject, role: member.role || 'member', neopassStatus: 'active' };
+      const fingerprint = sha256Hex(actor.subject);
+      const contributorApproved = fingerprint === activation.contributorSubjectSha256 && actor.role === 'member';
+      const curatorApproved = fingerprint === activation.curatorSubjectSha256 &&
+        (actor.role === 'curator' || actor.role === 'executive-admin');
+      if (!contributorApproved && !curatorApproved) {
+        throw new KnowledgeWriteError('pilot_identity_not_authorized', 403);
+      }
     } catch (error) {
       const code = error instanceof KnowledgeWriteError ? error.code : 'neopass_registry_unavailable';
       response(res, error instanceof KnowledgeWriteError ? error.status : 503, { error: code }, origin);
