@@ -41,3 +41,50 @@ test('does not follow redirects', async () => {
   assert.equal(result.crawled, 0);
   assert.match(result.errors[0].error, /redirect_not_allowed/);
 });
+
+
+test('pins the approved source root regardless of registry changes', async () => {
+  await assert.rejects(
+    crawlKnowindex({ ...source, url: 'https://example.org/hy/world-library/' }, { fetcher: fake(response(200, '')), sleep: async () => {} }),
+    /invalid_root/
+  );
+});
+
+test('records robots and page provenance for a bounded successful crawl', async () => {
+  const result = await crawlKnowindex(source, {
+    fetcher: fake(response(200, 'User-agent: *\nDisallow: /private/'), { [source.url]: response(200, '<title>Library</title>Knowledge') }),
+    sleep: async () => {}
+  });
+  assert.equal(result.crawled, 1);
+  assert.equal(result.attemptedPages, 1);
+  assert.equal(result.robots.status, 200);
+  assert.equal(result.robots.sha256.length, 64);
+  assert.equal(result.records[0].contentBytes, Buffer.byteLength('<title>Library</title>Knowledge'));
+  assert.equal(result.records[0].httpStatus, 200);
+});
+
+test('caps page requests even when child pages fail', async () => {
+  const child = source.url + 'missing/';
+  const urls = [];
+  const fetcher = fake(response(200, ''), {
+    [source.url]: response(200, '<a href="missing/">A</a><a href="other/">B</a>'),
+    [child]: response(500, '')
+  });
+  const result = await crawlKnowindex({ ...source, crawl: { ...source.crawl, maxPages: 2 } }, {
+    fetcher: async (url, options) => { urls.push(url); return fetcher(url, options); },
+    sleep: async () => {}
+  });
+  assert.equal(result.attemptedPages, 2);
+  assert.equal(result.crawled, 1);
+  assert.equal(result.errors.length, 1);
+  assert.equal(urls.length, 3);
+});
+
+test('rejects excessively large page responses without recording content', async () => {
+  const result = await crawlKnowindex(source, {
+    fetcher: fake(response(200, ''), { [source.url]: response(200, 'X'.repeat(2_000_001)) }),
+    sleep: async () => {}
+  });
+  assert.equal(result.crawled, 0);
+  assert.match(result.errors[0].error, /response_too_large/);
+});
