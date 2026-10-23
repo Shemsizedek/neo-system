@@ -7,6 +7,8 @@ import { createShemsiReplyPublisher } from '../../src/social/shemsi-reply-publis
 import { createShemsiIngestionRuntime } from './shemsi-ingestion.mjs'
 import { createGcsSocialOAuthStore } from './social-oauth-store.mjs'
 import { createSocialTokenResolver } from './social-token-lifecycle.mjs'
+import { ingestVerifiedInstagramEvent } from './shemsi-instagram-bridge.mjs'
+import { notifyShemsiApprovalDiscord } from './shemsi-notifier.mjs'
 
 const resolveSubject = createNeopassSubjectResolver()
 
@@ -22,6 +24,7 @@ const tokenResolver = createSocialTokenResolver({store:oauthStore})
 const shemsiStore = createGcsShemsiStore()
 const publishShemsiReply = createShemsiReplyPublisher()
 const shemsiIngestion = createShemsiIngestionRuntime({tokenResolver})
+const ingestInstagramEvent = (args)=>ingestVerifiedInstagramEvent({...args,store:shemsiStore,notifyApproval:payload=>notifyShemsiApprovalDiscord(payload)})
 
 async function publishOmnitrixJob(job) {
   if (job.destination === 'facebook' && process.env.FACEBOOK_PROVIDER === 'existing-organic' && !process.env.FACEBOOK_PAGE_ACCESS_TOKEN) {
@@ -47,6 +50,6 @@ async function publishOmnitrixJob(job) {
 const port = Number(process.env.PORT || 8080)
 const host = process.env.HOST || '0.0.0.0'
 
-createSocialGatewayServer({ resolveTrustedIdentity, store:oauthStore, automationStore, publishOmnitrixJob, shemsiStore, publishShemsiReply, shemsiIngestion }).listen(port, host, () => {
+createSocialGatewayServer({ resolveTrustedIdentity, store:oauthStore, automationStore, publishOmnitrixJob, shemsiStore, publishShemsiReply, shemsiIngestion, ingestInstagramEvent }).listen(port, host, () => {
   console.log(`neo-social-gateway listening on ${host}:${port}`)
 })
