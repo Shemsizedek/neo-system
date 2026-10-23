@@ -21,7 +21,7 @@ jobs:
           echo '| Service | HTTP | Content type | Result |' >> "$GITHUB_STEP_SUMMARY"
           echo '| --- | --- | --- | --- |' >> "$GITHUB_STEP_SUMMARY"
           failures=0
-          for spec in 'GISD|https://school.holytemples.org/' 'NEOpass|https://neopass.holytemples.org/' 'Render platform API|https://neo-platform-api-recovery.onrender.com/' 'Platform health|https://neo-platform-api-recovery.onrender.com/health' 'School storage health|https://neo-platform-api-recovery.onrender.com/health/school'; do
+          for spec in 'GISD|https://school.holytemples.org/' 'NEOpass|https://neopass.holytemples.org/' 'Render platform API|https://neo-platform-api-recovery.onrender.com/' 'Render edge preview|https://neo-edge-render.onrender.com/' 'Platform health|https://neo-platform-api-recovery.onrender.com/health' 'School storage health|https://neo-platform-api-recovery.onrender.com/health/school'; do
             IFS='|' read -r label url <<< "$spec"
             headers="$(mktemp)"
             body="$(mktemp)"
