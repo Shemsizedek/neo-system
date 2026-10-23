@@ -1,0 +1,45 @@
+name: KI-016 KNOWINDEX Identity & Read-Only Runtime Preflight
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'server/neo-knowindex/**'
+      - 'server/neo-platform-api/server.mjs'
+      - 'server/neo-platform-api/giss-production.mjs'
+      - 'scripts/ki016-live-readonly-smoke.mjs'
+      - 'scripts/ki016-gcp-readonly-audit.mjs'
+      - 'scripts/ki016-gcp-readonly-audit.test.mjs'
+      - '.github/workflows/ki016-knowindex-neopass-preflight.yml'
+      - 'data/knowindex/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verified-authority-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Verify NEOpass authoritative roles and disabled-by-default moderation
+        run: node --test server/neo-knowindex/neopass-authority.test.mjs server/neo-knowindex/http.test.mjs server/neo-knowindex/platform-integration.test.mjs scripts/ki016-gcp-readonly-audit.test.mjs
+  production-fail-closed-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Probe live NEO API and public Noogle without credentials or writes
+        run: node scripts/ki016-live-readonly-smoke.mjs
+      - name: State certification boundary
+        if: always()
+        run: |
+          echo 'This job does not use any user credential or issue a write.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Production knowledge-writing remains disabled until NEOpass registry, issuer binding, dedicated database, backup restore and rollback are independently certified.' >> "$GITHUB_STEP_SUMMARY"
