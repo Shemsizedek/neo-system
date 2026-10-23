@@ -126,7 +126,9 @@
     "neo-merchant-treasury:server": "node server/neo-merchant-treasury/server.mjs",
     "neo-merchant-treasury:test": "node --test server/neo-merchant-treasury/*.test.mjs",
     "neo-conversion:server": "node server/neo-conversion/server.mjs",
-    "neo-conversion:test": "node --test server/neo-conversion/*.test.mjs"
+    "neo-conversion:test": "node --test server/neo-conversion/*.test.mjs",
+    "neo-market-router:server": "node server/neo-router-market/server.mjs",
+    "neo-market-router:test": "node --test server/neo-router-market/*.test.mjs"
   },
   "dependencies": {
     "@composio/core": "^0.18.1",

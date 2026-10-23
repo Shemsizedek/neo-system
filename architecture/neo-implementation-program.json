@@ -465,6 +465,17 @@
         "docs/NEO-G128-MULTI-ASSET-CONVERSION.md",
         ".github/workflows/gate-128-multi-asset-conversion.yml"
       ]
+    },
+    {
+      "capability_id": "GATE-129-LIQUIDITY-VENUE-SMART-ORDER-ROUTER",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "architecture/neo-smart-order-router-policy.json",
+        "server/neo-router-market/fabric.mjs",
+        "server/neo-router-market/server.mjs",
+        "docs/NEO-G129-LIQUIDITY-VENUE-ROUTER.md",
+        ".github/workflows/gate-129-smart-order-router.yml"
+      ]
     }
   ],
   "autopilot": {
