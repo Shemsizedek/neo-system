@@ -128,7 +128,9 @@
     "neo-conversion:server": "node server/neo-conversion/server.mjs",
     "neo-conversion:test": "node --test server/neo-conversion/*.test.mjs",
     "neo-market-router:server": "node server/neo-router-market/server.mjs",
-    "neo-market-router:test": "node --test server/neo-router-market/*.test.mjs"
+    "neo-market-router:test": "node --test server/neo-router-market/*.test.mjs",
+    "neo-oms:server": "node server/neo-oms/server.mjs",
+    "neo-oms:test": "node --test server/neo-oms/*.test.mjs"
   },
   "dependencies": {
     "@composio/core": "^0.18.1",
