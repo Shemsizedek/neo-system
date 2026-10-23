@@ -1,0 +1,18 @@
+name: Gate 129 Liquidity Venue Smart Order Router
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['architecture/neo-smart-order-router-policy.json','server/neo-router-market/**','docs/NEO-G129-LIQUIDITY-VENUE-ROUTER.md','package.json','.github/workflows/gate-129-smart-order-router.yml']
+  pull_request:
+    paths: ['architecture/neo-smart-order-router-policy.json','server/neo-router-market/**','docs/NEO-G129-LIQUIDITY-VENUE-ROUTER.md','package.json','.github/workflows/gate-129-smart-order-router.yml']
+permissions: {contents: read}
+jobs:
+  router:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 24}
+      - run: npm run neo-market-router:test
+      - run: node --check server/neo-router-market/server.mjs
