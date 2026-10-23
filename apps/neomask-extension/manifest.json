@@ -1,0 +1,12 @@
+{
+  "manifest_version":3,
+  "name":"NeoMask",
+  "version":"0.1.0",
+  "description":"Bitcoin and Counterparty self-custody provider for NEO Pass, Tokenworks and NEO Guardian.",
+  "permissions":["storage"],
+  "host_permissions":[],
+  "background":{"service_worker":"background.js","type":"module"},
+  "content_scripts":[{"matches":["<all_urls>"],"js":["content.js"],"run_at":"document_start"}],
+  "web_accessible_resources":[{"resources":["inpage.js"],"matches":["<all_urls>"]}],
+  "action":{"default_title":"NeoMask"}
+}
