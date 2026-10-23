@@ -1,0 +1,8 @@
+import test from 'node:test'
+import assert from 'node:assert/strict'
+import {createTempleApprenticeshipRegistry} from './mentor-registry.mjs'
+test('unverified mentor cannot clear applicant for review',()=>{const x=createTempleApprenticeshipRegistry();x.registerMentor({id:'m1',track:'software',capacity:1});assert.equal(x.reviewCandidate({id:'a1',country:'GH',age:24,track:'software',mentorId:'m1',programApproved:true,jurisdictionReviewed:true}).status,'blocked')})
+test('verified mentor enables human review for training',()=>{const x=createTempleApprenticeshipRegistry();x.registerMentor({id:'m1',track:'software',verified:true,capacity:1});const a=x.reviewCandidate({id:'a1',country:'GH',age:24,track:'software',mentorId:'m1',programApproved:true,jurisdictionReviewed:true});assert.equal(a.status,'ready-for-human-review');assert.equal(a.offerEnabled,false)})
+test('mentor track mismatch blocks',()=>{const x=createTempleApprenticeshipRegistry();x.registerMentor({id:'m1',track:'media',verified:true,capacity:3});assert.equal(x.reviewCandidate({id:'a1',country:'GH',age:24,track:'software',mentorId:'m1',programApproved:true,jurisdictionReviewed:true}).status,'blocked')})
+test('paid projects require separate authorization',()=>{const x=createTempleApprenticeshipRegistry();x.registerMentor({id:'m1',track:'software',verified:true,capacity:2});const a=x.reviewCandidate({id:'a1',country:'GH',age:24,track:'software',engagement:'paid-project',mentorId:'m1',programApproved:true,jurisdictionReviewed:true});assert.equal(a.status,'blocked')})
+test('no active applicant intake or payments',()=>{const x=createTempleApprenticeshipRegistry();assert.equal(x.capabilities().liveIntake,false);assert.equal(x.capabilities().canPay,false)})
