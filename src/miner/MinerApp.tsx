@@ -48,7 +48,7 @@ export function MinerApp(){
     </aside>
 
     <main className="nm-main">
-      <header className="nm-header"><div><p>NEO BITCOIN PRODUCTION INFRASTRUCTURE</p><h1>ORIGIN Command Center</h1></div><div className="nm-env"><i/> DEMO / SIMULATION</div></header>
+      <header className="nm-header"><div><p>NEO BITCOIN PRODUCTION INFRASTRUCTURE</p><h1>ORIGIN Command Center</h1></div><div style={{display:'flex',alignItems:'center',gap:12,flexWrap:'wrap'}}><a href="#/miner-mobile" style={{color:'#8bffc0',border:'1px solid #305a3f',padding:'9px 11px',borderRadius:10,textDecoration:'none'}}>Mobile fleet →</a><div className="nm-env"><i/> DEMO / SIMULATION</div></div></header>
 
       <section className="nm-stats">
         <Stat label="Fleet Hashrate" value={`${num(fleet.th)} TH/s`} sub={`${fleet.online}/${miners.length} miners contributing`} Icon={Cpu}/>
