@@ -1,0 +1,36 @@
+name: NEO Energy NES-026 staging SQL integration
+on:
+  pull_request:
+    paths:
+      - 'neo-energy/NES-026/**'
+      - '.github/workflows/neo-energy-nes026-tests.yml'
+  workflow_dispatch:
+jobs:
+  db-integration:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: disposable-ci-only
+          POSTGRES_DB: energy_staging_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d energy_staging_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: localhost
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: disposable-ci-only
+      PGDATABASE: energy_staging_ci
+    steps:
+      - uses: actions/checkout@v4
+      - run: psql -X -v ON_ERROR_STOP=1 -f neo-energy/NES-026/staging.sql
+      - run: psql -X -v ON_ERROR_STOP=1 -f neo-energy/NES-026/test_staging.sql

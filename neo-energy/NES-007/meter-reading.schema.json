@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "NEO Utility Interval Meter Reading v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "site_id",
+    "meter_id",
+    "interval_start_utc",
+    "interval_end_utc",
+    "import_kwh",
+    "export_kwh",
+    "quality",
+    "source",
+    "record_id"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "record_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "site_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "meter_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "interval_start_utc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "interval_end_utc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "import_kwh": {
+      "type": "number",
+      "minimum": 0
+    },
+    "export_kwh": {
+      "type": "number",
+      "minimum": 0
+    },
+    "quality": {
+      "enum": [
+        "simulated",
+        "estimated",
+        "measured_unverified",
+        "revenue_verified"
+      ]
+    },
+    "source": {
+      "type": "string",
+      "minLength": 1
+    },
+    "measurement_kind": {
+      "const": "interval_energy"
+    },
+    "signature_ref": {
+      "type": "string"
+    },
+    "calibration_ref": {
+      "type": "string"
+    },
+    "received_at_utc": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

@@ -1,0 +1,22 @@
+prototype,item,quantity_total,estimated_unit_usd,estimated_extended_usd,price_status
+THERMO-01,SP1848-class TEG module,2,10,20,estimate
+THERMO-01,Heat sink and interface kit,2,22,44,estimate
+THERMO-01,Low-temperature heat source fixture,2,24,48,estimate
+THERMO-01,Compatible low-input boost module,2,18,36,estimate
+THERMO-01,Temperature sensor set,2,12,24,estimate
+THERMO-01,Resistors connectors test wiring,2,14,28,estimate
+THERMO-01,Insulated enclosure/frame,2,10,20,estimate
+RESONANCE-01,Matched transmitter receiver pair,2,30,60,estimate
+RESONANCE-01,Current-limited 5V DC adapter,2,22,44,estimate
+RESONANCE-01,Coil alignment fixture materials,2,20,40,estimate
+RESONANCE-01,Loads measurement adapters,2,18,36,estimate
+RESONANCE-01,Thermal sensors test points,2,20,40,estimate
+RESONANCE-01,Insulated enclosure,2,15,30,estimate
+RESONANCE-01,Connectors consumables,2,15,30,estimate
+HARVEST-01,PV harvesting cell,2,18,36,estimate
+HARVEST-01,BQ25570-class PCB,2,35,70,estimate
+HARVEST-01,Rated supercapacitor protection assembly,2,22,44,estimate
+HARVEST-01,Low-power MCU,2,20,40,estimate
+HARVEST-01,Temp humidity sensor interface,2,25,50,estimate
+HARVEST-01,Power switching wiring test points,2,20,40,estimate
+HARVEST-01,Prototype enclosure,2,25,50,estimate

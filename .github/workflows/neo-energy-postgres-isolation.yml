@@ -1,0 +1,40 @@
+name: NEO Energy PostgreSQL RLS isolation
+on:
+  pull_request:
+    paths:
+      - 'neo-energy/NES-022/**'
+      - '.github/workflows/neo-energy-postgres-isolation.yml'
+  workflow_dispatch:
+jobs:
+  postgres-isolation:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: test-only-password
+          POSTGRES_DB: neo_energy_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d neo_energy_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: localhost
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: test-only-password
+      PGDATABASE: neo_energy_ci
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create fixture and run RLS isolation tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f neo-energy/NES-022/staging_isolation.sql
+          psql -X -v ON_ERROR_STOP=1 -f neo-energy/NES-022/check_isolation.sql

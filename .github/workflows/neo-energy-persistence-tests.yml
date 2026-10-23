@@ -1,0 +1,19 @@
+name: NEO Energy persistent ledger tests
+on:
+  pull_request:
+    paths:
+      - 'neo-energy/NES-014/**'
+      - '.github/workflows/neo-energy-persistence-tests.yml'
+  workflow_dispatch:
+jobs:
+  test-persistence:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test local simulation store
+        run: python -m unittest discover -s neo-energy/NES-014 -p 'test_*.py' -v

@@ -1,0 +1,19 @@
+name: NEO Energy preview federation tests
+on:
+  pull_request:
+    paths:
+      - 'neo-energy/NES-023/**'
+      - 'neo-energy/NES-024/**'
+      - '.github/workflows/neo-energy-preview-federation.yml'
+  workflow_dispatch:
+jobs:
+  preview-federation:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test neo-energy/NES-024/test-energy-preview.mjs
