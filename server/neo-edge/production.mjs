@@ -28,6 +28,7 @@ const NEO_ASSETS_URL=String(process.env.NEO_ASSETS_URL||'').replace(/\/$/,'');
 const NEOMASK_SIGNER_URL=String(process.env.NEOMASK_SIGNER_URL||'').replace(/\/$/,'');
 const NEO_MERCHANT_NETWORK_URL=String(process.env.NEO_MERCHANT_NETWORK_URL||'').replace(/\/$/,'');
 const NEO_MERCHANT_TREASURY_URL=String(process.env.NEO_MERCHANT_TREASURY_URL||'').replace(/\/$/,'');
+const NEO_CONVERSION_URL=String(process.env.NEO_CONVERSION_URL||'').replace(/\/$/,'');
 const FAMILY_OFFICE_ORIGIN='sheltonestate.family.blog';
 const NEO_PLATFORM_API_ORIGIN=String(process.env.NEO_PLATFORM_API_ORIGIN||'https://egov.holytemples.org').replace(/\/$/,'');
 
@@ -90,6 +91,25 @@ function serviceConsole(host){
   </script></body></html>`;
 }
 
+
+function proxyConversion(req,res){
+  if(!NEO_CONVERSION_URL)return json(res,503,{error:'neo_conversion_unconfigured'});
+  let target;
+  try{
+    const suffix=String(req.url||'/').replace(/^\/api\/conversion/,'');
+    target=new URL(suffix||'/',NEO_CONVERSION_URL);
+  }catch{return json(res,502,{error:'neo_conversion_invalid_origin'})}
+  const transport=target.protocol==='https:'?https:http;
+  const headers={...req.headers,host:target.host,'x-forwarded-host':'neo.holytemples.org'};
+  const upstream=transport.request(target,{method:req.method,headers},reply=>{
+    const responseHeaders={...reply.headers};
+    delete responseHeaders['access-control-allow-origin'];
+    res.writeHead(reply.statusCode||502,responseHeaders);
+    reply.pipe(res);
+  });
+  upstream.on('error',error=>json(res,502,{error:'neo_conversion_unavailable',detail:error.message}));
+  req.pipe(upstream);
+}
 
 function proxyMerchantTreasury(req,res){
   if(!NEO_MERCHANT_TREASURY_URL)return json(res,503,{error:'neo_merchant_treasury_unconfigured'});
@@ -493,6 +513,7 @@ export async function startNeoEdgeProduction(){
     if(host==='neo.holytemples.org'&&url.pathname.startsWith('/api/neomask-signer/'))return proxyNeoMaskSigner(req,res);
     if(host==='neo.holytemples.org'&&url.pathname.startsWith('/api/merchant-network/'))return proxyMerchantNetwork(req,res);
     if(host==='neo.holytemples.org'&&url.pathname.startsWith('/api/merchant-treasury/'))return proxyMerchantTreasury(req,res);
+    if(host==='neo.holytemples.org'&&url.pathname.startsWith('/api/conversion/'))return proxyConversion(req,res);
     if(host==='neo.holytemples.org'&&url.pathname.startsWith('/api/ai/'))return proxyAiGateway(req,res);
     if(host==='desk.holytemples.org')return proxyDealDesk(req,res,url);
     if(host==='office.holytemples.org'&&req.method==='GET'&&url.pathname==='/health')return json(res,200,{ok:true,service:'shelton-estate-family-office',surface:'legacy-mirror',origin:FAMILY_OFFICE_ORIGIN});
