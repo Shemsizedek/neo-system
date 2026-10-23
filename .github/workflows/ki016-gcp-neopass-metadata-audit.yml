@@ -11,6 +11,7 @@ permissions:
 
 jobs:
   giss-issuer-metadata:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     environment: holytemples-production
@@ -37,19 +38,53 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
-      - name: Inspect GISS metadata without printing identities or secret references
+      - name: Reject any non-main workflow dispatch before requesting cloud credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "$GITHUB_REF" != "refs/heads/main" ]; then
+            echo "::error::KI-021 audit may run from reviewed main only."
+            exit 1
+          fi
+      - name: Inspect GISS metadata and exact secret-level IAM policy without disclosing identities
         shell: bash
         run: |
           set -euo pipefail
           chmod 700 "$RUNNER_TEMP"
-          # Sensitive runtime metadata stays in the ephemeral runner and never
-          # becomes an artifact or console output.
-          gcloud run services describe neo-temple-giss \
-            --project="$GCP_PROJECT_ID" --region="$GCP_REGION" \
-            --format=json > "$RUNNER_TEMP/ki016-giss.json"
-          node scripts/ki016-gcp-readonly-audit.mjs "$RUNNER_TEMP/ki016-giss.json"
-          rm -f "$RUNNER_TEMP/ki016-giss.json"
-          echo 'NEOpass Cloud Run binding metadata checked; token issuance, registry role and backups NOT certified.' >> "$GITHUB_STEP_SUMMARY"
-      - name: Ensure no runtime data remains
+          if ! gcloud run services describe neo-temple-giss \
+              --project="$GCP_PROJECT_ID" --region="$GCP_REGION" \
+              --format=json > "$RUNNER_TEMP/ki021-giss.json" \
+              2> "$RUNNER_TEMP/ki021-run-error.txt"; then
+            echo "::error::KI-021 Cloud Run metadata unavailable. Verify protected WIF/IAM, API status, and approved project billing."
+            exit 1
+          fi
+          node scripts/ki021-neopass-secret-iam-audit.mjs extract-ref \
+            "$RUNNER_TEMP/ki021-giss.json" "$RUNNER_TEMP/ki021-secret.ref"
+          # The secret ID is validated and read only from a private temp file;
+          # no secret value, service-account identifier, or IAM policy is echoed.
+          if ! gcloud secrets get-iam-policy "$(cat "$RUNNER_TEMP/ki021-secret.ref")" \
+              --project="$GCP_PROJECT_ID" --format=json \
+              > "$RUNNER_TEMP/ki021-secret-policy.json" \
+              2> "$RUNNER_TEMP/ki021-iam-error.txt"; then
+            if grep -Eqi '(BILLING_DISABLED|billing.*(disabled|enable|required))' "$RUNNER_TEMP/ki021-iam-error.txt"; then
+              echo "::error::KI-021 BLOCKED_GCP_BILLING. Do not change billing without explicit approval."
+            elif grep -Eqi '(PERMISSION_DENIED|permission denied|403)' "$RUNNER_TEMP/ki021-iam-error.txt"; then
+              echo "::error::KI-021 BLOCKED_IAM_PERMISSION. A protected, read-only IAM reviewer is required."
+            else
+              echo "::error::KI-021 BLOCKED_POLICY_UNAVAILABLE. Secret-level policy retrieval failed."
+            fi
+            exit 1
+          fi
+          node scripts/ki021-neopass-secret-iam-audit.mjs evaluate \
+            "$RUNNER_TEMP/ki021-giss.json" "$RUNNER_TEMP/ki021-secret-policy.json"
+          echo 'KI-021: direct secret-level IAM binding observed through protected, read-only metadata.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Effective runtime secret access, live NEOpass identities, production backups and knowledge-write authorization are NOT certified.' >> "$GITHUB_STEP_SUMMARY"
+      - name: Erase protected Cloud Run metadata, policy and diagnostic files
         if: always()
-        run: rm -f "$RUNNER_TEMP/ki016-giss.json"
+        shell: bash
+        run: |
+          rm -f "$RUNNER_TEMP/ki021-giss.json" \
+                "$RUNNER_TEMP/ki021-secret.ref" \
+                "$RUNNER_TEMP/ki021-secret-policy.json" \
+                "$RUNNER_TEMP/ki021-run-error.txt" \
+                "$RUNNER_TEMP/ki021-iam-error.txt"

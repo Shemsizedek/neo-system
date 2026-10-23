@@ -1,0 +1,40 @@
+name: KI-021 Protected GISS IAM Audit Safety
+
+# CI exercises only synthetic Cloud Run and IAM policies. No GCP credentials.
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/ki016-gcp-readonly-audit.mjs'
+      - 'scripts/ki016-gcp-readonly-audit.test.mjs'
+      - 'scripts/ki021-neopass-secret-iam-audit.mjs'
+      - 'scripts/ki021-neopass-secret-iam-audit.test.mjs'
+      - 'scripts/ki021-protected-workflow.test.mjs'
+      - '.github/workflows/ki016-gcp-neopass-metadata-audit.yml'
+      - '.github/workflows/ki021-iam-audit-safety.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  synthetic-iam-and-protected-workflow:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Test read-only GISS metadata, exact secret IAM and no disclosure
+        run: |
+          node --test \
+            scripts/ki016-gcp-readonly-audit.test.mjs \
+            scripts/ki021-neopass-secret-iam-audit.test.mjs \
+            scripts/ki021-protected-workflow.test.mjs
+      - name: Record what is and is not certified
+        if: always()
+        shell: bash
+        run: |
+          echo 'KI-021 CI uses only synthetic Cloud Run, Secret Manager IAM and test identities.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Production protected Cloud Run IAM access, real NEOpass accounts, dedicated Postgres backups and write approval remain unverified.' >> "$GITHUB_STEP_SUMMARY"
