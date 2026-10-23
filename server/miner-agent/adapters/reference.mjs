@@ -8,6 +8,7 @@ export function normalizeTelemetry(raw){
     rejectedShares:Number(raw.rejectedShares||0),
     uptimeSeconds:Number(raw.uptimeSeconds||0),
     pool:String(raw.pool||''),
+    poolConnected:raw.poolConnected===true,
     worker:String(raw.worker||''),
     firmware:String(raw.firmware||''),
     source:String(raw.source||'REFERENCE_ADAPTER')
