@@ -1,0 +1,18 @@
+name: Gate 128 Multi Asset Conversion and Liquidity
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['architecture/neo-multi-asset-conversion-policy.json','server/neo-conversion/**','docs/NEO-G128-MULTI-ASSET-CONVERSION.md','package.json','.github/workflows/gate-128-multi-asset-conversion.yml']
+  pull_request:
+    paths: ['architecture/neo-multi-asset-conversion-policy.json','server/neo-conversion/**','docs/NEO-G128-MULTI-ASSET-CONVERSION.md','package.json','.github/workflows/gate-128-multi-asset-conversion.yml']
+permissions: {contents: read}
+jobs:
+  conversion:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 24}
+      - run: npm run neo-conversion:test
+      - run: node --check server/neo-conversion/server.mjs
