@@ -129,6 +129,7 @@ jobs:
               --quiet
           fi
 
+      # Certificate Manager role is granted out-of-band by an IAM administrator.
       - name: Verify Certificate Manager IAM
         run: |
           set -euo pipefail
