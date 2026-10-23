@@ -51,7 +51,8 @@ test('invalid, stale, mismatched and replayed opt-in cannot grant consent',()=>{
   assert.throws(()=>registerDeviceConsent(miner,{...valid,minerId:'OTHER'}),/INVALID_DEVICE_CONSENT/)
   assert.throws(()=>registerDeviceConsent(miner,{...valid,signature:'tampered'}),/SIGNATURE_INVALID/)
   assert.throws(()=>registerDeviceConsent(miner,valid,{nowMs:Date.now()+301_000}),/STALE_OR_FUTURE/)
-  const granted=registerDeviceConsent(miner,valid)
+  // The operator gateway appends actor context to a signed device message.
+  const granted=registerDeviceConsent(miner,{...valid,operatorId:'trusted-operator'})
   assert.throws(()=>registerDeviceConsent(granted,valid),/ALREADY_RECORDED/)
 })
 
