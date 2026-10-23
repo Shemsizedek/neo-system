@@ -109,7 +109,9 @@
     "neo-continuity:server": "node server/neo-continuity/server.mjs",
     "neo-continuity:test": "node --test server/neo-continuity/*.test.mjs",
     "neo-observability:server": "node server/neo-observability/server.mjs",
-    "neo-observability:test": "node --test server/neo-observability/*.test.mjs"
+    "neo-observability:test": "node --test server/neo-observability/*.test.mjs",
+    "neo-autopilot:server": "node server/neo-autopilot/server.mjs",
+    "neo-autopilot:test": "node --test server/neo-autopilot/*.test.mjs"
   },
   "dependencies": {
     "@composio/core": "^0.18.1",
