@@ -381,6 +381,17 @@
         "docs/NEO-G121-GLOBAL-LICENSES-AND-COMMUNITY-CCP.md",
         ".github/workflows/gate-121-sovereign-economics.yml"
       ]
+    },
+    {
+      "capability_id": "GATE-122-COMMUNITY-CLEARING-SETTLEMENT",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "architecture/neo-clearing-settlement-policy.json",
+        "server/neo-clearing/fabric.mjs",
+        "server/neo-clearing/server.mjs",
+        "docs/NEO-G122-COMMUNITY-CLEARING-SETTLEMENT.md",
+        ".github/workflows/gate-122-community-clearing.yml"
+      ]
     }
   ],
   "autopilot": {
