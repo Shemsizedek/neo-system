@@ -1,49 +1,27 @@
-import { createCesAdapter } from '../apps/neoscan/adapters/ces/adapter.mjs';
+import {createCesRuntimeBridge} from '../apps/neoscan/adapters/ces/runtime-bridge.mjs';
 
-const mode = String(process.env.NEO_CES_MODE || 'status').trim();
-const endpoint = String(process.env.CES_ENDPOINT || '').trim();
-const network = String(process.env.CES_NETWORK || '').trim();
-const account = String(process.env.CES_ACCOUNT || '').trim();
-const token = String(process.env.CES_API_TOKEN || '').trim();
+const bridge=createCesRuntimeBridge({
+  mode:process.env.NEO_CES_MODE,
+  endpoint:process.env.CES_ENDPOINT,
+  readUrl:process.env.CES_SESSION_READ_URL,
+  network:process.env.CES_NETWORK,
+  account:process.env.CES_ACCOUNT,
+  token:process.env.CES_API_TOKEN,
+  sessionCookie:process.env.CES_SESSION_COOKIE
+});
 
-const adapter = createCesAdapter({ endpoint, network, account, authMode: 'bearer' });
-
-const baseStatus = {
-  service: 'neo-ces-bridge',
-  controlPlane: 'discord-primary',
-  runtimeDependency: 'none',
-  cloudflareRequired: false,
-  readOnly: true,
-  mode,
-  adapter: adapter.status()
-};
-
-if (mode === 'status') {
-  console.log(JSON.stringify({
-    ...baseStatus,
-    state: adapter.status().configured ? 'CONFIGURED' : 'READY_FOR_AUTHORIZED_CONNECTION',
-    note: 'Current public CES is session-based. API mode is opt-in only when an authorized CES-compatible API endpoint is available.'
-  }, null, 2));
-  process.exit(0);
-}
-
-if (mode !== 'api-readonly') {
-  throw new Error(`Unsupported NEO_CES_MODE: ${mode}`);
-}
-
-if (!endpoint || !account || !token) {
-  throw new Error('api-readonly requires CES_ENDPOINT, CES_ACCOUNT, and CES_API_TOKEN secrets');
-}
-
-const [balance, transactions] = await Promise.all([
-  adapter.getBalance({ token }),
-  adapter.getTransactions({ token, limit: 25 })
-]);
+const status=bridge.status();
+const result=await bridge.read();
 
 console.log(JSON.stringify({
-  ...baseStatus,
-  state: 'LIVE_READONLY',
-  balance,
-  transactionCount: transactions.length,
-  latestTransactions: transactions
-}, null, 2));
+  service:'neo-ces-bridge',
+  controlPlane:'discord-primary',
+  runtimeDependency:'provider-neutral',
+  cloudflareRequired:false,
+  readOnly:true,
+  status,
+  ...result,
+  note: status.mode==='status'
+    ? 'Ready for an authorized CES API or session transport. No credentials are persisted.'
+    : undefined
+},null,2));
