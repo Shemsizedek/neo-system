@@ -7,6 +7,7 @@ import { pathToFileURL } from 'node:url';
 import { inspectNeopassCloudRunMetadata } from './ki016-gcp-readonly-audit.mjs';
 
 const EXPECTED_SERVICE = 'neo-temple-giss';
+const EXPECTED_ISSUER = 'neo-pass';
 const RESTRICTED_ROLES = new Set([
   'roles/owner', 'roles/editor',
   'roles/secretmanager.admin',
@@ -51,6 +52,11 @@ export function extractGissIamTarget(service, { projectId } = {}) {
 
 export function inspectGissSecretIamPolicy({ service, policy, projectId } = {}) {
   const metadata = inspectNeopassCloudRunMetadata(service);
+  const containers = service?.spec?.template?.spec?.containers || service?.template?.containers || [];
+  const issuers = Array.isArray(containers) ? containers.flatMap(container =>
+    Array.isArray(container.env) ? container.env.filter(entry => entry?.name === 'NEO_PASS_JWT_ISSUER') : []) : [];
+  const expectedIssuerVerified = issuers.length === 1 && issuers[0].value === EXPECTED_ISSUER &&
+    !issuers[0].valueFrom && !issuers[0].valueSource;
   const target = extractGissIamTarget(service, { projectId });
   const policyReadable = policy && typeof policy === 'object' && !Array.isArray(policy) &&
     Array.isArray(policy.bindings);
@@ -67,7 +73,7 @@ export function inspectGissSecretIamPolicy({ service, policy, projectId } = {}) 
     }
   }
   const ready = metadata.metadataReady === true &&
-    metadata.issuerExplicitlyConfigured === true &&
+    metadata.issuerExplicitlyConfigured === true && expectedIssuerVerified &&
     Boolean(target) && Boolean(policyReadable) && direct && !broad;
 
   // Secret-level IAM policy is not a test of effective runtime access:
@@ -79,6 +85,7 @@ export function inspectGissSecretIamPolicy({ service, policy, projectId } = {}) 
     serviceIdentityBound: Boolean(target),
     signingSecretReferenceValid: Boolean(target),
     issuerConfigured: metadata.issuerExplicitlyConfigured === true,
+    issuerMatchesNEOpassContract: expectedIssuerVerified,
     oauthClientConfigured: metadata.oauthClientConfigured === true,
     metadataReady: metadata.metadataReady === true,
     secretIamPolicyReadable: Boolean(policyReadable),
