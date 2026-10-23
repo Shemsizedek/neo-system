@@ -10,7 +10,7 @@ import {
 const {publicKey,privateKey}=crypto.generateKeyPairSync('ed25519')
 const publicKeyPem=publicKey.export({format:'pem',type:'spki'})
 const privateKeyPem=privateKey.export({format:'pem',type:'pkcs8'})
-const payload={hashrateTh:90,powerW:2800,temperatureC:65,poolConnected:true}
+const payload={hashrateTh:90,powerW:2800,temperatureC:65,poolConnected:true,source:'ANTMINER_STYLE'}
 function enrolled(){
   const challenge=verifyEnrollmentChallenge(
     createEnrollmentChallenge({minerId:'NEO-ASIC-01',publicKey:publicKeyPem}),
@@ -62,4 +62,5 @@ test('simulated or invalid readings are blocked before signature attribution',()
   const base=enrolled()
   assert.throws(()=>registerSignedTelemetry(base,{...envelope(),payload:{...payload,simulation:true}}),/INVALID_TELEMETRY_PAYLOAD/)
   assert.throws(()=>registerSignedTelemetry(base,{...envelope(),payload:{...payload,hashrateTh:Infinity}}),/INVALID_TELEMETRY_MEASUREMENTS/)
+  assert.throws(()=>registerSignedTelemetry(base,{...envelope(),payload:{...payload,source:'REFERENCE_ADAPTER'}}),/UNAPPROVED_HASHING_ADAPTER/)
 })
