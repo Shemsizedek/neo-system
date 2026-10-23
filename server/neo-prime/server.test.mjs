@@ -110,3 +110,21 @@ test('Oracle staging serves a visible noncached HTML shell on root and oracle ro
     }
   })
 })
+
+test('Oracle evidence API fails closed without operator authentication', async () => {
+  await withServer(async (base) => {
+    const response = await fetch(`${base}/api/oracle/evidence`, {method:'POST', headers:{'content-type':'application/json'},body:'{}'})
+    assert.equal(response.status,401)
+  }, {env:{NEO_PRIME_OPERATOR_TOKEN:'test-secret'}})
+})
+test('Oracle evidence API refuses to claim independent chain verification', async () => {
+  await withServer(async (base) => {
+    const evidence = {source:'neo-scan',network:'signet',txid:'a'.repeat(64),blockHash:'b'.repeat(64),confirmations:3,observedAt:new Date().toISOString(),asset:'NOMNI'}
+    const response = await fetch(`${base}/api/oracle/evidence`,{method:'POST',headers:{'content-type':'application/json',authorization:'Bearer test-secret'},body:JSON.stringify(evidence)})
+    assert.equal(response.status,200)
+    const data = await response.json()
+    assert.equal(data.assessment.publishable,false)
+    assert.equal(data.assessment.status,'unverified')
+    assert.equal(data.networkVerification,'not-connected')
+  },{env:{NEO_PRIME_OPERATOR_TOKEN:'test-secret'}})
+})
