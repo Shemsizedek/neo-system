@@ -1,0 +1,19 @@
+{
+  "schema_version":1,
+  "gate":143,
+  "name":"NEO Credit Origination & Contract Execution Fabric",
+  "domains":["OFFER_ACCEPTANCE","DISCLOSURE","AGREEMENT_VERSION","SIGNATURE","CONDITION_PRECEDENT","FUNDING_READINESS","ORIGINATION_EVIDENCE"],
+  "controls":{
+    "accepted_unexpired_offer_required":true,
+    "jurisdiction_disclosure_policy_required":true,
+    "agreement_version_required":true,
+    "external_or_multisignature_signer_required":true,
+    "private_keys":"NEVER_STORED",
+    "conditions_precedent_required":true,
+    "funding_readiness_not_funding":true,
+    "pricing_integration":"GATE142",
+    "underwriting_integration":"GATE141",
+    "funding_integration":"GATE134"
+  },
+  "authority_boundary":"This fabric manages internal/community origination records and contract execution evidence. It does not by itself establish external lending authority, e-signature validity, disclosure compliance, licensing, or enforceability in any jurisdiction."
+}
