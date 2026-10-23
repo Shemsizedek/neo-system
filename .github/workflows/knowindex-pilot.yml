@@ -1,0 +1,38 @@
+name: KNOWINDEX World Library controlled pilot
+on:
+  push:
+    branches:
+      - feature/knowindex-world-library-source
+    paths:
+      - 'apps/noogle/index/knowindex-pilot.mjs'
+      - 'apps/noogle/index/knowindex-pilot.test.mjs'
+      - 'scripts/run-knowindex-pilot.mjs'
+      - '.github/workflows/knowindex-pilot.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  controlled-crawl:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run KNOWINDEX unit tests
+        run: node --test apps/noogle/index/knowindex-pilot.test.mjs
+      - name: Crawl approved public World Library subtree
+        env:
+          KNOWINDEX_PILOT_APPROVED: 'true'
+        run: node scripts/run-knowindex-pilot.mjs
+      - name: Upload provenance and generated index for review
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: knowindex-pilot-evidence
+          path: |
+            data/knowindex/pilot-report.json
+            public/api/noogle/knowindex.json
+          if-no-files-found: warn
+          retention-days: 14
