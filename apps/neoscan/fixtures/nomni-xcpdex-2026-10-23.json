@@ -1,0 +1,22 @@
+{
+  "schema_version": "nomni.external-market-observation.v0.1",
+  "asset": "NOMNI",
+  "source": "XCPDEX screenshot supplied by project owner",
+  "source_url": "https://xcpdex.com/NOMNI",
+  "captured_local_date": "2026-10-23",
+  "data_type": "user-supplied-screen-observation",
+  "pair": "NOMNI/XCP",
+  "displayed_last_price_xcp_per_nomni": "9.00000000",
+  "displayed_change_all_percent": "+125.00%",
+  "displayed_supply": "900.00M",
+  "displayed_holder_count": 837,
+  "displayed_locked": true,
+  "displayed_usd_equivalent": "approximately $43.25",
+  "displayed_best_dispenser_price_btc": "0.00000068",
+  "caveats": [
+    "Screenshot is a historical display, not independently verified live market data.",
+    "Quoted XCPDEX price is not a third-party reserve, index, or legal ownership attestation.",
+    "Chart and last-trade display may be thinly traded or stale.",
+    "Do not replace Crown Chain financial evidence with this source."
+  ]
+}
