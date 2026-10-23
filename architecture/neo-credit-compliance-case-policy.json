@@ -1,0 +1,19 @@
+{
+  "schema_version":1,
+  "gate":139,
+  "name":"NEO Credit Compliance Case Management & Regulatory Evidence Fabric",
+  "domains":["CASE_FILE","INVESTIGATION","DEADLINE","NOTICE","ADVERSE_ACTION","FURNISHER_RESPONSE","EVIDENCE_PACKAGE","CORRECTION_HANDOFF","AUDIT_EXPORT"],
+  "controls":{
+    "case_required_for_material_exception":true,
+    "deadline_policy_required":true,
+    "jurisdiction_specific_notice_templates_required":true,
+    "adverse_action_reason_codes_required":true,
+    "evidence_lineage_required":true,
+    "correction_handoff":"GATE137",
+    "qa_integration":"GATE138",
+    "tradeline_integration":"GATE136",
+    "servicing_integration":"GATE135",
+    "external_legal_determination":"NOT_AUTOMATIC"
+  },
+  "authority_boundary":"This fabric manages internal/community compliance cases and evidence. It does not itself provide legal conclusions, create regulator authority, or establish compliance with any external jurisdiction absent separately verified requirements."
+}
