@@ -36,10 +36,23 @@ export function createBudgetSimulator({ capMicrousd } = {}) {
     entry.status = 'unknown'
     return { allowed: true }
   }
+  // Reconcile unknown attempts only against externally verified final charges.
+  function reconcile({ key, verifiedCostMicrousd }) {
+    const entry = reservations.get(key)
+    if (!entry || entry.status !== 'unknown') return { allowed: false, reason: 'not_reconcilable' }
+    if (!valid(verifiedCostMicrousd) || verifiedCostMicrousd > entry.amountMicrousd) {
+      return { allowed: false, reason: 'invalid_reconciliation' }
+    }
+    reserved -= entry.amountMicrousd
+    settled += verifiedCostMicrousd
+    entry.status = 'reconciled'
+    entry.costMicrousd = verifiedCostMicrousd
+    return { allowed: true }
+  }
   function snapshot() {
     return { capMicrousd, reservedMicrousd: reserved, settledMicrousd: settled,
       availableMicrousd: capMicrousd - reserved - settled,
       entries: [...reservations.entries()].map(([key, entry]) => ({ key, ...entry })) }
   }
-  return { reserve, settle, markUnknown, snapshot }
+  return { reserve, settle, markUnknown, reconcile, snapshot }
 }
