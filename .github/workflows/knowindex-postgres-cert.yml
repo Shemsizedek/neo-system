@@ -1,0 +1,63 @@
+name: KI-015 PostgreSQL Durable Knowledge Certification
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'server/neo-knowindex/**'
+      - 'scripts/verify-ki015-postgres-restore.mjs'
+      - '.github/workflows/knowindex-postgres-cert.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  isolated-database-certification:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: neo_ki015_ci
+          POSTGRES_PASSWORD: ci-only-database-password
+          POSTGRES_DB: knowindex_ci_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U neo_ki015_ci -d knowindex_ci_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      KNOWINDEX_PG_TEST_URL: postgresql://neo_ki015_ci:ci-only-database-password@127.0.0.1:5432/knowindex_ci_test
+      KNOWINDEX_PG_RESTORE_URL: postgresql://neo_ki015_ci:ci-only-database-password@127.0.0.1:5432/knowindex_ci_restore
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install locked workspace dependencies and CI-only Postgres driver
+        run: |
+          npm ci
+          npm install --no-save --package-lock=false --ignore-scripts pg@8.16.3
+      - name: Certify isolated Postgres contribution and audit ledger
+        run: node --test server/neo-knowindex/postgres-ledger.test.mjs
+      - name: Certify existing API authentication and fail-closed compatibility
+        run: node --test server/neo-knowindex/http.test.mjs server/neo-knowindex/platform-integration.test.mjs
+      - name: Perform fresh-database logical backup and restore drill
+        shell: bash
+        run: |
+          set -euo pipefail
+          container="$(docker ps --filter ancestor=postgres:16 --format '{{.ID}}' | head -n 1)"
+          test -n "$container"
+          docker exec "$container" pg_dump -U neo_ki015_ci -d knowindex_ci_test -n knowindex --format=custom > "$RUNNER_TEMP/knowindex-ci-only.dump"
+          test -s "$RUNNER_TEMP/knowindex-ci-only.dump"
+          docker exec "$container" psql -U neo_ki015_ci -d postgres -v ON_ERROR_STOP=1 -c 'CREATE DATABASE knowindex_ci_restore;'
+          docker exec -i "$container" pg_restore -U neo_ki015_ci -d knowindex_ci_restore --no-owner --no-acl --exit-on-error < "$RUNNER_TEMP/knowindex-ci-only.dump"
+          node scripts/verify-ki015-postgres-restore.mjs
+          rm -f "$RUNNER_TEMP/knowindex-ci-only.dump"
+          echo 'KI-015 isolated CI database backup and restore: passed.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'This is NOT a certification of any production database or production NEOpass service.' >> "$GITHUB_STEP_SUMMARY"
