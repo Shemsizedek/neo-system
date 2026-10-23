@@ -1,3 +1,4 @@
+import {buildInvestmentCard} from './investment-card-engine.mjs';
 import http from 'node:http';
 import {readFile} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
@@ -15,6 +16,8 @@ export function createMetadataServer({store,resolveAsset=createAssetResolver()})
       const requestUrl=new URL(req.url,'http://localhost'),path=requestUrl.pathname;
       if(path==='/assets/NOMNI/tokenscan.json')return send(200,await readFile(new URL('./nomni-tokenscan.json',import.meta.url),'utf8'));
       if(path==='/assets/explore'){const asset=requestUrl.searchParams.get('asset')||'KNOWINDEX';if(!/^[A-Za-z0-9_.-]{1,255}$/.test(asset))return send(400,{error:'invalid_asset'});res.writeHead(302,{location:'/assets/'+encodeURIComponent(asset)+'/explore.html'});return res.end();}
+      const investment=path.match(/^\/assets\/([^/]+)\/investment-card\.json$/);
+      if(investment){const asset=decodeURIComponent(investment[1]);if(!/^[A-Za-z0-9_.-]{1,255}$/.test(asset))return send(400,{error:'invalid_asset'});const data=await resolveAsset(asset);return send(200,buildInvestmentCard(asset,data));}
       const showcase=path.match(/^\/assets\/([^/]+)\/showcase\.json$/);
       if(showcase){const asset=decodeURIComponent(showcase[1]);if(!/^[A-Za-z0-9_.-]{1,255}$/.test(asset))return send(400,{error:'invalid_asset'});const data=await resolveAsset(asset);const payload=buildShowcase(asset,data);const sha256=createHash('sha256').update(JSON.stringify(payload),'utf8').digest('hex');return send(200,{payload,integrity:{algorithm:'SHA-256',sha256,encoding:'UTF-8 JSON.stringify(payload)',blockchain_anchor_verified:false}});}
       const resolved=path.match(/^\/assets\/([^/]+)\/(resolve\.json|explore\.html)$/);
