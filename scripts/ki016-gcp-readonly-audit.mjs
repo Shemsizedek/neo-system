@@ -33,7 +33,8 @@ export function inspectNeopassCloudRunMetadata(service) {
   };
   report.metadataReady = report.serviceMetadataReadable && report.runtimeIdentityBound &&
     report.signingSecretBoundToSecretManager &&
-    !report.signingSecretLiteralPresent && report.oauthClientConfigured;
+    !report.signingSecretLiteralPresent && report.oauthClientConfigured &&
+    report.issuerExplicitlyConfigured;
   return report;
 }
 
