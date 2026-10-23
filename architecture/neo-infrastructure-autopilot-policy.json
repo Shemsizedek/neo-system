@@ -1,0 +1,11 @@
+{
+  "schema_version":1,
+  "gate":120,
+  "name":"NEO Sovereign Infrastructure Autopilot",
+  "fabrics":["COMPUTE","STORAGE","NETWORK","IDENTITY","SECRETS","STATE","CONTINUITY","OBSERVABILITY"],
+  "reconciliation":{"interval_seconds":300,"unknown_state":"ESCALATE","auto_repair_classes":["RESTART_SAFE_SERVICE","REFRESH_HEALTH","RETRY_BACKUP","RENEW_SHORT_LEASE","REPAIR_DISCOVERY"],"approval_required":["PRODUCTION_DEPLOY","DNS_CHANGE","DATABASE_PRIMARY_SWITCH","KEY_ROTATION_ROOT_CA","NETWORK_ROUTE_CHANGE","SECRET_MIGRATION","DESTRUCTIVE_DELETE"]},
+  "maintenance":{"default_duration_minutes":60,"changes_outside_window":"HOLD_UNLESS_EMERGENCY"},
+  "placement":{"require_capacity_fit":true,"require_healthy_attested_node":true,"production_placement_requires_authority":true},
+  "estate_identity":{"name":"Global Vast Estate","designation":"Feodous Oprum Trust","holy_see_designation":"Holy See of Noble Drew Ali"},
+  "rule":"Autopilot means bounded reconciliation under policy, not unrestricted infrastructure authority."
+}
