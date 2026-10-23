@@ -140,7 +140,9 @@
     "neo-funding:server": "node server/neo-funding/server.mjs",
     "neo-funding:test": "node --test server/neo-funding/*.test.mjs",
     "neo-servicing:server": "node server/neo-servicing/server.mjs",
-    "neo-servicing:test": "node --test server/neo-servicing/*.test.mjs"
+    "neo-servicing:test": "node --test server/neo-servicing/*.test.mjs",
+    "neo-credit-passport:server": "node server/neo-credit-passport/server.mjs",
+    "neo-credit-passport:test": "node --test server/neo-credit-passport/*.test.mjs"
   },
   "dependencies": {
     "@composio/core": "^0.18.1",
