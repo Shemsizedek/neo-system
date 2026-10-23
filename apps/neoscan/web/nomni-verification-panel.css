@@ -1,0 +1,6 @@
+.nomni-verification-panel{max-width:960px;margin:1.5rem auto;padding:1.5rem;border:1px solid #325b42;border-radius:16px;background:#08120d;color:#f1f6f0;font:inherit}
+.nomni-verification-panel h2{margin-top:0}
+.nomni-verification-panel .nomni-verification-row{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;padding:.85rem 0;border-bottom:1px solid #284030}
+.nomni-verification-panel .nomni-verification-row span{color:#c6d5c7;text-align:right}
+.nomni-verification-disclosure{font-size:.85rem;color:#b6c7b7;line-height:1.45}
+@media(max-width:560px){.nomni-verification-panel .nomni-verification-row{display:block}.nomni-verification-panel .nomni-verification-row span{display:block;text-align:left;margin-top:.25rem}}
