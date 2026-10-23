@@ -78,12 +78,13 @@ export function buildInvestmentCard(asset,resolved={}){
 }
 
 export function auditCard(record){const p=record.payload;return {card_id:p.card_id,financial_figures_verified:false,warnings:Object.entries(p.card_data.financial_metrics).filter(([,m])=>m.status!=='NOT PROVIDED').map(([k,m])=>k+': '+m.status),record_mode:p.record_mode};}
-export function runCardCommand(command,{asset,resolved={},records=[]}={}){
+export function runCardCommand(command,{asset,resolved={},records=[],record=null}={}){
  const name=String(command).toUpperCase().replace(/^\//,'');
  if(name==='BATCH')return records.map(r=>buildInvestmentCard(r.asset,r.resolved));
  const kinds={'REAL-ESTATE':'real_estate',BUSINESS:'business_acquisition','PRIVATE-CAPITAL':'private_capital',PORTFOLIO:'portfolio'};
  if(kinds[name]){const declared=classifyCard(asset,resolved.ledger,resolved.metadata);if(declared.status==='ISSUER_DECLARED'&&declared.type!==kinds[name])throw Error('Command category conflicts with issuer-linked metadata.');resolved={...resolved,metadata:{...object(resolved.metadata),instrument_type:kinds[name]}};}
  if(!['CARD','REAL-ESTATE','BUSINESS','PRIVATE-CAPITAL','PORTFOLIO','TOKENIZED','SCORE','AUDIT','PROMPT','UPDATE','VERIFY'].includes(name))throw Error('Unsupported card command.');
+ if(name==='VERIFY'&&record)return {integrity_valid:record.integrity?.algorithm==='SHA-256'&&sha(record.payload)===record.integrity?.sha256,financial_figures_verified:false,blockchain_anchor_verified:false};
  const result=buildInvestmentCard(asset,resolved);
  if(name==='PROMPT')return {card_id:result.payload.card_id,image_prompt:result.payload.image_prompt};
  if(name==='AUDIT')return auditCard(result);
