@@ -76,3 +76,32 @@ test('explicitly opted-in platform route enforces session and keeps writes unpub
     });
   } finally { ledger.close(); }
 });
+
+
+test('KI-016 distinct KNOWINDEX member authority overrides generic portal membership', async () => {
+  const ledger = createKnowindexContributionLedger({ now: () => new Date(nowEpoch) });
+  try {
+    await runServer({
+      authService,
+      knowindexAuthService: {
+        async session(subject, claims) {
+          assert.equal(subject, 'google:ki014-test-member');
+          assert.equal(claims, undefined, 'role-bearing JWT claims must not enter authoritative registry');
+          return null;
+        }
+      },
+      knowindexContributionLedger: ledger,
+      knowindexWriteEnabled: true,
+      knowindexJwtSecret: secret
+    }, async base => {
+      const attempt = await fetch(base + '/api/v1/noogle/knowledge/contributions', {
+        method: 'POST',
+        headers: { authorization: 'Bearer ' + bearer, 'content-type': 'application/json' },
+        body: JSON.stringify(submission)
+      });
+      assert.equal(attempt.status, 403);
+      assert.equal((await attempt.json()).error, 'active_verified_neopass_required');
+      assert.equal(ledger.verifyAuditChain().checked, 0);
+    });
+  } finally { ledger.close(); }
+});
