@@ -1,0 +1,19 @@
+{
+  "schema_version":1,
+  "gate":136,
+  "name":"NEO Credit Bureau & Credit Passport Integration",
+  "domains":["TRADELINE","PROOF_OF_PAYMENT","PROOF_OF_CREDIT","METRO2_MAPPING","DISPUTE","RATING_HISTORY","CREDIT_PASSPORT","CROWN_CERTIFICATE"],
+  "controls":{
+    "source_evidence_required":true,
+    "servicing_integration":"GATE135",
+    "funding_integration":"GATE134",
+    "credit_control_integration":"GATE133",
+    "metro2_external_reporting":"DISABLED_UNTIL_CREDENTIALS_AND_ADAPTER_VERIFIED",
+    "external_bureau_status":"NOT_CLAIMED",
+    "public_passport_redaction_required":true,
+    "dispute_history_immutable":true,
+    "rating_model":"NEO_INTERNAL_100_POINT_5_STAR",
+    "crown_certificate":"INTEGRITY_AND_PROVENANCE_ONLY"
+  },
+  "authority_boundary":"This fabric creates an internal/community credit registry, rating and passport system. It does not by itself establish consumer-reporting-agency, data-furnisher, credit-bureau, e-OSCAR, or government authority."
+}
