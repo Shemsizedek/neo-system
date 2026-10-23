@@ -73,6 +73,7 @@ export function registerSignedTelemetry(miner,envelope,{nowMs=Date.now(),maxAgeM
   for(const key of ['hashrateTh','powerW','temperatureC']){
     if(typeof payload[key]!=='number'||!Number.isFinite(payload[key])||payload[key]<0)throw new Error('INVALID_TELEMETRY_MEASUREMENTS')
   }
+  if(!['ANTMINER_STYLE','WHATSMINER_STYLE'].includes(payload.source))throw new Error('UNAPPROVED_HASHING_ADAPTER')
   if(payload.hashrateTh<=0||payload.powerW<=0||payload.poolConnected!==true)throw new Error('MINER_NOT_ACTIVELY_HASHING')
   const {signature,...signed}=envelope
   let valid=false
@@ -94,7 +95,7 @@ export function fleetCapacitySnapshot(miners=[],{nowMs=Date.now(),maxAgeMs=60_00
       Number.isFinite(seen)&&seen<=nowMs+5_000&&seen>=nowMs-maxAgeMs&&
       t.poolConnected===true&&Number.isFinite(t.hashrateTh)&&t.hashrateTh>0&&
       Number.isFinite(t.powerW)&&t.powerW>0&&
-      Number.isFinite(t.temperatureC)&&t.temperatureC>=0&&t.temperatureC<thermalLimitC
+      Number.isFinite(t.temperatureC)&&t.temperatureC>0&&t.temperatureC<thermalLimitC
   })
   const total=eligible.reduce((sum,miner)=>sum+miner.telemetry.hashrateTh,0)
   return {
