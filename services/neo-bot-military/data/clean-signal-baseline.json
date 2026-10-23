@@ -1,0 +1,35 @@
+{
+  "operation": "CLEAN SIGNAL",
+  "platform": "instagram",
+  "account": "shemsizedek",
+  "baseline_date": "2026-09-04",
+  "source": "operator_supplied_first_party_screenshots",
+  "metrics": {
+    "followers": 2708,
+    "views_90d": 22030,
+    "viewers_90d": 4554,
+    "interactions_90d": 1130,
+    "net_followers_90d": 63,
+    "non_follower_view_pct_90d": 37.8
+  },
+  "observations": [
+    {
+      "class": "platform_record",
+      "statement": "Instagram displayed a historical Partner Monetization Policies restriction labeled Ineligible country or region dated 2024-09-29."
+    },
+    {
+      "class": "platform_record",
+      "statement": "A current Instagram eligibility screen displayed the U.S.-residence requirement as satisfied."
+    },
+    {
+      "class": "firsthand_observation",
+      "statement": "Operator reports recurring suspicious sexualized/bot-like accounts among Story viewers."
+    },
+    {
+      "class": "firsthand_observation",
+      "statement": "Operator reports legitimate follower relationships, including verified accounts, disappearing and later being re-established."
+    }
+  ],
+  "causation": "undetermined",
+  "notes": "Baseline preserves observations without asserting shadowbanning, coordinated interference, or malicious causation."
+}
