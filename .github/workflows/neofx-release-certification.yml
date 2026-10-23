@@ -1,0 +1,43 @@
+name: NEO FX release certification
+on:
+  pull_request:
+    paths:
+      - 'apps/neo-exchange/**'
+      - 'server/neofx/**'
+      - 'server/neo-edge/**'
+      - 'server/markets/**'
+      - 'deploy/neo-edge/**'
+      - '.github/workflows/neofx-release-certification.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  neofx-build-and-security:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run broker adapter tests
+        run: node --test server/neofx/*.test.mjs server/markets/*.test.mjs
+      - name: Build Cloud Run-served React frontend
+        working-directory: apps/neo-exchange
+        run: |
+          npm install --no-audit --no-fund
+          npm run build
+          test -s dist/index.html
+          find dist -type f -name '*.js' | grep -q .
+      - name: Verify shared-edge NEO FX release preflight (no deployment)
+        run: node scripts/neofx-release-check-049.mjs
+      - name: Validate edge syntax
+        run: |
+          node --check server/neo-edge/production.mjs
+          node --check server/neofx/alpaca-oauth.mjs
+          node --check server/neofx/alpaca-deployment-gate.mjs
+      - name: Explicit release posture
+        run: |
+          echo 'CI only. No production deployment, OAuth credential provisioning, or order execution occurs in this workflow.'
