@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "gate": "KI-020",
+  "observedAt": "2026-10-23T16:00:00Z",
+  "productionWritesApproved": false,
+  "selectedProductionDatabase": null,
+  "source": "connected Render and Neon read-only project listings",
+  "candidates": [
+    {
+      "provider": "render",
+      "name": "noogle-connect-dev",
+      "workstream": "noogle-connect",
+      "environment": "development",
+      "productionEligible": false,
+      "reason": "Expiring free development Postgres; no approved off-host backup"
+    },
+    {
+      "provider": "render",
+      "name": "neo-pads-production",
+      "workstream": "neo-pads",
+      "environment": "production",
+      "productionEligible": false,
+      "reason": "Shared-workstream access forbidden without independent authorization"
+    },
+    {
+      "provider": "neon",
+      "name": "neo-gem-approvals-staging",
+      "workstream": "neo-gem-approvals",
+      "environment": "staging",
+      "productionEligible": false,
+      "reason": "Other workstream; six-hour branch history is not an approved KNOWINDEX backup"
+    },
+    {
+      "provider": "neon",
+      "name": "neo-oracle-staging",
+      "workstream": "neo-oracle",
+      "environment": "staging",
+      "productionEligible": false,
+      "reason": "Other workstream; no KNOWINDEX storage approval"
+    },
+    {
+      "provider": "neon",
+      "name": "neo-bank-staging",
+      "workstream": "neo-bank",
+      "environment": "staging",
+      "productionEligible": false,
+      "reason": "Other workstream; no KNOWINDEX storage approval"
+    },
+    {
+      "provider": "neon",
+      "name": "neo-creditstore-staging",
+      "workstream": "neo-creditstore",
+      "environment": "staging",
+      "productionEligible": false,
+      "reason": "Other workstream; no KNOWINDEX storage approval"
+    },
+    {
+      "provider": "neon",
+      "name": "neo-deal-desk-staging",
+      "workstream": "neo-deal-desk",
+      "environment": "staging",
+      "productionEligible": false,
+      "reason": "Other workstream; no KNOWINDEX storage approval"
+    }
+  ],
+  "approvalRequired": [
+    "dedicated knowindex production database",
+    "operator and security ownership",
+    "database role least privilege",
+    "off-host backup retention",
+    "independent full recovery drill",
+    "live NEOpass contributor and distinct curator",
+    "protected IAM audit"
+  ]
+}

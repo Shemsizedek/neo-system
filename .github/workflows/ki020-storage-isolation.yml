@@ -1,0 +1,46 @@
+name: KI-020 Cross-cloud Storage Isolation Gate
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'server/neo-knowindex/storage-selection*'
+      - 'data/knowindex/ki020-storage-candidates.json'
+      - '.github/workflows/ki020-storage-isolation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-no-cross-product-db:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Test inventory ownership and fail-closed recovery certification
+        run: node --test server/neo-knowindex/storage-selection.test.mjs
+      - name: Assert existing assets are not authorized for KNOWINDEX writes
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import { screenKnowindexStorageInventory } from './server/neo-knowindex/storage-selection.mjs';
+          const inventory = JSON.parse(fs.readFileSync('data/knowindex/ki020-storage-candidates.json','utf8'));
+          const result = screenKnowindexStorageInventory(inventory);
+          if (result.status !== 'BLOCKED' || result.eligibleCandidateCount !== 0 ||
+              result.productionWritesApproved !== false) throw new Error('unexpected_storage_authorization');
+          console.log(JSON.stringify({
+            gate: result.gate,
+            status: result.status,
+            existingCandidates: inventory.candidates.length,
+            eligibleCandidateCount: result.eligibleCandidateCount,
+            productionWritesApproved: result.productionWritesApproved
+          }));
+          NODE
+          echo 'No connected Render/Neon database is authorized for KNOWINDEX production.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'This test does not create, modify, connect to or back up any actual database.' >> "$GITHUB_STEP_SUMMARY"
