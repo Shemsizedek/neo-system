@@ -53,6 +53,7 @@ test('collection contains three records and no certified financial claims', () =
   for (const card of deck.cards) {
     assert.equal(card.provenance.financial_claims_verified,false);
     assert.equal(card.provenance.ai_artwork_generated,false);
+    assert.equal(card.provenance.artwork_generated,true);
     assert.equal(card.provenance.vector_artwork_generated,true);
     assert.equal(card.issuer_verified,false);
     for (const claim of Object.values(card.financial_claims)) assert.equal(claim.classification,'unverified_operator_claim');
