@@ -38,14 +38,17 @@ export function prepareTestKi018Activation(ledger, {
       emergencyDisableDrill: sha256Hex('test-only-rollback-evidence')
     }
   };
-  const raw = Buffer.from(JSON.stringify(statement));
-  const envelope = {
-    payload: raw.toString('base64url'),
-    signatures: [
-      { role: 'operator', signature: sign(null, raw, operator.privateKey).toString('base64url') },
-      { role: 'security', signature: sign(null, raw, security.privateKey).toString('base64url') }
-    ]
+  const signEnvelope = nextStatement => {
+    const raw = Buffer.from(JSON.stringify(nextStatement));
+    return {
+      payload: raw.toString('base64url'),
+      signatures: [
+        { role: 'operator', signature: sign(null, raw, operator.privateKey).toString('base64url') },
+        { role: 'security', signature: sign(null, raw, security.privateKey).toString('base64url') }
+      ]
+    };
   };
+  const envelope = signEnvelope(statement);
   const trustKeys = {
     operator: operator.publicKey.export({ type: 'spki', format: 'pem' }),
     security: security.publicKey.export({ type: 'spki', format: 'pem' })
@@ -59,5 +62,5 @@ export function prepareTestKi018Activation(ledger, {
       databaseFingerprint
     });
   }
-  return { envelope, trustKeys, deploymentSha, statement };
+  return { envelope, trustKeys, deploymentSha, statement, signEnvelope };
 }
