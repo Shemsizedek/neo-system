@@ -115,3 +115,16 @@ test('live shell reflects available browser pairing and avoids false terminal cl
  assert.equal((await fetch(base+'/connect/terminal')).status,403);
  }finally{await new Promise(resolve=>server.close(resolve));}
 });
+
+test('Chromebook PWA is installable without exposing protected Noogle routes',async()=>{
+ const server=createStagingServer();await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+ try {
+  const base='http://127.0.0.1:'+server.address().port;
+  const manifest=await fetch(base+'/manifest.webmanifest');assert.equal(manifest.status,200);
+  assert.match(manifest.headers.get('content-type'),/application\/manifest\+json/);
+  const config=await manifest.json();assert.equal(config.display,'standalone');assert.equal(config.start_url,'/');
+  const icon=await fetch(base+'/noogle-icon.svg');assert.equal(icon.status,200);
+  const home=await (await fetch(base+'/')).text();assert.match(home,/rel="manifest"/);
+  assert.equal((await fetch(base+'/connect/session')).status,403);
+ } finally {await new Promise(resolve=>server.close(resolve));}
+});

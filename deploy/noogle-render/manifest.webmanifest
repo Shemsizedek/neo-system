@@ -1,0 +1,19 @@
+{
+  "id": "/",
+  "name": "Noogle Connect — Device Hub",
+  "short_name": "Noogle Connect",
+  "description": "Installable Chromebook and Android companion for Noogle Connect pairing preview and NEO Mask device readiness.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#071b17",
+  "theme_color": "#071b17",
+  "icons": [
+    {
+      "src": "/noogle-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
