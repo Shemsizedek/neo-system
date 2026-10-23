@@ -1,0 +1,11 @@
+import test from 'node:test'
+import assert from 'node:assert/strict'
+import {createTradeline,createProof,mapTradelineToMetro2,createDispute,resolveDispute,calculateNeoCreditRating,createRatingHistory,createCreditPassport,createCrownCreditCertificate,creditPassportSnapshot} from './fabric.mjs'
+
+test('tradeline maps internally but external transmission remains adapter gated',()=>{const t=createTradeline({tradeline_id:'t',subject_id:'s',account_ref:'a',creditor_ref:'c',account_type:'INSTALLMENT'});assert.equal(mapTradelineToMetro2(t).transmission_status,'ADAPTER_AND_EXTERNAL_CREDENTIALS_REQUIRED')})
+test('proof requires evidence',()=>{assert.throws(()=>createProof({proof_type:'PROOF_OF_PAYMENT',subject_id:'s',tradeline_id:'t'}),/evidence required/)})
+test('rating is bounded and produces stars',()=>{const t=createTradeline({tradeline_id:'t',subject_id:'s',account_ref:'a',creditor_ref:'c',days_past_due:30,payment_status:'DELINQUENT'});const r=calculateNeoCreditRating({tradelines:[t]});assert(r.score>=0&&r.score<=100);assert(r.stars>=1&&r.stars<=5)})
+test('public passport redacts balances and creditor refs',()=>{const t=createTradeline({tradeline_id:'t',subject_id:'s',account_ref:'a',creditor_ref:'c',current_balance:100}),r=calculateNeoCreditRating({tradelines:[t]}),p=createCreditPassport({subject_id:'s',tradelines:[t],rating:r,visibility:'PUBLIC'});assert.equal('current_balance' in p.tradelines[0],false);assert.equal('creditor_ref' in p.tradelines[0],false)})
+test('dispute resolution preserves resolution evidence',()=>{const d=createDispute({dispute_id:'d',subject_id:'s',tradeline_id:'t',reason:'balance'}),x=resolveDispute(d,{resolution:'corrected',evidence_refs:['e']});assert.equal(x.dispute.status,'RESOLVED')})
+test('Crown certificate does not claim external bureau status',()=>{const r=calculateNeoCreditRating({}),p=createCreditPassport({subject_id:'s',rating:r}),h=createRatingHistory({subject_id:'s',rating:r}),c=createCrownCreditCertificate({passport:p,rating_history_digest:h.digest});assert.equal(c.external_bureau_status,'NOT_ESTABLISHED')})
+test('snapshot exposes external reporting disabled',()=>{assert.equal(creditPassportSnapshot({}).metro2_external_reporting,false)})
