@@ -360,6 +360,16 @@
         "server/neo-observability/server.mjs",
         ".github/workflows/gate-119-sovereign-observability.yml"
       ]
+    },
+    {
+      "capability_id": "GATE-120-SOVEREIGN-INFRASTRUCTURE-AUTOPILOT",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "architecture/neo-infrastructure-autopilot-policy.json",
+        "server/neo-autopilot/fabric.mjs",
+        "server/neo-autopilot/server.mjs",
+        ".github/workflows/gate-120-sovereign-autopilot.yml"
+      ]
     }
   ],
   "autopilot": {
