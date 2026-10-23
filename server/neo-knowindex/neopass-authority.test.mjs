@@ -5,7 +5,7 @@ import { createServer } from 'node:http';
 import { createKnowindexNeopassAuthority } from './neopass-authority.mjs';
 import { createKnowindexContributionHttpHandler } from './http.mjs';
 import { createKnowindexContributionLedger } from './ledger.mjs';
-import { issueNeopassToken } from '../neo-platform-api/neopass-google-auth.mjs';
+import { issueNeopassToken, createGoogleNeopassAuth } from '../neo-platform-api/neopass-google-auth.mjs';
 
 const alice = 'google:alice-verified-0001';
 const bob = 'google:bob-verified-0002';
@@ -149,4 +149,44 @@ test('revocation and Firestore outage are checked on every HTTP operation', asyn
       assert.equal(demoted.status, 403);
     } finally { records.set(bob, prior); }
   });
+});
+
+
+test('KI-016 ignores signed executive bootstrap claims even with the generic NEOpass auth service', async () => {
+  const genericAuth = createGoogleNeopassAuth({
+    clientId: 'test-client',
+    jwtSecret: secret,
+    jwtIssuer: 'neo-pass',
+    registry: {
+      async getNEOpassCredential() { return null; },
+      async upsert() { throw new Error('must_not_be_called'); }
+    },
+    verifyGoogleCredential: async () => { throw new Error('must_not_be_called'); },
+    executiveAdminEmail: 'executive@example.org',
+    now: () => fixed
+  });
+  const dangerousClaims = { role: 'executive-admin', email: 'executive@example.org' };
+  // The broader portal supports bootstrap; KNOWINDEX must never grant bootstrap power.
+  assert.equal((await genericAuth.session(alice, dangerousClaims)).role, 'executive-admin');
+
+  const ledger = createKnowindexContributionLedger({ now: () => new Date(fixed) });
+  const handler = createKnowindexContributionHttpHandler({
+    ledger, authService: genericAuth, enabled: true, jwtSecret: secret, jwtIssuer: 'neo-pass', now: () => fixed
+  });
+  const server = createServer(async (req, res) => {
+    if (!await handler(req, res)) { res.statusCode = 404; res.end(); }
+  });
+  server.listen(0, '127.0.0.1');
+  await once(server, 'listening');
+  try {
+    const base = 'http://127.0.0.1:' + server.address().port;
+    const response = await request(base, endpoint, alice, submission, dangerousClaims);
+    assert.equal(response.status, 403);
+    assert.equal((await response.json()).error, 'active_verified_neopass_required');
+    assert.equal(ledger.verifyAuditChain().checked, 0);
+  } finally {
+    server.close();
+    await once(server, 'close');
+    ledger.close();
+  }
 });
