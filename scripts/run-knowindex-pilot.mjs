@@ -1,28 +1,61 @@
+import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
 import { crawlKnowindex } from '../apps/noogle/index/knowindex-pilot.mjs';
-import { NoogleIndexStore } from '../apps/noogle/index/store.mjs';
 
-if (process.env.KNOWINDEX_PILOT_APPROVED !== 'true') {
-  console.error('KNOWINDEX pilot requires KNOWINDEX_PILOT_APPROVED=true');
-  process.exitCode = 2;
-} else {
-  const registry = JSON.parse(await fs.readFile('apps/noogle/index/sources.json', 'utf8'));
-  const source = registry.sources.find(item => item.id === 'world-library-knowindex');
-  if (!source) throw new Error('KNOWINDEX source not registered');
+const reportFile = 'data/knowindex/pilot-report.json';
+const documentsFile = 'data/knowindex/pilot-documents.json';
+const sourceId = 'world-library-knowindex';
+const generatedAt = new Date().toISOString();
+const report = {
+  schemaVersion: 1,
+  generatedAt,
+  status: 'BLOCKED',
+  sourceId,
+  sourceUrl: null,
+  sourceRegistrySha256: null,
+  robots: null,
+  scope: null,
+  attemptedPages: 0,
+  crawled: 0,
+  errors: [],
+  records: [],
+  publicationAuthorized: false,
+  note: 'Read-only crawl evidence; no production index or Noogle publication was modified.'
+};
+
+try {
+  if (process.env.KNOWINDEX_PILOT_APPROVED !== 'true') throw new Error('pilot_not_approved');
+  const registryBytes = await fs.readFile('apps/noogle/index/sources.json');
+  report.sourceRegistrySha256 = crypto.createHash('sha256').update(registryBytes).digest('hex');
+  const registry = JSON.parse(registryBytes.toString('utf8'));
+  const source = registry.sources.find(item => item.id === sourceId);
+  if (!source) throw new Error('source_not_registered');
+  report.sourceUrl = source.url;
+  report.scope = {
+    maxDepth: Math.min(1, Number(source.crawl?.maxDepth) || 0),
+    maxPages: Math.min(10, Number(source.crawl?.maxPages) || 10),
+    delayMs: Math.max(1500, Number(source.crawl?.delayMs) || 1500)
+  };
   const result = await crawlKnowindex(source);
-  const report = { generatedAt: new Date().toISOString(), sourceId: result.sourceId, rootUrl: result.rootUrl, crawled: result.crawled, errors: result.errors, records: result.records.map(({ id, url, title, contentHash, retrievedAt, publisher }) => ({ id, url, title, contentHash, retrievedAt, publisher })) };
-  await fs.mkdir('data/knowindex', { recursive: true });
-  await fs.writeFile('data/knowindex/pilot-report.json', JSON.stringify(report, null, 2) + '\n');
-  if (result.errors.length || result.crawled === 0) {
-    console.error('KNOWINDEX pilot did not meet publication criteria; no index updated');
-    process.exitCode = 1;
-  } else {
-    const store = new NoogleIndexStore('data/noogle-index.json');
-    await store.load();
-    for (const record of result.records) store.upsert(record);
-    await store.save();
-    await fs.mkdir('public/api/noogle', { recursive: true });
-    await fs.writeFile('public/api/noogle/knowindex.json', JSON.stringify({ generatedAt: report.generatedAt, documents: result.records }, null, 2) + '\n');
-    console.log(JSON.stringify({ status: 'INDEXED', count: result.crawled, report: 'data/knowindex/pilot-report.json' }));
+  report.robots = result.robots;
+  report.attemptedPages = result.attemptedPages;
+  report.crawled = result.crawled;
+  report.errors = result.errors;
+  report.records = result.records.map(({ id, url, canonicalUrl, title, contentHash, contentBytes, contentType, httpStatus, retrievedAt, publisher, evidenceState }) => ({
+    id, url, canonicalUrl, title, contentHash, contentBytes, contentType, httpStatus, retrievedAt, publisher, evidenceState
+  }));
+  if (result.crawled > 0 && result.errors.length === 0) {
+    report.status = 'READY_FOR_REVIEW';
+    await fs.mkdir('data/knowindex', { recursive: true });
+    await fs.writeFile(documentsFile, JSON.stringify({
+      schemaVersion: 1, generatedAt, sourceId, documents: result.records
+    }, null, 2) + '\n');
   }
+} catch (error) {
+  report.errors.push({ url: report.sourceUrl, error: String(error?.message || error) });
 }
+
+await fs.mkdir('data/knowindex', { recursive: true });
+await fs.writeFile(reportFile, JSON.stringify(report, null, 2) + '\n');
+console.log(JSON.stringify({ status: report.status, crawled: report.crawled, attemptedPages: report.attemptedPages, reportFile, documentsFile: report.status === 'READY_FOR_REVIEW' ? documentsFile : null }));
+if (report.status !== 'READY_FOR_REVIEW') process.exitCode = 1;
