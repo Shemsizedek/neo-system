@@ -542,6 +542,17 @@
         "docs/NEO-G135-SERVICING-CREDIT-PERFORMANCE.md",
         ".github/workflows/gate-135-servicing-credit-performance.yml"
       ]
+    },
+    {
+      "capability_id": "GATE-136-CREDIT-BUREAU-PASSPORT",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "architecture/neo-credit-passport-policy.json",
+        "server/neo-credit-passport/fabric.mjs",
+        "server/neo-credit-passport/server.mjs",
+        "docs/NEO-G136-CREDIT-PASSPORT.md",
+        ".github/workflows/gate-136-credit-passport.yml"
+      ]
     }
   ],
   "autopilot": {
