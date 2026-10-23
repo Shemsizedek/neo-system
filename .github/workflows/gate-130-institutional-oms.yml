@@ -1,0 +1,18 @@
+name: Gate 130 Institutional OMS EMS
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['architecture/neo-institutional-oms-ems-policy.json','server/neo-oms/**','docs/NEO-G130-INSTITUTIONAL-OMS-EMS.md','package.json','.github/workflows/gate-130-institutional-oms.yml']
+  pull_request:
+    paths: ['architecture/neo-institutional-oms-ems-policy.json','server/neo-oms/**','docs/NEO-G130-INSTITUTIONAL-OMS-EMS.md','package.json','.github/workflows/gate-130-institutional-oms.yml']
+permissions: {contents: read}
+jobs:
+  oms:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 24}
+      - run: npm run neo-oms:test
+      - run: node --check server/neo-oms/server.mjs
