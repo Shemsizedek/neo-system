@@ -116,11 +116,17 @@ test('KI-015 Postgres durable ledger: isolated persistence, audit and disaster-r
       });
       await t.test('audit mutation detection fails closed on all later writes', async () => {
         // Owner simulates privileged corruption; test-only schema is reset by the CI container lifecycle.
+        const original = await ownerPool.query('SELECT previous_hash FROM knowindex.events WHERE seq=1');
         await ownerPool.query('ALTER TABLE knowindex.events DISABLE TRIGGER knowindex_events_no_update');
-        await ownerPool.query("UPDATE knowindex.events SET previous_hash='tampered' WHERE seq=1");
-        assert.equal((await store.verifyAuditChain()).valid, false);
-        await assert.rejects(store.submit(input({ url: 'https://example.org/after-tamper' }), contributor, 'after-tamper-0001'), code('audit_integrity_failed'));
-        await ownerPool.query('ALTER TABLE knowindex.events ENABLE TRIGGER knowindex_events_no_update');
+        try {
+          await ownerPool.query("UPDATE knowindex.events SET previous_hash='tampered' WHERE seq=1");
+          assert.equal((await store.verifyAuditChain()).valid, false);
+          await assert.rejects(store.submit(input({ url: 'https://example.org/after-tamper' }), contributor, 'after-tamper-0001'), code('audit_integrity_failed'));
+        } finally {
+          await ownerPool.query('UPDATE knowindex.events SET previous_hash=$1 WHERE seq=1', [original.rows[0].previous_hash]);
+          await ownerPool.query('ALTER TABLE knowindex.events ENABLE TRIGGER knowindex_events_no_update');
+        }
+        assert.equal((await store.verifyAuditChain()).valid, true);
       });
     } finally {
       await writerPool.end();
