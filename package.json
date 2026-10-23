@@ -11,7 +11,7 @@
     "neo-bank:test": "node --test server/neo-bank/*.test.mjs",
     "neo-bank:server": "node server/neo-bank/production.mjs",
     "build": "tsc -b && vite build && node scripts/publish-neo-gas-pages.mjs",
-    "test": "node --test server/neo-identity/*.test.mjs server/neo-crawler/*.test.mjs server/neo-router/*.test.mjs server/neo-prime/*.test.mjs server/neo-platform-api/*.test.mjs server/neo-tokenworks/*.test.mjs server/nibiru-reserve/*.test.mjs server/markets/*.test.mjs core/neo-algo/*.test.mjs server/tribunal-backend/*.test.mjs server/miner-agent/*.test.mjs server/miner-agent/adapters/*.test.mjs server/miner-controller/*.test.mjs server/miner-commerce/*.test.mjs server/miner-generator/*.test.mjs server/miner-production/*.test.mjs server/miner-telemetry-sidecar/*.test.mjs server/miner-cloud-run-readonly/*.test.mjs server/nibiru-pool-core/*.test.mjs server/neo-counter-backend/*.test.mjs server/neo-evidence-vault/*.test.mjs server/neo-enterprise/*.test.mjs server/neo-bots/*.test.mjs server/neo-deal-desk/*.test.mjs server/holytemples-adapter/*.test.mjs apps/neoscan/adapters/ces/*.test.mjs apps/neoscan/server/*.test.mjs apps/neo-dash/server/*.test.mjs modules/orange-esop/*.test.mjs apps/orange-esop/server/*.test.mjs server/neotherapy/*.test.mjs apps/noogle/index/knowindex-pilot.test.mjs apps/noogle/index/reviewed-snapshot.test.mjs",
+    "test": "node --test server/neo-identity/*.test.mjs server/neo-crawler/*.test.mjs server/neo-router/*.test.mjs server/neo-prime/*.test.mjs server/neo-platform-api/*.test.mjs server/neo-tokenworks/*.test.mjs server/nibiru-reserve/*.test.mjs server/markets/*.test.mjs core/neo-algo/*.test.mjs server/tribunal-backend/*.test.mjs server/miner-agent/*.test.mjs server/miner-agent/adapters/*.test.mjs server/miner-controller/*.test.mjs server/miner-commerce/*.test.mjs server/miner-generator/*.test.mjs server/miner-production/*.test.mjs server/miner-telemetry-sidecar/*.test.mjs server/miner-cloud-run-readonly/*.test.mjs server/nibiru-pool-core/*.test.mjs server/neo-counter-backend/*.test.mjs server/neo-evidence-vault/*.test.mjs server/neo-enterprise/*.test.mjs server/neo-bots/*.test.mjs server/neo-deal-desk/*.test.mjs server/holytemples-adapter/*.test.mjs apps/neoscan/adapters/ces/*.test.mjs apps/neoscan/server/*.test.mjs apps/neo-dash/server/*.test.mjs modules/orange-esop/*.test.mjs apps/orange-esop/server/*.test.mjs server/neotherapy/*.test.mjs apps/noogle/index/knowindex-pilot.test.mjs apps/noogle/index/reviewed-snapshot.test.mjs server/neo-knowindex/*.test.mjs",
     "preview": "vite preview",
     "crawl:neo": "node scripts/neo-sync-crawl.mjs",
     "crawl:noogle": "node scripts/build-noogle-index.mjs",
@@ -158,7 +158,8 @@
     "neo-credit-pricing:server": "node server/neo-credit-pricing/server.mjs",
     "neo-credit-pricing:test": "node --test server/neo-credit-pricing/*.test.mjs",
     "neo-origination:server": "node server/neo-origination/server.mjs",
-    "neo-origination:test": "node --test server/neo-origination/*.test.mjs"
+    "neo-origination:test": "node --test server/neo-origination/*.test.mjs",
+    "knowindex:contributions:test": "node --test server/neo-knowindex/*.test.mjs"
   },
   "dependencies": {
     "@composio/core": "^0.18.1",
