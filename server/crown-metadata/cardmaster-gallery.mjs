@@ -80,7 +80,7 @@ export function createCardmasterCollection({tickerPacket = null, now = currentTi
       ...core, motif: seed.motif,
       market_data: attributeTickerMarket(tickerPacket, seed.market_pair, {now: new Date(generatedAt)}),
       artwork: {...core.artwork, status: 'vector_rendered', renderer: 'deterministic_svg', generated_image_url: null},
-      provenance: {...core.provenance, vector_artwork_generated: true, ai_artwork_generated: false, financial_claims_verified: false}
+      provenance: {...core.provenance, artwork_generated: true, vector_artwork_generated: true, ai_artwork_generated: false, financial_claims_verified: false}
     };
     return {...enriched, content_hash: sha256(enriched), hash_algorithm: 'sha256-json-utf8'};
   });
