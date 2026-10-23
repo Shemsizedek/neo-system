@@ -531,6 +531,17 @@
         "docs/NEO-G134-INSTITUTIONAL-FUNDING.md",
         ".github/workflows/gate-134-institutional-funding.yml"
       ]
+    },
+    {
+      "capability_id": "GATE-135-SERVICING-CREDIT-PERFORMANCE",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "architecture/neo-servicing-credit-performance-policy.json",
+        "server/neo-servicing/fabric.mjs",
+        "server/neo-servicing/server.mjs",
+        "docs/NEO-G135-SERVICING-CREDIT-PERFORMANCE.md",
+        ".github/workflows/gate-135-servicing-credit-performance.yml"
+      ]
     }
   ],
   "autopilot": {
