@@ -125,7 +125,8 @@
     "neo-merchant-network:test": "node --test server/neo-merchant-network/*.test.mjs",
     "neo-merchant-treasury:server": "node server/neo-merchant-treasury/server.mjs",
     "neo-merchant-treasury:test": "node --test server/neo-merchant-treasury/*.test.mjs",
-    "crown:cardmaster:test": "node --test server/crown-metadata/cardmaster*.test.mjs server/crown-metadata/counterparty-order-evidence.test.mjs api/crown/cardmaster.test.mjs deploy/crown-cardmaster-render/*.test.mjs"
+    "crown:cardmaster:test": "node --test server/crown-metadata/cardmaster*.test.mjs server/crown-metadata/counterparty-order-evidence.test.mjs api/crown/cardmaster.test.mjs deploy/crown-cardmaster-render/*.test.mjs",
+    "crown:studio:test": "node --test server/crown-metadata/cardmaster-studio.test.mjs deploy/crown-cardmaster-render/server.test.mjs"
   },
   "dependencies": {
     "@composio/core": "^0.18.1",
