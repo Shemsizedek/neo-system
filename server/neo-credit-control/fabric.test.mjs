@@ -1,0 +1,11 @@
+import test from 'node:test'
+import assert from 'node:assert/strict'
+import {createCreditFacility,createHaircutSchedule,createMarginAgreement,evaluateCollateral,evaluateConcentration,calculateCreditUtilization,evaluateCreditRequest,createFinancingTerms,creditSnapshot} from './fabric.mjs'
+
+test('secured credit requires collateral and margin agreement',()=>{const f=createCreditFacility({facility_id:'f',institution_id:'i',account_id:'a',credit_limit:100});assert.equal(calculateCreditUtilization({facility:f}).available,false)})
+test('haircut reduces eligible collateral',()=>{const s=createHaircutSchedule({schedule_id:'s',rules:[{asset:'BTC',haircut_bps:2000}]});const e=evaluateCollateral({records:[{asset:'BTC',market_value:100}],schedule:s});assert.equal(e.eligible_value,80)})
+test('concentration limits are enforced',()=>{const s=createHaircutSchedule({schedule_id:'s',rules:[{asset:'BTC',haircut_bps:0,max_concentration:.5},{asset:'XCP',haircut_bps:0,max_concentration:1}]});const e=evaluateCollateral({records:[{asset:'BTC',market_value:80},{asset:'XCP',market_value:20}],schedule:s});assert.equal(evaluateConcentration(e).within_limits,false)})
+test('available credit respects limit and eligible collateral',()=>{const f=createCreditFacility({facility_id:'f',institution_id:'i',account_id:'a',credit_limit:100}),a=createMarginAgreement({agreement_id:'m',facility_id:'f',initial_margin_bps:2000}),s=createHaircutSchedule({schedule_id:'s',rules:[{asset:'BTC',haircut_bps:0}]}),e=evaluateCollateral({records:[{asset:'BTC',market_value:100}],schedule:s}),u=calculateCreditUtilization({facility:f,outstanding:10,collateralEvaluation:e,agreement:a});assert.equal(u.available_credit,80)})
+test('credit approval does not execute financing',()=>{const r=evaluateCreditRequest({facility:{status:'ACTIVE'},utilization:{available:true,available_credit:10},amount:5,concentration:{within_limits:true}});assert.equal(r.approved,true);assert.equal(r.execution_enabled,false)})
+test('financing terms are not funded',()=>{assert.equal(createFinancingTerms({terms_id:'t',facility_id:'f'}).status,'TERMS_RECORDED_NOT_FUNDED')})
+test('snapshot keeps execution disabled',()=>{assert.equal(creditSnapshot({}).execution_enabled,false)})

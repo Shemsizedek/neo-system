@@ -509,6 +509,17 @@
         "docs/NEO-G132-PRIME-ACCOUNT-FABRIC.md",
         ".github/workflows/gate-132-prime-account-fabric.yml"
       ]
+    },
+    {
+      "capability_id": "GATE-133-INSTITUTIONAL-CREDIT-COLLATERAL-CONTROL",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "architecture/neo-institutional-credit-policy.json",
+        "server/neo-credit-control/fabric.mjs",
+        "server/neo-credit-control/server.mjs",
+        "docs/NEO-G133-INSTITUTIONAL-CREDIT-CONTROL.md",
+        ".github/workflows/gate-133-institutional-credit.yml"
+      ]
     }
   ],
   "autopilot": {

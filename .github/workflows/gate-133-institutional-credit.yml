@@ -1,0 +1,18 @@
+name: Gate 133 Institutional Credit Control
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['architecture/neo-institutional-credit-policy.json','server/neo-credit-control/**','docs/NEO-G133-INSTITUTIONAL-CREDIT-CONTROL.md','package.json','.github/workflows/gate-133-institutional-credit.yml']
+  pull_request:
+    paths: ['architecture/neo-institutional-credit-policy.json','server/neo-credit-control/**','docs/NEO-G133-INSTITUTIONAL-CREDIT-CONTROL.md','package.json','.github/workflows/gate-133-institutional-credit.yml']
+permissions: {contents: read}
+jobs:
+  credit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 24}
+      - run: npm run neo-credit-control:test
+      - run: node --check server/neo-credit-control/server.mjs
