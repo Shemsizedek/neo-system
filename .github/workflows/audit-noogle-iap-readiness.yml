@@ -1,0 +1,46 @@
+name: Noogle IAP Readiness Audit
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+  id-token: write
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    environment: holytemples-production
+    env:
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID || secrets.GCP_PROJECT_ID }}
+      GCP_REGION: ${{ vars.GCP_REGION || secrets.GCP_REGION }}
+      GCP_WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER || secrets.GCP_WIF_PROVIDER }}
+      GCP_CLOUD_RUN_SERVICE_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_SERVICE_ACCOUNT || secrets.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+    steps:
+      - uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@v3
+      - name: Inspect IAP API and existing backend authorization
+        shell: bash
+        run: |
+          set -euo pipefail
+          gcloud services list --enabled --project="$GCP_PROJECT_ID" --format='value(config.name)' > /tmp/enabled-apis
+          if grep -qx 'iap.googleapis.com' /tmp/enabled-apis; then
+            echo "IAP API: enabled"
+          else
+            echo "IAP API: not enabled (no changes made)"
+          fi
+          gcloud compute backend-services list --global --project="$GCP_PROJECT_ID" --format=json > /tmp/backends.json
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          const backends=JSON.parse(fs.readFileSync('/tmp/backends.json','utf8'));
+          console.log('Existing global backend count:',backends.length);
+          for(const b of backends) {
+            console.log('Backend',b.name,'IAP:',b.iap?.enabled===true?'enabled':'disabled-or-unset');
+          }
+          const noogle=backends.filter(b=>/noogle|connect/i.test(b.name||''));
+          console.log('Dedicated Noogle backends:',noogle.length);
+          console.log('Noogle IAP ready:',noogle.length>0&&noogle.every(b=>b.iap?.enabled===true));
+          JS
+          gcloud run services describe noogle-connect-staging --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format='value(status.latestReadyRevisionName,metadata.annotations.run.googleapis.com/ingress)' || true
+          echo "READ ONLY: OAuth client, IAP permissions and end-user access still require independent certification."
