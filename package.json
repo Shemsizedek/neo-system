@@ -124,7 +124,9 @@
     "neo-merchant-network:server": "node server/neo-merchant-network/server.mjs",
     "neo-merchant-network:test": "node --test server/neo-merchant-network/*.test.mjs",
     "neo-merchant-treasury:server": "node server/neo-merchant-treasury/server.mjs",
-    "neo-merchant-treasury:test": "node --test server/neo-merchant-treasury/*.test.mjs"
+    "neo-merchant-treasury:test": "node --test server/neo-merchant-treasury/*.test.mjs",
+    "neo-conversion:server": "node server/neo-conversion/server.mjs",
+    "neo-conversion:test": "node --test server/neo-conversion/*.test.mjs"
   },
   "dependencies": {
     "@composio/core": "^0.18.1",
