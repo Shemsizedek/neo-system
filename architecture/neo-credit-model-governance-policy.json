@@ -1,0 +1,18 @@
+{
+  "schema_version":1,
+  "gate":140,
+  "name":"NEO Credit Governance & Model Risk Control",
+  "domains":["MODEL_REGISTRY","VERSIONING","VALIDATION","BACKTESTING","APPROVAL","OVERRIDE","REASON_CODES","DRIFT","RETIREMENT","MODEL_EVIDENCE"],
+  "controls":{
+    "unversioned_model_use":"PROHIBITED",
+    "unapproved_model_use":"PROHIBITED",
+    "silent_model_change":"PROHIBITED",
+    "adverse_action_reason_requires_approved_reason_code":true,
+    "override_requires_actor_reason_and_evidence":true,
+    "drift_monitoring_required":true,
+    "retired_model_use":"PROHIBITED",
+    "credit_passport_integration":"GATE136",
+    "compliance_case_integration":"GATE139"
+  },
+  "authority_boundary":"This is an internal model-governance framework. It does not establish external regulatory model-risk compliance, fair-lending compliance, or legal sufficiency without separately verified requirements and review."
+}
