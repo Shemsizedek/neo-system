@@ -20,5 +20,6 @@
       "name": "1 NOMNI Bill — source and integrity",
       "data": "https://neoscan.holytemples.org/media/nomni-bill-1.json"
     }
-  ]
+  ],
+  "instrument_type": "currency"
 }
