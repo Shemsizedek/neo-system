@@ -1,0 +1,18 @@
+name: Gate 122 Community Clearing and Settlement
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['architecture/neo-clearing-settlement-policy.json','server/neo-clearing/**','docs/NEO-G122-COMMUNITY-CLEARING-SETTLEMENT.md','package.json','.github/workflows/gate-122-community-clearing.yml']
+  pull_request:
+    paths: ['architecture/neo-clearing-settlement-policy.json','server/neo-clearing/**','docs/NEO-G122-COMMUNITY-CLEARING-SETTLEMENT.md','package.json','.github/workflows/gate-122-community-clearing.yml']
+permissions: {contents: read}
+jobs:
+  clearing:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 24}
+      - run: npm run neo-clearing:test
+      - run: node --check server/neo-clearing/server.mjs
