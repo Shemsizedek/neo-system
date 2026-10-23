@@ -52,6 +52,19 @@ jobs:
           status,headers,body=fetch('/api/crown/cardmaster?format=svg&card_id=NEO-CARD-000002&face=back')
           assert status==200 and b'<svg' in body and b'<script' not in body
           print('SVG API: OK')
+          status,headers,body=fetch('/api/crown/order-evidence')
+          assert status==200,(status,body[:200])
+          evidence=json.loads(body)
+          assert evidence['schema']=='neo.crown.counterparty.order-evidence.v1'
+          assert evidence['market_quote_verified'] is False and evidence['price'] is None
+          assert evidence['read_only'] is True and len(evidence['pairs'])==2
+          for entry in evidence['pairs']:
+              assert entry['pair'] in ('NOMNI/XCP','NOMNI/BTC')
+              assert entry['status'] in ('no_open_orders','open_listings_present','unavailable')
+              assert entry['price'] is None and entry['price_verified'] is False
+              if entry['status']=='no_open_orders':
+                  assert entry['open_order_count']==0 and entry['orders']==[]
+          print('Counterparty order evidence and no fabricated price: OK')
           status,headers,body=fetch('/api/crown/cardmaster')
           assert status==200,(status,body[:300])
           deck=json.loads(body)
