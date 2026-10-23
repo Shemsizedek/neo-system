@@ -1,0 +1,28 @@
+{
+  "schema_version":1,
+  "gate":130,
+  "name":"NEO Institutional Order Management & Execution Management System",
+  "order_states":["NEW","RISK_CHECKED","APPROVED","WORKING","PARTIALLY_FILLED","FILLED","CANCELLED","REJECTED","ALLOCATED","SETTLED"],
+  "strategies":["DIRECT","TWAP","VWAP","POV"],
+  "controls":{
+    "pre_trade_risk_required":true,
+    "self_trade_prevention":true,
+    "wash_trading":"PROHIBITED",
+    "max_order_notional_required":true,
+    "max_participation_rate_required":true,
+    "price_limit_required":true,
+    "child_order_rate_limit_required":true,
+    "venue_routing":"GATE129",
+    "settlement":"GATE122",
+    "asset_registry":"GATE123"
+  },
+  "audit":{
+    "crown_evidence_required":true,
+    "events":["ORDER_CREATED","RISK_EVALUATED","ORDER_APPROVED","CHILD_CREATED","ROUTED","FILL_RECORDED","ALLOCATED","CANCELLED","SETTLEMENT_LINKED"],
+    "tamper_evident_digest":"SHA256"
+  },
+  "governance":{
+    "internal_model":"NEO_SELF_REGULATED_COMMUNITY_UNDER_NATURAL_LAW_DOCTRINE",
+    "external_interface_rule":"External venue, broker, custodian, tax, market, or jurisdictional requirements apply only at the relevant interface."
+  }
+}

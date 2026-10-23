@@ -476,6 +476,17 @@
         "docs/NEO-G129-LIQUIDITY-VENUE-ROUTER.md",
         ".github/workflows/gate-129-smart-order-router.yml"
       ]
+    },
+    {
+      "capability_id": "GATE-130-INSTITUTIONAL-OMS-EMS",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "architecture/neo-institutional-oms-ems-policy.json",
+        "server/neo-oms/fabric.mjs",
+        "server/neo-oms/server.mjs",
+        "docs/NEO-G130-INSTITUTIONAL-OMS-EMS.md",
+        ".github/workflows/gate-130-institutional-oms.yml"
+      ]
     }
   ],
   "autopilot": {
