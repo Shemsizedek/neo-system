@@ -1,0 +1,18 @@
+name: Gate 138 Credit Data Quality
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['architecture/neo-credit-data-quality-policy.json','server/neo-credit-reconciliation/**','docs/NEO-G138-CREDIT-DATA-QUALITY.md','package.json','.github/workflows/gate-138-credit-data-quality.yml']
+  pull_request:
+    paths: ['architecture/neo-credit-data-quality-policy.json','server/neo-credit-reconciliation/**','docs/NEO-G138-CREDIT-DATA-QUALITY.md','package.json','.github/workflows/gate-138-credit-data-quality.yml']
+permissions: {contents: read}
+jobs:
+  reconciliation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 24}
+      - run: npm run neo-credit-reconciliation:test
+      - run: node --check server/neo-credit-reconciliation/server.mjs
