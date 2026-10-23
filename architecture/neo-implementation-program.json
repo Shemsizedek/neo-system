@@ -498,6 +498,17 @@
         "docs/NEO-G131-INSTITUTIONAL-RISK.md",
         ".github/workflows/gate-131-institutional-risk.yml"
       ]
+    },
+    {
+      "capability_id": "GATE-132-PRIME-BROKERAGE-INSTITUTIONAL-ACCOUNT-FABRIC",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "architecture/neo-prime-account-fabric-policy.json",
+        "server/neo-prime-accounts/fabric.mjs",
+        "server/neo-prime-accounts/server.mjs",
+        "docs/NEO-G132-PRIME-ACCOUNT-FABRIC.md",
+        ".github/workflows/gate-132-prime-account-fabric.yml"
+      ]
     }
   ],
   "autopilot": {

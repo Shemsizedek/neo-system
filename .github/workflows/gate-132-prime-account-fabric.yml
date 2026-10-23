@@ -1,0 +1,18 @@
+name: Gate 132 Prime Account Fabric
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['architecture/neo-prime-account-fabric-policy.json','server/neo-prime-accounts/**','docs/NEO-G132-PRIME-ACCOUNT-FABRIC.md','package.json','.github/workflows/gate-132-prime-account-fabric.yml']
+  pull_request:
+    paths: ['architecture/neo-prime-account-fabric-policy.json','server/neo-prime-accounts/**','docs/NEO-G132-PRIME-ACCOUNT-FABRIC.md','package.json','.github/workflows/gate-132-prime-account-fabric.yml']
+permissions: {contents: read}
+jobs:
+  prime-accounts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 24}
+      - run: npm run neo-prime-accounts:test
+      - run: node --check server/neo-prime-accounts/server.mjs
