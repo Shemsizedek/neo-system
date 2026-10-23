@@ -1,0 +1,10 @@
+import test from 'node:test'
+import assert from 'node:assert/strict'
+import {createCareersChallengeStore,assessPayrollRelease} from './auth-payroll-policy.mjs'
+test('single-use sign-in challenge consumes exactly once',async()=>{const s=createCareersChallengeStore();const x=s.issue({subject:'worker1',origin:'https://careers.example'});const a={nonce:x.nonce,message:x.message,subject:'worker1',origin:'https://careers.example',verify:async()=>true};assert.equal(await s.consume(a),true);assert.equal(await s.consume(a),false)})
+test('expired challenge rejected',async()=>{let t=100000;const s=createCareersChallengeStore({now:()=>t,ttlMs:1000});const x=s.issue({subject:'w',origin:'https://careers.example'});t+=1100;assert.equal(await s.consume({nonce:x.nonce,message:x.message,subject:'w',origin:'https://careers.example',verify:async()=>true}),false)})
+test('wrong origin rejected',async()=>{const s=createCareersChallengeStore();const x=s.issue({subject:'w',origin:'https://careers.example'});assert.equal(await s.consume({nonce:x.nonce,message:x.message,subject:'w',origin:'https://evil.example',verify:async()=>true}),false)})
+test('modified message rejected',async()=>{const s=createCareersChallengeStore();const x=s.issue({subject:'w',origin:'https://careers.example'});assert.equal(await s.consume({nonce:x.nonce,message:x.message+'changed',subject:'w',origin:'https://careers.example',verify:async()=>true}),false)})
+test('missing payroll proofs prevents review',()=>assert.equal(assessPayrollRelease().eligibleForManualReview,false))
+test('full proof permits manual review but never transfer',()=>{const x=assessPayrollRelease({employerVerified:true,workerVerified:true,assetVerified:true,termsAccepted:true,fundsConfirmed:true,laborTaxReview:true});assert.equal(x.eligibleForManualReview,true);assert.equal(x.transferEnabled,false)})
+test('equity requires securities review',()=>{const x=assessPayrollRelease({employerVerified:true,workerVerified:true,assetVerified:true,termsAccepted:true,fundsConfirmed:true,laborTaxReview:true,awardType:'equity'});assert.equal(x.missing.includes('securities_review'),true)})
