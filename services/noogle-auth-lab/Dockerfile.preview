@@ -1,0 +1,8 @@
+FROM node:24-alpine
+WORKDIR /app
+COPY services/noogle-auth-lab/cloud-run-preview.mjs services/noogle-auth-lab/cloud-run-preview.mjs
+COPY docs/connect/ docs/connect/
+USER node
+ENV NODE_ENV=production PORT=8080
+EXPOSE 8080
+CMD ["node", "services/noogle-auth-lab/cloud-run-preview.mjs"]
