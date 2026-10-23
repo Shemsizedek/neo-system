@@ -1,0 +1,71 @@
+name: NEO Cloud Miner Web and Android Preview
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'public/neo-cloud-miner/**'
+      - 'apps/neo-generator-android/**'
+      - 'server/miner-generator/cloudRetail.test.mjs'
+      - 'server/miner-generator/nicehashReadOnly.mjs'
+      - '.github/workflows/neo-cloud-miner-preview.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'public/neo-cloud-miner/**'
+      - 'apps/neo-generator-android/**'
+      - 'server/miner-generator/cloudRetail.test.mjs'
+      - 'server/miner-generator/nicehashReadOnly.mjs'
+      - '.github/workflows/neo-cloud-miner-preview.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: neo-cloud-miner-preview-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - name: Validate web application and settlement boundaries
+        run: |
+          mkdir -p build/neo-generator-preview
+          node --check public/neo-cloud-miner/app.js
+          node --check public/neo-cloud-miner/core.js
+          node --test --test-reporter=tap server/miner-generator/cloudRetail.test.mjs | tee build/neo-generator-preview/cloud-retail-tests.tap
+      - name: Verify Android SDK tools
+        run: |
+          SDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-}}"
+          test -n "$SDK"
+          if [ ! -f "$SDK/platforms/android-35/android.jar" ] || [ ! -x "$SDK/build-tools/35.0.0/apksigner" ]; then
+            "$SDK/cmdline-tools/latest/bin/sdkmanager" 'platforms;android-35' 'build-tools;35.0.0'
+          fi
+      - name: Build and cryptographically verify evaluation APK
+        run: bash apps/neo-generator-android/build.sh
+      - name: Package matching source
+        run: |
+          tar -czf build/neo-generator-preview/source.tar.gz \
+            package.json public/neo-cloud-miner \
+            apps/neo-generator-android \
+            server/miner-generator/cloudRetail.test.mjs \
+            server/miner-generator/nicehashReadOnly.mjs \
+            docs/NEO_CLOUD_MINER_RELEASE.md
+          echo 'Installable evaluation APK. Not a retail release, not live mining, and no payment or token activation.' >> "$GITHUB_STEP_SUMMARY"
+          cat build/neo-generator-preview/SHA256SUMS >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: neo-generator-preview
+          path: build/neo-generator-preview/
+          if-no-files-found: error
+          retention-days: 30
