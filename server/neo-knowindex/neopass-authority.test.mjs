@@ -5,6 +5,7 @@ import { createServer } from 'node:http';
 import { createKnowindexNeopassAuthority } from './neopass-authority.mjs';
 import { createKnowindexContributionHttpHandler } from './http.mjs';
 import { createKnowindexContributionLedger } from './ledger.mjs';
+import { prepareTestKi018Activation } from './test-activation.mjs';
 import { issueNeopassToken, createGoogleNeopassAuth } from '../neo-platform-api/neopass-google-auth.mjs';
 
 const alice = 'google:alice-verified-0001';
@@ -44,7 +45,8 @@ async function withApi(fn) {
   const ledger = createKnowindexContributionLedger({ now: () => new Date(fixed) });
   const app = createKnowindexContributionHttpHandler({
     ledger, authService: authority(), enabled: true, jwtSecret: secret,
-    jwtIssuer: 'neo-pass', now: () => fixed
+    jwtIssuer: 'neo-pass', now: () => fixed,
+    pilotActivation: prepareTestKi018Activation(ledger, { contributor: alice, curator: bob })
   });
   const server = createServer(async (req, res) => {
     if (!await app(req, res)) { res.statusCode = 404; res.end(); }
@@ -171,7 +173,8 @@ test('KI-016 ignores signed executive bootstrap claims even with the generic NEO
 
   const ledger = createKnowindexContributionLedger({ now: () => new Date(fixed) });
   const handler = createKnowindexContributionHttpHandler({
-    ledger, authService: genericAuth, enabled: true, jwtSecret: secret, jwtIssuer: 'neo-pass', now: () => fixed
+    ledger, authService: genericAuth, enabled: true, jwtSecret: secret, jwtIssuer: 'neo-pass', now: () => fixed,
+    pilotActivation: prepareTestKi018Activation(ledger, { contributor: alice, curator: bob })
   });
   const server = createServer(async (req, res) => {
     if (!await handler(req, res)) { res.statusCode = 404; res.end(); }
