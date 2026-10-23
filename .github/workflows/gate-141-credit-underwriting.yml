@@ -1,0 +1,18 @@
+name: Gate 141 Credit Underwriting
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['architecture/neo-credit-underwriting-policy.json','server/neo-underwriting/**','docs/NEO-G141-CREDIT-UNDERWRITING.md','package.json','.github/workflows/gate-141-credit-underwriting.yml']
+  pull_request:
+    paths: ['architecture/neo-credit-underwriting-policy.json','server/neo-underwriting/**','docs/NEO-G141-CREDIT-UNDERWRITING.md','package.json','.github/workflows/gate-141-credit-underwriting.yml']
+permissions: {contents: read}
+jobs:
+  underwriting:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 24}
+      - run: npm run neo-underwriting:test
+      - run: node --check server/neo-underwriting/server.mjs

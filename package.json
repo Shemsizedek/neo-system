@@ -150,7 +150,9 @@
     "neo-credit-compliance:server": "node server/neo-credit-compliance/server.mjs",
     "neo-credit-compliance:test": "node --test server/neo-credit-compliance/*.test.mjs",
     "neo-credit-model-risk:server": "node server/neo-credit-model-risk/server.mjs",
-    "neo-credit-model-risk:test": "node --test server/neo-credit-model-risk/*.test.mjs"
+    "neo-credit-model-risk:test": "node --test server/neo-credit-model-risk/*.test.mjs",
+    "neo-underwriting:server": "node server/neo-underwriting/server.mjs",
+    "neo-underwriting:test": "node --test server/neo-underwriting/*.test.mjs"
   },
   "dependencies": {
     "@composio/core": "^0.18.1",
