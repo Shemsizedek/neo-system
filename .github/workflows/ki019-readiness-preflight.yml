@@ -1,0 +1,44 @@
+name: KI-019 External Production Evidence Readiness
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'server/neo-knowindex/production-evidence*'
+      - 'data/knowindex/ki019-readiness.json'
+      - '.github/workflows/ki019-readiness-preflight.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  fail-closed-readiness:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Verify production evidence cannot authorize writes
+        run: node --test server/neo-knowindex/production-evidence.test.mjs
+      - name: Confirm tracked production readiness remains BLOCKED until approvals exist
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import { assessKnowindexEvidence } from './server/neo-knowindex/production-evidence.mjs';
+          const proof = JSON.parse(fs.readFileSync('data/knowindex/ki019-readiness.json', 'utf8'));
+          const report = assessKnowindexEvidence(proof);
+          if (report.productionWritesApproved !== false || report.status !== 'BLOCKED') throw new Error('unreviewed_production_evidence_marked_approved');
+          console.log(JSON.stringify({
+            gate: report.gate, status: report.status,
+            productionWritesApproved: report.productionWritesApproved,
+            verifiedEvidenceTypes: report.verifiedEvidenceTypes?.length || 0,
+            blockers: report.blockers
+          }, null, 2));
+          NODE
+          echo 'KI-019 remains BLOCKED until separate live IAM, identity, production storage and recovery evidence exists.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'This job does not access GCP secrets, run production migrations, or enable KNOWINDEX writes.' >> "$GITHUB_STEP_SUMMARY"
