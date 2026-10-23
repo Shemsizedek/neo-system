@@ -93,3 +93,20 @@ test('unapproved origin is rejected', async () => {
     assert.equal(response.status, 403)
   })
 })
+
+
+test('Oracle staging serves a visible noncached HTML shell on root and oracle routes', async () => {
+  await withServer(async (base) => {
+    for (const route of ['/', '/oracle', '/oracle/']) {
+      const response = await fetch(`${base}${route}`)
+      assert.equal(response.status, 200)
+      assert.match(response.headers.get('content-type') || '', /text\/html/)
+      assert.match(response.headers.get('cache-control') || '', /no-store/)
+      const html = await response.text()
+      assert.match(html, /<main class="app">/)
+      assert.match(html, /NEO ORACLE/)
+      assert.match(html, /<textarea id="q"/)
+      assert.match(html, /\[hidden\]\{display:none!important\}/)
+    }
+  })
+})
