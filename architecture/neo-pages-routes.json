@@ -1,5 +1,5 @@
 {
-  "version": "1.0.0",
+  "version": "1.0.1",
   "deploymentOwner": ".github/workflows/pages.yml",
   "artifactRoot": "dist",
   "basePath": "/neo-system/",
@@ -7,6 +7,7 @@
     {"service":"neo-prime","path":"/neo-prime/"},
     {"service":"neopay","path":"/neopay/"},
     {"service":"neo-counter","path":"/neo-counter/"},
+    {"service":"neo-cloud-miner","path":"/neo-cloud-miner/"},
     {"service":"neo-pads","path":"/neo-pads/"},
     {"service":"neo-exchange","path":"/neo-exchange/"},
     {"service":"neoscan","path":"/neoscan/"},
@@ -24,10 +25,5 @@
     {"service":"neo-algo","path":"/neo-algo/"},
     {"service":"neo-corpus","path":"/neo-corpus/"}
   ],
-  "rules": {
-    "singleArtifact": true,
-    "singleDeployWorkflow": true,
-    "serviceWorkflowsValidationOnly": true,
-    "privilegedSecretsInPages": false
-  }
+  "rules": {"singleArtifact":true,"singleDeployWorkflow":true,"serviceWorkflowsValidationOnly":true,"privilegedSecretsInPages":false}
 }
