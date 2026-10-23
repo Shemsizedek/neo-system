@@ -1,0 +1,24 @@
+{
+  "schema_version":1,
+  "gate":122,
+  "name":"NEO Community Clearing, Netting and Settlement Fabric",
+  "operator_model":"CENTRAL_COUNTERPARTY_COMMUNITY_TRUST",
+  "trade_states":["CAPTURED","ACCEPTED","NETTED","MARGINED","READY_TO_SETTLE","SETTLING","SETTLED","FAILED","CANCELLED"],
+  "position_models":["BILATERAL","MULTILATERAL"],
+  "margin":{
+    "initial_margin_enabled":true,
+    "variation_margin_enabled":true,
+    "collateral_haircuts_required":true,
+    "default_fund_model":"COMMUNITY_POLICY_ONLY"
+  },
+  "settlement":{
+    "delivery_vs_payment_supported":true,
+    "payment_vs_payment_supported":true,
+    "external_chain_execution_requires_adapter":true,
+    "finality_requires_verified_external_or_crown_evidence":true
+  },
+  "crown_chain":{
+    "evidence_records":["TRADE_ACCEPTANCE","NETTING_RESULT","MARGIN_CALL","COLLATERAL_POSTING","SETTLEMENT_INSTRUCTION","SETTLEMENT_RECEIPT","FINALITY_ATTESTATION"]
+  },
+  "authority_boundary":"This fabric implements community contractual clearing and settlement functions. It does not by itself establish SEC-registered clearing-agency, DTC/DTCC, broker-dealer, exchange, bank, or governmental authority."
+}
