@@ -4,11 +4,12 @@ import fs from 'node:fs/promises';
 import { createKnowindexPostgresLedger } from './postgres-ledger.mjs';
 import { KnowledgeWriteError } from './ledger.mjs';
 
-const URL = process.env.KNOWINDEX_PG_TEST_URL || '';
+const DATABASE_URL = process.env.KNOWINDEX_PG_TEST_URL || '';
 const explicitTestDb = (() => {
-  try { return new URL(URL).pathname === '/knowindex_ci_test'; }
+  try { return new URL(DATABASE_URL).pathname === '/knowindex_ci_test'; }
   catch { return false; }
 })();
+if (DATABASE_URL && !explicitTestDb) throw new Error('refusing_non_CI_test_database');
 const contributor = { subject: 'google:ci-contributor', neopassStatus: 'active', role: 'member' };
 const curator = { subject: 'google:ci-curator', neopassStatus: 'active', role: 'curator' };
 const admin = { subject: 'google:ci-executive', neopassStatus: 'active', role: 'executive-admin' };
@@ -28,10 +29,10 @@ const input = (extra = {}) => ({
 const code = name => error => error instanceof KnowledgeWriteError && error.code === name;
 
 test('KI-015 Postgres durable ledger: isolated persistence, audit and disaster-recovery drill',
-  { skip: !explicitTestDb }, async t => {
+  { skip: !DATABASE_URL }, async t => {
     const { Pool } = await import('pg');
-    const ownerPool = new Pool({ connectionString: URL, max: 4 });
-    const runtimeUrl = new URL(URL);
+    const ownerPool = new Pool({ connectionString: DATABASE_URL, max: 4 });
+    const runtimeUrl = new URL(DATABASE_URL);
     runtimeUrl.username = 'knowindex_ci_writer';
     runtimeUrl.password = 'test-only-password-ki015';
     const writerPool = new Pool({ connectionString: runtimeUrl.href, max: 4 });
