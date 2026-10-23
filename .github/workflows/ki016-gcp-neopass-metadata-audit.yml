@@ -1,0 +1,55 @@
+name: KI-016 NEOpass Production Signing Metadata Audit
+
+# Read-only privileged metadata inspection. Manual dispatch ONLY. Never run WIF
+# in a PR workflow or on unreviewed branch code; require protected environment.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  giss-issuer-metadata:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: holytemples-production
+    env:
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID || secrets.GCP_PROJECT_ID }}
+      GCP_REGION: ${{ vars.GCP_REGION || secrets.GCP_REGION }}
+      GCP_WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER || secrets.GCP_WIF_PROVIDER }}
+      GCP_CLOUD_RUN_SERVICE_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_SERVICE_ACCOUNT || secrets.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fail if protected production preflight configuration is incomplete
+        shell: bash
+        run: |
+          set -euo pipefail
+          for value in GCP_PROJECT_ID GCP_REGION GCP_WIF_PROVIDER GCP_CLOUD_RUN_SERVICE_ACCOUNT; do
+            test -n "$(printenv "$value")" || { echo "::error::GCP metadata audit configuration missing"; exit 1; }
+          done
+      - uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@v3
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Inspect GISS metadata without printing identities or secret references
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod 700 "$RUNNER_TEMP"
+          # Sensitive runtime metadata stays in the ephemeral runner and never
+          # becomes an artifact or console output.
+          gcloud run services describe neo-temple-giss \
+            --project="$GCP_PROJECT_ID" --region="$GCP_REGION" \
+            --format=json > "$RUNNER_TEMP/ki016-giss.json"
+          node scripts/ki016-gcp-readonly-audit.mjs "$RUNNER_TEMP/ki016-giss.json"
+          rm -f "$RUNNER_TEMP/ki016-giss.json"
+          echo 'NEOpass Cloud Run binding metadata checked; token issuance, registry role and backups NOT certified.' >> "$GITHUB_STEP_SUMMARY"
+      - name: Ensure no runtime data remains
+        if: always()
+        run: rm -f "$RUNNER_TEMP/ki016-giss.json"
