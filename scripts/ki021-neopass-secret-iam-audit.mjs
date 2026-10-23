@@ -2,6 +2,7 @@
 // NEVER fetches secret values or performs IAM changes. No account IDs,
 // secret identifiers, key versions, emails, or tokens are printed.
 import fs from 'node:fs/promises';
+import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { inspectNeopassCloudRunMetadata } from './ki016-gcp-readonly-audit.mjs';
 
@@ -97,7 +98,8 @@ async function cli() {
   const projectId = process.env.GCP_PROJECT_ID;
   const service = JSON.parse(await fs.readFile(servicePath, 'utf8'));
   if (mode === 'extract-ref') {
-    if (!secondPath || !process.env.RUNNER_TEMP || !secondPath.startsWith(process.env.RUNNER_TEMP + '/')) {
+    if (!secondPath || !process.env.RUNNER_TEMP ||
+        path.dirname(path.resolve(secondPath)) !== path.resolve(process.env.RUNNER_TEMP)) {
       throw new Error('private_runner_output_required');
     }
     const target = extractGissIamTarget(service, { projectId });
