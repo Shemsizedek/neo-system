@@ -597,6 +597,17 @@
         "docs/NEO-G140-CREDIT-MODEL-RISK.md",
         ".github/workflows/gate-140-credit-model-risk.yml"
       ]
+    },
+    {
+      "capability_id": "GATE-141-CREDIT-DECISION-UNDERWRITING",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "architecture/neo-credit-underwriting-policy.json",
+        "server/neo-underwriting/fabric.mjs",
+        "server/neo-underwriting/server.mjs",
+        "docs/NEO-G141-CREDIT-UNDERWRITING.md",
+        ".github/workflows/gate-141-credit-underwriting.yml"
+      ]
     }
   ],
   "autopilot": {

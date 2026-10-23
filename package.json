@@ -151,6 +151,8 @@
     "neo-credit-compliance:test": "node --test server/neo-credit-compliance/*.test.mjs",
     "neo-credit-model-risk:server": "node server/neo-credit-model-risk/server.mjs",
     "neo-credit-model-risk:test": "node --test server/neo-credit-model-risk/*.test.mjs",
+    "neo-underwriting:server": "node server/neo-underwriting/server.mjs",
+    "neo-underwriting:test": "node --test server/neo-underwriting/*.test.mjs",
     "knowindex:test": "node --test apps/noogle/index/knowindex-pilot.test.mjs apps/noogle/index/reviewed-snapshot.test.mjs",
     "knowindex:pilot": "node scripts/run-knowindex-pilot.mjs"
   },
