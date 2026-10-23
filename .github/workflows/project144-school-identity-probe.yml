@@ -38,6 +38,15 @@ jobs:
             rm -f curl-error.txt
             rm -f "$headers" "$body"
           done
+          echo '### School authentication boundary (no credentials)' >> "$GITHUB_STEP_SUMMARY"
+          for spec in 'School portal redirect|https://neo-platform-api-recovery.onrender.com/portal/school|302' 'School API access control|https://neo-platform-api-recovery.onrender.com/api/v1/school/dashboard|401'; do
+            IFS='|' read -r label url expected <<< "$spec"
+            code="$(curl --silent --show-error --connect-timeout 10 --max-time 35 --output /dev/null --write-out '%{http_code}' "$url" || true)"
+            verdict=PASS
+            if [[ "$code" != "$expected" ]]; then verdict=FAIL; failures=$((failures+1)); fi
+            echo "$label: HTTP=$code expected=$expected result=$verdict"
+            echo "- $label: HTTP $code (expected $expected), $verdict" >> "$GITHUB_STEP_SUMMARY"
+          done
           echo 'These checks establish only public HTML reachability, not authenticated school or identity readiness.' >> "$GITHUB_STEP_SUMMARY"
           if (( failures > 0 )); then
             echo "::error::$failures external endpoint(s) failed public reachability"
