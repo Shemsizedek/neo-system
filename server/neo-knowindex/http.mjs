@@ -102,7 +102,13 @@ export function createKnowindexContributionHttpHandler({
     }
     const jwt = bearer(req);
     const claims = jwt ? verifyNeopassToken(jwt, { secret: jwtSecret, issuer: jwtIssuer, now }) : null;
-    const epoch = Math.floor(now() / 1000);
+    const currentTime = now();
+    const currentMillis = typeof currentTime === 'number' ? currentTime : new Date(currentTime).getTime();
+    if (!Number.isFinite(currentMillis)) {
+      response(res, 503, { error: 'clock_not_verified', writesEnabled: false }, origin);
+      return true;
+    }
+    const epoch = Math.floor(currentMillis / 1000);
     if (!claims || !Number.isSafeInteger(claims.exp) || !Number.isSafeInteger(claims.iat) ||
         claims.exp <= epoch || claims.iat > epoch + 30 || claims.exp - claims.iat > 8 * 3600 + 30 ||
         (claims.token_use != null && claims.token_use !== 'neopass-session')) {
