@@ -17,7 +17,7 @@ const secretBinding = {
 const oauthBinding = { name: 'GOOGLE_OAUTH_CLIENT_ID', value: 'sensitive-client-id.apps.googleusercontent.com' };
 const issuerBinding = { name: 'NEO_PASS_JWT_ISSUER', value: 'neo-pass' };
 const cloudRun = (env = [secretBinding, oauthBinding, issuerBinding], overrides = {}) => ({
-  metadata: { name: 'neo-temple-giss' },
+  metadata: { name: 'neo-temple-giss', namespace: PROJECT },
   spec: { template: { spec: { serviceAccountName: PRINCIPAL, containers: [{ env }] } } },
   ...overrides
 });
@@ -132,6 +132,14 @@ test('KI-021 refuses cross-project secret binding and invalid project ID', () =>
   assert.equal(inspect(foreign).status, 'BLOCKED');
   assert.equal(extractGissIamTarget(cloudRun(), { projectId: 'evil;rm' }), null);
   assert.equal(inspectGissSecretIamPolicy({ service: cloudRun(), policy: policy(), projectId: 'other-project' }).status, 'BLOCKED');
+});
+
+test('KI-021 accepts numeric Cloud Run namespaces without inferring the project ID', () => {
+  const service = cloudRun();
+  service.metadata.namespace = '123456789012';
+  const result = inspect(service);
+  assert.equal(result.secretBindingAndDirectGrantObserved, true);
+  assert.equal(result.actualEffectiveRuntimeSecretAccessVerified, false);
 });
 
 test('KI-021 accepts well-formed Cloud Run v2 secret references without treating them as live access', () => {
