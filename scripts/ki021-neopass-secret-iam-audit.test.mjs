@@ -53,6 +53,24 @@ test('KI-021 missing issuer fails even with direct secretAccessor IAM', () => {
   assert.equal(result.status, 'BLOCKED');
 });
 
+test('KI-021 refuses unexpected issuer values and unverifiable issuer secret references', () => {
+  const wrong = cloudRun([
+    secretBinding, oauthBinding, { name: 'NEO_PASS_JWT_ISSUER', value: 'untrusted-issuer' }
+  ]);
+  const other = inspect(wrong);
+  assert.equal(other.issuerConfigured, true);
+  assert.equal(other.issuerMatchesNEOpassContract, false);
+  assert.equal(other.status, 'BLOCKED');
+
+  const hidden = cloudRun([
+    secretBinding, oauthBinding,
+    { name: 'NEO_PASS_JWT_ISSUER', valueFrom: { secretKeyRef: { name: 'private-issuer', key: 'latest' } } }
+  ]);
+  assert.equal(inspect(hidden).status, 'BLOCKED');
+  const duplicate = cloudRun([secretBinding, oauthBinding, issuerBinding, issuerBinding]);
+  assert.equal(inspect(duplicate).status, 'BLOCKED');
+});
+
 test('KI-021 never accepts a conditional grant as verified unconditional access', () => {
   const result = inspect(cloudRun(), policy([{
     role: 'roles/secretmanager.secretAccessor',
