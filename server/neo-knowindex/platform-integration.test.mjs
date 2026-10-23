@@ -4,6 +4,7 @@ import { once } from 'node:events';
 import { createNeoPlatformApi } from '../neo-platform-api/server.mjs';
 import { issueNeopassToken } from '../neo-platform-api/neopass-google-auth.mjs';
 import { createKnowindexContributionLedger } from './ledger.mjs';
+import { prepareTestKi018Activation } from './test-activation.mjs';
 
 const nowEpoch = Date.parse('2026-10-23T12:00:00Z');
 const secret = 'ki014-integration-test-secret-do-not-deploy-outside-tests';
@@ -53,6 +54,7 @@ test('explicitly opted-in platform route enforces session and keeps writes unpub
     await runServer({
       authService,
       knowindexContributionLedger: ledger,
+      knowindexPilotActivation: prepareTestKi018Activation(ledger, { contributor: 'google:ki014-test-member' }),
       knowindexWriteEnabled: true,
       knowindexJwtSecret: secret,
       now: () => '2026-10-23T12:00:00Z'
@@ -91,8 +93,10 @@ test('KI-016 distinct KNOWINDEX member authority overrides generic portal member
         }
       },
       knowindexContributionLedger: ledger,
+      knowindexPilotActivation: prepareTestKi018Activation(ledger, { contributor: 'google:ki014-test-member' }),
       knowindexWriteEnabled: true,
-      knowindexJwtSecret: secret
+      knowindexJwtSecret: secret,
+      now: () => '2026-10-23T12:00:00Z'
     }, async base => {
       const attempt = await fetch(base + '/api/v1/noogle/knowledge/contributions', {
         method: 'POST',
@@ -101,6 +105,26 @@ test('KI-016 distinct KNOWINDEX member authority overrides generic portal member
       });
       assert.equal(attempt.status, 403);
       assert.equal((await attempt.json()).error, 'active_verified_neopass_required');
+      assert.equal(ledger.verifyAuditChain().checked, 0);
+    });
+  } finally { ledger.close(); }
+});
+
+
+test('KI-018 rejects accidentally enabled platform writes when signature evidence is missing', async () => {
+  const ledger = createKnowindexContributionLedger({ now: () => new Date(nowEpoch) });
+  try {
+    await runServer({
+      authService, knowindexContributionLedger: ledger,
+      knowindexWriteEnabled: true, knowindexJwtSecret: secret,
+      now: () => '2026-10-23T12:00:00Z'
+    }, async base => {
+      const response = await fetch(base + '/api/v1/noogle/knowledge/contributions', {
+        method: 'POST', headers: { authorization: 'Bearer ' + bearer, 'content-type': 'application/json' },
+        body: JSON.stringify(submission)
+      });
+      assert.equal(response.status, 503);
+      assert.equal((await response.json()).error, 'knowindex_activation_not_certified');
       assert.equal(ledger.verifyAuditChain().checked, 0);
     });
   } finally { ledger.close(); }

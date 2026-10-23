@@ -113,6 +113,24 @@ test('KI-015 Postgres durable ledger: isolated persistence, audit and disaster-r
         assert.equal(records.length, 1);
         await assert.rejects(writerPool.query("UPDATE knowindex.events SET action='tampered'"), /permission denied/);
       });
+      await t.test('KI-018 globally caps a signed pilot at exactly one total record', async () => {
+        const limited = createKnowindexPostgresLedger({
+          pool: writerPool, now: fixedNow,
+          maxSubmissionsPerHour: 5, maxTotalSubmissions: 1
+        });
+        const proof = await limited.inspectRuntimeSecurity();
+        assert.equal(proof.pilotOneRecordLimitConfigured, true);
+        assert.equal(proof.leastPrivilegeVerified, true);
+        assert.equal(proof.databaseFingerprint?.length, 64);
+        assert.equal(proof.productionDatabaseEligible, false,
+          'isolated CI Postgres must never count as production certified');
+        await assert.rejects(
+          limited.submit(input({ url: 'https://example.org/knowindex/over-pilot-quota' }),
+            { ...contributor, subject: 'google:pilot-overquota' }, 'ki018-pilot-overquota-001'),
+          code('pilot_record_limit_reached')
+        );
+        assert.equal((await limited.verifyAuditChain()).checked, 11);
+      });
       await t.test('logical recovery fixture restores identical audit chain', async () => {
         const before = await store.verifyAuditChain();
         const client = await ownerPool.connect();

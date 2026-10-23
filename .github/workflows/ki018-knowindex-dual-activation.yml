@@ -1,0 +1,46 @@
+name: KI-018 KNOWINDEX Two-Party Activation Safety
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'server/neo-knowindex/**'
+      - 'server/neo-platform-api/server.mjs'
+      - '.github/workflows/ki018-knowindex-dual-activation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  signed-activation-safety:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Verify dual signature, live database checks and fail-closed moderation
+        run: |
+          node --test \
+            server/neo-knowindex/production-activation.test.mjs \
+            server/neo-knowindex/http.test.mjs \
+            server/neo-knowindex/neopass-authority.test.mjs \
+            server/neo-knowindex/platform-integration.test.mjs
+      - name: Record certification boundary without secrets
+        if: always()
+        run: |
+          echo 'This job uses transient test signing keys and simulated registry subjects only.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'It does not sign a production activation, access a production DB, authorize spending, or enable live knowledge writes.' >> "$GITHUB_STEP_SUMMARY"
+
+  deployed-write-denial:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Confirm live backend remains write-disabled and Noogle source is readable
+        run: node scripts/ki016-live-readonly-smoke.mjs

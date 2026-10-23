@@ -1,5 +1,6 @@
 import { verifyNeopassToken } from '../neo-platform-api/neopass-google-auth.mjs';
 import { KnowledgeWriteError } from './ledger.mjs';
+import { verifyKnowindexPilotActivation, sha256Hex } from './production-activation.mjs';
 
 export const KNOWINDEX_ALLOWED_ORIGINS = new Set([
   'https://shemsizedek.github.io',
@@ -56,6 +57,7 @@ export function createKnowindexContributionHttpHandler({
   jwtSecret = '',
   jwtIssuer = 'neo-pass',
   enabled = false,
+  pilotActivation = null,
   allowedOrigins = KNOWINDEX_ALLOWED_ORIGINS,
   now = () => Date.now()
 } = {}) {
@@ -72,6 +74,20 @@ export function createKnowindexContributionHttpHandler({
       response(res, 503, { error: 'knowindex_writes_not_configured', writesEnabled: false }, origin);
       return true;
     }
+    // A Boolean flag alone is never permission to write knowledge records.
+    // Signatures, expiry, precise DB identity, immutable audit and one-record
+    // limit are rechecked even after a runtime has requested activation.
+    const activation = await verifyKnowindexPilotActivation({
+      envelope: pilotActivation?.envelope,
+      trustKeys: pilotActivation?.trustKeys,
+      deploymentSha: pilotActivation?.deploymentSha,
+      ledger,
+      now
+    });
+    if (!activation.authorized) {
+      response(res, 503, { error: 'knowindex_activation_not_certified', writesEnabled: false }, origin);
+      return true;
+    }
     if (req.method === 'OPTIONS') {
       res.writeHead(204, {
         'access-control-allow-origin': origin || '',
@@ -86,7 +102,13 @@ export function createKnowindexContributionHttpHandler({
     }
     const jwt = bearer(req);
     const claims = jwt ? verifyNeopassToken(jwt, { secret: jwtSecret, issuer: jwtIssuer, now }) : null;
-    const epoch = Math.floor(now() / 1000);
+    const currentTime = now();
+    const currentMillis = typeof currentTime === 'number' ? currentTime : new Date(currentTime).getTime();
+    if (!Number.isFinite(currentMillis)) {
+      response(res, 503, { error: 'clock_not_verified', writesEnabled: false }, origin);
+      return true;
+    }
+    const epoch = Math.floor(currentMillis / 1000);
     if (!claims || !Number.isSafeInteger(claims.exp) || !Number.isSafeInteger(claims.iat) ||
         claims.exp <= epoch || claims.iat > epoch + 30 || claims.exp - claims.iat > 8 * 3600 + 30 ||
         (claims.token_use != null && claims.token_use !== 'neopass-session')) {
@@ -102,6 +124,13 @@ export function createKnowindexContributionHttpHandler({
         throw new KnowledgeWriteError('active_verified_neopass_required', 403);
       }
       actor = { subject: member.subject, role: member.role || 'member', neopassStatus: 'active' };
+      const fingerprint = sha256Hex(actor.subject);
+      const contributorApproved = fingerprint === activation.contributorSubjectSha256 && actor.role === 'member';
+      const curatorApproved = fingerprint === activation.curatorSubjectSha256 &&
+        (actor.role === 'curator' || actor.role === 'executive-admin');
+      if (!contributorApproved && !curatorApproved) {
+        throw new KnowledgeWriteError('pilot_identity_not_authorized', 403);
+      }
     } catch (error) {
       const code = error instanceof KnowledgeWriteError ? error.code : 'neopass_registry_unavailable';
       response(res, error instanceof KnowledgeWriteError ? error.status : 503, { error: code }, origin);

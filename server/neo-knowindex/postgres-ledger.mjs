@@ -55,10 +55,11 @@ function verifyRows(rows) {
 }
 
 export function createKnowindexPostgresLedger({
-  pool, now = () => new Date(), maxSubmissionsPerHour = 5
+  pool, now = () => new Date(), maxSubmissionsPerHour = 5, maxTotalSubmissions = Infinity
 } = {}) {
   if (!pool || typeof pool.query !== 'function' || typeof pool.connect !== 'function') throw new Error('durable_postgres_pool_required');
   if (!Number.isInteger(maxSubmissionsPerHour) || maxSubmissionsPerHour < 1 || maxSubmissionsPerHour > 100) throw new Error('invalid_rate_limit');
+  if (maxTotalSubmissions !== Infinity && (!Number.isInteger(maxTotalSubmissions) || maxTotalSubmissions < 1 || maxTotalSubmissions > 1000)) throw new Error('invalid_total_submission_limit');
 
   async function get(client, id) {
     const result = await client.query('SELECT * FROM knowindex.contributions WHERE id=$1', [id]);
@@ -118,6 +119,11 @@ export function createKnowindexPostgresLedger({
       const hourAgo = new Date(Date.parse(timestamp) - 3600000).toISOString();
       const counter = await client.query('SELECT count(*)::integer AS total FROM knowindex.contributions WHERE actor_subject=$1 AND created_at>=$2', [subject, hourAgo]);
       if (Number(counter.rows?.[0]?.total || 0) >= maxSubmissionsPerHour) throw new KnowledgeWriteError('submission_rate_limited', 429);
+      if (maxTotalSubmissions !== Infinity) {
+        // Safe under transaction-wide advisory lock, including independent writers.
+        const count = await client.query('SELECT count(*)::integer AS total FROM knowindex.contributions');
+        if (Number(count.rows?.[0]?.total || 0) >= maxTotalSubmissions) throw new KnowledgeWriteError('pilot_record_limit_reached', 409);
+      }
       const id = randomUUID();
       await client.query('INSERT INTO knowindex.contributions(id,actor_subject,request_key,title,source_url,description,attribution,community,source_class,rights_basis,rights_statement,state,version,payload_sha256,created_at,updated_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)',
         [id, subject, key, details.title, details.url, details.description, details.attribution, details.community,
@@ -197,6 +203,8 @@ export function createKnowindexPostgresLedger({
     const result = await pool.query(String.raw`
       SELECT
         current_database() AS database_name,
+        inet_server_addr()::text AS server_address,
+        inet_server_port() AS server_port,
         pg_is_in_recovery() AS read_replica,
         (SELECT rolsuper OR rolcreatedb OR rolcreaterole OR rolreplication OR rolbypassrls
            FROM pg_roles WHERE rolname=current_user) AS elevated_role,
@@ -248,9 +256,14 @@ export function createKnowindexPostgresLedger({
     ]);
     const productionDatabaseEligible = typeof row.database_name === 'string' &&
       !unsafeNames.has(row.database_name.toLowerCase());
+    const databaseFingerprint = typeof row.server_address === 'string' && row.server_address &&
+      Number.isInteger(Number(row.server_port)) && typeof row.database_name === 'string'
+      ? hash(JSON.stringify([row.database_name, row.server_address, Number(row.server_port)])) : null;
     return {
       leastPrivilegeVerified: Object.values(checks).every(value => value === true),
       productionDatabaseEligible,
+      databaseFingerprint,
+      pilotOneRecordLimitConfigured: maxTotalSubmissions === 1,
       auditChainVerified: chain.valid === true,
       auditEventsChecked: chain.checked,
       // Off-host backups and human approvals CANNOT be established from DB grants.

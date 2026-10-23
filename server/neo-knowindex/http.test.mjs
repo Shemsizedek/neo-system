@@ -5,6 +5,7 @@ import { createServer } from 'node:http';
 import { createKnowindexContributionLedger } from './ledger.mjs';
 import { createKnowindexContributionHttpHandler } from './http.mjs';
 import { issueNeopassToken } from '../neo-platform-api/neopass-google-auth.mjs';
+import { prepareTestKi018Activation } from './test-activation.mjs';
 
 const secret = 'a-secret-of-at-least-thirty-two-bytes-for-local-test-only';
 const current = Date.parse('2026-10-23T12:00:00.000Z');
@@ -37,8 +38,9 @@ const headers = (subject, extra = {}) => ({
 });
 async function withServer(callback, config = {}) {
   const store = ledger();
+  const pilotActivation = prepareTestKi018Activation(store);
   const handler = createKnowindexContributionHttpHandler({
-    ledger: store, authService, jwtSecret: secret, jwtIssuer: 'neo-pass', now, enabled: true, ...config
+    ledger: store, authService, jwtSecret: secret, jwtIssuer: 'neo-pass', now, enabled: true, pilotActivation, ...config
   });
   const server = createServer(async (req, res) => {
     const handled = await handler(req, res);
@@ -111,7 +113,7 @@ test('moderation requires true registry role, second actor, and versioned transi
     assert.equal(deny.status, 403);
     let version = 1;
     for (const action of ['validate', 'attribute', 'approve']) {
-      const res = await send(base, endpoint + '/' + id + '/review', action === 'approve' ? 'google:charlie' : 'google:bob', {
+      const res = await send(base, endpoint + '/' + id + '/review', 'google:bob', {
         action, note: 'Evidence and attribution have been checked manually.', expectedVersion: version
       });
       assert.equal(res.status, 200);
@@ -151,4 +153,15 @@ test('API respects origin allowlist, JSON size boundary, and curator-only modera
     const privateUrl = await send(base, endpoint, 'google:alice', input({ url: 'https://127.0.0.1/private' }));
     assert.equal(privateUrl.status, 400);
   });
+});
+
+
+test('KI-018 Boolean write flag is insufficient without independently signed activation', async () => {
+  await withServer(async base => {
+    const result = await send(base, endpoint, 'google:alice', input());
+    assert.equal(result.status, 503);
+    const body = await result.json();
+    assert.equal(body.error, 'knowindex_activation_not_certified');
+    assert.equal(body.writesEnabled, false);
+  }, { enabled: true, pilotActivation: null });
 });
