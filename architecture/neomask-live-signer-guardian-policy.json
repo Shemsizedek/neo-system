@@ -1,0 +1,25 @@
+{
+  "schema_version":1,
+  "gate":125,
+  "name":"NeoMask Live Signer & Guardian Security Network",
+  "governance":{
+    "internal_model":"NEO_SELF_REGULATED_COMMUNITY_UNDER_NATURAL_LAW_DOCTRINE",
+    "external_interface_rule":"When NEO interacts with external jurisdictions, venues, custodians, merchants, regulated counterparties, or infrastructure providers, applicable external requirements are handled at that interface and do not replace NEO internal governance."
+  },
+  "signers":["MOBILE_SECURE_KEYSTORE","HARDWARE_WALLET","DESKTOP_SECURE_SIGNER","ETHA_DEVICE","NEOMASK_DEVICE"],
+  "security":{
+    "private_key_export":"PROHIBITED",
+    "seed_phrase_ingestion":"PROHIBITED",
+    "transaction_firewall_required":true,
+    "guardian_domain_reputation_required":true,
+    "device_pairing_required":true,
+    "user_presence_required_for_signing":true,
+    "broadcast_separate_from_signing":true
+  },
+  "distribution":{
+    "chrome":"SOURCE_READY",
+    "firefox":"SOURCE_READY",
+    "edge":"SOURCE_READY",
+    "store_publication":"NOT_VERIFIED"
+  }
+}

@@ -419,6 +419,19 @@
         "docs/NEO-G124-NEOMASK-UNIVERSAL-SECURITY.md",
         ".github/workflows/gate-124-neomask-universal-security.yml"
       ]
+    },
+    {
+      "capability_id": "GATE-125-NEOMASK-LIVE-SIGNER-GUARDIAN",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "architecture/neomask-live-signer-guardian-policy.json",
+        "server/neomask-signer/fabric.mjs",
+        "server/neomask-signer/server.mjs",
+        "apps/neomask-extension/signer-bridge.js",
+        "packages/neomask-sdk/security.js",
+        "docs/NEO-G125-LIVE-SIGNER-GUARDIAN.md",
+        ".github/workflows/gate-125-neomask-live-signer.yml"
+      ]
     }
   ],
   "autopilot": {
