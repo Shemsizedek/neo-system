@@ -630,6 +630,17 @@
         "docs/NEO-G143-CREDIT-ORIGINATION.md",
         ".github/workflows/gate-143-credit-origination.yml"
       ]
+    },
+    {
+      "capability_id": "GATE-144-CREDIT-LIFECYCLE-ORCHESTRATOR",
+      "status": "IMPLEMENTED",
+      "evidence": [
+        "architecture/neo-credit-lifecycle-orchestrator-policy.json",
+        "server/neo-credit-lifecycle/fabric.mjs",
+        "server/neo-credit-lifecycle/server.mjs",
+        "docs/NEO-G144-CREDIT-LIFECYCLE.md",
+        ".github/workflows/gate-144-credit-lifecycle.yml"
+      ]
     }
   ],
   "autopilot": {
