@@ -1,0 +1,17 @@
+{
+  "schema_version":1,
+  "gate":137,
+  "name":"NEO Credit Reporting Gateway & Furnisher Operations",
+  "domains":["FURNISHER_REGISTRY","METRO2_VALIDATION","REPORTING_BATCH","DISPUTE_INTAKE","SUPPRESSION","CORRECTION","DELIVERY_RECEIPT","AUDIT"],
+  "controls":{
+    "external_reporting":"DISABLED_UNTIL_VERIFIED_CREDENTIALS_AND_ENDPOINT",
+    "furnisher_registry_required":true,
+    "metro2_validation_required":true,
+    "suppression_before_transmission":true,
+    "correction_lineage_required":true,
+    "delivery_receipt_required_for_delivered_state":true,
+    "e_oscar_adapter":"OPTIONAL_EXTERNAL_ADAPTER",
+    "credit_passport_integration":"GATE136"
+  },
+  "authority_boundary":"This gateway prepares and controls furnishing operations but does not itself establish data-furnisher, consumer-reporting-agency, e-OSCAR, bureau, banking, or government authority."
+}
