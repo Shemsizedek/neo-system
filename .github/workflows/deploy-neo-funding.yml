@@ -1,0 +1,55 @@
+name: Deploy NEO Institutional Funding
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['server/neo-funding/**','deploy/neo-funding/**','architecture/neo-institutional-funding-policy.json','.github/workflows/deploy-neo-funding.yml']
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: neo-funding
+  cancel-in-progress: false
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: holytemples-production
+    timeout-minutes: 30
+    env:
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID || secrets.GCP_PROJECT_ID }}
+      GCP_REGION: ${{ vars.GCP_REGION || secrets.GCP_REGION }}
+      GCP_WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER || secrets.GCP_WIF_PROVIDER }}
+      GCP_CLOUD_RUN_SERVICE_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_SERVICE_ACCOUNT || secrets.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+      GCP_CLOUD_RUN_RUNTIME_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_RUNTIME_ACCOUNT || secrets.GCP_CLOUD_RUN_RUNTIME_ACCOUNT }}
+      GCP_ARTIFACT_REGISTRY: ${{ vars.GCP_ARTIFACT_REGISTRY || secrets.GCP_ARTIFACT_REGISTRY }}
+      SERVICE_NAME: neo-funding
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v4
+        with: {node-version: 24}
+      - run: npm run neo-funding:test
+      - uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@v3
+      - name: Build and push image
+        env: {IMAGE: "${{ env.GCP_ARTIFACT_REGISTRY }}/neo-funding:${{ github.sha }}"}
+        run: |
+          set -euo pipefail
+          gcloud auth configure-docker "${GCP_REGION}-docker.pkg.dev" --quiet
+          docker build -f deploy/neo-funding/Dockerfile -t "$IMAGE" .
+          docker push "$IMAGE"
+      - name: Deploy funding control
+        env: {IMAGE: "${{ env.GCP_ARTIFACT_REGISTRY }}/neo-funding:${{ github.sha }}"}
+        run: |
+          set -euo pipefail
+          gcloud run deploy "$SERVICE_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --image="$IMAGE" --service-account="$GCP_CLOUD_RUN_RUNTIME_ACCOUNT" --port=8080 --allow-unauthenticated --set-secrets="NEO_FUNDING_OPERATOR_TOKEN=neo-funding-operator-token:latest" --quiet
+      - name: Verify public posture
+        run: |
+          set -euo pipefail
+          SERVICE_URL="$(gcloud run services describe "$SERVICE_NAME" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format='value(status.url)')"
+          test -n "$SERVICE_URL"
+          curl --retry 5 --retry-delay 3 -fsS "$SERVICE_URL/health"
+          curl --retry 5 --retry-delay 3 -fsS "$SERVICE_URL/v1/estate/funding" >/tmp/funding.json
