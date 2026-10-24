@@ -1,0 +1,38 @@
+name: NTEL-021 Android Companion Build
+on:
+  push:
+    branches:
+      - feature/neotele-chaplaincy-esim-gate-001
+    paths:
+      - 'apps/noogle-connect-mobile/**'
+      - '.github/workflows/neotele-android-verify.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  compile-noogle-connect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - name: Install Android SDK platform
+        run: sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.10.2'
+      - name: Compile Noogle Connect debug APK
+        working-directory: apps/noogle-connect-mobile
+        run: gradle --no-daemon :app:assembleDebug
+      - name: Print APK SHA-256
+        run: sha256sum apps/noogle-connect-mobile/app/build/outputs/apk/debug/*.apk
+      - name: Upload DEBUG APK for approved local testing
+        uses: actions/upload-artifact@v4
+        with:
+          name: ntel-021-noogle-connect-debug-apk
+          path: apps/noogle-connect-mobile/app/build/outputs/apk/debug/*.apk
+          retention-days: 7
