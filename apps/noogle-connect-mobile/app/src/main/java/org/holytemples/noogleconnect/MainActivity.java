@@ -23,6 +23,7 @@ public final class MainActivity extends Activity {
     TextView note=text("NEO Device Companion · Local Terminal\nRemote access requires future NEO Pass authorization.",14);root.addView(note);
     Button web=new Button(this);web.setText("Open Noogle Connect");root.addView(web);
     web.setOnClickListener(v->startActivity(new Intent(Intent.ACTION_VIEW,Uri.parse("https://connect.holytemples.org/"))));
+    Button neoTele=new Button(this);neoTele.setText("NeoTele eSIM / Network Diagnostics");root.addView(neoTele);neoTele.setOnClickListener(v->startActivity(new Intent(this,NeoTeleDiagnosticsActivity.class)));
     Button status=new Button(this);status.setText("Check this device");root.addView(status);
     Button enrollment=new Button(this);enrollment.setText("NEO Pass enrollment status");root.addView(enrollment);
     enrollment.setOnClickListener(v->checkEnrollmentStatus());
