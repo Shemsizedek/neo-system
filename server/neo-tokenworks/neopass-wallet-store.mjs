@@ -13,7 +13,12 @@ export function createSqliteWalletProofStore({ path } = {}) {
       consumed_at INTEGER, record_json TEXT NOT NULL
     );
     CREATE INDEX IF NOT EXISTS neopass_wallet_challenges_expiry
-      ON neopass_wallet_challenges(expires_at);`);
+      ON neopass_wallet_challenges(expires_at);
+    CREATE TABLE IF NOT EXISTS neopass_wallet_links (
+      network TEXT NOT NULL, address TEXT NOT NULL, subject TEXT NOT NULL,
+      verified_at INTEGER NOT NULL, revoked_at INTEGER,
+      PRIMARY KEY(network,address)
+    );`);
   const insert = db.prepare('INSERT INTO neopass_wallet_challenges(id,subject,session_id,origin,expires_at,record_json) VALUES(?,?,?,?,?,?)');
   const consume = db.prepare(`UPDATE neopass_wallet_challenges SET consumed_at=?
     WHERE id=? AND subject=? AND session_id=? AND origin=?
@@ -29,6 +34,18 @@ export function createSqliteWalletProofStore({ path } = {}) {
     pruneExpired(now) {
       if (!Number.isSafeInteger(now)) throw Error('invalid_cleanup_time');
       return db.prepare('DELETE FROM neopass_wallet_challenges WHERE expires_at<=?').run(now).changes;
+    },
+    linkVerified(proof) {
+      const result = db.prepare(`INSERT INTO neopass_wallet_links(network,address,subject,verified_at)
+        VALUES(?,?,?,?) ON CONFLICT(network,address) DO UPDATE SET verified_at=excluded.verified_at,revoked_at=NULL
+        WHERE neopass_wallet_links.subject=excluded.subject RETURNING address`).get(proof.network,proof.address,proof.subject,proof.verifiedAt);
+      return Boolean(result);
+    },
+    listLinked(subject) {
+      return db.prepare('SELECT network,address,verified_at AS verifiedAt FROM neopass_wallet_links WHERE subject=? AND revoked_at IS NULL ORDER BY network,address').all(subject);
+    },
+    revokeLinked({ subject, network, address, now }) {
+      return db.prepare('UPDATE neopass_wallet_links SET revoked_at=? WHERE subject=? AND network=? AND address=? AND revoked_at IS NULL').run(now,subject,network,address).changes === 1;
     },
     close() { db.close(); }
   });
