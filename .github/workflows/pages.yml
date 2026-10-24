@@ -232,6 +232,8 @@ jobs:
           NODE
       - name: Add SPA 404 fallback
         run: cp dist/index.html dist/404.html
+      - name: Verify full NEO static artifact integrity
+        run: npm run pages:verify:static
       - name: Pages build summary
         run: |
           echo "Public NEO Hub: /neo-hub/" >> "$GITHUB_STEP_SUMMARY"
