@@ -1,6 +1,7 @@
 import http from 'node:http';
 import { createStore, VersionConflictError } from './store.mjs';
 import { createAuth } from './auth.mjs';
+import {createSandboxReceiptRoute} from './cloudSandboxEmitter.mjs';
 
 const PORT=Number(process.env.NEO_COUNTER_PORT||8787);
 const DB_PATH=process.env.NEO_COUNTER_DB_PATH||'data/neo-counter.sqlite';
@@ -14,9 +15,11 @@ function applyCors(res){
 function send(res,status,body){applyCors(res);res.writeHead(status,{'content-type':'application/json','cache-control':'no-store'});res.end(JSON.stringify(body));}
 async function readJson(req){const chunks=[];for await(const chunk of req) chunks.push(chunk);return chunks.length?JSON.parse(Buffer.concat(chunks).toString('utf8')):{};}
 
-export function createHandler(store,{auth=createAuth(store.db)}={}){
+export function createHandler(store,{auth=createAuth(store.db),sandboxEnv=process.env,sandboxNow=Date.now}={}){
+  const sandboxRoute=createSandboxReceiptRoute(store,{env:sandboxEnv,now:sandboxNow});
   return async(req,res)=>{
     try{
+      if(await sandboxRoute(req,res))return;
       if(req.method==='OPTIONS'){applyCors(res);res.writeHead(204);return res.end();}
       const url=new URL(req.url||'/',`http://${req.headers.host||'localhost'}`);
       if(url.pathname==='/health') return send(res,200,{ok:true,service:'neo-counter-backend'});

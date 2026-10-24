@@ -1,0 +1,46 @@
+name: NEO Cloud Counter Emitter and Local Miner Reads
+on:
+  pull_request:
+    branches: [main, feature/neo-cloud-002-sandbox-evidence]
+    paths:
+      - 'server/neo-counter-backend/**'
+      - 'server/miner-generator/**'
+      - 'server/miner-agent/adapters/xgminerReadOnly*'
+      - 'docs/NEO_CLOUD_002B_COUNTER_MINER_BRIDGE.md'
+      - '.github/workflows/neo-cloud-counter-emitter.yml'
+permissions:
+  contents: read
+concurrency:
+  group: neo-cloud-counter-emitter-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  synthetic-boundary-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Fixture HTTP, persistence and loopback protocol tests - not live evidence
+        run: |
+          mkdir -p build/neo-cloud-002b
+          node --test --test-reporter=tap server/neo-counter-backend/cloudSandbox*.test.mjs server/miner-agent/adapters/xgminerReadOnly.test.mjs server/miner-generator/cloudSandbox.test.mjs server/miner-generator/cloudRetail.test.mjs | tee build/neo-cloud-002b/tests.tap
+      - name: Record source and conservative gate status
+        run: |
+          node --input-type=module - <<'NODE'
+          import fs from 'node:fs';
+          fs.writeFileSync('build/neo-cloud-002b/status.json',JSON.stringify({
+            gate:'NEO-CLOUD-002B',commit:process.env.GITHUB_SHA,
+            validation:'SYNTHETIC_FIXTURES_ONLY',operationalGatePassed:false,
+            providerAuthenticated:false,realPaymentVerified:false,physicalMinerVerified:false,
+            purchasesEnabled:false,tokenIssuanceEnabled:false,productionDeployed:false
+          },null,2));
+          NODE
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: neo-cloud-002b-fixture-validation
+          path: build/neo-cloud-002b/
+          retention-days: 14
+          if-no-files-found: error
