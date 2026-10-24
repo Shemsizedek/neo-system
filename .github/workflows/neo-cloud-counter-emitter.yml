@@ -6,8 +6,10 @@ on:
       - 'server/neo-counter-backend/**'
       - 'server/miner-generator/**'
       - 'server/miner-agent/adapters/xgminerReadOnly*'
+      - 'scripts/neo_cloud_runtime_recovery*.py'
       - 'docs/NEO_CLOUD_002B_COUNTER_MINER_BRIDGE.md'
       - 'docs/NEO_CLOUD_002_ACCEPTANCE_RUNNER.md'
+      - 'docs/NEO_CLOUD_002_RUNTIME_RECOVERY.md'
       - '.github/workflows/neo-cloud-counter-emitter.yml'
 permissions:
   contents: read
@@ -23,6 +25,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
+      - name: Recovery helper safety tests - no host actions
+        run: |
+          set -euo pipefail
+          mkdir -p build/neo-cloud-002b
+          python3 -m unittest discover -s scripts -p neo_cloud_runtime_recovery_test.py -v 2>&1 | tee build/neo-cloud-002b/recovery-tests.txt
       - name: Fixture HTTP, persistence and loopback protocol tests - not live evidence
         run: |
           set -euo pipefail
