@@ -167,6 +167,7 @@
     "@composio/core": "^0.18.1",
     "@composio/openai-agents": "^0.11.0",
     "@openai/agents": "^0.1.11",
+    "@simplewebauthn/server": "14.0.3",
     "bitcoinjs-message": "2.2.0",
     "bs58check": "2.1.2",
     "lucide-react": "^0.468.0",
