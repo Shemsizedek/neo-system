@@ -1,0 +1,45 @@
+name: NTEL-023 First Device Certification
+on:
+  push:
+    branches: [feature/neotele-chaplaincy-esim-gate-001]
+  pull_request:
+    paths:
+      - 'apps/noogle-connect-mobile/**'
+      - 'server/neotele/**'
+      - '.github/workflows/neotele-first-device-certification.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  neotele-contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: node --test server/neotele/*.test.mjs
+  android-debug-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - run: sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.10.2'
+      - name: Compile debug APK
+        working-directory: apps/noogle-connect-mobile
+        run: gradle --no-daemon :app:assembleDebug
+      - name: Compute APK digest
+        run: sha256sum apps/noogle-connect-mobile/app/build/outputs/apk/debug/*.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ntel-023-noogle-connect-debug-apk
+          path: apps/noogle-connect-mobile/app/build/outputs/apk/debug/*.apk
+          retention-days: 7
