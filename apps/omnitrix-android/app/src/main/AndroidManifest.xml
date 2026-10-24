@@ -17,6 +17,7 @@
         <activity android:name=".NoogleBrowserActivity" android:exported="false" android:launchMode="singleTop" />
         <activity android:name=".AccountCloudStatusActivity" android:exported="false" />
         <activity android:name=".SyncHealthActivity" android:exported="false" />
+        <activity android:name=".NeoTeleDiagnosticsActivity" android:exported="false" />
         <activity android:name=".FormResponsesActivity" android:exported="false" />
         <activity android:name=".FormManageActivity" android:exported="false" />
         <activity android:name=".ChatThreadActivity" android:exported="false" />
