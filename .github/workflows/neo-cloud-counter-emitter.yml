@@ -1,0 +1,66 @@
+name: NEO Cloud Counter Emitter and Local Miner Reads
+on:
+  pull_request:
+    branches: [main, feature/neo-cloud-002-sandbox-evidence]
+    paths:
+      - 'server/neo-counter-backend/**'
+      - 'server/miner-generator/**'
+      - 'server/miner-agent/adapters/xgminerReadOnly*'
+      - 'scripts/neo_cloud_runtime_recovery*.py'
+      - 'docs/NEO_CLOUD_002B_COUNTER_MINER_BRIDGE.md'
+      - 'docs/NEO_CLOUD_002_ACCEPTANCE_RUNNER.md'
+      - 'docs/NEO_CLOUD_002_RUNTIME_RECOVERY.md'
+      - '.github/workflows/neo-cloud-counter-emitter.yml'
+permissions:
+  contents: read
+concurrency:
+  group: neo-cloud-counter-emitter-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  synthetic-boundary-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Recovery helper safety tests - no host actions
+        run: |
+          set -euo pipefail
+          mkdir -p build/neo-cloud-002b
+          python3 -m unittest discover -s scripts -p neo_cloud_runtime_recovery_test.py -v 2>&1 | tee build/neo-cloud-002b/recovery-tests.txt
+      - name: Fixture HTTP, persistence and loopback protocol tests - not live evidence
+        run: |
+          set -euo pipefail
+          mkdir -p build/neo-cloud-002b
+          node --test --test-reporter=tap server/neo-counter-backend/cloudSandbox*.test.mjs server/miner-agent/adapters/xgminerReadOnly.test.mjs server/miner-generator/cloudSandbox.test.mjs server/miner-generator/cloudRetail.test.mjs server/miner-generator/cloudSandboxAcceptance.test.mjs | tee build/neo-cloud-002b/tests.tap
+      - name: Prove unconfigured acceptance fails closed without credentials
+        run: |
+          set -euo pipefail
+          code=0
+          env -i PATH="$PATH" node server/miner-generator/cloudSandboxAcceptance.mjs --preflight > build/neo-cloud-002b/acceptance-preflight.json || code=$?
+          test "$code" = 2
+          node --input-type=module - <<'NODE'
+          import fs from 'node:fs';
+          const report=JSON.parse(fs.readFileSync('build/neo-cloud-002b/acceptance-preflight.json','utf8'));
+          if(report.gatePassed!==false || report.status!=='BLOCKED' || report.networkRequestsMade!==false) throw Error('preflight must remain fail-closed');
+          NODE
+      - name: Record source and conservative gate status
+        run: |
+          node --input-type=module - <<'NODE'
+          import fs from 'node:fs';
+          fs.writeFileSync('build/neo-cloud-002b/status.json',JSON.stringify({
+            gate:'NEO-CLOUD-002B',commit:process.env.GITHUB_SHA,
+            validation:'SYNTHETIC_FIXTURES_ONLY',operationalGatePassed:false,
+            providerAuthenticated:false,realPaymentVerified:false,physicalMinerVerified:false,
+            purchasesEnabled:false,tokenIssuanceEnabled:false,productionDeployed:false
+          },null,2));
+          NODE
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: neo-cloud-002b-fixture-validation
+          path: build/neo-cloud-002b/
+          retention-days: 14
+          if-no-files-found: error
