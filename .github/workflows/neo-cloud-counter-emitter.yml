@@ -7,6 +7,7 @@ on:
       - 'server/miner-generator/**'
       - 'server/miner-agent/adapters/xgminerReadOnly*'
       - 'docs/NEO_CLOUD_002B_COUNTER_MINER_BRIDGE.md'
+      - 'docs/NEO_CLOUD_002_ACCEPTANCE_RUNNER.md'
       - '.github/workflows/neo-cloud-counter-emitter.yml'
 permissions:
   contents: read
@@ -24,8 +25,20 @@ jobs:
           node-version: 24
       - name: Fixture HTTP, persistence and loopback protocol tests - not live evidence
         run: |
+          set -euo pipefail
           mkdir -p build/neo-cloud-002b
-          node --test --test-reporter=tap server/neo-counter-backend/cloudSandbox*.test.mjs server/miner-agent/adapters/xgminerReadOnly.test.mjs server/miner-generator/cloudSandbox.test.mjs server/miner-generator/cloudRetail.test.mjs | tee build/neo-cloud-002b/tests.tap
+          node --test --test-reporter=tap server/neo-counter-backend/cloudSandbox*.test.mjs server/miner-agent/adapters/xgminerReadOnly.test.mjs server/miner-generator/cloudSandbox.test.mjs server/miner-generator/cloudRetail.test.mjs server/miner-generator/cloudSandboxAcceptance.test.mjs | tee build/neo-cloud-002b/tests.tap
+      - name: Prove unconfigured acceptance fails closed without credentials
+        run: |
+          set -euo pipefail
+          code=0
+          env -i PATH="$PATH" node server/miner-generator/cloudSandboxAcceptance.mjs --preflight > build/neo-cloud-002b/acceptance-preflight.json || code=$?
+          test "$code" = 2
+          node --input-type=module - <<'NODE'
+          import fs from 'node:fs';
+          const report=JSON.parse(fs.readFileSync('build/neo-cloud-002b/acceptance-preflight.json','utf8'));
+          if(report.gatePassed!==false || report.status!=='BLOCKED' || report.networkRequestsMade!==false) throw Error('preflight must remain fail-closed');
+          NODE
       - name: Record source and conservative gate status
         run: |
           node --input-type=module - <<'NODE'
