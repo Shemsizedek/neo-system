@@ -30,7 +30,7 @@ test('KI-022 always checks read-only API even when protected source run fails', 
   assert.match(yaml, /ki022-protected-audit-receipt\.mjs "\$GITHUB_EVENT_PATH"/);
   assert.match(yaml, /if: always\(\)/);
   assert.match(yaml, /node scripts\/ki016-live-readonly-smoke\.mjs/);
-  assert.match(yaml, /production.*NOT effective runtime IAM/i);
+  assert.match(yaml, /Source-run success is NOT effective runtime IAM/);
 });
 
 test('KI-022 does not silently alter the protected source audit permission boundary', async () => {
