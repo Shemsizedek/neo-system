@@ -64,6 +64,35 @@ jobs:
           status,_,_=fetch('/assets/UNKNOWN/tokenscan.json')
           assert status==404,status
           print('NOMNI enhanced metadata / direct JSON / read-only safety: OK')
+          status,headers,body=fetch('/metadata/')
+          assert status==200 and b'METADATA OBSERVABILITY' in body and b'noindex,nofollow' in body
+          for module in ('app.js','styles.css'):
+              status,_,content=fetch('/metadata/'+module)
+              assert status==200 and len(content)>900
+          status,_,body=fetch('/api/crown/metadata-readiness?asset=NOMNI')
+          assert status==200,(status,body[:250])
+          diagnostic=json.loads(body)
+          assert diagnostic['schema']=='neo.crown.metadata-readiness.v1' and diagnostic['asset']=='NOMNI'
+          assert diagnostic['read_only'] is True and diagnostic['safe_to_issue'] is False
+          assert diagnostic['explorer_additional_information_verified'] is False
+          assert diagnostic['price'] is None and diagnostic['price_verified'] is False
+          assert diagnostic['canonical']['url']=='https://crown.holytemples.org/assets/NOMNI/tokenscan.json'
+          assert diagnostic['status'] in (
+              'canonical_blocked','mirror_not_verified','counterparty_pointer_not_verified',
+              'tokenscan_pointer_not_verified','canonical_ready_explorer_enrichment_unverified'
+          )
+          for key in ('canonical','mirror','counterparty','tokenscan'):
+              assert diagnostic[key]['state'] in (
+                  'matches_approved','differs_from_approved','points_to_canonical',
+                  'different_description','invalid','unavailable'
+              )
+          if diagnostic['canonical']['state']!='matches_approved':
+              assert diagnostic['status']=='canonical_blocked'
+          status,_,_=fetch('/api/crown/metadata-readiness',method='POST')
+          assert status==405
+          status,_,_=fetch('/api/crown/metadata-readiness?asset=NOTISSUED')
+          assert status==404
+          print('NCC-014 metadata dashboard, fail-closed canonical status and no signer permission: OK')
           status,headers,body=fetch('/studio/')
           assert status==200 and b'CROWN MEDIA LIBRARY' in body and b'mediaConsent' in body
           assert "img-src 'self' blob: data:" in headers.get('Content-Security-Policy','')
