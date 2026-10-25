@@ -4,7 +4,7 @@ const PREFIX='https://crown.holytemples.org/assets/';
 const ASSET=/^[A-Z][A-Z0-9]{0,23}$/;
 const HASH=/^[a-f0-9]{64}$/i;
 const TEXT_MAX=2048;
-const CODEPOINTS=/[\u0000-\u001f\u007f]/g;
+const CODEPOINTS=/[\u0000-\u001f\u007f]/;
 
 export function crownIssuanceDescription(asset){
   if(typeof asset!=='string'||!ASSET.test(asset))throw new Error('invalid_canonical_asset');
