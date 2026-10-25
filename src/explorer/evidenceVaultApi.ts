@@ -3,7 +3,12 @@ import type {OrangeChipEvidenceInput,OrangeChipEvidenceRecord,EvidenceReviewStat
 export type EvidenceAuditEvent={id:string;evidenceId:string;asset:string;eventType:string;actor:string;payload:Record<string,unknown>;createdAt:string}
 
 export class EvidenceVaultApi{
-  constructor(private readonly baseUrl=(import.meta as any).env?.VITE_NEO_EVIDENCE_API_URL||'',private readonly token=(import.meta as any).env?.VITE_NEO_EVIDENCE_API_TOKEN||''){}
+  private readonly baseUrl:string
+  private readonly token:string
+  constructor(baseUrl=(import.meta as any).env?.VITE_NEO_EVIDENCE_API_URL||'',token=''){
+    this.baseUrl=baseUrl
+    this.token=token
+  }
 
   private async request<T>(path:string,init:RequestInit={}):Promise<T>{
     if(!this.baseUrl)throw new Error('NEO Evidence Vault API is not configured.')
@@ -20,12 +25,12 @@ export class EvidenceVaultApi{
     return result.evidence
   }
 
-  async ingest(input:OrangeChipEvidenceInput,reviewer='neo-explorer'){
-    return this.request<OrangeChipEvidenceRecord>(`/assets/${encodeURIComponent(input.asset)}/evidence`,{method:'POST',headers:{'x-reviewer':reviewer},body:JSON.stringify(input)})
+  async ingest(input:OrangeChipEvidenceInput,_reviewer='neo-explorer'){
+    return this.request<OrangeChipEvidenceRecord>(`/assets/${encodeURIComponent(input.asset)}/evidence`,{method:'POST',body:JSON.stringify(input)})
   }
 
-  async review(asset:string,id:string,status:Exclude<EvidenceReviewStatus,'UNREVIEWED'>,reviewer:string,note?:string){
-    return this.request<OrangeChipEvidenceRecord>(`/evidence/${encodeURIComponent(id)}/review`,{method:'PATCH',headers:{'x-reviewer':reviewer},body:JSON.stringify({asset,status,reviewer,note})})
+  async review(asset:string,id:string,status:Exclude<EvidenceReviewStatus,'UNREVIEWED'>,_reviewer:string,note?:string){
+    return this.request<OrangeChipEvidenceRecord>(`/evidence/${encodeURIComponent(id)}/review`,{method:'PATCH',body:JSON.stringify({asset,status,note})})
   }
 
   async audit(asset:string){
