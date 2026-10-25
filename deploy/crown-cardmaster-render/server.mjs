@@ -5,6 +5,7 @@ import {fileURLToPath} from 'node:url';
 import {createCardmasterHandler} from '../../api/crown/cardmaster.mjs';
 import {CARDMASTER_SEEDS} from '../../server/crown-metadata/cardmaster-gallery.mjs';
 import {createCounterpartyEvidenceService} from '../../server/crown-metadata/counterparty-order-evidence.mjs';
+import {createCrownMetadataReadinessService} from '../../server/crown-metadata/metadata-readiness.mjs';
 
 const baseDir = dirname(fileURLToPath(import.meta.url));
 const DEFAULT_STATIC_ROOT = resolve(baseDir, '../../apps/neoscan/web/cardmaster');
@@ -23,7 +24,12 @@ const FILES = new Map([
   ['/studio/studio.css', ['studio/studio.css','text/css; charset=utf-8']],
   ['/studio/media-core.mjs', ['studio/media-core.mjs','text/javascript; charset=utf-8']],
   ['/studio/media-store.mjs', ['studio/media-store.mjs','text/javascript; charset=utf-8']],
-  ['/studio/media-ui.mjs', ['studio/media-ui.mjs','text/javascript; charset=utf-8']]
+  ['/studio/media-ui.mjs', ['studio/media-ui.mjs','text/javascript; charset=utf-8']],
+  ['/metadata', ['metadata/index.html','text/html; charset=utf-8']],
+  ['/metadata/', ['metadata/index.html','text/html; charset=utf-8']],
+  ['/metadata/index.html', ['metadata/index.html','text/html; charset=utf-8']],
+  ['/metadata/app.js', ['metadata/app.js','text/javascript; charset=utf-8']],
+  ['/metadata/styles.css', ['metadata/styles.css','text/css; charset=utf-8']]
 ]);
 const BASE_CSP = "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' blob: data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'";
 
@@ -56,7 +62,7 @@ function fileRoute(pathname) {
   return match && CARDS.has(match[1]) ? [`art/${match[1]}-${match[2]}.svg`,'image/svg+xml; charset=utf-8'] : null;
 }
 
-export function createCrownRenderServer({apiHandler=createCardmasterHandler(),evidenceService=createCounterpartyEvidenceService(),staticRoot=DEFAULT_STATIC_ROOT}={}) {
+export function createCrownRenderServer({apiHandler=createCardmasterHandler(),evidenceService=createCounterpartyEvidenceService(),metadataService=createCrownMetadataReadinessService(),staticRoot=DEFAULT_STATIC_ROOT}={}) {
   let inflight=0;
   const server=createServer(async (req,res)=>{
     commonHeaders(res);
@@ -75,6 +81,27 @@ export function createCrownRenderServer({apiHandler=createCardmasterHandler(),ev
     if(path==='/robots.txt'){
       res.setHeader('Content-Type','text/plain; charset=utf-8');
       return res.end('User-agent: *\nDisallow: /\n');
+    }
+    if(path==='/api/crown/metadata-readiness') {
+      if(req.method!=='GET') {
+        res.setHeader('Allow','GET');return json(res,405,{error:'read_only_endpoint'});
+      }
+      const names=parsed.searchParams.getAll('asset');
+      if(names.length>1)return json(res,400,{error:'ambiguous_asset'});
+      const assetName=names.length?names[0]:'NOMNI';
+      if(!/^[A-Z][A-Z0-9]{0,23}$/.test(assetName))return json(res,400,{error:'invalid_asset'});
+      if(inflight>=2)return json(res,503,{error:'gateway_busy'});
+      inflight++;
+      try {
+        const local=await readFile(join(staticRoot,'assets',assetName,'tokenscan.json'));
+        if(local.length>8192)return json(res,503,{error:'local_metadata_too_large'});
+        const approved=JSON.parse(local.toString('utf8'));
+        const result=await metadataService.inspect(assetName,approved);
+        return json(res,200,result);
+      }catch(error){
+        if(error?.code==='ENOENT')return json(res,404,{error:'asset_not_published'});
+        return json(res,503,{error:'metadata_readiness_unavailable'});
+      }finally{inflight--;}
     }
     if(path==='/api/crown/order-evidence') {
       if(req.method!=='GET') {
