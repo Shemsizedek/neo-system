@@ -27,15 +27,20 @@ jobs:
           base=os.environ['BASE'].rstrip('/')
           def fetch(path,method='GET'):
               request=urllib.request.Request(base+path,method=method,headers={'User-Agent':'NEO-CARDMASTER-CI/1.0'})
-              for attempt in range(3):
+              for attempt in range(5):
                   try:
-                      with urllib.request.urlopen(request,timeout=100) as response:
+                      with urllib.request.urlopen(request,timeout=35) as response:
                           return response.status,response.headers,response.read()
                   except urllib.error.HTTPError as ex:
-                      return ex.code,ex.headers,ex.read()
-                  except (urllib.error.URLError, TimeoutError, ConnectionError) as ex:
-                      if attempt==2: raise
-                      time.sleep(12)
+                      body=ex.read()
+                      if method=='GET' and ex.code in (502,503,504) and attempt<4:
+                          print(f'Render cold start or gateway outage: {path} returned {ex.code}. Retry {attempt+1}/4.',flush=True)
+                          time.sleep(16)
+                          continue
+                      return ex.code,ex.headers,body
+                  except (urllib.error.URLError, TimeoutError, ConnectionError):
+                      if method!='GET' or attempt==4: raise
+                      time.sleep(16)
           status,headers,body=fetch('/healthz')
           assert status==200,(status,body[:180])
           health=json.loads(body)
