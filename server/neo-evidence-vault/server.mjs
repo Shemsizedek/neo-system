@@ -1,28 +1,59 @@
 import http from 'node:http';
+import { createHash, timingSafeEqual } from 'node:crypto';
 import { createEvidenceVault } from './store.mjs';
 
 const PORT=Number(process.env.NEO_EVIDENCE_PORT||8791);
 const DB_PATH=process.env.NEO_EVIDENCE_DB_PATH||'data/neo-evidence-vault.sqlite';
 const ALLOWED_ORIGIN=process.env.NEO_EVIDENCE_ALLOWED_ORIGIN||'https://shemsizedek.github.io';
-const API_TOKEN=process.env.NEO_EVIDENCE_API_TOKEN||'';
+// Credentials are resolved when a handler is created, not at import time.
+export function credentialsFromEnv(env=process.env){
+  if(env.NEO_EVIDENCE_CREDENTIALS){
+    const values=JSON.parse(env.NEO_EVIDENCE_CREDENTIALS);
+    return validateCredentials(values);
+  }
+  return validateCredentials(env.NEO_EVIDENCE_API_TOKEN ? [{token:env.NEO_EVIDENCE_API_TOKEN,actor:env.NEO_EVIDENCE_ACTOR||'evidence-service',roles:['read','ingest','review']}] : []);
+}
+function validateCredentials(values){
+  if(!Array.isArray(values))throw new Error('invalid_evidence_credentials');
+  const seen=new Set();
+  return values.map(value=>{
+    if(typeof value?.token!=='string'||!value.token.trim()||seen.has(value.token)||typeof value.actor!=='string'||!value.actor.trim()||!Array.isArray(value.roles)||!value.roles.length||value.roles.some(role=>!['read','ingest','review'].includes(role)))throw new Error('invalid_evidence_credentials');
+    seen.add(value.token);
+    return {digest:createHash('sha256').update(value.token).digest(),actor:value.actor,roles:[...value.roles]};
+  });
+}
 
 function applyCors(res){
   res.setHeader('Access-Control-Allow-Origin',ALLOWED_ORIGIN);
-  res.setHeader('Access-Control-Allow-Headers','Authorization, Content-Type, X-Reviewer');
+  res.setHeader('Access-Control-Allow-Headers','Authorization, Content-Type');
   res.setHeader('Access-Control-Allow-Methods','GET,POST,PATCH,OPTIONS');
 }
 function send(res,status,body){applyCors(res);res.writeHead(status,{'content-type':'application/json','cache-control':'no-store'});res.end(JSON.stringify(body));}
 async function readJson(req){const chunks=[];for await(const chunk of req)chunks.push(chunk);return chunks.length?JSON.parse(Buffer.concat(chunks).toString('utf8')):{};}
-function authorized(req){if(!API_TOKEN)return true;return req.headers.authorization===`Bearer ${API_TOKEN}`;}
-function actor(req){return String(req.headers['x-reviewer']||'system');}
+function principal(req,credentials){
+  const match=/^Bearer (.+)$/.exec(req.headers.authorization||'');
+  if(!match)return null;
+  const digest=createHash('sha256').update(match[1]).digest();
+  return credentials.find(value=>timingSafeEqual(digest,value.digest))||null;
+}
 
-export function createHandler(vault){
+export function createHandler(vault,{credentials,authenticate}={}){
+  const configured=credentials===undefined?credentialsFromEnv():validateCredentials(credentials);
+  if(authenticate!==undefined&&typeof authenticate!=='function')throw new Error('invalid_evidence_authenticator');
   return async(req,res)=>{
     try{
       if(req.method==='OPTIONS'){applyCors(res);res.writeHead(204);return res.end();}
       const url=new URL(req.url||'/',`http://${req.headers.host||'localhost'}`);
       if(url.pathname==='/health')return send(res,200,{ok:true,service:'neo-evidence-vault'});
-      if(!authorized(req))return send(res,401,{error:'unauthorized'});
+      if(!configured.length&&!authenticate)return send(res,503,{error:'authentication_not_configured'});
+      let identity=principal(req,configured);
+      if(!identity&&authenticate){
+        try{identity=await authenticate(req);}catch{return send(res,503,{error:'authentication_unavailable'});}
+      }
+      if(identity&&(typeof identity.actor!=='string'||!identity.actor||!Array.isArray(identity.roles)))return send(res,503,{error:'authentication_unavailable'});
+      if(!identity)return send(res,401,{error:'unauthorized'});
+      const role=req.method==='GET'?'read':req.method==='POST'?'ingest':req.method==='PATCH'?'review':null;
+      if(!role||!identity.roles.includes(role))return send(res,403,{error:'forbidden'});
 
       const assetEvidence=url.pathname.match(/^\/assets\/([^/]+)\/evidence$/);
       if(assetEvidence){
@@ -31,7 +62,8 @@ export function createHandler(vault){
         if(req.method==='POST'){
           const body=await readJson(req);
           if(String(body.asset||asset).toUpperCase()!==asset)return send(res,400,{error:'asset_mismatch'});
-          return send(res,201,vault.createEvidence({...body,asset},actor(req)));
+          const {title,sourceType,sourceUrl,issuer,jurisdiction,claimType,observedAt,note}=body;
+          return send(res,201,vault.createEvidence({asset,title,sourceType,sourceUrl,issuer,jurisdiction,claimType,observedAt,note},identity.actor));
         }
       }
 
@@ -50,20 +82,20 @@ export function createHandler(vault){
       const review=url.pathname.match(/^\/evidence\/([^/]+)\/review$/);
       if(review&&req.method==='PATCH'){
         const body=await readJson(req);
-        const reviewer=String(body.reviewer||actor(req));
+        const reviewer=identity.actor;
         const record=vault.reviewEvidence(decodeURIComponent(review[1]),{status:body.status,reviewer,note:body.note});
         return record?send(res,200,record):send(res,404,{error:'not_found'});
       }
 
       return send(res,404,{error:'not_found'});
-    }catch(error){return send(res,500,{error:'internal_error',message:error instanceof Error?error.message:'unknown'});}
+    }catch(error){return send(res,500,{error:'internal_error'});}
   };
 }
 
-export function startServer({port=PORT,dbPath=DB_PATH}={}){
+export function startServer({port=PORT,dbPath=DB_PATH,host,credentials,authenticate}={}){
   const vault=createEvidenceVault(dbPath);
-  const server=http.createServer(createHandler(vault));
-  server.listen(port,()=>console.log(`NEO Evidence Vault listening on :${port}`));
+  const server=http.createServer(createHandler(vault,{credentials,authenticate}));
+  server.listen(port,host,()=>console.log(`NEO Evidence Vault listening on :${port}`));
   return {server,vault};
 }
 
