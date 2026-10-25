@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="theme-color" content="#0B1219">
+  <meta name="description" content="NEO Crown Chain Layer 3 — create token showcase cards on demand from source-attributed Bitcoin assets or unsigned design previews.">
+  <title>Crown Layer 3 · Token Showcase Cards</title>
+  <link rel="stylesheet" href="/showcase/styles.css">
+</head>
+<body>
+<div class="shell">
+  <header class="masthead">
+    <a href="/" class="identity"><div class="seal" aria-hidden="true">N</div><div><span class="eyebrow">PROJECT 144 / NEO CROWN CHAIN</span><strong>LAYER 3 <em>SHOWCASE</em></strong></div></a>
+    <nav aria-label="Navigation"><a href="/">Gallery</a><a href="/studio/">Art Studio</a><a href="/metadata/">NOMNI diagnostics</a></nav>
+  </header>
+  <section class="hero">
+    <div><p class="eyebrow gold">THE TOKEN SHOWCASE FORGE / NCC-015</p><h1>Every instrument.<br><em>One Crown identity.</em></h1><p class="lede">Produce premium front-and-back showcase cards for Bitcoin instruments in seconds. Resolve an existing Counterparty asset, or explore a proposed instrument as a clearly labeled draft. The artwork never signs, issues, values or legally certifies anything.</p></div>
+    <div class="metrics"><span class="eyebrow">SOURCE POLICY</span><strong>Evidence first.</strong><p>Verified public sources where supported; issuer declarations are never upgraded into proven financial rights.</p><div class="rule"></div><span class="eyebrow">RENDERING ENGINE</span><strong>Deterministic SVG</strong><p>Free browser PNG export · No provider credits · No wallets</p></div>
+  </section>
+  <section class="alert" role="note"><strong>Financial and chain integrity:</strong> An observed public Counterparty asset is not proof of who controls its wallet, an investment contract, collateral, title, market value or returns. Pre-issuance previews are off-chain designs only. Other Bitcoin instrument standards currently support design previews, not verified ledger lookups.</section>
+  <main class="workspace">
+    <aside class="pane controls" aria-labelledby="designTitle">
+      <div class="pane-head"><p class="eyebrow">01 · CONFIGURE</p><h2 id="designTitle">Card specification</h2></div>
+      <form id="showcaseForm" autocomplete="off">
+        <fieldset>
+          <legend>Instrument stage</legend>
+          <label class="choice"><input name="mode" type="radio" value="observed" checked><span><strong>Existing Bitcoin asset</strong><small>Read the public Counterparty ledger</small></span></label>
+          <label class="choice"><input name="mode" type="radio" value="preview"><span><strong>Unissued design preview</strong><small>Prepare artwork before an authorized issuance</small></span></label>
+        </fieldset>
+        <label for="asset">Asset identifier</label><input name="asset" id="asset" value="NOMNI" maxlength="255" required placeholder="e.g. NOMNI or A123456789">
+        <p class="hint">Enter the actual Counterparty asset name for a live lookup. No issuer wallet is required.</p>
+        <div id="previewFields" hidden>
+          <label for="instrumentType">Proposed instrument class <span class="muted">(design only)</span></label>
+          <select id="instrumentType" name="instrument_type">
+            <option value="unclassified">General asset / other</option>
+            <option value="currency">Currency or monetary unit</option>
+            <option value="bond">Bond</option>
+            <option value="note">Promissory note</option>
+            <option value="shares">Shares / equity</option>
+            <option value="real_estate">Real estate</option>
+            <option value="business_acquisition">Business acquisition</option>
+            <option value="private_equity">Private equity</option>
+            <option value="venture_capital">Venture capital</option>
+            <option value="private_capital">Private capital</option>
+            <option value="investment_pool">Investment fund / pool</option>
+            <option value="portfolio">Investment portfolio</option>
+            <option value="index">Index / benchmark</option>
+            <option value="insurance_policy">Insurance policy</option>
+            <option value="insurance_claim">Insurance claim</option>
+            <option value="neo_project">NEO project</option>
+            <option value="nft">Digital collectible / NFT presentation</option>
+            <option value="utility">Utility token</option>
+          </select>
+          <label for="network">Bitcoin protocol / presentation</label>
+          <select id="network" name="network">
+            <option value="counterparty">Counterparty</option>
+            <option value="runes">Runes (preview only)</option>
+            <option value="ordinals">Ordinals / inscriptions (preview only)</option>
+            <option value="taproot">Taproot contract (preview only)</option>
+            <option value="other-bitcoin">Other Bitcoin instrument (preview only)</option>
+          </select>
+          <label for="title">Public artwork title <span class="muted">(optional; no private personal information)</span></label>
+          <input id="title" name="title" maxlength="70" placeholder="Public design label only — never claimant names">
+        </div>
+        <label for="style">Card finish</label>
+        <select id="style" name="style">
+          <option value="auto">Auto · instrument-aware</option>
+          <option value="aurum">Aurum / gold</option>
+          <option value="emerald">Verdant / emerald</option>
+          <option value="azurite">Azurite / blue</option>
+          <option value="violet">Royal / violet</option>
+          <option value="copper">Copper / heritage</option>
+        </select>
+        <button class="generate" type="submit" id="generate">Generate Showcase Card <span>✦</span></button>
+      </form>
+      <div class="format-note"><strong>18 supported presentation categories</strong><p>Unknown instruments use a neutral design. A category is not an opinion that any token meets the legal definition of a bond, equity share, insurance policy or other regulated product.</p></div>
+    </aside>
+    <section class="canvas" aria-labelledby="canvasTitle">
+      <div class="canvas-head"><div><p class="eyebrow">02 · DESIGN OUTPUT</p><h2 id="canvasTitle">The Crown card</h2></div><span class="edition">720 × 1040 / SCALABLE VECTOR</span></div>
+      <div class="preview-frame"><div class="preview-glow"></div><img id="cardPreview" width="720" height="1040" alt="Layer 3 Token Showcase card preview" aria-describedby="renderStatus"><div id="previewOverlay" class="loading-label">Generating card…</div></div>
+      <div class="tabs" role="group" aria-label="Card face"><button type="button" class="active" id="frontFace" aria-pressed="true">Front design</button><button type="button" id="backFace" aria-pressed="false">Back / provenance</button></div>
+      <p class="status" id="renderStatus" role="status" aria-live="polite">Opening Layer 3 token showcase studio…</p>
+      <div class="downloads">
+        <button type="button" id="downloadSvg" disabled><span>SVG</span> Download card</button>
+        <button type="button" id="downloadPng" disabled><span>PNG</span> Export 2× print file</button>
+        <button type="button" id="downloadJson" disabled><span>JSON</span> Provenance record</button>
+      </div>
+    </section>
+    <aside class="pane provenance" aria-labelledby="recordTitle">
+      <div class="pane-head"><p class="eyebrow">03 · EVIDENCE</p><h2 id="recordTitle">Card record</h2></div>
+      <dl class="facts">
+        <dt>Card status</dt><dd id="recordMode">Not generated</dd>
+        <dt>Asset identifier</dt><dd id="recordAsset">—</dd>
+        <dt>Presentation type</dt><dd id="recordType">—</dd>
+        <dt>Classification source</dt><dd id="recordEvidence">—</dd>
+        <dt>Chain evidence</dt><dd id="recordLedger">—</dd>
+        <dt>Metadata source</dt><dd id="recordMetadata">—</dd>
+        <dt>Financial quotation</dt><dd id="recordPrice">No verified price</dd>
+        <dt>Card SHA-256</dt><dd class="mono" id="recordHash">—</dd>
+      </dl>
+      <div class="risk"><span class="eyebrow">SECURITY GATES</span><p><span class="indicator"></span> No Bitcoin signing or broadcast</p><p><span class="indicator"></span> No reserve or legal title certification</p><p><span class="indicator"></span> No automatic issuer claims</p></div>
+      <a id="recordLink" href="/api/crown/showcase?asset=NOMNI" target="_blank" rel="noopener noreferrer">Open source-backed JSON ↗</a>
+    </aside>
+  </main>
+  <footer><span>NEO CROWN CHAIN / LAYER 3</span><span>Presentation system · Evidence first · No minting, custody, investment assurance or market trading</span></footer>
+</div>
+<script src="/showcase/app.js" defer></script>
+</body>
+</html>
