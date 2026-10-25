@@ -1,0 +1,68 @@
+name: KI-022 Protected Neopass Audit Receipt
+
+# This read-only workflow is triggered ONLY by completion of the existing
+# manual, production-environment-protected source audit. It never dispatches
+# the protected audit and never accesses Google Cloud credentials.
+on:
+  workflow_run:
+    workflows:
+      - KI-016 NEOpass Production Signing Metadata Audit
+    types: [completed]
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/ki022-protected-audit-receipt*'
+      - 'scripts/ki022-receipt-workflow.test.mjs'
+      - 'server/neo-knowindex/storage-selection.test.mjs'
+      - 'data/knowindex/ki020-storage-candidates.json'
+      - '.github/workflows/ki022-protected-audit-receipt.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  test-receipt-parser:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Verify protected-source receipt remains fail-closed
+        run: node --test scripts/ki022-protected-audit-receipt.test.mjs scripts/ki022-receipt-workflow.test.mjs server/neo-knowindex/storage-selection.test.mjs
+
+  correlate-protected-audit:
+    if: github.event_name == 'workflow_run'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Check protected-audit source-run provenance without claiming IAM certification
+        shell: bash
+        run: |
+          set -euo pipefail
+          # GitHub supplies the event file. There is NO API token, secret,
+          # id-token permission, workflow dispatch, or IAM write.
+          if node scripts/ki022-protected-audit-receipt.mjs "$GITHUB_EVENT_PATH" > "$RUNNER_TEMP/ki022-receipt.json"; then
+            echo 'KI-022 observed a successful reviewed-main protected-audit workflow execution.' >> "$GITHUB_STEP_SUMMARY"
+            echo 'Source-run success is NOT effective runtime IAM, live Neopass identity, or write authorization.' >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo 'KI-022 BLOCKED: Protected source workflow did not pass provenance and success checks.' >> "$GITHUB_STEP_SUMMARY"
+            cat "$RUNNER_TEMP/ki022-receipt.json" || true
+            exit 1
+          fi
+          cat "$RUNNER_TEMP/ki022-receipt.json"
+          rm -f "$RUNNER_TEMP/ki022-receipt.json"
+      - name: Independently verify public API stays read-only
+        if: always()
+        run: node scripts/ki016-live-readonly-smoke.mjs
+      - name: Record continuing external evidence requirements
+        if: always()
+        run: |
+          echo 'No production database, billing, keys, registry membership, wallet or chain transactions were modified.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Operator and security must still verify real identity, durable off-host restore and a separately signed KI-018 single-record pilot.' >> "$GITHUB_STEP_SUMMARY"

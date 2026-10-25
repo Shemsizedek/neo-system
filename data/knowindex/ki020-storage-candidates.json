@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
   "gate": "KI-020",
-  "observedAt": "2026-10-23T16:00:00Z",
+  "observedAt": "2026-10-25T17:15:00Z",
   "productionWritesApproved": false,
   "selectedProductionDatabase": null,
-  "source": "connected Render and Neon read-only project listings",
+  "source": "connected Render and Neon read-only project listings (refreshed 2026-10-25)",
   "candidates": [
     {
       "provider": "render",
@@ -61,6 +61,14 @@
       "environment": "staging",
       "productionEligible": false,
       "reason": "Other workstream; no KNOWINDEX storage approval"
+    },
+    {
+      "provider": "neon",
+      "name": "neo-careers-staging",
+      "workstream": "neo-careers",
+      "environment": "staging",
+      "productionEligible": false,
+      "reason": "Separate NEO Careers staging Postgres project; no KNOWINDEX ownership, production backup, or recovery approval"
     }
   ],
   "approvalRequired": [
