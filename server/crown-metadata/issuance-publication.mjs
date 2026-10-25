@@ -24,6 +24,17 @@ async function writeOnce(path,content){
     return 'unchanged';
   }
 }
+async function writeReceiptOnce(path,record){
+  await mkdir(dirname(path),{recursive:true});
+  try{await writeFile(path,format(record),{encoding:'utf8',flag:'wx'});return 'created';}
+  catch(error){
+    if(error.code!=='EEXIST')throw error;
+    const existing=JSON.parse(await readFile(path,'utf8'));
+    const fields=['schema','asset','tx_hash','block_index','chain_block_hash','source_address','canonical_url','metadata_sha256','operator_review_reference'];
+    if(fields.some(field=>existing[field]!==record[field]))throw Error('existing_receipt_conflict_or_reorganization');
+    return 'unchanged';
+  }
+}
 export async function loadApprovedIntent(asset,{root=ROOT}={}){
   if(typeof asset!=='string'||!ASSET.test(asset))throw Error('invalid_approved_intent_name');
   const full=join(root,'server','crown-metadata','approved-intents',asset+'.json');
@@ -68,7 +79,8 @@ async function readCanonical(url,fetchImpl){
 export async function verifyCanonicalBeforeSigning(intent,{fetchImpl=fetch}={}){
   const expected=preparedMetadata(intent);
   const actual=validateLegacyEnhancedJSON(await readCanonical(expected.canonical_url,fetchImpl));
-  if(JSON.stringify(actual)!==JSON.stringify(expected.metadata))throw Error('canonical_content_does_not_match_approved_metadata');
+  const entries=o=>Object.entries(o).sort(([a],[b])=>a.localeCompare(b));
+  if(JSON.stringify(entries(actual))!==JSON.stringify(entries(expected.metadata)))throw Error('canonical_content_does_not_match_approved_metadata');
   return {asset:expected.asset,canonical_url:expected.canonical_url,status:'CANONICAL_JSON_VERIFIED',redirect:false,source_matches_approved_metadata:true,metadata_sha256:expected.content_sha256};
 }
 export async function confirmAndRecordIssuance(intent,{root=ROOT,fetchImpl=fetch,clock=()=>new Date(),minConfirmations=6}={}){
@@ -91,7 +103,7 @@ export async function confirmAndRecordIssuance(intent,{root=ROOT,fetchImpl=fetch
     issuer_wallet_control_verified_by_crown:false,
     no_token_operation_performed:true
   };
-  const state=await writeOnce(receiptPath(root,expected.asset),format(saved));
+  const state=await writeReceiptOnce(receiptPath(root,expected.asset),saved);
   return {asset:expected.asset,stage:'CHAIN_CONFIRMED_AND_CANONICAL_VERIFIED',state,canonical_check:url,receipt:saved};
 }
 async function main(){
