@@ -54,6 +54,19 @@ function payloadObject(value,label){
   if(!value||typeof value!=='object'||Array.isArray(value))throw Error('invalid_'+label+'_response');
   return value;
 }
+export function createCrownIssuanceIntentDraft({asset,ownerAddress,quantityRaw,description,website}={}){
+  const prepared=prepareCrownIssuance({asset,ownerAddress,description,website});
+  const units=strictBigInt(quantityRaw);
+  if(units<=0n)throw Error('positive_initial_issuance_required');
+  return {
+    schema:'neo.crown.issuance-intent.v1',operation:'initial_issuance',network:'bitcoin-mainnet',protocol:'counterparty',
+    asset:prepared.asset,owner_address:prepared.owner_address,issuer_address:prepared.owner_address,
+    quantity_raw:units.toString(),asset_description_for_signer:prepared.asset_description_for_signer,
+    metadata:prepared.metadata,tx_hash:null,
+    approval:{state:'DRAFT_REQUIRES_OPERATOR_REVIEW',review_reference:null},
+    signing_performed:false,broadcast_performed:false
+  };
+}
 export function validateApprovedIntent(intent,{requireTransaction=true}={}){
   if(!intent||intent.schema!=='neo.crown.issuance-intent.v1'||intent.operation!=='initial_issuance'||!ASSET.test(intent.asset||''))throw Error('invalid_issuance_intent');
   if(intent.approval?.state!=='approved_for_metadata_publication'||typeof intent.approval.review_reference!=='string'||!/^https:\/\/github\.com\/Shemsizedek\/neo-system\/(pull|issues)\/[1-9]\d*$/.test(intent.approval.review_reference))throw Error('operator_review_required');
