@@ -17,7 +17,7 @@ function json(res,status,body){
 }
 
 export function mapDealDeskPath(pathname='/'){
-  if(pathname==='/portal'||pathname==='/ui')return '/portal/deal-desk';
+  if(pathname==='/'||pathname==='/portal'||pathname==='/ui')return '/portal/deal-desk';
   return pathname;
 }
 
