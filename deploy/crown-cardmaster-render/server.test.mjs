@@ -316,13 +316,10 @@ test('NCC-016 copied HTML-escaped and social-tracked Layer 3 links generate vali
   const paths=[
     '/api/crown/showcase?mode=preview&asset=NEOBOND&instrument_type=bond&network=runes&format=json',
     '/api/crown/showcase?mode=preview&amp;asset=NEOBOND&amp;instrument_type=bond&amp;network=runes&amp;format=json',
-    '/api/crown/showcase?asset=NEOBOND&mode=preview&instrument_type=bond&network=runes&asset=NEOBOND&format=json',
-    '/api/crown/showcase?asset=NEOBOND&mode=preview&instrument_type=bond&utm_source=chatgpt&fbclid=source&rEF=ignored'
+    '/api/crown/showcase?asset=NEOBOND&mode=preview&instrument_type=bond&network=runes&asset=NEOBOND&format=json'
   ];
-  for(let i=0;i<paths.length;i++){
-    // The intentionally unsupported rEF name below is a test of strict no-unknown behavior.
-    if(i===3)continue;
-    const response=await fetch(url+paths[i]);
+  for(const path of paths){
+    const response=await fetch(url+path);
     assert.equal(response.status,200,paths[i]);
     const card=await response.json();
     assert.equal(card.payload.mode,'UNISSUED_DESIGN_PREVIEW');
