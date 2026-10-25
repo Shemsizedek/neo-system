@@ -16,8 +16,8 @@ const derive = overrides => ({
   ...inventory, candidates: [candidate()], ...overrides
 });
 
-test('all 7 connected Render/Neon candidates remain unapproved', () => {
-  assert.equal(inventory.candidates.length, 7);
+test('all 8 connected Render/Neon candidates remain unapproved', () => {
+  assert.equal(inventory.candidates.length, 8);
   const result = screenKnowindexStorageInventory(inventory);
   assert.equal(result.status, 'BLOCKED');
   assert.equal(result.productionWritesApproved, false);
