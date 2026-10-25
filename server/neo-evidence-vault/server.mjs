@@ -37,15 +37,20 @@ function principal(req,credentials){
   return credentials.find(value=>timingSafeEqual(digest,value.digest))||null;
 }
 
-export function createHandler(vault,{credentials}={}){
+export function createHandler(vault,{credentials,authenticate}={}){
   const configured=credentials===undefined?credentialsFromEnv():validateCredentials(credentials);
+  if(authenticate!==undefined&&typeof authenticate!=='function')throw new Error('invalid_evidence_authenticator');
   return async(req,res)=>{
     try{
       if(req.method==='OPTIONS'){applyCors(res);res.writeHead(204);return res.end();}
       const url=new URL(req.url||'/',`http://${req.headers.host||'localhost'}`);
       if(url.pathname==='/health')return send(res,200,{ok:true,service:'neo-evidence-vault'});
-      if(!configured.length)return send(res,503,{error:'authentication_not_configured'});
-      const identity=principal(req,configured);
+      if(!configured.length&&!authenticate)return send(res,503,{error:'authentication_not_configured'});
+      let identity=principal(req,configured);
+      if(!identity&&authenticate){
+        try{identity=await authenticate(req);}catch{return send(res,503,{error:'authentication_unavailable'});}
+      }
+      if(identity&&(typeof identity.actor!=='string'||!identity.actor||!Array.isArray(identity.roles)))return send(res,503,{error:'authentication_unavailable'});
       if(!identity)return send(res,401,{error:'unauthorized'});
       const role=req.method==='GET'?'read':req.method==='POST'?'ingest':req.method==='PATCH'?'review':null;
       if(!role||!identity.roles.includes(role))return send(res,403,{error:'forbidden'});
@@ -87,9 +92,9 @@ export function createHandler(vault,{credentials}={}){
   };
 }
 
-export function startServer({port=PORT,dbPath=DB_PATH,host,credentials}={}){
+export function startServer({port=PORT,dbPath=DB_PATH,host,credentials,authenticate}={}){
   const vault=createEvidenceVault(dbPath);
-  const server=http.createServer(createHandler(vault,{credentials}));
+  const server=http.createServer(createHandler(vault,{credentials,authenticate}));
   server.listen(port,host,()=>console.log(`NEO Evidence Vault listening on :${port}`));
   return {server,vault};
 }
