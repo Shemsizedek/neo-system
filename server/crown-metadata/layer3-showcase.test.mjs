@@ -107,3 +107,15 @@ test('no missing or mismatched live ledger may be represented as an observed iss
   assert.throws(()=>createLayer3Observed({asset}, {...observed(),ledger:{...observed().ledger,asset:'NOTNOMNI'}}),/counterparty_asset_identity_mismatch/);
   assert.throws(()=>createLayer3Observed({asset}, {...observed(),observed_at:null}),/counterparty_ledger_not_observed/);
 });
+
+
+test('sensitive insurance claimant and policyholder descriptions are excluded from public art and JSON',()=>{
+  const raw=observed();
+  raw.metadata={instrument_type:'insurance_claim',card_data:{primary_title:'Private Person Claim Docket'},description:'Private Person health condition and claimant identifying details'};
+  const record=createLayer3Observed({asset},raw);
+  assert.equal(record.payload.classification.type,'insurance_claim');
+  assert.equal(record.payload.display_title,asset);
+  assert.doesNotMatch(JSON.stringify(record),/Private Person|health condition|Claim Docket/);
+  assert.match(record.payload.instrument.description,/intentionally omitted/);
+  assert.doesNotMatch(renderLayer3Svg(record),/Private Person/);
+});
