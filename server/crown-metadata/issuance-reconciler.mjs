@@ -54,11 +54,11 @@ function payloadObject(value,label){
   if(!value||typeof value!=='object'||Array.isArray(value))throw Error('invalid_'+label+'_response');
   return value;
 }
-export function validateApprovedIntent(intent){
+export function validateApprovedIntent(intent,{requireTransaction=true}={}){
   if(!intent||intent.schema!=='neo.crown.issuance-intent.v1'||intent.operation!=='initial_issuance'||!ASSET.test(intent.asset||''))throw Error('invalid_issuance_intent');
   if(intent.approval?.state!=='approved_for_metadata_publication'||typeof intent.approval.review_reference!=='string'||!/^https:\/\/github\.com\/Shemsizedek\/neo-system\/(pull|issues)\/[1-9]\d*$/.test(intent.approval.review_reference))throw Error('operator_review_required');
   if(intent.network!=='bitcoin-mainnet'||intent.protocol!=='counterparty')throw Error('mainnet_counterparty_only');
-  hash(intent.tx_hash);
+  if(requireTransaction||intent.tx_hash!==undefined&&intent.tx_hash!==null)hash(intent.tx_hash);
   const units=strictBigInt(intent.quantity_raw);
   if(units<=0n)throw Error('positive_initial_issuance_required');
   const prepared=prepareCrownIssuance({asset:intent.asset,ownerAddress:intent.owner_address,description:intent.metadata?.description,website:intent.metadata?.website});
