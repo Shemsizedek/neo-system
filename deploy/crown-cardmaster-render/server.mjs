@@ -9,6 +9,7 @@ import {createCrownMetadataReadinessService} from '../../server/crown-metadata/m
 import {createAssetResolver} from '../../server/crown-metadata/resolver.mjs';
 import {normalizeShowcaseInput,createLayer3Observed,createLayer3Preview,LAYER3_TYPES,LAYER3_NETWORKS,LAYER3_STYLES} from '../../server/crown-metadata/layer3-showcase.mjs';
 import {renderLayer3Svg} from '../../server/crown-metadata/layer3-artwork.mjs';
+import {normalizeShowcaseQuery} from '../../server/crown-metadata/showcase-query.mjs';
 
 const baseDir = dirname(fileURLToPath(import.meta.url));
 const DEFAULT_STATIC_ROOT = resolve(baseDir, '../../apps/neoscan/web/cardmaster');
@@ -94,22 +95,32 @@ export function createCrownRenderServer({apiHandler=createCardmasterHandler(),ev
       if(req.method!=='GET'){
         res.setHeader('Allow','GET');return json(res,405,{error:'read_only_endpoint'});
       }
-      const allowed=new Set(['asset','mode','instrument_type','network','title','style','format','face']);
-      for(const [name] of parsed.searchParams){
-        if(!allowed.has(name)||parsed.searchParams.getAll(name).length!==1)return json(res,400,{error:'unsupported_or_duplicate_parameter'});
+      let params;
+      try{
+        // Sharing clients can insert harmless trackers or HTML-escape '&' as '&amp;'.
+        // Strip tracking, fold identical duplicates, reject conflicting selector values.
+        params=normalizeShowcaseQuery(parsed.searchParams);
+      }catch(error){
+        const code=error?.code||'invalid_showcase_parameters';
+        return json(res,400,{
+          error:code,
+          message:'This card link has unsupported or conflicting fields. Open the Layer 3 studio to generate a fresh link.',
+          studio_url:'/showcase/',
+          issuance_authorized:false
+        });
       }
       const request={
-        asset:parsed.searchParams.get('asset')||'NOMNI',
-        mode:parsed.searchParams.get('mode')||'observed',
-        instrumentType:parsed.searchParams.get('instrument_type')||'unclassified',
-        network:parsed.searchParams.get('network')||'counterparty',
-        title:parsed.searchParams.get('title')||'',
-        style:parsed.searchParams.get('style')||'auto'
+        asset:params.get('asset')||'NOMNI',
+        mode:params.get('mode')||'observed',
+        instrumentType:params.get('instrument_type')||'unclassified',
+        network:params.get('network')||'counterparty',
+        title:params.get('title')||'',
+        style:params.get('style')||'auto'
       };
-      const format=parsed.searchParams.get('format')||'json';
-      const face=parsed.searchParams.get('face')||'front';
+      const format=params.get('format')||'json';
+      const face=params.get('face')||'front';
       if(!['svg','json'].includes(format)||!['front','back'].includes(face))return json(res,400,{error:'unsupported_export_format'});
-      if(request.mode==='observed'&&(parsed.searchParams.has('instrument_type')||parsed.searchParams.has('title')))return json(res,400,{error:'observed_classification_cannot_be_overridden'});
+      if(request.mode==='observed'&&(params.has('instrument_type')||params.has('title')))return json(res,400,{error:'observed_classification_cannot_be_overridden'});
       let validated;
       try{validated=normalizeShowcaseInput(request);}
       catch{return json(res,400,{error:'invalid_showcase_input'});}
