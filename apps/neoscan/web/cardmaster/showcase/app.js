@@ -9,7 +9,7 @@
   function isPreview(){return form.elements.mode.value==='preview';}
   function setMode(){fields.hidden=!isPreview();}
   function message(text){status.textContent=text;}
-  function enabled(yes){for(const b of downloads)b.disabled=!yes;}
+  function enabled(yes){for(const b of [...downloads,$('copyLink')])b.disabled=!yes;}
   function reportFailure(error){
     overlay.hidden=false;overlay.textContent='PREVIEW UNAVAILABLE';
     message('Card could not be verified or generated: '+(error instanceof Error?error.message:'source unavailable')+'. If this is an existing asset, check Counterparty connectivity or use an explicitly unissued preview.');
@@ -139,6 +139,28 @@
   for(const el of form.querySelectorAll('input[name="mode"]'))el.addEventListener('change',setMode);
   faceButtons.front.addEventListener('click',()=>selectFace('front'));
   faceButtons.back.addEventListener('click',()=>selectFace('back'));
+  $('copyLink').addEventListener('click',async()=>{
+    if(!active)return;
+    // Share only the canonical design route, never raw API parameters or third-party tracking.
+    const shareUrl=new URL('/showcase/',window.location.origin);
+    shareUrl.search=activeParams;
+    try{
+      if(navigator.clipboard&&navigator.clipboard.writeText){
+        await navigator.clipboard.writeText(shareUrl.href);
+      }else{
+        const field=document.createElement('textarea');
+        field.value=shareUrl.href;
+        field.setAttribute('readonly','');
+        field.style.position='fixed';field.style.opacity='0';
+        document.body.append(field);field.select();
+        const ok=document.execCommand('copy');field.remove();
+        if(!ok)throw Error('browser clipboard unavailable');
+      }
+      message('Shareable card studio link copied. It includes only the asset, design category, protocol and selected finish.');
+    }catch{
+      message('Clipboard permission unavailable. You can share this card using the URL in your address bar after generating it.');
+    }
+  });
   $('downloadSvg').addEventListener('click',async()=>{
     if(!active)return;
     try{
