@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-24T20:52:43.415Z",
+  "generatedAt": "2026-10-25T04:45:47.256Z",
   "architecture": "crawler -> hash -> revision diff -> candidate graph relations -> 9-Ethereal quality gate -> Neopedia draft/review queue",
   "sources": [
     {
@@ -7,7 +7,16 @@
       "title": "The Holy Tablets by Dr. Malachi Z. York",
       "rootUrl": "https://holytablets.nuwaubianfacts.com/",
       "pages": 30,
-      "errors": []
+      "errors": [
+        {
+          "url": "https://holytablets.nuwaubianfacts.com/lightbox.css",
+          "error": "fetch failed"
+        },
+        {
+          "url": "https://holytablets.nuwaubianfacts.com/prayer%20of%20the%20ansaars.htm",
+          "error": "fetch failed"
+        }
+      ]
     },
     {
       "sourceId": "SRC-WORLD-TEMPLE-WEB",
@@ -17,9 +26,9 @@
       "errors": []
     }
   ],
-  "changes": 0,
-  "candidateRelations": 0,
-  "neopediaDrafts": 0,
+  "changes": 3,
+  "candidateRelations": 2,
+  "neopediaDrafts": 2,
   "reviewQueuePath": "data/neo-sync/review-queue.json",
   "relationQueuePath": "data/neo-sync/candidate-relations.json",
   "draftsPath": "data/neo-sync/neopedia-drafts.json",

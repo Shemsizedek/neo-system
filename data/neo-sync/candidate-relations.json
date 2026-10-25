@@ -1,4 +1,27 @@
 {
-  "generatedAt": "2026-10-24T20:52:43.415Z",
-  "items": []
+  "generatedAt": "2026-10-25T04:45:47.256Z",
+  "items": [
+    {
+      "fromId": "PAGE:2138275d775895259a2f6cff14319e440fcaa0e993d1a5ec487f48f1d7649a2c",
+      "toId": "SRC-HOLY-TABLETS-WEB",
+      "kind": "DERIVES_FROM",
+      "confidence": 0.99,
+      "evidenceRefs": [
+        "https://holytablets.nuwaubianfacts.com/100/051.htm",
+        "2138275d775895259a2f6cff14319e440fcaa0e993d1a5ec487f48f1d7649a2c"
+      ],
+      "decision": "ACCEPTED"
+    },
+    {
+      "fromId": "PAGE:d63e22a295671ffb346c7df252ab7d863486a5dd3e6d0c6ae23030fe3a87e931",
+      "toId": "SRC-WORLD-TEMPLE-WEB",
+      "kind": "DERIVES_FROM",
+      "confidence": 0.99,
+      "evidenceRefs": [
+        "https://holytemples.org/",
+        "d63e22a295671ffb346c7df252ab7d863486a5dd3e6d0c6ae23030fe3a87e931"
+      ],
+      "decision": "ACCEPTED"
+    }
+  ]
 }
