@@ -93,6 +93,8 @@ test('only after public staging, live canonical readback and confirmed chain eve
   assert.ok(network.calls.some(x=>x.endsWith('/issuances/'+tx)));
   const record=JSON.parse(await readFile(join(root,'server','crown-metadata','issuance-receipts',asset+'.json'),'utf8'));
   assert.equal(record.tx_hash,tx);
+  const second=await confirmAndRecordIssuance(intent,{root,fetchImpl:fetcher().fetchImpl,clock:()=>new Date('2026-10-25T18:55:00.000Z')});
+  assert.equal(second.state,'unchanged');
 });
 test('missing staged metadata or mismatched canonical JSON prevents chain-confirmation publication',async t=>{
   const root=await temp(t),intent=approved(tx),network=fetcher();
