@@ -1,0 +1,73 @@
+name: Crown NCC-013 confirmed issuance publication (staging)
+on:
+  push:
+    branches: [feat/ncc-007-render-runtime-hardening]
+    paths:
+      - 'server/crown-metadata/approved-intents/*.json'
+      - '.github/workflows/crown-issuance-metadata.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: ncc013-metadata-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  prepare-and-reconcile:
+    if: github.repository == 'Shemsizedek/neo-system' && github.ref == 'refs/heads/feat/ncc-007-render-runtime-hardening'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/ncc-007-render-runtime-hardening
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Verify fail-closed publisher and Counterparty tests
+        run: node --test server/crown-metadata/issuance-autopublish.test.mjs server/crown-metadata/issuance-reconciler.test.mjs server/crown-metadata/issuance-publication.test.mjs
+      - name: Prepare public metadata for approved intents BEFORE signing
+        run: node scripts/crown-issuance-reconcile.mjs --prepare-all
+      - name: Stage and commit deterministic metadata (never secrets or wallets)
+        id: staged
+        shell: bash
+        run: |
+          git add -A apps/neoscan/web/cardmaster/assets
+          if git diff --cached --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No approved metadata changed"
+          else
+            git config user.name "NEO Crown metadata bot"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit -m "data(crown): stage approved enhanced metadata before signing [skip ci]"
+            git push origin HEAD:feat/ncc-007-render-runtime-hardening
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Optional Render staging deploy hook (only after operator provisions secret)
+        if: steps.staged.outputs.changed == 'true'
+        env:
+          HOOK: ${{ secrets.CROWN_STAGING_DEPLOY_HOOK }}
+        shell: bash
+        run: |
+          if [ -z "$HOOK" ]; then
+            echo "::notice::No staging deploy hook configured; metadata is in GitHub only, not yet live."
+          else
+            curl --fail --silent --show-error --max-time 25 -X POST "$HOOK"
+            echo "Requested deployment of the existing Crown staging service; HTTPS readback is still required."
+          fi
+      - name: Require canonical hostname to serve approved JSON before signing
+        run: node scripts/crown-issuance-reconcile.mjs --verify-all
+      - name: Independently confirm post-sign Counterparty events
+        run: node scripts/crown-issuance-reconcile.mjs --confirm-all
+      - name: Commit immutable confirmed-issuance receipts
+        shell: bash
+        run: |
+          git add -A server/crown-metadata/issuance-receipts
+          if git diff --cached --quiet; then
+            echo "No new confirmed issuance receipts"
+          else
+            git config user.name "NEO Crown metadata bot"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit -m "audit(crown): record confirmed counterparty issuance [skip ci]"
+            git push origin HEAD:feat/ncc-007-render-runtime-hardening
+          fi
