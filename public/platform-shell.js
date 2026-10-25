@@ -1,7 +1,9 @@
 (() => {
   const root = document.documentElement;
   const platform = root.dataset.platform;
-  const apiPath = `/neo-system/api/platforms/${platform}.json`;
+  const scriptPath = document.currentScript?.src || new URL('./platform-shell.js', document.baseURI).href;
+  const publicRoot = new URL('./', scriptPath);
+  const apiPath = new URL(`api/platforms/${encodeURIComponent(platform || '')}.json`, publicRoot).pathname;
   const seoDefaults = {
     'neo-books':['NEO Books — Accounting, Treasury & Ledger Platform','Accounting, treasury, ledger and reporting infrastructure across the NEO ecosystem.'],
     'neo-miner':['NEO Miner — Bitcoin Mining Control Plane','Mining telemetry, fleet control and operational infrastructure across the NEO ecosystem.'],
