@@ -17,7 +17,7 @@ test('reject bad names, unsafe websites and missing control/description',()=>{
   for(const asset of ['../../NOMNI','nomni','A'.repeat(25),'','BTC/USD']){
     assert.throws(()=>crownIssuanceDescription(asset));
   }
-  assert.throws(()=>prepareCrownIssuance({asset:'NOMNI',ownerAddress:address,description:'Bad\\nDescription'}));
+  assert.throws(()=>prepareCrownIssuance({asset:'NOMNI',ownerAddress:address,description:'Bad'+String.fromCharCode(10)+'Description'}));
   assert.throws(()=>prepareCrownIssuance({asset:'NOMNI',ownerAddress:address,description:'Good',website:'javascript:alert(1)'}));
   assert.throws(()=>prepareCrownIssuance({asset:'NOMNI',ownerAddress:'unverified',description:'Good'}));
 });
@@ -28,7 +28,7 @@ test('only confirmed Counterparty issuance with matching on-chain description ma
   assert.equal(verified.receipt.tx_hash,'a'.repeat(64));
   assert.equal(verified.publication_status,'VERIFIED_READY_FOR_DEPLOY');
   assert.equal(verified.onchain_broadcast,false);
-  assert.match(verified.file_path,/assets\\/NOMNI\\/tokenscan.json$/);
+  assert.match(verified.file_path,/assets\/NOMNI\/tokenscan\.json$/);
 });
 test('reject unconfirmed, wrong owner, wrong network, mismatched current metadata and unverifiable provider evidence',()=>{
   const badCases=[
