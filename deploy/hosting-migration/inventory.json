@@ -1,0 +1,542 @@
+{
+  "schema_version": 1,
+  "gate": "HOSTING-001",
+  "requested_providers": [
+    "chatgpt-sites",
+    "render"
+  ],
+  "workspace_id": "tea-db8bbpij9qps73cb7gb0",
+  "scope": "holytemples.org and NEO service hostnames discovered in the neo-system source; not an authoritative DNS-zone export",
+  "status": "migration-in-progress",
+  "policy": {
+    "preserve_audience": true,
+    "cutover_requires_runtime_equivalence": true,
+    "cutover_requires_data_restore_verification": true,
+    "preserve_existing_services_until_verified": true,
+    "never_copy_secrets_into_manifest": true
+  },
+  "sites": [
+    {
+      "project_id": "appgprj_6ada8e74b8cc8191a7c617c66bc2409c",
+      "title": "NEO Scan \u2014 Bitcoin & Counterparty Explorer",
+      "access_mode": "public",
+      "url": "https://neoscan.holytemples.org",
+      "placement": "retain-on-chatgpt-sites"
+    },
+    {
+      "project_id": "appgprj_6ad7a33ed78081919ba182ee444a5f19",
+      "title": "NEO Tokenworks",
+      "access_mode": "custom",
+      "url": "https://neo-tokenworks.shemsizedek.chatgpt.site",
+      "placement": "retain-on-chatgpt-sites"
+    },
+    {
+      "project_id": "appgprj_6ad3c6c6a3688191b30255f4d2f77906",
+      "title": "Temple Platforms \u2014 Public Services",
+      "access_mode": "public",
+      "url": "https://temple-platforms.shemsizedek.chatgpt.site",
+      "placement": "retain-on-chatgpt-sites"
+    },
+    {
+      "project_id": "appgprj_6ad3c15dd8b88191a09ca2017bd81b20",
+      "title": "NEO Knowledge \u2014 Public Apps",
+      "access_mode": "public",
+      "url": "https://algo.holytemples.org",
+      "placement": "retain-on-chatgpt-sites"
+    },
+    {
+      "project_id": "appgprj_6ad3be70093c819181658e0f39c43876",
+      "title": "Temple Community \u2014 Public Sites",
+      "access_mode": "public",
+      "url": "https://leaders.holytemples.org",
+      "placement": "retain-on-chatgpt-sites"
+    },
+    {
+      "project_id": "appgprj_6ad38d35ba0881919fb413bbe06b3002",
+      "title": "World Temple \u2014 Continuity Gateway",
+      "access_mode": "public",
+      "url": "https://city.holytemples.org",
+      "placement": "retain-on-chatgpt-sites"
+    },
+    {
+      "project_id": "appgprj_6ad2c26582208191912429b7af81cd75",
+      "title": "CounterPay \u2014 NEO Systems Wallet",
+      "access_mode": "public",
+      "url": "https://counterpay.holytemples.org",
+      "placement": "retain-on-chatgpt-sites"
+    },
+    {
+      "project_id": "appgprj_6ac453bc0e108191876a58a9696327a8",
+      "title": "Asseturance \u00b7 NEO Crown Chain",
+      "access_mode": "custom",
+      "url": "https://asseturance-crown-market.shemsizedek.chatgpt.site",
+      "placement": "retain-on-chatgpt-sites"
+    },
+    {
+      "project_id": "appgprj_6a88f5f616988191b774ff0df2aa42f0",
+      "title": "GISD Office \u2014 Holy See Global District",
+      "access_mode": "public",
+      "url": "https://gisd.holytemples.org",
+      "placement": "retain-on-chatgpt-sites"
+    }
+  ],
+  "sites_domains": [
+    {
+      "hostname": "neoscan.holytemples.org",
+      "project_id": "appgprj_6ada8e74b8cc8191a7c617c66bc2409c",
+      "status": "active"
+    },
+    {
+      "hostname": "algo.holytemples.org",
+      "project_id": "appgprj_6ad3c15dd8b88191a09ca2017bd81b20",
+      "status": "active"
+    },
+    {
+      "hostname": "book.holytemples.org",
+      "project_id": "appgprj_6ad3c15dd8b88191a09ca2017bd81b20",
+      "status": "active"
+    },
+    {
+      "hostname": "noogle.holytemples.org",
+      "project_id": "appgprj_6ad3c15dd8b88191a09ca2017bd81b20",
+      "status": "active"
+    },
+    {
+      "hostname": "omnitrix.holytemples.org",
+      "project_id": "appgprj_6ad3c15dd8b88191a09ca2017bd81b20",
+      "status": "active"
+    },
+    {
+      "hostname": "oracle.holytemples.org",
+      "project_id": "appgprj_6ad3c15dd8b88191a09ca2017bd81b20",
+      "status": "active"
+    },
+    {
+      "hostname": "leaders.holytemples.org",
+      "project_id": "appgprj_6ad3be70093c819181658e0f39c43876",
+      "status": "active"
+    },
+    {
+      "hostname": "lifestyle.holytemples.org",
+      "project_id": "appgprj_6ad3be70093c819181658e0f39c43876",
+      "status": "active"
+    },
+    {
+      "hostname": "neoteric.holytemples.org",
+      "project_id": "appgprj_6ad3be70093c819181658e0f39c43876",
+      "status": "active"
+    },
+    {
+      "hostname": "office.holytemples.org",
+      "project_id": "appgprj_6ad3be70093c819181658e0f39c43876",
+      "status": "active"
+    },
+    {
+      "hostname": "society.holytemples.org",
+      "project_id": "appgprj_6ad3be70093c819181658e0f39c43876",
+      "status": "active"
+    },
+    {
+      "hostname": "city.holytemples.org",
+      "project_id": "appgprj_6ad38d35ba0881919fb413bbe06b3002",
+      "status": "active"
+    },
+    {
+      "hostname": "egov.holytemples.org",
+      "project_id": "appgprj_6ad38d35ba0881919fb413bbe06b3002",
+      "status": "active"
+    },
+    {
+      "hostname": "hub.holytemples.org",
+      "project_id": "appgprj_6ad38d35ba0881919fb413bbe06b3002",
+      "status": "active"
+    },
+    {
+      "hostname": "neo.holytemples.org",
+      "project_id": "appgprj_6ad38d35ba0881919fb413bbe06b3002",
+      "status": "active"
+    },
+    {
+      "hostname": "university.holytemples.org",
+      "project_id": "appgprj_6ad38d35ba0881919fb413bbe06b3002",
+      "status": "active"
+    },
+    {
+      "hostname": "counterpay.holytemples.org",
+      "project_id": "appgprj_6ad2c26582208191912429b7af81cd75",
+      "status": "active"
+    },
+    {
+      "hostname": "gisd.holytemples.org",
+      "project_id": "appgprj_6a88f5f616988191b774ff0df2aa42f0",
+      "status": "active"
+    }
+  ],
+  "render_services": [
+    {
+      "service_id": "srv-dbcn2oqvcj2c73f76um0",
+      "name": "neo-oracle-staging",
+      "url": "https://neo-oracle-staging.onrender.com",
+      "region": "virginia",
+      "placement": "retain-on-render",
+      "runtime": "node",
+      "auto_deploy": "no"
+    },
+    {
+      "service_id": "srv-dbcgvaom7kps739ujmm0",
+      "name": "neo-core-staging",
+      "url": "https://neo-core-staging.onrender.com",
+      "region": null,
+      "placement": "retain-on-render",
+      "runtime": "static",
+      "auto_deploy": "no"
+    },
+    {
+      "service_id": "srv-dbc19n1srm7s739a1br0",
+      "name": "neo-crown-gem-staging",
+      "url": "https://neo-crown-gem-staging.onrender.com",
+      "region": "virginia",
+      "placement": "retain-on-render",
+      "runtime": "python",
+      "auto_deploy": "no"
+    },
+    {
+      "service_id": "srv-dbbvvd9srm7s7395a81g",
+      "name": "neo-shop-catalog-staging",
+      "url": "https://neo-shop-catalog-staging.onrender.com",
+      "region": "virginia",
+      "placement": "retain-on-render",
+      "runtime": "node",
+      "auto_deploy": "no"
+    },
+    {
+      "service_id": "srv-dbbvid5pkucs73d304cg",
+      "name": "neo-shop-react-recovery",
+      "url": "https://neo-shop-react-recovery.onrender.com",
+      "region": null,
+      "placement": "retain-on-render",
+      "runtime": "static",
+      "auto_deploy": "no"
+    },
+    {
+      "service_id": "srv-dba67fajnfac73eh82f0",
+      "name": "neo-mail-postmaster-staging",
+      "url": "https://neo-mail-postmaster-staging.onrender.com",
+      "region": "virginia",
+      "placement": "retain-on-render",
+      "runtime": "node",
+      "auto_deploy": "no"
+    },
+    {
+      "service_id": "srv-db975ujrjlhs73aqvin0",
+      "name": "neo-pads-frontend",
+      "url": "https://neo-pads-frontend.onrender.com",
+      "region": "oregon",
+      "placement": "retain-on-render",
+      "runtime": "node",
+      "auto_deploy": "no"
+    },
+    {
+      "service_id": "srv-db96h93odcbs739gnvig",
+      "name": "neo-pads-api",
+      "url": "https://neo-pads-api.onrender.com",
+      "region": "oregon",
+      "placement": "retain-on-render",
+      "runtime": "node",
+      "auto_deploy": "yes"
+    },
+    {
+      "service_id": "srv-db9543eq1p3s73csefu0",
+      "name": "neo-deal-desk",
+      "url": "https://neo-deal-desk.onrender.com",
+      "region": "virginia",
+      "placement": "retain-on-render",
+      "runtime": "node",
+      "auto_deploy": "yes"
+    },
+    {
+      "service_id": "srv-db8pssvf3r2c73f06ifg",
+      "name": "neo-caregiver-connect",
+      "url": "https://neo-caregiver-connect.onrender.com",
+      "region": null,
+      "placement": "retain-on-render",
+      "runtime": "static",
+      "auto_deploy": "yes"
+    },
+    {
+      "service_id": "srv-db8pe7nf3r2c73eum130",
+      "name": "neo-platform-api-recovery",
+      "url": "https://neo-platform-api-recovery.onrender.com",
+      "region": "oregon",
+      "placement": "retain-on-render",
+      "runtime": "node",
+      "auto_deploy": "yes"
+    },
+    {
+      "service_id": "srv-db8odtnf3r2c73er4gbg",
+      "name": "neo-portal-recovery",
+      "url": "https://neo-portal-recovery.onrender.com",
+      "region": null,
+      "placement": "retain-on-render",
+      "runtime": "static",
+      "auto_deploy": "yes"
+    },
+    {
+      "service_id": "srv-db8bhgivcj2c738tfjug",
+      "name": "noogle-connect-staging",
+      "url": "https://noogle-connect-staging.onrender.com",
+      "region": "oregon",
+      "placement": "retain-on-render",
+      "runtime": "node",
+      "auto_deploy": "no"
+    },
+    {
+      "service_id": "srv-db8be4u89jmc73cu2s3g",
+      "name": "neo-system",
+      "url": "https://neo-system.onrender.com",
+      "region": "oregon",
+      "placement": "retain-on-render",
+      "runtime": "node",
+      "auto_deploy": "yes"
+    }
+  ],
+  "blocked_workloads": [
+    {
+      "hostname": "holytemples.org",
+      "target": "render",
+      "reason": "Full WordPress database, wp-content, plugin and media restore needed. Duplicator full backup id 1 completed with no exclusions and can_proceed=true; destination not provisioned."
+    },
+    {
+      "hostname": "court.holytemples.org",
+      "target": "render",
+      "reason": "Existing SQLite database and encryption/receipt/service-record keys must be exported from the current VM and restored to persistent storage before cutover."
+    },
+    {
+      "hostname": "neopass.holytemples.org",
+      "target": "render",
+      "reason": "Identity authority, signing keys, account records and existing session/issuer compatibility require verified transfer; generic edge page is not identity migration."
+    }
+  ],
+  "cutover_status": "No DNS, primary databases, signing keys or source-service deletion performed by HOSTING-001.",
+  "remaining_source_hostnames": [
+    {
+      "hostname": "counter.holytemples.org",
+      "target": "render",
+      "status": "source-discovered-not-cutover",
+      "classification": "requires-runtime-and-content-audit"
+    },
+    {
+      "hostname": "court.holytemples.org",
+      "target": "render",
+      "status": "source-discovered-not-cutover",
+      "classification": "requires-records-or-secrets-transfer"
+    },
+    {
+      "hostname": "desk.holytemples.org",
+      "target": "render",
+      "status": "source-discovered-not-cutover",
+      "classification": "requires-records-or-secrets-transfer"
+    },
+    {
+      "hostname": "gateway.holytemples.org",
+      "target": "render",
+      "status": "source-discovered-not-cutover",
+      "classification": "requires-records-or-secrets-transfer"
+    },
+    {
+      "hostname": "library.holytemples.org",
+      "target": "chatgpt-sites",
+      "status": "source-discovered-not-cutover",
+      "classification": "requires-runtime-and-content-audit"
+    },
+    {
+      "hostname": "marketer.holytemples.org",
+      "target": "render",
+      "status": "source-discovered-not-cutover",
+      "classification": "requires-runtime-and-content-audit"
+    },
+    {
+      "hostname": "msta.holytemples.org",
+      "target": "render",
+      "status": "source-discovered-not-cutover",
+      "classification": "public-preservation-runtime-source-archive-blocked"
+    },
+    {
+      "hostname": "neobank.holytemples.org",
+      "target": "render",
+      "status": "source-discovered-not-cutover",
+      "classification": "requires-records-or-secrets-transfer"
+    },
+    {
+      "hostname": "neodash.holytemples.org",
+      "target": "render",
+      "status": "source-discovered-not-cutover",
+      "classification": "requires-records-or-secrets-transfer"
+    },
+    {
+      "hostname": "neofx.holytemples.org",
+      "target": "render",
+      "status": "source-discovered-not-cutover",
+      "classification": "requires-runtime-and-content-audit"
+    },
+    {
+      "hostname": "neogram.holytemples.org",
+      "target": "render",
+      "status": "source-discovered-not-cutover",
+      "classification": "requires-runtime-and-content-audit"
+    },
+    {
+      "hostname": "neoguard.holytemples.org",
+      "target": "render",
+      "status": "source-discovered-not-cutover",
+      "classification": "requires-runtime-and-content-audit"
+    },
+    {
+      "hostname": "neopads.holytemples.org",
+      "target": "render",
+      "status": "source-discovered-not-cutover",
+      "classification": "requires-runtime-and-content-audit"
+    },
+    {
+      "hostname": "neopass.holytemples.org",
+      "target": "render",
+      "status": "source-discovered-not-cutover",
+      "classification": "requires-records-or-secrets-transfer"
+    },
+    {
+      "hostname": "neovision.holytemples.org",
+      "target": "chatgpt-sites",
+      "status": "source-discovered-not-cutover",
+      "classification": "requires-runtime-and-content-audit"
+    },
+    {
+      "hostname": "nomni.holytemples.org",
+      "target": "render",
+      "status": "source-discovered-not-cutover",
+      "classification": "requires-runtime-and-content-audit"
+    },
+    {
+      "hostname": "nvsn.holytemples.org",
+      "target": "render",
+      "status": "source-discovered-not-cutover",
+      "classification": "requires-runtime-and-content-audit"
+    },
+    {
+      "hostname": "opal.holytemples.org",
+      "target": "render",
+      "status": "source-discovered-not-cutover",
+      "classification": "requires-runtime-and-content-audit"
+    },
+    {
+      "hostname": "pay.holytemples.org",
+      "target": "render",
+      "status": "source-discovered-not-cutover",
+      "classification": "requires-runtime-and-content-audit"
+    },
+    {
+      "hostname": "prime.holytemples.org",
+      "target": "render",
+      "status": "source-discovered-not-cutover",
+      "classification": "requires-runtime-and-content-audit"
+    },
+    {
+      "hostname": "router.holytemples.org",
+      "target": "render",
+      "status": "source-discovered-not-cutover",
+      "classification": "requires-runtime-and-content-audit"
+    },
+    {
+      "hostname": "scan.holytemples.org",
+      "target": "render",
+      "status": "source-discovered-not-cutover",
+      "classification": "requires-runtime-and-content-audit"
+    },
+    {
+      "hostname": "school.holytemples.org",
+      "target": "chatgpt-sites",
+      "status": "source-discovered-not-cutover",
+      "classification": "requires-runtime-and-content-audit"
+    },
+    {
+      "hostname": "tabernacle.holytemples.org",
+      "target": "chatgpt-sites",
+      "status": "source-discovered-not-cutover",
+      "classification": "requires-runtime-and-content-audit"
+    },
+    {
+      "hostname": "treasury.holytemples.org",
+      "target": "render",
+      "status": "source-discovered-not-cutover",
+      "classification": "requires-records-or-secrets-transfer"
+    },
+    {
+      "hostname": "wallet.holytemples.org",
+      "target": "render",
+      "status": "source-discovered-not-cutover",
+      "classification": "requires-records-or-secrets-transfer"
+    },
+    {
+      "hostname": "wire.holytemples.org",
+      "target": "render",
+      "status": "source-discovered-not-cutover",
+      "classification": "requires-runtime-and-content-audit"
+    },
+    {
+      "hostname": "crown.holytemples.org",
+      "target": "render",
+      "status": "live-source-node-inventoried-not-cutover",
+      "classification": "requires-persistent-volume-records-and-secret-transfer"
+    }
+  ],
+  "replacement_runtimes": [
+    {
+      "name": "neo-edge-render",
+      "service_id": "srv-dbd93p5g1s2s73al65v0",
+      "url": "https://neo-edge-render.onrender.com",
+      "provider": "render",
+      "dns_cutover": false,
+      "status": "migration-preview-protected-operations-disabled",
+      "verification": {
+        "deploy_id": "dep-dbd96hr7uolc73avjfi0",
+        "commit": "8644726db13247b9c9ca17f30940a9e24afebd73",
+        "status": "live",
+        "health_http": 200,
+        "mode": "migration-preview",
+        "protected_api_http": 503,
+        "production_ready": false
+      }
+    },
+    {
+      "name": "neo-msta-preservation",
+      "service_id": "srv-dbd93s8473hc73ebuqd0",
+      "url": "https://neo-msta-preservation.onrender.com",
+      "provider": "render",
+      "dns_cutover": false,
+      "status": "runtime-live-source-archive-returns-403"
+    }
+  ],
+  "source_nodes": [
+    {
+      "host_id": "host_50699ac8024b4dfa",
+      "hostname": "crown-node-001",
+      "provider": "google-compute-engine",
+      "public_hostname": "crown.holytemples.org",
+      "containers": [
+        {
+          "name": "crown",
+          "image": "crown-chain:crown031",
+          "persistent_storage": "crown_state volume mounted at /var/lib/crown"
+        },
+        {
+          "name": "crown-metadata",
+          "image": "node:24-alpine",
+          "read_only_sources": [
+            "/opt/crown-metadata/code",
+            "/opt/crown-metadata/records"
+          ]
+        }
+      ],
+      "migration_status": "not-migrated-destination-storage-and-restore-required"
+    }
+  ]
+}
