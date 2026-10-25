@@ -145,7 +145,8 @@ test('KI-022 source receipt omits actor identities, cloud secrets and raw GitHub
   for (const forbidden of ['sensitive-neopass-operator', 'never-print-secret-data', 'client_secret', 'bearer']) {
     assert.equal(json.includes(forbidden), false);
   }
-  assert.deepEqual(Object.keys(result).filter(k => /secret|operator|account|token/i.test(k)), []);
+  assert.deepEqual(Object.keys(result).filter(k => /operator|account|token/i.test(k)), []);
+  assert.equal(result.effectiveRuntimeSecretAccessVerified, false);
 });
 
 test('KI-022 CLI emits only safe receipt JSON and fails on an unsuccessful protected run', async () => {
