@@ -43,17 +43,54 @@ jobs:
             git push origin HEAD:feat/ncc-007-render-runtime-hardening
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
-      - name: Optional Render staging deploy hook (only after operator provisions secret)
-        if: steps.staged.outputs.changed == 'true'
+      - name: Sync only approved metadata to the existing static Crown host branch
+        id: static
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin feat/ncc-005-cardmaster-gallery
+          git worktree add --detach "$RUNNER_TEMP/crown-static-metadata" origin/feat/ncc-005-cardmaster-gallery
+          copied=0
+          for file in server/crown-metadata/approved-intents/*.json; do
+            [ -f "$file" ] || continue
+            asset="$(basename "$file" .json)"
+            if [[ ! "$asset" =~ ^[A-Z][A-Z0-9]{0,23}$ ]]; then
+              echo "::error::Unsafe asset ID"
+              exit 1
+            fi
+            src="apps/neoscan/web/cardmaster/assets/$asset/tokenscan.json"
+            dst="$RUNNER_TEMP/crown-static-metadata/$src"
+            [ -f "$src" ] || { echo "::error::Approved metadata missing"; exit 1; }
+            mkdir -p "$(dirname "$dst")"
+            if [ -f "$dst" ]; then
+              cmp -s "$src" "$dst" || { echo "::error::Existing static asset conflicts; manual review required"; exit 1; }
+            else
+              cp "$src" "$dst"
+              copied=$((copied+1))
+            fi
+          done
+          git -C "$RUNNER_TEMP/crown-static-metadata" add -A apps/neoscan/web/cardmaster/assets
+          if git -C "$RUNNER_TEMP/crown-static-metadata" diff --cached --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "Existing static metadata already matches approved content"
+          else
+            git -C "$RUNNER_TEMP/crown-static-metadata" config user.name "NEO Crown metadata bot"
+            git -C "$RUNNER_TEMP/crown-static-metadata" config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git -C "$RUNNER_TEMP/crown-static-metadata" commit -m "data(crown): prepublish operator-approved enhanced asset JSON [skip ci]"
+            git -C "$RUNNER_TEMP/crown-static-metadata" push origin HEAD:feat/ncc-005-cardmaster-gallery
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Optionally request static Render deployment (only with approved hook secret)
+        if: steps.static.outputs.changed == 'true'
         env:
-          HOOK: ${{ secrets.CROWN_STAGING_DEPLOY_HOOK }}
+          HOOK: ${{ secrets.CROWN_STATIC_RENDER_DEPLOY_HOOK }}
         shell: bash
         run: |
           if [ -z "$HOOK" ]; then
-            echo "::notice::No staging deploy hook configured; metadata is in GitHub only, not yet live."
+            echo "::notice::Static host auto-deploy is off; the verified JSON is committed but NOT publicly served until manual deployment or an approved static deploy hook is installed."
           else
             curl --fail --silent --show-error --max-time 25 -X POST "$HOOK"
-            echo "Requested deployment of the existing Crown staging service; HTTPS readback is still required."
+            echo "Requested existing static site deploy; canonical HTTPS preflight must still pass."
           fi
       - name: Require canonical hostname to serve approved JSON before signing
         run: node scripts/crown-issuance-reconcile.mjs --verify-all
