@@ -147,3 +147,51 @@ test('NCC-012 NOMNI enhanced metadata is direct no-redirect JSON and public writ
   assert.equal((await fetch(url+'/assets/%2e%2e/tokenscan.json')).status,404);
   assert.equal((await fetch(url+'/assets/NOMNI/private.json')).status,404);
 });
+
+
+test('NCC-014 publishes a read-only metadata dashboard with strict CSP and allowlisted assets',async t=>{
+  let inspected=0;
+  const metadataService={async inspect(asset,approved){
+    inspected++;
+    assert.equal(asset,'NOMNI');
+    assert.equal(approved.asset,'NOMNI');
+    return {schema:'neo.crown.metadata-readiness.v1',asset,status:'canonical_blocked',read_only:true,safe_to_issue:false,price:null,explorer_additional_information_verified:false};
+  }};
+  const url=await withServer(t,{apiHandler:dummyHandler,metadataService});
+  const page=await fetch(url+'/metadata/');
+  assert.equal(page.status,200);
+  assert.match(page.headers.get('content-type'),/text\/html/);
+  assert.match(page.headers.get('content-security-policy'),/script-src 'self'/);
+  const html=await page.text();
+  assert.match(html,/METADATA OBSERVABILITY/);
+  assert.match(html,/noindex,nofollow/);
+  assert.match(html,/canonical\.holytemples\.org|crown\.holytemples\.org/);
+  const js=await fetch(url+'/metadata/app.js');
+  assert.equal(js.status,200);
+  assert.match(js.headers.get('content-type'),/text\/javascript/);
+  assert.match(await js.text(),/metadata-readiness/);
+  const css=await fetch(url+'/metadata/styles.css');
+  assert.equal(css.status,200);
+  assert.match(css.headers.get('content-type'),/text\/css/);
+  const result=await fetch(url+'/api/crown/metadata-readiness?asset=NOMNI');
+  assert.equal(result.status,200);
+  assert.match(result.headers.get('content-type'),/application\/json/);
+  assert.equal((await result.json()).safe_to_issue,false);
+  assert.equal(inspected,1);
+  assert.equal((await fetch(url+'/api/crown/metadata-readiness?asset=../../etc')).status,400);
+  assert.equal((await fetch(url+'/api/crown/metadata-readiness?asset=NOMNI&asset=NOTNOMNI')).status,400);
+  assert.equal((await fetch(url+'/api/crown/metadata-readiness?asset=NOTISSUED')).status,404);
+  assert.equal((await fetch(url+'/api/crown/metadata-readiness',{method:'POST'})).status,405);
+  assert.equal((await fetch(url+'/api/crown/metadata-readiness',{method:'HEAD'})).status,405);
+  assert.equal((await fetch(url+'/metadata/private.json')).status,404);
+  assert.equal((await fetch(url+'/metadata/',{method:'POST'})).status,405);
+});
+test('NCC-014 upstream observer failure never changes token state or leaks its error',async t=>{
+  const metadataService={async inspect(){throw Error('secret_or_sensitive_internal_detail');}};
+  const url=await withServer(t,{apiHandler:dummyHandler,metadataService});
+  const response=await fetch(url+'/api/crown/metadata-readiness');
+  assert.equal(response.status,503);
+  const body=await response.text();
+  assert.match(body,/metadata_readiness_unavailable/);
+  assert.doesNotMatch(body,/secret_or_sensitive_internal_detail/);
+});
