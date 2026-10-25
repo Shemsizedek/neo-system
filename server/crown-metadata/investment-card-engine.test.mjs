@@ -11,3 +11,20 @@ test('commands provide batch, prompt, score and honest verification',()=>{assert
 
 test('VERIFY detects tampered exports',()=>{const record=buildInvestmentCard('NOMNI');assert.equal(runCardCommand('/VERIFY',{record}).integrity_valid,true);record.payload.card_data.primary_title='tampered';assert.equal(runCardCommand('/VERIFY',{record}).integrity_valid,false);});
 test('HTTP investment export resolves numeric assets and retains media',async()=>{const {createMetadataServer}=await import('./server.mjs');const server=createMetadataServer({store:{get:async()=>null},resolveAsset:async asset=>({ledger:{asset,owner:'issuer',supply:'1',divisible:false,locked:true},metadata:{instrument_type:'insurance_policy'},media:{items:[{kind:'pdf',title:'Public policy terms',url:'https://example.com/policy.pdf'}]}})});await new Promise(r=>server.listen(0,'127.0.0.1',r));try{const r=await fetch('http://127.0.0.1:'+server.address().port+'/assets/A123456789012345678/investment-card.json');assert.equal(r.status,200);const j=await r.json();assert.equal(j.payload.classification.type,'insurance_policy');assert.equal(j.payload.media[0].kind,'pdf');assert.equal(j.payload.execution.on_chain_changes,false);}finally{await new Promise(r=>server.close(r));}});
+
+
+test('standalone Crown metadata route returns the strict NOMNI TokenScan compatibility envelope',async t=>{
+  const {createMetadataServer}=await import('./server.mjs');
+  const server=createMetadataServer({store:{get:async()=>null},resolveAsset:async()=>{throw Error('no live query required for pinned asset metadata');}});
+  await new Promise(r=>server.listen(0,'127.0.0.1',r));
+  t.after(async()=>await new Promise(r=>server.close(r)));
+  const base='http://127.0.0.1:'+server.address().port;
+  const response=await fetch(base+'/assets/NOMNI/tokenscan.json',{redirect:'manual'});
+  assert.equal(response.status,200);
+  assert.equal(response.headers.get('location'),null);
+  const info=await response.json();
+  assert.equal(info.asset,'NOMNI');
+  assert.ok(info.description);
+  assert.ok(!Object.keys(info).some(key=>!['asset','description','website','image','pgpsig'].includes(key)));
+  assert.equal((await fetch(base+'/assets/NOMNI/tokenscan.json',{method:'POST'})).status,405);
+});
