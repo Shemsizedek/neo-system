@@ -88,7 +88,8 @@ test('malicious issuer labels and bad strings never become executable SVG or mar
 test('SVG export is stable and supports different selected finishes',()=>{
   const cards=LAYER3_STYLES.map(style=>createLayer3Preview({asset:'DEMO',instrumentType:'nft',style}));
   const output=cards.map(card=>renderLayer3Svg(card));
-  assert.equal(new Set(output).size,output.length);
+  // Auto intentionally chooses the instrument's named palette (violet for NFTs).
+  assert.equal(new Set(output).size,output.length-1);
   assert.match(output[0],/viewBox="0 0 720 1040"/);
   assert.ok(output.every(xml=>xml.startsWith('<?xml version="1.0"')));
   assert.throws(()=>renderLayer3Svg(cards[0],{face:'invalid'}),/invalid_card_face/);
