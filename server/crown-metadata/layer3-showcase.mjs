@@ -63,7 +63,9 @@ function template({asset,mode,classification,title,network,style,ledger,showcase
       declared_rights_verified:false,underwriter_verified:false,
       contract_enforceability_verified:false,
       description:observed
-        ?display(showcase?.professional_description?.text||'',450)
+        ?(['insurance_policy','insurance_claim'].includes(classification.type)
+          ?'Public Counterparty insurance-related instrument presentation. Private insured, beneficiary, policyholder and claimant details are intentionally omitted.'
+          :display(showcase?.professional_description?.text||'',450))
         :'Unissued design preview for a proposed '+classification.label.toLowerCase()+'. No token issuance or legal rights are established by this card.',
       issuer_narrative_status:observed?'ISSUER_DESCRIPTION_UNVERIFIED':'DRAFT_DESIGN_ONLY',
       financial_figures_verified:false
@@ -120,7 +122,7 @@ export function createLayer3Observed(input,resolved){
   const investment=buildInvestmentCard(ledger.asset,observed).payload;
   return template({
     ...request,asset:ledger.asset,classification:investment.classification,
-    title:investment.card_data.primary_title,ledger,showcase,investment,
+    title:['insurance_policy','insurance_claim'].includes(investment.classification.type)?ledger.asset:investment.card_data.primary_title,ledger,showcase,investment,
     metadataStatus:resolved.metadata_status||'NO_POINTER',
     observedAt:resolved.observed_at,metadataUrl:resolved.metadata_url||null,metadataHash:resolved.metadata_sha256||null,
     provenance:{issuer_description_current:typeof ledger.description==='string'&&ledger.description.length<=255?ledger.description:null}
