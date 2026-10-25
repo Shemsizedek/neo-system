@@ -49,6 +49,9 @@ function bridgeResponse(res) {
 }
 function fileRoute(pathname) {
   if(FILES.has(pathname))return FILES.get(pathname);
+  // Direct HTTP 200 JSON, never redirect: required by Counterparty enhanced metadata.
+  const enhanced=/^\/assets\/([A-Z][A-Z0-9]{0,23})\/(tokenscan|manifest)\.json$/.exec(pathname);
+  if(enhanced) return [`assets/${enhanced[1]}/${enhanced[2]}.json`,'application/json; charset=utf-8'];
   const match = /^\/art\/(NEO-CARD-[A-Z0-9-]{3,80})-(front|back)\.svg$/.exec(pathname);
   return match && CARDS.has(match[1]) ? [`art/${match[1]}-${match[2]}.svg`,'image/svg+xml; charset=utf-8'] : null;
 }
@@ -110,7 +113,10 @@ export function createCrownRenderServer({apiHandler=createCardmasterHandler(),ev
       res.setHeader('Cache-Control',path.startsWith('/art/')?'public, max-age=600':'public, max-age=120');
       if(path.endsWith('.svg'))res.setHeader('Content-Security-Policy',"default-src 'none'; sandbox");
       return res.end(req.method==='HEAD'?undefined:data);
-    } catch {return json(res,503,{error:'asset_unavailable'});}
+    } catch (error) {
+      if(path.startsWith('/assets/') && error?.code==='ENOENT')return json(res,404,{error:'asset_not_published'});
+      return json(res,503,{error:'asset_unavailable'});
+    }
   });
   server.requestTimeout=12000;
   server.headersTimeout=10000;

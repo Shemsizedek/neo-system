@@ -128,3 +128,22 @@ test('NCC-010 media modules are allowlisted while server-side uploads stay disab
   assert.equal((await fetch(url+'/studio/media-config.json')).status,404);
   assert.equal((await fetch(url+'/studio/media-core.mjs',{method:'PUT'})).status,405);
 });
+
+
+test('NCC-012 NOMNI enhanced metadata is direct no-redirect JSON and public writes stay denied',async t=>{
+  const url=await withServer(t,{apiHandler:dummyHandler});
+  const response=await fetch(url+'/assets/NOMNI/tokenscan.json',{redirect:'manual'});
+  assert.equal(response.status,200);
+  assert.match(response.headers.get('content-type'),/application\/json/);
+  assert.equal(response.headers.get('location'),null);
+  const info=await response.json();
+  assert.equal(info.asset,'NOMNI');
+  assert.equal(typeof info.description,'string');
+  assert.ok(info.description.length<=2048);
+  assert.equal(info.website.startsWith('https://'),true);
+  assert.equal((await fetch(url+'/assets/NOMNI/manifest.json')).status,200);
+  assert.equal((await fetch(url+'/assets/NOMNI/tokenscan.json',{method:'POST'})).status,405);
+  assert.equal((await fetch(url+'/assets/NOTISSUED/tokenscan.json')).status,404);
+  assert.equal((await fetch(url+'/assets/%2e%2e/tokenscan.json')).status,404);
+  assert.equal((await fetch(url+'/assets/NOMNI/private.json')).status,404);
+});
