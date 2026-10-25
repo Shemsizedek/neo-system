@@ -11,3 +11,5 @@
 .evidence{border:1px solid #8b754b;border-radius:14px;background:#111921;padding:18px;margin:24px 0;color:#e7dac3}.evidence[hidden]{display:none}.evidence h3{color:#eccb88}.evidence-pair{border-top:1px solid #514935;padding:14px 0}.evidence-pair p{color:#b8b0a3;margin:6px 0}.evidence-pair a{color:#eccb88}
 
 .studio-entry{display:inline-flex;align-items:center;justify-content:center;min-height:41px;padding:9px 15px;border:1px solid #d5b575;border-radius:9px;background:linear-gradient(110deg,#d8b46f,#9f763c);color:#111820;font-size:13px;font-weight:750;text-decoration:none}.studio-entry:hover{color:#111820;background:#eacc87;text-decoration:none}.studio-entry:focus-visible{outline:3px solid #eccc7b;outline-offset:3px}
+
+.metadata-entry{display:inline-flex;align-items:center;justify-content:center;min-height:41px;padding:9px 14px;border:1px solid #b79d6e;border-radius:9px;background:#1d2931;color:#f0d39a;font-size:13px;font-weight:650;text-decoration:none}.metadata-entry:hover{background:#2c3b42;color:#f0d39a;text-decoration:none}.metadata-entry:focus-visible{outline:2px solid #f1d69d;outline-offset:3px}
