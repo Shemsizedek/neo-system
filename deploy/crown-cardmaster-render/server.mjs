@@ -6,6 +6,9 @@ import {createCardmasterHandler} from '../../api/crown/cardmaster.mjs';
 import {CARDMASTER_SEEDS} from '../../server/crown-metadata/cardmaster-gallery.mjs';
 import {createCounterpartyEvidenceService} from '../../server/crown-metadata/counterparty-order-evidence.mjs';
 import {createCrownMetadataReadinessService} from '../../server/crown-metadata/metadata-readiness.mjs';
+import {createAssetResolver} from '../../server/crown-metadata/resolver.mjs';
+import {normalizeShowcaseInput,createLayer3Observed,createLayer3Preview,LAYER3_TYPES,LAYER3_NETWORKS,LAYER3_STYLES} from '../../server/crown-metadata/layer3-showcase.mjs';
+import {renderLayer3Svg} from '../../server/crown-metadata/layer3-artwork.mjs';
 
 const baseDir = dirname(fileURLToPath(import.meta.url));
 const DEFAULT_STATIC_ROOT = resolve(baseDir, '../../apps/neoscan/web/cardmaster');
@@ -29,7 +32,12 @@ const FILES = new Map([
   ['/metadata/', ['metadata/index.html','text/html; charset=utf-8']],
   ['/metadata/index.html', ['metadata/index.html','text/html; charset=utf-8']],
   ['/metadata/app.js', ['metadata/app.js','text/javascript; charset=utf-8']],
-  ['/metadata/styles.css', ['metadata/styles.css','text/css; charset=utf-8']]
+  ['/metadata/styles.css', ['metadata/styles.css','text/css; charset=utf-8']],
+  ['/showcase', ['showcase/index.html','text/html; charset=utf-8']],
+  ['/showcase/', ['showcase/index.html','text/html; charset=utf-8']],
+  ['/showcase/index.html', ['showcase/index.html','text/html; charset=utf-8']],
+  ['/showcase/app.js', ['showcase/app.js','text/javascript; charset=utf-8']],
+  ['/showcase/styles.css', ['showcase/styles.css','text/css; charset=utf-8']]
 ]);
 const BASE_CSP = "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' blob: data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'";
 
@@ -62,7 +70,7 @@ function fileRoute(pathname) {
   return match && CARDS.has(match[1]) ? [`art/${match[1]}-${match[2]}.svg`,'image/svg+xml; charset=utf-8'] : null;
 }
 
-export function createCrownRenderServer({apiHandler=createCardmasterHandler(),evidenceService=createCounterpartyEvidenceService(),metadataService=createCrownMetadataReadinessService(),staticRoot=DEFAULT_STATIC_ROOT}={}) {
+export function createCrownRenderServer({apiHandler=createCardmasterHandler(),evidenceService=createCounterpartyEvidenceService(),metadataService=createCrownMetadataReadinessService(),showcaseResolver=createAssetResolver(),staticRoot=DEFAULT_STATIC_ROOT}={}) {
   let inflight=0;
   const server=createServer(async (req,res)=>{
     commonHeaders(res);
@@ -81,6 +89,54 @@ export function createCrownRenderServer({apiHandler=createCardmasterHandler(),ev
     if(path==='/robots.txt'){
       res.setHeader('Content-Type','text/plain; charset=utf-8');
       return res.end('User-agent: *\nDisallow: /\n');
+    }
+    if(path==='/api/crown/showcase') {
+      if(req.method!=='GET'){
+        res.setHeader('Allow','GET');return json(res,405,{error:'read_only_endpoint'});
+      }
+      const allowed=new Set(['asset','mode','instrument_type','network','title','style','format','face']);
+      for(const [name] of parsed.searchParams){
+        if(!allowed.has(name)||parsed.searchParams.getAll(name).length!==1)return json(res,400,{error:'unsupported_or_duplicate_parameter'});
+      }
+      const request={
+        asset:parsed.searchParams.get('asset')||'NOMNI',
+        mode:parsed.searchParams.get('mode')||'observed',
+        instrumentType:parsed.searchParams.get('instrument_type')||'unclassified',
+        network:parsed.searchParams.get('network')||'counterparty',
+        title:parsed.searchParams.get('title')||'',
+        style:parsed.searchParams.get('style')||'auto'
+      };
+      const format=parsed.searchParams.get('format')||'json';
+      const face=parsed.searchParams.get('face')||'front';
+      if(!['svg','json'].includes(format)||!['front','back'].includes(face))return json(res,400,{error:'unsupported_export_format'});
+      if(request.mode==='observed'&&(parsed.searchParams.has('instrument_type')||parsed.searchParams.has('title')))return json(res,400,{error:'observed_classification_cannot_be_overridden'});
+      let validated;
+      try{validated=normalizeShowcaseInput(request);}
+      catch{return json(res,400,{error:'invalid_showcase_input'});}
+      if(inflight>=2)return json(res,503,{error:'gateway_busy'});
+      inflight++;
+      try{
+        const card=validated.mode==='preview'
+          ?createLayer3Preview(validated)
+          :createLayer3Observed(validated,await showcaseResolver(validated.asset));
+        if(format==='svg'){
+          res.statusCode=200;
+          res.setHeader('Content-Type','image/svg+xml; charset=utf-8');
+          res.setHeader('Content-Security-Policy',"default-src 'none'; sandbox");
+          res.setHeader('Content-Disposition','inline; filename="NEO-L3-'+card.payload.card_id.slice(-18)+'-'+face+'.svg"');
+          return res.end(renderLayer3Svg(card,{face}));
+        }
+        return json(res,200,{
+          ...card,read_only:true,
+          on_demand:true,formats:['json','svg','browser_png'],
+          supported_instrument_types:LAYER3_TYPES,
+          supported_preview_protocols:LAYER3_NETWORKS,
+          supported_finishes:LAYER3_STYLES
+        });
+      }catch(error){
+        if(error?.message==='asset_not_found')return json(res,404,{error:'counterparty_asset_not_found'});
+        return json(res,503,{error:'showcase_source_unavailable'});
+      }finally{inflight--;}
     }
     if(path==='/api/crown/metadata-readiness') {
       if(req.method!=='GET') {
