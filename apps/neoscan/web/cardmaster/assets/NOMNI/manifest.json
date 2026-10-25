@@ -1,0 +1,12 @@
+{
+  "schema": "NEO-CROWN-TOKENSCAN-METADATA-V1",
+  "asset": "NOMNI",
+  "status": "metadata_mirror_staging",
+  "canonical_on_chain_description": "https://crown.holytemples.org/assets/NOMNI/tokenscan.json",
+  "indexer_refresh_verified": false,
+  "issuer_claims_verified": false,
+  "wallet_control_verified": false,
+  "bitcoin_anchor_verified": false,
+  "origin_file": "server/crown-metadata/attachments/NOMNI/tokenscan.json",
+  "notice": "This is a staging mirror. TokenScan's on-chain URL must resolve directly to the final published JSON for explorer enrichment."
+}
