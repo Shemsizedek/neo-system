@@ -1,21 +1,23 @@
-// Gate 45: MOCK-ONLY server-bound ledger capability.
-// Construction and bind() must remain inside trusted server middleware.
-// The registry and principal factory must NEVER be exposed to untrusted code.
+// Gate 45 server-bound mock ledger extended in Gate 46 to cover all
+// ordinary attempt transitions. No HTTP routes, credential verification,
+// durable budgets, or real billing integration.
 import { createAuthenticatedTenantResolver } from './authenticated-tenant-context.mjs'
 
 const isRecord = value => value !== null && typeof value === 'object' && !Array.isArray(value)
 const permitted = (value, keys) => isRecord(value) &&
   Object.keys(value).every(key => keys.includes(key))
+const validCharge = value => Number.isSafeInteger(value) && value >= 0
 
 export function createServerBoundTenantLedger({ principalFactory, registry } = {}) {
+  const methods = ['reserve', 'lookup', 'start', 'unknown', 'settle', 'reconcile']
   if (!principalFactory || typeof principalFactory.isMinted !== 'function' ||
-      !registry || typeof registry.reserve !== 'function' || typeof registry.lookup !== 'function') {
+      !registry || methods.some(method => typeof registry[method] !== 'function')) {
     throw new TypeError('trusted_ledger_dependencies_required')
   }
   const resolve = createAuthenticatedTenantResolver(principalFactory)
 
-  // Bind only a previously verified, factory-attested principal. Never accept
-  // authenticatedTenant, tenantId or a serialized principal from user input.
+  // Bind must run exclusively in trusted server middleware with a privately
+  // held factory and registry. Do not expose this binder to untrusted callers.
   function bind(context) {
     try {
       if (!permitted(context, ['verifiedPrincipal', 'requestBody', 'requestQuery', 'requestHeaders'])) {
@@ -23,37 +25,48 @@ export function createServerBoundTenantLedger({ principalFactory, registry } = {
       }
       const decision = resolve(context)
       if (!decision.ok) return { ok: false, reason: decision.reason }
-      // Private closure: the tenant is NOT a parameter to any exposed operation.
       const authenticatedTenant = decision.authenticatedTenant
 
+      // Each operation only receives explicitly approved fields; callers cannot
+      // provide or replace tenant identity in reserve, lookup or any transition.
+      function invoke(method, input) {
+        try {
+          return registry[method]({ authenticatedTenant, ...input })
+        } catch {
+          return { ok: false, reason: 'ledger_unavailable' }
+        }
+      }
+      function keyOperation(method, input) {
+        if (!permitted(input, ['key'])) return { ok: false, reason: 'invalid_operation' }
+        return invoke(method, { key: input.key })
+      }
+      function chargeOperation(method, input) {
+        if (!permitted(input, ['key', 'billedMicrousd']) ||
+            !validCharge(input.billedMicrousd)) {
+          return { ok: false, reason: 'invalid_operation' }
+        }
+        return invoke(method, { key: input.key, billedMicrousd: input.billedMicrousd })
+      }
       const operations = Object.freeze({
         reserve(input) {
-          try {
-            if (!permitted(input, ['key', 'attempt']) ||
-                !isRecord(input.attempt) ||
-                !permitted(input.attempt, ['state']) ||
-                input.attempt.state !== 'reserved') {
-              return { ok: false, reason: 'invalid_operation' }
-            }
-            return registry.reserve({
-              authenticatedTenant,
-              key: input.key,
-              attempt: { state: 'reserved' },
-            })
-          } catch {
-            return { ok: false, reason: 'ledger_unavailable' }
+          if (!permitted(input, ['key', 'attempt']) ||
+              !permitted(input.attempt, ['state', 'maxChargeMicrousd']) ||
+              input.attempt.state !== 'reserved' ||
+              (Object.hasOwn(input.attempt, 'maxChargeMicrousd') &&
+                (!Number.isSafeInteger(input.attempt.maxChargeMicrousd) ||
+                  input.attempt.maxChargeMicrousd <= 0))) {
+            return { ok: false, reason: 'invalid_operation' }
           }
+          const attempt = Object.hasOwn(input.attempt, 'maxChargeMicrousd')
+            ? { state: 'reserved', maxChargeMicrousd: input.attempt.maxChargeMicrousd }
+            : { state: 'reserved' }
+          return invoke('reserve', { key: input.key, attempt })
         },
-        lookup(input) {
-          try {
-            if (!permitted(input, ['key'])) {
-              return { ok: false, reason: 'invalid_operation' }
-            }
-            return registry.lookup({ authenticatedTenant, key: input.key })
-          } catch {
-            return { ok: false, reason: 'ledger_unavailable' }
-          }
-        },
+        lookup(input) { return keyOperation('lookup', input) },
+        start(input) { return keyOperation('start', input) },
+        unknown(input) { return keyOperation('unknown', input) },
+        settle(input) { return chargeOperation('settle', input) },
+        reconcile(input) { return chargeOperation('reconcile', input) },
       })
       return { ok: true, operations }
     } catch {

@@ -114,7 +114,8 @@ test('dependency errors fail closed without exposing backend details', async () 
   const a = await factory.authenticate('token-A')
   const ledger = createServerBoundTenantLedger({
     principalFactory: factory,
-    registry: { reserve() { throw new Error('sensitive storage data') }, lookup() { throw new Error('sensitive storage data') } },
+    registry: Object.fromEntries(['reserve', 'lookup', 'start', 'unknown', 'settle', 'reconcile']
+      .map(method => [method, () => { throw new Error('sensitive storage data') }])),
   })
   const bound = ledger.bind({ verifiedPrincipal: a.principal })
   assert.equal(bound.ok, true)
