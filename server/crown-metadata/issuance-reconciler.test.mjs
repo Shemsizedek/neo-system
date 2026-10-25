@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {independentlyReconcileCrownIssuance,validateApprovedIntent} from './issuance-reconciler.mjs';
+import {independentlyReconcileCrownIssuance,validateApprovedIntent,createCrownIssuanceIntentDraft} from './issuance-reconciler.mjs';
 import {crownIssuanceDescription} from './issuance-autopublish.mjs';
 
 const asset='NEOTEST';
@@ -120,4 +120,18 @@ test('reject unsafe numeric quantity and unreasonable confirmation thresholds',a
   data['/issuances/'+tx].result.quantity=Number.MAX_SAFE_INTEGER+5;
   await assert.rejects(run(intent(),data),/unsafe_numeric_quantity/);
   await assert.rejects(independentlyReconcileCrownIssuance(intent(),{minConfirmations:1}),/invalid_confirmation_threshold/);
+});
+
+test('new signer intent draft preserves quantity and metadata but is not approved, signed or broadcast',()=>{
+  const draft=createCrownIssuanceIntentDraft({
+    asset,ownerAddress:source,quantityRaw:'1000',description:'Original artwork only.',website:'https://holytemples.org/'
+  });
+  assert.equal(draft.asset_description_for_signer,desc);
+  assert.equal(draft.quantity_raw,'1000');
+  assert.equal(draft.approval.state,'DRAFT_REQUIRES_OPERATOR_REVIEW');
+  assert.equal(draft.tx_hash,null);
+  assert.equal(draft.signing_performed,false);
+  assert.equal(draft.broadcast_performed,false);
+  assert.throws(()=>validateApprovedIntent(draft),/operator_review_required/);
+  assert.throws(()=>createCrownIssuanceIntentDraft({asset,ownerAddress:source,quantityRaw:'0',description:'Test'}),/positive_initial_issuance_required/);
 });
