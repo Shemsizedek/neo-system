@@ -41,6 +41,7 @@ export function createNooglePasskeyAccounts({rpId,origin,store,now=Date.now}={})
    // Set this handle only as a Secure HttpOnly SameSite cookie, never a URL.
    return {sessionHandle:token,expiresAt};
   },
+  async signOut(token){if(!handle(token))return;if(typeof store.revokeSession!=='function')throw Error('session_revocation_unavailable');await store.revokeSession(hash(token));},
   async authenticate(token){
    if(!handle(token))return null;const session=await store.session(hash(token),now());
    return session&&await store.active(session.subject)===true?{subject:session.subject,verified:true,authTime:session.authTime,assurance:'passkey-user-verified'}:null;

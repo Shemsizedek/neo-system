@@ -15,6 +15,7 @@ export function createNooglePasskeyStore(path){
   async active(subject){return db.prepare('SELECT subject FROM noogle_accounts WHERE subject=? AND disabled=0').get(subject)!==undefined;},
   async commitLogin(p){return transaction(()=>{const row=db.prepare('UPDATE noogle_credentials SET counter=? WHERE id=? AND subject=? AND counter=? AND revoked=0 AND EXISTS(SELECT 1 FROM noogle_accounts WHERE subject=? AND disabled=0) RETURNING id').get(p.newCounter,p.credentialId,p.subject,p.oldCounter,p.subject);if(!row)return false;db.prepare('INSERT INTO noogle_sessions VALUES(?,?,?,?,?)').run(p.sessionHash,p.subject,p.credentialId,p.expiresAt,p.authTime);return true;});},
   async session(hash,now){return db.prepare('SELECT s.subject,s.auth_time AS authTime FROM noogle_sessions s JOIN noogle_credentials c ON c.id=s.credential_id WHERE s.hash=? AND s.expires_at>? AND c.revoked=0').get(hash,now)||null;},
+  async revokeSession(hash){db.prepare('DELETE FROM noogle_sessions WHERE hash=?').run(hash);},
   async revokeCredential(subject,id){return db.prepare('UPDATE noogle_credentials SET revoked=1 WHERE subject=? AND id=? AND revoked=0').run(subject,id).changes===1;},
   async disableAccount(subject){return db.prepare('UPDATE noogle_accounts SET disabled=1 WHERE subject=?').run(subject).changes===1;},
   close(){db.close();}
