@@ -115,7 +115,7 @@ function back(r,theme){
     ['METADATA RESOLUTION',cut(r.provenance.metadata_status.replaceAll('_',' '),39)]
   ];
   return text(69,97,'NEO',35,theme.light,'font-family="Georgia,serif" font-weight="bold"')+
-    text(154,94,'L A Y E R   3   /   P R O V E N A N C E',13,theme.accent,'font-weight="bold"')+
+    text(154,94,'LAYER 3 / PROVENANCE',13,theme.accent,'font-weight="bold"')+
     text(69,211,'EVIDENCE BEFORE CLAIMS',27,theme.light,'font-family="Georgia,serif"')+
     text(69,248,'Presentation metadata · not a signed ownership certificate',13,'#B5C1BD')+
     fields.map(([k,v],i)=>{const y=300+i*55;return text(73,y,k,11,theme.accent,'letter-spacing=".7"')+text(73,y+23,v,17,'#F1E7D3');}).join('')+
