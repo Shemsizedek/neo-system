@@ -27,8 +27,8 @@ const pngHash='b'.repeat(64);
 function routes(){
   return {
     '/':{result:{server_ready:true,network:'mainnet',ledger_state:'Following',counterparty_height:1011}},
-    '/assets/'+asset:{result:{asset,owner:address,issuer:address,description:canonical,first_issuance_block_index:1000,locked:false}},
-    '/issuances/'+tx:{result:{asset,tx_hash:tx,block_index:1000,quantity:101,source:address,issuer:address,description:canonical,status:'valid',transfer:false}},
+    ['/assets/'+asset]:{result:{asset,owner:address,issuer:address,description:canonical,first_issuance_block_index:1000,locked:false}},
+    ['/issuances/'+tx]:{result:{asset,tx_hash:tx,block_index:1000,quantity:101,source:address,issuer:address,description:canonical,status:'valid',transfer:false}},
     '/blocks/last':{result:{block_index:1011,block_hash:'c'.repeat(64)}},
     '/blocks/1000':{result:{block_index:1000,block_hash:pngHash}}
   };
