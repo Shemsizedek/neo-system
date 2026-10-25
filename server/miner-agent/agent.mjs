@@ -7,7 +7,16 @@ const sleep=(ms)=>new Promise(r=>setTimeout(r,ms))
 const now=()=>new Date().toISOString()
 
 export function canonicalPayload(payload){
-  return JSON.stringify(payload,Object.keys(payload).sort())
+  // Recursively canonicalize every nested field. A top-level JSON replacer list
+  // silently omits unlisted nested fields and cannot authenticate telemetry.
+  const normalize=value=>{
+    if(Array.isArray(value))return value.map(normalize)
+    if(value&&typeof value==='object'){
+      return Object.fromEntries(Object.keys(value).sort().map(key=>[key,normalize(value[key])]))
+    }
+    return value
+  }
+  return JSON.stringify(normalize(payload))
 }
 
 export function signEvent(payload,privateKeyPem){
@@ -23,9 +32,9 @@ export function buildEnvelope({agentId,minerId,type,payload,privateKeyPem}){
   return {...body,signature:signEvent(body,privateKeyPem)}
 }
 
-export async function postEnvelope(gatewayUrl,envelope,fetchImpl=fetch){
+export async function postEnvelope(gatewayUrl,envelope,fetchImpl=fetch,{token=''}={}){
   if(!gatewayUrl.startsWith('https://')) throw new Error('Gateway URL must use HTTPS')
-  const res=await fetchImpl(gatewayUrl,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(envelope)})
+  const res=await fetchImpl(gatewayUrl,{method:'POST',headers:{'content-type':'application/json',...(token?{authorization:`Bearer ${token}`}:{})},body:JSON.stringify(envelope)})
   if(!res.ok) throw new Error(`Gateway rejected event: ${res.status}`)
   return res.json().catch(()=>({ok:true}))
 }
@@ -47,7 +56,7 @@ export async function runAgent(config,{fetchImpl=fetch,adapter=createAdapter(con
       try{
         const telemetry=await adapter.readTelemetry()
         const envelope=buildEnvelope({agentId:config.agentId,minerId:config.minerId,type:'TELEMETRY',payload:telemetry,privateKeyPem})
-        await postEnvelope(config.gatewayUrl,envelope,fetchImpl)
+        await postEnvelope(config.gatewayUrl,envelope,fetchImpl,{token:process.env.NEO_MINER_AGENT_GATEWAY_TOKEN||''})
       }catch(error){
         console.error(`[neo-miner-agent] ${now()} ${error instanceof Error?error.message:String(error)}`)
       }
