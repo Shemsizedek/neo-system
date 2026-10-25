@@ -320,7 +320,7 @@ test('NCC-016 copied HTML-escaped and social-tracked Layer 3 links generate vali
   ];
   for(const path of paths){
     const response=await fetch(url+path);
-    assert.equal(response.status,200,paths[i]);
+    assert.equal(response.status,200,path);
     const card=await response.json();
     assert.equal(card.payload.mode,'UNISSUED_DESIGN_PREVIEW');
     assert.equal(card.payload.asset,'NEOBOND');
