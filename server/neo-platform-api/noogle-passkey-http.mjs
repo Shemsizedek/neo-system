@@ -9,12 +9,13 @@ const valid=v=>typeof v==='string'&&/^[A-Za-z0-9_-]{43}$/.test(v);
 const cookie=(req,name)=>{const matches=String(req.headers.cookie||'').split(';').map(x=>x.trim()).filter(x=>x.startsWith(name+'='));return matches.length===1?matches[0].slice(name.length+1):null;};
 const setCookie=(name,value,age)=>`${name}=${value}; Path=/; Secure; HttpOnly; SameSite=Strict; Max-Age=${age}`;
 // Explicit factory only. Shared ingress rate limiting and TLS are deployment requirements.
-export function createNooglePasskeyServer({origin,accounts,allowRegistration=false,now=Date.now}={}){
+export function createNooglePasskeyServer({origin,accounts,allowRegistration=false,oidcHandler,now=Date.now}={}){
  const url=new URL(origin);if(url.protocol!=='https:'||url.origin!==origin||!accounts||['beginRegistration','finishRegistration','beginLogin','finishLogin','authenticate','signOut'].some(k=>typeof accounts[k]!=='function'))throw Error('passkey_http_configuration_required');
  const limits=new Map();
  return http.createServer(async(req,res)=>{
   const send=(status,data,type='application/json')=>{res.writeHead(status,{'content-type':type,'cache-control':'no-store','x-content-type-options':'nosniff','referrer-policy':'no-referrer','content-security-policy':"default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'",'permissions-policy':'camera=(), microphone=(), geolocation=()'});res.end(type==='application/json'?JSON.stringify(data):data);};
   try{
+   if(oidcHandler&&await oidcHandler(req,res))return;
    const path=new URL(req.url,origin).pathname;
    if(req.method==='GET'&&path==='/'){
     if(!valid(cookie(req,'__Host-noogle-browser')))res.setHeader('set-cookie',setCookie('__Host-noogle-browser',randomBytes(32).toString('base64url'),1800));

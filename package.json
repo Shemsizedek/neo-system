@@ -170,6 +170,7 @@
     "@simplewebauthn/server": "14.0.3",
     "bitcoinjs-message": "2.2.0",
     "bs58check": "2.1.2",
+    "jose": "6.2.13",
     "lucide-react": "^0.468.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1"

@@ -20,6 +20,7 @@ export function createNoogleNeopassProvider({clients,store,authenticate,approve,
   return {client,...input};
  }
  return Object.freeze({
+  inspect(input){const value=request(input);return {clientId:value.client.id,clientName:value.client.name,redirectUri:value.redirect_uri,scope:'openid'};},
   async authorize(input,sessionHandle){
    const checked=request(input),identity=await authenticate(sessionHandle);
    if(!identity||typeof identity.subject!=='string'||!identity.subject||identity.verified!==true)throw Error('authentication_required');
