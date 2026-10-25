@@ -18,8 +18,8 @@ const intent=()=>({
 function responses(){
   return {
     '/':{result:{server_ready:true,network:'mainnet',ledger_state:'Following',counterparty_height:1009}},
-    '/assets/'+asset:{result:{asset,issuer:source,owner:source,description:desc,first_issuance_block_index:1000,locked:false}},
-    '/issuances/'+tx:{result:{tx_hash:tx,asset,source,issuer:source,description:desc,block_index:1000,status:'valid',transfer:false,quantity:1000}},
+    ['/assets/'+asset]:{result:{asset,issuer:source,owner:source,description:desc,first_issuance_block_index:1000,locked:false}},
+    ['/issuances/'+tx]:{result:{tx_hash:tx,asset,source,issuer:source,description:desc,block_index:1000,status:'valid',transfer:false,quantity:1000}},
     '/blocks/last':{result:{block_index:1009,block_hash:'c'.repeat(64)}},
     '/blocks/1000':{result:{block_index:1000,block_hash:blockHash}}
   };
