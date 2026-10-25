@@ -125,6 +125,28 @@ jobs:
           status,_,_=fetch('/api/crown/showcase?asset=NOMNI&instrument_type=bond')
           assert status==400
           print('NCC-015 Layer 3 observed+unissued showcase, source-backed SVG and read-only routes: OK')
+          # NCC-016: shared links from chat clients are normalized, never promoted to issuer commands.
+          status,_,body=fetch('/api/crown/showcase?mode=preview&amp;asset=NEOBOND&amp;instrument_type=bond&amp;network=runes&utm_source=chatgpt')
+          assert status==200,(status,body[:220])
+          escaped=json.loads(body)
+          assert escaped['payload']['mode']=='UNISSUED_DESIGN_PREVIEW'
+          assert escaped['payload']['asset']=='NEOBOND'
+          assert escaped['payload']['classification']['type']=='bond'
+          status,_,body=fetch('/api/crown/showcase?mode=preview&asset=NEOBOND&asset=NEOBOND&instrument_type=bond')
+          assert status==200,(status,body[:220])
+          assert json.loads(body)['payload']['asset']=='NEOBOND'
+          status,_,body=fetch('/api/crown/showcase?asset=NOMNI&asset=NOTNOMNI')
+          assert status==400,(status,body[:220])
+          conflict=json.loads(body)
+          assert conflict['error']=='conflicting_showcase_parameter'
+          assert conflict['studio_url']=='/showcase/'
+          assert conflict['issuance_authorized'] is False
+          status,_,body=fetch('/api/crown/showcase?mode=preview&asset=NEOBOND&issuer_verified=yes')
+          assert status==400
+          assert json.loads(body)['error']=='unsupported_showcase_parameter'
+          status,_,body=fetch('/showcase/')
+          assert status==200 and b'copyLink' in body
+          print('NCC-016 copied links, HTML escapes, metadata override rejection and share control: OK')
           status,headers,body=fetch('/studio/')
           assert status==200 and b'CROWN MEDIA LIBRARY' in body and b'mediaConsent' in body
           assert "img-src 'self' blob: data:" in headers.get('Content-Security-Policy','')

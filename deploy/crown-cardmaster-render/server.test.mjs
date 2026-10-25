@@ -306,3 +306,54 @@ test('NCC-015 rejects observed asset overrides, writes, malformed paths and unsu
   assert.equal(error.status,503);
   assert.doesNotMatch(await error.text(),/secret error/);
 });
+
+
+test('NCC-016 copied HTML-escaped and social-tracked Layer 3 links generate valid unissued cards',async t=>{
+  let observedCalls=0;
+  const url=await withServer(t,{apiHandler:dummyHandler,showcaseResolver:async()=>{
+    observedCalls++;throw Error('preview_should_not_query_chain');
+  }});
+  const paths=[
+    '/api/crown/showcase?mode=preview&asset=NEOBOND&instrument_type=bond&network=runes&format=json',
+    '/api/crown/showcase?mode=preview&amp;asset=NEOBOND&amp;instrument_type=bond&amp;network=runes&amp;format=json',
+    '/api/crown/showcase?asset=NEOBOND&mode=preview&instrument_type=bond&network=runes&asset=NEOBOND&format=json'
+  ];
+  for(const path of paths){
+    const response=await fetch(url+path);
+    assert.equal(response.status,200,path);
+    const card=await response.json();
+    assert.equal(card.payload.mode,'UNISSUED_DESIGN_PREVIEW');
+    assert.equal(card.payload.asset,'NEOBOND');
+    assert.equal(card.payload.classification.type,'bond');
+    assert.equal(card.payload.issuance.safe_to_issue,false);
+  }
+  const decorated=await fetch(url+'/api/crown/showcase?asset=NEOBOND&mode=preview&instrument_type=bond&utm_source=chatgpt&fbclid=source&ref=chat');
+  assert.equal(decorated.status,200);
+  assert.equal((await decorated.json()).payload.asset,'NEOBOND');
+  assert.equal(observedCalls,0);
+});
+test('NCC-016 identical query keys are idempotent but conflicting values remain blocked with a recovery URL',async t=>{
+  let observedCalls=0;
+  const url=await withServer(t,{apiHandler:dummyHandler,showcaseResolver:async()=>{
+    observedCalls++;throw Error('should_not_query_chain');
+  }});
+  const good=await fetch(url+'/api/crown/showcase?asset=NEOBOND&asset=NEOBOND&mode=preview&instrument_type=note&instrument_type=note&format=json');
+  assert.equal(good.status,200);
+  const item=await good.json();
+  assert.equal(item.payload.classification.type,'note');
+  for(const path of [
+    '/api/crown/showcase?asset=NOMNI&asset=NOTNOMNI',
+    '/api/crown/showcase?asset=NOMNI&mode=preview&mode=observed',
+    '/api/crown/showcase?mode=preview&asset=NEOBOND&issuer_verified=true',
+    '/api/crown/showcase?asset=NOMNI&amp;amp;format=svg'
+  ]){
+    const response=await fetch(url+path);
+    assert.equal(response.status,400,path);
+    const error=await response.json();
+    assert.match(error.message,/Layer 3 studio/);
+    assert.equal(error.studio_url,'/showcase/');
+    assert.equal(error.issuance_authorized,false);
+    assert.notEqual(error.error,'unsupported_or_duplicate_parameter');
+  }
+  assert.equal(observedCalls,0);
+});
