@@ -50,6 +50,20 @@ jobs:
           assert status==200 and b'CARDMASTER' in body and b'noindex,nofollow' in body
           assert "script-src 'self'" in headers.get('Content-Security-Policy','')
           print('Gallery and CSP: OK')
+          status,headers,body=fetch('/assets/NOMNI/tokenscan.json')
+          assert status==200,(status,body[:220])
+          assert 'application/json' in headers.get('Content-Type','')
+          assert headers.get('Location') is None
+          metadata=json.loads(body)
+          assert metadata['asset']=='NOMNI'
+          assert isinstance(metadata.get('description'),str) and len(metadata['description'])<=2048
+          assert metadata.get('website','').startswith('https://')
+          assert not any(key in metadata for key in ('private_key','seed','verified_issuer','reserve_amount','market_price'))
+          status,_,_=fetch('/assets/NOMNI/tokenscan.json',method='POST')
+          assert status==405,status
+          status,_,_=fetch('/assets/UNKNOWN/tokenscan.json')
+          assert status==404,status
+          print('NOMNI enhanced metadata / direct JSON / read-only safety: OK')
           status,headers,body=fetch('/studio/')
           assert status==200 and b'CROWN MEDIA LIBRARY' in body and b'mediaConsent' in body
           assert "img-src 'self' blob: data:" in headers.get('Content-Security-Policy','')
