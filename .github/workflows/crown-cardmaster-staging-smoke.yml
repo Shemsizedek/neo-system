@@ -93,6 +93,38 @@ jobs:
           status,_,_=fetch('/api/crown/metadata-readiness?asset=NOTISSUED')
           assert status==404
           print('NCC-014 metadata dashboard, fail-closed canonical status and no signer permission: OK')
+          status,headers,body=fetch('/showcase/')
+          assert status==200 and b'TOKEN SHOWCASE FORGE' in body and b'noindex,nofollow' in body
+          assert "script-src 'self'" in headers.get('Content-Security-Policy','')
+          for name in ('app.js','styles.css'):
+              status,_,file_data=fetch('/showcase/'+name)
+              assert status==200 and len(file_data)>2000
+          status,headers,body=fetch('/api/crown/showcase?asset=NOMNI&mode=observed')
+          assert status==200,(status,body[:250])
+          live_card=json.loads(body)
+          assert live_card['payload']['schema']=='NEO-CROWN-LAYER3-SHOWCASE-V1'
+          assert live_card['payload']['mode']=='OBSERVED_COUNTERPARTY_ASSET'
+          assert live_card['payload']['asset']=='NOMNI'
+          assert live_card['payload']['issuance']['safe_to_issue'] is False
+          assert live_card['payload']['market']['price'] is None
+          assert live_card['payload']['provenance']['issuer_control_verified'] is False
+          status,headers,body=fetch('/api/crown/showcase?asset=NOMNI&format=svg&face=front')
+          assert status==200 and b'<svg' in body and b'COUNTERPARTY ASSET' in body
+          assert 'image/svg' in headers.get('Content-Type','') and 'sandbox' in headers.get('Content-Security-Policy','')
+          assert b'<script' not in body
+          status,_,body=fetch('/api/crown/showcase?mode=preview&asset=DEMO_BOND&instrument_type=bond&network=runes')
+          assert status==200,(status,body[:250])
+          draft=json.loads(body)
+          assert draft['payload']['mode']=='UNISSUED_DESIGN_PREVIEW'
+          assert draft['payload']['provenance']['ledger_observed'] is False
+          assert draft['payload']['issuance']['safe_to_issue'] is False
+          status,_,body=fetch('/api/crown/showcase?mode=preview&asset=DEMO_BOND&instrument_type=bond&network=runes&format=svg&face=back')
+          assert status==200 and b'PROVENANCE' in body and b'<script' not in body
+          status,_,_=fetch('/api/crown/showcase?asset=NOMNI',method='POST')
+          assert status==405
+          status,_,_=fetch('/api/crown/showcase?asset=NOMNI&instrument_type=bond')
+          assert status==400
+          print('NCC-015 Layer 3 observed+unissued showcase, source-backed SVG and read-only routes: OK')
           status,headers,body=fetch('/studio/')
           assert status==200 and b'CROWN MEDIA LIBRARY' in body and b'mediaConsent' in body
           assert "img-src 'self' blob: data:" in headers.get('Content-Security-Policy','')
