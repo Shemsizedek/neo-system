@@ -27,7 +27,13 @@ test('invalid or missing tenant fails closed', () => {
 
 test('returned records are copies and cannot mutate registry state', () => {
   const registry = createTenantIdempotencyRegistry()
-  registry.reserve({ authenticatedTenant: 'A', key: 'key', attempt: { state: 'reserved', token: 'must-not-store' } })
+  // Gate 46 rejects unexpected credential-bearing fields instead of silently discarding them.
+  assert.equal(registry.reserve({
+    authenticatedTenant: 'A', key: 'key', attempt: { state: 'reserved', token: 'must-not-store' },
+  }).ok, false)
+  assert.equal(registry.reserve({
+    authenticatedTenant: 'A', key: 'key', attempt: { state: 'reserved' },
+  }).ok, true)
   const record = registry.lookup({ authenticatedTenant: 'A', key: 'key' })
   record.attempt.state = 'settled'
   assert.deepEqual(registry.lookup({ authenticatedTenant: 'A', key: 'key' }).attempt, { state: 'reserved' })
