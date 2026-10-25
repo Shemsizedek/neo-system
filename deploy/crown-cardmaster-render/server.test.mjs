@@ -195,3 +195,114 @@ test('NCC-014 upstream observer failure never changes token state or leaks its e
   assert.match(body,/metadata_readiness_unavailable/);
   assert.doesNotMatch(body,/secret_or_sensitive_internal_detail/);
 });
+
+
+test('NCC-015 Layer 3 studio serves an accessible on-demand generator without weakening CSP',async t=>{
+  const url=await withServer(t,{apiHandler:dummyHandler});
+  const page=await fetch(url+'/showcase/');
+  assert.equal(page.status,200);
+  assert.match(page.headers.get('content-type'),/text\/html/);
+  assert.match(page.headers.get('content-security-policy'),/script-src 'self'/);
+  const html=await page.text();
+  assert.match(html,/TOKEN SHOWCASE FORGE/);
+  assert.match(html,/UNISSUED|Unissued/);
+  assert.match(html,/noindex,nofollow/);
+  assert.match(html,/Export 2× print file/);
+  for(const [path,mime] of [['/showcase/app.js','text\/javascript'],['/showcase/styles.css','text\/css']]){
+    const response=await fetch(url+path);
+    assert.equal(response.status,200,path);
+    assert.match(response.headers.get('content-type'),new RegExp(mime));
+    assert.ok((await response.text()).length>2000);
+  }
+  const gallery=await (await fetch(url+'/')).text();
+  assert.match(gallery,/\/showcase\//);
+  assert.equal((await fetch(url+'/showcase/',{method:'POST'})).status,405);
+  assert.equal((await fetch(url+'/showcase/private.json')).status,404);
+});
+test('NCC-015 on-demand observed NOMNI card uses public Counterparty record but no verified title, wallet or price',async t=>{
+  let count=0;
+  const showcaseResolver=async asset=>{
+    count++;
+    assert.equal(asset,'NOMNI');
+    return {
+      requested_asset:asset,canonical_asset:asset,
+      observed_at:'2026-10-25T22:58:00Z',metadata_status:'UNAVAILABLE',
+      ledger:{asset:'NOMNI',owner:'18FyntJG9hdXYvanm67mGgbyo1P7adckvg',issuer:'1NySA74g62Mr28Unp4uCxwtQv9FkD7AVpk',supply:'900719925474099312345',divisible:true,locked:true,description:'https://crown.holytemples.org/assets/NOMNI/tokenscan.json'},
+      metadata:null,media:{items:[]}
+    };
+  };
+  const url=await withServer(t,{apiHandler:dummyHandler,showcaseResolver});
+  const json=await fetch(url+'/api/crown/showcase?asset=NOMNI&format=json');
+  assert.equal(json.status,200);
+  const item=await json.json();
+  assert.equal(item.payload.mode,'OBSERVED_COUNTERPARTY_ASSET');
+  assert.equal(item.payload.protocol,'counterparty');
+  assert.equal(item.payload.ledger.supply_raw,'900719925474099312345');
+  assert.equal(item.payload.provenance.ledger_observed,true);
+  assert.equal(item.payload.provenance.issuer_control_verified,false);
+  assert.equal(item.payload.market.price,null);
+  assert.equal(item.payload.issuance.safe_to_issue,false);
+  assert.equal(item.read_only,true);
+  const svg=await fetch(url+'/api/crown/showcase?asset=NOMNI&format=svg&face=front&style=aurum');
+  assert.equal(svg.status,200);
+  assert.match(svg.headers.get('content-type'),/svg/);
+  assert.match(svg.headers.get('content-security-policy'),/sandbox/);
+  const art=await svg.text();
+  assert.match(art,/NOMNI/);
+  assert.match(art,/OBSERVED COUNTERPARTY ASSET/);
+  assert.doesNotMatch(art,/<script|<foreignObject|onload=/i);
+  const back=await (await fetch(url+'/api/crown/showcase?asset=NOMNI&format=svg&face=back')).text();
+  assert.match(back,/PROVENANCE/);
+  assert.ok(count>=3);
+});
+test('NCC-015 preview creates free exportable cards for all categories without contacting the blockchain',async t=>{
+  const showcaseResolver=async()=>{throw Error('preview must never call Counterparty');};
+  const url=await withServer(t,{apiHandler:dummyHandler,showcaseResolver});
+  const json=await fetch(url+'/api/crown/showcase?mode=preview&asset=PROPOSED&type=ignored&instrument_type=bond&network=runes');
+  assert.equal(json.status,400);
+  const good=await fetch(url+'/api/crown/showcase?mode=preview&asset=PROPOSED&instrument_type=bond&network=runes&style=azurite&title=Crown%20Bond%20Study');
+  assert.equal(good.status,200);
+  const result=await good.json();
+  assert.equal(result.payload.mode,'UNISSUED_DESIGN_PREVIEW');
+  assert.equal(result.payload.classification.type,'bond');
+  assert.equal(result.payload.classification.status,'USER_SELECTED_PREVIEW_STYLE');
+  assert.equal(result.payload.provenance.ledger_observed,false);
+  assert.equal(result.payload.ledger.asset,null);
+  assert.equal(result.payload.market.price,null);
+  assert.equal(result.payload.issuance.safe_to_issue,false);
+  assert.ok(result.supported_instrument_types.includes('insurance_policy'));
+  assert.ok(result.supported_instrument_types.includes('real_estate'));
+  assert.ok(result.supported_instrument_types.includes('nft'));
+  const svg=await fetch(url+'/api/crown/showcase?mode=preview&asset=PROPOSED&instrument_type=bond&network=runes&style=azurite&format=svg');
+  assert.equal(svg.status,200);
+  assert.match(await svg.text(),/UNISSUED/);
+});
+test('NCC-015 rejects observed asset overrides, writes, malformed paths and unsupported format without network activity',async t=>{
+  let calls=0;
+  const url=await withServer(t,{apiHandler:dummyHandler,showcaseResolver:async()=>{calls++;throw Error('secret error');}});
+  const paths=[
+    '/api/crown/showcase?asset=../../etc',
+    '/api/crown/showcase?asset=NOMNI&asset=NOTNOMNI',
+    '/api/crown/showcase?asset=NOMNI&instrument_type=bond',
+    '/api/crown/showcase?asset=NOMNI&title=NotARealIssuer',
+    '/api/crown/showcase?asset=NOMNI&mode=preview&instrument_type=security_approved',
+    '/api/crown/showcase?asset=NOMNI&format=html',
+    '/api/crown/showcase?asset=NOMNI&format=png',
+    '/api/crown/showcase?asset=NOMNI&face=middle',
+    '/api/crown/showcase?asset=NOMNI&network=runes',
+    '/api/crown/showcase?asset=NOMNI&remote=http://attacker',
+    '/api/crown/showcase?asset=NOMNI&style=untrusted_color'
+  ];
+  for(const path of paths){
+    const response=await fetch(url+path);
+    assert.equal(response.status,400,path);
+  }
+  for(const method of ['POST','PUT','DELETE','PATCH','HEAD']){
+    const response=await fetch(url+'/api/crown/showcase',{method});
+    assert.equal(response.status,405,method);
+  }
+  assert.equal(calls,0);
+  const error=await fetch(url+'/api/crown/showcase?asset=NOMNI');
+  assert.equal(error.status,503);
+  assert.doesNotMatch(await error.text(),/secret error/);
+});
