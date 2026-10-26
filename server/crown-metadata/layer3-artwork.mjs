@@ -132,5 +132,5 @@ export function renderLayer3Svg(record,{face='front'}={}){
   if(face!=='front'&&face!=='back')throw Error('invalid_card_face');
   const theme=themeFor(data);
   const content=face==='front'?front(data,theme):back(data,theme);
-  return `<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" width="720" height="1040" viewBox="0 0 720 1040" role="img" aria-label="${x('NEO Crown '+data.asset+' '+face+' showcase')}">${backdrop(data,theme)}${content}</svg>`;
+  return `<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" width="720" height="1040" viewBox="0 0 720 1040" role="img" aria-label="${x('NEO Crown '+(data.asset==='NOMNI'?'NEO Crown':data.asset)+' '+face+' showcase')}">${backdrop(data,theme)}${content}</svg>`;
 }
