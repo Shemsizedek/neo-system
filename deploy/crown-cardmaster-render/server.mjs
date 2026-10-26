@@ -67,6 +67,11 @@ function fileRoute(pathname) {
   // Direct HTTP 200 JSON, never redirect: required by Counterparty enhanced metadata.
   const enhanced=/^\/assets\/([A-Z][A-Z0-9]{0,23})\/(tokenscan|manifest)\.json$/.exec(pathname);
   if(enhanced) return [`assets/${enhanced[1]}/${enhanced[2]}.json`,'application/json; charset=utf-8'];
+  // Public NEO Layer 3 creation-event publications, only files committed by the verified staging job.
+  const record=/^\/assets\/([A-Z][A-Z0-9]{0,23})\/(showcase(?:-manifest)?)\.json$/.exec(pathname);
+  if(record)return [`assets/${record[1]}/${record[2]}.json`,'application/json; charset=utf-8'];
+  const image=/^\/assets\/([A-Z][A-Z0-9]{0,23})\/(showcase-(?:front|back))\.svg$/.exec(pathname);
+  if(image)return [`assets/${image[1]}/${image[2]}.svg`,'image/svg+xml; charset=utf-8'];
   const match = /^\/art\/(NEO-CARD-[A-Z0-9-]{3,80})-(front|back)\.svg$/.exec(pathname);
   return match && CARDS.has(match[1]) ? [`art/${match[1]}-${match[2]}.svg`,'image/svg+xml; charset=utf-8'] : null;
 }
