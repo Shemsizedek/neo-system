@@ -1,0 +1,197 @@
+name: Crown CARDMASTER staging HTTP smoke
+on:
+  push:
+    branches: [feat/ncc-007-render-runtime-hardening]
+  pull_request:
+    branches: [feat/ncc-005-cardmaster-gallery]
+    paths:
+      - 'deploy/crown-cardmaster-render/**'
+      - 'apps/neoscan/web/cardmaster/**'
+      - 'server/crown-metadata/cardmaster-gallery.mjs'
+      - 'api/crown/cardmaster.mjs'
+      - '.github/workflows/crown-cardmaster-staging-smoke.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  http-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Test public Render gallery, read-only API and security responses
+        env:
+          BASE: https://neo-crown-cardmaster-runtime.onrender.com
+        run: |
+          python3 - <<'PY'
+          import json, os, time, urllib.request, urllib.error
+          base=os.environ['BASE'].rstrip('/')
+          def fetch(path,method='GET'):
+              request=urllib.request.Request(base+path,method=method,headers={'User-Agent':'NEO-CARDMASTER-CI/1.0'})
+              for attempt in range(5):
+                  try:
+                      with urllib.request.urlopen(request,timeout=35) as response:
+                          return response.status,response.headers,response.read()
+                  except urllib.error.HTTPError as ex:
+                      body=ex.read()
+                      if method=='GET' and ex.code in (502,503,504) and attempt<4:
+                          print(f'Render cold start or gateway outage: {path} returned {ex.code}. Retry {attempt+1}/4.',flush=True)
+                          time.sleep(16)
+                          continue
+                      return ex.code,ex.headers,body
+                  except (urllib.error.URLError, TimeoutError, ConnectionError):
+                      if method!='GET' or attempt==4: raise
+                      time.sleep(16)
+          status,headers,body=fetch('/healthz')
+          assert status==200,(status,body[:180])
+          health=json.loads(body)
+          assert health['service']=='neo-crown-cardmaster' and health['read_only'] is True
+          print('Health: OK')
+          status,headers,body=fetch('/')
+          assert status==200 and b'CARDMASTER' in body and b'noindex,nofollow' in body
+          assert "script-src 'self'" in headers.get('Content-Security-Policy','')
+          print('Gallery and CSP: OK')
+          status,headers,body=fetch('/assets/NOMNI/tokenscan.json')
+          assert status==200,(status,body[:220])
+          assert 'application/json' in headers.get('Content-Type','')
+          assert headers.get('Location') is None
+          metadata=json.loads(body)
+          assert metadata['asset']=='NOMNI'
+          assert isinstance(metadata.get('description'),str) and len(metadata['description'])<=2048
+          assert metadata.get('website','').startswith('https://')
+          assert not any(key in metadata for key in ('private_key','seed','verified_issuer','reserve_amount','market_price'))
+          status,_,_=fetch('/assets/NOMNI/tokenscan.json',method='POST')
+          assert status==405,status
+          status,_,_=fetch('/assets/UNKNOWN/tokenscan.json')
+          assert status==404,status
+          print('NOMNI enhanced metadata / direct JSON / read-only safety: OK')
+          status,headers,body=fetch('/metadata/')
+          assert status==200 and b'METADATA OBSERVABILITY' in body and b'noindex,nofollow' in body
+          for module in ('app.js','styles.css'):
+              status,_,content=fetch('/metadata/'+module)
+              assert status==200 and len(content)>900
+          status,_,body=fetch('/api/crown/metadata-readiness?asset=NOMNI')
+          assert status==200,(status,body[:250])
+          diagnostic=json.loads(body)
+          assert diagnostic['schema']=='neo.crown.metadata-readiness.v1' and diagnostic['asset']=='NOMNI'
+          assert diagnostic['read_only'] is True and diagnostic['safe_to_issue'] is False
+          assert diagnostic['explorer_additional_information_verified'] is False
+          assert diagnostic['price'] is None and diagnostic['price_verified'] is False
+          assert diagnostic['canonical']['url']=='https://crown.holytemples.org/assets/NOMNI/tokenscan.json'
+          assert diagnostic['status'] in (
+              'canonical_blocked','mirror_not_verified','counterparty_pointer_not_verified',
+              'tokenscan_pointer_not_verified','canonical_ready_explorer_enrichment_unverified'
+          )
+          for key in ('canonical','mirror','counterparty','tokenscan'):
+              assert diagnostic[key]['state'] in (
+                  'matches_approved','differs_from_approved','points_to_canonical',
+                  'different_description','invalid','unavailable'
+              )
+          if diagnostic['canonical']['state']!='matches_approved':
+              assert diagnostic['status']=='canonical_blocked'
+          status,_,_=fetch('/api/crown/metadata-readiness',method='POST')
+          assert status==405
+          status,_,_=fetch('/api/crown/metadata-readiness?asset=NOTISSUED')
+          assert status==404
+          print('NCC-014 metadata dashboard, fail-closed canonical status and no signer permission: OK')
+          status,headers,body=fetch('/showcase/')
+          assert status==200 and b'TOKEN SHOWCASE FORGE' in body and b'noindex,nofollow' in body
+          assert "script-src 'self'" in headers.get('Content-Security-Policy','')
+          for name in ('app.js','styles.css'):
+              status,_,file_data=fetch('/showcase/'+name)
+              assert status==200 and len(file_data)>2000
+          status,headers,body=fetch('/api/crown/showcase?asset=NOMNI&mode=observed')
+          assert status==200,(status,body[:250])
+          live_card=json.loads(body)
+          assert live_card['payload']['schema']=='NEO-CROWN-LAYER3-SHOWCASE-V1'
+          assert live_card['payload']['mode']=='OBSERVED_COUNTERPARTY_ASSET'
+          assert live_card['payload']['asset']=='NOMNI'
+          assert live_card['payload']['issuance']['safe_to_issue'] is False
+          assert live_card['payload']['market']['price'] is None
+          assert live_card['payload']['provenance']['issuer_control_verified'] is False
+          status,headers,body=fetch('/api/crown/showcase?asset=NOMNI&format=svg&face=front')
+          assert status==200 and b'<svg' in body and b'COUNTERPARTY ASSET' in body
+          assert 'image/svg' in headers.get('Content-Type','') and 'sandbox' in headers.get('Content-Security-Policy','')
+          assert b'<script' not in body
+          status,_,body=fetch('/api/crown/showcase?mode=preview&asset=DEMO_BOND&instrument_type=bond&network=runes')
+          assert status==200,(status,body[:250])
+          draft=json.loads(body)
+          assert draft['payload']['mode']=='UNISSUED_DESIGN_PREVIEW'
+          assert draft['payload']['provenance']['ledger_observed'] is False
+          assert draft['payload']['issuance']['safe_to_issue'] is False
+          status,_,body=fetch('/api/crown/showcase?mode=preview&asset=DEMO_BOND&instrument_type=bond&network=runes&format=svg&face=back')
+          assert status==200 and b'PROVENANCE' in body and b'<script' not in body
+          status,_,_=fetch('/api/crown/showcase?asset=NOMNI',method='POST')
+          assert status==405
+          status,_,_=fetch('/api/crown/showcase?asset=NOMNI&instrument_type=bond')
+          assert status==400
+          print('NCC-015 Layer 3 observed+unissued showcase, source-backed SVG and read-only routes: OK')
+          # NCC-016: shared links from chat clients are normalized, never promoted to issuer commands.
+          status,_,body=fetch('/api/crown/showcase?mode=preview&amp;asset=NEOBOND&amp;instrument_type=bond&amp;network=runes&utm_source=chatgpt')
+          assert status==200,(status,body[:220])
+          escaped=json.loads(body)
+          assert escaped['payload']['mode']=='UNISSUED_DESIGN_PREVIEW'
+          assert escaped['payload']['asset']=='NEOBOND'
+          assert escaped['payload']['classification']['type']=='bond'
+          status,_,body=fetch('/api/crown/showcase?mode=preview&asset=NEOBOND&asset=NEOBOND&instrument_type=bond')
+          assert status==200,(status,body[:220])
+          assert json.loads(body)['payload']['asset']=='NEOBOND'
+          status,_,body=fetch('/api/crown/showcase?asset=NOMNI&asset=NOTNOMNI')
+          assert status==400,(status,body[:220])
+          conflict=json.loads(body)
+          assert conflict['error']=='conflicting_showcase_parameter'
+          assert conflict['studio_url']=='/showcase/'
+          assert conflict['issuance_authorized'] is False
+          status,_,body=fetch('/api/crown/showcase?mode=preview&asset=NEOBOND&issuer_verified=yes')
+          assert status==400
+          assert json.loads(body)['error']=='unsupported_showcase_parameter'
+          status,_,body=fetch('/showcase/')
+          assert status==200 and b'copyLink' in body
+          print('NCC-016 copied links, HTML escapes, metadata override rejection and share control: OK')
+          status,headers,body=fetch('/studio/')
+          assert status==200 and b'CROWN MEDIA LIBRARY' in body and b'mediaConsent' in body
+          assert "img-src 'self' blob: data:" in headers.get('Content-Security-Policy','')
+          print('Local Crown media vault HTML / CSP: OK')
+          for name in ('media-core.mjs','media-store.mjs','media-ui.mjs'):
+              status,headers,body=fetch('/studio/'+name)
+              assert status==200 and len(body)>900 and b'export' in body
+          status,_,_=fetch('/api/crown/media/upload',method='POST')
+          assert status==405,status
+          print('Media modules and server upload denial: OK')
+          status,headers,body=fetch('/art/NEO-CARD-000001-front.svg')
+          assert status==200 and b'<svg' in body and b'MARKET STATUS IN GALLERY' in body
+          assert 'image/svg' in headers.get('Content-Type','')
+          print('Static SVG: OK')
+          status,headers,body=fetch('/api/crown/cardmaster?format=svg&card_id=NEO-CARD-000002&face=back')
+          assert status==200 and b'<svg' in body and b'<script' not in body
+          print('SVG API: OK')
+          status,headers,body=fetch('/api/crown/order-evidence')
+          assert status==200,(status,body[:200])
+          evidence=json.loads(body)
+          assert evidence['schema']=='neo.crown.counterparty.order-evidence.v1'
+          assert evidence['market_quote_verified'] is False and evidence['price'] is None
+          assert evidence['read_only'] is True and len(evidence['pairs'])==2
+          for entry in evidence['pairs']:
+              assert entry['pair'] in ('NOMNI/XCP','NOMNI/BTC')
+              assert entry['status'] in ('no_open_orders','open_listings_present','unavailable')
+              assert entry['price'] is None and entry['price_verified'] is False
+              if entry['status']=='no_open_orders':
+                  assert entry['open_order_count']==0 and entry['orders']==[]
+          print('Counterparty order evidence and no fabricated price: OK')
+          status,headers,body=fetch('/api/crown/cardmaster')
+          assert status==200,(status,body[:300])
+          deck=json.loads(body)
+          assert deck['schema']=='NEO-CARDMASTER-COLLECTION-V1' and deck['read_only'] is True
+          assert len(deck['cards'])==3
+          for card in deck['cards']:
+              market=card['market_data'];quote=market.get('quote')
+              if quote is not None:
+                  assert quote.get('upstream_observation_time_verified') is True
+                  assert quote.get('source_observed_at') and quote.get('source_url')
+              assert card['provenance']['financial_claims_verified'] is False
+          print('Source-attributed market policy: OK')
+          status,_,_=fetch('/api/crown/cardmaster',method='POST')
+          assert status==405,status
+          status,_,_=fetch('/.git/config')
+          assert status==404,status
+          print('Write/path safety: OK')
+          PY

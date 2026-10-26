@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#090e12">
+  <meta name="description" content="NEO Crown CARDMASTER — offline-capable generative vector artwork studio. No paid AI provider, trading or wallets.">
+  <title>NEO Crown Studio · CARDMASTER</title>
+  <link rel="stylesheet" href="/studio/studio.css">
+</head>
+<body>
+  <div class="page">
+    <header class="masthead">
+      <a class="brand" href="/" aria-label="Return to Crown CARDMASTER gallery"><span class="logo" aria-hidden="true">N</span><span><span class="overline">PROJECT 144 / NEO CROWN</span><strong>CARDMASTER <span class="brand-soft">STUDIO</span></strong></span></a>
+      <nav aria-label="Studio navigation"><a href="/">Collection Gallery <span aria-hidden="true">↗</span></a></nav>
+    </header>
+    <section class="hero">
+      <div><p class="overline gold">THE CROWN DESIGN FORGE / NCC-009</p><h1>Craft the<br><em>next edition.</em></h1><p class="hero-description">Create original, collectible vector art. Curate a visual identity, generate versions, then export gallery-ready front and back artwork with a transparent provenance record.</p></div>
+      <div class="hero-side"><div class="small-label">STUDIO ENGINE</div><strong>Procedural SVG</strong><span>Local generation · no payment or external AI calls</span><div class="mini-line"></div><div class="small-label">PUBLISHING STATE</div><strong class="muted-value">Preview only</strong><span>Artwork ≠ issuer verification or proof of reserves</span></div>
+    </section>
+    <div class="disclaimer" role="note"><strong>Creative prototype:</strong> artwork and prompts are generated locally by code, not by a connected AI illustration service. No verified asset price, yield, backing or ownership is represented. All card metadata and drafts require review before public promotion.</div>
+    <main class="workbench">
+      <aside class="panel controls" aria-labelledby="controlHeading">
+        <div class="panel-heading"><span class="eyebrow">01 / ART DIRECTION</span><h2 id="controlHeading">Design controls</h2></div>
+        <form id="studioControls">
+          <label for="asset">Crown collection asset</label>
+          <select id="asset" name="asset"><option value="NEO-CARD-000001">NOMNI Monetary Index</option><option value="NEO-CARD-000002">Shelton Estate Real Estate</option><option value="NEO-CARD-000003">Crown Chain Private Equity</option></select>
+          <label for="heading">Artwork headline</label><input id="heading" name="heading" maxlength="70" required value="NOMNI MONETARY INDEX" autocomplete="off">
+          <p class="helper">Creative label only; financial claims are intentionally excluded from the artwork.</p>
+          <label for="template">Composition</label>
+          <select id="template" name="template"><option value="sovereign">Sovereign / Monumental</option><option value="orbital">Orbital / Cosmic</option><option value="atlas">Atlas / Blueprint</option></select>
+          <label for="palette">Finish</label>
+          <select id="palette" name="palette"><option value="aurum">Aurum / Gold</option><option value="azurite">Azurite / Blue</option><option value="emerald">Verdant / Jade</option><option value="ember">Ember / Copper</option></select>
+          <label for="mediaSelect">Illustration layer</label>
+        <select id="mediaSelect" name="mediaSelect"><option value="">Procedural artwork only</option></select>
+        <p class="helper">Imported imagery appears on the card front only. Original image files are stored in your browser, not uploaded to Render.</p>
+        <div class="field-pair"><div><label for="edition">Edition</label><input id="edition" name="edition" type="number" min="1" max="9999" value="1" required></div><div><label for="variant">Pattern seed</label><input id="variant" name="variant" type="number" min="1" max="9999" value="144" required></div></div>
+          <div class="control-actions"><button class="primary" id="generate" type="submit">Generate artwork <span aria-hidden="true">✦</span></button><button class="secondary" id="reseed" type="button">New variation</button></div>
+        </form>
+        <p class="micro-note">Every new render receives a numbered local revision. Changes are private to this browser unless exported.</p>
+      </aside>
+      <section class="preview" aria-labelledby="previewHeading">
+        <div class="preview-top"><div><p class="eyebrow">02 / CANVAS</p><h2 id="previewHeading">Live composition</h2></div><span class="live-badge"><span aria-hidden="true">●</span> LOCAL RENDER</span></div>
+        <div class="art-wrap"><div class="ambient-glow" aria-hidden="true"></div><img id="artPreview" width="720" height="1040" alt="Crown card artwork preview" decoding="async"><div class="watermark" aria-hidden="true">PROJECT 144 · STAGING</div></div>
+        <div class="view-strip"><div class="face-tabs" aria-label="Artwork side"><button id="frontTab" class="active" type="button" aria-pressed="true">Front</button><button id="backTab" type="button" aria-pressed="false">Back</button></div><div class="edition-label">720 × 1040 <span>SVG / PNG</span></div></div>
+        <div class="preview-actions"><button id="downloadSvg" type="button">Download SVG <span aria-hidden="true">↧</span></button><button id="downloadPng" type="button">Download PNG <span aria-hidden="true">↧</span></button></div>
+        <p id="renderStatus" class="status" role="status" aria-live="polite">Initializing local vector renderer…</p>
+      </section>
+      <aside class="panel provenance" aria-labelledby="provenanceHeading">
+        <div class="panel-heading"><span class="eyebrow">03 / PROVENANCE</span><h2 id="provenanceHeading">Revision record</h2></div>
+        <div class="record-grid"><span>Asset ID</span><strong id="recordId">—</strong><span>Version</span><strong id="recordVersion">—</strong><span>Render mode</span><strong>Local procedural</strong><span>AI generation API</span><strong class="neutral">Disabled / no charges</strong><span>Imported illustration</span><strong id="recordMedia" class="neutral">None</strong><span>Public release</span><strong class="neutral">Not approved</strong></div>
+        <div class="hash-area"><span class="small-label">FRONT SVG / SHA-256</span><code id="recordHash">Pending first render</code><span class="small-label">BACK SVG / SHA-256</span><code id="recordBackHash">Pending first render</code></div>
+        <button class="outline wide" id="downloadManifest" type="button">Export JSON provenance <span aria-hidden="true">↧</span></button>
+        <section class="archive" aria-labelledby="archiveHeading"><div class="archive-top"><h3 id="archiveHeading">Local editions</h3><span id="archiveCount">0 saved</span></div><ol id="revisionList" class="revision-list"></ol><p class="helper">Stored only in this browser (up to 12 revisions). Download the JSON and artwork for durable copies; local data may be cleared.</p></section>
+      </aside>
+    </main>
+    <section class="below-grid">
+      <div class="subpanel"><p class="eyebrow">04 / AI-READY ART BRIEF</p><h2>Bring your own renderer.</h2><p>Generate a reusable concept prompt for an authorized AI-art provider or ChatGPT image generation. <strong>Prompt creation does not generate an AI image.</strong> No account keys or paid calls are used.</p><pre id="artPrompt" class="prompt"></pre><button id="copyPrompt" class="outline" type="button">Copy creative prompt <span aria-hidden="true">⧉</span></button></div>
+      <div class="subpanel"><p class="eyebrow">05 / MARKET INTELLIGENCE</p><h2>Evidence, not aesthetics.</h2><p>Live order-book evidence is displayed separately from the collectible artwork. Prices and targets are never burned into downloaded image files.</p><button id="checkMarket" class="outline" type="button">Check Counterparty evidence ↗</button><p id="marketStatus" class="market-message" role="status" aria-live="polite">No source data requested.</p><div id="marketResults" class="market-results"></div><p class="helper">An open order is not an executed trade, guarantee of liquidity, reserve certificate or valuation.</p></div>
+    </section>
+    <section class="media-workspace" aria-labelledby="mediaHeading">
+      <div class="media-header"><div><p class="eyebrow">06 / CROWN MEDIA LIBRARY</p><h2 id="mediaHeading">Bring approved artwork into the collection.</h2><p>Generate images in a provider you already have permission to use, then import the exported image here. No AI calls, token expenditure, or server upload is made from this studio.</p></div><span class="media-badge" id="mediaCount">Local vault · 0 assets</span></div>
+      <div class="media-inner">
+        <form id="mediaForm" class="media-import">
+          <h3>Import illustration</h3>
+          <label for="mediaFile">Artwork file · PNG, JPEG or WebP (maximum 6 MB input)</label>
+          <input id="mediaFile" type="file" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp" required>
+          <label for="mediaTitle">Artwork title</label><input id="mediaTitle" maxlength="100" placeholder="e.g. Crown Nebula concept" required>
+          <label for="mediaProvider">Declared creative source</label>
+          <select id="mediaProvider"><option value="original">Original / self-created</option><option value="chatgpt">ChatGPT (manual export)</option><option value="canva">Canva (manual export)</option><option value="elevenlabs">ElevenLabs (manual export)</option><option value="other">Another approved creator or tool</option></select>
+          <label for="mediaCreator">Artist or source account (user-declared)</label><input id="mediaCreator" maxlength="100" autocomplete="off" placeholder="Creator / artist / source" required>
+          <label for="mediaRights">Permission basis</label><select id="mediaRights"><option value="created">I created it</option><option value="licensed">I have a license permitting this use</option><option value="commissioned">I have written usage permission</option></select>
+          <label for="mediaReference">License or source reference (optional)</label><input id="mediaReference" maxlength="160" autocomplete="off" placeholder="e.g. project brief, license ID, originating prompt">
+          <label class="attestation"><input id="mediaConsent" type="checkbox" required><span>I confirm I have permission to use this artwork in a private Crown design. This declaration is not independent rights verification or publication approval.</span></label>
+          <button type="submit" class="primary import-action" id="importMedia">Validate &amp; import into local vault ↧</button>
+          <p class="helper">Imported files are decoded and re-encoded as PNG to remove embedded metadata, then content-hashed and stored in local browser IndexedDB when available. Up to 12 images / 24 MB total; never shared across devices.</p>
+        </form>
+        <div class="media-inventory"><h3>Saved media &amp; declared provenance</h3><p id="mediaVaultStatus" class="helper" role="status" aria-live="polite">Checking local media storage…</p><div id="mediaPreviewList" class="media-items"></div></div>
+      </div>
+      <p class="media-footer">Source attribution and rights in this vault are self-attested, not certified. Removing a local image may make an old composite revision impossible to restore. Public-use approval is separate.</p>
+    </section>
+    <footer><span>NEO CROWN / PROJECT 144</span><span>Artwork-only · No minting, signing, custody, pricing or publishing</span></footer>
+  </div>
+  <script type="module" src="/studio/studio-app.mjs"></script>
+</body>
+</html>

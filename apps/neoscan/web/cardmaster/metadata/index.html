@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="color-scheme" content="dark">
+  <meta name="description" content="Read-only NEO canonical metadata readiness for Crown Chain assets.">
+  <meta name="theme-color" content="#10171e">
+  <title>NEO Crown | NEO Canonical Metadata</title>
+  <link rel="stylesheet" href="/metadata/styles.css">
+</head>
+<body>
+  <div class="layout">
+    <header class="top"><div class="logo">N</div><div><div class="eyebrow">PROJECT 144 · NEO CROWN</div><strong>Crown Chain <span>Diagnostics</span></strong></div><nav><a href="/">Gallery</a><a href="/studio/">Artwork Studio</a></nav></header>
+    <section class="hero"><div><p class="eyebrow gold">NCC-014 · METADATA OBSERVABILITY</p><h1>NEO canonical<br><em>metadata.</em></h1><p class="lead">Four independent checks separate a correctly hosted NEO canonical metadata file from a blockchain description and an explorer's delayed display. Nothing here mints, signs, trades, modifies domains or verifies financial backing.</p></div><div class="head-stat"><div class="eyebrow">SYSTEM</div><strong>NEO</strong><div class="muted">Bitcoin / Counterparty</div><div class="head-rule"></div><div class="eyebrow">ISSUANCE</div><strong class="disabled">Not authorized</strong><div class="muted">Read-only diagnostics</div></div></section>
+    <div class="notice" role="note"><strong>Important:</strong> A passing metadata test does not verify TokenScan's enhanced-information display, issuer control, reserve backing, a market price or approval to issue another token. A description-change event is not a new token issuance.</div>
+    <main>
+      <section class="summary" aria-label="Current gate status"><div><div class="eyebrow">CANONICAL URL / PUBLICATION GATE</div><h2 id="gateTitle">Checking published metadata…</h2><p id="gateDetail" role="status" aria-live="polite">Collecting four read-only observations. An unavailable source is never treated as a successful response.</p><span class="checked">Last checked: <time id="checkedAt">—</time></span></div><button id="refresh" type="button">Run fresh checks <span aria-hidden="true">↻</span></button></section>
+      <section class="grid" aria-label="Source verification results">
+        <article class="check"><div class="step">01 / HOSTING</div><h3>Canonical HTTPS JSON</h3><p>The exact NEO canonical metadata URL embedded in the asset's on-chain description must return direct HTTP 200 with the approved JSON.</p><div id="canonicalState" class="state" aria-live="polite">Not checked</div><a href="https://crown.holytemples.org/assets/NOMNI/tokenscan.json" target="_blank" rel="noopener noreferrer">Open canonical metadata ↗</a></article>
+        <article class="check"><div class="step">02 / SOURCE FILE</div><h3>Render metadata mirror</h3><p>Confirm the existing static host serves the same reviewed JSON and does not return unrelated assets or redirected pages.</p><div id="mirrorState" class="state" aria-live="polite">Not checked</div><a href="https://neo-crown-cardmaster-staging.onrender.com/assets/NOMNI/tokenscan.json" target="_blank" rel="noopener noreferrer">Open approved mirror ↗</a></article>
+        <article class="check"><div class="step">03 / BITCOIN</div><h3>Counterparty description</h3><p>Read the public on-chain asset record to confirm the description still points to the canonical URL. No wallet authority is inferred.</p><div id="counterpartyState" class="state" aria-live="polite">Not checked</div><a href="https://api.counterparty.io:4000/v2/assets/NOMNI" target="_blank" rel="noopener noreferrer">Open mainnet record ↗</a></article>
+        <article class="check"><div class="step">04 / INDEXER</div><h3>TokenScan asset pointer</h3><p>Compare TokenScan's basic asset API with the canonical URL. This alone does not prove TokenScan's enhanced profile is populated.</p><div id="tokenscanState" class="state" aria-live="polite">Not checked</div><a href="https://tokenscan.io/asset/NOMNI" target="_blank" rel="noopener noreferrer">View technical token record on TokenScan ↗</a></article>
+      </section>
+      <section class="followup"><div><p class="eyebrow gold">REMAINING OPERATIONAL GATE</p><h2>What happens next?</h2><p id="nextGate">The authoritative hostname must be verified before any issuer-side action is considered.</p></div><div class="status-explainer"><strong>Why NEO never auto-reissues tokens</strong><p>Metadata hosting failures and slow explorer refreshes are off-chain problems. Any on-chain description change requires explicit approval from the authorized current controller, independent fee review and a verified signing environment.</p></div></section>
+      <section class="raw"><p class="eyebrow">AUDIT TRAIL</p><p>The source-backed diagnostic JSON is public, contains no private keys, and can be used to report a hosting or indexer failure.</p><a href="/api/crown/metadata-readiness?asset=NOMNI">Open read-only status JSON ↗</a></section>
+    </main>
+    <footer><span>NEO CROWN / PROJECT 144</span><span>Staging observer · No custody, minting, price or financial guarantees</span></footer>
+  </div>
+  <script src="/metadata/app.js" defer></script>
+</body>
+</html>

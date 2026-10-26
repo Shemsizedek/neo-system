@@ -4,20 +4,22 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="color-scheme" content="dark">
+  <meta name="robots" content="noindex,nofollow">
   <meta name="description" content="NEO Crown CARDMASTER read-only vector artwork and attributed market data gallery.">
   <title>NEO Crown · CARDMASTER</title>
   <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
   <main class="shell">
-    <header class="topbar"><div class="identity"><div class="seal" aria-hidden="true">N</div><div><p class="eyebrow">PROJECT 144 · NEO CROWN</p><h1>CARDMASTER</h1></div></div><a href="../index.html" class="back-link">← NEOscan</a></header>
+    <header class="topbar"><div class="identity"><div class="seal" aria-hidden="true">N</div><div><p class="eyebrow">PROJECT 144 · NEO CROWN</p><h1>CARDMASTER</h1></div></div><a href="https://neoscan.holytemples.org/" class="back-link">← NEOscan</a></header>
     <section class="intro" aria-labelledby="intro-title">
       <p class="eyebrow">Investment collection · read-only preview</p>
       <h2 id="intro-title">Collectible art. Traceable information.</h2>
       <p>Premium vector cards connect to attributed market intelligence without converting issuer claims, target values, or artwork into proof of asset backing.</p>
-      <div class="toolbar"><button id="refreshMarket" type="button">Check market feed</button><span id="feedStatus" role="status" aria-live="polite">Preview mode. Market data not yet requested.</span></div>
+      <div class="toolbar"><a class="studio-entry" href="/studio/">Open Crown Artwork Studio ↗</a><a class="studio-entry" href="/showcase/">Generate Layer 3 Token Card ↗</a><a class="metadata-entry" href="/metadata/">NEO canonical metadata ↗</a><button id="refreshMarket" type="button">Check market feed</button><button id="checkEvidence" type="button">Verify NEO order books</button><span id="feedStatus" role="status" aria-live="polite">Preview mode. Market data not yet requested.</span></div>
     </section>
     <div class="notice" role="note"><strong>Financial disclosure:</strong> Values, yields, issuer labels and statuses in this example collection are submitted, unverified figures. Cards are not a securities offering or evidence of ownership, issuer authority, or reserve backing.</div>
+    <section class="evidence" id="evidencePanel" aria-label="Source-backed NEO order-book status" hidden><h3>Counterparty public order evidence</h3><p id="evidenceNote" role="status" aria-live="polite">No public order evidence requested yet.</p><div id="evidenceResults"></div><p>Open orders are not completed trades, market valuations, reserves, or guaranteed liquidity. Block timestamps refer to the block containing an order, not to a trade execution.</p></section>
     <section class="gallery" id="gallery" aria-label="NEO Crown investment cards"></section>
     <footer>NEO Crown CARDMASTER · Bitcoin/Counterparty-adjacent presentation layer · Read-only, no custody or transaction signing.</footer>
   </main>

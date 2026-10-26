@@ -1,0 +1,28 @@
+name: Crown NCC-014 WordPress canonical metadata bridge
+on:
+  pull_request:
+    branches: [feat/ncc-007-render-runtime-hardening]
+    paths:
+      - 'integrations/wordpress/neo-crown-metadata-bridge/**'
+      - '.github/workflows/crown-metadata-wordpress-bridge.yml'
+  push:
+    branches: [feat/ncc-007-render-runtime-hardening]
+    paths:
+      - 'integrations/wordpress/neo-crown-metadata-bridge/**'
+      - '.github/workflows/crown-metadata-wordpress-bridge.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  php-bridge:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate PHP availability and syntax
+        run: |
+          php -v
+          php -l integrations/wordpress/neo-crown-metadata-bridge/neo-crown-metadata-bridge.php
+          php -l integrations/wordpress/neo-crown-metadata-bridge/test.php
+      - name: Run mocked WordPress integration safety checks
+        run: php integrations/wordpress/neo-crown-metadata-bridge/test.php

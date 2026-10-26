@@ -1,0 +1,137 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "NEO Investment Card Export v1",
+  "type": "object",
+  "required": [
+    "payload",
+    "integrity"
+  ],
+  "properties": {
+    "payload": {
+      "type": "object",
+      "required": [
+        "schema",
+        "methodology_version",
+        "card_id",
+        "asset",
+        "classification",
+        "card_data",
+        "ledger",
+        "provenance",
+        "execution"
+      ],
+      "properties": {
+        "schema": {
+          "const": "NEO-INVESTMENT-CARD-V1"
+        },
+        "card_id": {
+          "type": "string",
+          "pattern": "^NEO-CARD-[a-f0-9]{64}$"
+        },
+        "record_mode": {
+          "enum": [
+            "MOCK",
+            "ISSUER_METADATA"
+          ]
+        },
+        "card_data": {
+          "type": "object",
+          "required": [
+            "financial_metrics",
+            "verification_status"
+          ],
+          "properties": {
+            "verification_status": {
+              "enum": [
+                "UNVERIFIED",
+                "MOCK / UNVERIFIED"
+              ]
+            },
+            "financial_metrics": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/$defs/metric"
+              }
+            }
+          }
+        }
+      }
+    },
+    "integrity": {
+      "type": "object",
+      "required": [
+        "algorithm",
+        "sha256",
+        "encoding",
+        "blockchain_anchor_verified"
+      ],
+      "properties": {
+        "algorithm": {
+          "const": "SHA-256"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "blockchain_anchor_verified": {
+          "const": false
+        }
+      }
+    }
+  },
+  "$defs": {
+    "metric": {
+      "type": "object",
+      "required": [
+        "value",
+        "unit",
+        "status",
+        "source",
+        "formula",
+        "inputs"
+      ],
+      "properties": {
+        "value": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "unit": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "status": {
+          "enum": [
+            "NOT PROVIDED",
+            "REQUIRES VERIFICATION",
+            "DERIVED"
+          ]
+        },
+        "source": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "formula": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "inputs": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

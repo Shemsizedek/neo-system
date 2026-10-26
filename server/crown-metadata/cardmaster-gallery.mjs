@@ -55,6 +55,9 @@ export function attributeTickerMarket(packet, pair, {now = Date.now(), maxAgeMs 
   if (typeof row.source !== 'string' || !row.source.trim()) return unavailable('Quote source unavailable');
   const source = SOURCES.find(([re]) => re.test(row.source));
   if (!source) return unavailable('Quote provider is not yet registered');
+  const upstreamAt = Date.parse(row.source_observed_at);
+  if (row.source_observation_verified !== true || !Number.isFinite(upstreamAt)) return unavailable('Upstream market observation timestamp not independently verified');
+  if (upstreamAt > retrievedAt + 30000 || upstreamAt > nowMs + 30000 || retrievedAt - upstreamAt > maxAgeMs) return unavailable('Source market observation is stale or future dated');
   const kind = confidence === 'reference' ? 'reference' : 'derived_indicative';
   return {
     state: 'indicative',
@@ -64,7 +67,8 @@ export function attributeTickerMarket(packet, pair, {now = Date.now(), maxAgeMs 
       source_name: row.source.slice(0,160), source_url: source[1],
       retrieved_at: new Date(retrievedAt).toISOString(),
       price_kind: kind, methodology: confidence,
-      upstream_observation_time_verified: false,
+      upstream_observation_time_verified: true,
+      source_observed_at: new Date(upstreamAt).toISOString(),
       trade_execution_verified: false
     },
     backing_verified: false
@@ -86,7 +90,7 @@ export function createCardmasterCollection({tickerPacket = null, now = currentTi
   });
   return {
     schema: 'NEO-CARDMASTER-COLLECTION-V1', generated_at: generatedAt, read_only: true,
-    status: tickerPacket ? 'market_feed_attributed' : 'market_feed_unavailable',
+    status: tickerPacket ? 'market_feed_checked' : 'market_feed_unavailable',
     notice: 'Illustrative card art. Submitted financial figures, issuer labels and investment statuses are not independently verified. Market indications are not executed trades, appraisals, promises, or reserve attestations.',
     cards
   };
@@ -126,7 +130,7 @@ export function renderCardmasterSvg(record, {face='front'}={}) {
     svgText(55,220,ellipsis(record.sector || '',46),18,'#baa677');
   const front = `${motifArtwork(record.motif)}<rect x="43" y="741" width="634" height="190" rx="16" fill="#111820" stroke="#94774e"/>
     ${svgText(65,784,'SOURCE-ATTRIBUTED MARKET DATA',15,'#e6c17e','font-weight="bold"')}
-    ${svgText(65,833,'FRESH SNAPSHOT IN GALLERY',25,'#fcf0d8')}
+    ${svgText(65,833,'MARKET STATUS IN GALLERY',25,'#fcf0d8')}
     ${svgText(65,870,'PRICE IS NOT EMBEDDED IN STATIC ART',14,'#b8a988')}
     ${svgText(65,910,'ARTWORK IS NOT PROOF OF OWNERSHIP OR BACKING',13,'#b8a988')}`;
   const backRows = claims.map(([key,claim],i) => {
