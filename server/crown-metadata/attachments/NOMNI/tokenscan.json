@@ -21,5 +21,12 @@
       "data": "https://neoscan.holytemples.org/media/nomni-bill-1.json"
     }
   ],
-  "instrument_type": "currency"
+  "instrument_type": "currency",
+  "website": "https://holytemples.org/world-currency/",
+  "categories": [
+    {
+      "name": "Currency",
+      "subcategory": "Bitcoin / Counterparty"
+    }
+  ]
 }
