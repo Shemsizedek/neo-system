@@ -36,13 +36,13 @@ const descriptionChange=()=>({
 });
 function payloads(){
   return {
-    '/assets/'+asset+'/issuances?limit=100':{result:[descriptionChange(),creation()],next_cursor:null,result_count:2},
+    ['/assets/'+asset+'/issuances?limit=100']:{result:[descriptionChange(),creation()],next_cursor:null,result_count:2},
     '/':{result:{server_ready:true,network:'mainnet',ledger_state:'Following',counterparty_height:1012}},
-    '/assets/'+asset:{result:{
+    ['/assets/'+asset]:{result:{
       asset,asset_longname:null,issuer:wallet,owner:wallet,description:canonical,
       supply:1000,divisible:false,locked:true,first_issuance_block_index:1000
     }},
-    '/issuances/'+tx:{result:creation()},
+    ['/issuances/'+tx]:{result:creation()},
     '/blocks/last':{result:{block_index:1012,block_hash:'d'.repeat(64)}},
     '/blocks/1000':{result:{block_index:1000,block_hash:blockHash}}
   };
