@@ -43,7 +43,7 @@
       gate.textContent='Unable to verify metadata right now';
       detail.textContent='The diagnostic service is unavailable or not responding. This is not evidence of TokenScan ingestion or issuer authorization.';
       checked.textContent='Unavailable';
-      next.textContent='Check the existing Crown runtime health, approved NOMNI mirror and canonical domain mapping; do not reissue the token.';
+      next.textContent='Check the existing Crown runtime health, approved NEO metadata mirror and canonical domain mapping; do not reissue the token.';
       for(const id of Object.keys(names)){$(id+'State').textContent='Not verified in this check';$(id+'State').className='state';}
     }finally{clearTimeout(timer);button.disabled=false;}
   }
