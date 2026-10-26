@@ -120,3 +120,22 @@ test('sensitive insurance claimant and policyholder descriptions are excluded fr
   assert.match(record.payload.instrument.description,/intentionally omitted/);
   assert.doesNotMatch(renderLayer3Svg(record),/Private Person/);
 });
+
+test('NEO is public brand for the legacy asset while exact signed code stays in the ledger and provenance',()=>{
+  const card=createLayer3Observed({asset},observed());
+  assert.equal(card.payload.brand,'NEO');
+  assert.equal(card.payload.canonical_metadata_name,'NEO canonical metadata');
+  assert.equal(card.payload.display_title,'NEO Crown');
+  assert.equal(card.payload.asset,'NOMNI');
+  assert.equal(card.payload.ledger.asset,'NOMNI');
+  assert.equal(card.payload.provenance.technical_asset_code,'NOMNI');
+  assert.equal(card.payload.provenance.public_display_brand,'NEO');
+  const front=renderLayer3Svg(card,{face:'front'});
+  assert.match(front,/NEO Crown/);
+  assert.doesNotMatch(front,/NOMNI/);
+  const back=renderLayer3Svg(card,{face:'back'});
+  assert.match(back,/ON-CHAIN ASSET CODE/);
+  assert.match(back,/NOMNI/);
+  assert.equal(card.payload.issuance.safe_to_issue,false);
+  assert.equal(card.payload.market.price,null);
+});
