@@ -20,7 +20,10 @@ test('tampering, expired and wrong-issuer tokens fail closed',async()=>{
  assert.equal(await verify(token({...base,iss:'https://attacker.example'})),null);
  assert.equal(await verify(token({...base,exp:clock})),null);
  assert.equal(await verify(token({...base,aud:'other'})),null);
- assert.equal(await verify(token({...base,sub:'attacker'}).replace(/.$/,'z')),null);
+ const tampered=token({...base,sub:'attacker'}).split('.');
+ const signature=Buffer.from(tampered[2],'base64url');signature[0]^=1;
+ tampered[2]=signature.toString('base64url');
+ assert.equal(await verify(tampered.join('.')),null);
  assert.equal(await verify(token(base,{alg:'none',typ:'JWT',kid:'approved'})),null);
  assert.equal(await verify('not-a-token'),null);
 });

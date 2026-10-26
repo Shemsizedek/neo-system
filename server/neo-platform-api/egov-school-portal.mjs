@@ -15,7 +15,7 @@ function courseDetail(course,enrollment){
 
 export function schoolPortal(res,{member,data,notice='',error=''}){
  const canManage=['executive-admin','teacher','school-admin'].includes(member.role),courses=[...(data.courses||[])].sort((a,b)=>Number(Boolean(b.primary))-Number(Boolean(a.primary))),assignments=data.assignments||[];
- const giss='https://gisd-office.shemsizedek.chatgpt.site';
+ const giss='https://gisd.holytemples.org';
  const destinations=[['⌂','Overview','#dashboard'],['▦','Official class catalog','#classes'],['✓','Assignments','#assignments'],['◎','My progress','#gradebook'],['NU','Nu University',`${giss}/university`],['S','Student dashboard',`${giss}/lms?view=Student%20Dashboard`],...(canManage?[['T','Teacher dashboard',`${giss}/lms?view=Teacher%20Dashboard`]]:[]),...(['executive-admin','school-admin'].includes(member.role)?[['A','Admin dashboard',`${giss}/lms?view=Administration`]]:[]),['◌','Groups & clubs',`${giss}/lms?view=Groups%20%26%20Clubs`],['◇','Faculty & Holy Orders',`${giss}/university/orders`],['↗','NEOpass portal','/portal']];
  const nav=destinations.map(([icon,label,href])=>`<a href="${esc(href)}"><b aria-hidden="true">${icon}</b><span>${esc(label)}</span></a>`).join('');
  const charter=`<p class="muted">Listen to Reason! One never stops learning.</p><p>All official 101 classes are free. Education is lifelong, Hall-based, and open to children, adults, scholars, educators, researchers, and continuing learners, with age-separated environments where appropriate.</p><p class="muted">GISS → Nu University → Halls of Learning → 101 Core → Advanced Courses → Degrees / Certificates / Research</p>`;
