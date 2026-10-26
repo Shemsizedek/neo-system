@@ -32,16 +32,16 @@ async function addIntent(root,object=intent()){
 }
 function mock({issued=true}={}){
   const result={
-    '/assets/'+id+'/issuances?limit=100':{result:issued?[{
+    ['/assets/'+id+'/issuances?limit=100']:{result:issued?[{
       asset:id,asset_events:'creation',tx_hash:tx,block_index:1000,source:wallet,issuer:wallet,
       quantity:25,description:canonical,status:'valid',transfer:false
     }]:[],result_count:issued?1:0,next_cursor:null},
     '/':{result:{server_ready:true,network:'mainnet',ledger_state:'Following',counterparty_height:1020}},
-    '/assets/'+id:{result:{
+    ['/assets/'+id]:{result:{
       asset:id,asset_longname:null,owner:wallet,issuer:wallet,description:canonical,supply:25,
       divisible:false,locked:true,first_issuance_block_index:1000
     }},
-    '/issuances/'+tx:{result:{
+    ['/issuances/'+tx]:{result:{
       asset:id,asset_events:'creation',tx_hash:tx,block_index:1000,source:wallet,issuer:wallet,
       quantity:25,description:canonical,status:'valid',transfer:false
     }},
