@@ -6,14 +6,30 @@ on:
       - 'server/crown-metadata/approved-intents/*.json'
       - '.github/workflows/crown-issuance-metadata.yml'
   workflow_dispatch:
+  workflow_call:
+    secrets:
+      CROWN_STATIC_RENDER_DEPLOY_HOOK:
+        required: false
 permissions:
   contents: write
 concurrency:
-  group: ncc013-metadata-${{ github.ref }}
+  group: neo-crown-approved-issuance-staging
   cancel-in-progress: false
 jobs:
   prepare-and-reconcile:
-    if: github.repository == 'Shemsizedek/neo-system' && github.ref == 'refs/heads/feat/ncc-007-render-runtime-hardening'
+    # A caller on main must opt in via an explicit repository variable.
+    # A mutable public webhook alone never authorizes a token or a GitHub write.
+    if: >-
+      github.repository == 'Shemsizedek/neo-system' &&
+      (
+        github.ref == 'refs/heads/feat/ncc-007-render-runtime-hardening' ||
+        (
+          github.ref == 'refs/heads/main' &&
+          (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') &&
+          github.workflow == 'NEO Crown Automatic Issuance Watch' &&
+          vars.NEO_CROWN_AUTO_PUBLICATION_ENABLED == 'true'
+        )
+      )
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
