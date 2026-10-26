@@ -4,8 +4,6 @@
   "description": "NOMNI is an issuer-described world currency and unit of account on Counterparty. Token Showcase: issuer-provided design for a 1 NOMNI bill, intended for printing on cryptographic Bitcoin paper.",
   "image": "https://tokenscan.io/icon/NOMNI.png",
   "website": "https://holytemples.org/world-currency/",
-  "category": "Currency",
-  "subcategory": "Bitcoin / Counterparty",
   "images": [
     {
       "type": "large",
@@ -18,6 +16,12 @@
       "type": "json",
       "name": "1 NOMNI Bill — source and integrity",
       "data": "https://neoscan.holytemples.org/media/nomni-bill-1.json"
+    }
+  ],
+  "categories": [
+    {
+      "name": "Currency",
+      "subcategory": "Bitcoin / Counterparty"
     }
   ]
 }
