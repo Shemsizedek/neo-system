@@ -42,7 +42,8 @@
   function setFacts(card){
     const p=card.payload;
     $('recordMode').textContent=p.mode==='OBSERVED_COUNTERPARTY_ASSET'?'COUNTERPARTY PUBLIC ASSET · OBSERVED':'UNISSUED DESIGN PREVIEW';
-    $('recordAsset').textContent=p.asset;
+    $('recordAsset').textContent=p.asset==='NOMNI'?'NEO Crown':p.asset;
+    $('recordAsset').title='Actual on-chain asset code: '+p.asset;
     $('recordType').textContent=p.classification.label;
     $('recordEvidence').textContent=p.classification.status.replaceAll('_',' ');
     $('recordLedger').textContent=p.provenance.ledger_observed?'Public asset fetched; issuer and wallet control not independently verified':'No issued asset or transaction verified';
