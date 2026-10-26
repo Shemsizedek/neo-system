@@ -248,11 +248,14 @@ test('NCC-015 on-demand observed NOMNI card uses public Counterparty record but 
   assert.match(svg.headers.get('content-type'),/svg/);
   assert.match(svg.headers.get('content-security-policy'),/sandbox/);
   const art=await svg.text();
-  assert.match(art,/NOMNI/);
+  assert.match(art,/NEO Crown/);
+  assert.doesNotMatch(art,/NOMNI/);
   assert.match(art,/OBSERVED COUNTERPARTY ASSET/);
   assert.doesNotMatch(art,/<script|<foreignObject|onload=/i);
   const back=await (await fetch(url+'/api/crown/showcase?asset=NOMNI&format=svg&face=back')).text();
   assert.match(back,/PROVENANCE/);
+  assert.match(back,/ON-CHAIN ASSET CODE/);
+  assert.match(back,/NOMNI/);
   assert.ok(count>=3);
 });
 test('NCC-015 preview creates free exportable cards for all categories without contacting the blockchain',async t=>{

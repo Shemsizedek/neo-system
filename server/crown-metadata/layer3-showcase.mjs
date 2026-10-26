@@ -38,6 +38,7 @@ function template({asset,mode,classification,title,network,style,ledger,showcase
   const id='NEO-L3-'+sha(network+':'+canonicalAsset+(observed?'':':PREVIEW:'+classification.type)).slice(0,24).toUpperCase();
   const record={
     schema:LAYER3_SCHEMA,version:'1.0.0',presentation_layer:'NEO Crown Chain / Layer 3',
+    brand:'NEO',canonical_metadata_name:'NEO canonical metadata',
     card_id:id,asset:canonicalAsset,asset_longname:ledger?.asset_longname||null,
     display_title:title||ledger?.asset_longname||asset,
     mode:observed?'OBSERVED_COUNTERPARTY_ASSET':'UNISSUED_DESIGN_PREVIEW',
@@ -122,9 +123,9 @@ export function createLayer3Observed(input,resolved){
   const investment=buildInvestmentCard(ledger.asset,observed).payload;
   return template({
     ...request,asset:ledger.asset,classification:investment.classification,
-    title:['insurance_policy','insurance_claim'].includes(investment.classification.type)?ledger.asset:investment.card_data.primary_title,ledger,showcase,investment,
+    title:ledger.asset==='NOMNI'?'NEO Crown':(['insurance_policy','insurance_claim'].includes(investment.classification.type)?ledger.asset:investment.card_data.primary_title),ledger,showcase,investment,
     metadataStatus:resolved.metadata_status||'NO_POINTER',
     observedAt:resolved.observed_at,metadataUrl:resolved.metadata_url||null,metadataHash:resolved.metadata_sha256||null,
-    provenance:{issuer_description_current:typeof ledger.description==='string'&&ledger.description.length<=255?ledger.description:null}
+    provenance:{issuer_description_current:typeof ledger.description==='string'&&ledger.description.length<=255?ledger.description:null,technical_asset_code:ledger.asset,public_display_brand:'NEO'}
   });
 }

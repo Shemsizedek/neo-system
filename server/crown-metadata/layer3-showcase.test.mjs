@@ -81,7 +81,15 @@ test('malicious issuer labels and bad strings never become executable SVG or mar
   const record=createLayer3Observed({asset},input);
   const svg=renderLayer3Svg(record);
   assert.doesNotMatch(svg,/<script|onload\s*=|<iframe|<foreignObject/i);
-  assert.match(svg,/&lt;script&gt;/);
+  // The NEO public-facing alias excludes an injected legacy ticker title altogether.
+  assert.doesNotMatch(svg,/alert\("x"\)|&lt;script&gt;/);
+  // For other assets, public titles still use strict SVG XML escaping.
+  const regular=observed();
+  regular.ledger={...regular.ledger,asset:'NEOOTHER'};
+  regular.metadata=input.metadata;
+  const otherSvg=renderLayer3Svg(createLayer3Observed({asset:'NEOOTHER'},regular));
+  assert.match(otherSvg,/&lt;script&gt;/);
+  assert.doesNotMatch(otherSvg,/<script|onload\s*=|<iframe|<foreignObject/i);
   assert.doesNotMatch(svg,/href="https?:\/\//);
   assert.match(renderLayer3Svg(record,{face:'back'}),/PROVENANCE/);
 });
@@ -115,8 +123,28 @@ test('sensitive insurance claimant and policyholder descriptions are excluded fr
   raw.metadata={instrument_type:'insurance_claim',card_data:{primary_title:'Private Person Claim Docket'},description:'Private Person health condition and claimant identifying details'};
   const record=createLayer3Observed({asset},raw);
   assert.equal(record.payload.classification.type,'insurance_claim');
-  assert.equal(record.payload.display_title,asset);
+  assert.equal(record.payload.display_title,'NEO Crown');
+  assert.equal(record.payload.asset,asset);
   assert.doesNotMatch(JSON.stringify(record),/Private Person|health condition|Claim Docket/);
   assert.match(record.payload.instrument.description,/intentionally omitted/);
   assert.doesNotMatch(renderLayer3Svg(record),/Private Person/);
+});
+
+test('NEO is public brand for the legacy asset while exact signed code stays in the ledger and provenance',()=>{
+  const card=createLayer3Observed({asset},observed());
+  assert.equal(card.payload.brand,'NEO');
+  assert.equal(card.payload.canonical_metadata_name,'NEO canonical metadata');
+  assert.equal(card.payload.display_title,'NEO Crown');
+  assert.equal(card.payload.asset,'NOMNI');
+  assert.equal(card.payload.ledger.asset,'NOMNI');
+  assert.equal(card.payload.provenance.technical_asset_code,'NOMNI');
+  assert.equal(card.payload.provenance.public_display_brand,'NEO');
+  const front=renderLayer3Svg(card,{face:'front'});
+  assert.match(front,/NEO Crown/);
+  assert.doesNotMatch(front,/NOMNI/);
+  const back=renderLayer3Svg(card,{face:'back'});
+  assert.match(back,/ON-CHAIN ASSET CODE/);
+  assert.match(back,/NOMNI/);
+  assert.equal(card.payload.issuance.safe_to_issue,false);
+  assert.equal(card.payload.market.price,null);
 });
