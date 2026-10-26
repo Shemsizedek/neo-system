@@ -77,7 +77,8 @@ function themeFor(record){
   return PALETTES[key];
 }
 function front(r,theme){
-  const title=Array.from(r.display_title||r.asset);
+  const brandAsset=r.asset==='NOMNI'?'NEO Crown':r.asset;
+  const title=Array.from(r.display_title||brandAsset);
   const lines=title.length<=26?[title.join('')]:[title.slice(0,26).join(''),cut(title.slice(26).join(''),27)];
   const badge=r.mode==='OBSERVED_COUNTERPARTY_ASSET'?'OBSERVED COUNTERPARTY ASSET':'UNISSUED · DESIGN PREVIEW';
   const sup=r.ledger.supply_raw===null?'NOT VERIFIED':cut(r.ledger.supply_raw,23);
@@ -90,7 +91,7 @@ function front(r,theme){
     motif(r.classification.type,theme.accent,theme.light)+
     text(360,584,r.classification.label.toUpperCase(),16,theme.accent,'text-anchor="middle" letter-spacing="1.4"')+
     lines.map((s,i)=>text(360,646+i*49,s,lines.length>1?32:40,theme.light,'text-anchor="middle" font-weight="bold" font-family="Georgia,serif"')).join('')+
-    text(360,lines.length>1?753:704,'ASSET · '+cut(r.asset,43),13,'#B8C7C3','text-anchor="middle" letter-spacing=".5"')+
+    text(360,lines.length>1?753:704,'NEO CROWN PRESENTATION · '+cut(brandAsset,35),13,'#B8C7C3','text-anchor="middle" letter-spacing=".5"')+
     `<rect x="68" y="760" width="584" height="100" rx="11" fill="#0D161E" fill-opacity=".84" stroke="${theme.accent}" stroke-opacity=".3"/>`+
     text(92,789,'CLASSIFICATION',10,'#AAB8B7','letter-spacing="1.2"')+
     text(92,817,cut(r.classification.status.replaceAll('_',' '),25),17,theme.light)+
@@ -103,7 +104,7 @@ function front(r,theme){
 }
 function back(r,theme){
   const fields=[
-    ['ASSET',cut(r.asset,42)],
+    ['ON-CHAIN ASSET CODE',cut(r.asset,42)],
     ['PRESENTATION CLASS',cut(r.classification.label,40)],
     ['CLASSIFICATION EVIDENCE',cut(r.classification.status.replaceAll('_',' '),39)],
     ['BITCOIN / TOKEN STANDARD',cut(r.protocol.toUpperCase(),35)],
