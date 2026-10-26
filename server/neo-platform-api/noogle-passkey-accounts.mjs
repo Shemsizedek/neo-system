@@ -4,10 +4,39 @@ import {generateRegistrationOptions,verifyRegistrationResponse,generateAuthentic
 const hash=v=>createHash('sha256').update(v).digest('hex');
 const handle=v=>typeof v==='string'&&/^[A-Za-z0-9_-]{43,128}$/.test(v);
 // Isolated server service. HTTP must bind browserHandle to a secure server cookie.
-export function createNooglePasskeyAccounts({rpId,origin,store,now=Date.now}={}){
+export function createNooglePasskeyAccounts({rpId,origin,store,resolveEnrollmentIdentity,now=Date.now}={}){
  const url=new URL(origin);
  if(url.protocol!=='https:'||url.origin!==origin||url.hostname!==rpId||!store||['issue','take','register','credential','commitLogin','session','active'].some(k=>typeof store[k]!=='function'))throw Error('passkey_account_configuration_required');
+ async function enrollmentIdentity(sessionHandle){
+   if(typeof resolveEnrollmentIdentity!=='function')throw Error('linked_enrollment_not_configured');
+   const identity=await resolveEnrollmentIdentity(sessionHandle);
+   if(identity?.verified!==true||typeof identity.canonicalSubject!=='string'||!identity.canonicalSubject||typeof identity.providerSubject!=='string'||!identity.providerSubject||typeof identity.issuer!=='string'||!identity.issuer.startsWith('https://')||identity.audience!==origin||!Number.isFinite(identity.authenticatedAt)||identity.authenticatedAt>now()||now()-identity.authenticatedAt>=300000)throw Error('fresh_verified_member_identity_required');
+   return identity;
+ }
  return Object.freeze({
+  async beginLinkedRegistration(browserHandle,sessionHandle){
+   if(!handle(browserHandle))throw Error('browser_session_required');
+   if(typeof store.registerLinked!=='function')throw Error('linked_store_required');
+   const identity=await enrollmentIdentity(sessionHandle),userHandle=randomBytes(32);
+   const options=await generateRegistrationOptions({rpName:'Noogle NEOpass',rpID:rpId,userID:userHandle,userName:identity.canonicalSubject,attestationType:'none',supportedAlgorithmIDs:[-7],authenticatorSelection:{residentKey:'required',userVerification:'required'}});
+   const id=randomUUID();await store.issue(id,{purpose:'register-linked',browserHash:hash(browserHandle),subject:identity.canonicalSubject,issuer:identity.issuer,providerSubject:identity.providerSubject,userHandle:userHandle.toString('base64url'),challenge:options.challenge,expiresAt:now()+300000});
+   return {id,options};
+  },
+  async finishLinkedRegistration(browserHandle,sessionHandle,{id,response}={}){
+   if(!handle(browserHandle))throw Error('browser_session_required');
+   const ceremony=await store.take(id,'register-linked',hash(browserHandle),now());if(!ceremony)throw Error('ceremony_expired_or_replayed');
+   const identity=await enrollmentIdentity(sessionHandle);
+   if(identity.canonicalSubject!==ceremony.subject||identity.issuer!==ceremony.issuer||identity.providerSubject!==ceremony.providerSubject)throw Error('enrollment_identity_changed');
+   const result=await verifyRegistrationResponse({response,expectedChallenge:ceremony.challenge,expectedOrigin:origin,expectedRPID:rpId,requireUserVerification:true,supportedAlgorithmIDs:[-7]});
+   if(!result.verified||!result.registrationInfo||ceremony.expiresAt<=now())throw Error('registration_rejected');
+   // Re-resolve after authenticator verification so revocation during enrollment
+   // does not silently grant a credential to the stale provider session.
+   const current=await enrollmentIdentity(sessionHandle);
+   if(current.canonicalSubject!==ceremony.subject||current.issuer!==ceremony.issuer||current.providerSubject!==ceremony.providerSubject)throw Error('enrollment_identity_changed');
+   const info=result.registrationInfo;
+   await store.registerLinked({subject:ceremony.subject,userHandle:ceremony.userHandle,id:info.credential.id,publicKey:Buffer.from(info.credential.publicKey).toString('base64url'),counter:info.credential.counter,transports:info.credential.transports||[],deviceType:info.credentialDeviceType,backedUp:info.credentialBackedUp,issuer:ceremony.issuer,providerSubject:ceremony.providerSubject});
+   return {registered:true,loginRequired:true,existingAccount:true};
+  },
   async beginRegistration(browserHandle){
    if(!handle(browserHandle))throw Error('browser_session_required');
    const subject=randomUUID(),userHandle=randomBytes(32);

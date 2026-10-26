@@ -47,3 +47,47 @@ test('wrong discoverable user handle is rejected before creating a session',asyn
 test('account service rejects insecure configuration and unbound browser sessions',async()=>{
  assert.throws(()=>createNooglePasskeyAccounts({rpId,origin:'http://neopass.example',store:{}}));
 });
+
+test('verified social identity enrollment preserves the existing canonical account and survives restart',async t=>{
+ const dir=mkdtempSync(join(tmpdir(),'noogle-linked-')),path=join(dir,'accounts.sqlite');let store=createNooglePasskeyStore(path);
+ t.after(()=>{store.close();rmSync(dir,{recursive:true,force:true});});
+ const identity={verified:true,canonicalSubject:'existing-temple-owner',issuer:'https://accounts.google.com',providerSubject:'stable-provider-subject',audience:origin,authenticatedAt:1000};
+ let current=identity;
+ const service=()=>createNooglePasskeyAccounts({rpId,origin,store,resolveEnrollmentIdentity:async token=>token==='trusted-session'?current:null,now:()=>2000});
+ const auth=authenticator(),registration=await service().beginLinkedRegistration(browser,'trusted-session');
+ assert.equal(registration.options.user.name,'existing-temple-owner');
+ assert.equal((await service().finishLinkedRegistration(browser,'trusted-session',{id:registration.id,response:auth.register(registration.options)})).existingAccount,true);
+ store.close();store=createNooglePasskeyStore(path);
+ const ceremony=await service().beginLogin(browser),response=auth.login(ceremony.options,registration.options.user.id);
+ const login=await service().finishLogin(browser,{id:ceremony.id,response});assert.equal((await service().authenticate(login.sessionHandle)).subject,'existing-temple-owner');
+ // Provider-session substitution consumes and rejects the registration ceremony.
+ const another=await service().beginLinkedRegistration(browser,'trusted-session');current={...identity,canonicalSubject:'someone-else'};
+ await assert.rejects(()=>service().finishLinkedRegistration(browser,'trusted-session',{id:another.id,response:authenticator().register(another.options)}),/identity_changed/);
+ current=identity;await assert.rejects(()=>service().finishLinkedRegistration(browser,'trusted-session',{id:another.id,response:authenticator().register(another.options)}),/expired_or_replayed/);
+});
+
+test('linked enrollment rejects untrusted, stale, mismatched audience and missing provider identity',async t=>{
+ const dir=mkdtempSync(join(tmpdir(),'noogle-linked-deny-')),store=createNooglePasskeyStore(join(dir,'accounts.sqlite'));
+ t.after(()=>{store.close();rmSync(dir,{recursive:true,force:true});});
+ const identity={verified:true,canonicalSubject:'existing',issuer:'https://accounts.google.com',providerSubject:'provider',audience:origin,authenticatedAt:1000};
+ for(const delta of [{verified:false},{authenticatedAt:-400000},{authenticatedAt:3000},{audience:'https://other.example'},{providerSubject:''},{canonicalSubject:''}]){
+  const service=createNooglePasskeyAccounts({rpId,origin,store,resolveEnrollmentIdentity:async()=>({...identity,...delta}),now:()=>2000});
+  await assert.rejects(()=>service.beginLinkedRegistration(browser,'session'),/fresh_verified_member/);
+ }
+ const service=createNooglePasskeyAccounts({rpId,origin,store});await assert.rejects(()=>service.beginLinkedRegistration(browser,'session'),/not_configured/);
+});
+
+test('provider link conflicts, disabled accounts and extra credentials cannot alter migrated identity',async t=>{
+ const dir=mkdtempSync(join(tmpdir(),'noogle-link-conflict-')),store=createNooglePasskeyStore(join(dir,'accounts.sqlite'));
+ t.after(()=>{store.close();rmSync(dir,{recursive:true,force:true});});
+ const row={subject:'existing-owner',issuer:'https://accounts.google.com',providerSubject:'pinned',id:'credential-one',counter:0,userHandle:'handle',publicKey:'fixture'};
+ await store.registerLinked(row);
+ await assert.rejects(()=>store.registerLinked({...row,subject:'replacement',id:'credential-two'}),/provider_already_linked/);
+ assert.equal(await store.active('replacement'),false);
+ await assert.rejects(()=>store.registerLinked({...row,id:'credential-two'}),/credential_management_required/);
+ assert.equal(await store.credential('credential-two'),null);
+ await store.disableAccount('existing-owner');
+ await assert.rejects(()=>store.registerLinked({...row,id:'credential-three'}),/account_disabled/);
+ assert.equal(await store.active('existing-owner'),false);
+ assert.equal((await store.credential('credential-one')).subject,'existing-owner');
+});
