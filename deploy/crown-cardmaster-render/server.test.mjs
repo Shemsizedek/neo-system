@@ -357,3 +357,56 @@ test('NCC-016 identical query keys are idempotent but conflicting values remain 
   }
   assert.equal(observedCalls,0);
 });
+
+
+test('NCC-017 public pages use the NEO canonical metadata brand without rewriting technical on-chain identifiers',async t=>{
+  const url=await withServer(t,{apiHandler:dummyHandler});
+  const metadata=await (await fetch(url+'/metadata/')).text();
+  assert.match(metadata,/NEO canonical/i);
+  assert.match(metadata,/NEO Canonical Metadata/);
+  assert.doesNotMatch(metadata,/>NOMNI</);
+  const gallery=await (await fetch(url+'/')).text();
+  assert.match(gallery,/NEO canonical metadata/);
+  const showcase=await (await fetch(url+'/showcase/')).text();
+  assert.match(showcase,/NEO canonical metadata/);
+  // External Counterparty and explorer links still use the actual immutable asset ID.
+  assert.match(metadata,/assets\/NOMNI\/tokenscan\.json/);
+});
+test('NCC-017 only a committed verified showcase may be served; front/back SVG are read-only and sandboxed',async t=>{
+  const {mkdtemp,mkdir,writeFile,rm}=await import('node:fs/promises');
+  const {tmpdir}=await import('node:os');
+  const {join}=await import('node:path');
+  const root=await mkdtemp(join(tmpdir(),'neo-crown-verified-routes-'));
+  t.after(()=>rm(root,{recursive:true,force:true}));
+  const directory=join(root,'assets','NEOASSET');
+  await mkdir(directory,{recursive:true});
+  const manifest={
+    schema:'NEO-CROWN-LAYER3-AUTO-PUBLICATION-V1',
+    brand:'NEO',canonical_metadata_brand:'NEO canonical metadata',
+    status:'CHAIN_CONFIRMED_AWAITING_PUBLIC_HOST_READBACK',
+    asset_code:'NEOASSET'
+  };
+  await writeFile(join(directory,'showcase.json'),JSON.stringify({payload:{asset:'NEOASSET',market:{price:null}},read_only:true}));
+  await writeFile(join(directory,'showcase-manifest.json'),JSON.stringify(manifest));
+  await writeFile(join(directory,'showcase-front.svg'),'<?xml version="1.0"?><svg xmlns="http://www.w3.org/2000/svg"></svg>');
+  await writeFile(join(directory,'showcase-back.svg'),'<?xml version="1.0"?><svg xmlns="http://www.w3.org/2000/svg"></svg>');
+  const url=await withServer(t,{apiHandler:dummyHandler,staticRoot:root});
+  for(const file of ['showcase.json','showcase-manifest.json']){
+    const response=await fetch(url+'/assets/NEOASSET/'+file,{redirect:'manual'});
+    assert.equal(response.status,200,file);
+    assert.match(response.headers.get('content-type'),/application\/json/);
+    assert.equal(response.headers.get('location'),null);
+  }
+  for(const face of ['front','back']){
+    const response=await fetch(url+'/assets/NEOASSET/showcase-'+face+'.svg');
+    assert.equal(response.status,200);
+    assert.match(response.headers.get('content-type'),/image\/svg\+xml/);
+    assert.match(response.headers.get('content-security-policy'),/default-src 'none'; sandbox/);
+    assert.match(await response.text(),/<svg/);
+  }
+  assert.equal((await fetch(url+'/assets/NEOASSET/showcase.json',{method:'POST'})).status,405);
+  assert.equal((await fetch(url+'/assets/NOTAPPROVED/showcase.json')).status,404);
+  assert.equal((await fetch(url+'/assets/NEOASSET/private-key.json')).status,404);
+  assert.equal((await fetch(url+'/assets/NEOASSET/showcase-secret.svg')).status,404);
+  assert.equal((await fetch(url+'/assets/../NEOASSET/showcase.json')).status,404);
+});
