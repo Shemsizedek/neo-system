@@ -116,6 +116,20 @@ export async function independentlyReconcileCrownIssuance(intent,{fetchImpl=fetc
   });
   return {
     ...gate,stage:'CONFIRMED_READY_FOR_HOSTING',canonical_url:prepared.asset_description_for_signer,
+    // Sanitized public snapshot from this same Counterparty readback. Card publishers must
+    // still verify supply and divisibility before treating these fields as eligible.
+    verified_ledger_snapshot:{
+      asset:current.asset,
+      asset_longname:typeof current.asset_longname==='string'?current.asset_longname:null,
+      owner:current.owner,
+      issuer:current.issuer,
+      description:current.description,
+      supply:(typeof current.supply==='string'&&/^\d+$/.test(current.supply))?current.supply:
+        (typeof current.supply==='number'&&Number.isSafeInteger(current.supply)&&current.supply>=0?String(current.supply):null),
+      divisible:typeof current.divisible==='boolean'?current.divisible:null,
+      locked:current.locked,
+      first_issuance_block_index:current.first_issuance_block_index
+    },
     provenance:{
       authority:'counterparty_core_api_v2_single_public_endpoint',
       source_urls:[

@@ -25,7 +25,7 @@ jobs:
         with:
           node-version: '24'
       - name: Verify fail-closed publisher and Counterparty tests
-        run: node --test server/crown-metadata/issuance-autopublish.test.mjs server/crown-metadata/issuance-reconciler.test.mjs server/crown-metadata/issuance-publication.test.mjs
+        run: node --test server/crown-metadata/issuance-autopublish.test.mjs server/crown-metadata/issuance-reconciler.test.mjs server/crown-metadata/issuance-publication.test.mjs server/crown-metadata/neo-issuance-showcase-publisher.test.mjs server/crown-metadata/neo-showcase-batch.test.mjs
       - name: Prepare public metadata for approved intents BEFORE signing
         run: node scripts/crown-issuance-reconcile.mjs --prepare-all
       - name: Stage and commit deterministic metadata (never secrets or wallets)
@@ -94,17 +94,72 @@ jobs:
           fi
       - name: Require canonical hostname to serve approved JSON before signing
         run: node scripts/crown-issuance-reconcile.mjs --verify-all
-      - name: Independently confirm post-sign Counterparty events
-        run: node scripts/crown-issuance-reconcile.mjs --confirm-all
-      - name: Commit immutable confirmed-issuance receipts
+      - name: Observe approved creation events and stage NEO Layer 3 cards after six confirmations
+        run: node scripts/neo-crown-showcase-watch.mjs --stage-confirmed
+      - name: Commit immutable issuance receipts and confirmed NEO card artifacts
+        id: stagedshowcase
         shell: bash
         run: |
-          git add -A server/crown-metadata/issuance-receipts
+          set -euo pipefail
+          git add -A server/crown-metadata/issuance-receipts apps/neoscan/web/cardmaster/assets
           if git diff --cached --quiet; then
-            echo "No new confirmed issuance receipts"
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No newly confirmed NEO creation events; no cards were published"
           else
             git config user.name "NEO Crown metadata bot"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git commit -m "audit(crown): record confirmed counterparty issuance [skip ci]"
+            git commit -m "data(neo-crown): stage verified Layer 3 creation-event showcases [skip ci]"
             git push origin HEAD:feat/ncc-007-render-runtime-hardening
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Mirror only confirmed NEO showcase files to the existing static Crown branch
+        id: staticshowcase
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin feat/ncc-005-cardmaster-gallery
+          git worktree add --detach "$RUNNER_TEMP/neo-crown-confirmed-showcases" origin/feat/ncc-005-cardmaster-gallery
+          for intent in server/crown-metadata/approved-intents/*.json; do
+            [ -f "$intent" ] || continue
+            asset="$(basename "$intent" .json)"
+            if [[ ! "$asset" =~ ^[A-Z][A-Z0-9]{0,23}$ ]]; then
+              echo "::error::Unsafe asset code in reviewed issuance directory"
+              exit 1
+            fi
+            receipt="server/crown-metadata/issuance-receipts/$asset.json"
+            [ -f "$receipt" ] || continue
+            for file in showcase.json showcase-front.svg showcase-back.svg showcase-manifest.json; do
+              src="apps/neoscan/web/cardmaster/assets/$asset/$file"
+              dst="$RUNNER_TEMP/neo-crown-confirmed-showcases/$src"
+              [ -f "$src" ] || { echo "::error::Confirmed asset missing required showcase output"; exit 1; }
+              mkdir -p "$(dirname "$dst")"
+              if [ -f "$dst" ]; then
+                cmp -s "$src" "$dst" || { echo "::error::Published NEO showcase differs from immutable reviewed source"; exit 1; }
+              else
+                cp "$src" "$dst"
+              fi
+            done
+          done
+          git -C "$RUNNER_TEMP/neo-crown-confirmed-showcases" add -A apps/neoscan/web/cardmaster/assets
+          if git -C "$RUNNER_TEMP/neo-crown-confirmed-showcases" diff --cached --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No confirmed NEO showcase differs from the existing static host branch"
+          else
+            git -C "$RUNNER_TEMP/neo-crown-confirmed-showcases" config user.name "NEO Crown metadata bot"
+            git -C "$RUNNER_TEMP/neo-crown-confirmed-showcases" config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git -C "$RUNNER_TEMP/neo-crown-confirmed-showcases" commit -m "data(neo-crown): mirror confirmed Layer 3 card assets [skip ci]"
+            git -C "$RUNNER_TEMP/neo-crown-confirmed-showcases" push origin HEAD:feat/ncc-005-cardmaster-gallery
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Request existing free Render static deploy only when an approved hook is configured
+        if: steps.staticshowcase.outputs.changed == 'true'
+        env:
+          HOOK: ${{ secrets.CROWN_STATIC_RENDER_DEPLOY_HOOK }}
+        shell: bash
+        run: |
+          if [ -z "$HOOK" ]; then
+            echo "::warning::Confirmed NEO showcase files committed but NOT YET PUBLIC; the free static Render service has auto-deploy disabled and no approved deployment hook is configured."
+          else
+            curl --fail --silent --show-error --max-time 25 -X POST "$HOOK"
+            echo "Requested existing static Render deploy. A separate public readback is still required before claiming a card is published."
           fi
