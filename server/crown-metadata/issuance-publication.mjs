@@ -103,8 +103,16 @@ export async function confirmAndRecordIssuance(intent,{root=ROOT,fetchImpl=fetch
     issuer_wallet_control_verified_by_crown:false,
     no_token_operation_performed:true
   };
-  const state=await writeReceiptOnce(receiptPath(root,expected.asset),saved);
-  return {asset:expected.asset,stage:'CHAIN_CONFIRMED_AND_CANONICAL_VERIFIED',state,canonical_check:url,receipt:saved};
+  const path=receiptPath(root,expected.asset);
+  const state=await writeReceiptOnce(path,saved);
+  // Preserve the first verification timestamp and immutable chain evidence across retry runs.
+  const persisted=JSON.parse(await readFile(path,'utf8'));
+  return {
+    asset:expected.asset,stage:'CHAIN_CONFIRMED_AND_CANONICAL_VERIFIED',state,
+    canonical_check:url,receipt:persisted,
+    verified_ledger_snapshot:receipt.verified_ledger_snapshot,
+    chain_provenance:receipt.provenance
+  };
 }
 async function main(){
   const [mode,asset]=process.argv.slice(2);
