@@ -58,3 +58,18 @@ test('invalid or oversized JSON fails closed',()=>{
   assert.throws(()=>parseEcosSnapshotJson('{bad json'),/JSON_INVALID/);
   assert.throws(()=>parseEcosSnapshotJson(' '.repeat(40000)),/TOO_LARGE/);
 });
+
+
+test('ECOS Online status is treated as provider-reported active but still unverified',()=>{
+  const snapshot=normalizeEcosSnapshot({
+    source:'ECOS_ACCOUNT_APP',
+    observedAt,
+    account:{totalPowerTh:600,minedTodayBtc:0,minedAllTimeBtc:0},
+    contract:{contractId:'example-online-contract',status:'Online',hashrateTh:330,termDays:0}
+  },{now});
+  assert.equal(snapshot.contractReportedActive,true);
+  assert.equal(snapshot.status,'CONTRACT_REPORTED_ACTIVE_UNVERIFIED');
+  assert.equal(snapshot.capacity.reportedHashrateTh,330);
+  assert.equal(snapshot.capacity.eligibleForNeoCapacity,false);
+  assert.equal(snapshot.capacity.allocatableHashrateTh,null);
+});
