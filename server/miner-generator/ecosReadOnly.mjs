@@ -128,8 +128,9 @@ export function normalizeEcosSnapshot(input={}, {now=Date.now,maxAgeMs=24*60*60*
 }
 
 export function parseEcosSnapshotJson(raw,options){
-  if(typeof raw!=='string'||!raw.trim()) throw new Error('ECOS_SNAPSHOT_JSON_REQUIRED');
+  if(typeof raw!=='string') throw new Error('ECOS_SNAPSHOT_JSON_REQUIRED');
   if(Buffer.byteLength(raw)>MAX_SNAPSHOT_BYTES) throw new Error('ECOS_SNAPSHOT_TOO_LARGE');
+  if(!raw.trim()) throw new Error('ECOS_SNAPSHOT_JSON_REQUIRED');
   let value;try{value=JSON.parse(raw);}catch{throw new Error('ECOS_SNAPSHOT_JSON_INVALID');}
   return normalizeEcosSnapshot(value,options);
 }
