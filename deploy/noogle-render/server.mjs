@@ -1,5 +1,11 @@
 import { createPairingPreview } from './pairing-preview.mjs';
 import http from 'node:http';
+import { readFileSync } from 'node:fs';
+
+const chromebookFiles = new Map([
+  ['/chromebook/', {type:'text/html; charset=utf-8', body:readFileSync(new URL('../../apps/neo-connect-chromebook/index.html', import.meta.url))}],
+  ['/chromebook/terminal.mjs', {type:'text/javascript; charset=utf-8', body:readFileSync(new URL('../../apps/neo-connect-chromebook/terminal.mjs', import.meta.url))}]
+]);
 
 const port = Number(process.env.PORT || 10000);
 const searchHome = 'https://noogle.holytemples.org/';
@@ -27,6 +33,19 @@ export function createStagingServer() {
     let pathname;
     try { pathname = new URL(req.url || '/', 'http://127.0.0.1').pathname; }
     catch { return json(res,400,{error:'invalid_request'}); }
+    if(pathname === '/chromebook' || chromebookFiles.has(pathname)) {
+      if(req.method !== 'GET') return json(res,405,{error:'method_not_allowed'});
+      if(pathname === '/chromebook') {
+        res.writeHead(308,{...denyHeaders,location:'/chromebook/'});
+        return res.end();
+      }
+      const file=chromebookFiles.get(pathname);
+      res.writeHead(200,{
+        ...denyHeaders,'content-type':file.type,
+        'content-security-policy':"default-src 'none'; script-src 'self'; style-src 'unsafe-inline'; connect-src http://127.0.0.1:8766; frame-ancestors 'none'; form-action 'none'; base-uri 'none'"
+      });
+      return res.end(file.body);
+    }
     // Staging-only protocol simulation: no NEO Pass, real enrollment, or control privileges.
     if(pathname.startsWith('/preview/pair/')) {
       if(req.method !== 'POST') return json(res,405,{error:'method_not_allowed'});
@@ -74,6 +93,7 @@ nav{display:flex;align-items:center;justify-content:space-between;gap:15px;paddi
 @media(max-width:740px){.hero{grid-template-columns:1fr}.illustration{min-height:200px}.steps{grid-template-columns:1fr}.grid{grid-template-columns:1fr}nav{padding-bottom:18px}.panel{padding:20px}}@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
 </style></head><body><main><nav><div class="logo"><span class="mark">N</span><span>Noogle <span style="font-weight:450;color:#b8d5c3">Connect</span></span></div><span class="pill"><span class="dot"></span> Live pairing · Terminal access restricted</span></nav>
 <section class="hero"><div><div class="eyebrow">Your devices. One secure connection.</div><h1>Connect your<br>NEO devices.</h1><p class="intro">A simple home for linking your Android phone and Chromebook through NEO Pass. Pair your device browsers now with an approval code and automatic connection status. Remote terminal access will require verified NEO Pass authentication and a device companion.</p><button id="check" class="action" type="button">Check this device →</button><p id="probe-result" role="status" aria-live="polite">Device check uses browser capabilities only.</p></div><div class="illustration" role="img" aria-label="Illustration of phone and Chromebook with a secure connection"><div class="device phone">▣</div><span class="connection">⌁</span><div class="device laptop">▤</div></div></section>
+<section class="panel feature" aria-label="Chromebook terminal" style="margin-bottom:22px"><span class="label">On this Chromebook</span><h2>Connect your Linux terminal</h2><p>Already running the Chromebook companion? Open the terminal page, paste its session token, and select Connect. Device A / Device B pairing is not required for this local connection.</p><a class="action" href="/chromebook/">Open Chromebook Terminal →</a><p class="muted">Commands run on this Chromebook through its local companion. Other-device terminal access remains disabled.</p></section>
 <section class="panel feature" aria-label="One tap device connection" style="margin-bottom:22px"><span class="label">Noogle Connect · Device Hub</span><h2>Your devices, one dashboard</h2><p>Select Connect to check this device and securely start a browser-to-browser connection. A verified NEO Pass session and a device-side terminal agent will be required before terminal access can be granted.</p><button id="one-tap-connect" type="button" class="action">Connect this device →</button><a class="secondary" href="https://neopass.holytemples.org/" id="neopass-entry" rel="noopener noreferrer">NEO Pass sign-in ↗</a><p id="one-tap-result" role="status" aria-live="polite">Not connected. No commands or permissions requested.</p><p class="muted">Android · Chromebook · Desktop · Tablet · Eligible browser devices. Remote terminal is not enabled yet.</p></section>
 <section class="panel" aria-label="NEO Mask passkey readiness" style="margin-bottom:20px"><span class="label">NEO Mask · Passkey readiness</span><h2>Use your device PIN or fingerprint</h2><p>NEO Mask will use your browser's platform passkeys (Google Password Manager, Apple, Windows Hello and other supported providers). Your fingerprint and PIN remain protected by the device; Noogle never receives them.</p><button class="secondary" type="button" id="neomask-check">Check passkey support</button><p id="neomask-result" role="status" aria-live="polite">Passkey enrollment awaits verified NEO Pass identity and credential storage.</p><p class="muted">Bitcoin anchoring is a future audit feature, not live authentication or an on-chain storage location for credentials.</p></section>
 <section class="grid" aria-label="Device connections"><article class="panel feature"><span class="icon" aria-hidden="true">📱</span><span class="label">Device 01</span><h2>Android phone</h2><p>Open this page on Android to pair with another browser and exchange live connection pings. Platform passkey compatibility can be checked below.</p><div class="statusline"><span>Browser pairing</span><strong class="statusgood">Live</strong></div></article><article class="panel feature"><span class="icon" aria-hidden="true">💻</span><span class="label">Device 02</span><h2>Chromebook</h2><p>Open this page on your Chromebook, approve pairing, and exchange live connection pings with another browser.</p><div class="statusline"><span>Browser-to-browser signals</span><strong class="statusgood">Live</strong></div></article></section>

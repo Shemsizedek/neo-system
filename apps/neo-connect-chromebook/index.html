@@ -1,1 +1,47 @@
-<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>NEO Connect — Chromebook Terminal</title><style>body{font:16px system-ui;background:#071a14;color:#e8ffef;max-width:900px;margin:auto;padding:24px}h1{color:#74efaa}main{display:grid;gap:14px}input,button{font:inherit;padding:12px;border-radius:9px;border:1px solid #397051}input{background:#0b241a;color:white;width:100%;box-sizing:border-box}button{background:#76e9a5;color:#042314;font-weight:700}pre{background:#03100b;border:1px solid #26523a;padding:20px;min-height:250px;white-space:pre-wrap;overflow-wrap:anywhere}small{color:#b4caba}</style><main><h1>NEO Connect · Chromebook</h1><p>Connect to your Chromebook Linux terminal using the local NEO companion. Commands run on your Chromebook, not on the public website.</p><label>Local companion session token<input id="key" type="password" autocomplete="off" placeholder="Paste the token shown in your Chromebook Linux terminal"></label><label>Command<input id="cmd" autocomplete="off" placeholder="pwd"></label><button id="run">Run on Chromebook</button><pre id="out" aria-live="polite">Companion required: start the local agent first.</pre><small>No NEO Pass required. The companion listens only on 127.0.0.1. Browser private-network permissions may be required. Command execution is one-shot; interactive PTY shell comes later.</small></main><script>document.getElementById('run').onclick=async()=>{const out=document.getElementById('out'),command=document.getElementById('cmd').value,key=document.getElementById('key').value;out.textContent='Executing…';try{const r=await fetch('http://127.0.0.1:8766/command',{method:'POST',headers:{'content-type':'application/json','x-neo-token':key},body:JSON.stringify({command})});const data=await r.json();out.textContent=r.ok?(data.output+'\n[exit '+data.code+']'):(data.error||'Failed')}catch{out.textContent='Companion unreachable. Start it in Chromebook Linux and verify browser loopback permissions.'}};</script></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>Noogle Connect — Chromebook Terminal</title>
+  <style>
+    *{box-sizing:border-box}body{font:16px/1.6 system-ui;background:#071a14;color:#e8ffef;max-width:900px;margin:auto;padding:24px}a,h1{color:#a8f0c2}main{display:grid;gap:18px}section{background:#0b241a;border:1px solid #397051;border-radius:16px;padding:22px}h1,h2{line-height:1.2}label{display:block;margin-top:12px}input,button{font:inherit;padding:12px;border-radius:9px;border:1px solid #609773}input{background:#071a14;color:white;width:100%;box-sizing:border-box}button{background:#a8f0c2;color:#042314;font-weight:700;cursor:pointer;margin-top:12px}button:disabled{opacity:.5;cursor:not-allowed}button.secondary{background:transparent;color:#e8ffef}input:focus-visible,button:focus-visible,a:focus-visible{outline:3px solid #e8ffef;outline-offset:3px}pre{background:#03100b;border:1px solid #26523a;padding:20px;min-height:150px;white-space:pre-wrap;overflow-wrap:anywhere}code{overflow-wrap:anywhere}.muted{color:#b4caba}ol{padding-left:24px}#status{font-weight:700}
+  </style>
+</head>
+<body>
+<main>
+  <nav><a href="/">← Noogle Connect device hub</a></nav>
+  <header>
+    <h1>Chromebook Terminal</h1>
+    <p>Run commands on this Chromebook using its Linux companion.</p>
+  </header>
+  <section aria-labelledby="setup-heading">
+    <h2 id="setup-heading">1. Start the companion</h2>
+    <p>In your Chromebook Terminal, from the existing <code>neo-system</code> folder, run:</p>
+    <pre>node apps/neo-connect-chromebook/agent.mjs</pre>
+    <p>If it is already running, leave that Terminal tab open. Use the session token it printed. An “address already in use” message usually means another copy is running.</p>
+  </section>
+  <section aria-labelledby="connect-heading">
+    <h2 id="connect-heading">2. Connect this browser</h2>
+    <label for="key">Local companion session token</label>
+    <input id="key" type="password" autocomplete="off" autocapitalize="none" spellcheck="false" aria-describedby="token-help" placeholder="Paste the token from your Chromebook Terminal">
+    <p id="token-help" class="muted">Use the companion token, not your Chromebook password. It stays in this page until you disconnect or close it.</p>
+    <button id="connect" type="button">Connect</button>
+    <button id="disconnect" type="button" class="secondary" disabled>Disconnect</button>
+    <p id="status" role="status" aria-live="polite">Not connected.</p>
+    <p class="muted">Connect runs <code>pwd</code> to check access. If Chrome asks for local-network permission, allow it for this site. Browser pairing with Device A / Device B is separate and is not required here.</p>
+  </section>
+  <section aria-labelledby="command-heading">
+    <h2 id="command-heading">3. Run a command</h2>
+    <label for="cmd">Command</label>
+    <input id="cmd" autocomplete="off" spellcheck="false" maxlength="512" value="pwd" disabled>
+    <button id="run" type="button" disabled>Run on Chromebook</button>
+    <pre id="out" aria-live="polite">Connect the companion to see command output.</pre>
+    <p class="muted">Commands run as your Chromebook Linux user, with an eight-second limit. Each command starts a new shell, so use <code>cd neo-system &amp;&amp; …</code> when a command needs that folder. Interactive shells and long-running development servers should stay in the Chromebook Terminal.</p>
+  </section>
+  <p class="muted">Keep the companion on 127.0.0.1; do not forward port 8766 to the internet. Stop it with Ctrl+C to end access. Do not enter passwords or recovery seeds into commands. This page controls only the Chromebook running the companion; it does not give this chat remote terminal access.</p>
+</main>
+<script type="module" src="./terminal.mjs"></script>
+</body>
+</html>
