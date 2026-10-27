@@ -78,7 +78,7 @@ export function normalizeEcosSnapshot(input={}, {now=Date.now,maxAgeMs=24*60*60*
   const contractReportedActive=Boolean(
     reportedHashrateTh>0 &&
     contractStatus &&
-    ['ACTIVE','MINING','RUNNING','ENABLED'].includes(contractStatus.toUpperCase())
+    ['ACTIVE','MINING','RUNNING','ENABLED','ONLINE'].includes(contractStatus.toUpperCase())
   );
 
   return Object.freeze({
