@@ -6,7 +6,7 @@
   <meta name="referrer" content="no-referrer">
   <title>Noogle Connect — Chromebook Terminal</title>
   <style>
-    *{box-sizing:border-box}body{font:16px/1.6 system-ui;background:#071a14;color:#e8ffef;max-width:900px;margin:auto;padding:24px}a,h1{color:#a8f0c2}main{display:grid;gap:18px}section{background:#0b241a;border:1px solid #397051;border-radius:16px;padding:22px}h1,h2{line-height:1.2}label{display:block;margin-top:12px}input,button{font:inherit;padding:12px;border-radius:9px;border:1px solid #609773}input{background:#071a14;color:white;width:100%;box-sizing:border-box}button{background:#a8f0c2;color:#042314;font-weight:700;cursor:pointer;margin-top:12px}button:disabled{opacity:.5;cursor:not-allowed}button.secondary{background:transparent;color:#e8ffef}input:focus-visible,button:focus-visible,a:focus-visible{outline:3px solid #e8ffef;outline-offset:3px}pre{background:#03100b;border:1px solid #26523a;padding:20px;min-height:150px;white-space:pre-wrap;overflow-wrap:anywhere}code{overflow-wrap:anywhere}.muted{color:#b4caba}ol{padding-left:24px}#status{font-weight:700}
+    *{box-sizing:border-box}body{font:16px/1.6 system-ui;background:#071a14;color:#e8ffef;max-width:900px;margin:auto;padding:24px}a,h1{color:#a8f0c2}main{display:grid;gap:18px}section{background:#0b241a;border:1px solid #397051;border-radius:16px;padding:22px}h1,h2{line-height:1.2}label{display:block;margin-top:12px}input,select,button{font:inherit;padding:12px;border-radius:9px;border:1px solid #609773}input,select{background:#071a14;color:white;width:100%;box-sizing:border-box}fieldset{border:0;padding:0;margin:16px 0}button{background:#a8f0c2;color:#042314;font-weight:700;cursor:pointer;margin-top:12px}button:disabled{opacity:.5;cursor:not-allowed}button.secondary{background:transparent;color:#e8ffef}input:focus-visible,select:focus-visible,button:focus-visible,a:focus-visible{outline:3px solid #e8ffef;outline-offset:3px}pre{background:#03100b;border:1px solid #26523a;padding:20px;min-height:150px;white-space:pre-wrap;overflow-wrap:anywhere}code{overflow-wrap:anywhere}.muted{color:#b4caba}ol{padding-left:24px}#status{font-weight:700}
   </style>
 </head>
 <body>
@@ -14,7 +14,7 @@
   <nav><a href="/">← Noogle Connect device hub</a></nav>
   <header>
     <h1>Chromebook Terminal</h1>
-    <p>Run commands on this Chromebook using its Linux companion.</p>
+    <p>Run commands on this Chromebook, or connect from it to a remote server over SSH.</p>
   </header>
   <section aria-labelledby="setup-heading">
     <h2 id="setup-heading">1. Start the companion</h2>
@@ -24,6 +24,21 @@
   </section>
   <section aria-labelledby="connect-heading">
     <h2 id="connect-heading">2. Connect this browser</h2>
+    <label for="mode">Connection</label>
+    <select id="mode">
+      <option value="local">This Chromebook</option>
+      <option value="ssh">Remote server (SSH)</option>
+    </select>
+    <fieldset id="ssh-settings" hidden>
+      <legend>SSH server</legend>
+      <label for="ssh-host">Server hostname, IP, or SSH alias</label>
+      <input id="ssh-host" autocomplete="off" autocapitalize="none" spellcheck="false" maxlength="253" placeholder="my-server">
+      <label for="ssh-user">Linux SSH username (optional)</label>
+      <input id="ssh-user" autocomplete="off" autocapitalize="none" spellcheck="false" maxlength="64" placeholder="Use your SSH configuration">
+      <label for="ssh-port">SSH port (optional)</label>
+      <input id="ssh-port" type="number" min="1" max="65535" placeholder="Use your SSH configuration or port 22">
+      <p class="muted">First verify the server’s host key and make key-based SSH work in your Chromebook Terminal. This connection uses the Chromebook’s existing SSH configuration and keys. Password prompts are not supported; no key upload is needed. A Google service-account email is not a server address.</p>
+    </fieldset>
     <label for="key">Local companion session token</label>
     <input id="key" type="password" autocomplete="off" autocapitalize="none" spellcheck="false" aria-describedby="token-help" placeholder="Paste the token from your Chromebook Terminal">
     <p id="token-help" class="muted">Use the companion token, not your Chromebook password. It stays in this page until you disconnect or close it.</p>
@@ -38,9 +53,9 @@
     <input id="cmd" autocomplete="off" spellcheck="false" maxlength="512" value="pwd" disabled>
     <button id="run" type="button" disabled>Run on Chromebook</button>
     <pre id="out" aria-live="polite">Connect the companion to see command output.</pre>
-    <p class="muted">Commands run as your Chromebook Linux user, with an eight-second limit. Each command starts a new shell, so use <code>cd neo-system &amp;&amp; …</code> when a command needs that folder. Interactive shells and long-running development servers should stay in the Chromebook Terminal.</p>
+    <p class="muted">Local commands run as your Chromebook Linux user with an eight-second limit. SSH requests run as the selected server user and wait up to fifteen seconds; remote commands may continue after a timeout or disconnect. Each command starts a new shell, so use <code>cd folder &amp;&amp; …</code> when needed. Interactive shells and long-running development servers should stay in the Chromebook Terminal.</p>
   </section>
-  <p class="muted">Keep the companion on 127.0.0.1; do not forward port 8766 to the internet. Stop it with Ctrl+C to end access. Do not enter passwords or recovery seeds into commands. This page controls only the Chromebook running the companion; it does not give this chat remote terminal access.</p>
+  <p class="muted">Keep the companion on 127.0.0.1; do not forward port 8766 to the internet. Stop it with Ctrl+C to end access. Do not enter passwords or recovery seeds into commands. Connections originate from the Chromebook running the companion; this page does not give this chat remote terminal access.</p>
 </main>
 <script type="module" src="./terminal.mjs"></script>
 </body>

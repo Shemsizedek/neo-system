@@ -8,7 +8,7 @@ const token = 'a'.repeat(64);
 
 function page(fetch, origin = canonicalOrigin) {
   const elements = new Map();
-  for (const id of ['key', 'cmd', 'out', 'status', 'connect', 'disconnect', 'run']) {
+  for (const id of ['key', 'cmd', 'out', 'status', 'connect', 'disconnect', 'run', 'mode', 'ssh-settings', 'ssh-host', 'ssh-user', 'ssh-port']) {
     const handlers = new Map();
     elements.set(id, {
       value:'', textContent:'', disabled:false,
@@ -17,6 +17,7 @@ function page(fetch, origin = canonicalOrigin) {
       handlers
     });
   }
+  elements.get('mode').value = 'local';
   const document = {getElementById:id => elements.get(id)};
   mountTerminal({document, fetch, origin});
   return id => elements.get(id);
@@ -54,6 +55,106 @@ test('connect explicitly authenticates, runs commands only on loopback, and disc
   await element('connect').click();
   assert.equal(requests.length, 2);
   assert.match(element('status').textContent, /64-character/);
+});
+
+function selectSsh(element, {host = 'my-server', user = '', port = ''} = {}) {
+  element('mode').value = 'ssh';
+  element('mode').handlers.get('change')();
+  element('ssh-host').value = host;
+  element('ssh-user').value = user;
+  element('ssh-port').value = port;
+}
+
+test('SSH connection binds a server target and sends token and commands only to the local companion', async () => {
+  const requests = [];
+  const element = page(async (url, options) => { requests.push({url, options}); return success('/remote/home\n'); });
+  selectSsh(element, {host:'server.example.test', user:'neo', port:'2222'});
+  assert.equal(element('ssh-settings').hidden, false);
+  element('key').value = token;
+  await element('connect').click();
+  assert.equal(requests[0].url, 'http://127.0.0.1:8766/ssh/command');
+  assert.deepEqual(JSON.parse(requests[0].options.body), {hostAlias:'server.example.test', username:'neo', port:2222, command:'pwd'});
+  assert.equal(requests[0].options.headers['x-neo-token'], token);
+  assert.equal(element('mode').disabled, true);
+  assert.equal(element('ssh-host').disabled, true);
+  assert.equal(element('run').textContent, 'Run on SSH server');
+  assert.match(element('status').textContent, /Connected over SSH to server.example.test/);
+  element('ssh-host').value = 'different-server';
+  element('cmd').value = 'whoami';
+  await element('run').click();
+  assert.deepEqual(JSON.parse(requests[1].options.body), {hostAlias:'server.example.test', username:'neo', port:2222, command:'whoami'});
+  element('disconnect').click();
+  assert.equal(element('ssh-host').disabled, false);
+  assert.equal(element('run').disabled, true);
+});
+
+test('SSH aliases use local config defaults without sending empty username or port overrides', async () => {
+  let body;
+  const element = page(async (url, options) => { body = JSON.parse(options.body); return success(); });
+  selectSsh(element);
+  element('key').value = token;
+  await element('connect').click();
+  assert.deepEqual(body, {hostAlias:'my-server', command:'pwd'});
+});
+
+test('SSH target validation rejects service-account emails, options, and invalid ports before requesting access', async () => {
+  let calls = 0;
+  const element = page(async () => { calls++; return success(); });
+  element('key').value = token;
+  for (const host of ['', 'account@developer.gserviceaccount.com', '-oProxyCommand=bad', 'host;bad']) {
+    selectSsh(element, {host});
+    await element('connect').click();
+    assert.match(element('status').textContent, /server hostname/);
+  }
+  selectSsh(element, {user:'user@server'});
+  await element('connect').click();
+  assert.match(element('status').textContent, /Linux SSH username/);
+  for (const port of ['0', '65536', '22.5', '-1', 'x']) {
+    selectSsh(element, {port});
+    await element('connect').click();
+    assert.match(element('status').textContent, /SSH port/);
+  }
+  assert.equal(calls, 0);
+  assert.equal(element('run').disabled, true);
+});
+
+test('SSH failures explain companion updates, missing tools, timeouts, and host-key or login errors', async t => {
+  for (const [name, response, message] of [
+    ['old companion', () => Response.json({error:'not_found'}, {status:404}), /Update the Chromebook checkout/],
+    ['missing OpenSSH', () => Response.json({error:'ssh_unavailable'}, {status:503}), /openssh-client/],
+    ['timeout', () => Response.json({error:'ssh_timeout'}, {status:504}), /SSH connection or command timed out/],
+    ['unknown host key', () => success('Host key verification failed.', 255), /verify the server host key/]
+  ]) await t.test(name, async () => {
+    const element = page(async () => response());
+    selectSsh(element);
+    element('key').value = token;
+    await element('connect').click();
+    assert.match(element('status').textContent, message);
+    assert.equal(element('run').disabled, true);
+    assert.equal(element('key').value, '');
+    if (name === 'unknown host key') assert.match(element('out').textContent, /Host key verification failed/);
+  });
+});
+
+test('SSH browser request reaches the authenticated companion adapter with no Render hop', async () => {
+  const calls = [];
+  const agent = createAgent({secret:token, ssh:{execute:async options => {
+    calls.push(options);
+    return {stdout:'/server/home\n', stderr:'', exitCode:0};
+  }}});
+  await new Promise(resolve => agent.listen(0, '127.0.0.1', resolve));
+  try {
+    const element = page((url, options) => {
+      assert.equal(url, 'http://127.0.0.1:8766/ssh/command');
+      return fetch('http://127.0.0.1:' + agent.address().port + '/ssh/command', {...options, headers:{...options.headers, origin:canonicalOrigin}});
+    });
+    selectSsh(element, {host:'server.example.test', user:'neo'});
+    element('key').value = token;
+    await element('connect').click();
+    assert.deepEqual(calls, [{hostAlias:'server.example.test', username:'neo', command:'pwd'}]);
+    assert.match(element('out').textContent, /\/server\/home/);
+    assert.equal(element('run').disabled, false);
+  } finally { await new Promise(resolve => agent.close(resolve)); }
 });
 
 test('the Render hostname cannot send a companion token or enable commands', async () => {

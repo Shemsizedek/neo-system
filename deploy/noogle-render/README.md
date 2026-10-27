@@ -6,7 +6,9 @@ The Device Hub now links to `/chromebook/`, a static browser client for the exis
 
 Use the canonical `https://connect.holytemples.org/chromebook/` origin on the Chromebook running the companion. Other origins are rejected by the existing companion. Deployment does not establish Chromebook Chrome local-network permission or Linux-loopback reachability: verify Connect produces `pwd` output and `[exit 0]` on the actual device.
 
-Root `render.yaml` tracks `main` and keeps automatic deployment off. After reviewing and merging the update, manually deploy the latest commit for the existing service in Render. Verify `/healthz`, the Device Hub link, `/chromebook/`, and its module, then test the Chromebook connection. No DNS, NEO Pass, database, or Render secret changes are needed. See [the companion instructions](../../apps/neo-connect-chromebook/README.md).
+The client also offers **Remote server (SSH)**. Those requests go only to the updated companion's `/ssh/command` on loopback; Render does not expose `/ssh/command`. OpenSSH uses existing Chromebook keys/configuration with strict host verification and no interactive password, agent forwarding, or port forwarding. Hostname/alias, optional Linux username and optional port are entered in the page; keys are never uploaded. Selecting SSH does not grant this chat access or turn the ChatGPT development workspace into an SSH host.
+
+Root `render.yaml` tracks `main` and keeps automatic deployment off. After reviewing and merging the update, manually deploy the latest commit for the existing service in Render. Verify `/healthz`, the Device Hub link, `/chromebook/`, and its module, then test the Chromebook connection. SSH users must update and restart their Chromebook companion, then verify Connect and a command against their actual server. No DNS, NEO Pass, database, or Render secret changes are needed. See [the companion instructions](../../apps/neo-connect-chromebook/README.md).
 
 Run the build command from `render.yaml` to validate the HTTP routes, browser client behavior, pairing, and companion authentication before deployment.
 

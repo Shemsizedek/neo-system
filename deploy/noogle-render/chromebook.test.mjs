@@ -44,7 +44,7 @@ test('Chromebook page serves token and command controls under a loopback-only co
     assert.deepEqual(directives.get('base-uri'), ["'none'"]);
 
     const html = await response.text();
-    for (const id of ['key', 'connect', 'disconnect', 'cmd', 'run', 'out', 'status']) {
+    for (const id of ['key', 'connect', 'disconnect', 'cmd', 'run', 'out', 'status', 'mode', 'ssh-host', 'ssh-user', 'ssh-port']) {
       assert.match(html, new RegExp(`id=["']${id}["']`));
     }
     assert.match(html, /<script\b[^>]*type=["']module["'][^>]*src=["'](?:\.\/|\/chromebook\/)?terminal\.mjs["']/);
@@ -88,9 +88,9 @@ test('Chromebook UI does not enable server-side command or privileged endpoints'
       assert.equal(response.status, 403, path);
       assert.equal((await response.json()).remote_terminal, false, path);
     }
-    for (const method of ['GET', 'POST']) {
-      const response = await fetch(`${base}/command`, { method });
-      assert.equal(response.status, 404, `${method} /command`);
+    for (const path of ['/command', '/ssh/command']) for (const method of ['GET', 'POST']) {
+      const response = await fetch(`${base}${path}`, { method });
+      assert.equal(response.status, 404, `${method} ${path}`);
     }
     for (const path of ['/chromebook/agent.mjs', '/chromebook/README.md', '/chromebook/not-found']) {
       assert.equal((await fetch(`${base}${path}`)).status, 404, path);
