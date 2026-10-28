@@ -1,0 +1,43 @@
+{
+  "schema_version": "NEO-NOMNI-BILL-BINDING/0.1",
+  "status": "draft_pending_verification",
+  "network": "bitcoin-mainnet",
+  "protocol": "Counterparty",
+  "asset": "NOMNI",
+  "denomination": "1 NOMNI",
+  "relationship": "A proposed visual/physical representation of one unit of the existing NOMNI asset; not a separate token, redemption promise or proof of legal-tender status.",
+  "original_artwork": {
+    "filename": "nomni-heritage-banner.jpg",
+    "sha256": "bf9b0e221d5e4f788de1c3ec1080c171e030000f867fcfd9dd18bbac86d72984",
+    "dimensions": [
+      1536,
+      653
+    ],
+    "mime_type": "image/jpeg",
+    "repository_uploaded": false
+  },
+  "current_metadata": {
+    "path": "server/crown-metadata/attachments/NOMNI/tokenscan.json",
+    "image_large": "https://neoscan.holytemples.org/media/nomni-bill-1.jpg"
+  },
+  "issuer_signature": {
+    "status": "user_reports_existing_signature",
+    "transaction_hash": null,
+    "signer_address": null,
+    "message": null,
+    "verification_status": "not_verified"
+  },
+  "publication": {
+    "asset_description_pointer_verified": false,
+    "tokenscan_display_verified": false,
+    "physical_bill_serial_numbering": "not_authorized",
+    "requires_new_issuance": false
+  },
+  "acceptance_tests": [
+    "Original artwork hosted at immutable or versioned HTTPS URL and hash verified",
+    "Signature matched against issuer address and exact signed message",
+    "Live Counterparty NOMNI description and ownership independently read",
+    "TokenScan consumes the authenticated metadata pointer",
+    "Public displays accurate 1 NOMNI denomination with no unverified collateral or redemption claims"
+  ]
+}
