@@ -1,0 +1,27 @@
+{
+  "gate": "NOMNI-TOKENSCAN-028",
+  "checked_at": "2026-10-28",
+  "status": "blocked_on_public_metadata_and_issuer_evidence",
+  "asset": "NOMNI",
+  "verified": {
+    "original_image_sha256": "bf9b0e221d5e4f788de1c3ec1080c171e030000f867fcfd9dd18bbac86d72984",
+    "original_image_dimensions": "1536x653",
+    "bill_binding_record": "present_on_draft_branch",
+    "tokenscan_page": "public_page_retrieved",
+    "tokenscan_extra_info": "No additional information is available at this time",
+    "metadata_host_response": "could_not_retrieve_using_public_web_check"
+  },
+  "not_yet_verified": [
+    "Counterparty current asset-description pointer",
+    "Issuer-signature transaction hash and address",
+    "Whether TokenScan requires signed on-chain description pointer for additional information",
+    "Public image hosting and end-to-end rendering"
+  ],
+  "security_controls": [
+    "Do not request or store seed phrases or private keys",
+    "Do not reissue NOMNI",
+    "Do not state artwork alone guarantees token redemption",
+    "Do not represent hosted JSON as blockchain-verified without issuer evidence"
+  ],
+  "release_decision": "HOLD_PRODUCTION_UNTIL_VERIFICATION"
+}
