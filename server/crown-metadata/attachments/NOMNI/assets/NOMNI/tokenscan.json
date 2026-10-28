@@ -1,7 +1,7 @@
 {
   "asset": "NOMNI",
   "name": "NOMNI",
-  "description": "NOMNI is an issuer-described world currency and unit of account on Bitcoin / Counterparty. The 1 NOMNI Bill is the issuer-designated one-unit bill design for the same NOMNI token. Bill artwork and denomination record: https://crown.holytemples.org/assets/NOMNI/bill-1.json. The linked SHA-256 identifies the exact artwork; individual printed bills require separate funding and redemption verification.",
+  "description": "NOMNI is a world currency and unit of account on Bitcoin. The 1 NOMNI Bill is the one-unit bill designed for the same NOMNI token. Bill artwork and denomination records are linked to a SHA-256 hash that identifies the exact artwork; individual printed bills require separate funding and redemption verification.",
   "image_title": "1 NOMNI Bill",
   "image_large": "https://crown.holytemples.org/assets/NOMNI/nomni-bill-1.jpg",
   "instrument_type": "currency",
