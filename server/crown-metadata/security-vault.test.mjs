@@ -1,0 +1,6 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {randomBytes} from 'node:crypto';
+import {authorize,encryptEvidence,decryptEvidence,evaluateApprovals} from './security-vault.mjs';
+test('cross-tenant access denied',()=>assert.equal(authorize({authenticated:true,mfaVerified:true,subject:'u1',tenantId:'A',roles:['client']},'read',{tenantId:'B'}).allowed,false));
+test('self approval denied',()=>assert.equal(authorize({authenticated:true,mfaVerified:true,subject:'u1',tenantId:'A',roles:['issuer']},'approve',{tenantId:'A',createdBy:'u1'}).allowed,false));
+test('evidence encrypted and bound to tenant and case',()=>{const key=randomBytes(32),a={key,keyId:'test-key',aad:{tenantId:'A',caseId:'CASE1'}},env=encryptEvidence('private record',a);assert.equal(decryptEvidence(env,{key,tenantId:'A',caseId:'CASE1'}).toString(),'private record');assert.throws(()=>decryptEvidence(env,{key,tenantId:'B',caseId:'CASE1'}));});
+test('requires independent verified role approvals',()=>{const a={approved:true,authenticated:true,mfaVerified:true,evidenceHash:'abcd',subject:'same'};assert.equal(evaluateApprovals([{...a,role:'compliance'},{...a,role:'issuer'}]).approved,false);assert.equal(evaluateApprovals([{...a,role:'compliance'},{...a,subject:'other',role:'issuer'}]).approved,true);});
