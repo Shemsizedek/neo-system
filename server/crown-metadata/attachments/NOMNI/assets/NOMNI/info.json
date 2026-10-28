@@ -1,7 +1,10 @@
 {
   "asset": "NOMNI",
   "name": "NOMNI",
-  "description": "NOMNI is an issuer-described world currency and unit of account on Counterparty. Token Showcase: issuer-provided design for a 1 NOMNI bill, intended for printing on cryptographic Bitcoin paper.",
+  "description": "NOMNI is an issuer-described world currency and unit of account on Bitcoin / Counterparty. The 1 NOMNI Bill is the issuer-designated one-unit bill design for the same NOMNI token. Bill artwork and denomination record: https://crown.holytemples.org/assets/NOMNI/bill-1.json. The linked SHA-256 identifies the exact artwork; individual printed bills require separate funding and redemption verification.",
+  "image_title": "1 NOMNI Bill",
+  "image_large": "https://crown.holytemples.org/assets/NOMNI/nomni-bill-1.jpg",
+  "instrument_type": "currency",
   "website": "https://holytemples.org/world-currency/",
   "categories": [
     {
@@ -12,5 +15,23 @@
       "type": "sub",
       "data": "Bitcoin / Counterparty"
     }
-  ]
+  ],
+  "files": [
+    {
+      "type": "json",
+      "name": "1 NOMNI Bill denomination and artwork integrity record",
+      "data": "https://crown.holytemples.org/assets/NOMNI/bill-1.json"
+    }
+  ],
+  "denominations": [
+    {
+      "amount": "1",
+      "unit": "NOMNI",
+      "title": "1 NOMNI Bill",
+      "artwork": "https://crown.holytemples.org/assets/NOMNI/nomni-bill-1.jpg",
+      "record": "https://crown.holytemples.org/assets/NOMNI/bill-1.json",
+      "artwork_sha256": "00472d01de84f4d876d7cd6ca1fa53a844a0b7929f93f97cd5dfb4c28e7bb7e6"
+    }
+  ],
+  "bill_metadata": "https://crown.holytemples.org/assets/NOMNI/bill-1.json"
 }

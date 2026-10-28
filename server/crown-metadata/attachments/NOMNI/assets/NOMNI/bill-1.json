@@ -1,0 +1,33 @@
+{
+  "schema": "NEO-CROWN-SHOWCASE-ATTACHMENT-V1",
+  "asset": "NOMNI",
+  "title": "1 NOMNI Bill",
+  "kind": "image",
+  "url": "https://crown.holytemples.org/assets/NOMNI/nomni-bill-1.jpg",
+  "mime_type": "image/jpeg",
+  "description": "Issuer-provided design for a one-NOMNI bill, intended for printing on cryptographic Bitcoin paper.",
+  "source": "Provided by the NOMNI issuer in this conversation",
+  "sha256": "00472d01de84f4d876d7cd6ca1fa53a844a0b7929f93f97cd5dfb4c28e7bb7e6",
+  "size_bytes": 215295,
+  "printing_status": "Planned, per issuer statement",
+  "blockchain_anchor_verified": false,
+  "original_url": "https://neoscan.holytemples.org/media/nomni-bill-1.jpg",
+  "denomination": {
+    "amount": "1",
+    "unit": "NOMNI"
+  },
+  "token": {
+    "network": "counterparty-mainnet",
+    "asset": "NOMNI",
+    "asset_id": "6195210",
+    "metadata_url": "https://crown.holytemples.org/assets/NOMNI/tokenscan.json",
+    "explorer_url": "https://tokenscan.io/asset/NOMNI"
+  },
+  "relationship": "Issuer-designated one-NOMNI bill artwork associated with the NOMNI token.",
+  "binding": {
+    "method": "on-chain asset description URL to off-chain metadata and SHA-256 artwork digest",
+    "metadata_url": "https://crown.holytemples.org/assets/NOMNI/tokenscan.json",
+    "artwork_sha256": "00472d01de84f4d876d7cd6ca1fa53a844a0b7929f93f97cd5dfb4c28e7bb7e6"
+  },
+  "circulation_status": "Artwork association; no individual funded or redeemable paper bills verified."
+}

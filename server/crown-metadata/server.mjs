@@ -15,7 +15,9 @@ export function createMetadataServer({store,resolveAsset=createAssetResolver()})
     try {
       const requestUrl=new URL(req.url,'http://localhost'),path=requestUrl.pathname;
       if(path==='/assets/investment-card.schema.json')return send(200,await readFile(new URL('./investment-card.schema.json',import.meta.url),'utf8'));
-      if(path==='/assets/NOMNI/tokenscan.json')return send(200,await readFile(new URL('./nomni-tokenscan.json',import.meta.url),'utf8'));
+      if(path==='/assets/NOMNI/tokenscan.json'||path==='/assets/NOMNI/info.json')return send(200,await readFile(new URL('./attachments/NOMNI/tokenscan.json',import.meta.url),'utf8'));
+      if(path==='/assets/NOMNI/bill-1.json')return send(200,await readFile(new URL('./attachments/NOMNI/bill-1.json',import.meta.url),'utf8'));
+      if(path==='/assets/NOMNI/nomni-bill-1.jpg')return send(200,await readFile(new URL('./attachments/NOMNI/assets/NOMNI/nomni-bill-1.jpg',import.meta.url)),'image/jpeg');
       if(path==='/assets/explore'){const asset=requestUrl.searchParams.get('asset')||'KNOWINDEX';if(!/^[A-Za-z0-9_.-]{1,255}$/.test(asset))return send(400,{error:'invalid_asset'});res.writeHead(302,{location:'/assets/'+encodeURIComponent(asset)+'/explore.html'});return res.end();}
       const investment=path.match(/^\/assets\/([^/]+)\/investment-card\.json$/);
       if(investment){const asset=decodeURIComponent(investment[1]);if(!/^[A-Za-z0-9_.-]{1,255}$/.test(asset))return send(400,{error:'invalid_asset'});const data=await resolveAsset(asset);return send(200,buildInvestmentCard(asset,data));}
