@@ -9,7 +9,7 @@ const ASSET = 'BTC';
 const SERVICES = new Set(['neo-bank', 'neo-pay', 'neo-fx']);
 const ACTIONS = new Set(['quote', 'status', 'reconcile', 'deposit-instructions']);
 const READ_KEYS = new Set(['provider','service','action','asset','network','reference']);
-const DENIED_TERMS = /(?:ethereum|eth|\\bbase\\b|evm|erc[ -]?\d+|usdc|cbBTC|wBTC|polygon|optimism|arbitrum|solana|x402|builder.?code)/i;
+const DENIED_TERMS = /(?:ethereum|eth|\bbase\b|evm|erc[ -]?\d+|usdc|cbBTC|wBTC|polygon|optimism|arbitrum|solana|x402|builder.?code)/i;
 
 /** Validate a request before it can be mapped to external provider API calls. */
 export function assertCoinbaseBoundary(request) {
