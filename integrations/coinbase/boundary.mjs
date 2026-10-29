@@ -41,6 +41,9 @@ export function assertNativeBitcoinAsset(asset) {
   if (asset.asset !== ASSET || asset.network !== BTC_NETWORK || asset.native !== true) {
     throw new Error('Reject ambiguous, wrapped, or non-Bitcoin provider asset');
   }
+  if (Object.keys(asset).length !== 3 || Object.keys(asset).some(k => !['asset','network','native'].includes(k))) {
+    throw new Error('Provider descriptors must be projected to the minimal native BTC schema');
+  }
   if (DENIED_TERMS.test(JSON.stringify(asset))) throw new Error('Blocked network or token metadata');
   return true;
 }
