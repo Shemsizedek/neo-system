@@ -47,7 +47,7 @@ test('exact decimal arithmetic rejects misleading float values and missing docum
 
 test('blocks public claims before the issuer is approved and reserves proven',()=>{
   assert.equal(assertNoPrematureNomniStablecoinClaim({instrument_type:'currency',description:'NOMNI world currency on Bitcoin'}),true);
-  for(const description of ['NOMNI Stablecoin','fully-backed NOMNI','USD-pegged','1 NOMNI = $1']){
+  for(const description of ['NOMNI Stablecoin','fully-backed NOMNI','USD-backed NOMNI','dollar-backed NOMNI','USD-pegged','1 NOMNI = $1']){
     assert.throws(()=>assertNoPrematureNomniStablecoinClaim({description}),/approval/);
   }
 });
