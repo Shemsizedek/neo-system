@@ -1,0 +1,24 @@
+name: NEO Bank Render Staging Safety
+on:
+  pull_request:
+    paths:
+      - 'server/neo-bank/**'
+      - 'server/neo-bots/bank-bot.mjs'
+      - 'server/neo-bots/ces-interface-policy.mjs'
+      - 'deploy/neo-bank-render/**'
+      - '.github/workflows/neo-bank-render-staging-ci.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  safety-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Test NEO Bank PostgreSQL adapter and CES preview safety
+        run: node --test server/neo-bank/postgres-account-api.test.mjs deploy/neo-bank-render/staging.test.mjs
+      - name: Check preview script syntax
+        run: node --check deploy/neo-bank-render/staging.mjs
