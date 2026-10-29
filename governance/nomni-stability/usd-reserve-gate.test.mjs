@@ -13,7 +13,7 @@ const keys=[
 const evidenceRefs=Object.fromEntries(keys.map(k=>[k,'evidence:project144/'+k]));
 const complete={
   asset:'NOMNI',network:'bitcoin-counterparty',targetRedemptionUsdPerNomni:'1.00',
-  reportedOutstandingNomni:'1000.00000001',reportedSegregatedUsdCash:'1000.01',
+  reportedOutstandingNomni:'1000',reportedSegregatedUsdCash:'1000.00',reportedDivisible:false,
   supplyAsOfUtc:'2026-10-29T15:00:00Z',reserveAsOfUtc:'2026-10-29T15:00:00Z',
   evidenceRefs,
 };
@@ -30,8 +30,8 @@ test('objective is proposed only; all live operations stay disabled',()=>{
 
 test('calculates exact liability ceiling for one-cent rounding, never floats',()=>{
   const result=assessNomniUsdBacking(complete,options);
-  assert.equal(result.reportedRequiredReserveCents,'100001');
-  assert.equal(result.reportedCashReserveCents,'100001');
+  assert.equal(result.reportedRequiredReserveCents,'100000');
+  assert.equal(result.reportedCashReserveCents,'100000');
   assert.equal(result.reportedShortfallCents,'0');
   assert.equal(result.readiness,'PENDING_INDEPENDENT_VERIFICATION');
   assert.equal(result.reserveEvidenceVerified,false);
@@ -47,6 +47,13 @@ test('no under-reserve on fractional NOMNI liability',()=>{
   assert.equal(result.reportedRequiredReserveCents,'101');
   assert.equal(result.reportedShortfallCents,'1');
   assert.ok(result.missing.includes('reportedOneToOneReserveCoverage'));
+  assert.ok(result.missing.includes('indivisibleAssetSupplyConflict'));
+});
+
+test('requires independent on-chain divisibility confirmation',()=>{
+ const result=assessNomniUsdBacking({...complete,reportedDivisible:true},options);
+ assert.equal(result.readiness,'BLOCKED');
+ assert.ok(result.missing.includes('verifyNomniIsIndivisibleOnCounterparty'));
 });
 
 test('reconciles ALL outstanding tokens rather than assuming only circulation',()=>{
