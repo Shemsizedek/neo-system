@@ -41,3 +41,27 @@ All outputs explicitly refuse to certify operator access, bank connectivity, USD
 
 ## Test command
 `node --test integrations/ces-banking/*.test.mjs`
+
+## Gate 2: CES Bot report reader plugged into the existing runtime (staging injection only)
+
+`ces-bot-report-adapter.mjs` adds a **strictly read-only** adapter that can be injected into the existing NEO bot runtime; the existing deployment factory deliberately retains its stub default, so unconfigured production code cannot initiate CES requests.
+
+```js
+import { createNeoBotsDeploymentRuntime } from '../../server/neo-bots/deployment-runtime.mjs';
+import { createCesBotReportAdapter } from './ces-bot-report-adapter.mjs';
+// sessionProvider must be supplied by a separately verified secure deployment.
+const cesAdapter = createCesBotReportAdapter({ sessionProvider, onAudit });
+const runtime = createNeoBotsDeploymentRuntime({ cesAdapter });
+// The existing 'ces.transactions.review' bot action can now retrieve only
+// a SHA-256 report proof from an already authenticated NMNI/XCPC session.
+```
+
+Credential handling stays **outside this adapter**. Session-provider deployment remains a distinct step after CES admin login credential rotation and scope minimization. Never pass credential-bearing navigation links from the legacy CES admin page. Do not treat an open browser page as proof that an independent bot has authenticated.
+
+The adapter accepts only named report routes, only GET and manually handled redirects, strict same-origin response, explicit session verification, limited HTML size, and a sanitized audit sink. It returns only a SHA-256 checksum and report metadata; **no raw CES member records, statements, V-Dollar credits or credentials are returned or forwarded to Modern Treasury**. All issuance, approval and update methods are disabled even if the bot runtime grants a generic approval token. The original bot runtime still ships with its no-op adapter by default.
+
+`server/neo-bots/ces-legacy-crawler.mjs` now excludes any link/form/redirect with URL query parameters or cross-origin credentials from the persisted manifest; `server/neo-bots/ces-session-adapter.mjs` drops credential-bearing form actions and redacts all form field values from discovery results. Tests use synthetic secrets only.
+
+To advance beyond this gate: provision a dedicated, least-privilege CES Bot session provider in a controlled runtime; confirm a fresh independent bot session; run an authenticated read-only smoke against NMNI report metadata; inspect private report schema for authorization/provenance; only then add a separate explicit ingestion-to-NEO reconciliation job. Modern Treasury and Fedwire capabilities remain **external bank data adapters, not CES Bot privileges**. No live banking payment calls are part of this PR.
+
+New checks: `node --test integrations/ces-banking/*.test.mjs server/neo-bots/ces-legacy-crawler.test.mjs server/neo-bots/ces-session-adapter.test.mjs`.
