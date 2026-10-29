@@ -59,3 +59,18 @@ Sources: https://horizon.market/assets/NOMNI and official protocol reference htt
 **Required verification:** read-only GET /v2/assets/NOMNI from a synced Counterparty Core node, inspect total and outstanding supply, divisibility, lock status, issuer, and chain heights, then reconcile historical issuance/destruction, ownership and balances against a second independent indexer. Block issuance/redemption until complete. The reserve arithmetic code requires a reported non-divisible property and flags fractional supply submissions; no attestation has been obtained.
 
 No supply figure in this document is a declaration of audited NOMNI supply or a reserve funding commitment.
+
+
+## 2026-10-29 evidence update: single-node Counterparty onchain supply reconciled
+
+This **supersedes the earlier third-party-explorer-only uncertainty** about the 900M supply in this document, but it does **not** supersede missing independent two-node verification or any reserve/issuer compliance block.
+
+A live read-only request to the official Counterparty public mainnet node reported backend_height=counterparty_height=973747, server_ready=true, ledger_state=Following. Asset NOMNI (id 6195210) is non-divisible and locked with 900,000,000 issued units, first positive issuance at block 421813, and 5 valid issuance-family records in total. The other issuance-family records were zero-quantity description/lock/transfer changes. No destruction rows were returned. The complete 915-row holdings endpoint reconciled **894,011,631 wallet/UTXO balance units + 5,988,369 open dispenser escrow units = 900,000,000**.
+
+This evidence proves neither a dollar peg nor liquid or legally eligible reserves. The issuer-authored NEO Index publication describes 800 million shares (historical offering concept), but the Counterparty creation was for 900 million; no later 100 million mint is evident in the returned history. Those 800 million shares may have a distinct legal meaning that must be resolved by the issuer.
+
+The 2017 Noone Society Standard Benchmark Agreement language and later resolution propose a multi-asset benchmark; the newly selected USD-backed NOMNI design is an additional proposed program with potentially distinct legal rights. Both must be documented without substituting internal CES NMNI/V-Dollar book entries for fiat reserve assets.
+
+Primary evidence memo: [STANDARD-BENCHMARK-EVIDENCE-REVIEW.md](./STANDARD-BENCHMARK-EVIDENCE-REVIEW.md). Machine-readable aggregate record: [PROTOCOL-SNAPSHOT-2026-10-29.json](./PROTOCOL-SNAPSHOT-2026-10-29.json). Testable offline validator: [counterparty-supply-audit.mjs](./counterparty-supply-audit.mjs). CES segregation validator: [ces-ledger-boundary.mjs](./ces-ledger-boundary.mjs).
+
+**Unchanged restrictions:** no onchain change, no guaranteed redemption, no recognition of legal issuer authority, no independent reserve attestation, no Coinbase integration beyond proposed native BTC provider, and no public stablecoin marketing.
