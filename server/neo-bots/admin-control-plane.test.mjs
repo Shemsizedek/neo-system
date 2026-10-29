@@ -5,14 +5,16 @@ import { createNeoBotsAdminControlPlane } from './admin-control-plane.mjs';
 import { createEnvCesCredentialProvider, cesSecretRequirements } from './deployment-secrets.mjs';
 
 test('deployment credential provider reads only explicitly trusted exchange login metadata', async()=>{
-  const env={NEO_CES_NMNI_USERNAME:'NMNI0000',NEO_CES_NMNI_PASSWORD:'vault-only',NEO_CES_NMNI_LOGIN_PATH:'/legacy-login.asp',NEO_CES_NMNI_SUCCESS_LOCATION_PATTERN:'^/win/'};
+  const env={NEO_CES_NMNI_USERNAME:'NMNI0000',NEO_CES_NMNI_PASSWORD:'vault-only',NEO_CES_NMNI_LOGIN_PATH:'/legacy-login.asp',NEO_CES_NMNI_SUCCESS_LOCATION_PATTERN:'^/win/',NEO_CES_NMNI_AUTHENTICATED_PATH:'/win/home.asp',NEO_CES_NMNI_AUTHENTICATED_TEXT:'Member home'};
   const provider=createEnvCesCredentialProvider(env);
   const result=await provider({exchangeId:'NMNI'});
   assert.equal(result.username,'NMNI0000');
   assert.equal(result.password,'vault-only');
   assert.equal(result.loginPath,'/legacy-login.asp');
   assert.equal(result.successLocationPattern,'^/win/');
-  assert.deepEqual(cesSecretRequirements('NMNI').required,['NEO_CES_NMNI_USERNAME','NEO_CES_NMNI_PASSWORD','NEO_CES_NMNI_LOGIN_PATH','NEO_CES_NMNI_SUCCESS_LOCATION_PATTERN']);
+  assert.equal(result.authenticatedPath,'/win/home.asp');
+  assert.equal(result.authenticatedText,'Member home');
+  assert.deepEqual(cesSecretRequirements('NMNI').required,['NEO_CES_NMNI_USERNAME','NEO_CES_NMNI_PASSWORD','NEO_CES_NMNI_LOGIN_PATH','NEO_CES_NMNI_SUCCESS_LOCATION_PATTERN','NEO_CES_NMNI_AUTHENTICATED_PATH','NEO_CES_NMNI_AUTHENTICATED_TEXT']);
 });
 
 test('deployment credential provider refuses untrusted default login route', async()=>{
@@ -39,3 +41,4 @@ test('approval control plane requires operator and redacts sensitive payload fie
   assert.equal(approved.status,'approved');
   assert.equal(approved.resolvedBy,'discord:operator-1');
 });
+
