@@ -43,6 +43,11 @@ export function createCesSessionAdapter({
   function resolveTrustedUrl(path) {
     const url = new URL(path, baseUrl);
     if (url.origin !== trustedOrigin) throw new Error(`CES cross-origin request blocked: ${url.origin}`);
+    // CES legacy links may embed uid/pw tokens in query strings. Refuse them
+    // before fetch, manifest creation, or accidental request logging.
+    if (url.search || url.hash || url.username || url.password) {
+      throw new Error('CES session URLs must not contain credentials or query strings');
+    }
     return url;
   }
 
@@ -133,6 +138,28 @@ export function createCesSessionAdapter({
 
   return {
     login, discoverForms, discoverLegacyControlPanel, getLegacyDiscoveryManifest,
+    async createVerifiedReportSession(exchange) {
+      // Fresh authenticated login and scoped GET-only report access.
+      const result = await login(exchange);
+      if (!result?.authenticated) throw new Error('Unverified CES report session');
+      const allowed = new Set([
+        '/_admin/reptrades.asp',
+        '/_admin/statsindex.asp',
+        '/_admin/groupmain.asp',
+        '/_admin/convrates.asp',
+      ]);
+      return Object.freeze({
+        exchangeId:exchange.exchangeId,authenticated:true,readOnly:true,
+        async get(path,options={}) {
+          if (options.method !== 'GET' || options.redirect !== 'manual') {
+            throw new Error('CES report requires explicit GET and manual redirects');
+          }
+          const url=resolveTrustedUrl(path);
+          if (!allowed.has(url.pathname)) throw new Error('CES report path not allowlisted');
+          return request(url.pathname,{method:'GET'});
+        },
+      });
+    },
     reviewTransaction(payload) {
       const path = payload.path || payload.discoveryPath;
       if (path) return discoverForms(payload.exchange, path);
@@ -210,11 +237,15 @@ export function createMemoryCookieJar() {
 export async function defaultSessionValidator({ response, credentials }) {
   const location = response.headers?.get?.('location') || '';
   const successMarker = credentials.successLocationPattern;
-  if (successMarker) {
-    const pattern = successMarker instanceof RegExp ? successMarker : new RegExp(String(successMarker), 'i');
-    return { authenticated: pattern.test(location), reason: 'configured-location-marker' };
+  if (!successMarker) {
+    return { authenticated: false, reason: 'authenticated-session-marker-required' };
   }
-  return { authenticated: response.status >= 200 && response.status < 300, reason: 'successful-http-response' };
+  // A 200 login page is not evidence of an authenticated session.
+  if (![302,303].includes(response.status)) {
+    return { authenticated: false, reason: 'expected-authentication-redirect' };
+  }
+  const pattern = successMarker instanceof RegExp ? successMarker : new RegExp(String(successMarker), 'i');
+  return { authenticated: Boolean(location) && pattern.test(location), reason: 'configured-location-marker' };
 }
 
 function splitSetCookieHeader(value) {
