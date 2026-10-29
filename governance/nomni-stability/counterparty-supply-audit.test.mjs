@@ -36,7 +36,7 @@ test('synchronized node supply equals issuance and balances plus dispenser escro
 
 test('historical 800m offering cannot replace chain evidence',()=>{
  assert.throws(()=>audit({asset:{result:{...base.asset.result,supply:800000000}}}),/Issuance minus/);
- assert.throws(()=>audit({issuances:{...base.issuances,result:base.issuances.result.map((x,i)=>i?x:{...x,quantity:800000000}}}),/historic creation/i);
+ assert.throws(()=>audit({issuances:{...base.issuances,result:base.issuances.result.map((x,i)=>i?x:{...x,quantity:800000000})}}),/historic creation/i);
 });
 
 test('does not accept stale, mismatched or unknown node/network states',()=>{
