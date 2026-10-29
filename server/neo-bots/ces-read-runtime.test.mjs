@@ -2,6 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { once } from 'node:events';
 import { createCesReadServer } from './ces-read-server.mjs';
+import http from 'node:http';
+import { mountCesRuntime } from '../../deploy/ces-read-runtime/mount.mjs';
 import { NMNI_TRADING_COLUMNS, parseNmniTradingReport, readNmniAdminReport } from './nmni-admin-reader.mjs';
 import { normalizeTradingSnapshot, createCesSourceStore } from './ces-source-store.mjs';
 
@@ -128,4 +130,17 @@ test('runtime requires explicit import enablement even with valid credentials', 
   await withServer({ env: { ...env, NEO_CES_IMPORT_ENABLED: '' }, store, reader: () => { throw new Error('must not read'); } }, async base => {
     assert.equal((await fetch(base + '/v1/collect-import', { method: 'POST', headers })).status, 403);
   });
+});
+
+test('shared staging mount preserves primary routes and applies CES authentication under its prefix', async () => {
+  const primary = http.createServer((req, res) => { res.writeHead(200, { 'content-type': 'application/json' }); res.end(JSON.stringify({ service: 'primary', path: req.url })); });
+  const server = mountCesRuntime({ primary, ces: createCesReadServer({ env, store }) });
+  server.listen(0, '127.0.0.1'); await once(server, 'listening');
+  const base = 'http://127.0.0.1:' + server.address().port;
+  try {
+    assert.deepEqual(await (await fetch(base + '/health')).json(), { service: 'primary', path: '/health' });
+    assert.equal((await (await fetch(base + '/ces/health')).json()).service, 'neo-ces-read-runtime');
+    assert.equal((await fetch(base + '/ces/v1/imports')).status, 401);
+    assert.equal((await fetch(base + '/ces/v1/status', { headers })).status, 200);
+  } finally { server.closeAllConnections(); await new Promise(resolve => server.close(resolve)); }
 });
