@@ -1,0 +1,19 @@
+name: Project 144 CES banking evidence boundary
+on:
+  pull_request:
+    paths:
+      - 'integrations/ces-banking/**'
+      - '.github/workflows/project144-ces-bank-evidence.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  offline-evidence:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: node --test integrations/ces-banking/*.test.mjs
+      - run: node --test server/neo-bots/ces-interface-policy.test.mjs server/neo-bots/ces-session-adapter.test.mjs
