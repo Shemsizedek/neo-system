@@ -14,8 +14,8 @@ export async function launchAuthenticatedNeopass({env=process.env,start}={}) {
 if(process.argv[1] && import.meta.url===new URL('file://'+process.argv[1]).href) {
   try {
     await launchAuthenticatedNeopass({start:async()=>{
-      const {startGissProductionServer}=await import('./giss-production.mjs');
-      return startGissProductionServer();
+      const {startNeoPlatformApi}=await import('./server.mjs');
+      return startNeoPlatformApi();
     }});
   }catch(error){
     console.error(JSON.stringify({error:'neopass_startup_blocked',checks:error.checks||null}));
