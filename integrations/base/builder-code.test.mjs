@@ -4,7 +4,7 @@ import { baseBuilderCodeSuffix, appendBaseBuilderAttribution, ERC8021_MARKER } f
 
 test('encodes canonical ERC-8021 schema 0 single-code example', () => {
   assert.equal(baseBuilderCodeSuffix('baseapp'),
-    '0x62617365617070070080218021802180218021802180218021');
+    '0x07626173656170700080218021802180218021802180218021');
   assert.equal(ERC8021_MARKER, '80218021802180218021802180218021');
 });
 
