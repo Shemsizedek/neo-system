@@ -8,7 +8,7 @@ export function baseBuilderCodeSuffix(code) {
     throw new TypeError('Builder Code must be 1-32 lowercase ASCII letters, digits, or underscores');
   }
   const bytes = Buffer.from(code, 'ascii');
-  return '0x' + bytes.toString('hex') + bytes.length.toString(16).padStart(2, '0')
+  return '0x' + bytes.length.toString(16).padStart(2, '0') + bytes.toString('hex')
     + '00' + ERC8021_MARKER;
 }
 
