@@ -5,6 +5,25 @@ import { generateLegacyRouteCandidates } from './ces-legacy-route-candidates.mjs
 
 const DEFAULT_BASE_URL = 'https://www.community-exchange.org';
 
+function safeCesFormMetadata(form) {
+  // Keep field *names* for discovery, never hidden values, CSRF tokens or
+  // credential-bearing actions. Raw values remain private to the login parser.
+  const url = new URL(form.action);
+  if (url.search || url.hash || url.username || url.password ||
+      url.origin !== DEFAULT_BASE_URL) return null;
+  return Object.freeze({
+    index:form.index,
+    method:form.method,
+    action:url.origin+url.pathname,
+    readOnly:form.readOnly,
+    fingerprint:form.fingerprint,
+    classification:classifyCesForm(form),
+    fields:Object.freeze((form.fields||[]).map(field=>Object.freeze({
+      name:field.name,tag:field.tag,type:field.type,required:field.required,
+    }))),
+  });
+}
+
 export function createCesSessionAdapter({
   baseUrl = DEFAULT_BASE_URL,
   fetchImpl = globalThis.fetch,
@@ -94,7 +113,7 @@ export function createCesSessionAdapter({
       const response = await sessionRequest(path);
       const html = await response.text();
       const pageUrl = resolveTrustedUrl(path).toString();
-      const forms = inventoryCesForms(html, { pageUrl }).map((form) => ({ ...form, classification: classifyCesForm(form) }));
+      const forms = inventoryCesForms(html, { pageUrl }).map(safeCesFormMetadata).filter(Boolean);
       return { ok: response.ok, mode: 'discovery-read-only', path, status: response.status, forms };
     });
   }
@@ -127,7 +146,7 @@ export function createCesSessionAdapter({
       return withSession(payload.exchange, async ({ exchange, request: sessionRequest }) => {
         const response = await sessionRequest('/win/virtual.asp');
         const text = await response.text();
-        return { ok: response.ok, mode: 'read-only', operation: 'reviewVirtualTrader', exchange, status: response.status, pageDetected: /Virtual Trader/i.test(text), forms: inventoryCesForms(text, { pageUrl: resolveTrustedUrl('/win/virtual.asp').toString() }).map((form) => ({ ...form, classification: classifyCesForm(form) })) };
+        return { ok: response.ok, mode: 'read-only', operation: 'reviewVirtualTrader', exchange, status: response.status, pageDetected: /Virtual Trader/i.test(text), forms: inventoryCesForms(text, { pageUrl: resolveTrustedUrl('/win/virtual.asp').toString() }).map(safeCesFormMetadata).filter(Boolean) };
       });
     },
     reviewInterexchangeSettlement(payload) { return discoverForms(payload.exchange, payload.path || '/win/virtual.asp'); },
