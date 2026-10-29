@@ -86,8 +86,4 @@ Original finance route:
 
 `Bitcoin / XCP / Counterparty Assets → ETHA → NEO Teller → Cash / Card / Merchant`
 
-## Partner integrations
-
-The [Cherokee Trinity integration](docs/project144/CHEROKEE-TRINITY-BRIDGE.md) links HALI, TSDU and WAYA source metadata into NEO Tokenworks and prepares their [retokenization on Bitcoin through Counterparty](docs/project144/CHEROKEE-TRINITY-COUNTERPARTY-RETOKENIZATION.md). It provides exact quantity mapping, read-only name checks and supply reconciliation; issuance, signing and broadcasting remain disabled.
-
 The Base44 project descriptors remain under `base44/` for later application integration.
