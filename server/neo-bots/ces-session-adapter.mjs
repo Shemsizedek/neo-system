@@ -39,6 +39,7 @@ export function createCesSessionAdapter({
   if (!manifestStore?.save || !manifestStore?.get) throw new Error('manifestStore with save/get is required');
 
   const trustedOrigin = new URL(baseUrl).origin;
+  let boundReportExchange = null;
 
   function resolveTrustedUrl(path) {
     const url = new URL(path, baseUrl);
@@ -139,6 +140,15 @@ export function createCesSessionAdapter({
   return {
     login, discoverForms, discoverLegacyControlPanel, getLegacyDiscoveryManifest,
     async createVerifiedReportSession(exchange) {
+      // One adapter instance per CES exchange. Shared cookie jars must not
+      // silently cross NMNI/XCPC account boundaries after authentication.
+      if (!exchange?.exchangeId || !/^(NMNI|XCPC)$/.test(exchange.exchangeId)) {
+        throw new Error('Unapproved CES report exchange');
+      }
+      if (boundReportExchange && boundReportExchange !== exchange.exchangeId) {
+        throw new Error('CES report session exchange isolation required');
+      }
+      boundReportExchange = exchange.exchangeId;
       // Fresh authenticated login and scoped GET-only report access.
       const result = await login(exchange);
       if (!result?.authenticated) throw new Error('Unverified CES report session');
