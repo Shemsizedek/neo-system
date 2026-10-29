@@ -12,7 +12,7 @@ export type CounterpartyHealth = {
 
 const API = 'https://api.counterparty.io:4000/v2/'
 const height = (value: unknown): number | null =>
-  typeof value === 'number' && Number.isSafeInteger(value) && value >= 0 ? value : null
+  typeof value === 'number' && Number.isSafeInteger(value) && value > 0 ? value : null
 
 export class CounterpartyHealthAdapter {
   private fetchImpl: typeof fetch
@@ -21,7 +21,7 @@ export class CounterpartyHealthAdapter {
   async read(signal?: AbortSignal): Promise<CounterpartyHealth> {
     const timeout = AbortSignal.timeout(10000)
     const response = await this.fetchImpl(API, {
-      method: 'GET', credentials: 'omit', redirect: 'error',
+      method: 'GET', credentials: 'omit', redirect: 'error', cache: 'no-store',
       headers: {Accept: 'application/json'},
       signal: signal ? AbortSignal.any([signal, timeout]) : timeout,
     })
@@ -35,8 +35,9 @@ export class CounterpartyHealthAdapter {
     const bitcoinHeight = height(status.backend_height)
     const counterpartyHeight = height(status.counterparty_height)
     const ledgerState = typeof status.ledger_state === 'string' ? status.ledger_state : null
-    const headerReady = response.headers.get('X-COUNTERPARTY-READY')
-    const known = typeof status.server_ready === 'boolean' && bitcoinHeight !== null && counterpartyHeight !== null && ledgerState !== null
+    const headerReady = response.headers.get('X-COUNTERPARTY-READY')?.toLowerCase() ?? null
+    const known = typeof status.server_ready === 'boolean' && bitcoinHeight !== null && counterpartyHeight !== null && ledgerState !== null &&
+      (headerReady === null || headerReady === 'true' || headerReady === 'false')
     const ready = known && status.server_ready === true && ledgerState === 'Following' &&
       counterpartyHeight! >= bitcoinHeight! - 1 && headerReady !== 'false'
     const lagging = known && (status.server_ready === false || ledgerState !== 'Following' ||
