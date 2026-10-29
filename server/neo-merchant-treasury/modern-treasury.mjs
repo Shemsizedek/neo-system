@@ -122,6 +122,37 @@ export function createModernTreasuryConnector({
     }
   }
 
+  async function describeKeyPolicy() {
+    const { data: key } = await request('/api_keys/current');
+    const summarize = permissions => Array.isArray(permissions) ? permissions.map(item => {
+      if (!item || typeof item !== 'object') return { type: typeof item };
+      const actions = Array.isArray(item.actions) ? item.actions : [];
+      const knownActions = ['read', 'view', 'create', 'update', 'edit', 'delete', 'manage', 'write'];
+      return {
+        fields: Object.keys(item),
+        resource: typeof item.resource === 'string' && /^[a-z_]{1,64}$/.test(item.resource) ? item.resource : null,
+        actions: actions.filter(value => knownActions.includes(value)),
+        unrecognized_actions: actions.filter(value => !knownActions.includes(value)).length
+      };
+    }) : null;
+    return {
+      object: key?.object === 'api_key' ? 'api_key' : 'unexpected',
+      fields: key && typeof key === 'object' ? Object.keys(key) : [],
+      sandbox: key?.live_mode === false,
+      decommissioned: key?.decommissioned === true,
+      organization_matches: key?.organization_id === organizationId,
+      roles: Array.isArray(key?.roles) ? key.roles.map(role => typeof role === 'string' ? {
+        type: 'string',
+        scope: /^[a-z_]+:(read|view|manage|write)(:[A-Za-z0-9_-]+)?$/.test(role) ? role.split(':').slice(0, 2).join(':') : null
+      } : {
+        type: role && typeof role === 'object' ? 'object' : typeof role,
+        fields: role && typeof role === 'object' ? Object.keys(role) : [],
+        permissions: summarize(role?.permissions)
+      }) : null,
+      permissions: summarize(key?.permissions)
+    };
+  }
+
   async function listInternalAccounts({ perPage = 25, afterCursor, currency } = {}) {
     if (!Number.isInteger(perPage) || perPage < 1 || perPage > 100 ||
         (afterCursor !== undefined && (typeof afterCursor !== 'string' || !CURSOR.test(afterCursor))) ||
@@ -162,5 +193,5 @@ export function createModernTreasuryConnector({
     }
   }
 
-  return Object.freeze({ status, verifyConnection, listInternalAccounts });
+  return Object.freeze({ status, verifyConnection, listInternalAccounts, describeKeyPolicy });
 }

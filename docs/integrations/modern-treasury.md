@@ -93,6 +93,8 @@ Local validation on October 29, 2026: dependency installation and production bui
 
 The next gate adds a shared HTTP handler, an isolated staging host, and a wrapper that can host the sandbox connector alongside the existing Counter staging API. All 32 merchant treasury tests and all 11 Counter backend tests pass. Tests cover missing/wrong operator credentials, separation of merchant and treasury credentials, preservation of Counter routes, GET-only treasury access, and sanitized exceptions.
 
+An opt-in startup check (`NEO_TREASURY_VERIFY_ON_START=true`) now exercises the actual loopback HTTP routes: unauthenticated requests must fail, authenticated verification must report sandbox/read-only mode, and account discovery must return sandbox objects. It emits only status codes, a page count and sanitized policy structure on failure. It never logs credentials, account identifiers or provider error bodies. Counter remains available if verification fails. The expanded merchant treasury suite passes 37 tests; all 11 Counter regressions also pass.
+
 ### Render staging decision and reviewed configuration
 
 The verified NEO Render workspace has no existing merchant treasury runtime. Creation of a dedicated free `neo-modern-treasury-staging` service was rejected with **Hobby Tier is limited to 25 services**. No service was created and no workspace upgrade or service deletion was performed.
