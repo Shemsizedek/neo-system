@@ -641,6 +641,20 @@
         "docs/NEO-G144-CREDIT-LIFECYCLE.md",
         ".github/workflows/gate-144-credit-lifecycle.yml"
       ]
+    },
+    {
+      "capability_id": "NEO-VM-G1-NVM-BVM",
+      "status": "PARTIAL",
+      "scope": "Local regtest-profile compiler and Bitcoin Script subset evaluator; Bitcoin Core validation and production integrations pending",
+      "evidence": [
+        "architecture/neo-virtual-machines.json",
+        "core/neo-bvm/runtime.mjs",
+        "core/neo-nvm/runtime.mjs",
+        "core/neo-bvm/runtime.test.mjs",
+        "core/neo-nvm/runtime.test.mjs",
+        "scripts/neo-vm-demo.mjs",
+        "docs/NEO-NVM-BVM-GATE-1.md"
+      ]
     }
   ],
   "autopilot": {
