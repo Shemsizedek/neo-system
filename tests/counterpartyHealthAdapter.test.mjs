@@ -20,6 +20,7 @@ test('read-only and credential-free Counterparty Core v2 on Bitcoin mainnet', as
   assert.equal(called.options.method, 'GET')
   assert.equal(called.options.credentials, 'omit')
   assert.equal(called.options.redirect, 'error')
+  assert.equal(called.options.cache, 'no-store')
   assert.equal(data.network, 'bitcoin-mainnet')
   assert.equal(data.readiness, 'ready')
   assert.equal(data.counterpartyHeight, 900001)
@@ -48,4 +49,11 @@ test('honors cancellation before transporting data', async () => {
   controller.abort()
   const adapter = new CounterpartyHealthAdapter(async (_url, options) => {options.signal.throwIfAborted()})
   await assert.rejects(adapter.read(controller.signal), {name: 'AbortError'})
+})
+
+test('invalid heights and unknown readiness headers remain unknown', async () => {
+  const zero = new CounterpartyHealthAdapter(async () => response(payload({backend_height: 0, counterparty_height: 0})))
+  assert.equal((await zero.read()).readiness, 'unknown')
+  const oddHeader = new CounterpartyHealthAdapter(async () => response(payload(), {headers: {'X-COUNTERPARTY-READY': 'maybe'}}))
+  assert.equal((await oddHeader.read()).readiness, 'unknown')
 })
