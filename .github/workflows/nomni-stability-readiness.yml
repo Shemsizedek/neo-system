@@ -1,0 +1,18 @@
+name: NOMNI stable-value readiness safeguards
+on:
+  pull_request:
+    paths:
+      - 'governance/nomni-stability/**'
+      - '.github/workflows/nomni-stability-readiness.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  evidence-only:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: node --test governance/nomni-stability/readiness.test.mjs
