@@ -130,3 +130,32 @@ test('CES form discovery redacts hidden credentials and excludes query-bearing a
  assert.equal(Object.hasOwn(result.forms[0].fields[0],'value'),false);
  assert.doesNotMatch(JSON.stringify(result),new RegExp(marker));
 });
+
+
+test('default CES session validation rejects HTTP-200 and absent success marker', async () => {
+  const fixture='<form method="post" action="/login.asp"><input name="account"><input name="password" type="password"></form>';
+  const adapter=createCesSessionAdapter({
+    fetchImpl:async(_url,options={}) => (options.method==='POST' ?
+      response('<h1>Welcome</h1>',{status:200}) : response(fixture)),
+    credentialProvider:async()=>({
+      username:'synthetic-admin',password:'synthetic-only',
+      loginPath:'/login.asp',submitPath:'/login.asp',
+      usernameField:'account',passwordField:'password',
+    }),
+  });
+  await assert.rejects(()=>adapter.login(resolveCesIdentity('NMNI')),/did not validate an authenticated session/);
+});
+
+test('legacy CES credential-in-query login path is rejected before any request',async()=>{
+ let calls=0;
+ const adapter=createCesSessionAdapter({
+  fetchImpl:async()=>{calls++;return response('');},
+  credentialProvider:async()=>({
+   username:'synthetic-admin',password:'synthetic-only',
+   loginPath:'/login.asp?pw=bogus',submitPath:'/login.asp',
+   successLocationPattern:'^/win/',
+  }),
+ });
+ await assert.rejects(()=>adapter.login(resolveCesIdentity('NMNI')),/query strings/);
+ assert.equal(calls,0);
+});
