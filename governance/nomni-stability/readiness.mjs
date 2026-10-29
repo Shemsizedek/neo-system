@@ -65,7 +65,7 @@ export function assertNoPrematureNomniStablecoinClaim(metadata) {
   }
   const fields = [metadata.instrument_type, metadata.classification, metadata.description, metadata.status]
     .filter(v => typeof v === 'string').join(' ');
-  if (/stable[ -]?coin|fully[ -]?backed|guaranteed[ -]?redeemable|usd[ -]?pegged|1\s*NOMNI\s*=\s*\$?1/i.test(fields)) {
+  if (/stable[ -]?coin|fully[ -]?backed|usd[ -]?backed|dollar[ -]?backed|guaranteed[ -]?redeemable|usd[ -]?pegged|1\s*NOMNI\s*=\s*\$?1/i.test(fields)) {
     throw new Error('Stablecoin, backing, peg and redemption claims require independent approval');
   }
   return true;
