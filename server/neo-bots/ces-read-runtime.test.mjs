@@ -92,6 +92,17 @@ test('runtime health is public but control endpoints and data require bearer aut
   });
 });
 
+test('credential-free runtime reports health while all control and import routes remain closed', async () => {
+  await withServer({ env: {} }, async base => {
+    const health = await (await fetch(base + '/health')).json();
+    assert.equal(health.ok, true);
+    assert.equal(health.database, false);
+    for (const path of ['/v1/status', '/v1/imports', '/v1/collect-import', '/v1/auth/check']) {
+      assert.equal((await fetch(base + path, { method: path.includes('check') || path.includes('collect') ? 'POST' : 'GET', headers })).status, 401);
+    }
+  });
+});
+
 test('runtime fails closed without CES credentials or administrator proof', async () => {
   await withServer({ env: { NEO_CES_RUNTIME_TOKEN: token, NEO_CES_IMPORT_ENABLED: 'true' }, store, reader: () => { throw new Error('must not read'); } }, async base => {
     assert.equal((await fetch(base + '/v1/collect-import', { method: 'POST', headers })).status, 503);
