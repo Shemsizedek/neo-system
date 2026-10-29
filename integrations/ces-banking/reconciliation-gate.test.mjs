@@ -51,7 +51,10 @@ test('disallow PII, account metadata, ETH/Base and fabricated bank reserve attes
 test('simulation activation never converts input claims to money movement or external bank access',()=>{
  const result=assessCesBankingActivation({cesBotAuthVerified:true,readonlySessionVerified:true,
  modernTreasuryReadRoleVerified:true,fedwireBankParticipationVerified:true});
- assert.equal(result.cesReadOnlyReady,true);
+ assert.equal(result.cesBotAuthenticationClaimed,true);
+ assert.equal(result.cesReadOnlyReady,false);
+ assert.equal(result.modernTreasuryReadOnlyReady,false);
+ assert.equal(result.fedwireBankParticipationVerified,false);
  assert.equal(result.liveMoneyMovementEnabled,false);
  assert.equal(result.liveFederatedBankingEnabled,false);
  assert.equal(result.needsIndependentCredentialAndBankValidation,true);
