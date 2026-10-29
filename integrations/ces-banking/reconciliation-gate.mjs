@@ -92,10 +92,13 @@ export function createReadOnlyEvidencePacket({observations}={}){
 export function assessCesBankingActivation({cesBotAuthVerified=false,readonlySessionVerified=false,
   modernTreasuryReadRoleVerified=false,fedwireBankParticipationVerified=false}={}){
  return Object.freeze({
-  cesBotAuthenticated:cesBotAuthVerified===true&&readonlySessionVerified===true,
-  cesReadOnlyReady:cesBotAuthVerified===true&&readonlySessionVerified===true,
-  modernTreasuryReadOnlyReady:modernTreasuryReadRoleVerified===true,
-  fedwireBankParticipationEvidencePresent:fedwireBankParticipationVerified===true,
+  cesBotAuthenticationClaimed:cesBotAuthVerified===true&&readonlySessionVerified===true,
+  modernTreasuryReadAccessClaimed:modernTreasuryReadRoleVerified===true,
+  fedwireBankParticipationClaimed:fedwireBankParticipationVerified===true,
+  cesBotAuthenticated:false,
+  cesReadOnlyReady:false,
+  modernTreasuryReadOnlyReady:false,
+  fedwireBankParticipationVerified:false,
   liveFederatedBankingEnabled:false,
   liveMoneyMovementEnabled:false,
   needsIndependentCredentialAndBankValidation:true,
