@@ -48,3 +48,14 @@ Primary sources:
 Issuer legal identity/authorization, verified NOMNI total outstanding supply, legal disposition of existing holders, segregated custodian reserve account, authenticated eligible reserve inventory, independent assurance, operational redemption terms, and compliance signoff are **not yet verified**.
 
 The code must stay draft and fail closed. No issuance, metadata changes, NEO Bank live settlement or financial transactions are authorized by this decision.
+
+
+## Discovery requiring explicit review — not audited protocol state
+
+An independently operated third-party Counterparty explorer currently reports **900,000,000 NOMNI units, non-divisible, issuance locked**. This is not NEO's confirmed ledger audit. At $1 for every existing outstanding unit, the illustrative full backing amount would be **$900,000,000** before liquidity/capital buffers. The project must not represent that this reserve exists or assume that already-issued units can acquire new issuer obligations by changing metadata.
+
+Sources: https://horizon.market/assets/NOMNI and official protocol reference https://apidocs.counterparty.io/.
+
+**Required verification:** read-only GET /v2/assets/NOMNI from a synced Counterparty Core node, inspect total and outstanding supply, divisibility, lock status, issuer, and chain heights, then reconcile historical issuance/destruction, ownership and balances against a second independent indexer. Block issuance/redemption until complete. The reserve arithmetic code requires a reported non-divisible property and flags fractional supply submissions; no attestation has been obtained.
+
+No supply figure in this document is a declaration of audited NOMNI supply or a reserve funding commitment.
