@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {launchAuthenticatedNeopass} from './neopass-authenticated-entry.mjs';
-const ready={GOOGLE_CLOUD_PROJECT:'example',NEO_PASS_JWT_SECRET:'x'.repeat(40),GOOGLE_OAUTH_CLIENT_ID:'test-client',NEO_EXECUTIVE_ADMIN_EMAIL:'admin@example.com'};
+const ready={NEO_PASS_DB_PATH:'/var/data/neopass/identity.sqlite',NEO_PASS_STORAGE_DURABLE:'true',NEO_PASS_ORIGIN:'https://egov.holytemples.org',NEO_PASS_JWT_SECRET:'x'.repeat(40)};
 test('missing configuration never starts authentication runtime',async()=>{
  let called=false;
  await assert.rejects(()=>launchAuthenticatedNeopass({env:{},start:()=>{called=true;}}),/neopass_configuration_incomplete/);

@@ -8,11 +8,11 @@ test('missing NEO Pass configuration fails closed without values',()=>{
 });
 test('complete configuration reports presence but never echoes credentials',()=>{
  const secret='s'.repeat(64),client='client-secret-value';
- const status=inspectNeopassReadiness({GOOGLE_CLOUD_PROJECT:'example',NEO_PASS_JWT_SECRET:secret,GOOGLE_OAUTH_CLIENT_ID:client,NEO_EXECUTIVE_ADMIN_EMAIL:'admin@example.com'});
+ const status=inspectNeopassReadiness({NEO_PASS_DB_PATH:'/var/data/neopass/identity.sqlite',NEO_PASS_STORAGE_DURABLE:'true',NEO_PASS_ORIGIN:'https://egov.holytemples.org',NEO_PASS_JWT_SECRET:secret,});
  assert.equal(status.ready,true);assert.equal(JSON.stringify(status).includes(secret),false);
  assert.equal(JSON.stringify(status).includes(client),false);
 });
 test('short signing key fails readiness',()=>{
- const s=inspectNeopassReadiness({GOOGLE_CLOUD_PROJECT:'example',NEO_PASS_JWT_SECRET:'short',GOOGLE_OAUTH_CLIENT_ID:'client',NEO_EXECUTIVE_ADMIN_EMAIL:'admin@example.com'});
+ const s=inspectNeopassReadiness({NEO_PASS_DB_PATH:'/var/data/neopass/identity.sqlite',NEO_PASS_STORAGE_DURABLE:'true',NEO_PASS_ORIGIN:'https://egov.holytemples.org',NEO_PASS_JWT_SECRET:'short',});
  assert.equal(s.ready,false);
 });
