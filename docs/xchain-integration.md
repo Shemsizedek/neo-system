@@ -1,6 +1,6 @@
 # XChain integration
 
-NEO Explorer renders a dedicated XChain testnet panel with network status and token lookup for TBTC, TLTC and TDOGE. The client uses the public documented explorer REST API with GET only, no credentials, a ten-second timeout, cancellation and freshness reporting. Unknown freshness remains unknown; stale or halted data is not presented as current.
+NEO Explorer renders a dedicated XChain testnet panel with network status and token lookup for Bitcoin testnet (TBTC) only. The client uses the public documented explorer REST API with GET only, no credentials, a ten-second timeout, cancellation and freshness reporting. The adapter rejects all other networks before transport, and status output is projected onto Bitcoin alone. Unknown freshness remains unknown; stale or halted data is not presented as current.
 
 XChain Platform currently advertises testnet only. It is distinct from the former Counterparty explorer at xchain.io. Historical NOMNI archive targets remain historical records. XChain results never enter Counterparty treasury registries, production market quotes, or Crown Chain ownership/valuation evidence.
 

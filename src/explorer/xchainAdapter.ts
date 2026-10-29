@@ -1,5 +1,5 @@
 /** XChain Platform testnet data is distinct from Counterparty mainnet assets. */
-export const XCHAIN_NETWORKS = ['TBTC', 'TLTC', 'TDOGE'] as const
+export const XCHAIN_NETWORKS = ['TBTC'] as const
 export type XChainNetwork = typeof XCHAIN_NETWORKS[number]
 export type XChainResult = {
   network: XChainNetwork
@@ -12,7 +12,7 @@ export class XChainExplorerAdapter {
   private fetchImpl: typeof fetch
   constructor(fetchImpl: typeof fetch = fetch) { this.fetchImpl = fetchImpl }
   async read(network: XChainNetwork, resource: 'status' | 'network' | 'tokens', query?: string, signal?: AbortSignal): Promise<XChainResult> {
-    if (!XCHAIN_NETWORKS.includes(network)) throw new Error('Only XChain testnets are enabled.')
+    if (!XCHAIN_NETWORKS.includes(network)) throw new Error('Only Bitcoin testnet is enabled.')
     if (!['status', 'network', 'tokens'].includes(resource)) throw new Error('Unsupported XChain resource.')
     if (resource === 'tokens' && (!query || !/^[A-Za-z0-9_.-]{1,128}$/.test(query))) throw new Error('Enter a valid token ticker.')
     const path = resource === 'tokens' ? 'tokens/' + encodeURIComponent(query!) + '/token?limit=20' : resource
@@ -35,6 +35,12 @@ export class XChainExplorerAdapter {
       freshness = status.stale?.[network] === true || status.replica_halted?.[network] === true ? 'stale'
         : status.stale?.[network] === false && status.replica_halted?.[network] === false && status.available?.[network] != null ? 'live' : 'unknown'
     }
-    return {network, source, observedAt: new Date().toISOString(), freshness, data: envelope.data}
+    const data = resource === 'status' ? Object.fromEntries(
+      ['supported', 'available', 'last_block', 'stale', 'replica_halted', 'decoder_health', 'tip_age_seconds'].map(key => {
+        const values = (envelope.data as Record<string, unknown>)[key]
+        return [key, values && typeof values === 'object' ? (values as Record<string, unknown>)[network] ?? null : null]
+      })
+    ) : envelope.data
+    return {network, source, observedAt: new Date().toISOString(), freshness, data}
   }
 }

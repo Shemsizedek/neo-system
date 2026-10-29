@@ -1,9 +1,9 @@
 import {useEffect, useState} from 'react'
-import {XCHAIN_NETWORKS, XChainExplorerAdapter} from './xchainAdapter'
-import type {XChainNetwork, XChainResult} from './xchainAdapter'
+import {XChainExplorerAdapter} from './xchainAdapter'
+import type {XChainResult} from './xchainAdapter'
 
 export function XChainPanel() {
-  const [network, setNetwork] = useState<XChainNetwork>('TBTC')
+  const network = 'TBTC' as const
   const [ticker, setTicker] = useState('XCHAIN')
   const [request, setRequest] = useState<{resource: 'status' | 'tokens'; query?: string; revision: number}>({resource: 'status', revision: 0})
   const [result, setResult] = useState<XChainResult | null>(null)
@@ -21,11 +21,11 @@ export function XChainPanel() {
     })
     return () => controller.abort()
   }, [network, request])
-  return <section className="card explorer-panel" aria-label="XChain testnet connection">
-    <div className="explorer-panel-title"><div><span>NEOChain • XChain Platform</span><h3>XChain testnet explorer</h3></div><em>TESTNET ONLY</em></div>
+  return <section className="card explorer-panel" aria-label="XChain Bitcoin testnet connection">
+    <div className="explorer-panel-title"><div><span>NEOChain • XChain Platform</span><h3>XChain Bitcoin explorer</h3></div><em>TESTNET ONLY</em></div>
     <p>Explore XChain independently of Counterparty. Testnet tokens do not establish ownership, backing, or value of NOMNI or other production assets.</p>
     <form className="explorer-actions" onSubmit={event => {event.preventDefault(); setRequest(previous => ({resource: 'tokens', query: ticker.trim(), revision: previous.revision + 1}))}}>
-      <label>Test network <select value={network} onChange={event => setNetwork(event.target.value as XChainNetwork)}>{XCHAIN_NETWORKS.map(code => <option key={code}>{code}</option>)}</select></label>
+      <span>Bitcoin testnet (TBTC)</span>
       <label>Token ticker <input value={ticker} onChange={event => setTicker(event.target.value)} maxLength={128} required pattern="[A-Za-z0-9_.-]{1,128}" /></label>
       <button type="submit">Look up token</button>
       <button type="button" onClick={() => setRequest(previous => ({resource: 'status', revision: previous.revision + 1}))}>Refresh status</button>

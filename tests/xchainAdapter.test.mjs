@@ -19,7 +19,7 @@ test('uses documented testnet token route and read-only credential-free requests
 })
 test('rejects mainnet, unknown resources and path injection before fetching', async () => {
   const adapter = new XChainExplorerAdapter(() => {throw new Error('unexpected fetch')})
-  await assert.rejects(adapter.read('BTC', 'status'), /testnets/)
+  await assert.rejects(adapter.read('BTC', 'status'), /Bitcoin testnet/)
   await assert.rejects(adapter.read('TBTC', 'broadcast'), /Unsupported/)
   await assert.rejects(adapter.read('TBTC', 'tokens', '../NOMNI'), /ticker/)
 })
@@ -32,14 +32,33 @@ test('stale markers override live headers; missing markers remain unknown', asyn
   assert.equal((await new XChainExplorerAdapter(async () => response({data:[]})).read('TBTC','tokens','XCHAIN')).freshness, 'unknown')
 })
 test('status requires explicit freshness and halt checks for selected network', async () => {
-  const read = async data => (await new XChainExplorerAdapter(async () => response({data})).read('TLTC','status')).freshness
-  assert.equal(await read({available:{TLTC:'Litecoin testnet'}, stale:{TLTC:false}, replica_halted:{TLTC:false}}), 'live')
-  assert.equal(await read({available:{TLTC:'Litecoin testnet'}, stale:{TLTC:false}, replica_halted:{TLTC:true}}), 'stale')
-  assert.equal(await read({available:{TLTC:'Litecoin testnet'}, stale:{TLTC:false}}), 'unknown')
+  const read = async data => (await new XChainExplorerAdapter(async () => response({data})).read('TBTC','status')).freshness
+  assert.equal(await read({available:{TBTC:'Bitcoin testnet'}, stale:{TBTC:false}, replica_halted:{TBTC:false}}), 'live')
+  assert.equal(await read({available:{TBTC:'Bitcoin testnet'}, stale:{TBTC:false}, replica_halted:{TBTC:true}}), 'stale')
+  assert.equal(await read({available:{TBTC:'Bitcoin testnet'}, stale:{TBTC:false}}), 'unknown')
 })
 test('propagates cancellation to transport', async () => {
   const controller = new AbortController()
   controller.abort()
   const adapter = new XChainExplorerAdapter(async (_url, options) => {options.signal.throwIfAborted()})
   await assert.rejects(adapter.read('TBTC','status',undefined,controller.signal), {name:'AbortError'})
+})
+
+test('rejects every non-Bitcoin network before transport', async () => {
+  let calls = 0
+  const adapter = new XChainExplorerAdapter(async () => { calls++; throw new Error('unexpected transport') })
+  for (const coin of ['TLTC','TDOGE','LTC','DOGE','BTC','RBTC']) {
+    await assert.rejects(adapter.read(coin,'status'), /Only Bitcoin testnet/)
+  }
+  assert.equal(calls, 0)
+})
+test('projects status onto Bitcoin without exposing other network records', async () => {
+  const result = await new XChainExplorerAdapter(async () => response({data:{
+    available:{TBTC:'Bitcoin testnet',TLTC:'Litecoin testnet'},
+    last_block:{TBTC:100,TLTC:200},
+    stale:{TBTC:false,TLTC:false}, replica_halted:{TBTC:false,TLTC:false}
+  }})).read('TBTC','status')
+  assert.equal(result.data.last_block,100)
+  assert.equal(result.data.available,'Bitcoin testnet')
+  assert.equal(JSON.stringify(result.data).includes('TLTC'),false)
 })
