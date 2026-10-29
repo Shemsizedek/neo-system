@@ -125,6 +125,7 @@
     "neo-merchant-network:test": "node --test server/neo-merchant-network/*.test.mjs",
     "neo-merchant-treasury:server": "node server/neo-merchant-treasury/server.mjs",
     "neo-merchant-treasury:test": "node --test server/neo-merchant-treasury/*.test.mjs",
+    "modern-treasury:check": "node scripts/check-modern-treasury.mjs",
     "neo-conversion:server": "node server/neo-conversion/server.mjs",
     "neo-conversion:test": "node --test server/neo-conversion/*.test.mjs",
     "neo-market-router:server": "node server/neo-router-market/server.mjs",

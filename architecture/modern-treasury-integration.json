@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "project": "NEO System — Project 144",
+  "integration": "modern-treasury",
+  "reviewed_on": "2026-10-29",
+  "accountable_owner": "NEOsync",
+  "workstreams": ["NEO Core", "NEO Counter", "NEO Merchant Treasury"],
+  "purpose": "Verify a restricted sandbox API key and discover sandbox internal accounts without moving money or changing NEO ledger balances.",
+  "source_host": "server/neo-merchant-treasury/server.mjs",
+  "upstream_origin": "https://app.moderntreasury.com",
+  "environment": "sandbox",
+  "access": "NEO_MERCHANT_TREASURY_OPERATOR_TOKEN",
+  "upstream_methods": ["GET"],
+  "upstream_paths": ["/api/api_keys/current", "/api/ping", "/api/internal_accounts"],
+  "secret_variables": ["MODERN_TREASURY_ORGANIZATION_ID", "MODERN_TREASURY_API_KEY"],
+  "controls": {
+    "server_side_credentials_only": true,
+    "reject_production_keys": true,
+    "reject_manage_permissions": true,
+    "verify_key_before_each_account_page": true,
+    "follow_redirects": false,
+    "request_timeout_ms": 10000,
+    "max_response_bytes": 2097152,
+    "account_projection": ["id", "currency", "live_mode"],
+    "pagination": "Use X-After-Cursor, including on empty pages; do not infer completion from page length.",
+    "payment_execution_enabled": false,
+    "webhook_receiver_enabled": false,
+    "automatic_ledger_credit_enabled": false
+  },
+  "readiness": {
+    "source_implementation": "implemented",
+    "account_access": "blocked_on_email_verification_observed_in_dashboard",
+    "credentials": "not_provisioned_or_tested",
+    "deployment": "not_attempted",
+    "end_to_end_connection": "not_verified"
+  },
+  "dependencies": [
+    "Owner completes Modern Treasury email verification and any required account agreements.",
+    "Owner supplies a sandbox key restricted to Accounts Read and Developer Read in the existing server secret manager.",
+    "Confirm the authorized existing staging runtime; no new paid service is requested."
+  ],
+  "next_milestone": "Authenticated sandbox key verification plus operator-only account discovery on the selected staging runtime.",
+  "runbook": "docs/integrations/modern-treasury.md"
+}

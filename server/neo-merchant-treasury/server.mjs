@@ -1,15 +1,27 @@
 import http from 'node:http'
+import {createModernTreasuryConnector,ModernTreasuryError} from './modern-treasury.mjs'
 import {createMerchantLedger,creditFinalPayment,holdReserve,releaseReserve,createSettlementBatch,reconcileBatch,createPayout,approvePayout,recordPayoutEvidence,createRefund,createDispute,treasurySnapshot} from './fabric.mjs'
 const PORT=Number(process.env.PORT||8812),TOKEN=String(process.env.NEO_MERCHANT_TREASURY_OPERATOR_TOKEN||'')
 const ledger=createMerchantLedger(),batches=[],payouts=[],refunds=[],disputes=[],reserves=[]
 const json=(res,s,b)=>{res.writeHead(s,{'content-type':'application/json; charset=utf-8','cache-control':'no-store'});res.end(JSON.stringify(b))}
-const auth=req=>TOKEN&&String(req.headers.authorization||'')===`Bearer ${TOKEN}`
+const auth=(req,token)=>token&&String(req.headers.authorization||'')===`Bearer ${token}`
 const body=async req=>{const c=[];for await(const x of req)c.push(x);return c.length?JSON.parse(Buffer.concat(c).toString('utf8')):{}}
-export function createTreasuryServer(){return http.createServer(async(req,res)=>{try{
+export function createTreasuryServer({operatorToken=TOKEN,modernTreasury=createModernTreasuryConnector()}={}){return http.createServer(async(req,res)=>{try{
  const u=new URL(req.url||'/','http://neo.local')
  if(req.method==='GET'&&u.pathname==='/health')return json(res,200,{ok:true,service:'neo-merchant-treasury'})
  if(req.method==='GET'&&u.pathname==='/v1/estate/merchant-treasury')return json(res,200,treasurySnapshot({ledger,batches,payouts,refunds,disputes,reserves}))
- if(!auth(req))return json(res,401,{error:'operator_auth_required'})
+ if(!auth(req,operatorToken))return json(res,401,{error:'operator_auth_required'})
+ const mt='/v1/integrations/modern-treasury'
+ if(u.pathname===mt||u.pathname.startsWith(`${mt}/`)){
+  if(req.method!=='GET'){res.setHeader('allow','GET');return json(res,405,{error:'modern_treasury_read_only',read_only:true})}
+  const params=[...u.searchParams.keys()]
+  const allowed=u.pathname===`${mt}/internal-accounts`?['per_page','after_cursor','currency']:[]
+  if(params.some(key=>!allowed.includes(key)||u.searchParams.getAll(key).length!==1))return json(res,400,{error:'modern_treasury_invalid_query',read_only:true})
+  if(u.pathname===`${mt}/status`)return json(res,200,modernTreasury.status())
+  if(u.pathname===`${mt}/check`)return json(res,200,await modernTreasury.verifyConnection())
+  if(u.pathname===`${mt}/internal-accounts`)return json(res,200,await modernTreasury.listInternalAccounts({perPage:u.searchParams.has('per_page')?Number(u.searchParams.get('per_page')):25,afterCursor:u.searchParams.get('after_cursor')??undefined,currency:u.searchParams.get('currency')??undefined}))
+  return json(res,404,{error:'not_found',read_only:true})
+ }
  if(req.method==='POST'&&u.pathname==='/v1/credits'){return json(res,201,creditFinalPayment(ledger,await body(req)))}
  if(req.method==='POST'&&u.pathname==='/v1/reserves'){const x=holdReserve(ledger,await body(req));reserves.push(x.reserve);return json(res,201,x)}
  const rr=u.pathname.match(/^\/v1\/reserves\/([^/]+)\/release$/);if(req.method==='POST'&&rr){const r=reserves.find(x=>x.reserve_id===decodeURIComponent(rr[1]));if(!r)return json(res,404,{error:'reserve_not_found'});const x=releaseReserve(ledger,r);Object.assign(r,x.reserve);return json(res,200,x)}
@@ -21,5 +33,5 @@ export function createTreasuryServer(){return http.createServer(async(req,res)=>
  if(req.method==='POST'&&u.pathname==='/v1/refunds'){const r=createRefund(await body(req));refunds.push(r);return json(res,201,r)}
  if(req.method==='POST'&&u.pathname==='/v1/disputes'){const d=createDispute(await body(req));disputes.push(d);return json(res,201,d)}
  return json(res,404,{error:'not_found'})
-}catch(e){return json(res,500,{error:'neo_merchant_treasury_error',detail:String(e?.message||e)})}})}
+}catch(e){if(e instanceof ModernTreasuryError)return json(res,e.status,{error:e.code,read_only:true,payment_execution_enabled:false});return json(res,500,{error:'neo_merchant_treasury_error',detail:String(e?.message||e)})}})}
 if(import.meta.url===`file://${process.argv[1]}`)createTreasuryServer().listen(PORT,'0.0.0.0')
