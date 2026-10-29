@@ -3,6 +3,7 @@ import {createHash,randomUUID} from 'node:crypto';
 const clean=value=>String(value??'').trim();
 const subjectKey=subject=>createHash('sha256').update(clean(subject)).digest('hex');
 const publicAccount=value=>({accountNumber:value.account_number,displayName:value.display_name,role:value.role||'member',balance:Number(value.balance||0),creditLimit:Number(value.credit_limit||0),status:value.status||'active',createdAt:value.created_at});
+const apiAccount=value=>value?{...value,accountNumber:value.account_number,displayName:value.display_name,creditLimit:Number(value.credit_limit||0),balance:Number(value.balance||0),createdAt:value.created_at}:null;
 
 export async function migrateNeoBankPostgres(pool){
   await pool.query(`
@@ -66,10 +67,10 @@ export function createNeoBankPostgresStore({pool,now=()=>new Date().toISOString(
         VALUES($1,$2,$3,$4,$5,$6,$7,$7)
         ON CONFLICT(subject) DO UPDATE SET role=CASE WHEN EXCLUDED.role='executive-admin' THEN 'executive-admin' ELSE neo_bank_accounts.role END,updated_at=$7
         RETURNING *`,[id,identity.subject,`CES-${id.slice(0,10).toUpperCase()}`,clean(identity.name)||'CES Member',clean(identity.email).toLowerCase(),role,createdAt]);
-      return rows[0];
+      return apiAccount(rows[0]);
     },
-    async accountBySubject(subject){const {rows}=await pool.query('SELECT * FROM neo_bank_accounts WHERE subject=$1',[subject]);return rows[0]||null},
-    async account(accountNumber){const key=clean(accountNumber);if(!/^[A-Za-z0-9._-]{2,80}$/.test(key))return null;const {rows}=await pool.query('SELECT * FROM neo_bank_accounts WHERE account_number=$1',[key]);return rows[0]||null},
+    async accountBySubject(subject){const {rows}=await pool.query('SELECT * FROM neo_bank_accounts WHERE subject=$1',[subject]);return apiAccount(rows[0]||null)},
+    async account(accountNumber){const key=clean(accountNumber);if(!/^[A-Za-z0-9._-]{2,80}$/.test(key))return null;const {rows}=await pool.query('SELECT * FROM neo_bank_accounts WHERE account_number=$1',[key]);return apiAccount(rows[0]||null)},
     async directory(limit=100){const {rows}=await pool.query('SELECT * FROM neo_bank_accounts WHERE status=\'active\' ORDER BY created_at DESC LIMIT $1',[Math.min(Number(limit)||100,100)]);return rows.map(publicAccount)},
     async updateAccount(accountNumber,input){const creditLimit=Number(input.creditLimit),status=input.status==='suspended'?'suspended':'active';if(!Number.isFinite(creditLimit)||creditLimit<0||creditLimit>100000000)throw new Error('invalid_account_update');const {rows}=await pool.query('UPDATE neo_bank_accounts SET credit_limit=$2,status=$3,updated_at=$4 WHERE account_number=$1 RETURNING *',[clean(accountNumber),creditLimit,status,now()]);if(!rows[0])throw new Error('account_not_found');return publicAccount(rows[0])},
     async listOffers({kind,status='open',limit=100}={}){const values=[status,Math.min(Number(limit)||100,100)],filter=kind?' AND kind=$3':'';if(kind)values.push(kind);const {rows}=await pool.query(`SELECT * FROM neo_bank_offers WHERE status=$1${filter} ORDER BY created_at DESC LIMIT $2`,values);return rows.map(row=>({id:row.id,memberId:row.member_id,accountNumber:row.account_number,displayName:row.display_name,kind:row.kind,title:row.title,description:row.description,amount:Number(row.amount),currency:row.currency,status:row.status,createdAt:row.created_at,updatedAt:row.updated_at}))},
