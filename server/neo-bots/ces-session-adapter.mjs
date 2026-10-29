@@ -2,6 +2,7 @@ import { inventoryCesForms, classifyCesForm } from './ces-form-mapper.mjs';
 import { createLegacyCesCrawler } from './ces-legacy-crawler.mjs';
 import { createMemoryCesManifestStore } from './ces-manifest-store.mjs';
 import { generateLegacyRouteCandidates } from './ces-legacy-route-candidates.mjs';
+import { readNmniAdminReport } from './nmni-admin-reader.mjs';
 
 const DEFAULT_BASE_URL = 'https://www.community-exchange.org';
 
@@ -122,6 +123,9 @@ export function createCesSessionAdapter({
 
   return {
     login, discoverForms, discoverLegacyControlPanel, getLegacyDiscoveryManifest,
+    readNmniTradingStatistics({ exchange, collect = true }) {
+      return withSession(exchange, ({ request }) => readNmniAdminReport({ request, exchange, collect }));
+    },
     reviewTransaction(payload) {
       const path = payload.path || payload.discoveryPath;
       if (path) return discoverForms(payload.exchange, path);
