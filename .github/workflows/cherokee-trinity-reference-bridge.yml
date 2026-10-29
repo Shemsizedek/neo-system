@@ -1,0 +1,44 @@
+name: Cherokee Trinity reference bridge
+on:
+  pull_request:
+    paths:
+      - 'registry/partners/cherokee-trinity.json'
+      - 'integrations/cherokee-trinity/**'
+      - 'server/neo-tokenworks/**'
+      - 'scripts/verify-cherokee-trinity.mjs'
+      - '.github/workflows/cherokee-trinity-reference-bridge.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'registry/partners/cherokee-trinity.json'
+      - 'integrations/cherokee-trinity/**'
+      - 'server/neo-tokenworks/**'
+      - 'scripts/verify-cherokee-trinity.mjs'
+      - '.github/workflows/cherokee-trinity-reference-bridge.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  reference-integrity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: node --test server/neo-tokenworks/*.test.mjs
+      - name: Read reviewed source commit
+        id: pin
+        run: |
+          node --input-type=module -e "import {readPartnerManifest} from './server/neo-tokenworks/partner-bridge.mjs'; console.log('commit='+readPartnerManifest().source.commit)" >> "$GITHUB_OUTPUT"
+      - name: Check out partner reference documents without executing them
+        uses: actions/checkout@v4
+        with:
+          repository: kburrjr/cherokee-trinity-token-system
+          ref: ${{ steps.pin.outputs.commit }}
+          path: partner-source
+          persist-credentials: false
+      - name: Verify reviewed source fingerprints
+        run: node scripts/verify-cherokee-trinity.mjs --checkout partner-source

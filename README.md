@@ -86,4 +86,8 @@ Original finance route:
 
 `Bitcoin / XCP / Counterparty Assets → ETHA → NEO Teller → Cash / Card / Merchant`
 
+## Partner integrations
+
+The [Cherokee Trinity reference bridge](docs/project144/CHEROKEE-TRINITY-BRIDGE.md) links the partner repository's HALI, TSDU and WAYA metadata into NEO Tokenworks with pinned source fingerprints. Token data remains partner-declared; financial execution and identity federation are disabled.
+
 The Base44 project descriptors remain under `base44/` for later application integration.

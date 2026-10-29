@@ -1,0 +1,117 @@
+{
+  "schema": "neo.partner.reference.v1",
+  "id": "cherokee-trinity",
+  "name": "Cherokee Trinity Token System",
+  "relationship": {
+    "status": "USER_REPORTED_PARTNERSHIP",
+    "neoOwner": "NEOsync",
+    "partnerRepositoryOwner": "kburrjr",
+    "agreementVerified": false
+  },
+  "source": {
+    "repository": "kburrjr/cherokee-trinity-token-system",
+    "url": "https://github.com/kburrjr/cherokee-trinity-token-system",
+    "branch": "main",
+    "commit": "b2ede5f6fdd2ece75c0bda11621f13832e50eb61",
+    "observedOn": "2026-10-29",
+    "access": "READ_ONLY",
+    "files": [
+      {
+        "path": "README.md",
+        "gitBlobSha": "d7b1badc6684330c9e87a014793aa797dca8a45d",
+        "sha256": "d636a1df943c6de4ca40a289d1dc98a3842a4f7cc1fe47b1e57d6c8e1fa34748",
+        "bytes": 2545
+      },
+      {
+        "path": "docs/ECOSYSTEM_OVERVIEW_v1.0.md",
+        "gitBlobSha": "1c1dbaa339f66906a2b2fabc128f97d6355fb7d5",
+        "sha256": "03fe1df609e8150eb086c39aac691549727dfd7d9cdfbcde60a3aaae8c5607ff",
+        "bytes": 17466
+      },
+      {
+        "path": "docs/VALUATION_AND_COMMERCIAL_STANDARDS_v1.0.md",
+        "gitBlobSha": "4b6bae4dd10b2f858f36dab194845d330eca7ffe",
+        "sha256": "fde141f247916b02d7a91afcd0e53754403780168db98bf6189771d091025cc4",
+        "bytes": 17542
+      }
+    ]
+  },
+  "network": {
+    "name": "XPR Network",
+    "namespace": "xpr-network",
+    "chainId": null,
+    "rpcUrl": null,
+    "deploymentVerified": false
+  },
+  "tokens": [
+    {
+      "symbol": "HALI",
+      "name": "Eagle",
+      "role": "Recognition and governance",
+      "precision": 4,
+      "issuer": "kburrjr",
+      "contract": "tokencreate",
+      "declaredSupply": "777777000.0000"
+    },
+    {
+      "symbol": "TSDU",
+      "name": "Rabbit",
+      "role": "Rewards and utility",
+      "precision": 4,
+      "issuer": "kburrjr",
+      "contract": "tokencreate",
+      "declaredSupply": "6400000000.0000"
+    },
+    {
+      "symbol": "WAYA",
+      "name": "Wolf",
+      "role": "Security and governance coordination",
+      "precision": 4,
+      "issuer": "kburrjr",
+      "contract": "tokencreate",
+      "declaredSupply": "3141592653.0000"
+    }
+  ],
+  "missingReferencedFiles": [
+    "docs/HALI_Technical_Specification.pdf",
+    "docs/TSDU_Technical_Specification.pdf",
+    "docs/WAYA_Technical_Specification.pdf",
+    "docs/Smart_Contract_Specifications.pdf"
+  ],
+  "mode": "READ_ONLY_REFERENCE",
+  "capabilities": {
+    "metadata": true,
+    "sourceIntegrityCheck": true,
+    "liveBalances": false,
+    "identityFederation": false,
+    "compose": false,
+    "sign": false,
+    "broadcast": false,
+    "custody": false,
+    "swap": false,
+    "settlement": false,
+    "collateralValuation": false
+  },
+  "blockers": [
+    {
+      "id": "CT-002",
+      "owner": "kburrjr",
+      "requirement": "Provide chain ID, approved read RPC, deployment references, ABI, contract source and security review. Validate issuer, precision, supply and permissions against the chain."
+    },
+    {
+      "id": "CT-003",
+      "owner": "NEOsync and kburrjr",
+      "requirement": "Agree proof-of-account ownership, data-sharing scope, identity mapping and revocation. A partnership does not grant NEO access or wallet authority."
+    },
+    {
+      "id": "CT-004",
+      "owner": "kburrjr",
+      "requirement": "Reconcile HALI/TSDU ratios and composite-unit arithmetic in the commercial standards. Declared par values are excluded from price and collateral feeds."
+    },
+    {
+      "id": "CT-005",
+      "owner": "NEOsync and kburrjr",
+      "requirement": "Design and test an audited bridge with custody, finality, replay protection, reconciliation, rollback and applicable legal/compliance validation before any financial activation."
+    }
+  ]
+}
