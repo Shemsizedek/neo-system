@@ -1,7 +1,6 @@
 // NEO Project 144: loopback-only offline preview. No Coinbase API connectivity or transfers.
 import http from 'node:http';
 import {createHash, timingSafeEqual} from 'node:crypto';
-import {once} from 'node:events';
 import {createCoinbaseSandbox} from './sandbox.mjs';
 
 const LIMIT = 2048;
@@ -108,6 +107,11 @@ export function createCoinbaseLocalGateway({
     }
   });
 
+  server.headersTimeout = 10_000;
+  server.requestTimeout = 10_000;
+  server.keepAliveTimeout = 1_000;
+  server.maxRequestsPerSocket = 50;
+
   let started = false;
   return Object.freeze({
     async start({port = 0} = {}) {
@@ -115,8 +119,25 @@ export function createCoinbaseLocalGateway({
       if (!Number.isInteger(port) || port < 0 || port > 65535) throw new Error('invalid_port');
       started = true;
       try {
-        server.listen(port, '127.0.0.1');
-        await Promise.race([once(server, 'listening'), once(server, 'error').then(([error]) => Promise.reject(error))]);
+        await new Promise((resolve, reject) => {
+          const onListening = () => {
+            server.off('error', onError);
+            resolve();
+          };
+          const onError = error => {
+            server.off('listening', onListening);
+            reject(error);
+          };
+          server.once('listening', onListening);
+          server.once('error', onError);
+          try {
+            server.listen(port, '127.0.0.1');
+          } catch (error) {
+            server.off('listening', onListening);
+            server.off('error', onError);
+            reject(error);
+          }
+        });
         return 'http://127.0.0.1:' + server.address().port;
       } catch (error) {
         started = false;
