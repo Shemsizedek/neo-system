@@ -7,7 +7,7 @@ NOMNI remains the existing **Bitcoin/Counterparty asset and NEO world currency/u
 A stablecoin is not simply an asset that has a denomination, declared price, or linked bill artwork. This gate assesses whether NOMNI might later qualify for a separately approved, explicitly defined stablecoin program.
 
 ## Open decisions
-- What is the intended stabilization objective? A fixed USD redemption peg, another reference unit, or simply reducing NOMNI price volatility? **No peg has been adopted in this gate.**
+- **Decision (2026-10-29):** Research **proposed USD 1:1 backing** for NOMNI, subject to written issuer authorization, verified eligible reserves and enforceable redemption terms. This is NOT an active peg; see `USD-BACKING-DECISION.md` and `usd-reserve-gate.mjs`.
 - Identify the legal issuer, liabilities, beneficial ownership, jurisdiction, custody, circulation and issuance authorities.
 - Audit current Counterparty NOMNI supply/locks/issuance history and reconcile to liability and independent reserve balances.
 - Document whether every existing NOMNI is eligible for the same rights. Do not arbitrarily promise redemptions on legacy holders.
@@ -31,4 +31,4 @@ No Coinbase NOMNI custody or listing is presumed. Coinbase "Counterparty Transfe
 - New York DFS guidance: https://www.dfs.ny.gov/industry_guidance/industry_letters/il20220608_issuance_stablecoins
 - Coinbase institutional Counterparty Transfers: https://help.coinbase.com/en/exchange/crypto-transfers/counterparty-transfers
 
-Tests: `node --test governance/nomni-stability/readiness.test.mjs`.
+Tests: `node --test governance/nomni-stability/*.test.mjs`.
