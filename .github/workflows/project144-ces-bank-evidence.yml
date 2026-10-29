@@ -16,4 +16,4 @@ jobs:
         with:
           node-version: '24'
       - run: node --test integrations/ces-banking/*.test.mjs
-      - run: node --test server/neo-bots/ces-interface-policy.test.mjs server/neo-bots/ces-session-adapter.test.mjs
+      - run: node --test server/neo-bots/ces-interface-policy.test.mjs server/neo-bots/ces-session-adapter.test.mjs server/neo-bots/ces-legacy-crawler.test.mjs server/neo-bots/deployment-runtime.test.mjs
