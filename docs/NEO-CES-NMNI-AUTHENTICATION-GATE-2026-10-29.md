@@ -31,7 +31,7 @@ For the generic environment credential provider, deployments must now supply bot
 
 ## Current deployment evidence
 
-The connected Render account lists 22 services in the previously authorized **NEO workspace** (`tea-db8bbpij9qps73cb7gb0`). None is a dedicated CES bot, CES browser gateway or NEO Bank service, and the listed start commands do not launch the NEO Bank server. This does not establish the state of other hosting providers. Public NEO Bank health and community-status checks were inaccessible through the web retrieval tool; this is inconclusive for availability.
+The connected Render account lists 22 services in the previously authorized **NEO workspace** (`tea-db8bbpij9qps73cb7gb0`). None is a dedicated CES bot, CES browser gateway or NEO Bank service, and the listed start commands do not launch the NEO Bank server. This does not establish the state of other hosting providers. Public NEO Bank health and community-status checks were inaccessible through the web retrieval tool. A subsequent request to `https://neobank.holytemples.org/health` in the operator's browser failed with `net::ERR_CONNECTION_RESET`. No working NEO Bank import destination was verified.
 
 Source inspection confirms that `getNeoBotsDeploymentRuntime()` still constructs the no-op CES adapter and reports `liveCesExecutionEnabled: false`. NEO Bank's server exposes no CES snapshot import endpoint. Browser authentication alone therefore does not connect the bots or populate the NEO Bank database.
 
@@ -44,7 +44,7 @@ node --test server/neo-bots/*.test.mjs apps/neoscan/adapters/ces/*.test.mjs
 node --input-type=module -e "import {nmniReadiness} from './server/neo-bots/nmni-login-profile.mjs'; console.log(JSON.stringify(nmniReadiness(), null, 2))"
 ```
 
-The preflight performs no network requests, prints only configuration presence and non-secret login metadata, and always distinguishes configuration from verified authentication. Fixture tests do not establish unattended live authentication.
+All 77 relevant tests passed on Node 24.22.1, and all eight GitHub workflow runs passed for code commit `5db4be7c4a79fba830eabcb7f1b18b36461b818e`. The preflight reported both local NMNI credential variables absent. It performs no network requests, prints only configuration presence and non-secret login metadata, and always distinguishes configuration from verified authentication. Fixture tests do not establish unattended live authentication.
 
 ## Next milestone and dependencies
 
