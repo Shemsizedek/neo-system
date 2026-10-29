@@ -7,15 +7,23 @@
   "workstreams": ["NEO Core", "NEO Counter", "NEO Merchant Treasury"],
   "purpose": "Verify a restricted sandbox API key and discover sandbox internal accounts without moving money or changing NEO ledger balances.",
   "source_host": "server/neo-merchant-treasury/server.mjs",
-  "staging_source_host": "server/neo-merchant-treasury/modern-treasury-staging.mjs",
+  "staging_source_host": "deploy/modern-treasury-render/counter-staging.mjs",
+  "isolated_host_entrypoint": "server/neo-merchant-treasury/modern-treasury-staging.mjs",
   "staging_plan": {
     "provider": "Render",
-    "service_name": "neo-modern-treasury-staging",
+    "dedicated_service_request": "rejected_by_25_service_hobby_limit; no_service_created",
+    "service_name": "neo-counter-render-staging",
+    "existing_service_id": "srv-dbe0o0ff3r2c73cb01mg",
+    "existing_health_url": "https://neo-counter-render-staging.onrender.com/health",
+    "existing_live_deploy": "dep-dbe0o0vf3r2c73cb02vg",
+    "existing_live_commit": "6bd196caf0afa033b2ef799d9f3958e5a558333f",
     "region": "virginia",
     "plan": "free",
     "branch": "feat/project144-modern-treasury-sandbox",
     "auto_deploy": false,
-    "credential_state": "absent_pending_restricted_key_approval"
+    "credential_state": "absent_pending_restricted_key_and_storage_approval",
+    "deployment_state": "prepared_pending_approval_to_redeploy_existing_counter_staging",
+    "staging_data_risk": "Existing temporary SQLite test data may reset on redeploy."
   },
   "upstream_origin": "https://app.moderntreasury.com",
   "environment": "sandbox",
@@ -41,13 +49,13 @@
     "source_implementation": "implemented",
     "account_access": "signed_in_sandbox_dashboard_verified",
     "credentials": "not_provisioned_or_tested",
-    "deployment": "not_attempted",
+    "deployment": "new_service_creation_rejected; existing_service_unchanged",
     "end_to_end_connection": "not_verified"
   },
   "dependencies": [
     "Signed-in sandbox dashboard access is verified; no new account agreements have been accepted by this integration.",
     "Owner supplies a sandbox key restricted to Accounts Read and Developer Read in the existing server secret manager.",
-    "Deploy and test the isolated free Render staging host, leaving credentials absent until approval."
+    "Approve existing Counter staging redeployment after reviewing its temporary SQLite data lifecycle and the runbook configuration."
   ],
   "next_milestone": "Authenticated sandbox key verification plus operator-only account discovery on the selected staging runtime.",
   "runbook": "docs/integrations/modern-treasury.md"

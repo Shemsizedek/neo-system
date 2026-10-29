@@ -13,7 +13,7 @@ Reviewed on October 29, 2026. Accountable owner: NEOsync. Implementation workstr
 | Account UI | Signed-in dashboard access verified; the application explicitly displays **Viewing sandbox** |
 | Source implementation | Sandbox connector, shared operator-only HTTP routes, isolated staging host, CLI and automated tests |
 | Credentials | No account credentials have been provisioned or tested |
-| Runtime | No deployment or authenticated staging check has been performed |
+| Runtime | Dedicated Render service creation rejected: workspace is at its 25-service limit. Existing Counter staging API is healthy; shared-host deployment is prepared and awaits approval |
 | Money movement | Disabled in this connector |
 | Next milestone | Verify the sandbox key and account-discovery route on the selected existing staging runtime |
 
@@ -29,7 +29,8 @@ Source implementation and mock tests are not proof of an operational account con
 - [x] Test the connector, HTTP authorization, pagination and failure cases with synthetic data.
 - [x] Verify signed-in sandbox dashboard access after the owner completes sign-in.
 - [ ] Owner creates the restricted sandbox key and provisions it in the selected runtime's secret manager.
-- [ ] Confirm the authorized existing staging runtime and its operator token.
+- [x] Inspect the NEO Render workspace and verify existing Counter staging health.
+- [ ] Approve reuse/redeployment of Counter staging, including its temporary test database lifecycle, and provision its separate treasury operator token.
 - [ ] Run the authenticated probe against Modern Treasury.
 - [ ] Deploy the reviewed change and verify unauthorized requests fail, then check account discovery with the operator token.
 - [ ] Record the deployment revision and sanitized probe result before reporting the connection operational.
@@ -38,7 +39,7 @@ Source implementation and mock tests are not proof of an operational account con
 
 Modern Treasury authenticates using HTTP Basic authentication: the Organization ID is the username and the API key is the password. The API origin is the same for sandbox and production; the key determines the environment. This connector checks `/api/api_keys/current` and requires `live_mode` to be the boolean `false` before making the ping or account request.
 
-After completing verification, open the [Modern Treasury API Keys page](https://app.moderntreasury.com/developers/api_keys). The owner should create a dedicated **sandbox** key with restricted **Accounts Read** and **Developer Read** permissions. An account-scoped `accounts:read:<account-id>` role is also accepted. All returned roles must be read-only, and at least one must permit account reads. Default keys with manage permissions are rejected.
+After completing verification, open the [Modern Treasury API Keys page](https://app.moderntreasury.com/developers/api_keys). The proposed dedicated **sandbox** key is named **NEO Project 144 Staging Read Only**. Use restricted read permissions for account discovery and key introspection; do not select the **API Manage All** role. The current UI exposes resource-level **View** actions. The connector validates the authenticated key's documented read roles before requesting account data; an account-scoped `accounts:read:<account-id>` role is also accepted. Validate the exact returned permission representation during activation and fail closed if it cannot be verified. Default keys with manage permissions are rejected.
 
 Provision these variables through the existing staging runtime's secret manager:
 
@@ -87,22 +88,35 @@ The existing Gate 127 workflow runs the merchant treasury test suite for this in
 
 Local validation on October 29, 2026: dependency installation and production build succeeded; the merchant treasury suite passed 24 tests; the repository-wide suite passed 878 tests with one skipped and no failures. An authenticated Modern Treasury probe has not been run.
 
-The next gate adds an isolated Render staging host and a shared HTTP handler. All 28 merchant treasury tests pass, including denial of missing/wrong operator credentials, rejection of legacy payout and ledger routes on the staging host, and sanitized exception handling. The existing merchant server uses the same tested read handler.
+The next gate adds a shared HTTP handler, an isolated staging host, and a wrapper that can host the sandbox connector alongside the existing Counter staging API. All 32 merchant treasury tests and all 11 Counter backend tests pass. Tests cover missing/wrong operator credentials, separation of merchant and treasury credentials, preservation of Counter routes, GET-only treasury access, and sanitized exceptions.
 
-### Isolated Render staging host
+### Render staging decision and reviewed configuration
 
-The verified NEO Render workspace has no existing merchant treasury runtime. The selected staging configuration is a dedicated `neo-modern-treasury-staging` web service using the `free` plan in Virginia, the repository's `feat/project144-modern-treasury-sandbox` branch, and manual deployment (`autoDeploy: no`). It requires no database or dependency installation.
+The verified NEO Render workspace has no existing merchant treasury runtime. Creation of a dedicated free `neo-modern-treasury-staging` service was rejected with **Hobby Tier is limited to 25 services**. No service was created and no workspace upgrade or service deletion was performed.
+
+The prepared alternative uses the existing **neo-counter-render-staging** service (`srv-dbe0o0ff3r2c73cb01mg`) on its existing free plan in Virginia. Its public `/health` returned 200 with service `neo-counter-backend`. Its current live deploy is `dep-dbe0o0vf3r2c73cb02vg` from commit `6bd196caf0afa033b2ef799d9f3958e5a558333f`. This service has automatic deploys disabled and currently tracks `main`.
+
+The wrapper preserves Counter's original handlers, URLs, merchant session authorization and database configuration. Treasury reads use the separate `NEO_MERCHANT_TREASURY_OPERATOR_TOKEN`; a merchant session cannot read treasury accounts, and the treasury token cannot authenticate a Counter session. The isolated-host entrypoint remains available for future capacity, without adding a service now.
+
+The existing Counter start command places its SQLite database in `/tmp/neo-counter-render/neo-counter.sqlite`. A redeploy may reset that temporary test database. Deployment to this existing service is held for explicit owner approval; do not assume test data is disposable.
+
+| Setting | Current / rollback reference | Proposed value after approval |
+| --- | --- | --- |
+| Branch | `main` | `feat/project144-modern-treasury-sandbox` |
+| Auto deploy | Off | Off |
+| Build command | Firestore context and REST DB tests plus Counter server syntax check | Original checks plus merchant treasury tests and wrapper syntax check |
+| Start command | `mkdir -p /tmp/neo-counter-render && NEO_COUNTER_DB_PATH=/tmp/neo-counter-render/neo-counter.sqlite NEO_COUNTER_PORT=${PORT:-10000} node server/neo-counter-backend/server.mjs` | Same directory, DB path and port setup, with `node deploy/modern-treasury-render/counter-staging.mjs` as the entrypoint |
 
 ```sh
-# Build command
-node --test server/neo-merchant-treasury/*.test.mjs
-# Start command
-node server/neo-merchant-treasury/modern-treasury-staging.mjs
+# Proposed complete build command
+node --test server/neo-counter-backend/firestore-context.test.mjs server/neo-counter-backend/firestore-rest-db.test.mjs && node --check server/neo-counter-backend/server.mjs && node --test server/neo-merchant-treasury/*.test.mjs && node --check deploy/modern-treasury-render/counter-staging.mjs
+# Proposed complete start command
+mkdir -p /tmp/neo-counter-render && NEO_COUNTER_DB_PATH=/tmp/neo-counter-render/neo-counter.sqlite NEO_COUNTER_PORT=${PORT:-10000} node deploy/modern-treasury-render/counter-staging.mjs
 ```
 
-The isolated host exposes `/health` and the three operator-only read endpoints above. It does not initialize merchant balances or expose legacy merchant snapshot, payout, credit, refund or settlement routes. Health checks disclose only service identity, sandbox/read-only flags and a nonsecret source revision. With no operator token configured, all integration routes return 401 and no provider request occurs.
+The shared host preserves `/health` and adds `/health/modern-treasury`, plus the three operator-only read endpoints above. It does not expose the merchant treasury service's legacy payout, credit, refund or settlement endpoints. The new health response discloses only service identity, sandbox/read-only flags and a nonsecret source revision. With no treasury operator token configured, all treasury integration routes return 401 and no provider request occurs.
 
-Nonsecret server configuration is `NODE_ENV=production`, `NODE_VERSION=24.22.1`, `MODERN_TREASURY_ENVIRONMENT=sandbox`, and `NEO_TREASURY_REVISION=<deployed source commit>`. Credentials remain absent until the dedicated restricted key is approved. Record the resulting service/deploy IDs and live probe results after deployment; a submitted creation request is not operational proof.
+Nonsecret connector configuration is `MODERN_TREASURY_ENVIRONMENT=sandbox` and `NEO_TREASURY_REVISION=<deployed source commit>`. Preserve all existing Counter environment variables and its supported Node configuration. Credentials remain absent until the dedicated restricted key and target storage are approved. Record the actual new deploy ID and source revision, verify both health endpoints, verify missing/wrong credentials fail, and then verify the authenticated key and account page before reporting the connection operational.
 
 The free Render host is for sandbox verification. It can spin down after idle periods and uses the workspace's shared free-instance hours and included build/bandwidth allowances. It is not a 24/7 production payment service. No plan upgrade, paid datastore, production DNS change, or new Modern Treasury financial account is included.
 
@@ -118,7 +132,8 @@ For activation: retain the previous runtime revision, provision the restricted s
 | --- | --- | --- |
 | Complete | Verify signed-in sandbox dashboard access | NEOsync / Modern Treasury |
 | P0 | Use a dedicated restricted sandbox key; verify the key's actual mode and organization | NEOsync / existing secret manager |
-| P1 | Deploy and verify operator-only account discovery on the confirmed staging host | NEO Core operations / P0 |
+| Approval required | Reuse/redeploy Counter staging; its temporary SQLite test data may reset | NEOsync / reviewed configuration above |
+| P1 | Deploy and verify operator-only account discovery on the approved staging host | NEO Core operations / P0 and staging reuse approval |
 | P1 | Repair existing router CI dependency installation and missing risk-fabric export identified during validation | NEO Core repository maintenance / independent of account activation |
 | P1 | Map verified internal account IDs to NEO treasury records with explicit currency and reconciliation rules | NEO Counter treasury / verified sandbox accounts |
 | P2 | Add signed webhooks with raw-body HMAC verification and durable deduplication before relying on events | NEO Core / durable event store and reviewed endpoint |

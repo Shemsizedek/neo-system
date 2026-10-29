@@ -3,9 +3,9 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ['architecture/neo-merchant-treasury-policy.json','architecture/modern-treasury-integration.json','server/neo-merchant-treasury/**','scripts/check-modern-treasury.mjs','docs/integrations/modern-treasury.md','docs/NEO-G127-MERCHANT-TREASURY.md','.env.example','package.json','.github/workflows/gate-127-merchant-treasury.yml']
+    paths: ['architecture/neo-merchant-treasury-policy.json','architecture/modern-treasury-integration.json','server/neo-merchant-treasury/**','deploy/modern-treasury-render/**','scripts/check-modern-treasury.mjs','docs/integrations/modern-treasury.md','docs/NEO-G127-MERCHANT-TREASURY.md','.env.example','package.json','.github/workflows/gate-127-merchant-treasury.yml']
   pull_request:
-    paths: ['architecture/neo-merchant-treasury-policy.json','architecture/modern-treasury-integration.json','server/neo-merchant-treasury/**','scripts/check-modern-treasury.mjs','docs/integrations/modern-treasury.md','docs/NEO-G127-MERCHANT-TREASURY.md','.env.example','package.json','.github/workflows/gate-127-merchant-treasury.yml']
+    paths: ['architecture/neo-merchant-treasury-policy.json','architecture/modern-treasury-integration.json','server/neo-merchant-treasury/**','deploy/modern-treasury-render/**','scripts/check-modern-treasury.mjs','docs/integrations/modern-treasury.md','docs/NEO-G127-MERCHANT-TREASURY.md','.env.example','package.json','.github/workflows/gate-127-merchant-treasury.yml']
 permissions: {contents: read}
 jobs:
   treasury:
@@ -19,4 +19,5 @@ jobs:
       - run: node --check server/neo-merchant-treasury/modern-treasury.mjs
       - run: node --check server/neo-merchant-treasury/modern-treasury-http.mjs
       - run: node --check server/neo-merchant-treasury/modern-treasury-staging.mjs
+      - run: node --check deploy/modern-treasury-render/counter-staging.mjs
       - run: node --check scripts/check-modern-treasury.mjs
