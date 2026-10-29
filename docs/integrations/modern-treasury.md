@@ -56,8 +56,8 @@ Do not paste API keys into chat, commit them, add them to `VITE_` variables, or 
 With the variables securely injected into the server process:
 
 ```sh
-npm run modern-treasury:check
-npm run modern-treasury:check -- --accounts
+node scripts/check-modern-treasury.mjs
+node scripts/check-modern-treasury.mjs --accounts
 ```
 
 The first command verifies the key and ping. The optional `--accounts` returns one sanitized page, its next cursor and an explicit completion flag. It does not retrieve all accounts or account balances. Failures exit nonzero and print only a stable error code.
@@ -87,6 +87,8 @@ The existing Gate 127 workflow runs the merchant treasury test suite for this in
 
 Local validation on October 29, 2026: dependency installation and production build succeeded; the merchant treasury suite passed 24 tests; the repository-wide suite passed 878 tests with one skipped and no failures. An authenticated Modern Treasury probe has not been run.
 
+Repository CI observations from the initial feature-branch run: Gate 127 passed. Gates 104, 107 and 108 ran the existing router tests without installing dependencies and failed to resolve `@composio/core`. Gate 131 imported the missing `riskReview` export from the existing risk fabric. Those workflow and module files match the base commit and are outside this integration's implementation. Track their repair in the repository maintenance backlog; do not describe the initial full workflow run as green.
+
 The repository currently contains a production Cloud Run deployment workflow for the merchant treasury service. That is source evidence, not verification of a running service or its secret configuration. Do not assume Render hosts this service. Confirm an existing staging target before activation; do not create paid resources or repoint production DNS for this connection.
 
 For activation: retain the previous runtime revision, provision the restricted sandbox secret, deploy the reviewed revision, verify `/health`, confirm integration endpoints return 401 without an operator credential, then run `/check` and the account discovery route with the operator credential. Save only sanitized results with the revision. On failure, remove the new Modern Treasury credentials from the runtime and roll back to the previous revision; do not rotate or delete unrelated credentials. Account access remains disabled without the operator token.
@@ -98,6 +100,7 @@ For activation: retain the previous runtime revision, provision the restricted s
 | P0 | Complete email verification; establish dashboard access | NEOsync / Modern Treasury |
 | P0 | Use a dedicated restricted sandbox key; verify the key's actual mode and organization | NEOsync / existing secret manager |
 | P1 | Deploy and verify operator-only account discovery on the confirmed staging host | NEO Core operations / P0 |
+| P1 | Repair existing router CI dependency installation and missing risk-fabric export identified during validation | NEO Core repository maintenance / independent of account activation |
 | P1 | Map verified internal account IDs to NEO treasury records with explicit currency and reconciliation rules | NEO Counter treasury / verified sandbox accounts |
 | P2 | Add signed webhooks with raw-body HMAC verification and durable deduplication before relying on events | NEO Core / durable event store and reviewed endpoint |
 | Separate approval | Production read access or money movement requires a separately reviewed scope, provider eligibility, permissions and payment controls | NEOsync / legal and compliance validation at the provider interface |
