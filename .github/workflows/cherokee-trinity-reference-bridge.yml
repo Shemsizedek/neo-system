@@ -2,18 +2,20 @@ name: Cherokee Trinity reference bridge
 on:
   pull_request:
     paths:
-      - 'registry/partners/cherokee-trinity.json'
+      - 'registry/partners/cherokee-trinity*.json'
       - 'integrations/cherokee-trinity/**'
       - 'server/neo-tokenworks/**'
       - 'scripts/verify-cherokee-trinity.mjs'
+      - 'scripts/cherokee-retokenization.mjs'
       - '.github/workflows/cherokee-trinity-reference-bridge.yml'
   push:
     branches: [main]
     paths:
-      - 'registry/partners/cherokee-trinity.json'
+      - 'registry/partners/cherokee-trinity*.json'
       - 'integrations/cherokee-trinity/**'
       - 'server/neo-tokenworks/**'
       - 'scripts/verify-cherokee-trinity.mjs'
+      - 'scripts/cherokee-retokenization.mjs'
       - '.github/workflows/cherokee-trinity-reference-bridge.yml'
   workflow_dispatch:
 permissions:
@@ -29,6 +31,7 @@ jobs:
         with:
           node-version: '24'
       - run: node --test server/neo-tokenworks/*.test.mjs
+      - run: node scripts/cherokee-retokenization.mjs --plan
       - name: Read reviewed source commit
         id: pin
         run: |

@@ -27,8 +27,8 @@ export function createTokenworksServer({ tokenworks = createTokenworks(), crownA
       if (url.pathname === partnerRoot || url.pathname.startsWith(`${partnerRoot}/`)) {
         if (req.method !== 'GET') { res.setHeader('allow','GET, OPTIONS'); return json(res,405,{error:'partner_bridge_read_only'}); }
         if (url.pathname === partnerRoot) return json(res,200,partnerBridge.listPartners());
-        const match = url.pathname.match(/^\/api\/v1\/tokenworks\/partners\/([a-z0-9-]+)(\/assets)?$/);
-        const reference = match && (match[2] ? partnerBridge.getAssets(match[1]) : partnerBridge.getPartner(match[1]));
+        const match = url.pathname.match(/^\/api\/v1\/tokenworks\/partners\/([a-z0-9-]+)(\/(?:assets|retokenization))?$/);
+        const reference = match && (match[2] === '/retokenization' ? partnerBridge.getRetokenization(match[1]) : match[2] === '/assets' ? partnerBridge.getAssets(match[1]) : partnerBridge.getPartner(match[1]));
         return reference ? json(res,200,reference) : json(res,404,{error:'partner_reference_not_found'});
       }
       if (req.method === 'POST' && url.pathname === '/api/v1/neopass/challenges') return json(res,201,tokenworks.issueAddressChallenge(await readBody(req)));

@@ -1,9 +1,10 @@
 import { readFileSync } from 'node:fs';
+import { buildRetokenizationPlan } from './retokenization.mjs';
 
 export const PARTNER_ID = 'cherokee-trinity';
 export const PARTNER_REPOSITORY = 'kburrjr/cherokee-trinity-token-system';
 const manifestUrl = new URL('../../registry/partners/cherokee-trinity.json', import.meta.url);
-const readCapabilities = ['metadata', 'sourceIntegrityCheck'];
+const readCapabilities = ['metadata', 'sourceIntegrityCheck', 'retokenizationPlanning'];
 const disabledCapabilities = ['liveBalances', 'identityFederation', 'compose', 'sign', 'broadcast', 'custody', 'swap', 'settlement', 'collateralValuation'];
 const sourcePaths = ['README.md', 'docs/ECOSYSTEM_OVERVIEW_v1.0.md', 'docs/VALUATION_AND_COMMERCIAL_STANDARDS_v1.0.md'];
 
@@ -61,5 +62,6 @@ export function createPartnerBridge({ manifest = readPartnerManifest() } = {}) {
       source: { repository: reference.source.repository, commit: reference.source.commit, path: 'README.md' }
     }))
   } : null;
-  return { capabilities, listPartners, getPartner, getAssets };
+  const getRetokenization = id => id === PARTNER_ID ? buildRetokenizationPlan(reference) : null;
+  return { capabilities, listPartners, getPartner, getAssets, getRetokenization };
 }

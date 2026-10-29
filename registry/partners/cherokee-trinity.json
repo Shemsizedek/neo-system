@@ -79,9 +79,15 @@
     "docs/Smart_Contract_Specifications.pdf"
   ],
   "mode": "READ_ONLY_REFERENCE",
+  "retokenization": {
+    "direction": "XPR_TO_BITCOIN_COUNTERPARTY",
+    "policyManifest": "registry/partners/cherokee-trinity-counterparty.json",
+    "state": "DRAFT_NOT_EXECUTABLE"
+  },
   "capabilities": {
     "metadata": true,
     "sourceIntegrityCheck": true,
+    "retokenizationPlanning": true,
     "liveBalances": false,
     "identityFederation": false,
     "compose": false,
@@ -96,12 +102,12 @@
     {
       "id": "CT-002",
       "owner": "kburrjr",
-      "requirement": "Provide chain ID, approved read RPC, deployment references, ABI, contract source and security review. Validate issuer, precision, supply and permissions against the chain."
+      "requirement": "Provide verified XPR contract, issuer, supply and holder snapshot for Counterparty retokenization on Bitcoin. Counterparty preferred names require fresh readiness and owner-control checks."
     },
     {
       "id": "CT-003",
       "owner": "NEOsync and kburrjr",
-      "requirement": "Agree proof-of-account ownership, data-sharing scope, identity mapping and revocation. A partnership does not grant NEO access or wallet authority."
+      "requirement": "Verify the authorized Bitcoin issuance address and existing HALI ownership; agree source retirement, 1:1 migration terms, holder-account proofs, claim deduplication and revocation."
     },
     {
       "id": "CT-004",
@@ -111,7 +117,7 @@
     {
       "id": "CT-005",
       "owner": "NEOsync and kburrjr",
-      "requirement": "Design and test an audited bridge with custody, finality, replay protection, reconciliation, rollback and applicable legal/compliance validation before any financial activation."
+      "requirement": "Rehearse Counterparty issuance and claims off mainnet, validate source retirement and combined supply, implement durable replay/reorg controls, approve metadata and fees, and complete applicable legal/compliance validation before issuance."
     }
   ]
 }

@@ -76,8 +76,12 @@ test('Tokenworks serves public references and rejects writes before calling auth
     assert.equal((await detail.json()).network.deploymentVerified, false);
     const assets = await fetch(`${base}${prefix}/${partnerId}/assets`);
     assert.equal((await assets.json()).assets.length, 3);
+    const migration = await fetch(`${base}${prefix}/${partnerId}/retokenization`);
+    assert.equal(migration.status, 200);
+    assert.equal((await migration.json()).direction, 'XPR_TO_BITCOIN_COUNTERPARTY');
     const capabilities = await (await fetch(`${base}/api/v1/tokenworks/capabilities`)).json();
     assert.equal(capabilities.partnerBridge.metadata, true);
+    assert.equal(capabilities.partnerBridge.retokenizationPlanning, true);
     assert.equal(capabilities.partnerBridge.settlement, false);
     for (const method of ['POST', 'PUT', 'PATCH', 'DELETE']) {
       const response = await fetch(`${base}${prefix}/${partnerId}/transfer`, { method });

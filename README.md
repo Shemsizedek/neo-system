@@ -88,6 +88,6 @@ Original finance route:
 
 ## Partner integrations
 
-The [Cherokee Trinity reference bridge](docs/project144/CHEROKEE-TRINITY-BRIDGE.md) links the partner repository's HALI, TSDU and WAYA metadata into NEO Tokenworks with pinned source fingerprints. Token data remains partner-declared; financial execution and identity federation are disabled.
+The [Cherokee Trinity integration](docs/project144/CHEROKEE-TRINITY-BRIDGE.md) links HALI, TSDU and WAYA source metadata into NEO Tokenworks and prepares their [retokenization on Bitcoin through Counterparty](docs/project144/CHEROKEE-TRINITY-COUNTERPARTY-RETOKENIZATION.md). It provides exact quantity mapping, read-only name checks and supply reconciliation; issuance, signing and broadcasting remain disabled.
 
 The Base44 project descriptors remain under `base44/` for later application integration.

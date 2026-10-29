@@ -1,0 +1,37 @@
+{
+  "schema": "neo.retokenization.policy.v1",
+  "partner": "cherokee-trinity",
+  "direction": "XPR_TO_BITCOIN_COUNTERPARTY",
+  "directive": "USER_REQUESTED_RETOKENIZATION",
+  "destination": {
+    "blockchain": "bitcoin",
+    "protocol": "counterparty",
+    "network": "mainnet",
+    "divisible": true,
+    "protocolPrecision": 8,
+    "migrationClaimPrecision": 4
+  },
+  "unitMapping": {
+    "sourceUnits": "1",
+    "targetUnits": "1",
+    "status": "PROPOSED_REQUIRES_ISSUER_APPROVAL"
+  },
+  "sourceTreatment": "RETIRE_BEFORE_TARGET_ISSUANCE_PROPOSAL",
+  "sourceRetirementMechanism": null,
+  "issuerBitcoinAddress": null,
+  "issuerAuthorityVerified": false,
+  "sourceSnapshotVerified": false,
+  "assets": [
+    { "sourceSymbol": "HALI", "preferredTargetAsset": "HALI" },
+    { "sourceSymbol": "TSDU", "preferredTargetAsset": "TSDU" },
+    { "sourceSymbol": "WAYA", "preferredTargetAsset": "WAYA" }
+  ],
+  "execution": {
+    "compose": false,
+    "sign": false,
+    "broadcast": false,
+    "issue": false,
+    "sourceRetirement": false,
+    "assetSupplyLock": false
+  }
+}
