@@ -17,4 +17,6 @@ jobs:
       - run: npm run neo-merchant-treasury:test
       - run: node --check server/neo-merchant-treasury/server.mjs
       - run: node --check server/neo-merchant-treasury/modern-treasury.mjs
+      - run: node --check server/neo-merchant-treasury/modern-treasury-http.mjs
+      - run: node --check server/neo-merchant-treasury/modern-treasury-staging.mjs
       - run: node --check scripts/check-modern-treasury.mjs

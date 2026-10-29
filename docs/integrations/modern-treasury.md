@@ -10,8 +10,8 @@ Reviewed on October 29, 2026. Accountable owner: NEOsync. Implementation workstr
 | --- | --- |
 | Repository | `Shemsizedek/neo-system`, base commit `0a04327ef9ab8a1a25a2e21bbcf7c36aa55b5ad2` |
 | Integration host in source | Existing `server/neo-merchant-treasury/server.mjs` |
-| Account UI | Latest check: **Sign In** required. Earlier signup displayed **Verify your email address**; completion was not confirmed. Dashboard access was not established |
-| Source implementation | Sandbox connector, operator-only HTTP routes, CLI and automated tests |
+| Account UI | Signed-in dashboard access verified; the application explicitly displays **Viewing sandbox** |
+| Source implementation | Sandbox connector, shared operator-only HTTP routes, isolated staging host, CLI and automated tests |
 | Credentials | No account credentials have been provisioned or tested |
 | Runtime | No deployment or authenticated staging check has been performed |
 | Money movement | Disabled in this connector |
@@ -27,7 +27,7 @@ Source implementation and mock tests are not proof of an operational account con
 - [x] Require operator authentication before integration status, verification or account discovery.
 - [x] Reject production, archived, foreign-organization and overprivileged keys.
 - [x] Test the connector, HTTP authorization, pagination and failure cases with synthetic data.
-- [ ] Owner completes email verification and any required account agreements.
+- [x] Verify signed-in sandbox dashboard access after the owner completes sign-in.
 - [ ] Owner creates the restricted sandbox key and provisions it in the selected runtime's secret manager.
 - [ ] Confirm the authorized existing staging runtime and its operator token.
 - [ ] Run the authenticated probe against Modern Treasury.
@@ -87,6 +87,25 @@ The existing Gate 127 workflow runs the merchant treasury test suite for this in
 
 Local validation on October 29, 2026: dependency installation and production build succeeded; the merchant treasury suite passed 24 tests; the repository-wide suite passed 878 tests with one skipped and no failures. An authenticated Modern Treasury probe has not been run.
 
+The next gate adds an isolated Render staging host and a shared HTTP handler. All 28 merchant treasury tests pass, including denial of missing/wrong operator credentials, rejection of legacy payout and ledger routes on the staging host, and sanitized exception handling. The existing merchant server uses the same tested read handler.
+
+### Isolated Render staging host
+
+The verified NEO Render workspace has no existing merchant treasury runtime. The selected staging configuration is a dedicated `neo-modern-treasury-staging` web service using the `free` plan in Virginia, the repository's `feat/project144-modern-treasury-sandbox` branch, and manual deployment (`autoDeploy: no`). It requires no database or dependency installation.
+
+```sh
+# Build command
+node --test server/neo-merchant-treasury/*.test.mjs
+# Start command
+node server/neo-merchant-treasury/modern-treasury-staging.mjs
+```
+
+The isolated host exposes `/health` and the three operator-only read endpoints above. It does not initialize merchant balances or expose legacy merchant snapshot, payout, credit, refund or settlement routes. Health checks disclose only service identity, sandbox/read-only flags and a nonsecret source revision. With no operator token configured, all integration routes return 401 and no provider request occurs.
+
+Nonsecret server configuration is `NODE_ENV=production`, `NODE_VERSION=24.22.1`, `MODERN_TREASURY_ENVIRONMENT=sandbox`, and `NEO_TREASURY_REVISION=<deployed source commit>`. Credentials remain absent until the dedicated restricted key is approved. Record the resulting service/deploy IDs and live probe results after deployment; a submitted creation request is not operational proof.
+
+The free Render host is for sandbox verification. It can spin down after idle periods and uses the workspace's shared free-instance hours and included build/bandwidth allowances. It is not a 24/7 production payment service. No plan upgrade, paid datastore, production DNS change, or new Modern Treasury financial account is included.
+
 Repository CI observations from the initial feature-branch run: Gate 127 passed. Gates 104, 107 and 108 ran the existing router tests without installing dependencies and failed to resolve `@composio/core`. Gate 131 imported the missing `riskReview` export from the existing risk fabric. Those workflow and module files match the base commit and are outside this integration's implementation. Track their repair in the repository maintenance backlog; do not describe the initial full workflow run as green.
 
 The repository currently contains a production Cloud Run deployment workflow for the merchant treasury service, binding only its operator-token secret. That is source evidence, not verification of a running service or its secret configuration. Confirm an existing staging target and explicitly bind both Modern Treasury variables there; do not invoke the production workflow as a staging deployment. Do not assume Render hosts this service, create paid resources or repoint production DNS for this connection.
@@ -97,7 +116,7 @@ For activation: retain the previous runtime revision, provision the restricted s
 
 | Priority | Decision / remaining work | Owner / dependency |
 | --- | --- | --- |
-| P0 | Sign in, complete email verification if still required, and establish dashboard access | NEOsync / Modern Treasury |
+| Complete | Verify signed-in sandbox dashboard access | NEOsync / Modern Treasury |
 | P0 | Use a dedicated restricted sandbox key; verify the key's actual mode and organization | NEOsync / existing secret manager |
 | P1 | Deploy and verify operator-only account discovery on the confirmed staging host | NEO Core operations / P0 |
 | P1 | Repair existing router CI dependency installation and missing risk-fabric export identified during validation | NEO Core repository maintenance / independent of account activation |
@@ -119,3 +138,4 @@ No webhook receiver, bank-account creation or payment execution is included in t
 - [List internal accounts](https://docs.moderntreasury.com/platform/reference/list-internal-accounts)
 - [Pagination](https://docs.moderntreasury.com/platform/reference/pagination)
 - [Webhooks](https://docs.moderntreasury.com/platform/reference/webhooks)
+- [Render free service limits](https://render.com/docs/free)
