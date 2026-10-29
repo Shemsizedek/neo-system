@@ -1,0 +1,22 @@
+name: NOMNI bill draft gate
+on:
+  pull_request:
+    paths:
+      - 'server/nomni-bills/**'
+      - '.github/workflows/nomni-bill-draft-gate.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'server/nomni-bills/**'
+      - '.github/workflows/nomni-bill-draft-gate.yml'
+permissions:
+  contents: read
+jobs:
+  draft-registry:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: node --test server/nomni-bills/*.test.mjs
