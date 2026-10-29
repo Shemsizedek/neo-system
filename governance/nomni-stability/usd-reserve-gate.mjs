@@ -26,7 +26,7 @@ const REQUIRED_EVIDENCE = Object.freeze([
 const DECIMAL = /^(0|[1-9]\d*)(?:\.(\d+))?$/;
 const ALLOWED_KEYS = new Set([
   'asset', 'network', 'targetRedemptionUsdPerNomni',
-  'reportedOutstandingNomni', 'reportedSegregatedUsdCash',
+  'reportedOutstandingNomni', 'reportedSegregatedUsdCash', 'reportedDivisible',
   'supplyAsOfUtc', 'reserveAsOfUtc', 'evidenceRefs',
 ]);
 
@@ -73,7 +73,11 @@ export function assessNomniUsdBacking(snapshot = {}, {
   if (snapshot.targetRedemptionUsdPerNomni !== '1.00') {
     missing.push('usdOneToOneProposalMatch');
   }
+  if (snapshot.reportedDivisible !== false) missing.push('verifyNomniIsIndivisibleOnCounterparty');
   const outstanding = scaled(snapshot.reportedOutstandingNomni, 8);
+  if (outstanding !== null && outstanding % 100000000n !== 0n) {
+    missing.push('indivisibleAssetSupplyConflict');
+  }
   const cash = scaled(snapshot.reportedSegregatedUsdCash, 2);
   if (outstanding === null || outstanding === 0n) missing.push('completeOutstandingNomniSupply');
   if (cash === null) missing.push('segregatedUsdCashStatement');
