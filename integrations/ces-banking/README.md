@@ -65,3 +65,40 @@ The adapter accepts only named report routes, only GET and manually handled redi
 To advance beyond this gate: provision a dedicated, least-privilege CES Bot session provider in a controlled runtime; confirm a fresh independent bot session; run an authenticated read-only smoke against NMNI report metadata; inspect private report schema for authorization/provenance; only then add a separate explicit ingestion-to-NEO reconciliation job. Modern Treasury and Fedwire capabilities remain **external bank data adapters, not CES Bot privileges**. No live banking payment calls are part of this PR.
 
 New checks: `node --test integrations/ces-banking/*.test.mjs server/neo-bots/ces-legacy-crawler.test.mjs server/neo-bots/ces-session-adapter.test.mjs`.
+
+## Gate 3 — Dedicated CES read-only session (2026-10-29)
+
+A new `createVerifiedReportSession(exchange)` method in `server/neo-bots/ces-session-adapter.mjs` now connects the existing authenticated CES session implementation to the isolated report adapter.
+
+Security properties:
+
+- Login requires a configured, verified successful redirect marker; a 200 response or a login page never proves authentication.
+- Login and report paths cannot contain URL query parameters, fragments, embedded credentials, or cross-origin destinations.
+- Each CES session-adapter instance is bound to **one** exchange (NMNI *or* XCPC). Separate bot identities and cookie jars are required for each exchange.
+- Only four fixed report paths can be read using GET with redirect handling disabled. No administrative write or payment methods are exposed by the broker.
+- The report adapter returns a checksum and report metadata but not customer statements or private HTML.
+- The default deployment runtime remains stub-only, so this gate adds no production CES network access.
+
+Staging composition (not activated):
+
+```js
+import {createCesSessionAdapter} from '../../server/neo-bots/ces-session-adapter.mjs';
+import {resolveCesIdentity} from '../../server/neo-bots/bank-bot.mjs';
+import {createNeoBotsDeploymentRuntime} from '../../server/neo-bots/deployment-runtime.mjs';
+import {createCesBotReportAdapter} from './ces-bot-report-adapter.mjs';
+
+// credentialProvider, fetchImpl and onAudit must be supplied privately by
+// the deployment; never commit credentials or reuse URL-based login secrets.
+const session = createCesSessionAdapter({credentialProvider,fetchImpl});
+const cesAdapter = createCesBotReportAdapter({
+  sessionProvider: async ({exchangeId}) =>
+    session.createVerifiedReportSession(resolveCesIdentity(exchangeId)),
+  onAudit,
+});
+const runtime = createNeoBotsDeploymentRuntime({cesAdapter});
+```
+
+For concurrent NMNI and XCPC operations, instantiate **one session and runtime per exchange**; do not share cookies. The new `ces-bot-session-smoke.test.mjs` executes this end-to-end composition with synthetic HTTP fixtures only and confirms that login, report metadata, tenant separation, and blocked write paths work without contacting CES.
+
+Live activation remains blocked by the credentials-within-URLs issue (#1274), unverified independently scoped bot identity, and missing private, authenticated report-schema validation. No Modern Treasury or Fedwire payment functionality is enabled here.
+
