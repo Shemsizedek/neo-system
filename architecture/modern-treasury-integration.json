@@ -21,7 +21,9 @@
     "plan": "free",
     "branch": "feat/project144-modern-treasury-sandbox",
     "auto_deploy": false,
-    "credential_state": "absent_pending_restricted_key_and_storage_approval",
+    "credential_state": "draft_only; final_key_creation_and_server_storage_pending_approval",
+    "proposed_key_name": "NEO Project 144 Staging Read Only",
+    "proposed_key_permission": "Internal Accounts: View only; no API Manage All role",
     "deployment_state": "prepared_pending_approval_to_redeploy_existing_counter_staging",
     "staging_data_risk": "Existing temporary SQLite test data may reset on redeploy."
   },
@@ -54,7 +56,7 @@
   },
   "dependencies": [
     "Signed-in sandbox dashboard access is verified; no new account agreements have been accepted by this integration.",
-    "Owner supplies a sandbox key restricted to Accounts Read and Developer Read in the existing server secret manager.",
+    "Approve creating the prepared sandbox key with Internal Accounts View only, storing it on the approved NEO staging host, and verifying its actual read-only permission representation.",
     "Approve existing Counter staging redeployment after reviewing its temporary SQLite data lifecycle and the runbook configuration."
   ],
   "next_milestone": "Authenticated sandbox key verification plus operator-only account discovery on the selected staging runtime.",

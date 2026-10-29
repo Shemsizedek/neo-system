@@ -12,7 +12,7 @@ Reviewed on October 29, 2026. Accountable owner: NEOsync. Implementation workstr
 | Integration host in source | Existing `server/neo-merchant-treasury/server.mjs` |
 | Account UI | Signed-in dashboard access verified; the application explicitly displays **Viewing sandbox** |
 | Source implementation | Sandbox connector, shared operator-only HTTP routes, isolated staging host, CLI and automated tests |
-| Credentials | No account credentials have been provisioned or tested |
+| Credentials | Dedicated read-only sandbox key form prepared; final creation, server storage and authenticated verification remain pending |
 | Runtime | Dedicated Render service creation rejected: workspace is at its 25-service limit. Existing Counter staging API is healthy; shared-host deployment is prepared and awaits approval |
 | Money movement | Disabled in this connector |
 | Next milestone | Verify the sandbox key and account-discovery route on the selected existing staging runtime |
@@ -39,7 +39,7 @@ Source implementation and mock tests are not proof of an operational account con
 
 Modern Treasury authenticates using HTTP Basic authentication: the Organization ID is the username and the API key is the password. The API origin is the same for sandbox and production; the key determines the environment. This connector checks `/api/api_keys/current` and requires `live_mode` to be the boolean `false` before making the ping or account request.
 
-After completing verification, open the [Modern Treasury API Keys page](https://app.moderntreasury.com/developers/api_keys). The proposed dedicated **sandbox** key is named **NEO Project 144 Staging Read Only**. Use restricted read permissions for account discovery and key introspection; do not select the **API Manage All** role. The current UI exposes resource-level **View** actions. The connector validates the authenticated key's documented read roles before requesting account data; an account-scoped `accounts:read:<account-id>` role is also accepted. Validate the exact returned permission representation during activation and fail closed if it cannot be verified. Default keys with manage permissions are rejected.
+After completing verification, open the [Modern Treasury API Keys page](https://app.moderntreasury.com/developers/api_keys). The proposed dedicated **sandbox** key is named **NEO Project 144 Staging Read Only**, with **Internal Accounts → View** only and no role selected. The current UI does not offer an API-key/developer resource in its custom-permission selector. Verify key introspection using this minimal key before considering any additional permission; do not select the **API Manage All** role. The connector validates the authenticated key's documented read roles before requesting account data; an account-scoped `accounts:read:<account-id>` role is also accepted. Validate the exact returned permission representation during activation and fail closed if it cannot be verified. Default keys with manage permissions are rejected.
 
 Provision these variables through the existing staging runtime's secret manager:
 
@@ -97,6 +97,8 @@ The verified NEO Render workspace has no existing merchant treasury runtime. Cre
 The prepared alternative uses the existing **neo-counter-render-staging** service (`srv-dbe0o0ff3r2c73cb01mg`) on its existing free plan in Virginia. Its public `/health` returned 200 with service `neo-counter-backend`. Its current live deploy is `dep-dbe0o0vf3r2c73cb02vg` from commit `6bd196caf0afa033b2ef799d9f3958e5a558333f`. This service has automatic deploys disabled and currently tracks `main`.
 
 The wrapper preserves Counter's original handlers, URLs, merchant session authorization and database configuration. Treasury reads use the separate `NEO_MERCHANT_TREASURY_OPERATOR_TOKEN`; a merchant session cannot read treasury accounts, and the treasury token cannot authenticate a Counter session. The isolated-host entrypoint remains available for future capacity, without adding a service now.
+
+Source comparison verified that `server.mjs`, `store.mjs`, and `auth.mjs` in `server/neo-counter-backend` match the current live Counter commit. Those files are unchanged by this integration.
 
 The existing Counter start command places its SQLite database in `/tmp/neo-counter-render/neo-counter.sqlite`. A redeploy may reset that temporary test database. Deployment to this existing service is held for explicit owner approval; do not assume test data is disposable.
 
