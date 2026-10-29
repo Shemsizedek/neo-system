@@ -32,3 +32,12 @@ No Coinbase NOMNI custody or listing is presumed. Coinbase "Counterparty Transfe
 - Coinbase institutional Counterparty Transfers: https://help.coinbase.com/en/exchange/crypto-transfers/counterparty-transfers
 
 Tests: `node --test governance/nomni-stability/*.test.mjs`.
+
+
+## Approved design direction (2026-10-29)
+
+NEO has selected **research into a proposed USD 1:1 NOMNI backing program**, not an active public redemption promise. The full decision and evidence gate are documented in [USD-BACKING-DECISION.md](./USD-BACKING-DECISION.md).
+
+Horizon Market currently displays approximately 900 million NOMNI, non-divisible and locked, but this is a third-party report **pending independent synced Counterparty verification**. Full $1 backing on that reported entire outstanding amount would imply roughly $900 million in reserve obligations; no eligible reserves or issuer authority have been established. Never assume reserve backing from an asset's artwork, market listing, NEO treasury balance, or NOMNI Bill metadata.
+
+Use `assessNomniUsdBacking` from `usd-reserve-gate.mjs` only for offline evidence-gap and reserve math; the status remains pending independent verification at best, and all live operations remain disabled. Coinbase is outside this NOMNI program and remains native-BTC-only.
