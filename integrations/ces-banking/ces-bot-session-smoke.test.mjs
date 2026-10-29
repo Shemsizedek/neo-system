@@ -101,3 +101,14 @@ test('session broker blocks arbitrary routes, credentials in URL and write metho
  await assert.rejects(()=>session.get('/_admin/reptrades.asp',{method:'POST',redirect:'manual'}));
  await assert.rejects(()=>session.get('/_admin/reptrades.asp',{method:'GET',redirect:'follow'}));
 });
+
+
+test('single CES session instance cannot mix NMNI and XCPC authentication cookies',async()=>{
+ const {sessionProvider}=buildFixture();
+ const nmni=await sessionProvider({exchangeId:'NMNI',purpose:'report-read-only'});
+ assert.equal(nmni.exchangeId,'NMNI');
+ await assert.rejects(
+   ()=>sessionProvider({exchangeId:'XCPC',purpose:'report-read-only'}),
+   /exchange isolation required/
+ );
+});
