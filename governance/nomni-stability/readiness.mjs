@@ -28,7 +28,7 @@ export function assessNomniStabilityProposal(proposal = {}) {
   if (proposal.asset !== 'NOMNI' || proposal.network !== 'bitcoin-counterparty') {
     missing.push('verifiedCounterpartyAsset');
   }
-  // No peg is chosen by default. USD 1:1 is only a candidate, not an established commitment.
+  // USD 1:1 is the approved research objective only; every submitted proposal must match. No active peg or redemption claim.
   if (proposal.peg?.currency !== 'USD' || proposal.peg?.usdPerNomni !== '1') {
     missing.push('approvedPegDefinition');
   }
