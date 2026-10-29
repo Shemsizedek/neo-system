@@ -1,5 +1,5 @@
 import {readFile} from 'node:fs/promises'
-import {bitcoinRpcClient} from '../miner-production/bitcoinWallet.mjs'
+import {createRestrictedBvmBitcoinRpc} from './shared-bitcoin-core.mjs'
 import {verifyBvmRegtest} from './bvm-regtest.mjs'
 
 // Run inside the neo-system checkout, with isolated Bitcoin Core regtest RPC.
@@ -14,7 +14,7 @@ async function main(){
   const input=process.argv[2]
   if(!input)throw new Error('BVM_FIXTURE_JSON_REQUIRED')
   const data=JSON.parse(await readFile(input,'utf8'))
-  const result=await verifyBvmRegtest({...data,rpc:bitcoinRpcClient({url,auth})})
+  const result=await verifyBvmRegtest({...data,rpc:createRestrictedBvmBitcoinRpc({url,auth})})
   process.stdout.write(JSON.stringify(result,null,2)+'\n')
   if(!result.mempoolAccepted)process.exitCode=2
 }
