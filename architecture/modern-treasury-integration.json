@@ -29,7 +29,7 @@
   },
   "readiness": {
     "source_implementation": "implemented",
-    "account_access": "blocked_on_email_verification_observed_in_dashboard",
+    "account_access": "sign_in_required; earlier_signup_email_verification_not_confirmed_complete",
     "credentials": "not_provisioned_or_tested",
     "deployment": "not_attempted",
     "end_to_end_connection": "not_verified"

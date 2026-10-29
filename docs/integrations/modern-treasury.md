@@ -10,7 +10,7 @@ Reviewed on October 29, 2026. Accountable owner: NEOsync. Implementation workstr
 | --- | --- |
 | Repository | `Shemsizedek/neo-system`, base commit `0a04327ef9ab8a1a25a2e21bbcf7c36aa55b5ad2` |
 | Integration host in source | Existing `server/neo-merchant-treasury/server.mjs` |
-| Account UI | Modern Treasury displayed **Verify your email address**; dashboard access was not established |
+| Account UI | Latest check: **Sign In** required. Earlier signup displayed **Verify your email address**; completion was not confirmed. Dashboard access was not established |
 | Source implementation | Sandbox connector, operator-only HTTP routes, CLI and automated tests |
 | Credentials | No account credentials have been provisioned or tested |
 | Runtime | No deployment or authenticated staging check has been performed |
@@ -89,7 +89,7 @@ Local validation on October 29, 2026: dependency installation and production bui
 
 Repository CI observations from the initial feature-branch run: Gate 127 passed. Gates 104, 107 and 108 ran the existing router tests without installing dependencies and failed to resolve `@composio/core`. Gate 131 imported the missing `riskReview` export from the existing risk fabric. Those workflow and module files match the base commit and are outside this integration's implementation. Track their repair in the repository maintenance backlog; do not describe the initial full workflow run as green.
 
-The repository currently contains a production Cloud Run deployment workflow for the merchant treasury service. That is source evidence, not verification of a running service or its secret configuration. Do not assume Render hosts this service. Confirm an existing staging target before activation; do not create paid resources or repoint production DNS for this connection.
+The repository currently contains a production Cloud Run deployment workflow for the merchant treasury service, binding only its operator-token secret. That is source evidence, not verification of a running service or its secret configuration. Confirm an existing staging target and explicitly bind both Modern Treasury variables there; do not invoke the production workflow as a staging deployment. Do not assume Render hosts this service, create paid resources or repoint production DNS for this connection.
 
 For activation: retain the previous runtime revision, provision the restricted sandbox secret, deploy the reviewed revision, verify `/health`, confirm integration endpoints return 401 without an operator credential, then run `/check` and the account discovery route with the operator credential. Save only sanitized results with the revision. On failure, remove the new Modern Treasury credentials from the runtime and roll back to the previous revision; do not rotate or delete unrelated credentials. Account access remains disabled without the operator token.
 
@@ -97,7 +97,7 @@ For activation: retain the previous runtime revision, provision the restricted s
 
 | Priority | Decision / remaining work | Owner / dependency |
 | --- | --- | --- |
-| P0 | Complete email verification; establish dashboard access | NEOsync / Modern Treasury |
+| P0 | Sign in, complete email verification if still required, and establish dashboard access | NEOsync / Modern Treasury |
 | P0 | Use a dedicated restricted sandbox key; verify the key's actual mode and organization | NEOsync / existing secret manager |
 | P1 | Deploy and verify operator-only account discovery on the confirmed staging host | NEO Core operations / P0 |
 | P1 | Repair existing router CI dependency installation and missing risk-fabric export identified during validation | NEO Core repository maintenance / independent of account activation |
