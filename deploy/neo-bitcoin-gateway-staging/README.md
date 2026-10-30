@@ -30,3 +30,14 @@ Do not change any of the NEO services that track `main`.
 Production mainnet RPC access still requires verified NEO-operated Bitcoin
 Core, an authenticated authorization path, network-limited RPC, independent
 security review, monitored rollback, and approved project-by-project cutover.
+
+## Render account capacity check
+
+On 2026-10-29, Render rejected creation of this isolated staging service with
+`Hobby Tier is limited to 25 services` (HTTP 400). The staging service was
+**not** created. Do not upgrade, remove another application, or repurpose an
+existing service merely to satisfy this gate. Existing NEO workloads should
+remain unchanged. Continue real Bitcoin Core regtest CI in GitHub Actions.
+A dedicated staging service requires capacity to become available or an
+explicitly approved alternate hosting arrangement. The runtime and its tests
+remain committed for a subsequent verified rollout.
