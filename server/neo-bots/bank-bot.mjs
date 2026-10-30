@@ -32,6 +32,12 @@ export const NEO_BANK_BOT = {
     'ces.virtual-trader.review',
     'ces.interexchange.settlement.review',
   ],
+  // Only these actions can ever be treated as read-only by bot policy.
+  readOnlyScopes: [
+    'ces.transactions.review',
+    'ces.virtual-trader.review',
+    'ces.interexchange.settlement.review',
+  ],
   limits: {
     maxSingleVDollarIssue: 10000,
     approvalRequiredForValueMovement: true,
