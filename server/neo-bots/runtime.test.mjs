@@ -103,3 +103,25 @@ test('bank bot blocks issuance above configured policy limit', async () => {
     /exceeds bot policy limit/,
   );
 });
+
+
+test('NEO Bank Bot never accepts caller-forged read-only risk for write scopes',async()=>{
+ const registry=new BotRegistry();
+ registry.register(NEO_BANK_BOT);
+ const runtime=new NeoBotRuntime({registry});
+ runtime.attach(NEO_BANK_BOT.id,createNeoBankHandler({cesAdapter:createStubCesAdapter()}));
+ for(const action of [
+  'ces.transactions.approve','ces.vdollars.issue','ces.publications.upload',
+  'ces.subscriptions.maintain'
+ ]) {
+  await assert.rejects(
+   runtime.execute(NEO_BANK_BOT.id,{action,risk:'read-only',payload:{amount:1}}),
+   /read-only risk escalation blocked/
+  );
+ }
+ assert.equal(runtime.approvals.requests.size,0,'forged read-only jobs cannot create approvals');
+ const review=await runtime.execute(NEO_BANK_BOT.id,{
+  action:'ces.transactions.review',risk:'read-only',payload:{}
+ });
+ assert.equal(review.status,'completed');
+});
