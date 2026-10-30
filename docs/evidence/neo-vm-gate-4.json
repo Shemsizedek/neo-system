@@ -1,0 +1,388 @@
+{
+  "gate": "NEO-VM-G4",
+  "checkedAt": "2026-10-30T01:18:01.883Z",
+  "status": "PASS",
+  "bitcoinCore": {
+    "version": 310100,
+    "subversion": "/Satoshi:31.1.0/",
+    "binarySha256": "986e63b3c8770f08d0059820ad3dd085d1ab9e1bea23946c243f858a06888a08"
+  },
+  "isolation": {
+    "chain": "regtest",
+    "freshDataDirectory": true,
+    "networkActive": false,
+    "peerConnections": 0,
+    "walletDisabled": true
+  },
+  "gate3Regression": {
+    "passed": 13,
+    "cases": [
+      {
+        "name": "variable-length hashlock: correct preimage",
+        "passed": true,
+        "coreAccepted": true,
+        "localScriptAccepted": true,
+        "adapterBoundary": "CORE_POLICY_RESULT",
+        "rejectReason": null,
+        "txid": "a083ad28e107ac06f513640a154b0b253bbe0b5563794e9a4724cec0ec36e80d",
+        "wtxid": "0409e688ca4151c4f65bf8f2a0deabce783ff6bcf8cf4a9e4c615a407d0783f6"
+      },
+      {
+        "name": "fixed-32-byte hashlock: correct preimage",
+        "passed": true,
+        "coreAccepted": true,
+        "localScriptAccepted": true,
+        "adapterBoundary": "CORE_POLICY_RESULT",
+        "rejectReason": null,
+        "txid": "d3ee6fd8deb3c1b384e9faab6d7148b2ce847eaa8519c976a60479873d378df5",
+        "wtxid": "6ebf19d5bdb823c8759e9f06e4b5a64dd2cda4fa75fdaadcb019d6fc48c9e67c"
+      },
+      {
+        "name": "wrong preimage",
+        "passed": true,
+        "coreAccepted": false,
+        "localScriptAccepted": false,
+        "adapterBoundary": "CORE_POLICY_RESULT",
+        "rejectReason": "mempool-script-verify-flag-failed (Script evaluated without error but finished with a false/empty top stack element)",
+        "txid": "a083ad28e107ac06f513640a154b0b253bbe0b5563794e9a4724cec0ec36e80d",
+        "wtxid": "13c7f9100bd6c4ee0b6db2b2a1b3a1706ff64f1389c138dcdd5ef8cd5d80163c"
+      },
+      {
+        "name": "fixed-length contract: 31-byte preimage",
+        "passed": true,
+        "coreAccepted": false,
+        "localScriptAccepted": false,
+        "adapterBoundary": "CORE_POLICY_RESULT",
+        "rejectReason": "mempool-script-verify-flag-failed (Script failed an OP_EQUALVERIFY operation)",
+        "txid": "d3ee6fd8deb3c1b384e9faab6d7148b2ce847eaa8519c976a60479873d378df5",
+        "wtxid": "3a30d6c1ca015d6d3be1d0f78ab8605c99e6173d715537f5bd67e83dc3d82c78"
+      },
+      {
+        "name": "altered witnessScript commitment",
+        "passed": true,
+        "coreAccepted": false,
+        "localScriptAccepted": false,
+        "adapterBoundary": "REJECTED_BEFORE_POLICY",
+        "rejectReason": "mempool-script-verify-flag-failed (Witness program hash mismatch)",
+        "txid": "a083ad28e107ac06f513640a154b0b253bbe0b5563794e9a4724cec0ec36e80d",
+        "wtxid": "9061bafc0271a132dff63ec6526defb169496af657f708c168b3f712ba79968e"
+      },
+      {
+        "name": "extra witness stack item",
+        "passed": true,
+        "coreAccepted": false,
+        "localScriptAccepted": false,
+        "adapterBoundary": "REJECTED_BEFORE_POLICY",
+        "rejectReason": "mempool-script-verify-flag-failed (Stack size must be exactly one after execution)",
+        "txid": "a083ad28e107ac06f513640a154b0b253bbe0b5563794e9a4724cec0ec36e80d",
+        "wtxid": "20667a214e5533fd1f1a6fbd2f84f3e00a29dcd15a958f517cf5ac033ab267c3"
+      },
+      {
+        "name": "521-byte witness element",
+        "passed": true,
+        "coreAccepted": false,
+        "localScriptAccepted": false,
+        "adapterBoundary": "CORE_POLICY_RESULT",
+        "rejectReason": "bad-witness-nonstandard",
+        "txid": "a083ad28e107ac06f513640a154b0b253bbe0b5563794e9a4724cec0ec36e80d",
+        "wtxid": "fd3f41154e8fa98fca34248b8840538a7e6ff96e2dfd928d352453fa1cea60c5"
+      },
+      {
+        "name": "zero fee: policy rejection with valid Script",
+        "passed": true,
+        "coreAccepted": false,
+        "localScriptAccepted": true,
+        "adapterBoundary": "CORE_POLICY_RESULT",
+        "rejectReason": "min relay fee not met",
+        "txid": "dac6f79b50a4aea07640b89714eda57821f0547faaf00462925d9e76c997d993",
+        "wtxid": "e4d127730fe94c7a9cb8b3e25341a203f11d8b866df2911fcb956eb35e3a62da"
+      },
+      {
+        "name": "negative transaction fee",
+        "passed": true,
+        "coreAccepted": false,
+        "localScriptAccepted": true,
+        "adapterBoundary": "REJECTED_BEFORE_POLICY",
+        "rejectReason": "bad-txns-in-belowout",
+        "txid": "40d05c2076070f458e1d99998625c97df04658778c5b08c14bb58949f8662dcf",
+        "wtxid": "3fe7bcc12b82797d7638b18450bec62efd1c25329dce2172d48ca4aae0f670b3"
+      },
+      {
+        "name": "fee exceeds NEO cap despite Core acceptance",
+        "passed": true,
+        "coreAccepted": true,
+        "localScriptAccepted": true,
+        "adapterBoundary": "REJECTED_BEFORE_POLICY",
+        "rejectReason": null,
+        "txid": "6d263c7a46d0570b16847dcaf3eef50bb65e7523c3ee00a59191b9a3e1b8df22",
+        "wtxid": "0703350f0f696afbd80f3021e3d3eebf82b4803feaf15334d5e4c306584035c1"
+      },
+      {
+        "name": "Core maximum fee-rate rejection",
+        "passed": true,
+        "coreAccepted": false,
+        "localScriptAccepted": true,
+        "adapterBoundary": "REJECTED_BEFORE_POLICY",
+        "rejectReason": "max-fee-exceeded",
+        "txid": "1aca4fab20e92c25e21fab3bf52876f460c4e0b30bf852b0531adccae0d2d42a",
+        "wtxid": "a50b7363b469b49fcb4ee3dc198c8cafece153edd98bf2ec2f0d2e2b49e49f91"
+      },
+      {
+        "name": "reorg removes funding UTXO",
+        "passed": true,
+        "adapterRejected": true
+      },
+      {
+        "name": "reorg recovery restores independently checked UTXO",
+        "passed": true,
+        "coreAccepted": true,
+        "localScriptAccepted": true,
+        "adapterBoundary": "CORE_POLICY_RESULT",
+        "rejectReason": null,
+        "txid": "a083ad28e107ac06f513640a154b0b253bbe0b5563794e9a4724cec0ec36e80d",
+        "wtxid": "0409e688ca4151c4f65bf8f2a0deabce783ff6bcf8cf4a9e4c615a407d0783f6"
+      }
+    ]
+  },
+  "contractProfile": "sha256-signature-refund-v1",
+  "contractCases": [
+    {
+      "name": "redemption: correct signer and preimage",
+      "passed": true,
+      "accepted": true,
+      "rejectReason": null,
+      "txid": "2e61ec190660c38c57131d7446bedae8a9a92f75f77a7ef71483848146304241",
+      "wtxid": "f7151081eb8823679e72f0bbc310b430e4d50c6fe2bb03837721aa169d0f8b80"
+    },
+    {
+      "name": "redemption: refund key cannot sign redeem branch",
+      "passed": true,
+      "accepted": false,
+      "rejectReason": "mempool-script-verify-flag-failed (Signature must be zero for failed CHECK(MULTI)SIG operation)",
+      "txid": "2e61ec190660c38c57131d7446bedae8a9a92f75f77a7ef71483848146304241",
+      "wtxid": "5300534da3431e47c72809a2b8d40dfdbe721769be00b237808518810a504c97"
+    },
+    {
+      "name": "redemption: wrong preimage",
+      "passed": true,
+      "accepted": false,
+      "rejectReason": "mempool-script-verify-flag-failed (Script failed an OP_EQUALVERIFY operation)",
+      "txid": "2e61ec190660c38c57131d7446bedae8a9a92f75f77a7ef71483848146304241",
+      "wtxid": "496fc51fd2593b5e3ee7bb64b9e927825fe4633c3333cecd6e5602135a0e581d"
+    },
+    {
+      "name": "redemption: short preimage",
+      "passed": true,
+      "accepted": false,
+      "rejectReason": "mempool-script-verify-flag-failed (Script failed an OP_EQUALVERIFY operation)",
+      "txid": "2e61ec190660c38c57131d7446bedae8a9a92f75f77a7ef71483848146304241",
+      "wtxid": "60951e47174d6ca04a677a7ae890e820e46ca82d129046d074c90a4f175b5f47"
+    },
+    {
+      "name": "redemption: missing signature",
+      "passed": true,
+      "accepted": false,
+      "rejectReason": "mempool-script-verify-flag-failed (Script evaluated without error but finished with a false/empty top stack element)",
+      "txid": "2e61ec190660c38c57131d7446bedae8a9a92f75f77a7ef71483848146304241",
+      "wtxid": "a5c95cb73926d9350b3a346ba76128154b201205b44597c3942983a0f8c5071b"
+    },
+    {
+      "name": "redemption: damaged signature",
+      "passed": true,
+      "accepted": false,
+      "rejectReason": "mempool-script-verify-flag-failed (Signature must be zero for failed CHECK(MULTI)SIG operation)",
+      "txid": "2e61ec190660c38c57131d7446bedae8a9a92f75f77a7ef71483848146304241",
+      "wtxid": "b2e35c90a0fc28d5f718d5e532f5824202a75d1e66b65a007993935acb77cb19"
+    },
+    {
+      "name": "redemption: destination changed after signature",
+      "passed": true,
+      "accepted": false,
+      "rejectReason": "mempool-script-verify-flag-failed (Signature must be zero for failed CHECK(MULTI)SIG operation)",
+      "txid": "f1807e7a4ee63a5e0f4dc491d6cde47c7293fd22758d159f6b14cf4b32f2cdea",
+      "wtxid": "3754d3201a2906e3c43811db2aa1d4f0ae4b813b99c1c942d5b1d5fde577886f"
+    },
+    {
+      "name": "redemption: wrong signing-context funding amount",
+      "passed": true,
+      "accepted": false,
+      "rejectReason": "mempool-script-verify-flag-failed (Signature must be zero for failed CHECK(MULTI)SIG operation)",
+      "txid": "2e61ec190660c38c57131d7446bedae8a9a92f75f77a7ef71483848146304241",
+      "wtxid": "93b57ae90a64d0fb03b22aa3331b121a811aacd88bf879c647d3559384200ec5"
+    },
+    {
+      "name": "redemption: nonminimal branch selector",
+      "passed": true,
+      "accepted": false,
+      "rejectReason": "mempool-script-verify-flag-failed (OP_IF/NOTIF argument must be minimal)",
+      "txid": "2e61ec190660c38c57131d7446bedae8a9a92f75f77a7ef71483848146304241",
+      "wtxid": "20a97114806e803500fe1c00e4cd52aaf0a6d8f5d0b1178b75622b40307ce165"
+    },
+    {
+      "name": "refund: before block-height lock",
+      "passed": true,
+      "accepted": false,
+      "rejectReason": "non-final",
+      "txid": "b059992f0a8a2fbfd85b36e7a4789827842f3a23a4cd0f13c9bf0fe47d2fcdc0",
+      "wtxid": "0955960bf827b0f6d88dd0c1a883d9f3acc3a17a2c8a4cdfd9f4e9ba3ea05e7d"
+    },
+    {
+      "name": "refund: correct key after block-height lock",
+      "passed": true,
+      "accepted": true,
+      "rejectReason": null,
+      "txid": "b059992f0a8a2fbfd85b36e7a4789827842f3a23a4cd0f13c9bf0fe47d2fcdc0",
+      "wtxid": "6292efe042a3762746b1ac769b69a1e6ed209259f13a4790f5701a7afafa51d4"
+    },
+    {
+      "name": "refund: redeem key cannot sign refund branch",
+      "passed": true,
+      "accepted": false,
+      "rejectReason": "mempool-script-verify-flag-failed (Signature must be zero for failed CHECK(MULTI)SIG operation)",
+      "txid": "b059992f0a8a2fbfd85b36e7a4789827842f3a23a4cd0f13c9bf0fe47d2fcdc0",
+      "wtxid": "2814f91ba3aacf5b05a833925b1042cc06a3f921e199d8bd2a1bcfbb914f132f"
+    },
+    {
+      "name": "refund: transaction locktime below script requirement",
+      "passed": true,
+      "accepted": false,
+      "rejectReason": "mempool-script-verify-flag-failed (Locktime requirement not satisfied)",
+      "txid": "66e45d62d9fe1811f02b2293d0796b2cb9f53d95658326c5478a932ea369bc4a",
+      "wtxid": "6c5bf20444f883247bfdc7e1bca2a6eac1fe5ad9b1132e4436366e943eb50adf"
+    },
+    {
+      "name": "refund: final sequence cannot bypass CLTV",
+      "passed": true,
+      "accepted": false,
+      "rejectReason": "mempool-script-verify-flag-failed (Locktime requirement not satisfied)",
+      "txid": "0561b438a20a4a18c7ca411fe844adc4245c95a3099e20980edb07ea92c36a47",
+      "wtxid": "43480a667052485a5664c043383ef311c42b5de3bda4906e6a7308396bcf17a7"
+    },
+    {
+      "name": "redeem branch remains valid after refund height",
+      "passed": true,
+      "accepted": true,
+      "rejectReason": null,
+      "txid": "2e61ec190660c38c57131d7446bedae8a9a92f75f77a7ef71483848146304241",
+      "wtxid": "96ba16954050a12f63b102f06d03185650c2f3f8a77a0249f3ac1f6bb01ffef7"
+    }
+  ],
+  "authorizationCases": [
+    {
+      "name": "unsigned redeem PSBT: signed one-use approval",
+      "passed": true,
+      "approved": true,
+      "psbtHash": "7343c61ece9e1bf3b32f8e64980ec0cf1f012e6bac10599682fdd5227510e13f",
+      "intentHash": "889fc71568dfc2d9dd8295b5ed56bd2026b5b75e86e4e0a5f39bc9dfb13d26ad",
+      "nonceConsumed": true
+    },
+    {
+      "name": "refund PSBT: reject before height maturity",
+      "passed": true,
+      "approved": false,
+      "reason": "PSBT_REFUND_NOT_MATURE",
+      "nonceConsumed": false
+    },
+    {
+      "name": "PSBT output destination differs from approved intent",
+      "passed": true,
+      "approved": false,
+      "reason": "PSBT_OUTPUT_INTENT_MISMATCH",
+      "nonceConsumed": false
+    },
+    {
+      "name": "PSBT output amount differs from approved intent",
+      "passed": true,
+      "approved": false,
+      "reason": "PSBT_OUTPUT_INTENT_MISMATCH",
+      "nonceConsumed": false
+    },
+    {
+      "name": "PSBT witness amount differs from real Core UTXO",
+      "passed": true,
+      "approved": false,
+      "reason": "PSBT_UTXO_BINDING_MISMATCH",
+      "nonceConsumed": false
+    },
+    {
+      "name": "PSBT witnessScript differs from contract",
+      "passed": true,
+      "approved": false,
+      "reason": "PSBT_UNSIGNED_SIGHASH_ALL_REQUIRED",
+      "nonceConsumed": false
+    },
+    {
+      "name": "PSBT declares SIGHASH_NONE",
+      "passed": true,
+      "approved": false,
+      "reason": "PSBT_UNSIGNED_SIGHASH_ALL_REQUIRED",
+      "nonceConsumed": false
+    },
+    {
+      "name": "PSBT already contains a partial signature",
+      "passed": true,
+      "approved": false,
+      "reason": "PSBT_UNSIGNED_SIGHASH_ALL_REQUIRED",
+      "nonceConsumed": false
+    },
+    {
+      "name": "PSBT fee exceeds independently approved cap",
+      "passed": true,
+      "approved": false,
+      "reason": "PSBT_FEE_OUT_OF_BOUNDS",
+      "nonceConsumed": false
+    },
+    {
+      "name": "PSBT bytes changed after approval signature",
+      "passed": true,
+      "approved": false,
+      "reason": "PSBT_APPROVAL_SIGNATURE_INVALID",
+      "nonceConsumed": false
+    },
+    {
+      "name": "expired operator approval",
+      "passed": true,
+      "approved": false,
+      "reason": "PSBT_APPROVAL_EXPIRED",
+      "nonceConsumed": false
+    },
+    {
+      "name": "wrong operator approval key",
+      "passed": true,
+      "approved": false,
+      "reason": "PSBT_APPROVAL_SIGNATURE_INVALID",
+      "nonceConsumed": false
+    },
+    {
+      "name": "real Core PSBT approval replay",
+      "passed": true,
+      "approved": false,
+      "reason": "PSBT_APPROVAL_REPLAYED"
+    },
+    {
+      "name": "unsigned refund PSBT: correct key policy and mature height",
+      "passed": true,
+      "approved": true,
+      "psbtHash": "18cc4c1aa338e8d63d31638cf1897631deafda0f6e02ef6fe9c95c1f0865a5d6",
+      "intentHash": "c5de3f5765b271af0a35a17c38278e24940229690c19eddff69965964e5bd738",
+      "nonceConsumed": true
+    }
+  ],
+  "fixtureSigningOnly": true,
+  "liveNeopassConnected": false,
+  "approvalStore": "isolated test-only atomic Set",
+  "mempoolUnchanged": true,
+  "productionConnected": false,
+  "applicationBroadcasts": 0,
+  "binaryProvenance": {
+    "version": "31.1",
+    "version_output": "Bitcoin Core daemon version v31.1.0 bitcoind",
+    "architecture": "x86_64-linux-gnu",
+    "archive_sha256": "b80d9c3e04da78fb6f0569685673418cf686fadba9042d926d13fb87ff503f9e",
+    "bitcoind_sha256": "986e63b3c8770f08d0059820ad3dd085d1ab9e1bea23946c243f858a06888a08",
+    "signature_verified": true,
+    "signer_fingerprint": "E777299FC265DD04793070EB944D35F9AC3DB76A",
+    "release_and_guix_checksums_match": true,
+    "source_url": "https://bitcoincore.org/bin/bitcoin-core-31.1/bitcoin-31.1-x86_64-linux-gnu.tar.gz"
+  }
+}

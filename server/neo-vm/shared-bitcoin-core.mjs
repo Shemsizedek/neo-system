@@ -23,6 +23,10 @@ export function restrictedBvmBitcoinRpc(rpc){
 }
 
 export function createRestrictedBvmBitcoinRpc({url,auth,fetchImpl}={}){
+  return restrictedBvmBitcoinRpc(loopbackBitcoinRpc({url,auth,fetchImpl}))
+}
+
+function loopbackBitcoinRpc({url,auth,fetchImpl}={}){
   const endpoint=new URL(url)
   if(endpoint.protocol!=='http:'||
      !['localhost','127.0.0.1','[::1]'].includes(endpoint.hostname)||
@@ -31,7 +35,18 @@ export function createRestrictedBvmBitcoinRpc({url,auth,fetchImpl}={}){
     throw new Error('BVM_LOOPBACK_RPC_REQUIRED')
   }
   if(typeof auth!=='string'||!auth.trim())throw new Error('BVM_RPC_AUTH_REQUIRED')
-  return restrictedBvmBitcoinRpc(bitcoinRpcClient({url,auth,fetchImpl}))
+  return bitcoinRpcClient({url,auth,fetchImpl})
+}
+
+// Separate read-only profile. The existing five-method BVM profile is unchanged.
+export function createRestrictedPsbtBitcoinRpc(options){
+  const rpc=loopbackBitcoinRpc(options)
+  const methods=new Set(['getblockchaininfo','decodepsbt','gettxout'])
+  return async(method,params=[])=>{
+    if(!methods.has(method))throw new Error('PSBT_RPC_METHOD_FORBIDDEN')
+    if(!Array.isArray(params))throw new Error('PSBT_RPC_PARAMS_INVALID')
+    return rpc(method,params)
+  }
 }
 
 /**

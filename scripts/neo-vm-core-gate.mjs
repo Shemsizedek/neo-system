@@ -39,7 +39,7 @@ async function unusedPort() {
   return port
 }
 
-export async function runBitcoinCoreGate({ bitcoindPath, evidencePath } = {}) {
+export async function runBitcoinCoreGate({ bitcoindPath, evidencePath, afterRegtestChecks } = {}) {
   if (!bitcoindPath || !isAbsolute(bitcoindPath)) throw new Error('ABSOLUTE_VERIFIED_BITCOIND_PATH_REQUIRED')
   const binarySha256 = createHash('sha256').update(await readFile(bitcoindPath)).digest('hex')
   const directory = await mkdtemp(join(tmpdir(), 'neo-bvm-regtest-'))
@@ -58,6 +58,7 @@ export async function runBitcoinCoreGate({ bitcoindPath, evidencePath } = {}) {
   let applicationRpc
   try {
     let ready = false
+    let privateEndpoint
     for (let attempt = 0; attempt < 200; attempt++) {
       if (spawnError || child.exitCode !== null) throw new Error(`REGTEST_NODE_START_FAILED: ${startupError || spawnError?.message}`)
       try {
@@ -67,6 +68,7 @@ export async function runBitcoinCoreGate({ bitcoindPath, evidencePath } = {}) {
         const chain = await controlRpc('getblockchaininfo', [])
         assert.equal(chain.chain, 'regtest')
         applicationRpc = createRestrictedBvmBitcoinRpc({ url, auth })
+        privateEndpoint = { url, auth }
         ready = true
         break
       } catch { await delay(50) }
@@ -142,6 +144,11 @@ export async function runBitcoinCoreGate({ bitcoindPath, evidencePath } = {}) {
     await controlRpc('reconsiderblock', [fundingBlocks[0]])
     await check('reorg recovery restores independently checked UTXO', { accepted: true })
     assert.deepEqual(await controlRpc('getrawmempool', []), initialMempool)
+    // Trusted test extension only; never accepted by an application endpoint.
+    const additionalGate = afterRegtestChecks
+      ? await afterRegtestChecks({ controlRpc, privateEndpoint, network })
+      : undefined
+    assert.deepEqual(await controlRpc('getrawmempool', []), initialMempool)
     const report = {
       gate: 'NEO-VM-G3', checkedAt: new Date().toISOString(), status: 'PASS',
       bitcoinCore: { version: network.version, subversion: network.subversion, binarySha256 },
@@ -149,6 +156,7 @@ export async function runBitcoinCoreGate({ bitcoindPath, evidencePath } = {}) {
       validation: 'independent local Script evaluation and Bitcoin Core mempool policy checks',
       applicationRpc: 'existing NEO Bitcoin Core client with five-method read-only allowlist',
       cases, mempoolUnchanged: true, productionConnected: false, applicationBroadcasts: 0,
+      ...(additionalGate ? { additionalGate } : {}),
     }
     if (evidencePath) await writeFile(evidencePath, JSON.stringify(report, null, 2) + '\n')
     return report

@@ -656,6 +656,19 @@
         "docs/evidence/neo-vm-gate-3.json",
         ".github/workflows/neo-vm-gate.yml"
       ]
+    },
+    {
+      "capability_id": "NEO-VM-G4-SIGNATURE-REFUND-PSBT",
+      "status": "PARTIAL",
+      "scope": "Public-key compiler and selected signature/refund/PSBT review cases tested on isolated Core; live identity, durable approval storage, external signer and production deployment pending",
+      "evidence": [
+        "core/neo-nvm/signature-refund.mjs",
+        "server/neo-vm/psbt-authorization.mjs",
+        "server/neo-vm/signature-refund.test.mjs",
+        "scripts/neo-vm-signature-core-gate.mjs",
+        "docs/NEO-NVM-BVM-GATE-4.md",
+        "docs/evidence/neo-vm-gate-4.json"
+      ]
     }
   ],
   "autopilot": {

@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
   "program_id": "NEO-VM",
-  "gate_id": "NEO-VM-G3",
+  "gate_id": "NEO-VM-G4",
   "project": "NEO System — Project 144",
-  "status": "ISOLATED_REGTEST_VALIDATED",
+  "status": "SIGNATURE_REFUND_AND_PSBT_REVIEW_LOCAL_VALIDATED",
   "decision_date": "2026-10-29",
-  "source_baseline": "8911cd50923be1b0b6a73a68ed6413c3e8ea3194",
+  "source_baseline": "bf7b3f24562ff75ea0adf47246833e641c4a5636",
   "project_register": {
     "workstream": "NEO Core / Bitcoin contract execution",
     "purpose": "Compile bounded NEO contracts to existing Bitcoin Script and evaluate them locally",
@@ -37,6 +37,19 @@
       "role": "Independent Script and transaction-context checks using shared NEO RPC transport",
       "implementation": "server/neo-vm/bvm-regtest.mjs",
       "native_validation": "scripts/neo-vm-core-gate.mjs"
+    },
+    {
+      "id": "NEO-NVM-SIGNATURE-REFUND",
+      "role": "Public-key-only P2WSH contract compiler with hashlock redemption and block-height refund",
+      "implementation": "core/neo-nvm/signature-refund.mjs",
+      "execution_authority": "Bitcoin Core"
+    },
+    {
+      "id": "NEO-PSBT-REVIEW",
+      "role": "Exact-PSBT and intent review with operator signature and atomic one-use approval",
+      "implementation": "server/neo-vm/psbt-authorization.mjs",
+      "signing": false,
+      "broadcasting": false
     }
   ],
   "execution_policy": {
@@ -47,7 +60,8 @@
     "contracts": [
       "sha256-preimage-32-v1",
       "sha256-preimage",
-      "sha256-preimage-32"
+      "sha256-preimage-32",
+      "sha256-signature-refund-v1"
     ],
     "evm_compatibility": false,
     "format_inference": false,
@@ -59,7 +73,21 @@
     "broadcasting": false,
     "receipt_evidence": "deterministic unsigned local summary checksum",
     "max_transaction_weight": 400000,
-    "max_fee_satoshis": 100000
+    "max_fee_satoshis": 100000,
+    "rpc_profiles": {
+      "bvm": "existing five read-only methods",
+      "psbt_review": [
+        "getblockchaininfo",
+        "decodepsbt",
+        "gettxout"
+      ]
+    },
+    "operator_approval": {
+      "signature": "Ed25519",
+      "maximum_lifetime_seconds": 300,
+      "atomic_nonce_store_required": true,
+      "live_neopass_connected": false
+    }
   },
   "integration_checklist": [
     {
@@ -89,6 +117,22 @@
     {
       "integration": "Counterparty and NOMNI semantics",
       "status": "NOT_IMPLEMENTED"
+    },
+    {
+      "integration": "Signature/refund template to Bitcoin Core regtest",
+      "status": "SELECTED_VECTORS_LOCAL_VALIDATED"
+    },
+    {
+      "integration": "PSBT intent review and signed one-use approval",
+      "status": "LOCAL_TESTED_WITH_FIXTURE_AUTHORITY"
+    },
+    {
+      "integration": "Durable atomic approval store",
+      "status": "PENDING"
+    },
+    {
+      "integration": "External signer and final transaction revalidation",
+      "status": "PENDING"
     }
   ],
   "decision_log": [
@@ -119,6 +163,18 @@
     {
       "id": "VM-D007",
       "decision": "Bind actual witness, txid, wtxid, single prevout, weight and fees before treating Core mempool acceptance as usable local evidence"
+    },
+    {
+      "id": "VM-D008",
+      "decision": "Delegate IF, ECDSA and CLTV execution to Core; do not expand the local subset with simulated signature success"
+    },
+    {
+      "id": "VM-D009",
+      "decision": "Bind a public-key-only signed approval to exact PSBT bytes, normalized intent, five-minute expiry and one atomic nonce; snapshot authenticated fields before RPC"
+    },
+    {
+      "id": "VM-D010",
+      "decision": "Keep Ed25519 operator approval distinct from Bitcoin ECDSA and from unconnected NEOpass identity; fixture signing remains test-only"
     }
   ],
   "prioritized_backlog": [
@@ -140,13 +196,13 @@
     {
       "id": "VM-003",
       "priority": "P1",
-      "status": "NEXT",
+      "status": "REGTEST_TEMPLATE_AND_REVIEW_VALIDATED",
       "deliverable": "Reviewed signature and timelock contract templates, transaction-context validation and differential tests"
     },
     {
       "id": "VM-004",
       "priority": "P1",
-      "status": "PLANNED",
+      "status": "NEXT",
       "deliverable": "Verify NEOpass and NeoMask capabilities before adding authorized PSBT workflows"
     },
     {
@@ -160,27 +216,35 @@
       "priority": "P1",
       "status": "PLANNED",
       "deliverable": "Broaden independent Core differential coverage for opcode limits, nonminimal-push policy and RBF/mempool conflicts before supporting additional contracts"
+    },
+    {
+      "id": "VM-007",
+      "priority": "P0",
+      "status": "NEXT",
+      "deliverable": "Durable atomic nonce-store integration, live identity binding and independently reviewed external-signer/final-transaction controls"
     }
   ],
-  "next_milestone": "Reviewed signature/refund templates and PSBT authorization tests; verify an operator-host staging deployment before enabling product integrations",
+  "next_milestone": "Durable approval storage and verified identity/external-signer boundaries; operator-host staging remains pending",
   "verification": {
     "vm_tests": {
-      "passed": 62,
+      "passed": 78,
       "failed": 0,
       "skipped": 0
     },
     "core_gate": {
       "status": "PASS",
-      "cases": 13,
+      "signature_refund_cases": 15,
+      "psbt_authorization_cases": 14,
+      "gate3_core_regressions": 13,
       "version": 310100,
       "network": "regtest"
     },
-    "evidence": "docs/evidence/neo-vm-gate-3.json",
+    "evidence": "docs/evidence/neo-vm-gate-4.json",
     "github_publication_approved": true,
     "production_deployment": "NOT_PERFORMED",
     "repository_tests": {
-      "total": 941,
-      "passed": 940,
+      "total": 957,
+      "passed": 956,
       "failed": 0,
       "skipped": 1,
       "skip": "existing KI-015 Postgres integration test without isolated database configuration"
@@ -240,7 +304,25 @@
         "status": "PASS",
         "run": "https://github.com/Shemsizedek/neo-system/actions/runs/40977893952"
       }
+    },
+    "gate4": {
+      "unit_tests_passed": 78,
+      "native_contract_cases_passed": 15,
+      "native_psbt_cases_passed": 14,
+      "gate3_native_regressions_passed": 13,
+      "network": "regtest",
+      "production_deployment": "NOT_PERFORMED",
+      "publication": "PENDING",
+      "repository_tests": {
+        "passed": 956,
+        "failed": 0,
+        "skipped": 1
+      },
+      "build": "PASS",
+      "architecture_audit_errors": 0,
+      "architecture_registry_tests_passed": 3,
+      "workflow_yaml": "PARSED"
     }
   },
-  "source_dependency": "https://github.com/Shemsizedek/neo-system/pull/1268"
+  "source_dependency": "https://github.com/Shemsizedek/neo-system/pull/1275"
 }
