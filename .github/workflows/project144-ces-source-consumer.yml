@@ -1,0 +1,22 @@
+name: Project 144 CES source and Bank Bot policy
+on:
+  pull_request:
+    paths:
+      - 'integrations/ces-banking/**'
+      - 'server/neo-bots/bank-bot.mjs'
+      - 'server/neo-bots/runtime.mjs'
+      - 'server/neo-bots/runtime.test.mjs'
+      - '.github/workflows/project144-ces-source-consumer.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source-only-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Verify CES import boundary and NEO Bot approvals
+        run: node --test integrations/ces-banking/*.test.mjs server/neo-bots/runtime.test.mjs server/neo-bots/ces-read-runtime.test.mjs
