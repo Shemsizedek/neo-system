@@ -35,9 +35,9 @@ export function createBitcoinGatewayStagingServer({now=()=>new Date().toISOStrin
     }
   })
 }
-export function startBitcoinGatewayStaging({port=Number(process.env.PORT||10000)}={}){
+export function startBitcoinGatewayStaging({port=Number(process.env.PORT||10000),host=process.env.HOST||'0.0.0.0'}={}){
   const server=createBitcoinGatewayStagingServer()
-  server.listen(port,'0.0.0.0',()=>{
+  server.listen(port,host,()=>{
     process.stdout.write('[neo-bitcoin-gateway-staging] started; Bitcoin access disabled\n')
   })
   return server
