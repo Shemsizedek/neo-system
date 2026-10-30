@@ -27,6 +27,9 @@ public class MainActivity extends Activity {
   private Button begin, end;
   private android.os.Handler timer=new android.os.Handler(android.os.Looper.getMainLooper());
   private int tab=0;
+  private volatile String workerMessage="Not connected";
+  private EditText endpointField, tokenField;
+
   private int dp(float v){return (int)(getResources().getDisplayMetrics().density*v+0.5f);}
   private GradientDrawable panel(int color,int radius){GradientDrawable d=new GradientDrawable();d.setColor(color);d.setCornerRadius(dp(radius));return d;}
   private TextView txt(String s,int sp,int color,boolean bold){TextView t=new TextView(this);t.setText(s);t.setTextColor(color);t.setTextSize(sp);if(bold)t.setTypeface(Typeface.DEFAULT,Typeface.BOLD);return t;}
@@ -65,14 +68,26 @@ public class MainActivity extends Activity {
   private void generator(){
     add(page,txt("NEO Generator",28,WHITE,true),6);add(page,txt("Power, capacity and production visibility",14,MUTED,false),18);
     LinearLayout c=card();label(c,"Energy generation","Not connected");add(c,txt("The phone cannot generate electricity by running the SHA-256 benchmark.",13,MUTED,false),0);add(page,c,14);
-    c=card();label(c,"Remote mining capacity","Not connected");add(c,txt("A verified gateway and mining worker API are required.",13,MUTED,false),0);add(page,c,14);
+    c=card();label(c,"Remote mining capacity",workerMessage);
+    add(c,txt("Read-only HTTPS telemetry; pool claims are not independently verified.",13,MUTED,false),12);
+    endpointField=new EditText(this);endpointField.setSingleLine(true);endpointField.setText(getPreferences(0).getString("endpoint",""));endpointField.setHint("https://gateway.example/api/worker");endpointField.setTextColor(WHITE);endpointField.setHintTextColor(MUTED);endpointField.setInputType(17);add(c,endpointField,8);
+    tokenField=new EditText(this);tokenField.setSingleLine(true);tokenField.setHint("Optional read-only API token");tokenField.setTextColor(WHITE);tokenField.setHintTextColor(MUTED);tokenField.setInputType(129);add(c,tokenField,10);
+    Button refresh=button("Fetch worker status",true);add(c,refresh,0);refresh.setOnClickListener(v->{
+      String url=endpointField.getText().toString().trim(), token=tokenField.getText().toString();
+      if(!url.startsWith("https://")){workerMessage="HTTPS endpoint required";render();return;}
+      getPreferences(0).edit().putString("endpoint",url).apply();
+      refresh.setEnabled(false);
+      new Thread(()->{String result=WorkerTelemetry.fetch(url,token);
+        runOnUiThread(()->{workerMessage=result;render();});}).start();
+    });
+    add(page,c,14);
     c=card();label(c,"Pool-confirmed earnings","Unavailable");add(c,txt("No estimated BTC balances are presented as verified payouts.",13,MUTED,false),0);add(page,c,14);
   }
   private void security(){
     add(page,txt("Security & access",28,WHITE,true),6);add(page,txt("Device protection and verified connections",14,MUTED,false),18);
     LinearLayout c=card();label(c,"NEO Pass","Enrollment pending");add(c,txt("Authentication is not active in this build.",13,MUTED,false),0);add(page,c,14);
     c=card();label(c,"Wallet / seed access","None");add(c,txt("This application does not request wallet credentials or store seed phrases.",13,MUTED,false),0);add(page,c,14);
-    c=card();label(c,"Build","0.12.0 • Development");add(c,txt("Local benchmark only. Do not interpret the hash count as submitted Bitcoin shares.",13,MUTED,false),0);add(page,c,14);
+    c=card();label(c,"Build","0.16.0 • Development");add(c,txt("Local benchmark only. Do not interpret the hash count as submitted Bitcoin shares.",13,MUTED,false),0);add(page,c,14);
   }
   private void updateMetrics(){if(metric==null)return;long sec=Math.max(1,(System.currentTimeMillis()-started)/1000);metric.setText((running.get()?count/sec:0)+" H/s");if(indicator!=null)indicator.setText(state+(running.get()?" • "+count+" hashes":""));}
   private void startBenchmark(){
