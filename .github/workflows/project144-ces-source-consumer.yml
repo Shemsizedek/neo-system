@@ -3,6 +3,7 @@ on:
   pull_request:
     paths:
       - 'integrations/ces-banking/**'
+      - 'deploy/ces-read-runtime/staging-preflight*'
       - 'server/neo-bots/bank-bot.mjs'
       - 'server/neo-bots/runtime.mjs'
       - 'server/neo-bots/runtime.test.mjs'
@@ -19,4 +20,4 @@ jobs:
         with:
           node-version: '24'
       - name: Verify CES import boundary and NEO Bot approvals
-        run: node --test integrations/ces-banking/*.test.mjs server/neo-bots/runtime.test.mjs server/neo-bots/ces-read-runtime.test.mjs
+        run: node --test integrations/ces-banking/*.test.mjs server/neo-bots/runtime.test.mjs server/neo-bots/ces-read-runtime.test.mjs deploy/ces-read-runtime/*.test.mjs
