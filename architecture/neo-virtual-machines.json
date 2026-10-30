@@ -312,7 +312,11 @@
       "gate3_native_regressions_passed": 13,
       "network": "regtest",
       "production_deployment": "NOT_PERFORMED",
-      "publication": "PENDING",
+      "publication": {
+        "status": "PUBLISHED_DRAFT",
+        "pull_request": "https://github.com/Shemsizedek/neo-system/pull/1277",
+        "implementation_commit": "1986498e76196fe44109d40f3d2a746ad57e03d9"
+      },
       "repository_tests": {
         "passed": 956,
         "failed": 0,
@@ -321,7 +325,23 @@
       "build": "PASS",
       "architecture_audit_errors": 0,
       "architecture_registry_tests_passed": 3,
-      "workflow_yaml": "PARSED"
+      "workflow_yaml": "PARSED",
+      "github_ci": {
+        "checked_commit": "1986498e76196fe44109d40f3d2a746ad57e03d9",
+        "vm_gate": {
+          "status": "PASS",
+          "run": "https://github.com/Shemsizedek/neo-system/actions/runs/40985539872"
+        },
+        "standard_ci": {
+          "status": "PASS",
+          "run": "https://github.com/Shemsizedek/neo-system/actions/runs/40985539880"
+        },
+        "architecture_standard": {
+          "status": "PASS",
+          "run": "https://github.com/Shemsizedek/neo-system/actions/runs/40985539926"
+        },
+        "preexisting_other_workflow_failures": 4
+      }
     }
   },
   "source_dependency": "https://github.com/Shemsizedek/neo-system/pull/1275"
