@@ -1,10 +1,11 @@
 import {createHash} from 'node:crypto'
+import {compileSha256Hashlock} from '../../core/neo-bvm/hashlock.mjs'
 
 const HEX32=/^[0-9a-f]{64}$/i
 const sha256=buffer=>createHash('sha256').update(buffer).digest('hex')
 function exactKeys(value,keys,label){
   if(!value||typeof value!=='object'||Array.isArray(value)||Object.getPrototypeOf(value)!==Object.prototype)throw new Error(label+'_OBJECT_REQUIRED')
-  const received=Object.keys(value)
+  const received=Reflect.ownKeys(value)
   if(received.some(key=>!keys.includes(key))||keys.some(key=>!Object.hasOwn(value,key)))throw new Error(label+'_FIELDS_INVALID')
 }
 
@@ -14,14 +15,13 @@ export function compileNvm(program){
   if(program.version!==1)throw new Error('NVM_VERSION_UNSUPPORTED')
   if(program.network!=='bitcoin-regtest')throw new Error('NVM_BITCOIN_REGTEST_ONLY')
   exactKeys(program.contract,['kind','digest'],'NVM_CONTRACT')
-  if(program.contract.kind!=='sha256-preimage')throw new Error('NVM_CONTRACT_UNSUPPORTED')
+  if(!['sha256-preimage','sha256-preimage-32'].includes(program.contract.kind))throw new Error('NVM_CONTRACT_UNSUPPORTED')
   if(typeof program.contract.digest!=='string'||!HEX32.test(program.contract.digest))throw new Error('NVM_DIGEST_INVALID')
   const digest=program.contract.digest.toLowerCase()
   // OP_SHA256 PUSH32 <digest> OP_EQUAL. A hashlock is NOT an authorization signature.
-  const witnessScript='a820'+digest+'87'
-  const programId=sha256(Buffer.from(witnessScript,'hex'))
-  const scriptPubKey='0020'+programId
-  return Object.freeze({version:1,network:'bitcoin-regtest',kind:'sha256-preimage',digest,witnessScript,scriptPubKey,programId})
+  const exactBytes=program.contract.kind==='sha256-preimage-32'?32:null
+  const {witnessScriptHex:witnessScript,scriptHash:programId,scriptPubKeyHex:scriptPubKey}=compileSha256Hashlock(digest,exactBytes)
+  return Object.freeze({version:1,network:'bitcoin-regtest',kind:program.contract.kind,digest,witnessScript,scriptPubKey,programId})
 }
 
 export function digestPreimage(preimage){

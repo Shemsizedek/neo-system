@@ -18,7 +18,9 @@ NVM is a restricted compiler for native Bitcoin Script and BVM is an isolated **
 ```bash
 node --test server/neo-vm/*.test.mjs
 ```
-These are mocked RPC/unit tests, **not** live Bitcoin Core validation.
+These are mocked RPC/unit tests. The subsequent independent node validation,
+witness binding and fee guards are recorded in
+[`NEO-NVM-BVM-GATE-3.md`](NEO-NVM-BVM-GATE-3.md).
 
 ## Actual Bitcoin Core acceptance
 1. Verify the operator-owned Bitcoin Core installer / binary source, version, binary signature or reproducible hash, OS and service settings.
