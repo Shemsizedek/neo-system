@@ -7,6 +7,7 @@ on:
       - 'src/explorer/NeoExplorer.tsx'
       - 'tests/counterpartyHealthAdapter.test.mjs'
       - '.github/workflows/counterparty-health.yml'
+      - 'scripts/neo-explorer-public-smoke.mjs'
   workflow_dispatch:
 permissions:
   contents: read
@@ -31,3 +32,12 @@ jobs:
             -H 'Accept: application/json' \
             -o counterparty-health.json
           node -e 'const fs=require("node:fs");const p=JSON.parse(fs.readFileSync("counterparty-health.json","utf8"));if(!p.result || p.result.network!=="mainnet" || p.result.server_ready!==true || p.result.ledger_state!=="Following" || !Number.isSafeInteger(p.result.backend_height) || !Number.isSafeInteger(p.result.counterparty_height) || p.result.counterparty_height<p.result.backend_height-1){console.error("Counterparty mainnet readiness not confirmed");process.exit(1)}console.log("Counterparty mainnet health ready: schema and heights verified")'
+
+  public-explorer-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: node scripts/neo-explorer-public-smoke.mjs
