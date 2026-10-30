@@ -1,0 +1,33 @@
+name: NEO Bitcoin Core disposable regtest gateway
+on:
+  pull_request:
+    paths:
+      - 'server/neo-vm/**'
+      - 'server/neo-platform-api/bitcoin-gateway*'
+      - '.github/workflows/neo-bitcoin-core-regtest-live.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  regtest-gateway:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      BITCOIN_RPC_URL: http://127.0.0.1:18443
+      BITCOIN_RPC_AUTH: neo-regtest-ci:disposable-not-a-secret
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Start isolated Bitcoin Core (unofficial test container)
+        run: |
+          docker run --rm -d --name neo-bvm-ci-regtest --network host bitcoin/bitcoin:29.4 \
+            -regtest=1 -server=1 -listen=0 -dnsseed=0 -connect=0 \
+            -rpcbind=127.0.0.1 -rpcuser=neo-regtest-ci \
+            -rpcpassword=disposable-not-a-secret
+      - name: Verify actual Bitcoin Core and read-only gateway
+        run: node server/neo-platform-api/bitcoin-core-regtest-smoke.mjs
+      - name: Stop ephemeral node
+        if: always()
+        run: docker rm -f neo-bvm-ci-regtest || true
