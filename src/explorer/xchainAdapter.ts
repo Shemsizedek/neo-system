@@ -46,7 +46,7 @@ export class XChainExplorerAdapter {
     }
     const data = statusBody ? Object.fromEntries(
       ['supported', 'available', 'last_block', 'stale', 'replica_halted', 'decoder_health', 'tip_age_seconds'].map(key => {
-        const values = statusBody[key]
+        const values = key === 'last_block' ? (statusBody.last_block ?? statusBody.chain_tip) : statusBody[key]
         return [key, values && typeof values === 'object' && !Array.isArray(values) ? (values as Record<string, unknown>)[network] ?? null : null]
       })
     ) : envelope.data
