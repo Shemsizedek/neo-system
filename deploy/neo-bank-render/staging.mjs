@@ -39,14 +39,34 @@ function send(res,status,data,type=headers){
   res.writeHead(status,type);
   res.end(typeof data==='string'?data:JSON.stringify(data));
 }
-export function createNeoBankStagingServer(){
-  return http.createServer((req,res)=>{
+export function createNeoBankStagingServer({cesReadFetch=fetch}={}){
+  return http.createServer(async(req,res)=>{
     const path=new URL(req.url||'/', 'http://localhost').pathname;
     if(req.method!=='GET')return send(res,503,{ok:false,error:'staging_writes_disabled',mode:'read-only-preview'});
     if(path==='/healthz')return send(res,200,{ok:true,service:'neo-bank-render-staging',mode:'read-only-preview',bankOperational:false,externalCesConnected:false});
     if(path==='/health')return send(res,503,{ok:false,service:'neo-bank',reason:'bank_backend_not_deployed'});
     if(path==='/api/v1/community/status')return send(res,503,{ok:false,service:'NEO Bank',database:'not_attached',accountServices:false,mode:'read-only-preview'});
     if(path==='/api/v1/ces/exchanges')return send(res,200,{ok:true,source:'neo-system/CES_EXCHANGES',verifiedExternalConnections:0,bot:{id:NEO_BANK_BOT.id,liveExecution:false,approvalRequired:true},exchanges});
+    if(path==='/api/v1/ces/bridge/status'){
+      // Only poll the public read-service health endpoint; never forward tokens,
+      // cookies, account identifiers, user inputs, or administrative routes.
+      let transport='unavailable', sourceDatabase='unverified';
+      try{
+        const response=await cesReadFetch('https://neo-ces-read-staging.onrender.com/health',{
+          method:'GET',headers:{accept:'application/json'},signal:AbortSignal.timeout(3500)
+        });
+        if(response.ok){
+          const report=await response.json();
+          if(report?.ok===true&&report.service==='neo-ces-read-runtime'){
+            transport='reachable';
+            sourceDatabase=report.database===true?'connected':'unavailable';
+          }
+        }
+      }catch{}
+      return send(res,200,{ok:true,mode:'read-only-preview',
+        ces:{transport,sourceDatabase,cesAccountsAuthenticated:false,
+          importsEnabled:false,financialWritesEnabled:false},verifiedExternalAccountLinks:0});
+    }
     if(path==='/api/v1/auth/config')return send(res,200,{enabled:false,mode:'read-only-preview'});
     if(path==='/'||path==='/index.html')return send(res,200,page,htmlHeaders);
     return send(res,404,{ok:false,error:'not_found'});
