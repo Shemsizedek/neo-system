@@ -4,6 +4,10 @@ const SOURCE_ORIGIN = 'https://nuuniversitydot.wordpress.com';
 const SOURCE_HOME = '/the-nu-univ-system/';
 const PUBLIC_ORIGIN = 'https://university.holytemples.org';
 const GISS_SCHOOL = 'https://egov.holytemples.org/portal/school';
+const NEO_HOME = 'https://neo.holytemples.org';
+const NEO_HUB = 'https://hub.holytemples.org';
+const NEO_PASS = 'https://neopass.holytemples.org';
+const NOOGLE = 'https://noogle.holytemples.org';
 
 function send(res,status,body,headers={}){
   const payload=Buffer.from(body);
@@ -22,7 +26,7 @@ function fallback(res,message='Nu University is temporarily unavailable.'){
 }
 
 function universityBar(){
-  return `<style id="neo-university-shell">.neo-university-bar{position:sticky;top:0;z-index:2147483000;display:flex;align-items:center;gap:14px;padding:10px 16px;background:#101613;color:#f4f0e2;border-bottom:1px solid #6d5a2c;font:600 14px/1.25 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.neo-university-bar strong{font-family:Georgia,serif;letter-spacing:.04em}.neo-university-bar span{color:#bdb6a4}.neo-university-bar a{margin-left:auto!important;padding:8px 13px!important;border-radius:999px!important;background:#d6b665!important;color:#11160f!important;text-decoration:none!important;font-weight:800!important;white-space:nowrap}@media(max-width:620px){.neo-university-bar span{display:none}.neo-university-bar{padding:9px 10px;font-size:13px}.neo-university-bar a{padding:7px 10px!important}}</style><div class="neo-university-bar" role="navigation" aria-label="Nu University"><strong>NU UNIVERSITY</strong><span>Global Interdependent School District · NEO GISS</span><a href="/giss">Enroll →</a></div>`;
+  return `<style id="neo-university-shell">.neo-university-bar{position:sticky;top:0;z-index:2147483000;display:flex;align-items:center;gap:14px;padding:10px 16px;background:#101613;color:#f4f0e2;border-bottom:1px solid #6d5a2c;font:600 14px/1.25 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.neo-university-bar strong{font-family:Georgia,serif;letter-spacing:.04em}.neo-university-bar span{color:#bdb6a4}.neo-university-links{margin-left:auto;display:flex;gap:7px;flex-wrap:wrap}.neo-university-links a{padding:8px 11px!important;border-radius:999px!important;background:#1d2924!important;color:#f4f0e2!important;text-decoration:none!important;font-weight:800!important;white-space:nowrap}.neo-university-links a.primary{background:#d6b665!important;color:#11160f!important}@media(max-width:760px){.neo-university-bar{align-items:flex-start;flex-direction:column;padding:9px 10px;font-size:13px}.neo-university-bar span{display:none}.neo-university-links{margin-left:0;width:100%;overflow:auto;flex-wrap:nowrap}.neo-university-links a{font-size:12px}}</style><div class="neo-university-bar" role="navigation" aria-label="Nu University and NEO System"><strong>NU UNIVERSITY</strong><span>Global Interdependent School District · NEO Cipher</span><div class="neo-university-links"><a href="/neo">NEO</a><a href="/hub">Hub</a><a href="/noogle">Noogle</a><a href="/neopass">NEOpass</a><a class="primary" href="/giss">Enroll →</a></div></div>`;
 }
 
 function rewriteHtml(html){
@@ -40,6 +44,10 @@ async function proxy(req,res){
   const incoming=new URL(req.url||'/',PUBLIC_ORIGIN);
   if(incoming.pathname==='/health') return send(res,200,JSON.stringify({service:'neo-nu-university',status:'ok',source:SOURCE_ORIGIN,giss:GISS_SCHOOL}),{'content-type':'application/json; charset=utf-8','cache-control':'no-store'});
   if(incoming.pathname==='/giss'||incoming.pathname==='/login'||incoming.pathname==='/portal') return redirect(res,GISS_SCHOOL,302);
+  if(incoming.pathname==='/neo') return redirect(res,NEO_HOME,302);
+  if(incoming.pathname==='/hub') return redirect(res,NEO_HUB,302);
+  if(incoming.pathname==='/neopass') return redirect(res,NEO_PASS,302);
+  if(incoming.pathname==='/noogle') return redirect(res,NOOGLE,302);
   const targetPath=incoming.pathname==='/'?SOURCE_HOME:incoming.pathname;
   const target=new URL(targetPath+incoming.search,SOURCE_ORIGIN);
   let upstream;
