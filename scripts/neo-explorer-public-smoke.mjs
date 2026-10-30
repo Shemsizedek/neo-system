@@ -29,7 +29,12 @@ function ensureCounterparty(result, response) {
 }
 function ensureXchain(result) {
   const v = result?.data
-  if (!v || typeof v !== 'object') fail('XChain status envelope invalid')
+  if (!v || typeof v !== 'object') {
+    // XChain is an unauthenticated public read API. Emit capped response for protocol-drift triage.
+    const preview = JSON.stringify(result)
+    console.error('XChain response shape (first 1200 chars):', typeof preview === 'string' ? preview.slice(0,1200) : String(result))
+    fail('XChain status envelope invalid')
+  }
   if (!v.available?.TBTC || !integer(v.last_block?.TBTC)) fail('XChain Bitcoin testnet height not available')
   if (v.stale?.TBTC !== false || v.replica_halted?.TBTC !== false) fail('XChain testnet freshness cannot be confirmed')
   console.log('PASS XChain TBTC testnet status, block',v.last_block.TBTC)
