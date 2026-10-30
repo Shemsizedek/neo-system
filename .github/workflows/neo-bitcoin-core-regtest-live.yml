@@ -23,7 +23,7 @@ jobs:
       - name: Start isolated Bitcoin Core (unofficial test container)
         run: |
           docker run --rm -d --name neo-bvm-ci-regtest --network host bitcoin/bitcoin:29.4 \
-            -regtest=1 -server=1 -listen=0 -dnsseed=0 -connect=0 \
+            -regtest=1 -server=1 -listen=0 -dnsseed=0 -connect=0 -fallbackfee=0.0002 \
             -rpcbind=127.0.0.1 -rpcuser=neo-regtest-ci \
             -rpcpassword=disposable-not-a-secret
       - name: Verify actual Bitcoin Core and read-only gateway
