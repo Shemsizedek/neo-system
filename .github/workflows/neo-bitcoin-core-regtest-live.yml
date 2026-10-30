@@ -28,6 +28,8 @@ jobs:
             -rpcpassword=disposable-not-a-secret
       - name: Verify actual Bitcoin Core and read-only gateway
         run: node server/neo-platform-api/bitcoin-core-regtest-smoke.mjs
+      - name: Verify actual Bitcoin Script witnesses using Bitcoin Core
+        run: node server/neo-platform-api/bitcoin-script-regtest-acceptance.mjs
       - name: Stop ephemeral node
         if: always()
         run: docker rm -f neo-bvm-ci-regtest || true
