@@ -1,0 +1,246 @@
+{
+  "schema_version": 1,
+  "program_id": "NEO-VM",
+  "gate_id": "NEO-VM-G3",
+  "project": "NEO System — Project 144",
+  "status": "ISOLATED_REGTEST_VALIDATED",
+  "decision_date": "2026-10-29",
+  "source_baseline": "8911cd50923be1b0b6a73a68ed6413c3e8ea3194",
+  "project_register": {
+    "workstream": "NEO Core / Bitcoin contract execution",
+    "purpose": "Compile bounded NEO contracts to existing Bitcoin Script and evaluate them locally",
+    "accountable_owner": "NEOsync",
+    "production_deployed": false,
+    "technical_owner": null,
+    "technical_owner_status": "TBD"
+  },
+  "architecture_inventory": [
+    {
+      "id": "NEO-BVM",
+      "name": "Bitcoin Virtual Machine",
+      "profile": "neo-bvm/p2wsh-subset-v1",
+      "role": "Bounded local Bitcoin witness-v0 Script subset evaluator",
+      "implementation": "core/neo-bvm/runtime.mjs",
+      "tests": "core/neo-bvm/runtime.test.mjs"
+    },
+    {
+      "id": "NEO-NVM",
+      "name": "NEO Virtual Machine",
+      "profile": "neo-nvm/contract-v1",
+      "role": "Strict NEO contract compiler and local execution orchestration",
+      "implementation": "core/neo-nvm/runtime.mjs",
+      "tests": "core/neo-nvm/runtime.test.mjs"
+    },
+    {
+      "id": "NEO-BVM-CORE",
+      "name": "Bitcoin Core regtest adapter",
+      "role": "Independent Script and transaction-context checks using shared NEO RPC transport",
+      "implementation": "server/neo-vm/bvm-regtest.mjs",
+      "native_validation": "scripts/neo-vm-core-gate.mjs"
+    }
+  ],
+  "execution_policy": {
+    "family": "bitcoin",
+    "networks": [
+      "regtest"
+    ],
+    "contracts": [
+      "sha256-preimage-32-v1",
+      "sha256-preimage",
+      "sha256-preimage-32"
+    ],
+    "evm_compatibility": false,
+    "format_inference": false,
+    "unsupported_opcodes": "reject",
+    "bitcoin_consensus_validator": false,
+    "signature_verification": false,
+    "rpc_access": "five-method read-only loopback Core adapter; separate owned-node test harness",
+    "signing": false,
+    "broadcasting": false,
+    "receipt_evidence": "deterministic unsigned local summary checksum",
+    "max_transaction_weight": 400000,
+    "max_fee_satoshis": 100000
+  },
+  "integration_checklist": [
+    {
+      "integration": "NVM to BVM",
+      "status": "LOCAL_TESTED"
+    },
+    {
+      "integration": "Repository npm test and CI",
+      "status": "WIRED"
+    },
+    {
+      "integration": "Bitcoin Core regtest differential validation",
+      "status": "SELECTED_VECTORS_LOCAL_VALIDATED"
+    },
+    {
+      "integration": "NEOpass authorization",
+      "status": "NOT_CONNECTED"
+    },
+    {
+      "integration": "NeoMask signing",
+      "status": "NOT_CONNECTED"
+    },
+    {
+      "integration": "NEO Counter checkout",
+      "status": "NOT_CONNECTED"
+    },
+    {
+      "integration": "Counterparty and NOMNI semantics",
+      "status": "NOT_IMPLEMENTED"
+    }
+  ],
+  "decision_log": [
+    {
+      "id": "VM-D001",
+      "decision": "Keep both project-scoped names: NEO NVM for orchestration, NEO BVM for Bitcoin execution"
+    },
+    {
+      "id": "VM-D002",
+      "decision": "Use existing Bitcoin witness-v0 Script; do not invent Bitcoin consensus opcodes or require Ethereum"
+    },
+    {
+      "id": "VM-D003",
+      "decision": "Gate 1 is a bounded local hashlock prototype; Bitcoin Core remains the validation authority for future node tests"
+    },
+    {
+      "id": "VM-D004",
+      "decision": "Receipt hashes identify local summaries and are never represented as on-chain proofs"
+    },
+    {
+      "id": "VM-D005",
+      "decision": "Integrate approved Gate 1 runtime with Gate 2 PR #1268 and share one Script emitter without changing the original variable-length profile"
+    },
+    {
+      "id": "VM-D006",
+      "decision": "Keep application RPC read-only; native fixture mining and reorg controls use only a newly spawned isolated node"
+    },
+    {
+      "id": "VM-D007",
+      "decision": "Bind actual witness, txid, wtxid, single prevout, weight and fees before treating Core mempool acceptance as usable local evidence"
+    }
+  ],
+  "prioritized_backlog": [
+    {
+      "id": "VM-003-PUBLISH",
+      "priority": "P0",
+      "status": "COMPLETE",
+      "deliverable": "Publish the Gate 3 follow-up after explicit public-disclosure approval for its reviewed package",
+      "evidence": [
+        "https://github.com/Shemsizedek/neo-system/pull/1275"
+      ]
+    },
+    {
+      "id": "VM-002",
+      "priority": "P0",
+      "status": "SELECTED_VECTORS_VALIDATED",
+      "deliverable": "Isolated Bitcoin Core regtest harness for matching and mismatching witnesses, script mutations and resource-boundary vectors"
+    },
+    {
+      "id": "VM-003",
+      "priority": "P1",
+      "status": "NEXT",
+      "deliverable": "Reviewed signature and timelock contract templates, transaction-context validation and differential tests"
+    },
+    {
+      "id": "VM-004",
+      "priority": "P1",
+      "status": "PLANNED",
+      "deliverable": "Verify NEOpass and NeoMask capabilities before adding authorized PSBT workflows"
+    },
+    {
+      "id": "VM-005",
+      "priority": "P2",
+      "status": "PLANNED",
+      "deliverable": "Define explicit Counterparty and NOMNI adapter semantics without treating local VM acceptance as token settlement"
+    },
+    {
+      "id": "VM-006",
+      "priority": "P1",
+      "status": "PLANNED",
+      "deliverable": "Broaden independent Core differential coverage for opcode limits, nonminimal-push policy and RBF/mempool conflicts before supporting additional contracts"
+    }
+  ],
+  "next_milestone": "Reviewed signature/refund templates and PSBT authorization tests; verify an operator-host staging deployment before enabling product integrations",
+  "verification": {
+    "vm_tests": {
+      "passed": 62,
+      "failed": 0,
+      "skipped": 0
+    },
+    "core_gate": {
+      "status": "PASS",
+      "cases": 13,
+      "version": 310100,
+      "network": "regtest"
+    },
+    "evidence": "docs/evidence/neo-vm-gate-3.json",
+    "github_publication_approved": true,
+    "production_deployment": "NOT_PERFORMED",
+    "repository_tests": {
+      "total": 941,
+      "passed": 940,
+      "failed": 0,
+      "skipped": 1,
+      "skip": "existing KI-015 Postgres integration test without isolated database configuration"
+    },
+    "build": "PASS",
+    "architecture_audit": {
+      "errors": 0,
+      "existing_gap_warnings": 3,
+      "tests_passed": 3
+    },
+    "workflow_yaml": "PARSED",
+    "gate1_publication": {
+      "pull_request": "https://github.com/Shemsizedek/neo-system/pull/1269",
+      "draft": true,
+      "commit": "a90259ebb20ac997424751862e69b4072fe2284c",
+      "scope": "original approved Gate 1 snapshot"
+    },
+    "gate3_publication": {
+      "status": "PUBLISHED_DRAFT",
+      "pull_request": "https://github.com/Shemsizedek/neo-system/pull/1275",
+      "implementation_commit": "4953604f9d0be4db78d4d6ad03d6f8bfe9ba2a04",
+      "approved_archive_sha256": "005a52df761d8148354342ae39c8bf94a6cf16a5a45ea6f147bad13be9fc9258",
+      "scope": "19 reviewed files; publication bookkeeping updated after successful upload"
+    },
+    "gate1_github_ci": {
+      "standard_ci": "PASS",
+      "run": "https://github.com/Shemsizedek/neo-system/actions/runs/40956309691",
+      "additional_failed_gate_jobs": 4,
+      "failure_summary": [
+        "Gates 104, 107, 108: dependency installation missing; @composio/core could not be resolved",
+        "Gate 131: test imports riskReview, absent from fabric.mjs exports"
+      ],
+      "affected_files_unchanged_from_gate1_baseline": [
+        ".github/workflows/gate-104-autonomous-recovery.yml",
+        ".github/workflows/gate-107-communications-fabric.yml",
+        ".github/workflows/gate-108-situational-awareness.yml",
+        ".github/workflows/gate-131-institutional-risk.yml",
+        "server/neo-router/composio-gateway.mjs",
+        "server/neo-router/composio-gateway.test.mjs",
+        "server/neo-risk/fabric.mjs",
+        "server/neo-risk/fabric.test.mjs"
+      ]
+    },
+    "gate3_github_ci": {
+      "checked_commit": "4953604f9d0be4db78d4d6ad03d6f8bfe9ba2a04",
+      "vm_gate": {
+        "status": "PASS",
+        "unit_tests": 62,
+        "native_core_scenarios": 13,
+        "run": "https://github.com/Shemsizedek/neo-system/actions/runs/40977894394"
+      },
+      "standard_ci": {
+        "status": "PASS",
+        "run": "https://github.com/Shemsizedek/neo-system/actions/runs/40977894241"
+      },
+      "architecture_standard": {
+        "status": "PASS",
+        "run": "https://github.com/Shemsizedek/neo-system/actions/runs/40977893952"
+      }
+    }
+  },
+  "source_dependency": "https://github.com/Shemsizedek/neo-system/pull/1268"
+}
