@@ -1,5 +1,5 @@
 {
-  "version": "1.1.1",
+  "version": "1.2.0",
   "domainRoot": "holytemples.org",
   "policy": {
     "tlsRequired": true,
@@ -220,12 +220,20 @@
       "source": "server/neo-platform-api"
     },
     {
+      "id": "nu-city",
+      "host": "city.holytemples.org",
+      "kind": "education-community",
+      "access": "public",
+      "uiRequired": true,
+      "source": "server/nu-city-proxy"
+    },
+    {
       "id": "nu-university",
       "host": "university.holytemples.org",
       "kind": "education",
       "access": "public-and-role-gated",
       "uiRequired": true,
-      "source": "holytemples.org"
+      "source": "server/nu-university-proxy"
     },
     {
       "id": "neo-oracle",
