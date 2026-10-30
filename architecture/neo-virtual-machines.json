@@ -125,8 +125,11 @@
     {
       "id": "VM-003-PUBLISH",
       "priority": "P0",
-      "status": "BLOCKED",
-      "deliverable": "Publish the Gate 3 follow-up after explicit public-disclosure approval for its reviewed package"
+      "status": "COMPLETE",
+      "deliverable": "Publish the Gate 3 follow-up after explicit public-disclosure approval for its reviewed package",
+      "evidence": [
+        "https://github.com/Shemsizedek/neo-system/pull/1275"
+      ]
     },
     {
       "id": "VM-002",
@@ -196,8 +199,11 @@
       "scope": "original approved Gate 1 snapshot"
     },
     "gate3_publication": {
-      "status": "BLOCKED_AUTOMATIC_REVIEW",
-      "reason": "Automatic approval review requires explicit approval for public disclosure of the expanded Gate 3 code, workflow, architecture records and evidence"
+      "status": "PUBLISHED_DRAFT",
+      "pull_request": "https://github.com/Shemsizedek/neo-system/pull/1275",
+      "implementation_commit": "4953604f9d0be4db78d4d6ad03d6f8bfe9ba2a04",
+      "approved_archive_sha256": "005a52df761d8148354342ae39c8bf94a6cf16a5a45ea6f147bad13be9fc9258",
+      "scope": "19 reviewed files; publication bookkeeping updated after successful upload"
     },
     "gate1_github_ci": {
       "standard_ci": "PASS",
@@ -217,6 +223,23 @@
         "server/neo-risk/fabric.mjs",
         "server/neo-risk/fabric.test.mjs"
       ]
+    },
+    "gate3_github_ci": {
+      "checked_commit": "4953604f9d0be4db78d4d6ad03d6f8bfe9ba2a04",
+      "vm_gate": {
+        "status": "PASS",
+        "unit_tests": 62,
+        "native_core_scenarios": 13,
+        "run": "https://github.com/Shemsizedek/neo-system/actions/runs/40977894394"
+      },
+      "standard_ci": {
+        "status": "PASS",
+        "run": "https://github.com/Shemsizedek/neo-system/actions/runs/40977894241"
+      },
+      "architecture_standard": {
+        "status": "PASS",
+        "run": "https://github.com/Shemsizedek/neo-system/actions/runs/40977893952"
+      }
     }
   },
   "source_dependency": "https://github.com/Shemsizedek/neo-system/pull/1268"
