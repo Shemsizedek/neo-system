@@ -62,3 +62,12 @@ test('projects status onto Bitcoin without exposing other network records', asyn
   assert.equal(result.data.available,'Bitcoin testnet')
   assert.equal(JSON.stringify(result.data).includes('TLTC'),false)
 })
+
+test('accepts live top-level XChain status without leaking other networks', async () => {
+  const data = {available:{TBTC:'BTC (testnet)',TLTC:'LTC (testnet)'},chain_tip:{TBTC:158133,TLTC:4945764},stale:{TBTC:false,TLTC:false},replica_halted:{TBTC:false,TLTC:false}}
+  const result = await new XChainExplorerAdapter(async () => response(data)).read('TBTC','status')
+  assert.equal(result.data.available,'BTC (testnet)')
+  assert.equal(result.network,'TBTC')
+  assert.equal(JSON.stringify(result.data).includes('TLTC'),false)
+  assert.equal(result.freshness,'live')
+})
