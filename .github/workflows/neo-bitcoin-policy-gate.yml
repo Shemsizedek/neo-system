@@ -4,6 +4,8 @@ on:
     paths:
       - 'architecture/neo-bitcoin-execution-standard.json'
       - 'server/neo-vm/**'
+      - 'server/neo-platform-api/counterparty-mainnet-*'
+      - 'server/neo-platform-api/server.mjs'
       - 'docs/NEO_BITCOIN_WIDE_STANDARD.md'
       - '.github/workflows/neo-bitcoin-policy-gate.yml'
   workflow_dispatch:
@@ -17,4 +19,4 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
-      - run: node --test server/neo-vm/*.test.mjs
+      - run: node --test server/neo-vm/*.test.mjs server/neo-platform-api/counterparty-mainnet-gateway.test.mjs
