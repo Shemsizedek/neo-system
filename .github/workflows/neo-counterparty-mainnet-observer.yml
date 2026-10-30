@@ -1,0 +1,24 @@
+name: NEO Counterparty mainnet read-only preflight
+on:
+  pull_request:
+    paths:
+      - 'server/neo-vm/counterparty-mainnet.mjs'
+      - 'server/neo-platform-api/counterparty-mainnet-*'
+      - 'scripts/neo-counterparty-mainnet-preflight.mjs'
+      - '.github/workflows/neo-counterparty-mainnet-observer.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  mainnet-observation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Run Counterparty gateway security tests
+        run: node --test server/neo-platform-api/counterparty-mainnet-gateway.test.mjs
+      - name: Read Counterparty mainnet readiness, no keys or writes
+        run: node scripts/neo-counterparty-mainnet-preflight.mjs
