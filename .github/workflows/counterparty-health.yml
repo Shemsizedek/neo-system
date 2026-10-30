@@ -22,7 +22,6 @@ jobs:
       - run: npm ci
       - run: npm run build
   live-readonly-smoke:
-    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - run: |
@@ -31,4 +30,4 @@ jobs:
             https://api.counterparty.io:4000/v2/ \
             -H 'Accept: application/json' \
             -o counterparty-health.json
-          node -e 'const fs=require("node:fs");const p=JSON.parse(fs.readFileSync("counterparty-health.json","utf8"));if(!p.result || p.result.network!=="mainnet")process.exit(1);console.log("Counterparty mainnet response shape received")'
+          node -e 'const fs=require("node:fs");const p=JSON.parse(fs.readFileSync("counterparty-health.json","utf8"));if(!p.result || p.result.network!=="mainnet" || p.result.server_ready!==true || p.result.ledger_state!=="Following" || !Number.isSafeInteger(p.result.backend_height) || !Number.isSafeInteger(p.result.counterparty_height) || p.result.counterparty_height<p.result.backend_height-1){console.error("Counterparty mainnet readiness not confirmed");process.exit(1)}console.log("Counterparty mainnet health ready: schema and heights verified")'
