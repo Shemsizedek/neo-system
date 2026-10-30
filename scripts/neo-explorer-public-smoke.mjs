@@ -28,16 +28,19 @@ function ensureCounterparty(result, response) {
   console.log('PASS Counterparty mainnet ready; heights:',v.backend_height,v.counterparty_height)
 }
 function ensureXchain(result) {
-  const v = result?.data
-  if (!v || typeof v !== 'object') {
+  const v = result?.data && typeof result.data === 'object' ? result.data : result
+  if (!v || typeof v !== 'object' || !v.available) {
     // XChain is an unauthenticated public read API. Emit capped response for protocol-drift triage.
     const preview = JSON.stringify(result)
     console.error('XChain response shape (first 1200 chars):', typeof preview === 'string' ? preview.slice(0,1200) : String(result))
     fail('XChain status envelope invalid')
   }
-  if (!v.available?.TBTC || !integer(v.last_block?.TBTC)) fail('XChain Bitcoin testnet height not available')
-  if (v.stale?.TBTC !== false || v.replica_halted?.TBTC !== false) fail('XChain testnet freshness cannot be confirmed')
-  console.log('PASS XChain TBTC testnet status, block',v.last_block.TBTC)
+  const height = v.last_block?.TBTC ?? v.chain_tip?.TBTC
+  if (!v.available?.TBTC || !integer(height)) fail('XChain Bitcoin testnet height not available')
+  const stale = v.stale?.TBTC === true || v.replica_halted?.TBTC === true
+  const healthy = v.stale?.TBTC === false && v.replica_halted?.TBTC === false
+  if (stale || !healthy) fail('XChain testnet freshness cannot be confirmed')
+  console.log('PASS XChain TBTC testnet status, block',height)
 }
 async function main() {
   const outcome = {}
