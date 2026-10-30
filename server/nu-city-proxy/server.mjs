@@ -3,6 +3,10 @@ import http from 'node:http';
 const SOURCE_ORIGIN = 'https://nuuniversitytxdot.wordpress.com';
 const PUBLIC_ORIGIN = 'https://city.holytemples.org';
 const GISS_SCHOOL = 'https://egov.holytemples.org/portal/school';
+const NEO_HOME = 'https://neo.holytemples.org';
+const NEO_HUB = 'https://hub.holytemples.org';
+const NEO_PASS = 'https://neopass.holytemples.org';
+const NOOGLE = 'https://noogle.holytemples.org';
 const SERVICE_NAME = 'neo-nu-city';
 
 const HOP_BY_HOP = new Set([
@@ -19,6 +23,10 @@ function send(res,status,body,headers={}){
 function redirect(res,location,status=302){
   res.writeHead(status,{location,'cache-control':'no-store','x-neo-proxy':'city-holytemples'});
   res.end();
+}
+
+function neoShell(){
+  return `<style id="neo-city-shell">.neo-city-bar{position:sticky;top:0;z-index:2147483000;display:flex;align-items:center;gap:12px;padding:9px 14px;background:#101613;color:#f4f0e2;border-bottom:1px solid #4f6f67;font:600 13px/1.25 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.neo-city-bar strong{font-family:Georgia,serif;letter-spacing:.04em}.neo-city-links{margin-left:auto;display:flex;gap:7px;flex-wrap:wrap}.neo-city-links a{padding:7px 10px!important;border-radius:999px!important;background:#1d2924!important;color:#f4f0e2!important;text-decoration:none!important;font-weight:800!important;white-space:nowrap}.neo-city-links a.primary{background:#d6b665!important;color:#11160f!important}@media(max-width:760px){.neo-city-bar{align-items:flex-start;flex-direction:column}.neo-city-links{margin-left:0;width:100%;overflow:auto;flex-wrap:nowrap}.neo-city-links a{font-size:12px}}</style><div class="neo-city-bar" role="navigation" aria-label="NEO System"><strong>CITY OF NU UNIVERSITY</strong><div class="neo-city-links"><a href="/neo">NEO</a><a href="/hub">Hub</a><a href="/noogle">Noogle</a><a href="/neopass">NEOpass</a><a class="primary" href="/giss">Enroll →</a></div></div>`;
 }
 
 function rewrite(value=''){
@@ -49,9 +57,11 @@ async function proxy(req,res){
     });
   }
 
-  if(incoming.pathname==='/giss'||incoming.pathname==='/login'||incoming.pathname==='/portal'){
-    return redirect(res,GISS_SCHOOL,302);
-  }
+  if(incoming.pathname==='/giss'||incoming.pathname==='/login'||incoming.pathname==='/portal') return redirect(res,GISS_SCHOOL,302);
+  if(incoming.pathname==='/neo') return redirect(res,NEO_HOME,302);
+  if(incoming.pathname==='/hub') return redirect(res,NEO_HUB,302);
+  if(incoming.pathname==='/neopass') return redirect(res,NEO_PASS,302);
+  if(incoming.pathname==='/noogle') return redirect(res,NOOGLE,302);
 
   const target=new URL(incoming.pathname+incoming.search,SOURCE_ORIGIN);
   const init={method:req.method,headers:copyRequestHeaders(req),redirect:'manual'};
