@@ -50,6 +50,11 @@ starts a disposable node and runs the native validation gate.
 See [`docs/NEO-NVM-BVM-GATE-3.md`](docs/NEO-NVM-BVM-GATE-3.md) for evidence,
 the two input formats, execution limits and the next milestone.
 
+The signature/refund compiler and signed one-use PSBT review gate are documented
+in [`docs/NEO-NVM-BVM-GATE-4.md`](docs/NEO-NVM-BVM-GATE-4.md). Run
+`npm run neo-vm:signatures` with the same verified `BITCOIND_PATH` to exercise
+the native contract and authorization cases on a disposable regtest node.
+
 ## Current release boundary
 
 This build is **FOUNDATION / SANDBOX** software.
