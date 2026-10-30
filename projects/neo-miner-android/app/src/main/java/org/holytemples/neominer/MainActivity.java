@@ -86,8 +86,23 @@ public class MainActivity extends Activity {
   private void security(){
     add(page,txt("Security & access",28,WHITE,true),6);add(page,txt("Device protection and verified connections",14,MUTED,false),18);
     LinearLayout c=card();label(c,"NEO Pass","Enrollment pending");add(c,txt("Authentication is not active in this build.",13,MUTED,false),0);add(page,c,14);
+    c=card();add(c,txt("DEVICE IDENTITY",12,GREEN,true),10);
+    TextView identity=txt("Tap below to initialize a local signing key.",14,WHITE,false);add(c,identity,10);
+    Button enroll=button("Initialize & verify device key",true);add(c,enroll,10);
+    enroll.setOnClickListener(v->{try{
+      boolean verified=DeviceIdentity.selfTest();
+      identity.setText("Public key fingerprint: "+DeviceIdentity.fingerprint()+"\\nLocal signature check: "+(verified?"passed":"failed")+"\\nNEO Pass server: not enrolled");
+    }catch(Exception ex){identity.setText("Keystore unavailable: "+ex.getClass().getSimpleName());}});
+    Button copy=button("Copy public key",false);add(c,copy,0);
+    copy.setOnClickListener(v->{try{
+      String key=DeviceIdentity.publicKey();
+      android.content.ClipboardManager cm=(android.content.ClipboardManager)getSystemService(CLIPBOARD_SERVICE);
+      cm.setPrimaryClip(android.content.ClipData.newPlainText("NEO Miner public key",key));
+      Toast.makeText(this,"Public key copied (private key stays on device)",Toast.LENGTH_LONG).show();
+    }catch(Exception ex){Toast.makeText(this,"Key unavailable",Toast.LENGTH_SHORT).show();}});
+    add(page,c,14);
     c=card();label(c,"Wallet / seed access","None");add(c,txt("This application does not request wallet credentials or store seed phrases.",13,MUTED,false),0);add(page,c,14);
-    c=card();label(c,"Build","0.16.0 • Development");add(c,txt("Local benchmark only. Do not interpret the hash count as submitted Bitcoin shares.",13,MUTED,false),0);add(page,c,14);
+    c=card();label(c,"Build","0.18.0 • Development");add(c,txt("Local benchmark only. Do not interpret the hash count as submitted Bitcoin shares.",13,MUTED,false),0);add(page,c,14);
   }
   private void updateMetrics(){if(metric==null)return;long sec=Math.max(1,(System.currentTimeMillis()-started)/1000);metric.setText((running.get()?count/sec:0)+" H/s");if(indicator!=null)indicator.setText(state+(running.get()?" • "+count+" hashes":""));}
   private void startBenchmark(){
