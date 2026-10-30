@@ -1,4 +1,5 @@
 import crypto from 'node:crypto';
+import { isDeepStrictEqual } from 'node:util';
 
 const now = () => new Date().toISOString();
 const id = (prefix) => `${prefix}_${crypto.randomUUID()}`;
@@ -114,6 +115,10 @@ export class NeoBotRuntime {
     const bot = this.registry.get(botId);
     if (bot.status !== 'active') throw new Error(`bot is not active: ${botId}`);
     if (!bot.scopes.includes(job.action)) throw new Error(`scope denied: ${job.action}`);
+    if (job.risk === 'read-only' && Array.isArray(bot.readOnlyScopes) &&
+        !bot.readOnlyScopes.includes(job.action)) {
+      throw new Error(`read-only risk escalation blocked: ${job.action}`);
+    }
 
     if (bot.requiresHumanApproval && job.risk !== 'read-only' && !context.approval) {
       return { status: 'approval_required', approval: this.approvals.create({ botId, action: job.action, payload: job.payload, reason: job.reason ?? 'governed action' }) };
@@ -121,9 +126,15 @@ export class NeoBotRuntime {
 
     if (context.approval) {
       const approval = this.approvals.requests.get(context.approval);
-      if (!approval || approval.botId !== botId || approval.action !== job.action || approval.status !== 'approved') {
-        throw new Error('valid approved approval token required');
+      if (!approval || approval.botId !== botId || approval.action !== job.action || approval.status !== 'approved' ||
+          !isDeepStrictEqual(approval.payload, job.payload)) {
+        throw new Error('valid approved approval token for exact payload required');
       }
+      // Consume atomically before entering the asynchronous handler, even if
+      // the handler rejects. One approval never authorizes multiple transfers.
+      approval.status = 'consumed';
+      approval.consumedAt = now();
+      this.audit.append({ botId, action: 'approval.consumed', approvalId: context.approval, targetAction: job.action });
     }
 
     const handler = this.handlers.get(botId);
