@@ -47,3 +47,29 @@ Once the operator has securely installed a distinct runtime token, it may be sup
 - [ ] NEO Bank ledgers, transfer controls, NOMNI supply and V-Dollar issuance remain unchanged.
 
 Related: [PR #1273](https://github.com/Shemsizedek/neo-system/pull/1273) (CES runtime), [PR #1278](https://github.com/Shemsizedek/neo-system/pull/1278) (restricted metadata consumer), [Security Issue #1274](https://github.com/Shemsizedek/neo-system/issues/1274).
+
+## Prepared activation command — verification first
+
+The companion `staging-acceptance.mjs` uses only `https://neo-ces-read-staging.onrender.com`. It is a code-only staging client, not a deployment.
+
+After the operator securely installs the restricted database URL, strong control token and approved NMNI bot credentials, run from a protected environment:
+
+```sh
+node deploy/ces-read-runtime/staging-acceptance.mjs
+```
+
+By default the script uses `GET /health`, anonymous `GET /v1/imports` (must be denied), authenticated `GET /v1/status`, and, only after readiness is confirmed, `POST /v1/auth/check`. It does not import any data or authorize payments. Responses are summarized without returning credentials, report HTML, account numbers or member details.
+
+Only after NMNI admin proof, report schema inspection and explicit authorization for one historical source batch, an authorized operator may separately enable the server-side import flag and run:
+
+```sh
+# These flags must already be set in the protected operator environment:
+# NEO_CES_RUNTIME_TOKEN=<privately provisioned>
+# NEO_CES_IMPORT_ENABLED=true
+# NEO_CES_SOURCE_IMPORT_APPROVED=true
+node deploy/ces-read-runtime/staging-acceptance.mjs --collect-once
+```
+
+The source-import script requires *both* explicit local approval and the local server-import enablement indication. The CES runtime independently rejects imports unless its own server-side import flag is true. The script first rechecks admin proof, then calls exactly one bounded `POST /v1/collect-import`, followed by authorized `GET /v1/imports` to verify the import SHA-256 and row count (1–250). No bank account or ledger posting is supported.
+
+Do not run the collection command while the staging health endpoint returns 503, while the protected database health is false, or before a real approved CES Bot login. The latest code changes do not enable the service or transfer secrets. Tests: `node --test deploy/ces-read-runtime/*.test.mjs`.
