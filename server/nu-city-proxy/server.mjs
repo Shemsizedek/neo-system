@@ -8,6 +8,7 @@ const NEO_HUB = 'https://hub.holytemples.org';
 const NEO_PASS = 'https://neopass.holytemples.org';
 const NOOGLE = 'https://noogle.holytemples.org';
 const SERVICE_NAME = 'neo-nu-city';
+const LEGACY_SOURCE_PATH = '/source';
 
 const HOP_BY_HOP = new Set([
   'connection','keep-alive','proxy-authenticate','proxy-authorization',
@@ -21,7 +22,7 @@ function send(res,status,body,headers={}){
 }
 
 function redirect(res,location,status=302){
-  res.writeHead(status,{location,'cache-control':'no-store','x-neo-proxy':'city-holytemples'});
+  res.writeHead(status,{location,'cache-control':'no-store','x-neo-proxy':'city-holytemples','x-neo-source':'nuuniversitytxdot.wordpress.com'});
   res.end();
 }
 
@@ -57,6 +58,7 @@ async function proxy(req,res){
     });
   }
 
+  if(incoming.pathname===LEGACY_SOURCE_PATH) return redirect(res,SOURCE_ORIGIN,302);
   if(incoming.pathname==='/giss'||incoming.pathname==='/login'||incoming.pathname==='/portal') return redirect(res,GISS_SCHOOL,302);
   if(incoming.pathname==='/neo') return redirect(res,NEO_HOME,302);
   if(incoming.pathname==='/hub') return redirect(res,NEO_HUB,302);
