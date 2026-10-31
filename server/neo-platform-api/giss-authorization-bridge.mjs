@@ -2,7 +2,8 @@ import { createHash, createHmac, randomBytes, timingSafeEqual } from 'node:crypt
 import { issueNeopassToken, verifyNeopassToken } from './neopass-google-auth.mjs';
 
 export const GISS_CLIENT = 'gisd-office';
-export const GISS_REDIRECT = 'https://gisd-office.shemsizedek.chatgpt.site/api/neopass/callback';
+export const GISS_REDIRECT = 'https://gisd.holytemples.org/api/neopass/callback';
+const GISS_REDIRECTS = new Set([GISS_REDIRECT,'https://gisd-office.shemsizedek.chatgpt.site/api/neopass/callback']);
 const scope = 'giss:academic:read';
 const digest = value => createHash('sha256').update(value).digest('base64url');
 const safe = value => String(value ?? '').replace(/[&<>"']/g, character => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[character]));
@@ -12,7 +13,7 @@ const clearReturn = '__Host-neo_giss_return=; Path=/; HttpOnly; Secure; SameSite
 function parameters(params) {
   for(const key of ['client_id','redirect_uri','state','code_challenge','code_challenge_method'])if(params.getAll(key).length!==1)throw Error('invalid_authorization_request');
   const value=Object.fromEntries(params);
-  if(value.client_id!==GISS_CLIENT||value.redirect_uri!==GISS_REDIRECT||value.code_challenge_method!=='S256'||!/^[A-Za-z0-9_-]{43}$/.test(value.code_challenge)||!/^[A-Za-z0-9_-]{32,128}$/.test(value.state))throw Error('invalid_authorization_request');
+  if(value.client_id!==GISS_CLIENT||!GISS_REDIRECTS.has(value.redirect_uri)||value.code_challenge_method!=='S256'||!/^[A-Za-z0-9_-]{43}$/.test(value.code_challenge)||!/^[A-Za-z0-9_-]{32,128}$/.test(value.state))throw Error('invalid_authorization_request');
   return value;
 }
 async function form(req) {
@@ -57,10 +58,10 @@ export function createGissAuthorizationBridge({codeStore,authService,subjectReso
       if(url.pathname==='/auth/giss/token'&&req.method==='POST') {
         const input=await form(req);
         for(const key of ['code','code_verifier','client_id','redirect_uri'])if(input.getAll(key).length!==1)return json(res,400,{error:'invalid_grant'}),true;
-        if(input.get('client_id')!==GISS_CLIENT||input.get('redirect_uri')!==GISS_REDIRECT||!/^[A-Za-z0-9_-]{43}$/.test(input.get('code')||'')||!/^[A-Za-z0-9_-]{43,128}$/.test(input.get('code_verifier')||''))return json(res,400,{error:'invalid_grant'}),true;
+        if(input.get('client_id')!==GISS_CLIENT||!GISS_REDIRECTS.has(input.get('redirect_uri'))||!/^[A-Za-z0-9_-]{43}$/.test(input.get('code')||'')||!/^[A-Za-z0-9_-]{43,128}$/.test(input.get('code_verifier')||''))return json(res,400,{error:'invalid_grant'}),true;
         const grant=await codeStore.consume(input.get('code'));
         const actual=Buffer.from(digest(input.get('code_verifier'))),expected=Buffer.from(grant?.challenge||'');
-        if(!grant||grant.expiresMs<=clock()||grant.clientId!==GISS_CLIENT||grant.redirectUri!==GISS_REDIRECT||actual.length!==expected.length||!timingSafeEqual(actual,expected))return json(res,400,{error:'invalid_grant'}),true;
+        if(!grant||grant.expiresMs<=clock()||grant.clientId!==GISS_CLIENT||grant.redirectUri!==input.get('redirect_uri')||actual.length!==expected.length||!timingSafeEqual(actual,expected))return json(res,400,{error:'invalid_grant'}),true;
         const expiresIn=900;
         const accessToken=issueNeopassToken({subject:grant.subject,secret:bridgeSecret,issuer:jwtIssuer,now:clock,ttlSeconds:expiresIn,claims:{token_use:'giss-bridge',scope,aud:GISS_CLIENT,email:grant.email}});
         json(res,200,{access_token:accessToken,token_type:'Bearer',expires_in:expiresIn,scope,member:{subject:grant.subject,email:grant.email}});return true;
