@@ -1,0 +1,15 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {assessDescriptorEvidence,assessProfessionalRegistryEvidence,assessRegtestAcceptance} from './regtest-acceptance.mjs';
+const keys=['02'+'a'.repeat(64),'03'+'b'.repeat(64)];
+const profile={kind:'BUSINESS',network:'bitcoin-regtest-counterparty',threshold:2,legalEntityId:'TEST-ONLY',signers:keys.map((publicKey,i)=>({id:String(i),publicKey}))};
+const descriptor='wsh(sortedmulti(2,'+keys.join(',')+'))#placeholder';
+const evidence={profile,descriptor,expectedAddress:'bcrt1qexample',bitcoinCore:{network:'regtest',isValid:true,isSolvable:true,blockHeight:120,bestBlockHash:'a'.repeat(64),derivedAddresses:['bcrt1qexample']}};
+test('recorded regtest descriptor is not key possession proof',()=>{const r=assessDescriptorEvidence(evidence);assert.equal(r.status,'REGTEST_DESCRIPTOR_EVIDENCE_RECORDED');assert.equal(r.signingEnabled,false);assert.equal(r.signerPossessionVerified,false)});
+test('rejects mainnet profile',()=>assert.equal(assessDescriptorEvidence({...evidence,profile:{...profile,network:'bitcoin-mainnet-counterparty'}}).status,'HOLD'));
+test('rejects repeated public keys',()=>assert.equal(assessDescriptorEvidence({...evidence,profile:{...profile,signers:[profile.signers[0],profile.signers[0]]}}).status,'HOLD'));
+test('rejects unbound address',()=>assert.equal(assessDescriptorEvidence({...evidence,expectedAddress:'bcrt1another'}).status,'HOLD'));
+const credential={personId:'TEST',profession:'lawyer',jurisdiction:'NC',licenseNumber:'MOCK'};
+const registry={...credential,issuer:'EXAMPLE',evidenceId:'MOCK-EVIDENCE',status:'ACTIVE',checkedAt:'2026-10-31T20:00:00Z'};
+test('registry flag is still pending professional review',()=>assert.equal(assessProfessionalRegistryEvidence({credential,registry,now:Date.parse('2026-10-31T21:00:00Z')}).status,'REGISTRY_REVIEW_PENDING'));
+test('registry mismatch fails closed',()=>assert.equal(assessProfessionalRegistryEvidence({credential,registry:{...registry,licenseNumber:'OTHER'}}).status,'HOLD'));
+test('regtest case cannot pass absent required scenarios',()=>{const r=assessRegtestAcceptance({descriptor:assessDescriptorEvidence(evidence),assetState:{network:'counterparty-regtest',asset:'NOMNI',blockHash:'a'.repeat(64),independentIndexersAgree:true},scenarios:{}});assert.equal(r.status,'HOLD')});
