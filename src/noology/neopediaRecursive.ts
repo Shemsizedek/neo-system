@@ -1,4 +1,5 @@
 import { neoDoctrineRegistry } from './doctrineRegistry'
+import { sacredChambersDoctrine } from './sacredChambersDoctrine'
 import { neoMaxims } from './maxims'
 import { sacredRecordsGraphNodes } from './sacredRecordsKnowledgeGraph'
 import { sacredRecordsOfTheMoors } from './sacredRecordsMoors'
@@ -87,7 +88,7 @@ function toArticle(value: unknown, sourceClass: RecursiveNeopediaSourceClass, fa
 }
 
 const generated: RecursiveNeopediaArticle[] = [
-  ...neoDoctrineRegistry.map(x => toArticle(x, 'NEO_DOCTRINE', 'NEO Doctrine', ['Noology','Doctrine'])),
+  ...[...neoDoctrineRegistry, ...sacredChambersDoctrine].map(x => toArticle(x, 'NEO_DOCTRINE', 'NEO Doctrine', ['Noology','Doctrine'])),
   ...neoMaxims.map(x => toArticle(x, 'NEO_MAXIM', 'NEO Maxim', ['NEO Maxims','Philosophy'])),
   ...sacredRecordsOfTheMoors.map(x => toArticle(x, 'SACRED_RECORD', 'Sacred Record', ['Sacred Records','Factology'], 'RESEARCH')),
   ...sacredRecordsGraphNodes.map(x => toArticle(x, 'KNOWLEDGE_GRAPH', 'Sacred Records Graph Node', ['Knowledge Graph','History'], 'RESEARCH')),
