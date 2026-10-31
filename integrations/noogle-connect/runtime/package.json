@@ -1,0 +1,17 @@
+{
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.32.2",
+    "jose": "6.2.14"
+  },
+  "name": "noogle-connect-mcp-runtime",
+  "version": "0.3.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": "24.x"
+  },
+  "scripts": {
+    "start": "node start.mjs",
+    "test": "node --test *.test.mjs ../*.test.mjs ../../../deploy/noogle-render/*.test.mjs"
+  }
+}

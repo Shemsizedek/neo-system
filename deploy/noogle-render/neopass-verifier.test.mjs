@@ -20,7 +20,12 @@ test('tampering, expired and wrong-issuer tokens fail closed',async()=>{
  assert.equal(await verify(token({...base,iss:'https://attacker.example'})),null);
  assert.equal(await verify(token({...base,exp:clock})),null);
  assert.equal(await verify(token({...base,aud:'other'})),null);
- assert.equal(await verify(token({...base,sub:'attacker'}).replace(/.$/,'z')),null);
+ // Changing the last base64url character can leave decoded bytes unchanged.
+ // Flip a real signature byte so this negative case is deterministic.
+ const parts=token({...base,sub:'attacker'}).split('.');
+ const signature=Buffer.from(parts[2],'base64url');signature[0]^=1;
+ parts[2]=signature.toString('base64url');
+ assert.equal(await verify(parts.join('.')),null);
  assert.equal(await verify(token(base,{alg:'none',typ:'JWT',kid:'approved'})),null);
  assert.equal(await verify('not-a-token'),null);
 });

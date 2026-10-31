@@ -22,3 +22,21 @@ test('rejects wrong origin, user verification absent and invalid signature',asyn
  assert.equal(await verify(signedAssertion({flags:1})),null);
  assert.equal(await verify({...signedAssertion(),signature:Buffer.from('wrong').toString('base64url')}),null);
 });
+
+test('accepts stored PEM keys using the same signature verification',async()=>{
+ const verify=createAssertionVerifier({rpId,origin,consumeChallenge:async()=>true,getCredential:async()=>({subject:'person-1',rpId,publicKey:publicKey.export({type:'spki',format:'pem'}),confirmCounter:async n=>n===1})});
+ assert.equal((await verify(signedAssertion())).subject,'person-1');
+});
+test('tampered signature never consumes a challenge with a public KeyObject',async()=>{
+ let consumed=false;
+ const verify=createAssertionVerifier({rpId,origin,consumeChallenge:async()=>{consumed=true;return true;},getCredential:async()=>({subject:'person-1',rpId,publicKey,confirmCounter:async()=>true})});
+ const assertion=signedAssertion(),signature=Buffer.from(assertion.signature,'base64url');signature[signature.length-1]^=1;
+ assert.equal(await verify({...assertion,signature:signature.toString('base64url')}),null);
+ assert.equal(consumed,false);
+});
+test('revoked credentials and failed counter checks never grant identity',async()=>{
+ for(const revoked of [true,false]){
+  const verify=createAssertionVerifier({rpId,origin,consumeChallenge:async()=>true,getCredential:async()=>({subject:'person-1',rpId,publicKey,revoked,confirmCounter:async()=>false})});
+  assert.equal(await verify(signedAssertion()),null);
+ }
+});
