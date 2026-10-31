@@ -2,6 +2,10 @@
 
 31 October 2026 · NEO Suite · Project 144
 
+[Verified deployment evidence](./GATE3-DEPLOYMENT.md): locked staging is live,
+all five HTTPS denial/liveness checks matched expectations, and the four
+observed GitHub workflows passed at the deployed runtime commit.
+
 ## Outcome and implementation
 
 Official MCP SDK Streamable HTTP resource-server path built and tested locally.

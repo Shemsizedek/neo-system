@@ -5,6 +5,9 @@ adds an isolated official SDK runtime. Run its full suite with
 `npm test --prefix integrations/noogle-connect/runtime` after installing with
 `npm ci --prefix integrations/noogle-connect/runtime --ignore-scripts`.
 Its default startup is locked; it does not yet connect a real user or device.
+[Staging health](https://noogle-connect-mcp-staging.onrender.com/healthz)
+is live; [deployment evidence](./GATE3-DEPLOYMENT.md) distinguishes process
+liveness from the pending authenticated ChatGPT/Codex connection.
 
 Status: **local read-only MCP prototype**. [Gate 2 results](./GATE2.md) resolve
 the inherited failures and add a non-routed protected read contract.
