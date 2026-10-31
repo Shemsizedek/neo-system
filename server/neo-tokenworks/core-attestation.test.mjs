@@ -1,0 +1,14 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {inspectRegtestDescriptor,prepareProfessionalEvidenceView} from './core-attestation.mjs';
+const address='bcrt1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq';
+const descriptor='wsh(sortedmulti(2,02'+'a'.repeat(64)+',03'+'b'.repeat(64)+'))';
+const normalized=descriptor+'#test1234';
+const rpc=async(method)=>({getblockchaininfo:{chain:'regtest',blocks:40,bestblockhash:'a'.repeat(64)},getdescriptorinfo:{isrange:false,issolvable:true,hasprivatekeys:false,descriptor:normalized},deriveaddresses:[address]})[method];
+test('records read-only Core regtest evidence',async()=>{let r=await inspectRegtestDescriptor({rpc,descriptor,expectedAddress:address});assert.equal(r.status,'CORE_REGTEST_EVIDENCE_RECORDED');assert.equal(r.signingEnabled,false)});
+test('rejects mainnet RPC',async()=>{let r=await inspectRegtestDescriptor({rpc:async method=>method==='getblockchaininfo'?{chain:'main',blocks:40,bestblockhash:'a'.repeat(64)}:rpc(method),descriptor,expectedAddress:address});assert.equal(r.status,'HOLD')});
+test('rejects private-key descriptor payload',async()=>{let r=await inspectRegtestDescriptor({rpc:async method=>method==='getdescriptorinfo'?{isrange:false,issolvable:true,hasprivatekeys:true,descriptor:normalized}:rpc(method),descriptor,expectedAddress:address});assert.equal(r.status,'HOLD')});
+test('rejects mismatched derived address',async()=>{let r=await inspectRegtestDescriptor({rpc,descriptor,expectedAddress:'bcrt1qnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn'});assert.equal(r.status,'HOLD')});
+test('rejects inaccessible RPC',async()=>{let r=await inspectRegtestDescriptor({rpc:async()=>{throw Error('unavailable')},descriptor,expectedAddress:address});assert.equal(r.status,'HOLD')});
+test('professional portal is never a collateral approval',()=>{let r=prepareProfessionalEvidenceView({role:'auditor',caseId:'CASE-1234',core:{status:'CORE_REGTEST_EVIDENCE_RECORDED',blockHeight:40},asset:{status:'CONSISTENT_REPORTED_SNAPSHOTS'}});assert.equal(r.status,'REVIEW_ONLY');assert.equal(r.collateralApproved,false);assert.ok(r.pendingEvidence.includes('market'))});
+test('portal rejects insufficient blockchain evidence',()=>{let r=prepareProfessionalEvidenceView({role:'lawyer',caseId:'CASE-1234'});assert.equal(r.status,'HOLD')});
