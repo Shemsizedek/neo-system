@@ -95,9 +95,19 @@ export function createSalesHttpServer({allowedHosts=['127.0.0.1','localhost','ne
       }catch{return respond(res,400,{error:'bad_request'});}
       if(!allowedHosts.includes(host))return respond(res,403,{error:'host_denied'});
       if(req.headers.origin && !allowedOrigins.includes(req.headers.origin))return respond(res,403,{error:'origin_denied'});
+      // Explicit allowlist for browser clients; never use a wildcard for a protected MCP origin.
+      if(req.headers.origin){
+        res.setHeader('access-control-allow-origin',req.headers.origin);
+        res.setHeader('vary','Origin');
+        res.setHeader('access-control-allow-methods','POST, OPTIONS');
+        res.setHeader('access-control-allow-headers','content-type, accept, mcp-protocol-version, mcp-session-id, last-event-id');
+        res.setHeader('access-control-expose-headers','mcp-session-id, mcp-protocol-version');
+        res.setHeader('access-control-max-age','600');
+      }
       if(req.method==='GET' && path==='/healthz')return respond(res,200,{ok:true,service:'neo-sales-mcp',mode:'public-read-only-pilot'});
       if(req.method==='GET' && path==='/readyz')return respond(res,200,{ready:true,mode:'public-read-only-pilot',privateSalesReady:false});
       if(path!=='/mcp')return respond(res,404,{error:'not_found'});
+      if(req.method==='OPTIONS'){res.writeHead(204);return res.end();}
       const now=Date.now(),ip=req.socket.remoteAddress||'unknown';
       const prior=rate.get(ip);
       const entry=(!prior || now-prior.start>60000)?{start:now,count:0}:prior;
