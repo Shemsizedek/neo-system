@@ -35,6 +35,12 @@ test('MCP SDK connects anonymously, discovers and calls three public tools',asyn
  assert.equal(overview.structuredContent.stage,'public-read-only-pilot');
  const guide=await client.callTool({name:'neo_sales_qualification_guide',arguments:{interest:'licensing'}});
  assert.equal(guide.structuredContent.questions.length,3);
+ const preflight=await fetch(base+'/mcp',{method:'OPTIONS',headers:{Origin:'https://chatgpt.com','Access-Control-Request-Method':'POST','Access-Control-Request-Headers':'content-type,mcp-protocol-version'}});
+ assert.equal(preflight.status,204);
+ assert.equal(preflight.headers.get('access-control-allow-origin'),'https://chatgpt.com');
+ assert.ok(preflight.headers.get('access-control-allow-methods').includes('POST'));
+ const foreignPreflight=await fetch(base+'/mcp',{method:'OPTIONS',headers:{Origin:'https://evil.example','Access-Control-Request-Method':'POST'}});
+ assert.equal(foreignPreflight.status,403);
  assert.equal((await fetch(base+'/mcp',{method:'GET'})).status,405);
  assert.equal((await fetch(base+'/mcp',{method:'POST',headers:{'content-type':'application/json',Origin:'https://evil.example'},body:'{}'})).status,403);
 });
