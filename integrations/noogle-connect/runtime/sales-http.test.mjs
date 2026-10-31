@@ -1,0 +1,40 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { once } from 'node:events';
+import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
+import { createSalesHttpServer,invokeSalesTool } from './sales-http.mjs';
+
+test('public sales tools expose no personal data, prices or write actions',()=>{
+ const overview=invokeSalesTool('neo_sales_overview');
+ assert.equal(overview.customerDataConnected,false);
+ assert.equal(overview.checkoutEnabled,false);
+ assert.equal(overview.leadCaptureEnabled,false);
+ assert.equal(overview.pricingVerified,false);
+ assert.throws(()=>invokeSalesTool('neo_sales_qualification_guide',{interest:'retail',email:'person@example.test'}));
+ assert.throws(()=>invokeSalesTool('unknown'));
+});
+test('MCP SDK connects anonymously, discovers and calls three public tools',async t=>{
+ const server=createSalesHttpServer();
+ server.listen(0,'127.0.0.1');
+ await once(server,'listening');
+ t.after(()=>new Promise(resolve=>{server.closeAllConnections();server.close(resolve)}));
+ const base='http://127.0.0.1:'+server.address().port;
+ const healthy=await fetch(base+'/healthz');
+ assert.equal(healthy.status,200);
+ const ready=await(await fetch(base+'/readyz')).json();
+ assert.equal(ready.ready,true);
+ assert.equal(ready.privateSalesReady,false);
+ const client=new Client({name:'neo-sales-test',version:'1.0.0'});
+ await client.connect(new StreamableHTTPClientTransport(new URL(base+'/mcp')));
+ t.after(()=>client.close());
+ const found=await client.listTools();
+ assert.equal(found.tools.length,3);
+ assert.ok(found.tools.every(tool=>tool.securitySchemes?.[0]?.type==='noauth'));
+ const overview=await client.callTool({name:'neo_sales_overview',arguments:{}});
+ assert.equal(overview.structuredContent.stage,'public-read-only-pilot');
+ const guide=await client.callTool({name:'neo_sales_qualification_guide',arguments:{interest:'licensing'}});
+ assert.equal(guide.structuredContent.questions.length,3);
+ assert.equal((await fetch(base+'/mcp',{method:'GET'})).status,405);
+ assert.equal((await fetch(base+'/mcp',{method:'POST',headers:{'content-type':'application/json',Origin:'https://evil.example'},body:'{}'})).status,403);
+});
