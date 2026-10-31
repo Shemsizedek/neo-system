@@ -1,5 +1,11 @@
 # NEO Suite · Noogle Connect · Plugin Gate 1
 
+[Gate 3: HTTP runtime, authentication tests and staging checklist](./GATE3.md)
+adds an isolated official SDK runtime. Run its full suite with
+`npm test --prefix integrations/noogle-connect/runtime` after installing with
+`npm ci --prefix integrations/noogle-connect/runtime --ignore-scripts`.
+Its default startup is locked; it does not yet connect a real user or device.
+
 Status: **local read-only MCP prototype**. [Gate 2 results](./GATE2.md) resolve
 the inherited failures and add a non-routed protected read contract.
 Not installed in ChatGPT, not deployed,
