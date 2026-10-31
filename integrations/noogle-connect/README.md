@@ -1,6 +1,8 @@
 # NEO Suite · Noogle Connect · Plugin Gate 1
 
-Status: **local read-only MCP prototype**. Not installed in ChatGPT, not deployed,
+Status: **local read-only MCP prototype**. [Gate 2 results](./GATE2.md) resolve
+the inherited failures and add a non-routed protected read contract.
+Not installed in ChatGPT, not deployed,
 not submitted, not published, and no user device is connected. No API key,
 additional dependencies, database, cloud service or spending is required.
 
@@ -103,9 +105,9 @@ reproduced in a clean worktree at the unchanged baseline commit:
 - `webauthn-assertion.test.mjs`: the valid signed-assertion case returns `null`
   instead of the expected device-bound identity. Root cause is not established.
 
-These remain Gate 2 prerequisites; this prototype does not exercise their
-production path or change those modules. No official client certification or
-live device/hosting test has been completed.
+These were the Gate 1 baseline results. [Gate 2](./GATE2.md) repairs both issues
+and records the current **63/63 passing** run. No official client certification
+or live device/hosting test has been completed.
 
 Public release requires a stable HTTPS endpoint, verified publishing identity,
 domain verification, accessible website/support/privacy/terms URLs, data
