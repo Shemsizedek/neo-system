@@ -1,0 +1,15 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {validateWalletProfile,reviewProfessionalCredential,collectCounterpartyEvidence} from './professional-verification.mjs';
+const personal={kind:'PERSONAL',network:'bitcoin-regtest-counterparty',threshold:1,signers:[{id:'person1',role:'holder'}]};
+const business={kind:'BUSINESS',network:'bitcoin-mainnet-counterparty',threshold:2,legalEntityId:'TEST-LLC',signers:[{id:'officer1',role:'officer'},{id:'auditor1',role:'auditor'}]};
+test('personal registry policy is read-only',()=>assert.equal(validateWalletProfile(personal).signingEnabled,false));
+test('business policy requires multiple signers',()=>assert.equal(validateWalletProfile(business).threshold,2));
+test('business one-of-one threshold rejected',()=>assert.throws(()=>validateWalletProfile({...business,threshold:1})));
+test('business requires entity identity',()=>assert.throws(()=>validateWalletProfile({...business,legalEntityId:''})));
+test('professional credential cannot self-certify',()=>assert.equal(reviewProfessionalCredential({personId:'x',profession:'lawyer',jurisdiction:'NC',licenseNumber:'TEST',issuer:'BAR',sourceUrl:'https://example.org',validUntil:'2099-01-01'}).status,'PENDING_EXTERNAL_REGISTRY_CHECK'));
+test('expired credential fails',()=>assert.equal(reviewProfessionalCredential({personId:'x',profession:'lawyer',jurisdiction:'NC',licenseNumber:'TEST',issuer:'BAR',sourceUrl:'https://example.org',validUntil:'2001-01-01'}).status,'HOLD'));
+const sources=[{operatorId:'a',apiBase:'https://a.example'},{operatorId:'b',apiBase:'https://b.example'}],record={asset:'NOMNI',address:'test',blockHeight:100,blockHash:'a'.repeat(64),quantity:100};
+test('matching snapshot is reported, never certified',async()=>{const r=await collectCounterpartyEvidence({address:'test',sources,fetchSnapshot:async()=>({...record})});assert.equal(r.status,'CONSISTENT_REPORTED_SNAPSHOTS');assert.equal(r.independentAttestation,false)});
+test('disagreement fails closed',async()=>{const r=await collectCounterpartyEvidence({address:'test',sources,fetchSnapshot:async({source})=>({...record,quantity:source.operatorId==='a'?100:99})});assert.equal(r.status,'HOLD')});
+test('same-operator sources rejected',async()=>{const r=await collectCounterpartyEvidence({address:'test',sources:[sources[0],sources[0]],fetchSnapshot:async()=>record});assert.equal(r.status,'HOLD')});
