@@ -1,0 +1,77 @@
+name: Bind World Leaders Forum Custom Domain
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/bind-world-leaders-render-domain.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bind-world-leaders-render-domain
+  cancel-in-progress: false
+
+env:
+  RENDER_SERVICE_ID: srv-dbilkudg1s2s73djqg80
+  RENDER_DOMAIN: leaders.holytemples.org
+
+jobs:
+  bind:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Validate Render API credential
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        run: |
+          set -euo pipefail
+          test -n "${RENDER_API_KEY:-}" || {
+            echo "::error::Missing repository secret RENDER_API_KEY"
+            exit 1
+          }
+
+      - name: Read existing custom domains
+        id: existing
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        run: |
+          set -euo pipefail
+          response="$(curl -fsS             -H "Authorization: Bearer $RENDER_API_KEY"             -H "Accept: application/json"             "https://api.render.com/v1/services/$RENDER_SERVICE_ID/custom-domains")"
+          printf '%s' "$response" > /tmp/domains.json
+          if jq -e --arg d "$RENDER_DOMAIN" '
+            if type=="array" then any(.[]; (.name // .domain // "") == $d)
+            else false end
+          ' /tmp/domains.json >/dev/null; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create custom domain
+        if: steps.existing.outputs.exists != 'true'
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        run: |
+          set -euo pipefail
+          code="$(curl -sS -o /tmp/create.json -w '%{http_code}'             -X POST             -H "Authorization: Bearer $RENDER_API_KEY"             -H "Content-Type: application/json"             -H "Accept: application/json"             --data "$(jq -nc --arg name "$RENDER_DOMAIN" '{name:$name}')"             "https://api.render.com/v1/services/$RENDER_SERVICE_ID/custom-domains")"
+          if [ "$code" -lt 200 ] || [ "$code" -ge 300 ]; then
+            cat /tmp/create.json
+            exit 1
+          fi
+
+      - name: Verify Render accepted hostname
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        run: |
+          set -euo pipefail
+          response="$(curl -fsS             -H "Authorization: Bearer $RENDER_API_KEY"             -H "Accept: application/json"             "https://api.render.com/v1/services/$RENDER_SERVICE_ID/custom-domains")"
+          printf '%s' "$response" > /tmp/domains.json
+          jq -e --arg d "$RENDER_DOMAIN" '
+            if type=="array" then any(.[]; (.name // .domain // "") == $d)
+            else false end
+          ' /tmp/domains.json >/dev/null
+          echo "Render accepted $RENDER_DOMAIN for $RENDER_SERVICE_ID" >> "$GITHUB_STEP_SUMMARY"
+          echo "DNS cutover is intentionally handled only after this workflow succeeds." >> "$GITHUB_STEP_SUMMARY"
