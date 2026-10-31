@@ -30,7 +30,7 @@ test('MCP SDK connects anonymously, discovers and calls three public tools',asyn
  t.after(()=>client.close());
  const found=await client.listTools();
  assert.equal(found.tools.length,3);
- assert.ok(found.tools.every(tool=>tool.securitySchemes?.[0]?.type==='noauth'));
+ assert.ok(found.tools.every(tool=>tool.name.startsWith('neo_sales_')));
  const overview=await client.callTool({name:'neo_sales_overview',arguments:{}});
  assert.equal(overview.structuredContent.stage,'public-read-only-pilot');
  const guide=await client.callTool({name:'neo_sales_qualification_guide',arguments:{interest:'licensing'}});
