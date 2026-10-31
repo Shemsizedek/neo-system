@@ -1,0 +1,47 @@
+name: Bind TWLF Forum Custom Domain
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/bind-twlf-forum-render-domain.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bind-twlf-forum-render-domain
+  cancel-in-progress: false
+
+env:
+  RENDER_SERVICE_ID: srv-dbilmknlk1mc73f32750
+  RENDER_DOMAIN: forum.holytemples.org
+
+jobs:
+  bind:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Validate Render API credential
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        run: |
+          set -euo pipefail
+          test -n "${RENDER_API_KEY:-}" || { echo "::error::Missing repository secret RENDER_API_KEY"; exit 1; }
+
+      - name: Create custom domain if absent
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        run: |
+          set -euo pipefail
+          existing="$(curl -fsS -H "Authorization: Bearer $RENDER_API_KEY" -H "Accept: application/json" "https://api.render.com/v1/services/$RENDER_SERVICE_ID/custom-domains")"
+          if printf '%s' "$existing" | grep -Fq "$RENDER_DOMAIN"; then
+            echo "Domain already present"
+            exit 0
+          fi
+          code="$(curl -sS -o /tmp/create.json -w '%{http_code}'             -X POST             -H "Authorization: Bearer $RENDER_API_KEY"             -H "Content-Type: application/json"             -H "Accept: application/json"             --data "$(jq -nc --arg name "$RENDER_DOMAIN" '{name:$name}')"             "https://api.render.com/v1/services/$RENDER_SERVICE_ID/custom-domains")"
+          cat /tmp/create.json
+          test "$code" -ge 200
+          test "$code" -lt 300
+          echo "Render accepted $RENDER_DOMAIN" >> "$GITHUB_STEP_SUMMARY"
