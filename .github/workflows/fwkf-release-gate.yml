@@ -1,0 +1,28 @@
+name: FWKF static release gate
+on:
+  pull_request:
+    paths:
+      - 'apps/fwkf-worldcafe/public/**'
+      - 'scripts/verify_fwkf_release_tree.py'
+      - 'tests/verify_fwkf_release_tree_test.py'
+      - '.github/workflows/fwkf-release-gate.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  fwkf-release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Unit-test release validator
+        run: python -m unittest discover -s tests -p 'verify_fwkf_release_tree_test.py' -v
+      - name: Validate fully imported release (fails on temporary shell)
+        run: python scripts/verify_fwkf_release_tree.py apps/fwkf-worldcafe/public
+      - name: Verify compiled JS syntax
+        run: |
+          node --check apps/fwkf-worldcafe/public/assets/index-C6xF2f0w.js
+          node --check apps/fwkf-worldcafe/public/fwkf-release-guard.js
