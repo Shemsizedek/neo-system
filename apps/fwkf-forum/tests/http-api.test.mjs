@@ -1,0 +1,25 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import {createHttpApi} from "../src/http-api.mjs";
+import {createForum} from "../src/core.mjs";
+import {createTestStore} from "../src/sqlite-test-store.mjs";
+test("private API blocks anonymous writes, foreign origins and pending content",async t=>{
+ const store=createTestStore(),member=store.seedMember({sub:"http-user-001"}),mod=store.seedMember({sub:"http-mod-001",role:"moderator"}),community=store.seedCommunity({slug:"world-library"});
+ const tokens={"user-token-000000000000000000000000":{sub:member.sub},"moderator-token-0000000000000000000":{sub:mod.sub}};
+ const forum=createForum({store,verifyIdentity:async token=>tokens[token],rateLimit:async()=>true});
+ const server=createHttpApi({forum,publicOrigin:"https://worldcafe.holytemples.org"});
+ await new Promise(resolve=>server.listen(0,"127.0.0.1",resolve));
+ t.after(()=>new Promise(resolve=>server.close(resolve)));t.after(()=>store.close());
+ const root="http://127.0.0.1:"+server.address().port,req=(route,opt)=>fetch(root+route,opt);
+ let r=await req("/health");assert.equal(r.status,200);assert.equal((await r.json()).posting,false);
+ r=await req("/questions",{method:"POST",headers:{"content-type":"application/json"},body:"{}"});assert.equal(r.status,401);
+ r=await req("/questions",{method:"POST",headers:{origin:"https://evil.example","content-type":"application/json",authorization:"Bearer user-token-000000000000000000000000"},body:"{}"});assert.equal(r.status,403);
+ const userHeaders={"content-type":"application/json",authorization:"Bearer user-token-000000000000000000000000"};
+ r=await req("/questions",{method:"POST",headers:userHeaders,body:JSON.stringify({communityId:community.id,title:"What should we read?",body:"The library has useful books."})});
+ assert.equal(r.status,202);const post=await r.json();assert.equal(post.status,"pending");
+ r=await req("/communities/world-library/questions");assert.deepEqual((await r.json()).questions,[]);
+ const modHeaders={"content-type":"application/json",authorization:"Bearer moderator-token-0000000000000000000"};
+ r=await req("/moderation",{method:"POST",headers:modHeaders,body:JSON.stringify({targetType:"post",targetId:post.id,action:"approve",reason:"On topic and verified"})});
+ assert.equal(r.status,202);
+ r=await req("/communities/world-library/questions");assert.equal((await r.json()).questions.length,1);
+});
