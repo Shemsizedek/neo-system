@@ -1,0 +1,52 @@
+{
+  "title": "Free World Knowledge Index",
+  "publisher": "Free World Knowledge Foundation",
+  "version": "1.0",
+  "status": "definitions only",
+  "summary": "A developing framework for understanding how knowledge is created, shared, preserved, and used.",
+  "website": "https://worldcafe.holytemples.org/knowledge.html",
+  "library": "https://holytemples.org/world-library/",
+  "indicators": [
+    {
+      "name": "Registered resources",
+      "description": "Public knowledge resources included in the index",
+      "value": null
+    },
+    {
+      "name": "Source attribution",
+      "description": "Resources with reviewed source information",
+      "value": null
+    },
+    {
+      "name": "Publication permissions",
+      "description": "Resources cleared for their stated use",
+      "value": null
+    },
+    {
+      "name": "Resource availability",
+      "description": "Public resources accessible when checked",
+      "value": null
+    },
+    {
+      "name": "Preservation",
+      "description": "Preserved resources passing integrity checks",
+      "value": null
+    },
+    {
+      "name": "Community participation",
+      "description": "Contributions shared with permission",
+      "value": null
+    },
+    {
+      "name": "Learning outcomes",
+      "description": "Documented learning and practical applications",
+      "value": null
+    },
+    {
+      "name": "Knowledge economy",
+      "description": "Verified knowledge services, licenses and related activity",
+      "value": null
+    }
+  ],
+  "notes": "Measurements will be published only when independently reviewed and supported by reliable sources."
+}
