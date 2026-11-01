@@ -11,6 +11,7 @@ export function prepareCesAccountLink({ neoSubject, exchangeId, externalAccount 
   const exchange = clean(exchangeId).toUpperCase();
   const account = clean(externalAccount).toUpperCase();
   if (!subjectFormat.test(subject)) throw new Error('invalid_neo_subject');
+  if (!exchange) throw new Error('invalid_external_exchange');
   resolveCesIdentity(exchange); // Unknown exchanges must not silently link.
   if (!idFormat.test(account)) throw new Error('invalid_external_account');
   return Object.freeze({
