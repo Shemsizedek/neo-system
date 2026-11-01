@@ -37,3 +37,9 @@ Source added under `apps/fwkf-forum/`:
 2. Implement the Postgres store, stable migrations, real identities, server moderation roles, sign-in UX and a private test deployment; test cross-user ACL.
 3. Build question/feed/reply/voting/moderator UI, then test end-to-end, backups, privacy, abuse reports, accessibility and rollback.
 4. Promote only after independent production signoff; update `worldcafe.holytemples.org/forum.html` to point to the actually working Forum at that time.
+
+## Gate 019 follow-up verification
+
+- Added asynchronous store support to domain rules and a separate `src/pg-store.mjs` with parameterized SQL and atomic moderator write/rollback.
+- Added four Postgres adapter tests, bringing isolated container test suite to **14/14 passing** (HTTP, JWT crypto, SQLite workflow, Postgres SQL mock). These are source/adapter tests, **not** live Neon integration tests.
+- GitHub Actions Forum security workflow completed successfully at commit `8e7f3f8729cba6bbd0ca41c41e0363034fa2cbdd` before the Postgres test module was added. Do not assert its later run has passed without checking.
