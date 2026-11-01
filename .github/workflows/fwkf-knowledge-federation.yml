@@ -1,0 +1,23 @@
+name: FWKF KNOWINDEX read-only crosswalk tests
+on:
+  pull_request:
+    paths:
+      - 'apps/fwkf-worldcafe/public/knowindex.json'
+      - 'scripts/inspect-fwkf-knowindex-feed.mjs'
+      - 'tests/inspect-fwkf-knowindex-feed.test.mjs'
+      - 'server/crown-metadata/knowindex/fwkf-evidence-feed.draft.json'
+      - '.github/workflows/fwkf-knowledge-federation.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  knowindex-crosswalk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test source-only read-only schema (no network/writes)
+        run: node --test tests/inspect-fwkf-knowindex-feed.test.mjs
+      - name: Inspect public JSON with local validation (no network)
+        run: |
+          node --input-type=module -e "import fs from 'node:fs'; import {validateFeed} from './scripts/inspect-fwkf-knowindex-feed.mjs'; console.log(JSON.stringify(validateFeed(JSON.parse(fs.readFileSync('apps/fwkf-worldcafe/public/knowindex.json','utf8')))))"
