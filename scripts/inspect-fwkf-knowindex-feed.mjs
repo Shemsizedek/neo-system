@@ -1,5 +1,5 @@
 // Read-only FWKF KNOWINDEX evidence probe; never signs, stores, anchors, or issues assets.
-const URL = "https://worldcafe.holytemples.org/knowindex.json";
+const SOURCE_URL = "https://worldcafe.holytemples.org/knowindex.json";
 const EXPECTED = Array.from({length:8}, (_,i)=>"NK-"+String(i+1).padStart(2,"0"));
 export function validateFeed(feed) {
   if (!feed || typeof feed!=="object" || Array.isArray(feed)) throw new Error("Invalid feed object");
@@ -10,9 +10,9 @@ export function validateFeed(feed) {
   if (feed.live_observations_available!==false || !Array.isArray(feed.measures) || feed.measures.length!==8) throw new Error("Unreviewed observations");
   if (feed.measures.some((m,i)=>m.code!==EXPECTED[i] || m.value!==null || typeof m.definition!=="string")) throw new Error("Unreviewed measure values or codes");
   if (feed.crown_chain_evidence?.production_writes_approved!==false || feed.crown_chain_evidence?.bitcoin_commitment_verified!==false || feed.crown_chain_evidence?.signatures_present!==false) throw new Error("Crown-chain evidence boundary violated");
-  if (feed.crown_chain_evidence?.candidate_feed!==URL) throw new Error("Unexpected candidate source");
+  if (feed.crown_chain_evidence?.candidate_feed!==SOURCE_URL) throw new Error("Unexpected candidate source");
   return Object.freeze({
-    source:URL,
+    source:SOURCE_URL,
     status:"methodology_only",
     knowledgeIndexCodes:EXPECTED.slice(0,7),
     knowledgeEconomicIndexCode:"NK-08",
@@ -24,7 +24,7 @@ export function validateFeed(feed) {
   });
 }
 export async function inspectFeed(fetcher=fetch) {
-  const response = await fetcher(URL,{method:"GET",redirect:"error",signal:AbortSignal.timeout(10000),headers:{"accept":"application/json"}});
+  const response = await fetcher(SOURCE_URL,{method:"GET",redirect:"error",signal:AbortSignal.timeout(10000),headers:{"accept":"application/json"}});
   if (!response.ok) throw new Error("Feed fetch failed: "+response.status);
   const ct=response.headers?.get?.("content-type")||"";
   if (!ct.includes("application/json")) throw new Error("Unexpected content type");
