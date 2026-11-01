@@ -165,7 +165,8 @@
     "neo-vm:test": "node --test server/neo-vm/*.test.mjs core/neo-bvm/*.test.mjs core/neo-nvm/*.test.mjs",
     "neo-vm:demo": "node scripts/neo-vm-demo.mjs",
     "neo-vm:core": "node scripts/neo-vm-core-gate.mjs",
-    "neo-vm:signatures": "node scripts/neo-vm-signature-core-gate.mjs"
+    "neo-vm:signatures": "node scripts/neo-vm-signature-core-gate.mjs",
+    "neo-vm:identity": "node scripts/neo-vm-identity-core-gate.mjs"
   },
   "dependencies": {
     "@composio/core": "^0.18.1",

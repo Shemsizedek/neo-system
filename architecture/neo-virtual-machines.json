@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
   "program_id": "NEO-VM",
-  "gate_id": "NEO-VM-G4",
-  "project": "NEO System — Project 144",
-  "status": "SIGNATURE_REFUND_AND_PSBT_REVIEW_LOCAL_VALIDATED",
-  "decision_date": "2026-10-29",
-  "source_baseline": "bf7b3f24562ff75ea0adf47246833e641c4a5636",
+  "gate_id": "NEO-VM-G5",
+  "project": "NEO System \u2014 Project 144",
+  "status": "DURABLE_APPROVAL_AND_NEOPASS_BINDING_LOCAL_VALIDATED",
+  "decision_date": "2026-10-31",
+  "source_baseline": "bf72879cb2f49c7769ec240e903fbe764ec6e74e",
   "project_register": {
     "workstream": "NEO Core / Bitcoin contract execution",
     "purpose": "Compile bounded NEO contracts to existing Bitcoin Script and evaluate them locally",
@@ -50,6 +50,19 @@
       "implementation": "server/neo-vm/psbt-authorization.mjs",
       "signing": false,
       "broadcasting": false
+    },
+    {
+      "id": "NEO-PSBT-APPROVAL-STORE",
+      "role": "Single-host durable SQLite nonce reservation with hashed audit context",
+      "implementation": "server/neo-vm/approval-store.mjs",
+      "tests": "server/neo-vm/approval-store.test.mjs"
+    },
+    {
+      "id": "NEO-NEOPASS-PSBT-REVIEW",
+      "role": "Existing NEOpass session verification, current registry membership and operator-pinned approval key",
+      "implementation": "server/neo-vm/neopass-psbt-review.mjs",
+      "tests": "server/neo-vm/neopass-psbt-review.test.mjs",
+      "live_identity_connected": false
     }
   ],
   "execution_policy": {
@@ -86,7 +99,11 @@
       "signature": "Ed25519",
       "maximum_lifetime_seconds": 300,
       "atomic_nonce_store_required": true,
-      "live_neopass_connected": false
+      "live_neopass_connected": false,
+      "durable_store": "SQLite WAL synchronous=FULL; same-host shared file",
+      "identity_boundary": "Existing NEOpass HS256 session + active authoritative Google membership + explicit public Ed25519 binding",
+      "registry_rechecks": "before Core and before/after nonce reservation",
+      "token_claim_roles_trusted": false
     }
   },
   "integration_checklist": [
@@ -104,7 +121,7 @@
     },
     {
       "integration": "NEOpass authorization",
-      "status": "NOT_CONNECTED"
+      "status": "ADAPTER_LOCAL_TESTED_WITH_FIXTURE_REGISTRY; LIVE_CONFIGURATION_PENDING"
     },
     {
       "integration": "NeoMask signing",
@@ -128,7 +145,7 @@
     },
     {
       "integration": "Durable atomic approval store",
-      "status": "PENDING"
+      "status": "SQLITE_LOCAL_TESTED_WITH_RESTART_AND_MULTI_PROCESS_CONTENTION"
     },
     {
       "integration": "External signer and final transaction revalidation",
@@ -175,6 +192,18 @@
     {
       "id": "VM-D010",
       "decision": "Keep Ed25519 operator approval distinct from Bitcoin ECDSA and from unconnected NEOpass identity; fixture signing remains test-only"
+    },
+    {
+      "id": "VM-D011",
+      "decision": "Require a dedicated SQLite WAL/FULL store with one primary-key insert; keep consumed nonce history through expiry and key rotation"
+    },
+    {
+      "id": "VM-D012",
+      "decision": "Reuse the platform NEOpass verifier with mandatory bounded session times; require current registry identity and a separately provisioned public approval key, with no role-claim or executive fallback"
+    },
+    {
+      "id": "VM-D013",
+      "decision": "Repeat identity checks around reservation, burn nonces on uncertain post-reservation results, and treat review receipts as audit results rather than deferred signing authority"
     }
   ],
   "prioritized_backlog": [
@@ -202,7 +231,7 @@
     {
       "id": "VM-004",
       "priority": "P1",
-      "status": "NEXT",
+      "status": "IDENTITY_ADAPTER_LOCAL_VALIDATED; SIGNER_PENDING",
       "deliverable": "Verify NEOpass and NeoMask capabilities before adding authorized PSBT workflows"
     },
     {
@@ -220,14 +249,20 @@
     {
       "id": "VM-007",
       "priority": "P0",
+      "status": "DURABLE_STORE_AND_IDENTITY_ADAPTER_LOCAL_VALIDATED",
+      "deliverable": "Provision live identity and durable host storage, then independently validate external-signer/final-transaction controls"
+    },
+    {
+      "id": "VM-008",
+      "priority": "P0",
       "status": "NEXT",
-      "deliverable": "Durable atomic nonce-store integration, live identity binding and independently reviewed external-signer/final-transaction controls"
+      "deliverable": "Bounded external-signer protocol and independent final-transaction revalidation on regtest without production activation"
     }
   ],
-  "next_milestone": "Durable approval storage and verified identity/external-signer boundaries; operator-host staging remains pending",
+  "next_milestone": "External-signer protocol and final-transaction revalidation on regtest; live NEOpass, persistent operator-host storage and deployment remain pending",
   "verification": {
     "vm_tests": {
-      "passed": 78,
+      "passed": 100,
       "failed": 0,
       "skipped": 0
     },
@@ -237,14 +272,16 @@
       "psbt_authorization_cases": 14,
       "gate3_core_regressions": 13,
       "version": 310100,
-      "network": "regtest"
+      "network": "regtest",
+      "identity_approval_cases": 13,
+      "total_selected_scenarios": 55
     },
-    "evidence": "docs/evidence/neo-vm-gate-4.json",
+    "evidence": "docs/evidence/neo-vm-gate-5.json",
     "github_publication_approved": true,
     "production_deployment": "NOT_PERFORMED",
     "repository_tests": {
-      "total": 957,
-      "passed": 956,
+      "total": 979,
+      "passed": 978,
       "failed": 0,
       "skipped": 1,
       "skip": "existing KI-015 Postgres integration test without isolated database configuration"
@@ -342,7 +379,32 @@
         },
         "preexisting_other_workflow_failures": 4
       }
+    },
+    "gate5": {
+      "unit_tests_passed": 100,
+      "new_storage_identity_tests_passed": 22,
+      "native_identity_cases_passed": 13,
+      "earlier_native_regressions_passed": 42,
+      "network": "regtest",
+      "concurrent_processes": 6,
+      "concurrent_nonce_winners": 1,
+      "abrupt_process_exit_test": "PASS",
+      "live_neopass_connected": false,
+      "external_signer_connected": false,
+      "production_deployment": "NOT_PERFORMED",
+      "branch": "feat/neo-vm-durable-identity-gate-5",
+      "repository_tests": {
+        "total": 979,
+        "passed": 978,
+        "failed": 0,
+        "skipped": 1,
+        "skip": "existing KI-015 Postgres integration test without isolated database configuration"
+      },
+      "build": "PASS",
+      "architecture_audit_errors": 0,
+      "architecture_registry_tests_passed": 3,
+      "workflow_yaml": "PARSED"
     }
   },
-  "source_dependency": "https://github.com/Shemsizedek/neo-system/pull/1275"
+  "source_dependency": "https://github.com/Shemsizedek/neo-system/pull/1277"
 }

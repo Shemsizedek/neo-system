@@ -660,7 +660,7 @@
     {
       "capability_id": "NEO-VM-G4-SIGNATURE-REFUND-PSBT",
       "status": "PARTIAL",
-      "scope": "Public-key compiler and selected signature/refund/PSBT review cases tested on isolated Core; live identity, durable approval storage, external signer and production deployment pending",
+      "scope": "Public-key compiler and selected signature/refund/PSBT review cases tested on isolated Core; Gate 5 adds a durable store and identity adapter; live identity, external signer and production deployment pending",
       "evidence": [
         "core/neo-nvm/signature-refund.mjs",
         "server/neo-vm/psbt-authorization.mjs",
@@ -668,6 +668,20 @@
         "scripts/neo-vm-signature-core-gate.mjs",
         "docs/NEO-NVM-BVM-GATE-4.md",
         "docs/evidence/neo-vm-gate-4.json"
+      ]
+    },
+    {
+      "capability_id": "NEO-VM-G5-DURABLE-IDENTITY-APPROVAL",
+      "status": "PARTIAL",
+      "scope": "SQLite durable atomic approval and existing NEOpass session/registry/public-key binding tested locally, including isolated Core; live identity, durable operator-host storage and external signing pending",
+      "evidence": [
+        "server/neo-vm/approval-store.mjs",
+        "server/neo-vm/approval-store.test.mjs",
+        "server/neo-vm/neopass-psbt-review.mjs",
+        "server/neo-vm/neopass-psbt-review.test.mjs",
+        "scripts/neo-vm-identity-core-gate.mjs",
+        "docs/NEO-NVM-BVM-GATE-5.md",
+        "docs/evidence/neo-vm-gate-5.json"
       ]
     }
   ],

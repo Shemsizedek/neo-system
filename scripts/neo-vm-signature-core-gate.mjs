@@ -9,7 +9,7 @@ import { authorizePsbtReview } from '../server/neo-vm/psbt-authorization.mjs'
 import { createRestrictedPsbtBitcoinRpc } from '../server/neo-vm/shared-bitcoin-core.mjs'
 import { fixtureKey, fixtureTransaction, signedFixtureSpend, fixturePsbt, fixtureIntent, fixtureApproval } from './test-support/neo-vm-fixtures.mjs'
 
-export async function runSignatureRefundGate({ bitcoindPath, evidencePath } = {}) {
+export async function runSignatureRefundGate({ bitcoindPath, evidencePath, afterSignatureChecks } = {}) {
   const combined = await runBitcoinCoreGate({
     bitcoindPath,
     afterRegtestChecks: async ({ controlRpc, privateEndpoint }) => {
@@ -113,8 +113,11 @@ export async function runSignatureRefundGate({ bitcoindPath, evidencePath } = {}
       await native('refund: final sequence cannot bypass CLTV', signedFixtureSpend({ plan, outpoint, branch: 'refund', sequence: 0xffffffff }), false)
       await native('redeem branch remains valid after refund height', signedFixtureSpend({ plan, outpoint }), true)
       await review('unsigned refund PSBT: correct key policy and mature height', requestFor({ branch: 'refund' }))
+      // Trusted test extension on the owned node only. Application modules do
+      // not receive control RPC, credentials or a callback execution endpoint.
+      const identityGate = afterSignatureChecks ? await afterSignatureChecks({ program, plan, outpoint, reviewRpc }) : null
       assert.deepEqual(await controlRpc('getrawmempool', []), [])
-      return { status: 'PASS', contractProfile: plan.kind, contractCases, authorizationCases, fixtureSigningOnly: true, liveNeopassConnected: false, approvalStore: 'isolated test-only atomic Set' }
+      return { status: 'PASS', contractProfile: plan.kind, contractCases, authorizationCases, identityGate, fixtureSigningOnly: true, liveNeopassConnected: false, approvalStore: 'isolated test-only atomic Set' }
     },
   })
   const report = {

@@ -6,11 +6,13 @@ on:
       - 'core/neo-bvm/**'
       - 'core/neo-nvm/**'
       - 'server/miner-production/bitcoinWallet.mjs'
+      - 'server/neo-platform-api/neopass-google-auth.mjs'
       - 'scripts/neo-vm-*.mjs'
       - 'scripts/test-support/neo-vm-*.mjs'
       - 'docs/NVM_BVM_GATE_2.md'
       - 'docs/NEO-NVM-BVM-GATE-3.md'
       - 'docs/NEO-NVM-BVM-GATE-4.md'
+      - 'docs/NEO-NVM-BVM-GATE-5.md'
       - 'architecture/neo-virtual-machines.json'
       - 'package.json'
       - '.github/workflows/neo-vm-gate.yml'
@@ -48,10 +50,10 @@ jobs:
             bitcoin.tar.gz | sha256sum --check -
           tar -xzf bitcoin.tar.gz bitcoin-31.1/bin/bitcoind
           echo "BITCOIND_PATH=$RUNNER_TEMP/neo-bitcoin-core/bitcoin-31.1/bin/bitcoind" >> "$GITHUB_ENV"
-      - name: Run isolated Core hashlock, signature, refund and PSBT gates
+      - name: Run isolated Core contract, PSBT, durable approval and identity gates
         env:
           NEO_VM_EVIDENCE: ${{ runner.temp }}/neo-vm-core-evidence.json
-        run: node scripts/neo-vm-signature-core-gate.mjs
+        run: node scripts/neo-vm-identity-core-gate.mjs
       - uses: actions/upload-artifact@v4
         with:
           name: neo-vm-core-regtest-evidence
