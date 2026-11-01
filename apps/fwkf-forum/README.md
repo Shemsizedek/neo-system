@@ -33,3 +33,6 @@ The tests use a fresh, private `:memory:` SQLite database and generated ephemera
 - [ ] Deploy to a **separate** cloud service and custom hostname after verified acceptance. Keep `forum.holytemples.org` (World Leaders Forum) unchanged.
 
 No public forum is operational yet. This code is a **functional tested private prototype**, not a production authorization or public invitation to post.
+
+## Database adapter added
+`src/pg-store.mjs` provides parameterized Postgres queries, bounded published-question listing, idempotent vote upserts based on partial unique indexes and atomic/audited moderation writes. It is **not deployed** and requires a separately approved Neon testing branch and least-privilege connection.
