@@ -41,12 +41,12 @@ CREATE TABLE IF NOT EXISTS fwkf_forum.replies (
 );
 CREATE INDEX IF NOT EXISTS fwkf_replies_post_status ON fwkf_forum.replies(post_id,status,created_at);
 CREATE TABLE IF NOT EXISTS fwkf_forum.votes (
+ id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
  member_id uuid NOT NULL REFERENCES fwkf_forum.members(id),
  post_id uuid REFERENCES fwkf_forum.posts(id),
  reply_id uuid REFERENCES fwkf_forum.replies(id),
  value smallint NOT NULL CHECK (value IN (-1,1)),
  created_at timestamptz NOT NULL DEFAULT now(),
- PRIMARY KEY(member_id,post_id,reply_id),
  CONSTRAINT one_vote_target CHECK ((post_id IS NOT NULL) <> (reply_id IS NOT NULL))
 );
 CREATE UNIQUE INDEX IF NOT EXISTS fwkf_votes_post_once ON fwkf_forum.votes(member_id,post_id) WHERE post_id IS NOT NULL;
