@@ -22,9 +22,9 @@ NEO Cipher may provide the shared LMS/education control plane while GISD and NEO
 
 For current NEO System implementation and public education surfaces:
 
-- **GISS** means **Global Interdependent School System**. GISS is the shared school-system/platform layer for learning services, academic records, school operations, and participating institutions.
+- **NEO Cipher GISS** is the canonical technical product name for the education platform. **GISS** expands to **Global Interdependent School System** and is used in SEO, metadata, architecture descriptions, and explanatory copy rather than as the primary visual brand.
 - **GISD** means **Global Interdependent School District**. GISD is the district/institutional domain that organizes participating schools, temples, programs, authorities, and district-level education governance.
-- **NEO Cipher** is the shared LMS/education control plane used by GISD/GISS learning surfaces.
+- **NEO Cipher** is the primary visual and product brand across GISS learning surfaces, including the logo, favicon, LMS shell, and learner-facing interface.
 - **NEO Cipher #D — 999/144 Yamassee Secure Script Protocol** is a separate security and secure-communications subsystem. It must not be treated as the LMS cryptographic boundary merely because both use the NEO Cipher brand.
 
 The live HolyTemples education surface and current platform tests use the Interdependent naming above. Older doctrine/curriculum records that expand GISD as “Global Independent School System” are retained as historical/source provenance and must not silently override the current operational terminology. Migration of those records should preserve their original wording while adding an explicit legacy/canonical mapping when they are next revised.
@@ -33,6 +33,6 @@ The live HolyTemples education surface and current platform tests use the Interd
 
 Current operational mapping:
 
-`GISD district/domain -> GISS school-system/platform -> NEO Cipher LMS -> NEOpass-authenticated learner and faculty services`
+`GISD district/domain -> NEO Cipher GISS platform -> NEO Cipher LMS/control plane -> NEOpass-authenticated learner and faculty services`
 
 NEO Cipher #D remains a separate defensive security component with its own key-management, cryptographic, transport, and audit requirements.
