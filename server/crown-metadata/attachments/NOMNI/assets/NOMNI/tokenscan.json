@@ -33,5 +33,14 @@
       "artwork_sha256": "00472d01de84f4d876d7cd6ca1fa53a844a0b7929f93f97cd5dfb4c28e7bb7e6"
     }
   ],
-  "bill_metadata": "https://crown.holytemples.org/assets/NOMNI/bill-1.json"
+  "bill_metadata": "https://crown.holytemples.org/assets/NOMNI/bill-1.json",
+  "images": [
+    {
+      "type": "large",
+      "name": "1 NOMNI Bill",
+      "data": "https://crown.holytemples.org/assets/NOMNI/nomni-bill-1.jpg",
+      "hash": "00472d01de84f4d876d7cd6ca1fa53a844a0b7929f93f97cd5dfb4c28e7bb7e6"
+    }
+  ],
+  "html": "<div style=\"background-color:#166534;color:#ffffff;padding:14px 18px;border-radius:6px;font-family:Arial,sans-serif;font-size:18px;font-weight:700;text-align:center\">This is a NEO Crown Chain Project</div>"
 }

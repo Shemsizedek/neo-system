@@ -9,6 +9,7 @@ const parse=async path=>JSON.parse(await readFile(new URL(path,root),'utf8'));
 test('Render publish directory contains the exact on-chain metadata path and matching aliases',async()=>{
   const canonical=await parse('tokenscan.json');
   assert.equal(canonical.asset,'NOMNI');
+  assert.equal(canonical.description, 'NOMNI is a world currency and unit of account on Bitcoin. The 1 NOMNI Bill is the one-unit bill designed for the same NOMNI token. Bill artwork and denomination records are linked to a SHA-256 hash that identifies the exact artwork; individual printed bills require separate funding and redemption verification.');
   assert.ok(canonical.description.length<=2048);
   assert.ok(canonical.website.length<=100);
   assert.deepEqual(await parse('assets/NOMNI/tokenscan.json'),canonical);
@@ -24,6 +25,10 @@ test('Render publish directory contains the exact on-chain metadata path and mat
   assert.equal(digest,record.sha256);
   assert.equal(canonical.denominations[0].artwork_sha256,digest);
   assert.equal(canonical.image_large,record.url);
+  assert.deepEqual(canonical.images,[{type:'large',name:record.title,data:record.url,hash:digest}]);
+  assert.equal(record.binding.artwork_sha256,digest);
+  assert.equal(record.token.asset,canonical.asset);
+  assert.equal(canonical.bill_metadata,canonical.denominations[0].record);
   assert.equal(canonical.files[0].data,canonical.denominations[0].record);
   assert.equal(record.blockchain_anchor_verified,false);
 });
