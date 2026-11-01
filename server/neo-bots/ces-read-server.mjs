@@ -17,7 +17,7 @@ const failureReasons = new Map([
 ]);
 function requestStage(url, options) {
   const path = new URL(url).pathname;
-  if (path === '/home/user-login/') return 'login_page';
+  if (path === '/home/user-login/' || path === '/login.asp') return 'login_page';
   if (path === '/rlogin.asp') return options?.method === 'POST' ? 'login_submit' : 'admin_transition';
   if (path === '/memac.asp') return 'member_page';
   if (path === '/_admin/statstrading.asp') return 'trading_report';

@@ -1,7 +1,7 @@
-// Non-secret metadata observed on the official CES login on 2026-10-29.
+// Official same-origin legacy login, verified as published on 2026-11-01.
 // This verifies a member session; admin collection needs a separate reviewed route.
 export const NMNI_READ_LOGIN_PROFILE = Object.freeze({
-  loginPath: '/home/user-login/',
+  loginPath: '/login.asp',
   submitPath: '/rlogin.asp',
   usernameField: 'uid',
   passwordField: 'passwd',
