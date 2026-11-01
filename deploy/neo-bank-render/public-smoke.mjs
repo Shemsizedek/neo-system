@@ -53,3 +53,36 @@ for (const [path, expected] of checks) {
   }
 }
 console.log('Read-only external bank staging smoke checks passed.');
+
+
+// CES backend transport is a separate service. Public health can prove it is
+// reachable, not that operator credentials or account imports are verified.
+const cesOrigin = 'https://neo-ces-read-staging.onrender.com';
+async function cesRequest(path) {
+  let lastError;
+  for (let attempt = 1; attempt <= 4; attempt++) {
+    try {
+      return await fetch(cesOrigin + path, {
+        method: 'GET', redirect: 'manual',
+        headers: { accept: 'application/json' },
+        signal: AbortSignal.timeout(30000)
+      });
+    } catch (error) {
+      lastError = error;
+      if (attempt !== 4) await new Promise(resolve => setTimeout(resolve, 7000));
+    }
+  }
+  throw lastError;
+}
+const cesHealth = await cesRequest('/health');
+assert.equal(cesHealth.status, 200, 'CES runtime health HTTP status');
+assert.equal(new URL(cesHealth.url).origin, cesOrigin, 'CES unexpected origin');
+const cesState = await cesHealth.json();
+assert.equal(cesState.ok, true);
+assert.equal(cesState.service, 'neo-ces-read-runtime');
+assert.equal(typeof cesState.database, 'boolean');
+console.log('CES read-only runtime: HTTP 200; database reachable=' + cesState.database + '; authenticated CES accounts are NOT inferred');
+const protectedCes = await cesRequest('/v1/status');
+assert.equal(protectedCes.status, 401, 'CES control routes require backend authentication');
+assert.equal((await protectedCes.json()).error, 'authentication_required');
+console.log('CES protected backend status: HTTP 401 without credentials (expected)');
