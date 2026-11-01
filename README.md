@@ -55,6 +55,12 @@ in [`docs/NEO-NVM-BVM-GATE-4.md`](docs/NEO-NVM-BVM-GATE-4.md). Run
 `npm run neo-vm:signatures` with the same verified `BITCOIND_PATH` to exercise
 the native contract and authorization cases on a disposable regtest node.
 
+Gate 5 adds SQLite approval replay protection and NEOpass session/registry/key
+binding in [`docs/NEO-NVM-BVM-GATE-5.md`](docs/NEO-NVM-BVM-GATE-5.md).
+Run `npm run neo-vm:identity` with the same verified `BITCOIND_PATH` for the
+combined native gate. Live identity configuration and external signing remain
+pending.
+
 ## Current release boundary
 
 This build is **FOUNDATION / SANDBOX** software.
