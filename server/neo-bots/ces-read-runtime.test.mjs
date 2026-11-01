@@ -162,6 +162,59 @@ test('live reader diagnostics identify failed steps without returning transport 
   }
 });
 
+test('debug mode defaults off and requires the exact true string', async () => {
+  for (const flag of [undefined, 'false', '1', 'TRUE']) {
+    const entries = [];
+    await withServer({ env: { ...env, NEO_CES_DEBUG_ENABLED: flag }, store, logger: entry => entries.push(entry), fetchImpl: async () => new Response('', { status: 403 }) }, async base => {
+      const status = await (await fetch(base + '/v1/status', { headers })).json();
+      assert.equal(status.debugEnabled, false);
+      assert.equal((await fetch(base + '/v1/auth/check', { method: 'POST', headers })).status, 502);
+      assert.deepEqual(entries, []);
+    });
+  }
+});
+
+test('enabled debug traces a complete administrator check without exposing session material', async () => {
+  const entries = [];
+  const fetchImpl = async (url, options) => {
+    const path = new URL(url).pathname;
+    if (path === '/login.asp') return new Response('<form method="POST" action="/rlogin.asp"><input name="uid"><input type="password" name="passwd"></form>');
+    if (path === '/rlogin.asp' && options.method === 'POST') return new Response('', { status: 302, headers: { location: '/memac.asp', 'set-cookie': 'session=private-cookie' } });
+    if (path === '/memac.asp') return new Response('Noocratic Open Market Nibiru Index ' + member);
+    if (path === '/rlogin.asp') return new Response('', { status: 302, headers: { location: '/_admin/admain.asp' } });
+    if (path === '/_admin/admain.asp') return new Response(home);
+    throw new Error('unexpected fixture route');
+  };
+  await withServer({ env: { ...env, NEO_CES_DEBUG_ENABLED: 'true', NEO_CES_IMPORT_ENABLED: 'false' }, store, logger: entry => entries.push(entry), fetchImpl }, async base => {
+    assert.equal((await fetch(base + '/v1/status')).status, 401);
+    assert.equal((await (await fetch(base + '/v1/status', { headers })).json()).debugEnabled, true);
+    const result = await fetch(base + '/v1/auth/check', { method: 'POST', headers });
+    assert.equal(result.status, 200);
+    assert.equal((await result.json()).proof.adminAuthenticated, true);
+    assert.equal((await fetch(base + '/v1/collect-import', { method: 'POST', headers })).status, 403);
+  });
+  assert.equal(entries[0].event, 'ces_debug_enabled');
+  const requests = entries.filter(entry => entry.event === 'ces_request');
+  assert.deepEqual(requests.map(entry => entry.stage), ['login_page', 'login_submit', 'member_page', 'member_page', 'admin_transition', 'admin_page']);
+  assert.ok(requests.every(entry => Number.isInteger(entry.durationMs) && entry.durationMs >= 0));
+  assert.doesNotMatch(JSON.stringify(entries), /fixture-secret|fixture-password|fixture-control-token|private-cookie|pw=|https:/);
+});
+
+test('debug failures remain redacted and a broken logger does not break the runtime', async () => {
+  const entries = [];
+  for (const logger of [entry => entries.push(entry), () => { throw new Error('logger failed'); }]) {
+    await withServer({ env: { ...env, NEO_CES_DEBUG_ENABLED: 'true' }, store, logger, fetchImpl: async () => { throw new Error('https://example.test/?pw=transport-secret cookie=private'); } }, async base => {
+      const result = await fetch(base + '/v1/auth/check', { method: 'POST', headers });
+      assert.equal(result.status, 502);
+      assert.doesNotMatch(await result.text(), /transport-secret|cookie=|https:/);
+      assert.equal((await fetch(base + '/health')).status, 200);
+    });
+  }
+  assert.ok(entries.some(entry => entry.event === 'ces_request_unavailable' && entry.stage === 'login_page'));
+  assert.ok(entries.some(entry => entry.event === 'ces_read_failed' && entry.reason === 'request_unavailable'));
+  assert.doesNotMatch(JSON.stringify(entries), /transport-secret|cookie=|https:/);
+});
+
 test('shared staging mount preserves primary routes and applies CES authentication under its prefix', async () => {
   const primary = http.createServer((req, res) => { res.writeHead(200, { 'content-type': 'application/json' }); res.end(JSON.stringify({ service: 'primary', path: req.url })); });
   const server = mountCesRuntime({ primary, ces: createCesReadServer({ env, store }) });

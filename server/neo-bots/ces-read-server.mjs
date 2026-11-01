@@ -31,20 +31,32 @@ function authorized(req, token) {
   return actual.length === expected.length && timingSafeEqual(actual, expected);
 }
 
-export function createCesReadServer({ env = process.env, store, fetchImpl = fetch, reader, now = () => new Date().toISOString() } = {}) {
+export function createCesReadServer({ env = process.env, store, fetchImpl = fetch, reader, now = () => new Date().toISOString(), logger = entry => console.info(JSON.stringify(entry)) } = {}) {
   let busy = false;
+  const debugEnabled = env.NEO_CES_DEBUG_ENABLED === 'true';
+  const debug = entry => { if (debugEnabled) { try { logger(entry); } catch {} } };
+  debug({ event: 'ces_debug_enabled' });
   const read = reader || (async collect => {
     let stage = 'configuration', httpStatus;
     try {
       const adapter = createCesSessionAdapter({ credentialProvider: createNmniReadCredentialProvider(env), fetchImpl: async (url, options) => {
         stage = requestStage(url, options); httpStatus = undefined;
-        const response = await fetchImpl(url, { ...options, signal: AbortSignal.timeout(20000) });
-        httpStatus = response.status;
-        return response;
+        const started = performance.now();
+        const method = options?.method === 'POST' ? 'POST' : 'GET';
+        try {
+          const response = await fetchImpl(url, { ...options, signal: AbortSignal.timeout(20000) });
+          httpStatus = response.status;
+          debug({ event: 'ces_request', stage, method, httpStatus, durationMs: Math.max(0, Math.round(performance.now() - started)) });
+          return response;
+        } catch (error) {
+          debug({ event: 'ces_request_unavailable', stage, method, durationMs: Math.max(0, Math.round(performance.now() - started)) });
+          throw error;
+        }
       } });
       return await adapter.readNmniTradingStatistics({ exchange: resolveCesIdentity('NMNI'), collect });
     } catch (error) {
       const reason = validationReasons.has(error?.validationReason) ? error.validationReason : failureReasons.get(error?.message) || (httpStatus === undefined ? 'request_unavailable' : 'response_unverified');
+      debug({ event: 'ces_read_failed', stage, reason, ...(httpStatus === undefined ? {} : { httpStatus }) });
       // Only fixed vocabulary and numeric HTTP status survive this boundary.
       throw Object.assign(new Error('CES read failed'), { cesDiagnostic: { stage, reason, ...(httpStatus === undefined ? {} : { httpStatus }) } });
     }
@@ -58,7 +70,7 @@ export function createCesReadServer({ env = process.env, store, fetchImpl = fetc
     }
     if (!authorized(req, env.NEO_CES_RUNTIME_TOKEN)) return json(res, 401, { error: 'authentication_required' });
     if (req.headers.origin) return json(res, 403, { error: 'browser_origin_not_supported' });
-    if (req.method === 'GET' && path === '/v1/status') return json(res, 200, { ...nmniReadiness(env), databaseConfigured: Boolean(store), financialWritesEnabled: false });
+    if (req.method === 'GET' && path === '/v1/status') return json(res, 200, { ...nmniReadiness(env), databaseConfigured: Boolean(store), financialWritesEnabled: false, debugEnabled });
     if (req.method === 'GET' && path === '/v1/imports') {
       try { return json(res, 200, { imports: await store.list() }); } catch { return json(res, 503, { error: 'source_store_unavailable' }); }
     }
