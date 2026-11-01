@@ -7,6 +7,10 @@ export function validateFeed(feed) {
   if (feed.sources?.foundation!=="https://worldcafe.holytemples.org/" || feed.sources?.world_library!=="https://holytemples.org/world-library/") throw new Error("Source allowlist mismatch");
   if (feed.knowindex?.name!=="KNOWINDEX" || feed.knowindex?.live_asset_verified!==false || feed.knowindex?.asset_rights_verified!==false) throw new Error("Asset-state boundary missing");
   if (feed.knowindex?.transaction_id!==null || feed.knowindex?.asset_id!==null || feed.knowindex?.supply_on_chain!==null) throw new Error("Unverified chain state");
+  const obs=feed.knowindex?.indexer_observation;
+  if (obs?.reported_asset_id!==2197274275635 || obs?.reported_supply_units!==1000 || obs?.reported_divisible!==false || obs?.reported_locked!==false) throw new Error("Indexer evidence mismatch");
+  if (!Array.isArray(obs?.explorer_sources) || !obs.explorer_sources.includes("https://tokenscan.io/asset/KNOWINDEX") || !obs.explorer_sources.includes("https://xcp.io/asset/KNOWINDEX")) throw new Error("Indexer source evidence missing");
+
   if (feed.live_observations_available!==false || !Array.isArray(feed.measures) || feed.measures.length!==8) throw new Error("Unreviewed observations");
   if (feed.measures.some((m,i)=>m.code!==EXPECTED[i] || m.value!==null || typeof m.definition!=="string")) throw new Error("Unreviewed measure values or codes");
   if (feed.crown_chain_evidence?.production_writes_approved!==false || feed.crown_chain_evidence?.bitcoin_commitment_verified!==false || feed.crown_chain_evidence?.signatures_present!==false) throw new Error("Crown-chain evidence boundary violated");
@@ -18,6 +22,9 @@ export function validateFeed(feed) {
     knowledgeEconomicIndexCode:"NK-08",
     publicObservations:0,
     knowindexAssetVerified:false,
+    counterpartyExplorerRecordObserved:true,
+    counterpartyReportedAssetId:2197274275635,
+    counterpartyReportedSupplyUnits:1000,
     bitcoinAnchored:false,
     crownChainWritesApproved:false,
     permittedAction:"read_only_review"
