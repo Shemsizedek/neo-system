@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url'
 import { runBitcoinCoreGate } from './neo-vm-core-gate.mjs'
 import { compileSignatureRefund } from '../core/neo-nvm/signature-refund.mjs'
 import { authorizePsbtReview } from '../server/neo-vm/psbt-authorization.mjs'
-import { createRestrictedPsbtBitcoinRpc } from '../server/neo-vm/shared-bitcoin-core.mjs'
+import { createRestrictedPsbtBitcoinRpc, createRestrictedBvmBitcoinRpc } from '../server/neo-vm/shared-bitcoin-core.mjs'
 import { fixtureKey, fixtureTransaction, signedFixtureSpend, fixturePsbt, fixtureIntent, fixtureApproval } from './test-support/neo-vm-fixtures.mjs'
 
 export async function runSignatureRefundGate({ bitcoindPath, evidencePath, afterSignatureChecks } = {}) {
@@ -115,7 +115,8 @@ export async function runSignatureRefundGate({ bitcoindPath, evidencePath, after
       await review('unsigned refund PSBT: correct key policy and mature height', requestFor({ branch: 'refund' }))
       // Trusted test extension on the owned node only. Application modules do
       // not receive control RPC, credentials or a callback execution endpoint.
-      const identityGate = afterSignatureChecks ? await afterSignatureChecks({ program, plan, outpoint, reviewRpc }) : null
+      const identityGate = afterSignatureChecks ? await afterSignatureChecks({ program, plan, outpoint, reviewRpc,
+        validationRpc: createRestrictedBvmBitcoinRpc(privateEndpoint), controlRpc, fundingBlock }) : null
       assert.deepEqual(await controlRpc('getrawmempool', []), [])
       return { status: 'PASS', contractProfile: plan.kind, contractCases, authorizationCases, identityGate, fixtureSigningOnly: true, liveNeopassConnected: false, approvalStore: 'isolated test-only atomic Set' }
     },

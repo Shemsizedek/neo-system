@@ -683,6 +683,22 @@
         "docs/NEO-NVM-BVM-GATE-5.md",
         "docs/evidence/neo-vm-gate-5.json"
       ]
+    },
+    {
+      "capability_id": "NEO-VM-G6-EXTERNAL-SIGNER-FINAL-TRANSACTION",
+      "status": "PARTIAL",
+      "scope": "Authenticated external-signer protocol, independent final wire/intent checks and Core policy validation tested on regtest with a separate fixture signer and dual durable nonce stores; real pairing, live identity/storage and deployment pending",
+      "evidence": [
+        "server/neo-vm/external-signer.mjs",
+        "server/neo-vm/signer-protocol.mjs",
+        "server/neo-vm/signer-transport.mjs",
+        "server/neo-vm/final-transaction.mjs",
+        "server/neo-vm/external-signer.test.mjs",
+        "server/neo-vm/signer-transport.test.mjs",
+        "scripts/neo-vm-signer-core-gate.mjs",
+        "docs/NEO-NVM-BVM-GATE-6.md",
+        "docs/evidence/neo-vm-gate-6.json"
+      ]
     }
   ],
   "autopilot": {

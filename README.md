@@ -61,6 +61,11 @@ Run `npm run neo-vm:identity` with the same verified `BITCOIND_PATH` for the
 combined native gate. Live identity configuration and external signing remain
 pending.
 
+Gate 6 defines an authenticated external-signer protocol and independently
+validates the finalized transaction in [`docs/NEO-NVM-BVM-GATE-6.md`](docs/NEO-NVM-BVM-GATE-6.md).
+Run `npm run neo-vm:signer` with the verified `BITCOIND_PATH` for the separate
+fixture-signer and combined Core regtest gate. Real device pairing remains pending.
+
 ## Current release boundary
 
 This build is **FOUNDATION / SANDBOX** software.

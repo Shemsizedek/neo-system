@@ -60,6 +60,14 @@ export function createNeopassPsbtReviewer({ rpc, registry, jwtSecret, jwtIssuer,
     authenticate(token)
   }
   return Object.freeze({
+    // Authentication only: this result neither reserves a nonce nor grants a
+    // deferred signing capability. Gate 6 calls it again at its own boundary.
+    async recheckIdentity({ token } = {}) {
+      const binding = bySubject.get(authenticate(token))
+      if (!binding) fail('PSBT_NEOPASS_APPROVER_NOT_BOUND')
+      await requireActive(token, binding)
+      return Object.freeze({ approverId: binding.approverId, neopassSubjectHash: binding.subjectHash, approvalKeyHash: binding.approvalKeyHash })
+    },
     async review(input) {
       requireFields(input, ['token', 'request'])
       const token = input.token
