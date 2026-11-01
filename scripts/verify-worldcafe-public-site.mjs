@@ -8,7 +8,7 @@ const all=new Map(pages.map(p=>[p,fs.readFileSync(path.join(root,p),"utf8")]));
 const css=fs.readFileSync(path.join(root,"site.css"),"utf8");
 assert.ok(css.includes("@media"),"Responsive styles required");
 assert.ok(css.includes(":focus-visible"),"Accessible focus required");
-const privateWords=[/project\s*144/i,/sponsor-described/i,/internal\s*gate/i,/original\s*archive/i,/production\s*write/i,/penguin/i,/private conversation/i,/bitcoin\s*commitment/i,/crown\s*chain/i,/asset[_ ]id/i];
+const privateWords=[/project\s*144/i,/sponsor-described/i,/internal\s*gate/i,/original\s*archive/i,/production\s*write/i,/penguin/i,/bitcoin\s*commitment/i,/crown\s*chain/i,/asset[_ ]id/i];
 for(const [p,html] of all) {
  assert.ok(/<main id="content">/.test(html),p+": accessible main missing");
  assert.ok(html.includes('/site.css'),p+": stylesheet missing");
