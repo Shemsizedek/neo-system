@@ -37,7 +37,17 @@
       "type": "other",
       "name": "World Temple City — Holy See Global District and proposed Nu Cities of Peace",
       "data": "https://holytemples.org/world-temple-city/"
+    },
+    {
+      "type": "other",
+      "name": "KNOWINDEX — publicly indexed Bitcoin/Counterparty asset record (supply 1,000, owner rights not certified by this metadata draft)",
+      "data": "https://xcp.io/asset/KNOWINDEX"
+    },
+    {
+      "type": "other",
+      "name": "Counterparty TokenScan public KNOWINDEX asset record",
+      "data": "https://tokenscan.io/asset/KNOWINDEX"
     }
   ],
-  "html": "<section><h2>NEO Knowledge / KNOWINDEX</h2><p>Free World Knowledge Foundation knowledge resources, reviewed contributions, and proposed knowledge-economic indicators (NK-01 through NK-08). The index data contract contains null/unverified values until independently confirmed.</p><p><a href=\"https://worldcafe.holytemples.org/#index\">KNOWINDEX information</a> | <a href=\"https://worldcafe.holytemples.org/knowindex.json\">Public knowledge index data contract</a> | <a href=\"https://holytemples.org/world-library/\">World Library</a></p><p>Bitcoin / Counterparty context is sponsor-described and does not certify an on-chain update, entitlements, token issuance, or NEO Crown Chain writes. Specific share rights require governing documents.</p></section>"
+  "html": "<section><h2>NEO Knowledge / KNOWINDEX</h2><p>Free World Knowledge Foundation knowledge resources, reviewed contributions, and proposed knowledge-economic indicators (NK-01 through NK-08). The index data contract contains null/unverified values until independently confirmed.</p><p><a href=\"https://worldcafe.holytemples.org/#index\">KNOWINDEX information</a> | <a href=\"https://worldcafe.holytemples.org/knowindex.json\">Public knowledge index data contract</a> | <a href=\"https://holytemples.org/world-library/\">World Library</a></p><p>Bitcoin / Counterparty context is sponsor-described and does not certify an on-chain update, entitlements, token issuance, or NEO Crown Chain writes. Specific share rights require governing documents.</p><p>Public Counterparty explorers report KNOWINDEX asset ID 2197274275635 and 1,000 indivisible units issued 2026-10-20. Explorer records do not establish issuer authority, legal rights or approval to broadcast an update. <a href=\"https://xcp.io/asset/KNOWINDEX\">View independent asset record</a>.</p></section>"
 }
