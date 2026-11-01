@@ -5,7 +5,15 @@
   "sourceType": "public_reviewed_methodology",
   "asset": "KNOWINDEX",
   "bitcoinProtocol": "Counterparty",
-  "knowledgeMeasures": ["NK-01", "NK-02", "NK-03", "NK-04", "NK-05", "NK-06", "NK-07"],
+  "knowledgeMeasures": [
+    "NK-01",
+    "NK-02",
+    "NK-03",
+    "NK-04",
+    "NK-05",
+    "NK-06",
+    "NK-07"
+  ],
   "knowledgeEconomicMeasure": "NK-08",
   "sourcePage": "https://worldcafe.holytemples.org/#index",
   "worldLibrary": "https://holytemples.org/world-library/",
@@ -18,5 +26,16 @@
   "assetRightsVerified": false,
   "knowindexContributionWritesEnabled": false,
   "operatorSecurityApprovalRequired": true,
-  "notes": "Read-only crosswalk. Not a chain writer, signer, token metadata broadcast, issuance, share register, GKI valuation, or authority to ingest protected knowledge."
+  "notes": "Read-only crosswalk. Not a chain writer, signer, token metadata broadcast, issuance, share register, GKI valuation, or authority to ingest protected knowledge.",
+  "counterpartyExplorerObservation": {
+    "reportedAssetId": 2197274275635,
+    "reportedSupply": 1000,
+    "divisible": false,
+    "issuedDate": "2026-10-20",
+    "sourceUrls": [
+      "https://xcp.io/asset/KNOWINDEX",
+      "https://tokenscan.io/asset/KNOWINDEX"
+    ],
+    "assertion": "Corroborated indexer evidence only; does not authorize transactions, ownership rights, token broadcasts or Crown Chain writes"
+  }
 }
