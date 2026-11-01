@@ -1,0 +1,27 @@
+name: FWKF archive audit safety checks
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/fwkf-archive-audit.yml'
+      - 'scripts/fwkf_source_gate.py'
+      - 'tests/fwkf_source_gate*_test.py'
+      - 'docs/project-144/fwkf/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  archive-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Compile archive auditor
+        run: python -m py_compile scripts/fwkf_source_gate.py
+      - name: Test with synthetic ZIPs only
+        run: python -m unittest discover -s tests -p 'fwkf_source_gate*_test.py' -v
