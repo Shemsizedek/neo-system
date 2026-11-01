@@ -17,3 +17,22 @@ OAuth tokens, passwords, service-account credentials, recovery material, and oth
 
 ## Separation of systems
 NEO Cipher may provide the shared LMS/education control plane while GISD and NEO University remain institution-specific domains. External classroom bridges synchronize only data and actions for which the authenticated external account has granted scope.
+
+## Canonical education terminology
+
+For current NEO System implementation and public education surfaces:
+
+- **GISS** means **Global Interdependent School System**. GISS is the shared school-system/platform layer for learning services, academic records, school operations, and participating institutions.
+- **GISD** means **Global Interdependent School District**. GISD is the district/institutional domain that organizes participating schools, temples, programs, authorities, and district-level education governance.
+- **NEO Cipher** is the shared LMS/education control plane used by GISD/GISS learning surfaces.
+- **NEO Cipher #D — 999/144 Yamassee Secure Script Protocol** is a separate security and secure-communications subsystem. It must not be treated as the LMS cryptographic boundary merely because both use the NEO Cipher brand.
+
+The live HolyTemples education surface and current platform tests use the Interdependent naming above. Older doctrine/curriculum records that expand GISD as “Global Independent School System” are retained as historical/source provenance and must not silently override the current operational terminology. Migration of those records should preserve their original wording while adding an explicit legacy/canonical mapping when they are next revised.
+
+## Architecture mapping
+
+Current operational mapping:
+
+`GISD district/domain -> GISS school-system/platform -> NEO Cipher LMS -> NEOpass-authenticated learner and faculty services`
+
+NEO Cipher #D remains a separate defensive security component with its own key-management, cryptographic, transport, and audit requirements.
