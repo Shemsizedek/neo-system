@@ -12,6 +12,7 @@ test('CES links begin unverified with no banking or account data permissions', (
   assert.deepEqual(p.permissions, { read: false, transfer: false, issuance: false });
   assert.equal(p.exchangeId, 'NMNI');
   assert.throws(() => prepareCesAccountLink({neoSubject:'neo:founder:000001',exchangeId:'UNKNOWN',externalAccount:'ABC123'}));
+  assert.throws(() => prepareCesAccountLink({neoSubject:'neo:founder:000001',exchangeId:'',externalAccount:'NMNIBANK'}), /invalid_external_exchange/);
   assert.throws(() => prepareCesAccountLink({neoSubject:'neo:founder:000001',exchangeId:'NMNI',externalAccount:'@@@'}));
 });
 
