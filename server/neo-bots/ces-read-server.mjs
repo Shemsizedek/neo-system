@@ -68,11 +68,21 @@ export function createCesReadServer({ env = process.env, store, fetchImpl = fetc
       try { database = Boolean(await store?.ping()); } catch {}
       return json(res, 200, { ok: true, service: 'neo-ces-read-runtime', database, timestamp: now(), version: env.RENDER_GIT_COMMIT || 'local' });
     }
-    if (!authorized(req, env.NEO_CES_RUNTIME_TOKEN)) return json(res, 401, { error: 'authentication_required' });
+    const controlAuthorized = authorized(req, env.NEO_CES_RUNTIME_TOKEN);
+    const backendAuthorized = authorized(req, env.NEO_CES_BACKEND_TOKEN);
+    if (!controlAuthorized && !backendAuthorized) return json(res, 401, { error: 'authentication_required' });
     if (req.headers.origin) return json(res, 403, { error: 'browser_origin_not_supported' });
+    const backendReadAllowed = (req.method === 'GET' && ['/v1/status', '/v1/reports/trading/latest'].includes(path)) || (req.method === 'POST' && path === '/v1/auth/check');
+    if (!controlAuthorized && !backendReadAllowed) return json(res, 403, { error: 'operation_not_permitted' });
     if (req.method === 'GET' && path === '/v1/status') return json(res, 200, { ...nmniReadiness(env), databaseConfigured: Boolean(store), financialWritesEnabled: false, debugEnabled });
     if (req.method === 'GET' && path === '/v1/imports') {
       try { return json(res, 200, { imports: await store.list() }); } catch { return json(res, 503, { error: 'source_store_unavailable' }); }
+    }
+    if (req.method === 'GET' && path === '/v1/reports/trading/latest') {
+      try {
+        const report = await store.latest();
+        return json(res, report ? 200 : 404, report ? { report } : { error: 'report_not_available' });
+      } catch { return json(res, 503, { error: 'source_store_unavailable' }); }
     }
     if (req.method !== 'POST' || !['/v1/auth/check', '/v1/collect-import'].includes(path)) return json(res, 404, { error: 'not_found' });
     if (path === '/v1/collect-import' && env.NEO_CES_IMPORT_ENABLED !== 'true') return json(res, 403, { error: 'source_import_disabled' });

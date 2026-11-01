@@ -19,6 +19,15 @@ export function createCesSourceStore(pool) {
   return {
     async ping() { await pool.query('SELECT 1 FROM neo_ces_source_imports LIMIT 1'); return true; },
     async list() { const { rows } = await pool.query('SELECT id,exchange_id,observed_at,imported_at,row_count FROM neo_ces_source_imports ORDER BY imported_at DESC LIMIT 20'); return rows; },
+    async latest() {
+      const { rows } = await pool.query("SELECT id,row_count,payload FROM neo_ces_source_imports WHERE exchange_id='NMNI' ORDER BY observed_at DESC,imported_at DESC LIMIT 1");
+      if (!rows[0]) return null;
+      const row = rows[0], payload = row.payload;
+      if (payload?.schema !== 'neo.ces.trading-summary.v1' || payload.unit !== 'NEO' || payload.recordType !== 'historical-trading-summary' || payload.verificationStatus !== 'source-imported') throw new Error('invalid cached source report');
+      const record = normalizeTradingSnapshot({ schemaVersion: 'neo.ces.browser-evidence.v1', exchangeId: payload.exchangeId, observedAt: payload.observedAt, source: { origin: payload.sourceOrigin, path: payload.sourcePath }, scrapedReport: { columns: payload.columns, monthlyRows: payload.monthlyRows } });
+      if (record.id !== row.id || record.rowCount !== Number(row.row_count)) throw new Error('invalid cached source report');
+      return { id: record.id, observedAt: record.payload.observedAt, rowCount: record.rowCount, unit: 'NEO', recordType: record.payload.recordType, columns: record.payload.columns, monthlyRows: record.payload.monthlyRows };
+    },
     async importSnapshot(input) {
       const record = normalizeTradingSnapshot(input);
       const result = await pool.query('INSERT INTO neo_ces_source_imports(id,exchange_id,observed_at,row_count,payload) VALUES($1,$2,$3,$4,$5) ON CONFLICT(id) DO NOTHING RETURNING id', [record.id, 'NMNI', record.payload.observedAt, record.rowCount, JSON.stringify(record.payload)]);

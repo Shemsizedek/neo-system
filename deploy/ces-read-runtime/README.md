@@ -7,3 +7,5 @@ The authenticated `GET /v1/status` response reports `debugEnabled`. Debug mode l
 Logs contain a fixed event name, request stage, GET/POST method, numeric HTTP status when available, and elapsed milliseconds. Failure reasons come from a fixed vocabulary. Logs exclude URLs, query strings, request and response headers, HTML, raw exceptions, credentials, cookies, and database connection strings. Logging failures do not interrupt the request.
 
 Run an authenticated `POST /v1/auth/check` to trace the member login and administrator transition without importing a report. A reachable public website does not establish that the server-side login route is reachable or that authentication succeeds.
+
+For a bank backend, configure a separate `NEO_CES_BACKEND_TOKEN`. This token permits only `GET /v1/status`, `GET /v1/reports/trading/latest`, and `POST /v1/auth/check`. It cannot collect/import, enumerate imports, or perform financial actions. Keep the controller token separate. The cached-report endpoint returns a validated historical report without making a new upstream login; it returns 404 until a source batch exists.

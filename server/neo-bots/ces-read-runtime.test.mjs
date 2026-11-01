@@ -71,6 +71,22 @@ test('source store inserts only into the dedicated import table and deduplicates
   assert.doesNotMatch(calls.join(' '), /UPDATE|DELETE|neo_bank_accounts|neo_bank_entries/);
 });
 
+test('cached source report verifies its hash and exposes only the report fields', async () => {
+  const record = normalizeTradingSnapshot(snapshot());
+  const row = { id: record.id, row_count: record.rowCount, payload: { ...record.payload, password: 'never-return' } };
+  const calls = [];
+  const source = createCesSourceStore({ query: async sql => { calls.push(sql); return { rows: [row] }; } });
+  const report = await source.latest();
+  assert.equal(report.id, record.id);
+  assert.equal(report.monthlyRows[0][3], '100000000.00');
+  assert.doesNotMatch(JSON.stringify(report), /never-return|sourceOrigin|community-exchange|NMNI/);
+  assert.ok(calls.every(sql => sql.startsWith('SELECT ') && !/neo_bank_/.test(sql)));
+  row.id = 'f'.repeat(64);
+  await assert.rejects(() => source.latest(), /invalid cached/);
+  const empty = createCesSourceStore({ query: async () => ({ rows: [] }) });
+  assert.equal(await empty.latest(), null);
+});
+
 const token = 'fixture-control-token-'.repeat(3);
 const env = { NEO_CES_RUNTIME_TOKEN: token, NEO_CES_NMNI_USERNAME: 'fixture', NEO_CES_NMNI_PASSWORD: 'fixture-password', NEO_CES_IMPORT_ENABLED: 'true' };
 async function withServer(options, run) {
@@ -123,6 +139,36 @@ test('runtime imports after verified reads, and auth check never imports', async
     assert.equal(response.status, 200);
     assert.equal((await response.json()).import.rowCount, 1);
     assert.equal(imports, 1);
+  });
+});
+
+test('cached reports require authentication without making a new upstream login', async () => {
+  const record = normalizeTradingSnapshot(snapshot());
+  const report = { id: record.id, observedAt: record.payload.observedAt, rowCount: record.rowCount, unit: 'NEO', recordType: record.payload.recordType, columns: record.payload.columns, monthlyRows: record.payload.monthlyRows };
+  let latest = report;
+  await withServer({ env: { NEO_CES_RUNTIME_TOKEN: token }, store: { ...store, latest: async () => latest }, reader: () => { throw Error('must not authenticate upstream'); } }, async base => {
+    const path = base + '/v1/reports/trading/latest';
+    assert.equal((await fetch(path)).status, 401);
+    assert.deepEqual(await (await fetch(path, { headers })).json(), { report });
+    latest = null;
+    assert.equal((await fetch(path, { headers })).status, 404);
+  });
+});
+
+test('bank backend token can verify access and read reports but cannot import', async () => {
+  const backendToken = 'backend-read-token-'.repeat(3);
+  const backendHeaders = { authorization: 'Bearer ' + backendToken };
+  let imports = 0;
+  await withServer({ env: { ...env, NEO_CES_BACKEND_TOKEN: backendToken }, store: { ...store, latest: async () => null, importSnapshot: async () => { imports++; } }, reader: async () => ({ proof: { ...proof, verifiedAt: '2026-11-01T00:00:00.000Z' } }) }, async base => {
+    assert.equal((await fetch(base + '/v1/status', { headers: backendHeaders })).status, 200);
+    assert.equal((await fetch(base + '/v1/reports/trading/latest', { headers: backendHeaders })).status, 404);
+    assert.equal((await fetch(base + '/v1/auth/check', { method: 'POST', headers: backendHeaders })).status, 200);
+    for (const [method, path] of [['POST', '/v1/collect-import'], ['GET', '/v1/imports'], ['POST', '/v1/transfer']]) {
+      const result = await fetch(base + path, { method, headers: backendHeaders });
+      assert.equal(result.status, 403);
+      assert.deepEqual(await result.json(), { error: 'operation_not_permitted' });
+    }
+    assert.equal(imports, 0);
   });
 });
 
