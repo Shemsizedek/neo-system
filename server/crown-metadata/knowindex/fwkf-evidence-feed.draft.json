@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "workstream": "FWKF_KNOWINDEX_CROWN_FEED",
+  "sourceUrl": "https://worldcafe.holytemples.org/knowindex.json",
+  "sourceType": "public_reviewed_methodology",
+  "asset": "KNOWINDEX",
+  "bitcoinProtocol": "Counterparty",
+  "knowledgeMeasures": ["NK-01", "NK-02", "NK-03", "NK-04", "NK-05", "NK-06", "NK-07"],
+  "knowledgeEconomicMeasure": "NK-08",
+  "sourcePage": "https://worldcafe.holytemples.org/#index",
+  "worldLibrary": "https://holytemples.org/world-library/",
+  "siteContext": "World Temple City; Holy See Global District; projected Nu Cities of Peace",
+  "approvedInputType": "public_metadata_only",
+  "containsPrivateResourceRecords": false,
+  "crownChainRuntimeEnabled": false,
+  "bitcoinAnchoringEnabled": false,
+  "onChainAssetVerified": false,
+  "assetRightsVerified": false,
+  "knowindexContributionWritesEnabled": false,
+  "operatorSecurityApprovalRequired": true,
+  "notes": "Read-only crosswalk. Not a chain writer, signer, token metadata broadcast, issuance, share register, GKI valuation, or authority to ingest protected knowledge."
+}
