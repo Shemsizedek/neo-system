@@ -10,9 +10,10 @@ import { createNeopassPsbtReviewer } from '../server/neo-vm/neopass-psbt-review.
 import { issueNeopassToken } from '../server/neo-platform-api/neopass-google-auth.mjs'
 import { fixturePsbt, fixtureIntent, fixtureApproval } from './test-support/neo-vm-fixtures.mjs'
 
-export async function runIdentityApprovalGate({ bitcoindPath, evidencePath } = {}) {
+export async function runIdentityApprovalGate({ bitcoindPath, evidencePath, afterIdentityChecks } = {}) {
   const previous = await runSignatureRefundGate({ bitcoindPath,
-    afterSignatureChecks: async ({ program, plan, outpoint, reviewRpc }) => {
+    afterSignatureChecks: async context => {
+      const { program, plan, outpoint, reviewRpc } = context
       const directory = await mkdtemp(join(tmpdir(), 'neo-vm-core-identity-')), stores = []
       const subject = 'google:regtest-operator', secret = randomBytes(48), keys = generateKeyPairSync('ed25519')
       let clock = 1_100, serial = 100, registryReads = 0, coreCalls = 0, registryUnavailable = false, onRegistry, onRpc
@@ -83,7 +84,8 @@ export async function runIdentityApprovalGate({ bitcoindPath, evidencePath } = {
         await check('burned nonce remains denied after identity reactivation', burned, 'PSBT_APPROVAL_REPLAYED')
         const closedStore = open(), closedReviewer = reviewer(closedStore); closedStore.close()
         await check('closed durable store grants no approval', { token: token(), request: makeRequest() }, 'PSBT_APPROVAL_STORE_CLOSED', closedReviewer)
-        return { status: 'PASS', cases, store: store.inspect(), coreCalls, registryReads,
+        const signerGate = afterIdentityChecks ? await afterIdentityChecks(context) : null
+        return { status: 'PASS', cases, store: store.inspect(), coreCalls, registryReads, signerGate,
           fixtureIdentityOnly: true, liveNeopassConnected: false, externalSignerConnected: false }
       } finally { for (const current of stores) current.close(); await rm(directory, { recursive: true, force: true }) }
     },

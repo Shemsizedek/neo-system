@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
   "program_id": "NEO-VM",
-  "gate_id": "NEO-VM-G5",
+  "gate_id": "NEO-VM-G6",
   "project": "NEO System \u2014 Project 144",
-  "status": "DURABLE_APPROVAL_AND_NEOPASS_BINDING_LOCAL_VALIDATED",
-  "decision_date": "2026-10-31",
-  "source_baseline": "bf72879cb2f49c7769ec240e903fbe764ec6e74e",
+  "status": "EXTERNAL_SIGNER_PROTOCOL_AND_FINAL_TRANSACTION_REGTEST_VALIDATED",
+  "decision_date": "2026-11-01",
+  "source_baseline": "a539aa1e711b1d665469db85f17b8717334ce658",
   "project_register": {
     "workstream": "NEO Core / Bitcoin contract execution",
     "purpose": "Compile bounded NEO contracts to existing Bitcoin Script and evaluate them locally",
@@ -63,6 +63,20 @@
       "implementation": "server/neo-vm/neopass-psbt-review.mjs",
       "tests": "server/neo-vm/neopass-psbt-review.test.mjs",
       "live_identity_connected": false
+    },
+    {
+      "id": "NEO-EXTERNAL-SIGNER",
+      "role": "Full per-call NEOpass/operator approval, explicit device permissions and pinned authenticated response",
+      "implementation": "server/neo-vm/external-signer.mjs",
+      "protocol": "server/neo-vm/signer-protocol.mjs",
+      "transport": "server/neo-vm/signer-transport.mjs",
+      "production_device_connected": false
+    },
+    {
+      "id": "NEO-FINAL-TRANSACTION",
+      "role": "Independent bounded wire parsing, intent/txid/wtxid/weight binding and fresh read-only Core policy validation",
+      "implementation": "server/neo-vm/final-transaction.mjs",
+      "broadcasting": false
     }
   ],
   "execution_policy": {
@@ -104,6 +118,31 @@
       "identity_boundary": "Existing NEOpass HS256 session + active authoritative Google membership + explicit public Ed25519 binding",
       "registry_rechecks": "before Core and before/after nonce reservation",
       "token_claim_roles_trusted": false
+    },
+    "external_signer": {
+      "mode": "EXPLICIT_REGTEST_CONFIGURATION_ONLY",
+      "application_private_keys": false,
+      "production_device_connected": false,
+      "transport": "HTTPS or loopback HTTP; fixed endpoint; service bearer auth; no redirects/cookies/retries",
+      "request_lifetime_seconds": 30,
+      "default_timeout_ms": 10000,
+      "maximum_timeout_ms": 30000,
+      "request_bytes_max": 100000,
+      "response_bytes_max": 140000,
+      "device_response_signature": "pinned Ed25519",
+      "device_operator_proof_verification_required": true,
+      "device_durable_nonce_store_required": true,
+      "presence": "signer-signed assertion; hardware/biometric ceremony unverified",
+      "failure_policy": "nonce remains consumed; no automatic retry"
+    },
+    "final_transaction": {
+      "profile": "one-input native SegWit signature/refund",
+      "independent_wire_parse": true,
+      "core_txid_wtxid_fee_weight_binding": true,
+      "chain_and_utxo_recheck": true,
+      "identity_recheck": "before external call, after response, after final Core validation",
+      "raw_transaction_returned": false,
+      "broadcasting": false
     }
   },
   "integration_checklist": [
@@ -125,7 +164,7 @@
     },
     {
       "integration": "NeoMask signing",
-      "status": "NOT_CONNECTED"
+      "status": "PROTOCOL_TESTED_WITH_SEPARATE_FIXTURE_PROCESS; REAL_PAIRING_PENDING"
     },
     {
       "integration": "NEO Counter checkout",
@@ -149,7 +188,7 @@
     },
     {
       "integration": "External signer and final transaction revalidation",
-      "status": "PENDING"
+      "status": "SELECTED_VECTORS_REGTEST_VALIDATED; PRODUCTION_DEVICE_PENDING"
     }
   ],
   "decision_log": [
@@ -204,6 +243,22 @@
     {
       "id": "VM-D013",
       "decision": "Repeat identity checks around reservation, burn nonces on uncertain post-reservation results, and treat review receipts as audit results rather than deferred signing authority"
+    },
+    {
+      "id": "VM-D014",
+      "decision": "Perform fresh full identity/operator approval before each external call; do not accept prior review receipts as signing authority"
+    },
+    {
+      "id": "VM-D015",
+      "decision": "Bind an authenticated bounded request to a pinned device response and original operator proof; require device-side identity permissions, user presence and its own durable nonce reservation"
+    },
+    {
+      "id": "VM-D016",
+      "decision": "Independently parse returned wire bytes and require exact intent, txid/wtxid/fee/weight and fresh Core policy checks; return audit hashes without broadcasting"
+    },
+    {
+      "id": "VM-D017",
+      "decision": "Abort on timeout without retry; retain consumed approvals because an external signature may already exist"
     }
   ],
   "prioritized_backlog": [
@@ -231,7 +286,7 @@
     {
       "id": "VM-004",
       "priority": "P1",
-      "status": "IDENTITY_ADAPTER_LOCAL_VALIDATED; SIGNER_PENDING",
+      "status": "IDENTITY_AND_SIGNER_PROTOCOL_REGTEST_VALIDATED; REAL_PAIRING_PENDING",
       "deliverable": "Verify NEOpass and NeoMask capabilities before adding authorized PSBT workflows"
     },
     {
@@ -255,14 +310,20 @@
     {
       "id": "VM-008",
       "priority": "P0",
-      "status": "NEXT",
+      "status": "SELECTED_VECTORS_REGTEST_VALIDATED",
       "deliverable": "Bounded external-signer protocol and independent final-transaction revalidation on regtest without production activation"
+    },
+    {
+      "id": "VM-009",
+      "priority": "P0",
+      "status": "NEXT",
+      "deliverable": "Verified device pairing, durable signing-outcome audit and regtest operator-staging readiness with live identity/storage provisioning in the NEO System workspace"
     }
   ],
-  "next_milestone": "External-signer protocol and final-transaction revalidation on regtest; live NEOpass, persistent operator-host storage and deployment remain pending",
+  "next_milestone": "Pair a real signer, persist signing outcomes, and verify regtest staging in the NEO System Render workspace; production activation remains pending",
   "verification": {
     "vm_tests": {
-      "passed": 100,
+      "passed": 124,
       "failed": 0,
       "skipped": 0
     },
@@ -274,14 +335,15 @@
       "version": 310100,
       "network": "regtest",
       "identity_approval_cases": 13,
-      "total_selected_scenarios": 55
+      "total_selected_scenarios": 76,
+      "external_signer_cases": 21
     },
-    "evidence": "docs/evidence/neo-vm-gate-5.json",
+    "evidence": "docs/evidence/neo-vm-gate-6.json",
     "github_publication_approved": true,
     "production_deployment": "NOT_PERFORMED",
     "repository_tests": {
-      "total": 979,
-      "passed": 978,
+      "total": 1003,
+      "passed": 1002,
       "failed": 0,
       "skipped": 1,
       "skip": "existing KI-015 Postgres integration test without isolated database configuration"
@@ -404,7 +466,34 @@
       "architecture_audit_errors": 0,
       "architecture_registry_tests_passed": 3,
       "workflow_yaml": "PARSED"
+    },
+    "gate6": {
+      "unit_tests_passed": 124,
+      "new_signer_tests_passed": 24,
+      "native_signer_cases_passed": 21,
+      "earlier_native_regressions_passed": 55,
+      "network": "regtest",
+      "separate_signer_process": true,
+      "gateway_and_device_durable_nonce_stores": true,
+      "device_replay_after_restart": "PASS",
+      "real_reorg_and_tip_change": "PASS",
+      "live_neopass_connected": false,
+      "production_signer_connected": false,
+      "application_broadcasts": 0,
+      "production_deployment": "NOT_PERFORMED",
+      "branch": "feat/neo-vm-external-signer-gate-6",
+      "repository_tests": {
+        "total": 1003,
+        "passed": 1002,
+        "failed": 0,
+        "skipped": 1,
+        "skip": "existing KI-015 Postgres integration test without isolated database configuration"
+      },
+      "build": "PASS",
+      "architecture_audit_errors": 0,
+      "architecture_registry_tests_passed": 3,
+      "workflow_yaml": "PARSED"
     }
   },
-  "source_dependency": "https://github.com/Shemsizedek/neo-system/pull/1277"
+  "source_dependency": "https://github.com/Shemsizedek/neo-system/pull/1292"
 }
