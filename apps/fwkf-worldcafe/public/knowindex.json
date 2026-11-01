@@ -1,0 +1,102 @@
+{
+  "version": "0.1.0-draft",
+  "id": "fwkf-knowindex-001",
+  "title": "Free World Knowledge Foundation / KNOWINDEX knowledge evidence crosswalk",
+  "as_of": "2026-11-01",
+  "status": "reference_only",
+  "live_observations_available": false,
+  "sources": {
+    "foundation": "https://worldcafe.holytemples.org/",
+    "knowledge_index": "https://worldcafe.holytemples.org/#index",
+    "world_library": "https://holytemples.org/world-library/",
+    "world_temple_city": "https://holytemples.org/world-temple-city/",
+    "methodology_repository": "https://github.com/Shemsizedek/neo-system/blob/main/server/crown-metadata/knowindex/METHODOLOGY.md"
+  },
+  "ownership_and_scope": {
+    "site": "Free World Knowledge Foundation",
+    "event_program": "World Café Events",
+    "place_context": "Holy See Global District",
+    "city_context": "World Temple City",
+    "proposed_developments": "Nu Cities of Peace",
+    "permission_policy": "public metadata only; provenance and community consent required for individual works"
+  },
+  "knowindex": {
+    "name": "KNOWINDEX",
+    "initiative": "NEO Knowledge",
+    "protocol_context": "Bitcoin / Counterparty (sponsor-described initiative)",
+    "live_asset_verified": false,
+    "transaction_id": null,
+    "asset_id": null,
+    "supply_on_chain": null,
+    "asset_rights_verified": false,
+    "publication_state": "methodology and crosswalk only; no issuer updates, broadcasts, issuance, transfers, or rights grants",
+    "external_gki_not_equivalent": true
+  },
+  "measures": [
+    {
+      "code": "NK-01",
+      "label": "Registered knowledge",
+      "definition": "Distinct eligible resource IDs with works and editions reported separately",
+      "unit": "count",
+      "value": null
+    },
+    {
+      "code": "NK-02",
+      "label": "Provenance coverage",
+      "definition": "Reviewed source and attribution evidence divided by eligible resources",
+      "unit": "percent",
+      "value": null
+    },
+    {
+      "code": "NK-03",
+      "label": "Permission coverage",
+      "definition": "Resources with documented authority divided by resources proposed for that access class",
+      "unit": "percent",
+      "value": null
+    },
+    {
+      "code": "NK-04",
+      "label": "Access reliability",
+      "definition": "Successful checks divided by attempted checks for permitted resources",
+      "unit": "percent",
+      "value": null
+    },
+    {
+      "code": "NK-05",
+      "label": "Preservation integrity",
+      "definition": "Preserved files passing current byte-hash verification divided by preserved files checked",
+      "unit": "percent",
+      "value": null
+    },
+    {
+      "code": "NK-06",
+      "label": "Community participation",
+      "definition": "Consented contributions and participating organizations, separately reported",
+      "unit": "count",
+      "value": null
+    },
+    {
+      "code": "NK-07",
+      "label": "Learning and application",
+      "definition": "Separately verified course completions, citations, and applications",
+      "unit": "multiple_counts",
+      "value": null
+    },
+    {
+      "code": "NK-08",
+      "label": "Knowledge economy activity",
+      "definition": "Documented license events, paid research or teaching engagements and verified receipts; excludes market capitalization and projections",
+      "unit": "multi_metric",
+      "value": null
+    }
+  ],
+  "crown_chain_evidence": {
+    "candidate_feed": "https://worldcafe.holytemples.org/knowindex.json",
+    "format": "reference_manifest",
+    "eligible_record_state": "reviewed_only",
+    "production_writes_approved": false,
+    "bitcoin_commitment_verified": false,
+    "signatures_present": false,
+    "publishing_rule": "No contributor data, claims of token rights, chain hashes or signing without consent, authorization and independent verification"
+  }
+}
