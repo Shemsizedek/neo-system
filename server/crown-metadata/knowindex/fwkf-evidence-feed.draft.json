@@ -1,24 +1,24 @@
 {
   "version": 1,
   "workstream": "FWKF_KNOWINDEX_CROWN_FEED",
-  "sourceUrl": "https://worldcafe.holytemples.org/knowindex.json",
-  "sourceType": "public_reviewed_methodology",
+  "sourceUrl": "https://worldcafe.holytemples.org/knowledge-index.json",
+  "sourceType": "public_knowledge_definitions_only",
   "asset": "KNOWINDEX",
   "bitcoinProtocol": "Counterparty",
   "knowledgeMeasures": [
-    "NK-01",
-    "NK-02",
-    "NK-03",
-    "NK-04",
-    "NK-05",
-    "NK-06",
-    "NK-07"
+    "Registered resources",
+    "Source attribution",
+    "Publication permissions",
+    "Resource availability",
+    "Preservation",
+    "Community participation",
+    "Learning outcomes"
   ],
-  "knowledgeEconomicMeasure": "NK-08",
-  "sourcePage": "https://worldcafe.holytemples.org/#index",
+  "knowledgeEconomicMeasure": "Knowledge economy",
+  "sourcePage": "https://worldcafe.holytemples.org/knowledge.html",
   "worldLibrary": "https://holytemples.org/world-library/",
   "siteContext": "World Temple City; Holy See Global District; projected Nu Cities of Peace",
-  "approvedInputType": "public_metadata_only",
+  "approvedInputType": "public_definitions_without_observations",
   "containsPrivateResourceRecords": false,
   "crownChainRuntimeEnabled": false,
   "bitcoinAnchoringEnabled": false,
@@ -26,16 +26,5 @@
   "assetRightsVerified": false,
   "knowindexContributionWritesEnabled": false,
   "operatorSecurityApprovalRequired": true,
-  "notes": "Read-only crosswalk. Not a chain writer, signer, token metadata broadcast, issuance, share register, GKI valuation, or authority to ingest protected knowledge.",
-  "counterpartyExplorerObservation": {
-    "reportedAssetId": 2197274275635,
-    "reportedSupply": 1000,
-    "divisible": false,
-    "issuedDate": "2026-10-20",
-    "sourceUrls": [
-      "https://xcp.io/asset/KNOWINDEX",
-      "https://tokenscan.io/asset/KNOWINDEX"
-    ],
-    "assertion": "Corroborated indexer evidence only; does not authorize transactions, ownership rights, token broadcasts or Crown Chain writes"
-  }
+  "notes": "A public plain-language definition set. No measurement observations, personal data, investor details, token updates or chain writes."
 }
