@@ -43,3 +43,5 @@ Source added under `apps/fwkf-forum/`:
 - Added asynchronous store support to domain rules and a separate `src/pg-store.mjs` with parameterized SQL and atomic moderator write/rollback.
 - Added four Postgres adapter tests, bringing isolated container test suite to **14/14 passing** (HTTP, JWT crypto, SQLite workflow, Postgres SQL mock). These are source/adapter tests, **not** live Neon integration tests.
 - GitHub Actions Forum security workflow completed successfully at commit `8e7f3f8729cba6bbd0ca41c41e0363034fa2cbdd` before the Postgres test module was added. Do not assert its later run has passed without checking.
+
+- Follow-up verification: GitHub Actions **Free World Knowledge Forum — security and domain tests** completed with **conclusion success** for commit `73fcf7ea9f67719dad8c243c95f0940d9f4975ad`, including the PostgreSQL-adapter tests. This is CI/source verification; it is not a deployed live database or member-login test.
