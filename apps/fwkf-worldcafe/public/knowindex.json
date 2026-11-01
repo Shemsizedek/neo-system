@@ -30,7 +30,22 @@
     "supply_on_chain": null,
     "asset_rights_verified": false,
     "publication_state": "methodology and crosswalk only; no issuer updates, broadcasts, issuance, transfers, or rights grants",
-    "external_gki_not_equivalent": true
+    "external_gki_not_equivalent": true,
+    "indexer_observation": {
+      "observation_date": "2026-11-01",
+      "description": "Free World Knowledge Foundation Knowledge Index for the Global Knowledge Economy",
+      "reported_asset_id": 2197274275635,
+      "reported_supply_units": 1000,
+      "reported_divisible": false,
+      "reported_locked": false,
+      "reported_issue_date": "2026-10-20",
+      "explorer_sources": [
+        "https://tokenscan.io/asset/KNOWINDEX",
+        "https://xcp.io/asset/KNOWINDEX",
+        "https://tokenscan.io/api/asset/KNOWINDEX"
+      ],
+      "interpretation": "Two independent public indexers report a Counterparty asset on Bitcoin. This is not verification of a particular controller's authority, shareholder rights, compliance, provenance of knowledge content, or a new token transaction."
+    }
   },
   "measures": [
     {
