@@ -52,3 +52,11 @@ Added:
 2. Obtain approved issuer/controller documentation and a true live chain proof for KNOWINDEX before updating published asset metadata or asserting rights.
 3. Establish a signed, auditable, opt-in source→NEO Crown Chain ingestion flow; keep chain output disabled until KI-022 gates and operator/security authorizations clear.
 4. Restore the original React/27-image design through cloud-only transfer if exact visual fidelity is desired; review copyrights before indexability.
+
+## Final live activation and test receipt
+
+- Render deployment `dep-dbjp6jc9v7es73apagng` reported `live` for commit `d6741fbcaefc56bbef60d63de5a89c34b8b85b72` including the updated Foundation HTML/JSON; subsequent unrelated source docs and CI commits do not require a content redeploy.
+- Independent fresh-fetch of `https://worldcafe.holytemples.org/`, `https://worldcafe.holytemples.org/knowindex.json`, and `https://holytemples.org/world-temple-city/`: all returned HTTP **200** on HTTPS. Cross-links, World Café Events, Holy See Global District, proposed Nu Cities of Peace, KNOWINDEX and explorer source were present; old "World Café District" wording absent.
+- The `inspect-fwkf-knowindex-feed.mjs` test suite passed **3/3**. An initial live probe encountered deployment propagation/cache mismatch, so was not counted as pass. Following fresh readback from both Render and Neon and retry of the exact live inspector, the output reported `counterpartyExplorerRecordObserved:true`, `counterpartyReportedAssetId:2197274275635`, `counterpartyReportedSupplyUnits:1000`, `crownChainWritesApproved:false`, and `permittedAction:read_only_review`; exit code **0**.
+- Web hosting is entirely cloud-based (WordPress DNS → Neon Function → Render static origin). Development machine was used for test execution only, not serving the site.
+- Gate 016 blocker issue: https://github.com/Shemsizedek/neo-system/issues/1297
