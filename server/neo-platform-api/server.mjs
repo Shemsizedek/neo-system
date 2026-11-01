@@ -190,4 +190,20 @@ export function createNeoPlatformApi({ now=()=>new Date().toISOString(), audit=(
   }catch(error){if(error instanceof CrmStoreError||error instanceof SchoolStoreError)return json(res,error.status,{error:error.code});if(error instanceof IntegrationHubError||error instanceof CommandRouterError||error instanceof ControlPlaneError||error instanceof TempleAdapterError)return json(res,error.status,{error:error.code,message:error.message,readOnly:true});return json(res,502,{error:'upstream_failure',message:error?.message||'unknown error'});}});
 }
 export function startNeoPlatformApi({port=Number(process.env.PORT||8787)}={}){const dealDeskMailAdapter=createTitanMailAdapter({env:process.env}),dealDeskInboundReader=createTitanImapReader({env:process.env});const server=createNeoPlatformApi({dealDeskMailAdapter,dealDeskInboundReader,dealDeskOutboundEnabled:process.env.NEO_DEAL_DESK_OUTBOUND_ENABLED==='true'});server.listen(port,async()=>{console.log(`NEO Platform API listening on :${port}`);if(process.env.NEO_MAIL_SELF_TEST_ON_STARTUP==='true'){try{const delivery=await dealDeskMailAdapter.selfTest();console.log(`NEO Mail startup self-test succeeded provider=${delivery?.provider||'unknown'} messageId=${delivery?.messageId||'unknown'}`);}catch(error){console.error(`NEO Mail startup self-test failed: ${error?.message||'unknown'}`);}}});return server;}
-if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href)startNeoPlatformApi();
+if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){
+  const productionReady=Boolean(
+    (process.env.GOOGLE_CLOUD_PROJECT||process.env.GCP_PROJECT_ID) &&
+    process.env.NEO_PASS_JWT_SECRET &&
+    process.env.GOOGLE_OAUTH_CLIENT_ID
+  );
+  if(productionReady){
+    import('./giss-production.mjs')
+      .then(({startGissProductionServer})=>startGissProductionServer())
+      .catch(error=>{
+        console.error('NEO GISS production bootstrap failed:',error?.code||error?.message||'unknown');
+        process.exitCode=1;
+      });
+  }else{
+    startNeoPlatformApi();
+  }
+}
