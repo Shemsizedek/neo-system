@@ -1,6 +1,28 @@
 # Dedicated CES runtime — 2026-10-29
 
-This record supersedes the shared-host deployment proposal for the next CES gate.
+This record supersedes the shared-host deployment proposal for the CES gate.
+
+## Provisioning gate — 2026-10-31 (America/New_York)
+
+The operator's “Next gate” approved transferring the restricted Neon database credential, generated runtime control token, and NMNI administrator identifier to the named dedicated service. The merge update succeeded without replacing unrelated configuration. `NEO_CES_IMPORT_ENABLED=false` remains in effect.
+
+| Verification | Result |
+| --- | --- |
+| Deployment | dep-dbjaudrbc2fs73ca6q50 — live |
+| Deployed commit | 6df03be3a1c4248aaada9e89160d085ec6c89a15 |
+| Deployment completed (UTC) | 2026-11-01T03:17:48.969179Z |
+| Build tests | 89 passed, 0 failed |
+| GET /health | HTTP 200; database: true |
+| Authenticated GET /v1/status | HTTP 200; databaseConfigured: true |
+| Authenticated GET /v1/imports | HTTP 200; imports: [] |
+| POST /v1/auth/check | HTTP 503; ces_credentials_not_configured |
+| POST /v1/collect-import | HTTP 403; source_import_disabled |
+
+Protected status identifies only `NEO_CES_NMNI_PASSWORD` as missing. No unattended CES login or source import has occurred. The runtime control and restricted database credentials were not written into source, this record, or logs.
+
+The operator must add the CES account password directly at https://dashboard.render.com/web/srv-dbhtlv4s728c73cuetf0/env under `NEO_CES_NMNI_PASSWORD`, then save and deploy. Do not send the password through chat. After it is active, perform live member and administrator verification, then execute the already authorized bounded import. No additional import approval is required.
+
+The historical record below describes the earlier credential-free deployment and superseded approval request.
 
 ## Verified destination
 
