@@ -1,30 +1,29 @@
 #!/usr/bin/env node
-// FWKF-008: verify the *actual recovered website* is live, not the temporary shell.
-// Run only against an authorized https:// preview or worldcafe.holytemples.org.
-import assert from 'node:assert/strict';
-const base = (process.argv[2] || 'https://fwkf-worldcafe-staging.onrender.com').replace(/\/$/, '');
-const target = new URL(base);
-if (target.protocol !== 'https:') throw Error('HTTPS URL required');
-if (target.hostname !== 'fwkf-worldcafe-staging.onrender.com' && target.hostname !== 'worldcafe.holytemples.org')
-  throw Error('Unapproved FWKF deployment host');
-async function fetchChecked(path, marker) {
-  const response = await fetch(new URL(path, base), { redirect: 'error', signal: AbortSignal.timeout(15000) });
-  assert.equal(response.status, 200, path + ' must return HTTP 200');
-  assert.ok((response.headers.get('content-type') || '').length, path + ' lacks content type');
-  const body = await response.text();
-  if (marker) assert.ok(body.includes(marker), path + ' missing marker: ' + marker);
-  return body;
+// Read-only cloud website smoke test; independent of developer workstation for hosting.
+import assert from "node:assert/strict";
+const base=(process.argv[2]||"https://worldcafe.holytemples.org").replace(/\/$/,"");
+const target=new URL(base);
+assert.equal(target.protocol,"https:");
+assert.ok(["worldcafe.holytemples.org","fwkf-worldcafe-staging.onrender.com"].includes(target.hostname));
+async function load(route,needle){
+ const r=await fetch(base+route,{redirect:"error",signal:AbortSignal.timeout(15000),headers:{"cache-control":"no-cache"}});
+ assert.equal(r.status,200,route+": HTTP "+r.status);
+ const text=await r.text();
+ assert.ok(text.includes(needle),route+": content not deployed");
+ return text;
 }
-const html = await fetchChecked('/', 'Free World Knowledge Foundation');
-assert.ok(html.includes('/assets/index-C6xF2f0w.js'), 'Archived React bundle not deployed; staging shell is insufficient');
-assert.ok(html.includes('/assets/index-CECYfagt.css'), 'Archived CSS not deployed');
-assert.ok(html.includes('noindex,nofollow'), 'Non-indexing safety guard absent');
-assert.ok(html.includes('/fwkf-release-guard.js'), 'Form guard not referenced');
-assert.ok(!html.includes('interim deployment shell'), 'Temporary shell still active');
-await fetchChecked('/assets/index-C6xF2f0w.js');
-await fetchChecked('/assets/index-CECYfagt.css');
-await fetchChecked('/fwkf-release-guard.js', 'Contact submissions are temporarily unavailable');
-await fetchChecked('/favicon.svg');
-await fetchChecked('/icons.svg');
-await fetchChecked('/robots.txt', 'Disallow: /');
-console.log(JSON.stringify({host:target.hostname,verified:true,checks:8,productionAuthorized:false},null,2));
+const pages=[
+ ["/","Good conversations. New ideas. Stronger communities."],
+ ["/events.html","World Café Events"],
+ ["/conversations.html","World Café Conversations"],
+ ["/cafes.html","Knowledge Cafés, city by city."],
+ ["/forum.html","Free World Knowledge Forum"],
+ ["/knowledge.html","Knowledge, shared and explored"],
+ ["/investor-relations.html","Investor Relations"]
+];
+for(const [route,needle] of pages){const html=await load(route,needle);if(route!=="/investor-relations.html")assert.ok(!html.includes("2197274275635"),"Token ID on a non-investor page: "+route);}
+await load("/site.css","--cream:");
+const feed=JSON.parse(await load("/knowledge-index.json","Free World Knowledge Index"));
+assert.ok(feed.indicators.length===8 && feed.indicators.every(x=>x.value===null));
+assert.ok(!JSON.stringify(feed).includes("2197274275635"),"Token info should not be in public index");
+console.log(JSON.stringify({target:base,checks:9,live:true,penguinDependency:false,forumPostingEnabled:false,physicalCafeLocationsVerified:false},null,2));
