@@ -80,7 +80,11 @@ export function createCesSessionAdapter({
 
     if (response.status >= 400) throw new Error(`CES login failed with HTTP ${response.status}`);
     const validation = await sessionValidator({ response, exchange, credentials, request, baseUrl });
-    if (!validation?.authenticated) throw new Error('CES login response did not validate an authenticated session');
+    if (!validation?.authenticated) {
+      const error = new Error('CES login response did not validate an authenticated session');
+      error.validationReason = validation?.reason;
+      throw error;
+    }
 
     return {
       ok: true,

@@ -5,6 +5,25 @@ import { createCesSessionAdapter } from './ces-session-adapter.mjs';
 import { resolveCesIdentity } from './bank-bot.mjs';
 
 const json = (res, status, value) => { res.writeHead(status, { 'content-type': 'application/json', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff' }); res.end(JSON.stringify(value)); };
+const validationReasons = new Set(['protected-page-verification-required', 'untrusted-protected-page', 'login-response-rejected', 'missing-login-redirect', 'untrusted-login-redirect', 'login-redirect-mismatch', 'protected-page-unavailable', 'untrusted-protected-response', 'login-form-returned', 'protected-page-marker-missing']);
+const failureReasons = new Map([
+  ['CES login contract mismatch: configured POST action or credential field names were not found on the login page', 'login_contract_mismatch'],
+  ['CES administrator transition unavailable', 'admin_transition_missing'],
+  ['CES administrator transition rejected', 'admin_transition_rejected'],
+  ['CES administrator redirect rejected', 'admin_redirect_rejected'],
+  ['CES administrator session unavailable', 'admin_session_unavailable'],
+  ['CES administrator proof missing', 'admin_proof_missing'],
+  ['CES report could not be verified', 'report_format_unverified'],
+]);
+function requestStage(url, options) {
+  const path = new URL(url).pathname;
+  if (path === '/home/user-login/') return 'login_page';
+  if (path === '/rlogin.asp') return options?.method === 'POST' ? 'login_submit' : 'admin_transition';
+  if (path === '/memac.asp') return 'member_page';
+  if (path === '/_admin/statstrading.asp') return 'trading_report';
+  if (path.startsWith('/_admin/')) return 'admin_page';
+  return 'other_ces_page';
+}
 function authorized(req, token) {
   if (!token || token.length < 32) return false;
   const actual = Buffer.from(req.headers.authorization || '');
@@ -15,8 +34,20 @@ function authorized(req, token) {
 export function createCesReadServer({ env = process.env, store, fetchImpl = fetch, reader, now = () => new Date().toISOString() } = {}) {
   let busy = false;
   const read = reader || (async collect => {
-    const adapter = createCesSessionAdapter({ credentialProvider: createNmniReadCredentialProvider(env), fetchImpl: (url, options) => fetchImpl(url, { ...options, signal: AbortSignal.timeout(20000) }) });
-    return adapter.readNmniTradingStatistics({ exchange: resolveCesIdentity('NMNI'), collect });
+    let stage = 'configuration', httpStatus;
+    try {
+      const adapter = createCesSessionAdapter({ credentialProvider: createNmniReadCredentialProvider(env), fetchImpl: async (url, options) => {
+        stage = requestStage(url, options); httpStatus = undefined;
+        const response = await fetchImpl(url, { ...options, signal: AbortSignal.timeout(20000) });
+        httpStatus = response.status;
+        return response;
+      } });
+      return await adapter.readNmniTradingStatistics({ exchange: resolveCesIdentity('NMNI'), collect });
+    } catch (error) {
+      const reason = validationReasons.has(error?.validationReason) ? error.validationReason : failureReasons.get(error?.message) || (httpStatus === undefined ? 'request_unavailable' : 'response_unverified');
+      // Only fixed vocabulary and numeric HTTP status survive this boundary.
+      throw Object.assign(new Error('CES read failed'), { cesDiagnostic: { stage, reason, ...(httpStatus === undefined ? {} : { httpStatus }) } });
+    }
   });
   return http.createServer(async (req, res) => {
     const path = new URL(req.url || '/', 'http://localhost').pathname;
@@ -44,10 +75,10 @@ export function createCesReadServer({ env = process.env, store, fetchImpl = fetc
       if (path === '/v1/auth/check') return json(res, 200, { proof: result.proof });
       const imported = await store.importSnapshot(result.snapshot);
       return json(res, 200, { proof: result.proof, import: imported });
-    } catch {
+    } catch (error) {
       // CES errors may contain credential-bearing navigation URLs. Never return
       // or log the underlying exception, HTML, session material or secrets.
-      return json(res, 502, { error: 'ces_read_or_import_failed' });
+      return json(res, 502, { error: 'ces_read_or_import_failed', ...(reader ? {} : { diagnostic: error?.cesDiagnostic }) });
     } finally { busy = false; }
   });
 }
