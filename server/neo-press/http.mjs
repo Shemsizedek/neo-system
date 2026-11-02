@@ -92,6 +92,7 @@ const hasRole = (actor, role) => actor.roles.includes(role)
 export function createPressHttpHandler({
   store = null, mediaStore = null, authService = null, accessRegistry = null,
   jwtSecret = '', jwtIssuer = 'neo-pass', enabled = false,
+  securityPolicy = null, productionMode = false,
   allowedOrigins = defaultOrigins, now = () => Date.now()
 } = {}) {
   return async function handlePress(req, res) {
@@ -104,7 +105,8 @@ export function createPressHttpHandler({
     }
     if (!enabled || !store || !authService || typeof authService.session !== 'function' ||
         !accessRegistry || typeof accessRegistry.resolveAccess !== 'function' ||
-        typeof jwtSecret !== 'string' || jwtSecret.length < 32) {
+        typeof jwtSecret !== 'string' || jwtSecret.length < 32 ||
+        (productionMode && (securityPolicy?.mode !== 'PRODUCTION' || securityPolicy.productionConfigured !== true))) {
       respond(res, 503, { error: 'press_service_not_certified', writesEnabled: false }, origin)
       return true
     }
@@ -122,6 +124,15 @@ export function createPressHttpHandler({
     // audience-scoped press token. No browser passwords, user-supplied roles,
     // refresh tokens, persistent storage or automatic membership creation.
     if (url.pathname === '/api/v1/press/session/exchange' && req.method === 'POST') {
+      if (securityPolicy) {
+        const admission = await securityPolicy.authorize({
+          req, token: bearer(req), operation: 'exchange'
+        })
+        if (!admission.allowed) {
+          respond(res, admission.status, { error: admission.error }, origin)
+          return true
+        }
+      }
       const result = await exchangeNooglePressSession({
         baseToken:bearer(req),jwtSecret,jwtIssuer,authService,accessRegistry,now
       })
@@ -149,6 +160,15 @@ export function createPressHttpHandler({
         claims.token_use !== 'neopass-session') {
       respond(res, 401, { error: 'press_scoped_neopass_token_required' }, origin)
       return true
+    }
+    if (securityPolicy) {
+      const admission = await securityPolicy.authorize({
+        req, token, subject: claims.sub, operation: 'press'
+      })
+      if (!admission.allowed) {
+        respond(res, admission.status, { error: admission.error }, origin)
+        return true
+      }
     }
     let actor
     try {
