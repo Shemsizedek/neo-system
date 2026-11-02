@@ -31,7 +31,7 @@ function authorized(req, token) {
   return actual.length === expected.length && timingSafeEqual(actual, expected);
 }
 
-export function createCesReadServer({ env = process.env, store, fetchImpl = fetch, reader, now = () => new Date().toISOString(), logger = entry => console.info(JSON.stringify(entry)) } = {}) {
+export function createCesReadServer({ env = process.env, store, fetchImpl = fetch, reader, accountAttestor, now = () => new Date().toISOString(), logger = entry => console.info(JSON.stringify(entry)) } = {}) {
   let busy = false;
   const debugEnabled = env.NEO_CES_DEBUG_ENABLED === 'true';
   const debug = entry => { if (debugEnabled) { try { logger(entry); } catch {} } };
@@ -72,6 +72,35 @@ export function createCesReadServer({ env = process.env, store, fetchImpl = fetc
     const backendAuthorized = authorized(req, env.NEO_CES_BACKEND_TOKEN);
     if (!controlAuthorized && !backendAuthorized) return json(res, 401, { error: 'authentication_required' });
     if (req.headers.origin) return json(res, 403, { error: 'browser_origin_not_supported' });
+    // A backend-only account-control attestation, disabled unless an independently
+    // verified CES account-record reader AND runtime signing key are installed.
+    if (path === '/v1/account/attest') {
+      if (!backendAuthorized || req.method !== 'POST') return json(res, 403, { error: 'operation_not_permitted' });
+      if (!accountAttestor?.attest) return json(res, 503, { error: 'account_attestation_unavailable' });
+      if (req.headers['content-type']?.split(';')[0]?.trim().toLowerCase() !== 'application/json' ||
+          Number(req.headers['content-length'] || 0) > 2048 ||
+          req.headers['transfer-encoding'] || new URL(req.url||'/', 'https://ces.invalid').search)
+        return json(res, 400, { error: 'invalid_account_challenge' });
+      try {
+        let size = 0;
+        const chunks = [];
+        for await (const chunk of req) {
+          size += chunk.length;
+          if (size > 2048) return json(res, 413, { error: 'account_challenge_too_large' });
+          chunks.push(chunk);
+        }
+        const body = JSON.parse(Buffer.concat(chunks).toString('utf8'));
+        if (!body || typeof body !== 'object' || Array.isArray(body) ||
+          Object.keys(body).some(k => !['audience','neoSubject','exchangeId','externalAccount','challenge','expiresAt'].includes(k)))
+          return json(res, 400, { error: 'invalid_account_challenge' });
+        const result = await accountAttestor.attest(body);
+        // Authenticated backend responses only; no upstream CES content or
+        // account balances ever enter this endpoint.
+        return json(res, 200, { attestation: result.attestation, signature: result.signature });
+      } catch {
+        return json(res, 422, { error: 'ces_account_control_not_verified' });
+      }
+    }
     const backendReadAllowed = (req.method === 'GET' && ['/v1/status', '/v1/reports/trading/latest'].includes(path)) || (req.method === 'POST' && path === '/v1/auth/check');
     if (!controlAuthorized && !backendReadAllowed) return json(res, 403, { error: 'operation_not_permitted' });
     if (req.method === 'GET' && path === '/v1/status') return json(res, 200, { ...nmniReadiness(env), databaseConfigured: Boolean(store), financialWritesEnabled: false, debugEnabled });
