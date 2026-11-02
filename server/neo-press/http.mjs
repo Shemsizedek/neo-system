@@ -277,6 +277,32 @@ export function createPressHttpHandler({
         respond(res,201,{correction:corrected,published:false},origin)
         return true
       }
+      const correctionDecision=/^\/api\/v1\/press\/corrections\/([0-9a-f-]{36})\/decision$/.exec(url.pathname)
+      if(correctionDecision && req.method==='POST'){
+        const item=store.correctionLookup(correctionDecision[1])
+        if(!item){respond(res,404,{error:'not_found'},origin);return true}
+        if(!store.hasCase(actor,item.case_id)){respond(res,403,{error:'correction_case_access_forbidden'},origin);return true}
+        const body=await jsonBody(req)
+        const role=body.gate==='EDITOR'?'press:editor':body.gate==='PRIVACY'?'press:privacy':null
+        if(!role||!hasRole(actor,role)){respond(res,403,{error:'correction_reviewer_role_required'},origin);return true}
+        const decision=store.decideCorrection(item.id,{gate:body.gate,decision:body.decision,rationale:body.rationale},actor.subject)
+        respond(res,200,{decision,published:false,reviewRequired:true},origin)
+        return true
+      }
+      const postCorrection=/^\/api\/v1\/press\/evidence\/([0-9a-f-]{36})\/post-correction-review$/.exec(url.pathname)
+      if(postCorrection && req.method==='POST'){
+        const item=store.lookup(postCorrection[1])
+        if(!item){respond(res,404,{error:'not_found'},origin);return true}
+        if(!store.hasCase(actor,item.case_id)){respond(res,403,{error:'case_review_access_forbidden'},origin);return true}
+        const body=await jsonBody(req)
+        const role=REQUIRED_ROLES[body.gate]
+        if(!role||!hasRole(actor,role)){respond(res,403,{error:'post_correction_role_required'},origin);return true}
+        const review=store.postCorrectionReview(item.id,{
+          gate:body.gate,decision:body.decision,rationale:body.rationale
+        },actor.subject)
+        respond(res,200,{review,published:false,editorialReleasePerformed:false},origin)
+        return true
+      }
       const intake = /^\/api\/v1\/press\/cases\/([A-Za-z0-9_-]+)\/evidence$/.exec(url.pathname)
       if (intake && req.method === 'POST') {
         const caseId = store.normalize(intake[1])
@@ -322,7 +348,7 @@ export function createPressHttpHandler({
       respond(res, ['GET','POST'].includes(req.method) ? 404 : 405, { error: 'not_found' }, origin)
     } catch (error) {
       const status = Number.isInteger(error.status) ? error.status :
-        /not_eligible|approval|required|restricted|independent_|verification_|integrity_|original_media|correction_publication_hold/.test(String(error.message)) ? 409 : 400
+        /not_eligible|approval|required|restricted|independent_|verification_|integrity_|original_media|correction_publication_hold|post_correction|correction_not_open|correction_reviewers/.test(String(error.message)) ? 409 : 400
       respond(res, status, { error: status === 400 ? 'invalid_press_request' :
         status === 409 ? 'review_or_integrity_gate_blocked' :
         status === 503 ? 'verified_media_vault_unavailable' : error.message, published: false }, origin)
