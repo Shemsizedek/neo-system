@@ -33,7 +33,7 @@ Stacked on #1304 (001), #1305 (002), #1306 (003), #1307 (004), #1308 (005).
 
 1. PR dependency chain reviewed, reconciled and merged only after full CI passes; global GISS/architecture checks may remain separate blockers.
 2. Legacy Evidence Vault HTTP access flaw isolated or remediated. Do not mount press-only protected database or media files into the legacy public service.
-3. Real independent Noogle/NEopass token issuer, revocation and role registry verified; no Google login dependence should be introduced to this press flow.
+3. Real independent Noogle/NEOpass token issuer, revocation and role registry verified; no Google login dependence should be introduced to this press flow.
 4. Production encryption at rest for SQLite and original media, KMS custody/rotation, backups, and documented restoration verified by an independent security reviewer.
 5. Rate limits, CSRF/CORS, identity revocation, concurrent editorial actions, PII minimization and encrypted correction-note storage tested.
 6. Independent custody checkpoints published to a separately controlled witness, independently retrieved, and tied to source proof.
