@@ -88,6 +88,13 @@ jobs:
             fi
             qty="$(jq -e 'if type=="array" then length else error("unexpected response") end' /tmp/render-svc-domains.json)"
             registered=$((registered+qty))
+            if [ "$qty" -gt 0 ]; then
+              jq -r '.[] | (.name // .domain // .customDomain.name // empty)' /tmp/render-svc-domains.json | while IFS= read -r host; do
+                if [ -n "$host" ]; then
+                  echo "Attached Render hostname: $host"
+                fi
+              done
+            fi
           done < <(printf '%s' "$services" | jq -r '.[].service.id // .[].id // empty')
           {
             echo "Services inspected in workspace: `$count`"
