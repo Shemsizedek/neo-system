@@ -36,3 +36,7 @@ No public forum is operational yet. This code is a **functional tested private p
 
 ## Database adapter added
 `src/pg-store.mjs` provides parameterized Postgres queries, bounded published-question listing, idempotent vote upserts based on partial unique indexes and atomic/audited moderation writes. It is **not deployed** and requires a separately approved Neon testing branch and least-privilege connection.
+
+## Gate 021 staging API
+
+Deployed the isolated, read-only gateway at `https://br-misty-sun-b850yi7t-fwkfalpha.compute.c-14.us-east-1.aws.neon.tech/health`. An unauthenticated `/me` returns 401. This is *not* the business write API or a public Forum. Six topic communities are in staging as `draft`, with zero members, questions, replies and reports. Posting and registration remain closed.
