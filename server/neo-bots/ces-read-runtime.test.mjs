@@ -192,7 +192,7 @@ test('runtime requires explicit import enablement even with valid credentials', 
 test('live reader diagnostics identify failed steps without returning transport secrets', async () => {
   for (const [fetchImpl, expected] of [
     [async () => { throw new Error('https://example.test/?pw=transport-secret cookie=private'); }, { stage: 'login_page', reason: 'request_unavailable' }],
-    [async () => new Response('', { status: 302, headers: { location: '/private?pw=transport-secret' } }), { stage: 'login_page', reason: 'login_contract_mismatch', httpStatus: 302 }],
+    [async () => new Response('', { status: 302, headers: { location: '/private?pw=transport-secret' } }), { stage: 'login_page', reason: 'login_page_unavailable', httpStatus: 302 }],
     [async (url, options) => options?.method === 'POST'
       ? new Response('', { status: 302, headers: { location: '/denied?pw=transport-secret' } })
       : new Response('<form method="POST" action="/rlogin.asp"><input name="uid"><input type="password" name="passwd"></form>'),
