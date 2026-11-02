@@ -3,6 +3,8 @@ on:
   pull_request:
     paths:
       - 'scripts/verify-fwkf-forum-staging.mjs'
+      - 'apps/fwkf-forum/functions/data/**'
+      - 'apps/fwkf-forum/migrations/0002_readonly_api_role.sql'
       - '.github/workflows/fwkf-forum-staging-smoke.yml'
   workflow_dispatch:
 permissions:
