@@ -62,10 +62,17 @@ function findMobileAdminNavigation(html) {
 }
 export function inspectCesMobileAdminPage(html) {
   if(typeof html!=='string'||html.length>200000)return false;
-  return /\bNMNI0000\b/i.test(html) && logoutMarker.test(html) &&
+  // Source contract reviewed in user's authenticated ces.community/manage.php
+  // browser tab on 2026-11-02. Account is bound by the preceding, verified
+  // NMNI0000 mobile login, then by the subject and exchange on this page.
+  return /\bHon\.\s*Larry\s+Shelton\b/i.test(html) &&
+    /\bNoocratic\s+Open\s+Market\s+Nibiru\s+Index\b/i.test(html) &&
+    /\bAdministration\b/i.test(html) && logoutMarker.test(html) &&
     !loginForm.test(html) &&
-    /(?:<h[1-6][^>]*>\s*Administration\b|\bAdministration\s+Index\b)/i.test(html) &&
-    /\b(?:transaction\s+report|newsletter\s+management|manage\s+exchange\s+members)\b/i.test(html);
+    /\bApprove\s+new\s+sign-ups\b/i.test(html) &&
+    /\bManage\s+exchange\b/i.test(html) &&
+    /\bTransaction\s+report\b/i.test(html) &&
+    /\bSend\s+statements\b/i.test(html);
 }
 
 export async function probeCesMobileMemberLogin({env=process.env,fetchImpl=fetch,inspectAdministration=false}={}){
@@ -122,28 +129,33 @@ export async function probeCesMobileMemberLogin({env=process.env,fetchImpl=fetch
     return {result:'member_session_unverified',memberAuthenticated:false,adminAuthenticated:false,signals};
   if(!inspectAdministration)return {result:'member_session_verified',memberAuthenticated:true,adminAuthenticated:false};
   const nav=findMobileAdminNavigation(signedInHtml);
-  if(!nav.checkedUrl){
+  // The user's authenticated browser exposed /manage.php as the CES
+  // Administration screen. It is a reviewed read-only GET destination.
+  // Never follow unsafe navigation, and never use guessed paths or query tokens.
+  const reviewedAdminUrl=ORIGIN+'/manage.php';
+  const vettedUrl=nav.checkedUrl || (!nav.seen ? reviewedAdminUrl : null);
+  if(!vettedUrl){
     return {result:'member_session_verified',memberAuthenticated:true,adminAuthenticated:false,
       adminVerification:{navigationVisible:nav.seen,protectedPageVerified:false}};
   }
   let page;
   try{
-    page=await request(fetchImpl,nav.checkedUrl,{
+    page=await request(fetchImpl,vettedUrl,{
       method:'GET',headers:jar.size?{cookie:cookieHeader(jar)}:{}
     });
   }catch{
     return {result:'member_session_verified',memberAuthenticated:true,adminAuthenticated:false,
-      adminVerification:{navigationVisible:true,protectedPageVerified:false}};
+      adminVerification:{navigationVisible:nav.seen,protectedPageVerified:false}};
   }
   if(page.status!==200){
     return {result:'member_session_verified',memberAuthenticated:true,adminAuthenticated:false,
-      adminVerification:{navigationVisible:true,protectedPageVerified:false}};
+      adminVerification:{navigationVisible:nav.seen,protectedPageVerified:false}};
   }
   let content;
   try{content=await page.text()}catch{content=''}
   const verified=inspectCesMobileAdminPage(content);
   return {result:'member_session_verified',memberAuthenticated:true,adminAuthenticated:verified,
-    adminVerification:{navigationVisible:true,protectedPageVerified:verified}};
+    adminVerification:{navigationVisible:nav.seen,protectedPageVerified:verified}};
 
 }
 export async function runCesMobileLoginPreflight({env=process.env,fetchImpl=fetch,logger=x=>console.info(JSON.stringify(x))}={}){
