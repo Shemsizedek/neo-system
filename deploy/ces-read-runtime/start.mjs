@@ -2,6 +2,7 @@ import pg from 'pg';
 import { createCesSourceStore } from '../../server/neo-bots/ces-source-store.mjs';
 import { createCesReadServer } from '../../server/neo-bots/ces-read-server.mjs';
 import { runCesAdminLoginPreflight } from '../../server/neo-bots/ces-admin-login-preflight.mjs';
+import { runCesMobileLoginPreflight } from '../../server/neo-bots/ces-mobile-login-preflight.mjs';
 
 // A credential-free deployment exposes health only. Control routes still fail
 // closed until a strong runtime token is provisioned, and imports default off.
@@ -17,6 +18,10 @@ server.listen(port,'0.0.0.0',()=>{
     const token=process.env.NEO_CES_BACKEND_TOKEN?.length>=32
       ? process.env.NEO_CES_BACKEND_TOKEN : process.env.NEO_CES_RUNTIME_TOKEN;
     void runCesAdminLoginPreflight({port,token});
+  } else if(process.env.NEO_CES_MOBILE_PREFLIGHT_ON_START==='true'){
+    // Exactly one login attempt per staging process startup. Never on by default.
+    // Do not log or export any credential or session state.
+    void runCesMobileLoginPreflight();
   }
 });
 const close = () => { server.close(() => Promise.resolve(pool?.end()).finally(() => process.exit(0))); setTimeout(() => process.exit(1), 15000).unref(); };
