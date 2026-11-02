@@ -5,7 +5,7 @@ import { createCesSessionAdapter } from './ces-session-adapter.mjs';
 import { resolveCesIdentity } from './bank-bot.mjs';
 
 const json = (res, status, value) => { res.writeHead(status, { 'content-type': 'application/json', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff' }); res.end(JSON.stringify(value)); };
-const validationReasons = new Set(['protected-page-verification-required', 'untrusted-protected-page', 'login-response-rejected', 'missing-login-redirect', 'untrusted-login-redirect', 'login-redirect-mismatch', 'protected-page-unavailable', 'untrusted-protected-response', 'login-form-returned', 'protected-page-marker-missing']);
+const validationReasons = new Set(['protected-page-verification-required', 'untrusted-protected-page', 'login-response-rejected', 'missing-login-redirect', 'untrusted-login-redirect', 'login-redirect-mismatch', 'protected-page-unavailable', 'untrusted-protected-response', 'login-form-returned', 'protected-page-marker-missing', 'upstream_access_denied', 'login_page_unavailable']);
 const failureReasons = new Map([
   ['CES login contract mismatch: configured POST action or credential field names were not found on the login page', 'login_contract_mismatch'],
   ['CES administrator transition unavailable', 'admin_transition_missing'],
