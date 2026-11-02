@@ -4,13 +4,14 @@ import {generateKeyPairSync,sign} from "node:crypto";
 import gateway from "../functions/alpha/index.mjs";
 const issuer="https://alpha-auth.example.invalid/neondb/auth";
 const jwksUrl=issuer+"/.well-known/jwks.json";
+const jwtOrigin=new URL(issuer).origin;
 const {publicKey,privateKey}=generateKeyPairSync("ed25519");
 const jwk={...publicKey.export({format:"jwk"}),kid:"test-signing-key",alg:"EdDSA"};
 const originalFetch=globalThis.fetch;
 const env={NEON_AUTH_BASE_URL:process.env.NEON_AUTH_BASE_URL,NEON_AUTH_JWKS_URL:process.env.NEON_AUTH_JWKS_URL};
 function jwt(override={}){
  const h=Buffer.from(JSON.stringify({alg:"EdDSA",kid:"test-signing-key"})).toString("base64url");
- const p=Buffer.from(JSON.stringify({iss:issuer,aud:"authenticated",sub:"fake-test-member-001",iat:Math.floor(Date.now()/1000)-10,exp:Math.floor(Date.now()/1000)+120,...override})).toString("base64url");
+ const p=Buffer.from(JSON.stringify({iss:jwtOrigin,aud:jwtOrigin,sub:"fake-test-member-001",iat:Math.floor(Date.now()/1000)-10,exp:Math.floor(Date.now()/1000)+120,...override})).toString("base64url");
  return h+"."+p+"."+sign(null,Buffer.from(h+"."+p),privateKey).toString("base64url");
 }
 const req=(path="/health",opts={})=>new Request("https://forum-staging.test"+path,opts);
