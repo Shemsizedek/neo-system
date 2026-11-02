@@ -94,12 +94,17 @@ test('cross-account, cross-subject, cross-exchange and tampered claims are rejec
   const {verifier,link,claims,challengeStore}=await setup();
   for(const patch of [
     {externalAccount:'XCPCBANK'},{neoSubject:'neo:attacker:000001'},
-    {exchangeId:'XCPC'},{challenge:'x'.repeat(43)}
+    {exchangeId:'XCPC'}
   ]){
     const evidence=signClaims({...claims,...patch});
     await assert.rejects(verifier({neoSubject:link.neoSubject,exchangeId:link.exchangeId,
       externalAccount:link.externalAccount,evidence}),/ces_account_verification_failed/);
   }
+  // Even a valid signature for a different nonce must fail the one-time store
+  // binding; it is not evidence that the current bank challenge was satisfied.
+  await assert.rejects(verifier({neoSubject:link.neoSubject,exchangeId:link.exchangeId,
+    externalAccount:link.externalAccount,evidence:signClaims({...claims,challenge:'x'.repeat(43)})}),
+    /ces_account_challenge_used_or_expired/);
   await assert.rejects(verifier({neoSubject:link.neoSubject,exchangeId:link.exchangeId,
     externalAccount:link.externalAccount,evidence:signClaims(claims,attacker.privateKey)}),
     /ces_account_verification_failed/);
