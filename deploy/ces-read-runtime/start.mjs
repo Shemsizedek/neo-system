@@ -19,7 +19,8 @@ server.listen(port,'0.0.0.0',()=>{
       ? process.env.NEO_CES_BACKEND_TOKEN : process.env.NEO_CES_RUNTIME_TOKEN;
     void runCesAdminLoginPreflight({port,token});
   } else if(process.env.NEO_CES_MOBILE_PREFLIGHT_ON_START==='true' ||
-     process.env.NEO_CES_MOBILE_ADMIN_PREFLIGHT_ON_START==='true'){
+     process.env.NEO_CES_MOBILE_ADMIN_PREFLIGHT_ON_START==='true' ||
+     process.env.NEO_CES_USERS_ROUTE_PREFLIGHT_ON_START==='true'){
     // Exactly one login attempt per staging process startup. Never on by default.
     // Do not log or export any credential or session state.
     void runCesMobileLoginPreflight();
