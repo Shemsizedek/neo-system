@@ -145,6 +145,20 @@ jobs:
             cp "data/neo-telegram/$file.json" "dist/api/neo-telegram/$file.json"
           done
           printf '{"commit":"%s","generated_at":"%s","source":"GitHub Actions"}\n' "$GITHUB_SHA" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > dist/api/neo-telegram/build.json
+      - name: Publish standalone NEO Bank read-only frontend
+        run: |
+          node --check apps/neo-bank-pages/preview.js
+          node --test apps/neo-bank-pages/preview.test.mjs
+          mkdir -p dist/neobank
+          cp apps/neo-bank-pages/index.html dist/neobank/index.html
+          cp apps/neo-bank-pages/preview.css dist/neobank/preview.css
+          cp apps/neo-bank-pages/preview.js dist/neobank/preview.js
+          cp apps/neo-bank-pages/site-status.json dist/neobank/site-status.json
+          test -s dist/neobank/index.html
+          test -s dist/neobank/preview.css
+          test -s dist/neobank/preview.js
+          test -s dist/neobank/site-status.json
+          ! grep -E 'href="/preview.css"|src="/preview.js"' dist/neobank/index.html
       - name: Verify Pages artifact root
         run: |
           test -f dist/index.html
@@ -252,6 +266,7 @@ jobs:
           echo "Neogram v0.5 relay config: /api/neo-telegram/relay-config.json" >> "$GITHUB_STEP_SUMMARY"
           echo "Neogram v0.5 relay contract: /api/neo-telegram/relay-contract.json" >> "$GITHUB_STEP_SUMMARY"
           echo "NEO Counter: /neo-counter/" >> "$GITHUB_STEP_SUMMARY"
+          echo "NEO Bank read-only dashboard: /neobank/" >> "$GITHUB_STEP_SUMMARY"
           echo "NEO Counter GitHub backend snapshots: /api/neo-counter/" >> "$GITHUB_STEP_SUMMARY"
           echo "NEO Enterprise: /neo-enterprise/" >> "$GITHUB_STEP_SUMMARY"
           echo "Enterprise executive console: /neo-enterprise/admin/" >> "$GITHUB_STEP_SUMMARY"
