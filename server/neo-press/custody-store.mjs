@@ -198,7 +198,7 @@ export function createPressCustodyStore({ dbPath, testMemory = false, now = () =
     if(!item)throw new Error('press_evidence_not_found')
     if(!['FACTUAL_ERROR','SOURCE_DISPUTE','CONSENT_WITHDRAWN','REDACTION_REQUEST'].includes(category) ||
        typeof summary!=='string' || summary.trim().length<8 || summary.length>500 ||
-       /[\\x00-\\x08\\x0b\\x0c\\x0e-\\x1f]/.test(summary))throw new Error('invalid_correction')
+       /[\x00-\x08\x0b\x0c\x0e-\x1f]/.test(summary))throw new Error('invalid_correction')
     if(typeof actorSubject!=='string'||!actorSubject)throw new Error('verified_actor_required')
     db.exec('BEGIN IMMEDIATE')
     try{
