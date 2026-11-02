@@ -17,7 +17,7 @@ export function createForumSession({auth,apiBase,fetcher=fetch}){
  }
  return Object.freeze({
   async signIn(email,password){
-   if(typeof email!=="string"||!/^\S+@\S+\.\S+$/.test(email)||typeof password!=="string"||password.length<8)throw Error("INVALID_CREDENTIALS");
+   if(typeof email!=="string"||!/^\S+@\S+\.\S+$/.test(email.trim())||typeof password!=="string"||password.length<8)throw Error("INVALID_CREDENTIALS");
    await auth.signIn(email.trim(),password); // real identity checked by Neon Managed Auth, never by this page.
    return testIdentity();
   },
