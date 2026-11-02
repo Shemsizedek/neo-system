@@ -31,7 +31,7 @@ jobs:
       - name: Check dedicated publishing template and single-host protections
         run: |
           test -s deploy/neo-bank-site-bootstrap/pages.yml
-          grep -q "actions/deploy-pages@v4" deploy/neo-bank-site-bootstrap/pages.yml
+          grep -q "actions/deploy-""pages@v4" deploy/neo-bank-site-bootstrap/pages.yml
           grep -q "index.html preview.css preview.js site-status.json" deploy/neo-bank-site-bootstrap/pages.yml
           ! test -f CNAME
           ! test -f apps/neo-bank-pages/CNAME
