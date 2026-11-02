@@ -134,7 +134,13 @@ export function createPressHttpHandler({
         }
       }
       const result = await exchangeNooglePressSession({
-        baseToken:bearer(req),jwtSecret,jwtIssuer,authService,accessRegistry,now
+        baseToken:bearer(req),jwtSecret,jwtIssuer,authService,accessRegistry,now,
+        identityGuard: securityPolicy ? async subject => {
+          const check = await securityPolicy.authorize({
+            req, token: bearer(req), subject, operation: 'exchange-subject'
+          })
+          return check.allowed === true
+        } : null
       })
       respond(res,result.status,result.ok?{
         token:result.token,tokenType:result.tokenType,expiresAt:result.expiresAt,
