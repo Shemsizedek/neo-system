@@ -3,7 +3,7 @@
 import {createPublicKey,verify as verifySignature} from "node:crypto";
 const unauthorized=()=>Object.assign(new Error("AUTH_REQUIRED"),{code:"AUTH_REQUIRED",status:401});
 export function createNeonJwtVerifier({issuer,audience,jwks,clock=Date.now}){
- if(typeof issuer!=="string"||!issuer.startsWith("https://")||!audience||!Array.isArray(jwks)||jwks.length===0)throw new Error("NEON_AUTH_CONFIG_REQUIRED");
+ if(typeof issuer!=="string"||!issuer.startsWith("https://")||audience!==new URL(issuer).origin||!Array.isArray(jwks)||jwks.length===0)throw new Error("NEON_AUTH_CONFIG_REQUIRED");
  const keys=new Map();
  for(const jwk of jwks){
   if(jwk.kty!=="OKP"||jwk.crv!=="Ed25519"||typeof jwk.kid!=="string"||!jwk.kid||jwk.alg&&jwk.alg!=="EdDSA")throw Error("INVALID_JWKS_KEY");
