@@ -41,7 +41,7 @@ test("valid signed Neon-style EdDSA bearer token is accepted without exposing me
 test("expired, wrong audience, wrong issuer and tampered signatures fail",async()=>{
  const candidates=[
  jwt({exp:1}),jwt({iss:"https://attacker.invalid"}),jwt({aud:"different-service"}),
- jwt({sub:"attacker"}).replace(/.$/,"A")
+ (()=>{const p=jwt({sub:"attacker"}).split(".");p[2]=(p[2][0]==="A"?"B":"A")+p[2].slice(1);return p.join(".")})()
  ];
  for(const t of candidates){const r=await gateway.fetch(req("/me",{headers:{authorization:"Bearer "+t}}));assert.equal(r.status,401); }
 });
