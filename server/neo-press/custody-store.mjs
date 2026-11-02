@@ -182,6 +182,17 @@ export function createPressCustodyStore({ dbPath, testMemory = false, now = () =
   }
 
 
+  function hasPendingCorrectionReview(evidenceId) {
+    const current=correctionSnapshot(evidenceId)
+    if(!current.rows.length)return false
+    if(current.rows.some(x=>x.status!=='RESOLVED'))return true
+    const approvals=db.prepare(
+      'SELECT gate,decision FROM press_post_correction_reviews WHERE evidence_id=? AND revision_hash=?'
+    ).all(evidenceId,current.revisionHash)
+    return approvals.some(x=>x.decision==='REJECT') ||
+      !PRESS_REVIEW_GATES.every(gate=>approvals.some(x=>x.gate===gate&&x.decision==='APPROVE'))
+  }
+
   function listCaseEvidence(caseId, { limit = 25, offset = 0 } = {}) {
     const key = normalize(caseId)
     if (!Number.isSafeInteger(limit) || limit < 1 || limit > 50 ||
@@ -197,7 +208,7 @@ export function createPressCustodyStore({ dbPath, testMemory = false, now = () =
       id:r.id, title:r.title, observedAt:r.observed_at,
       sourceTier:r.source_tier, editorialState:r.editorial_state,
       restricted:r.access_level !== 'PUBLIC', originalMediaVerified:r.media_verified===1,
-      correctionHold:r.correction_count>0, publicationPerformed:false
+      correctionHold:hasPendingCorrectionReview(r.id), publicationPerformed:false
     }))
     const total=db.prepare('SELECT COUNT(*) AS n FROM press_manifest WHERE case_id=?').get(key).n
     return { caseId:key,records,total,limit,offset,nextOffset:offset+records.length<total?offset+records.length:null,
