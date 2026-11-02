@@ -1,6 +1,6 @@
 // Branch-scoped managed Neon Auth adapter for a private, bundled Forum app.
 // Loaded only when VITE_NEON_AUTH_URL is configured; no public signup capability.
-import {createAuthClient} from "@neon/neon-js/auth";
+import {createAuthClient} from "@neondatabase/auth";
 export function connectForumAuth({baseUrl}){
  if(typeof baseUrl!=="string"||!/^https:\/\//.test(baseUrl))throw Error("AUTH_URL_NOT_CONFIGURED");
  const client=createAuthClient(baseUrl);
