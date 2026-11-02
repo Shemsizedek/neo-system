@@ -2,7 +2,7 @@
 export function createForumSession({auth,apiBase,fetcher=fetch}){
  if(!auth||typeof auth.signIn!=="function"||typeof auth.getSession!=="function"||typeof auth.getAccessToken!=="function"||typeof auth.signOut!=="function")throw Error("AUTH_NOT_CONFIGURED");
  const u=new URL(apiBase||"");
- if(u.protocol!=="https:"||!/^[a-z0-9-]+-fwkfalpha\.compute\./.test(u.hostname))throw Error("STAGING_API_ALLOWLIST_FAILED");
+ if(u.origin!=="https://br-misty-sun-b850yi7t-fwkfalpha.compute.c-14.us-east-1.aws.neon.tech"||u.pathname!=="/"||u.search||u.hash)throw Error("STAGING_API_ALLOWLIST_FAILED");
  const meUrl=u.origin+"/me";
  async function testIdentity(){
   const session=await auth.getSession();
