@@ -17,7 +17,7 @@ export function createNeonJwtVerifier({issuer,audience,jwks,clock=Date.now}){
   if(header.alg!=="EdDSA"||!keys.has(header.kid))throw unauthorized();
   if(!verifySignature(null,Buffer.from(parts[0]+"."+parts[1]),keys.get(header.kid),Buffer.from(parts[2],"base64url")))throw unauthorized();
   const now=Math.floor(clock()/1000),aud=Array.isArray(claims.aud)?claims.aud:[claims.aud];
-  if(claims.iss!==issuer||!aud.includes(audience)||typeof claims.sub!=="string"||claims.sub.length<3||!Number.isInteger(claims.exp)||claims.exp<=now||claims.exp>now+3600||(claims.nbf&&claims.nbf>now+30))throw unauthorized();
+  if(claims.iss!==new URL(issuer).origin||!aud.includes(new URL(issuer).origin)||typeof claims.sub!=="string"||claims.sub.length<3||!Number.isInteger(claims.exp)||claims.exp<=now||claims.exp>now+3600||(claims.nbf&&claims.nbf>now+30))throw unauthorized();
   return Object.freeze({sub:claims.sub});
  };
 }
