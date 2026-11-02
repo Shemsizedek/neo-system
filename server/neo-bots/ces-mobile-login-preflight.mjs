@@ -159,7 +159,7 @@ export async function probeCesMobileMemberLogin({env=process.env,fetchImpl=fetch
   if(!checkUsersRoute || !verified)return result;
   // The user's authenticated Administration tab identifies this read-only
   // Users destination. Probe status only; never read/store account records.
-  const usersLink=/href\\s*=\\s*["']https:\\/\\/ces\\.community\\/members\\.php["']/i.test(content);
+  const usersLink=/<a\b[^>]*href\s*=\s*["'](?:https:\/\/ces\.community\/|\/)?members\.php["'][^>]*>[\s\S]*?\bUsers\b[\s\S]*?<\/a>/i.test(content);
   if(!usersLink)return {...result,usersRoute:{linked:false,reached:false,accountControlVerified:false}};
   let reached=false;
   try{
