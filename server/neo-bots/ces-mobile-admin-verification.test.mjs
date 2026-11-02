@@ -11,7 +11,7 @@ const env={
 const login='<form action="rlogin.php" method="POST"><input name="uid"><input name="passwd"><input name="by" value="usr"><button name="action" value="login">Sign In</button></form>';
 const adminLink='<a href="/admin.php">Administration</a>';
 const signedIn=link=>'<main>Account: NMNI0000 <a href="logout.php">Log Out</a> '+link+'</main>';
-const verifiedAdmin='<h1>Administration Index</h1> NMNI0000 <a href="logout.php">Log Out</a> <h2>Transaction report</h2>';
+const verifiedAdmin='<h1>Administration</h1> Hon. Larry Shelton | Noocratic Open Market Nibiru Index <a href="logout.php">Log Out</a><a href="newlist.php">Approve new sign-ups (0)</a><a href="editexchange.php">Manage exchange</a><a href="transactionreport.php">Transaction report</a><a href="manage.php?go=ss">Send statements</a>';
 
 const mkFlow=(nav=adminLink,adminBody=verifiedAdmin)=>{
  const calls=[];
@@ -29,7 +29,7 @@ const mkFlow=(nav=adminLink,adminBody=verifiedAdmin)=>{
      return new Response(signedIn(nav),{status:200});
    }
    if(calls.length===4){
-     assert.equal(path,'/admin.php');assert.equal(method,'GET');
+     assert.equal(path,nav.includes('Administration')?'/admin.php':'/manage.php');assert.equal(method,'GET');
      assert.equal(options.headers.cookie,'session=sample-no-storage');
      return new Response(adminBody,{status:200});
    }
@@ -56,13 +56,22 @@ test('admin menu alone never proves administrator privileges',async()=>{
  assert.equal(result.adminVerification.protectedPageVerified,false);
 });
 
-test('no administration link leaves member verified, without visiting guessed routes',async()=>{
+test('the reviewed browser /manage.php route verifies admin rights when landing-page menu is absent',async()=>{
  const flow=mkFlow('<a href="/help.php">Help</a>');
  const result=await probeCesMobileMemberLogin({env,fetchImpl:flow.fetchImpl,inspectAdministration:true});
  assert.equal(result.memberAuthenticated,true);
+ assert.equal(result.adminAuthenticated,true);
+ assert.deepEqual(result.adminVerification,{navigationVisible:false,protectedPageVerified:true});
+ assert.deepEqual(flow.calls.map(x=>[x.path,x.method]),[['/index.php','GET'],['/rlogin.php','POST'],['/index.php','GET'],['/manage.php','GET']]);
+});
+
+test('reviewed admin route does not prove anything without the protected account controls',async()=>{
+ const flow=mkFlow('<a href="/help.php">Help</a>','<h1>Administration</h1> Log Out');
+ const result=await probeCesMobileMemberLogin({env,fetchImpl:flow.fetchImpl,inspectAdministration:true});
+ assert.equal(result.memberAuthenticated,true);
  assert.equal(result.adminAuthenticated,false);
- assert.deepEqual(result.adminVerification,{navigationVisible:false,protectedPageVerified:false});
- assert.equal(flow.calls.length,3);
+ assert.equal(result.adminVerification.protectedPageVerified,false);
+ assert.equal(flow.calls.length,4);
 });
 
 test('cross-origin and query-string administration links are never followed',async()=>{
@@ -82,7 +91,8 @@ test('cross-origin and query-string administration links are never followed',asy
 
 test('admin page must be tied to exact principal and include specialized protected controls',()=>{
  assert.equal(inspectCesMobileAdminPage(verifiedAdmin),true);
- assert.equal(inspectCesMobileAdminPage(verifiedAdmin.replace('NMNI0000','NMNI9999')),false);
+ assert.equal(inspectCesMobileAdminPage(verifiedAdmin.replace('Hon. Larry Shelton','Other Principal')),false);
+ assert.equal(inspectCesMobileAdminPage(verifiedAdmin.replace('Noocratic Open Market Nibiru Index','Another Community')),false);
  assert.equal(inspectCesMobileAdminPage(verifiedAdmin.replace('Transaction report','Public home')),false);
  assert.equal(inspectCesMobileAdminPage(verifiedAdmin+login),false);
 });
