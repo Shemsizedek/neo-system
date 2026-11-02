@@ -66,7 +66,12 @@ jobs:
             -H "Accept: application/json" --data "$(jq -nc --arg name "$RENDER_DOMAIN" '{name:$name}')" \
             "https://api.render.com/v1/services/$RENDER_SERVICE_ID/custom-domains")"
           if [ "$code" -lt 200 ] || [ "$code" -ge 300 ]; then
-            echo "::error::Render rejected custom-domain registration (HTTP $code); no DNS changes performed"
+            # Render may reject a hostname already registered elsewhere, an
+            # account limit, or a DNS-validation precondition. Print only
+            # provider error type and bounded message; never request details
+            # containing credentials or full service configuration.
+            error_detail="$(jq -r '[(.message // .error // .details // .errors[0].message // "unspecified error") | tostring] | .[0][0:240]' /tmp/create.json 2>/dev/null || echo "unparseable Render error")"
+            echo "::error::Render rejected custom-domain registration (HTTP $code): $error_detail"
             exit 1
           fi
           echo "Render accepted NEO Bank custom-domain registration (HTTP $code)"
