@@ -1,0 +1,8 @@
+{
+  "ok": true,
+  "mode": "read-only-preview",
+  "service": "neo-bank-pages-ui",
+  "accountServices": false,
+  "database": "not_attached",
+  "financialWrites": false
+}
