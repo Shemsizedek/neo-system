@@ -35,7 +35,7 @@ Branch `fix/neo-core-render-start-025`, draft PR **#1300** (not merged):
 
 ## Security follow-up — Forum
 - Isolated Neon `fwkf-forum-g020-staging` branch `br-misty-sun-b850yi7t` ready; **six draft communities, zero Auth users, zero Forum members and posts** at readback. Branch expiration November 15, 2026.
-- Managed Better Auth configuration readback: `allow_sign_up: true`, `verify_email_on_sign_up: false`, `require_email_verification: false`. This is a **pre-beta risk** despite the separate Forum membership API enforcing approval and all POST routes closed.
+- Managed Better Auth branch self-registration and email-verification policies require hardening before testing. The separate Forum API enforces approved membership and currently rejects all posting routes; this is **not** a substitute for secure identity-provider configuration.
 - The available Neon Auth connector can read the configuration but offers only renaming under `update_auth_config`, not the required sign-up policy change. Do not claim server-side Auth self-registration is disabled; no user was created.
 - Before inviting real testers, use the Neon Console / supported Auth management surface to disable uninvited sign-up, require verification as appropriate, review trusted domains and use controlled, owner-authorized test emails. Then verify actual login/JWT/member binding and two-member moderated posting end to end.
 - No Penguin, paid upgrade, test mailbox fabrication, external DNS changes or sensitive private chat disclosures.
