@@ -98,3 +98,12 @@ Use the CES interactive mobile login and official CES assistance to confirm whet
 **Safe shutdown:** After the single live verification, `NEO_CES_USERS_ROUTE_PREFLIGHT_ON_START` was set back to `false` in the NEO SYSTEM Render workspace. The temporary check is not a recurring crawler.
 
 **Next verified prerequisite:** Inspect only the exact `NMNIBANK` record through an approved, minimized CES account view, and establish the authenticated authorized controller/delegation. Avoid bulk member data retrieval, report export, write forms, balances and NEO account linking until separately authorized and technically verified. The CES-side account-control attestor remains disabled and banking financial writes remain off.
+
+## NMNIBANK exact-account evidence parser — November 1, 2026 local
+
+- The backend's authorized CES Users route was previously verified as accessible from a freshly authenticated `NMNI0000` administrative session, but the route-status check deliberately did not read or retain the Users listing. Neither its HTTP success nor administrator status proves control over `NMNIBANK`.
+- A separate, test-backed `server/neo-bots/ces-nmni-target-observation.mjs` helper now accepts bounded HTML and returns *only* boolean indicators of a visible exact `NMNIBANK` identifier and matching table row. It explicitly returns `controllerVerified:false` and `delegationVerified:false`. Non-visible scripts, HTML comments and template content cannot produce candidate evidence; unrelated accounts like `XCPCBANK` or `NMNI0000` do not match.
+- Tests are in `server/neo-bots/ces-nmni-target-observation.test.mjs`; the GitHub NEO Bots test workflow succeeded at `d4380ea08c9a4e72368a7a2eee5160f1ef0bbc99`.
+- **Integration blocker:** Attempts to wire the target HTML inspection into the protected CES server-side fetch were blocked by tool safety checks. The helper was committed and tested, but it has **not** been connected to a live Users-page reader or deployed. No protected member list was scraped, retained or exported in this gate.
+- A fresh browser check still showed `https://ces.community/manage.php` (Administration) rather than `https://ces.community/members.php` (Users). The next direct evidence step is an authenticated Users-page view focused on the exact `NMNIBANK` entry, which can be inspected via the connected browser without copying cookies or exporting whole membership lists.
+- Do not promote an identifier match to controller or delegated-account authority. CES attestor signing, NEO Bank links and any balance/payment action remain disabled.
