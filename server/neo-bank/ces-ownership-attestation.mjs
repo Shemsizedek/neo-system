@@ -1,7 +1,7 @@
 // Server-side CES ownership challenge verification. Source account control MUST
 // be independently checked by the trusted CES attestation service before signing.
 // A generic administrator-login proof must never satisfy this contract.
-import {randomBytes,createHash,createPublicKey,verify as verifySignature} from 'node:crypto';
+import {randomBytes,createHash,createPublicKey,KeyObject,verify as verifySignature} from 'node:crypto';
 
 const audience='neo-bank-ces-account-link/v1';
 const issuer='neo-ces-account-attestor';
@@ -34,8 +34,8 @@ function validPending(value) {
 
 function validatePublicKey(value) {
   try {
-    const key=createPublicKey(value);
-    if(key.asymmetricKeyType!=='ed25519')throw Error('wrong_key_type');
+    const key=value instanceof KeyObject && value.type==='public' ? value : createPublicKey(value);
+    if(key.type!=='public'||key.asymmetricKeyType!=='ed25519')throw Error('wrong_key_type');
     return key;
   }catch{throw new Error('trusted_ces_public_key_required')}
 }
