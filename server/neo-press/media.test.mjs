@@ -144,7 +144,7 @@ test('authorized reporter can upload bytes; editor preflight remains blocked unt
     const endpoint=base+'/api/v1/press/evidence/'+id
     assert.equal((await fetch(endpoint+'/release-preflight',{headers:headers('editor')})).status,409)
     assert.equal((await fetch(endpoint+'/media',{method:'POST',headers:headers('outsider',{'content-type':'application/octet-stream'}),body:bytes})).status,403)
-    assert.equal((await fetch(endpoint+'/media',{method:'POST',headers:headers('reporter',{'content-type':'application/octet-stream'}),body:Buffer.from('wrong')})).status,400)
+    assert.equal((await fetch(endpoint+'/media',{method:'POST',headers:headers('reporter',{'content-type':'application/octet-stream'}),body:Buffer.from('wrong')})).status,409)
     const upload=await fetch(endpoint+'/media',{method:'POST',headers:headers('reporter',{'content-type':'application/octet-stream'}),body:bytes})
     assert.equal(upload.status,201)
     assert.equal((await upload.json()).media.originalVerified,true)
