@@ -50,3 +50,13 @@ The protected `POST /v1/account/attest` endpoint accepts a short-lived NEO Bank 
 
 ### Next controlled action
 Use the CES interactive mobile login and official CES assistance to confirm whether `NMNI0000` is supported by the mobile site. Do not email credentials or copy browser cookies into NEO. When a successful legitimate member session is independently corroborated, review the actual protected-page evidence and only then implement the least-privilege read adapter. Verify `NMNIBANK` ownership separately. 
+
+## NMNI0000 member authentication recovered - 2026-11-01 (UTC: 2026-11-02)
+
+**Successful actual staging evidence:** Render CES runtime log event `ces_nmni_mobile_preflight` returned `result:member_session_verified`, `memberAuthenticated:true`, `adminAuthenticated:false` at 2026-11-02T01:21:30Z. This follows a real mobile CES login using the existing protected Render credential configuration. No credential, session cookie, HTML or account records were logged.
+
+**Root cause repaired:** The official `https://ces.community/index.php` sign-in form has `<button name="action" value="login" type="submit">`. The original NEO bot did not include `action=login` in its `POST /rlogin.php` form, causing CES to redirect back to login. Source `server/neo-bots/ces-mobile-login-preflight.mjs` now validates the submit button and includes `action=login`. Regression tests reject a changed/missing form before sending a password. NEO Bots dedicated CI succeeded for commit `f5daae39ded776ce29064e0116c64329fc435099`.
+
+**Evidence boundary:** This is evidence of an authenticated NMNI0000 **member** session under the protected browserless server login, not evidence of Community Administrator privileges, account ownership of `NMNIBANK`, nor authority to move balances. The runtime still does not expose a trusted admin account-control route. `NEO_CES_MOBILE_PREFLIGHT_ON_START` was reverted to `false` after the single successful login check; it must remain off except for an explicitly scoped test.
+
+**Next gate:** Implement a scoped read-only, backend-only verification of CES administrative status from an authenticated mobile session using a reviewed protected account/admin page (not merely a redirect). If the mobile site does not expose administrator controls, request the approved CES admin integration route. Inspect `NMNIBANK` evidence separately. Only after these controls are independently verified may the CES account attestor and NEO Bank account link be configured. Keep token issuance, financial writes, Neon migrations and production DNS unchanged.
