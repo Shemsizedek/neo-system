@@ -39,7 +39,36 @@ function updateJar(jar,response){
 async function request(fetchImpl,url,options){
   return fetchImpl(url,{...options,redirect:'manual',signal:AbortSignal.timeout(20000)});
 }
-export async function probeCesMobileMemberLogin({env=process.env,fetchImpl=fetch}={}){
+// Only follow a reviewed, same-origin GET link found in an already-verified
+// member page. Query strings may carry session state, so never follow or log them.
+function findMobileAdminNavigation(html) {
+  const anchor=/<a\b([^>]{0,1300})>([\s\S]{0,1800}?)<\/a>/gi;
+  let seen=false, match;
+  while((match=anchor.exec(html))!==null) {
+    const label=match[2].replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim();
+    if(!/\b(?:administration|administrator(?:\s+functions)?|exchange\s+admin)\b/i.test(label))continue;
+    seen=true;
+    const href=match[1].match(/\bhref\s*=\s*(["'])(.*?)\1/i)?.[2];
+    if(!href||/[&#]/.test(href))continue;
+    try {
+      const u=new URL(href,ORIGIN+LOGIN);
+      if(u.origin!==ORIGIN||u.username||u.password||u.search||u.hash)continue;
+      if(!/^\/[a-z0-9_/-]+\.php$/i.test(u.pathname))continue;
+      if(/\/(?:logout|transfer|edit|delete|save|submit|approve|pay|payment|withdraw|issue)[a-z0-9_-]*\.php$/i.test(u.pathname))continue;
+      return {seen:true,checkedUrl:u.href};
+    } catch {}
+  }
+  return {seen,checkedUrl:null};
+}
+export function inspectCesMobileAdminPage(html) {
+  if(typeof html!=='string'||html.length>200000)return false;
+  return /\bNMNI0000\b/i.test(html) && logoutMarker.test(html) &&
+    !loginForm.test(html) &&
+    /(?:<h[1-6][^>]*>\s*Administration\b|\bAdministration\s+Index\b)/i.test(html) &&
+    /\b(?:transaction\s+report|newsletter\s+management|manage\s+exchange\s+members)\b/i.test(html);
+}
+
+export async function probeCesMobileMemberLogin({env=process.env,fetchImpl=fetch,inspectAdministration=false}={}){
   const username=env.NEO_CES_NMNI_USERNAME;
   const password=env.NEO_CES_NMNI_PASSWORD;
   if(username!==ADMIN||typeof password!=='string'||!password){
@@ -91,10 +120,34 @@ export async function probeCesMobileMemberLogin({env=process.env,fetchImpl=fetch
   };
   if(signedInHtml.length>200000||!signals.accountMarkerFound||!signals.signOutFound||signals.loginFormReturned)
     return {result:'member_session_unverified',memberAuthenticated:false,adminAuthenticated:false,signals};
-  return {result:'member_session_verified',memberAuthenticated:true,adminAuthenticated:false};
+  if(!inspectAdministration)return {result:'member_session_verified',memberAuthenticated:true,adminAuthenticated:false};
+  const nav=findMobileAdminNavigation(signedInHtml);
+  if(!nav.checkedUrl){
+    return {result:'member_session_verified',memberAuthenticated:true,adminAuthenticated:false,
+      adminVerification:{navigationVisible:nav.seen,protectedPageVerified:false}};
+  }
+  let page;
+  try{
+    page=await request(fetchImpl,nav.checkedUrl,{
+      method:'GET',headers:jar.size?{cookie:cookieHeader(jar)}:{}
+    });
+  }catch{
+    return {result:'member_session_verified',memberAuthenticated:true,adminAuthenticated:false,
+      adminVerification:{navigationVisible:true,protectedPageVerified:false}};
+  }
+  if(page.status!==200){
+    return {result:'member_session_verified',memberAuthenticated:true,adminAuthenticated:false,
+      adminVerification:{navigationVisible:true,protectedPageVerified:false}};
+  }
+  let content;
+  try{content=await page.text()}catch{content=''}
+  const verified=inspectCesMobileAdminPage(content);
+  return {result:'member_session_verified',memberAuthenticated:true,adminAuthenticated:verified,
+    adminVerification:{navigationVisible:true,protectedPageVerified:verified}};
+
 }
 export async function runCesMobileLoginPreflight({env=process.env,fetchImpl=fetch,logger=x=>console.info(JSON.stringify(x))}={}){
-  const result=await probeCesMobileMemberLogin({env,fetchImpl});
+  const result=await probeCesMobileMemberLogin({env,fetchImpl,inspectAdministration:env.NEO_CES_MOBILE_ADMIN_PREFLIGHT_ON_START==='true'});
   logger({event:'ces_nmni_mobile_preflight',...result});
   return result;
 }
