@@ -1,0 +1,38 @@
+name: NEO Bank Dedicated Pages Bootstrap Check
+
+on:
+  push:
+    branches:
+      - ops/neo-bank-site-bootstrap-20261102
+    paths:
+      - deploy/neo-bank-site-bootstrap/**
+      - .github/workflows/neo-bank-site-bootstrap-check.yml
+  pull_request:
+    paths:
+      - deploy/neo-bank-site-bootstrap/**
+      - .github/workflows/neo-bank-site-bootstrap-check.yml
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Test canonical NEO Bank frontend assets
+        run: |
+          node --check apps/neo-bank-pages/preview.js
+          node --test apps/neo-bank-pages/preview.test.mjs
+      - name: Check dedicated publishing template and single-host protections
+        run: |
+          test -s deploy/neo-bank-site-bootstrap/pages.yml
+          grep -q "actions/deploy-pages@v4" deploy/neo-bank-site-bootstrap/pages.yml
+          grep -q "index.html preview.css preview.js site-status.json" deploy/neo-bank-site-bootstrap/pages.yml
+          ! test -f CNAME
+          ! test -f apps/neo-bank-pages/CNAME
+          node -e "const fs=require('fs');const j=JSON.parse(fs.readFileSync('apps/neo-bank-pages/site-status.json'));if(j.financialWrites!==false||j.accountServices!==false)process.exit(1)"
