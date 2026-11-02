@@ -43,7 +43,17 @@ export function createPressCustodyStore({ dbPath, testMemory = false, now = () =
     ' category TEXT NOT NULL, summary TEXT NOT NULL, actor_subject TEXT NOT NULL,',
     ' created_at TEXT NOT NULL, status TEXT NOT NULL DEFAULT \'OPEN\',',
     ' FOREIGN KEY(evidence_id) REFERENCES evidence_records(id));',
-    'CREATE INDEX IF NOT EXISTS idx_press_corrections_evidence ON press_corrections(evidence_id,created_at);'
+    'CREATE INDEX IF NOT EXISTS idx_press_corrections_evidence ON press_corrections(evidence_id,created_at);',
+    'CREATE TABLE IF NOT EXISTS press_correction_decisions (',
+    ' correction_id TEXT NOT NULL, gate TEXT NOT NULL, reviewer_subject TEXT NOT NULL,',
+    ' decision TEXT NOT NULL, note_sha256 TEXT NOT NULL, created_at TEXT NOT NULL,',
+    ' PRIMARY KEY(correction_id,gate),',
+    ' FOREIGN KEY(correction_id) REFERENCES press_corrections(id));',
+    'CREATE TABLE IF NOT EXISTS press_post_correction_reviews (',
+    ' evidence_id TEXT NOT NULL, revision_hash TEXT NOT NULL, gate TEXT NOT NULL,',
+    ' reviewer_subject TEXT NOT NULL, decision TEXT NOT NULL, created_at TEXT NOT NULL,',
+    ' PRIMARY KEY(evidence_id,revision_hash,gate),',
+    ' FOREIGN KEY(evidence_id) REFERENCES evidence_records(id));'
   ].join('\n'))
   const timestamp = () => now().toISOString()
   function append(caseId, evidenceId, eventType, actorSubject, payload) {
@@ -172,6 +182,17 @@ export function createPressCustodyStore({ dbPath, testMemory = false, now = () =
   }
 
 
+  function hasPendingCorrectionReview(evidenceId) {
+    const current=correctionSnapshot(evidenceId)
+    if(!current.rows.length)return false
+    if(current.rows.some(x=>x.status!=='RESOLVED'))return true
+    const approvals=db.prepare(
+      'SELECT gate,decision FROM press_post_correction_reviews WHERE evidence_id=? AND revision_hash=?'
+    ).all(evidenceId,current.revisionHash)
+    return approvals.some(x=>x.decision==='REJECT') ||
+      !PRESS_REVIEW_GATES.every(gate=>approvals.some(x=>x.gate===gate&&x.decision==='APPROVE'))
+  }
+
   function listCaseEvidence(caseId, { limit = 25, offset = 0 } = {}) {
     const key = normalize(caseId)
     if (!Number.isSafeInteger(limit) || limit < 1 || limit > 50 ||
@@ -187,7 +208,7 @@ export function createPressCustodyStore({ dbPath, testMemory = false, now = () =
       id:r.id, title:r.title, observedAt:r.observed_at,
       sourceTier:r.source_tier, editorialState:r.editorial_state,
       restricted:r.access_level !== 'PUBLIC', originalMediaVerified:r.media_verified===1,
-      correctionHold:r.correction_count>0, publicationPerformed:false
+      correctionHold:hasPendingCorrectionReview(r.id), publicationPerformed:false
     }))
     const total=db.prepare('SELECT COUNT(*) AS n FROM press_manifest WHERE case_id=?').get(key).n
     return { caseId:key,records,total,limit,offset,nextOffset:offset+records.length<total?offset+records.length:null,
@@ -227,6 +248,74 @@ export function createPressCustodyStore({ dbPath, testMemory = false, now = () =
     }))
   }
 
+
+  const ensureReviewNote = note => {
+    if(typeof note!=='string'||note.trim().length<8||note.length>500||
+      /[\x00-\x08\x0b\x0c\x0e-\x1f]/.test(note))throw new Error('invalid_review_rationale')
+    return digest(note.trim())
+  }
+  function correctionLookup(id) {
+    return db.prepare(
+      'SELECT id,evidence_id,case_id,actor_subject,status,category FROM press_corrections WHERE id=?'
+    ).get(id)||null
+  }
+  function correctionSnapshot(evidenceId) {
+    const rows=db.prepare('SELECT id,status,category FROM press_corrections WHERE evidence_id=? ORDER BY id ASC').all(evidenceId)
+    return { rows, revisionHash:digest(JSON.stringify(rows)) }
+  }
+  function decideCorrection(correctionId,{gate,decision,rationale},actorSubject){
+    const item=correctionLookup(correctionId)
+    if(!item)throw new Error('correction_not_found')
+    if(!['EDITOR','PRIVACY'].includes(gate)||!['APPROVE','REJECT'].includes(decision))
+      throw new Error('invalid_correction_decision')
+    const reasonHash=ensureReviewNote(rationale)
+    const evidence=lookup(item.evidence_id)
+    if(item.status!=='OPEN')throw new Error('correction_not_open')
+    if(!actorSubject||actorSubject===item.actor_subject||actorSubject===evidence.reporter_subject)
+      throw new Error('independent_correction_review_required')
+    db.exec('BEGIN IMMEDIATE')
+    try{
+      const prior=db.prepare('SELECT reviewer_subject FROM press_correction_decisions WHERE correction_id=?').all(correctionId)
+      if(prior.some(row=>row.reviewer_subject===actorSubject))throw new Error('distinct_correction_reviewers_required')
+      const at=timestamp()
+      db.prepare('INSERT INTO press_correction_decisions(correction_id,gate,reviewer_subject,decision,note_sha256,created_at) VALUES(?,?,?,?,?,?)')
+        .run(correctionId,gate,actorSubject,decision,reasonHash,at)
+      append(item.case_id,item.evidence_id,'CORRECTION_'+gate+'_'+decision,actorSubject,
+        {correctionId,decision,rationaleSha256:reasonHash})
+      const decisions=db.prepare('SELECT gate,decision FROM press_correction_decisions WHERE correction_id=?').all(correctionId)
+      if(decisions.length===2 && decisions.every(d=>d.decision==='APPROVE')){
+        db.prepare("UPDATE press_corrections SET status='RESOLVED' WHERE id=? AND status='OPEN'").run(correctionId)
+        append(item.case_id,item.evidence_id,'CORRECTION_RESOLVED',actorSubject,{correctionId})
+      }
+      db.exec('COMMIT')
+      return {correctionId,status:correctionLookup(correctionId).status,
+        needsPostCorrectionReview:true,publicationPerformed:false}
+    }catch(error){db.exec('ROLLBACK');throw error}
+  }
+  function postCorrectionReview(evidenceId,{gate,decision,rationale},actorSubject){
+    const item=lookup(evidenceId)
+    if(!item)throw new Error('press_evidence_not_found')
+    if(!PRESS_REVIEW_GATES.includes(gate)||!['APPROVE','REJECT'].includes(decision))
+      throw new Error('invalid_post_correction_review')
+    const rationaleSha256=ensureReviewNote(rationale)
+    if(!actorSubject||actorSubject===item.reporter_subject)throw new Error('independent_review_required')
+    const snap=correctionSnapshot(evidenceId)
+    if(!snap.rows.length || snap.rows.some(r=>r.status!=='RESOLVED'))throw new Error('unresolved_correction_publication_hold')
+    db.exec('BEGIN IMMEDIATE')
+    try{
+      const prior=db.prepare('SELECT reviewer_subject FROM press_post_correction_reviews WHERE evidence_id=? AND revision_hash=?')
+        .all(evidenceId,snap.revisionHash)
+      if(prior.some(x=>x.reviewer_subject===actorSubject))throw new Error('distinct_post_correction_reviewers_required')
+      const at=timestamp()
+      db.prepare('INSERT INTO press_post_correction_reviews(evidence_id,revision_hash,gate,reviewer_subject,decision,created_at) VALUES(?,?,?,?,?,?)')
+        .run(evidenceId,snap.revisionHash,gate,actorSubject,decision,at)
+      append(item.case_id,evidenceId,'POST_CORRECTION_'+gate,actorSubject,
+        {decision,revisionHash:snap.revisionHash,rationaleSha256})
+      db.exec('COMMIT')
+      return {evidenceId,gate,revisionHash:snap.revisionHash,publicationPerformed:false}
+    }catch(error){db.exec('ROLLBACK');throw error}
+  }
+
   function verifyCase(caseId) {
     const key = normalize(caseId)
     const events = db.prepare('SELECT * FROM press_custody WHERE case_id=? ORDER BY seq ASC').all(key)
@@ -244,8 +333,14 @@ export function createPressCustodyStore({ dbPath, testMemory = false, now = () =
     const integrity = verifyCase(item.case_id)
     if (!integrity.valid) throw new Error('custody_integrity_failed')
     if (item.access_level !== 'PUBLIC' || item.editorial_state !== 'CORROBORATED') throw new Error('not_eligible_for_publication')
-    if(db.prepare('SELECT 1 FROM press_corrections WHERE evidence_id=? AND status=\'OPEN\' LIMIT 1').get(id))
-      throw new Error('unresolved_correction_publication_hold')
+    const correctionState=correctionSnapshot(id)
+    if(correctionState.rows.some(x=>x.status!=='RESOLVED'))throw new Error('unresolved_correction_publication_hold')
+    if(correctionState.rows.length){
+      const later=db.prepare('SELECT gate,decision FROM press_post_correction_reviews WHERE evidence_id=? AND revision_hash=?')
+        .all(id,correctionState.revisionHash)
+      if(later.some(x=>x.decision==='REJECT') || !PRESS_REVIEW_GATES.every(g=>later.some(x=>x.gate===g && x.decision==='APPROVE')))
+        throw new Error('fresh_editorial_review_required_after_correction')
+    }
     const reviews = db.prepare('SELECT gate,reviewer_subject,decision FROM press_reviews WHERE evidence_id=?').all(id)
     if (reviews.some(r => r.decision === 'REJECT') ||
         !PRESS_REVIEW_GATES.every(gate => reviews.some(r => r.gate === gate && r.decision === 'APPROVE'))) {
@@ -261,5 +356,5 @@ export function createPressCustodyStore({ dbPath, testMemory = false, now = () =
     const integrity = verifyCase(caseId)
     return { integrity, events: db.prepare('SELECT seq,evidence_id,event_type,actor_subject,created_at,previous_hash,event_hash FROM press_custody WHERE case_id=? ORDER BY seq ASC').all(normalize(caseId)) }
   }
-  return { ingest, review, lookup, listCaseEvidence, submitCorrection, listCorrections, attachVerifiedMedia, getMediaStatus, publicationPreflight, releaseCandidate, custody, verifyCase, normalize, hasCase, close: () => vault.close() }
+  return { ingest, review, lookup, listCaseEvidence, submitCorrection, listCorrections, correctionLookup, decideCorrection, postCorrectionReview, attachVerifiedMedia, getMediaStatus, publicationPreflight, releaseCandidate, custody, verifyCase, normalize, hasCase, close: () => vault.close() }
 }
