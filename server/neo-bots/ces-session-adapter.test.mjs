@@ -71,7 +71,7 @@ test('login fails closed when authenticated session cannot be validated', async 
     fetchImpl: async (url, options = {}) => (options.method === 'POST' ? response('', { status: 302 }) : response(loginForm)),
     credentialProvider: trustedCredentialProvider,
   });
-  await assert.rejects(() => adapter.login(resolveCesIdentity('NMNI')), /did not validate an authenticated session/);
+  await assert.rejects(() => adapter.login(resolveCesIdentity('NMNI')), /protected-page verification is not configured/);
 });
 
 test('Virtual Trader review remains read-only', async () => {
@@ -110,3 +110,4 @@ test('legacy control-panel discovery persists a reusable manifest', async () => 
   assert.equal(persisted.interface, 'legacy');
   assert.equal(postCount, 1, 'discovery must not submit any POST after login');
 });
+

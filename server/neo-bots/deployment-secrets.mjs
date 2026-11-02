@@ -16,6 +16,9 @@ export function createEnvCesCredentialProvider(env=process.env){
     if(!username||!password)throw new Error(`CES deployment credentials are not configured for ${exchangeId}`);
     if(!loginPath)throw new Error(`CES trusted legacy login path is not configured for ${exchangeId}`);
     if(!successLocationPattern)throw new Error(`CES authenticated-session success marker is not configured for ${exchangeId}`);
+    const authenticatedPath=env[key(exchangeId,'AUTHENTICATED_PATH')];
+    const authenticatedText=env[key(exchangeId,'AUTHENTICATED_TEXT')];
+    if(!authenticatedPath||!authenticatedText)throw new Error(`CES protected-page verification is not configured for ${exchangeId}`);
     return {
       username,
       password,
@@ -25,13 +28,16 @@ export function createEnvCesCredentialProvider(env=process.env){
       passwordField:env[key(exchangeId,'PASSWORD_FIELD')]||'password',
       csrfField:env[key(exchangeId,'CSRF_FIELD')]||undefined,
       successLocationPattern,
+      authenticatedPath,
+      authenticatedText,
     };
   };
 }
 
 export function cesSecretRequirements(exchangeId){
   return Object.freeze({
-    required:[key(exchangeId,'USERNAME'),key(exchangeId,'PASSWORD'),key(exchangeId,'LOGIN_PATH'),key(exchangeId,'SUCCESS_LOCATION_PATTERN')],
+    required:[key(exchangeId,'USERNAME'),key(exchangeId,'PASSWORD'),key(exchangeId,'LOGIN_PATH'),key(exchangeId,'SUCCESS_LOCATION_PATTERN'),key(exchangeId,'AUTHENTICATED_PATH'),key(exchangeId,'AUTHENTICATED_TEXT')],
     optional:[key(exchangeId,'SUBMIT_PATH'),key(exchangeId,'USERNAME_FIELD'),key(exchangeId,'PASSWORD_FIELD'),key(exchangeId,'CSRF_FIELD')],
   });
 }
+
