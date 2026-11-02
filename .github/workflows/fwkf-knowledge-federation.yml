@@ -1,0 +1,22 @@
+name: World Café knowledge index read-only contract
+on:
+  pull_request:
+    paths:
+      - 'apps/fwkf-worldcafe/public/knowledge-index.json'
+      - 'apps/fwkf-worldcafe/public/knowindex.json'
+      - 'scripts/inspect-fwkf-knowindex-feed.mjs'
+      - 'tests/inspect-fwkf-knowindex-feed.test.mjs'
+      - '.github/workflows/fwkf-knowledge-federation.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  knowledge-index:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate the source-only read-only feed contract
+        run: node --test tests/inspect-fwkf-knowindex-feed.test.mjs
+      - name: Check actual public JSON, private-data exclusions and alias sync
+        run: node scripts/verify-worldcafe-public-site.mjs apps/fwkf-worldcafe/public

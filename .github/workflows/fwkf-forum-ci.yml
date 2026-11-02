@@ -1,0 +1,22 @@
+name: Free World Knowledge Forum - security and domain tests
+on:
+  pull_request:
+    paths:
+      - 'apps/fwkf-forum/**'
+      - '.github/workflows/fwkf-forum-ci.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  forum:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Verify schema is isolated and fails closed
+        run: node scripts/verify-fwkf-forum-foundation.mjs
+      - name: Test isolated temporary SQLite forum and RS256 identity verification
+        run: node --test apps/fwkf-forum/tests/*.test.mjs tests/verify-fwkf-forum-foundation.test.mjs
