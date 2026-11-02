@@ -46,3 +46,20 @@ The user explicitly approved a potential $0.25 per month custom-domain charge. A
 **Resume checklist:** Verify Render now accepts the hostname registration by rerunning the existing exact-target workflow; only after a successful registration switch *only* the `neobank` WordPress A record to CNAME `neo-bank-render-staging.onrender.com`. Validate TLS and public page before marking success. Preserve rollback A `8.232.127.249`, TTL 3600. Do not attempt to bypass billing by changing an unrelated NEO domain or workspace.
 
 **Public banking scope:** The dashboard at `https://neo-bank-render-staging.onrender.com/` is a six-section interactive read-only preview; no live bank account services have been activated.
+
+## Neon fallback requested — November 1, 2026 local (November 2 UTC)
+
+**User request:** Use connected Neon instead of adding a Render payment method to connect NEO Bank for now.
+
+**Verified Neon source:** Neon project `neo-bank-staging`, project id `sweet-dawn-99167630`, default branch `br-cold-frost-akdzmiga` (`main`), region `aws-us-west-2`, project plan `free_v3`. The five existing Postgres tables (`neo_bank_accounts`, `neo_bank_entries`, `neo_bank_idempotency`, `neo_bank_offers`, `neo_ces_source_imports`) were inspected via a read-only `SELECT count(*)` each; **all five contain zero records** as of this check. No account authorization, ledger balance, financial import or production bank readiness follows from the existing schema.
+
+**Hard infrastructure limits confirmed by Neon API:** Neon Functions `list_functions` returned `Neon Functions are not available for this project: it is in aws-us-west-2`; `list_functions_custom_domains` returned `custom domains not available for this project`. Per official Neon [Functions overview](https://neon.com/docs/compute/functions/overview) and [custom-domain documentation](https://neon.com/docs/compute/functions/custom-domains), **Neon Functions do not support hosting websites**; their domains target a deployed backend Function. Neon Function availability is limited to `aws-us-east-1`, `aws-us-east-2`, `aws-eu-central-1`, `aws-ap-southeast-1` for now. Neon cannot replace the HTML/CSS/JS frontend hosting for `neobank.holytemples.org` just by registering a domain.
+
+**Recommended no-extra-Render-billing architecture:**
+- Serve responsive NEO Bank frontend on a genuine website host already under user control, preferably the existing WordPress web estate once site routing/subdomain mapping is verified, or an existing dedicated static frontend host with support for an owned subdomain. The working Render `onrender.com` staging preview remains available, but the Render custom-domain binding is currently blocked by a required payment method.
+- Keep `neo-bank-staging` as the **Neon Postgres** source for future verified member account data, ledger and CES integration. Use a trusted server-side API with proper identity, audit, account authorization and financial compliance; never connect public browser components directly to privileged Postgres or expose credentials.
+- Do not migrate empty tables as real records or show zero records as zero balances. No banking writes or app-account mapping until the source/controller has been verified.
+
+**Action completed:** Neon project and schema inspected read-only; deployment design updated. **Not performed:** No Neon Function/proxy, new project, custom domain, new spending, DNS record edits, bank database mutations, login configuration changes or banking account-link attestations. Existing `neobank` A `8.232.127.249`, TTL 3600 remains the rollback/reference record.
+
+**Next verifiable hosting gate:** Confirm the alternate frontend hostname can be bound to a legitimate website host and can serve the six-section dashboard with valid TLS; only then replace exactly the `neobank` DNS record and verify public HTML/CSS/JS, CSP, TLS and app health. Do not point the domain to a Neon Function or to an unbound Render service simply to avoid Render billing.
