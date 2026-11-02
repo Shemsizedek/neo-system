@@ -7,7 +7,8 @@ export async function exchangeNooglePressSession({
   baseToken, jwtSecret, jwtIssuer = 'neo-pass', authService, accessRegistry,
   now = () => Date.now(), ttlSeconds = 300
 } = {}) {
-  if (!baseToken || typeof jwtSecret !== 'string' || jwtSecret.length < 32 ||
+  if (!baseToken) return {ok:false,status:401,error:'unscoped_neopass_session_required'}
+  if (typeof jwtSecret !== 'string' || jwtSecret.length < 32 ||
       !authService || typeof authService.session !== 'function' ||
       !accessRegistry || typeof accessRegistry.resolveAccess !== 'function') {
     return { ok: false, status: 503, error: 'press_identity_exchange_not_configured' }
