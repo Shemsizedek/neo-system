@@ -5,7 +5,7 @@ import {createNeonJwtVerifier} from "../src/auth-neon-jwt.mjs";
 const {publicKey,privateKey}=generateKeyPairSync("ed25519");
 const jwk={...publicKey.export({format:"jwk"}),alg:"EdDSA",kid:"staging-test"};
 const now=()=>Date.parse("2026-11-01T15:00:00Z");
-const verify=createNeonJwtVerifier({issuer:"https://staging.example.com/auth",audience:"authenticated",jwks:[jwk],clock:now});
+const verify=createNeonJwtVerifier({issuer:"https://staging.example.com/auth",audience:"https://staging.example.com",jwks:[jwk],clock:now});
 function make(overrides={}){
  const head=Buffer.from(JSON.stringify({alg:"EdDSA",kid:"staging-test"})).toString("base64url");
  const body=Buffer.from(JSON.stringify({iss:"https://staging.example.com",aud:"https://staging.example.com",sub:"member-123",exp:Math.floor(now()/1000)+240,...overrides})).toString("base64url");
