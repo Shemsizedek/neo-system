@@ -6,7 +6,7 @@ const response=(status,data,origin,extra={})=>new Response(JSON.stringify(data),
 const problem=(status,code)=>Object.assign(new Error(code),{status,code});
 const decoded=value=>{try{if(!/^[A-Za-z0-9_-]{2,8192}$/.test(value))throw Error("bad");return JSON.parse(Buffer.from(value,"base64url").toString("utf8"))}catch{throw problem(401,"AUTH_REQUIRED")}};
 export function createForumDataHandler({pool,env,fetchJwks=fetch,clock=Date.now}){
- if(!pool||typeof pool.query!=="function"||!env)throw Error("GATEWAY_UNCONFIGURED");
+ if(!pool||typeof pool.connect!=="function"||!env)throw Error("GATEWAY_UNCONFIGURED");
  let jwks=null,cacheExpires=0;
  async function identity(token){
   if(!env.NEON_AUTH_JWKS_URL?.startsWith("https://")||!env.NEON_AUTH_BASE_URL?.startsWith("https://"))throw problem(503,"IDENTITY_UNAVAILABLE");
@@ -38,8 +38,19 @@ export function createForumDataHandler({pool,env,fetchJwks=fetch,clock=Date.now}
   return body.sub;
  }
  async function db(sql,params=[]){
-  if(!env.DATABASE_URL)throw problem(503,"DATA_UNAVAILABLE");
-  try{return await pool.query({text:sql,values:params,query_timeout:5000})}catch{throw problem(503,"DATA_UNAVAILABLE")}
+  if(!env.DATABASE_URL||!/^SELECT /i.test(sql))throw problem(503,"DATA_UNAVAILABLE");
+  let client;
+  try{
+   client=await pool.connect();
+   await client.query("BEGIN READ ONLY");
+   await client.query("SET LOCAL ROLE fwkf_forum_reader");
+   const result=await client.query({text:sql,values:params,query_timeout:5000});
+   await client.query("COMMIT");
+   return result;
+  }catch{
+   if(client){try{await client.query("ROLLBACK")}catch{}}
+   throw problem(503,"DATA_UNAVAILABLE");
+  }finally{if(client)client.release()}
  }
  return Object.freeze({async fetch(request){
   const origin=request.headers.get("origin"),url=new URL(request.url);
