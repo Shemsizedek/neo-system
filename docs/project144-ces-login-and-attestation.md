@@ -38,3 +38,15 @@ The protected `POST /v1/account/attest` endpoint accepts a short-lived NEO Bank 
 2. Obtain explicit CES service integration/access terms or an approved origin when infrastructure blocks non-browser access; do not try rotating proxies or copying browser cookies to evade Cloudflare challenges.
 3. After a successful administrator session, inspect exact `NMNIBANK` record and separate delegation evidence. Only then enable the account-specific signer.
 4. Keep the read-only runtime operational and keep its preflight flag disabled when not performing a scheduled diagnostic. No transfers, account provisioning or domain switch.
+
+## Mobile login verification - 2026-11-01
+- CES official mobile form at `https://ces.community/index.php` is reachable, with exact action `POST /rlogin.php`, fields `uid`, `passwd`, hidden `by=usr`, and `timezone`. The official CES site recommends `ces.community` as a mobile login option.
+- A staging-only bot module, `server/neo-bots/ces-mobile-login-preflight.mjs`, uses the existing `NEO_CES_NMNI_USERNAME` and `NEO_CES_NMNI_PASSWORD` runtime values, requires username `NMNI0000`, validates the form before submitting once, and verifies a protected logged-in account marker and logout control before reporting success. The module stores no cookies outside transient process memory and returns no credentials, HTML or account details to log output.
+- GitHub NEO Bots Tests passed for the mobile implementation and the subsequent sanitized signal update. Render's build passed **123 tests**.
+- The first controlled mobile attempt returned `member_session_unverified`.
+- A second controlled check, with only categorical signals, returned `member_session_unverified`, `loginFormReturned:true`, `accountMarkerFound:false`, `signOutFound:false`, `responseKind:same_origin_redirect`. No account session was established to the bot's defined evidence standard. Neither the current credential validity nor CES account-level delegation can be inferred. The mobile site may not support this administrator identity or the login flow may require a different reviewed contract; avoid claiming either as fact.
+- `NEO_CES_MOBILE_PREFLIGHT_ON_START` was set back to `false` immediately after the attempt. Do not repeat login retries automatically or enable persistent session reuse from this result.
+- Banking writes, CES account associations, account attestation signing and production DNS remain disabled/unchanged.
+
+### Next controlled action
+Use the CES interactive mobile login and official CES assistance to confirm whether `NMNI0000` is supported by the mobile site. Do not email credentials or copy browser cookies into NEO. When a successful legitimate member session is independently corroborated, review the actual protected-page evidence and only then implement the least-privilege read adapter. Verify `NMNIBANK` ownership separately. 
