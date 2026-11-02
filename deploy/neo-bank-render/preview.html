@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#07150f">
+<meta name="description" content="NEO Bank — secure community finance interface and service readiness dashboard.">
+<title>NEO Bank | Community Finance</title>
+<link rel="stylesheet" href="/preview.css">
+<script src="/preview.js" defer></script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<div class="shell">
+  <aside class="sidebar" aria-label="NEO Bank navigation">
+    <a class="brand" href="/" aria-label="NEO Bank home"><span class="brand-mark" aria-hidden="true">N</span><span class="brand-type"><strong>NEO <em>Bank</em></strong><small>PROJECT 144 · FINANCE</small></span></a>
+    <div class="workspace"><span class="workspace-icon" aria-hidden="true">◈</span><div><b>NEO System</b><small>Community services</small></div><span class="workspace-chevron" aria-hidden="true">⌄</span></div>
+    <p class="nav-label">WORKSPACE</p>
+    <nav class="primary-nav" aria-label="Sections">
+      <button type="button" class="nav-link active" data-section="overview" aria-current="page"><span aria-hidden="true">▦</span> Overview</button>
+      <button type="button" class="nav-link" data-section="accounts"><span aria-hidden="true">▤</span> Accounts</button>
+      <button type="button" class="nav-link" data-section="exchange"><span aria-hidden="true">⇄</span> Exchange</button>
+      <button type="button" class="nav-link" data-section="markets"><span aria-hidden="true">◇</span> Markets</button>
+      <button type="button" class="nav-link" data-section="activity"><span aria-hidden="true">◷</span> Activity</button>
+    </nav>
+    <p class="nav-label system-label">SYSTEM</p>
+    <nav class="primary-nav" aria-label="System">
+      <button type="button" class="nav-link" data-section="integrations"><span aria-hidden="true">⌘</span> Integrations</button>
+    </nav>
+    <div class="sidebar-bottom"><div class="sidebar-note"><span class="pulse" aria-hidden="true"></span><strong>Verification environment</strong><small>Read-only access. Transactions remain disabled.</small></div><a class="support-link" href="https://holytemples.org/" rel="noopener noreferrer">World Temple of Karast <span aria-hidden="true">↗</span></a></div>
+  </aside>
+  <div class="main-pane">
+    <header class="topbar"><div class="breadcrumbs"><span>NEO System</span><span class="separator">/</span><strong id="breadcrumb">Overview</strong></div><div class="top-actions"><span class="environment"><span class="pulse"></span> STAGING · READ ONLY</span><a class="top-link" href="https://holytemples.org/neo-system/neopay/" rel="noopener noreferrer">Open NEOpay <span aria-hidden="true">↗</span></a><div class="avatar" title="No account is signed in">N</div></div></header>
+    <main id="main" tabindex="-1">
+      <div class="heading"><div><p class="kicker">NEO BANK <span class="kicker-line"></span> PROJECT 144</p><h1 id="page-heading">Good things are taking shape.</h1><p class="heading-sub">Your community finance workspace, built on verified connections and transparent controls.</p></div><span class="readonly-pill">◉ Preview mode</span></div>
+
+      <section class="view active" id="view-overview" data-view="overview" aria-labelledby="overview-title">
+        <h2 id="overview-title" class="sr-only">Overview</h2>
+        <div class="hero-grid">
+          <article class="hero-card"><div class="hero-top"><span class="hero-label">YOUR COMMUNITY FINANCE HUB</span><span class="hero-sparkle" aria-hidden="true">✳</span></div><div class="hero-main"><p class="hero-eyebrow">A better way to connect value.</p><h2>Banking services,<br><em>built around community.</em></h2><p>One place for community exchange, account access, and clear financial records. We're validating each connection before account services go live.</p></div><div class="hero-footer"><span class="mini-icon" aria-hidden="true">◈</span> Secure by design <span class="bullet">•</span> Bitcoin &amp; Counterparty wallet actions remain in NEOpay</div></article>
+          <article class="readiness-card"><div class="card-top"><span class="card-eyebrow">PLATFORM READINESS</span><span class="status-icon" aria-hidden="true">◉</span></div><div class="readiness-score">Not live <span>yet</span></div><p>Account services are gated while source ownership and deployment are verified.</p><div class="readiness-divider"></div><div class="status-line"><span>Preview runtime</span><strong id="runtimeStatus">Checking…</strong></div><div class="status-line"><span>Bank account services</span><strong id="bankStatus">Checking…</strong></div><div class="status-line"><span>Payments &amp; issuance</span><strong class="muted-status">Disabled</strong></div><button class="quiet-button" type="button" id="refreshStatus">↻ Refresh checks</button><p class="last-checked" id="checkedAt" role="status" aria-live="polite">Checking live status…</p></article>
+        </div>
+        <div class="section-title"><div><p class="kicker">YOUR WORKSPACE</p><h2>Everything in one place</h2></div><span class="subtle">Available features depend on verification</span></div>
+        <div class="feature-grid">
+          <button class="feature-card" type="button" data-open="accounts"><span class="feature-icon green" aria-hidden="true">▤</span><span class="feature-title">Accounts <span aria-hidden="true">↗</span></span><span class="feature-desc">Review account readiness, access, and verified balances.</span><span class="feature-state">PENDING VERIFICATION</span></button>
+          <button class="feature-card" type="button" data-open="exchange"><span class="feature-icon gold" aria-hidden="true">⇄</span><span class="feature-title">Community exchange <span aria-hidden="true">↗</span></span><span class="feature-desc">Send and receive mutual credit when transfers are enabled.</span><span class="feature-state">TRANSACTIONS DISABLED</span></button>
+          <button class="feature-card" type="button" data-open="markets"><span class="feature-icon blue" aria-hidden="true">◇</span><span class="feature-title">Offers &amp; needs <span aria-hidden="true">↗</span></span><span class="feature-desc">A place for member goods, services, and opportunities.</span><span class="feature-state">COMING ONLINE</span></button>
+          <button class="feature-card" type="button" data-open="activity"><span class="feature-icon violet" aria-hidden="true">◷</span><span class="feature-title">Activity &amp; statements <span aria-hidden="true">↗</span></span><span class="feature-desc">Clear records, provenance, and verified account history.</span><span class="feature-state">NO DATA CONNECTED</span></button>
+        </div>
+        <div class="info-strip"><span class="info-mark" aria-hidden="true">i</span><div><strong>Working UI, deliberately limited operations.</strong><p>This dashboard is interactive in preview mode. It does not present invented balances or offer unverified financial actions.</p></div></div>
+      </section>
+
+      <section class="view" id="view-accounts" data-view="accounts"><div class="section-title"><div><p class="kicker">ACCOUNTS</p><h2>Your account overview</h2></div></div><div class="module-grid"><article class="module wide"><span class="module-icon">▤</span><h3>Account access is being verified</h3><p>NEOpass sign-in, account ownership, and balance records will appear here only after a secure account link is independently validated.</p><div class="empty-data"><span>Available balance</span><strong>Unavailable</strong><small>No connected account or financial balance is being represented.</small></div><span class="module-tag">Account linking disabled</span></article><article class="module"><h3>Account safety</h3><p>Account ownership and authorized access are required before any record is displayed.</p><div class="mini-rows"><span>NEOpass</span><strong>Not configured here</strong></div><div class="mini-rows"><span>Private keys</span><strong>Never collected</strong></div></article></div></section>
+
+      <section class="view" id="view-exchange" data-view="exchange"><div class="section-title"><div><p class="kicker">COMMUNITY EXCHANGE</p><h2>Exchange, when you're ready</h2></div></div><div class="module-grid"><article class="module wide"><span class="module-icon">⇄</span><h3>Transfers are not available</h3><p>Exchanges require verified member identity, exact account permissions, and live transaction controls. These protections are not yet active in this preview.</p><div class="empty-data"><span>Transfer capability</span><strong>Disabled in staging</strong><small>No transfer form or submission route is exposed to this interface.</small></div></article><article class="module"><h3>Bitcoin &amp; Counterparty</h3><p>Wallet connection, signing, and blockchain transactions are handled in NEOpay, not by this NEO Bank preview.</p><a class="outline-link" href="https://holytemples.org/neo-system/neopay/" rel="noopener noreferrer">Open NEOpay ↗</a></article></div></section>
+
+      <section class="view" id="view-markets" data-view="markets"><div class="section-title"><div><p class="kicker">MARKETPLACE</p><h2>Offers &amp; needs</h2></div></div><article class="module"><span class="module-icon">◇</span><h3>Community marketplace</h3><p>Browse and publish member offers and requests once account access and the marketplace data source have been activated.</p><div class="empty-data"><strong>No live listings connected</strong><small>Listings are not simulated or sourced from private member records.</small></div></article></section>
+
+      <section class="view" id="view-activity" data-view="activity"><div class="section-title"><div><p class="kicker">ACTIVITY</p><h2>Activity &amp; statements</h2></div></div><article class="module"><span class="module-icon">◷</span><h3>Financial records will appear here</h3><p>Only confirmed, account-authorized statements and transfers will be shown. This preview does not contain customer financial information.</p><div class="empty-data"><strong>No verified statement available</strong><small>No example or fictitious transactions are displayed.</small></div></article></section>
+
+      <section class="view" id="view-integrations" data-view="integrations"><div class="section-title"><div><p class="kicker">SYSTEM INTEGRATIONS</p><h2>Connected services</h2></div></div><div class="module-grid"><article class="module wide"><h3>Integration readiness</h3><p>Frontend connectivity is checked against this staging runtime. Backend administrator authentication has been tested separately and is not exposed through the public interface.</p><div class="mini-rows"><span>Frontend runtime</span><strong id="runtimeStatusDetail">Checking…</strong></div><div class="mini-rows"><span>Bank account API</span><strong id="bankStatusDetail">Checking…</strong></div><div class="mini-rows"><span>Financial writes</span><strong>Disabled</strong></div><button type="button" class="quiet-button" id="refreshDetail">↻ Recheck services</button></article><article class="module"><h3>Platform boundaries</h3><p>Account credentials stay in backend secret storage. Browser sessions and private member records are not imported into the public dashboard.</p><a class="outline-link" href="https://neo-bank-render-staging.onrender.com/healthz" rel="noopener noreferrer">Runtime health ↗</a></article></div></section>
+    </main>
+    <footer><span>© NEO System · Project 144</span><span>Staging interface · No financial transactions</span></footer>
+  </div>
+</div>
+</body>
+</html>
