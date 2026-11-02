@@ -5,7 +5,7 @@ import { issueNeopassToken, verifyNeopassToken } from '../neo-platform-api/neopa
 // The short-lived press token stays ephemeral in the requesting browser.
 export async function exchangeNooglePressSession({
   baseToken, jwtSecret, jwtIssuer = 'neo-pass', authService, accessRegistry,
-  now = () => Date.now(), ttlSeconds = 300
+  now = () => Date.now(), ttlSeconds = 300, identityGuard = null
 } = {}) {
   if (!baseToken) return {ok:false,status:401,error:'unscoped_neopass_session_required'}
   if (typeof jwtSecret !== 'string' || jwtSecret.length < 32 ||
@@ -28,6 +28,10 @@ export async function exchangeNooglePressSession({
     return {ok:false,status:401,error:'unscoped_neopass_session_required'}
   }
   try {
+    if (identityGuard && (typeof identityGuard !== 'function' ||
+        await identityGuard(claims.sub) !== true)) {
+      return { ok: false, status: 401, error: 'neopass_press_identity_revoked_or_unconfirmed' }
+    }
     const [member, access] = await Promise.all([
       authService.session(claims.sub), accessRegistry.resolveAccess(claims.sub)
     ])
