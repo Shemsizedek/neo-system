@@ -34,3 +34,15 @@ No production DNS was modified. No account banking was activated.
 - https://render.com/docs/custom-domains
 - https://render.com/docs/configure-other-dns
 - https://api-docs.render.com/reference/create-custom-domain
+
+## Approved domain registration attempt — November 1 local / November 2 UTC
+
+The user explicitly approved a potential $0.25 per month custom-domain charge. An authorized GitHub Actions workflow `.github/workflows/bind-neobank-render-domain.yml` executed with the existing protected `RENDER_API_KEY` secret, after independently verifying target service `srv-dbifhkcs728c73f4iuk0`, exact NEO SYSTEM owner `tea-dbhtkc8473hc73933img`, and lack of an existing `neobank.holytemples.org` registration on the target.
+
+**Result: blocked by Render billing configuration, not permission or DNS.** The Render custom-domain create endpoint returned HTTP 400: `a payment method is required to add more than 2 custom domains`. Workflow run `41383836895`, job `125080212366`; the first attempt was run `41383759450`. No domain was registered or billed on either attempt, and WordPress DNS was not changed. The NEO SYSTEM workspace already has `leaders.holytemples.org` and `city.holytemples.org` registered, consuming Hobby's two included slots.
+
+**Required user-side prerequisite:** In Render Dashboard select the **NEO SYSTEM** workspace, then **Billing > Update payment method**. A payment method must be entered through Render's secure billing interface, **never** in chat, GitHub or environment variables. Do not upgrade workspace plan just to add a domain.
+
+**Resume checklist:** Verify Render now accepts the hostname registration by rerunning the existing exact-target workflow; only after a successful registration switch *only* the `neobank` WordPress A record to CNAME `neo-bank-render-staging.onrender.com`. Validate TLS and public page before marking success. Preserve rollback A `8.232.127.249`, TTL 3600. Do not attempt to bypass billing by changing an unrelated NEO domain or workspace.
+
+**Public banking scope:** The dashboard at `https://neo-bank-render-staging.onrender.com/` is a six-section interactive read-only preview; no live bank account services have been activated.
