@@ -1,10 +1,11 @@
 {
-  "version": "1.1.4",
+  "version": "1.1.5",
   "standard": "architecture/neo-services-platform.json",
   "scope": "apps-directory",
   "planes": {"backend":"github","frontend":"github-pages","serverApi":"discord"},
   "apps": [
     {"id":"gisd"},
+    {"id":"neo-bank-pages"},
     {"id":"neo-connect-android"},
     {"id":"neo-connect-chromebook"},
     {"id":"neo-counter"},
