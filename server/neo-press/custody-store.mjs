@@ -33,7 +33,11 @@ export function createPressCustodyStore({ dbPath, testMemory = false, now = () =
     ' seq INTEGER PRIMARY KEY AUTOINCREMENT, case_id TEXT NOT NULL, evidence_id TEXT NOT NULL,',
     ' event_type TEXT NOT NULL, actor_subject TEXT NOT NULL, payload_json TEXT NOT NULL,',
     ' created_at TEXT NOT NULL, previous_hash TEXT NOT NULL, event_hash TEXT NOT NULL);',
-    'CREATE INDEX IF NOT EXISTS idx_press_custody_case ON press_custody(case_id,seq);'
+    'CREATE INDEX IF NOT EXISTS idx_press_custody_case ON press_custody(case_id,seq);',
+    'CREATE TABLE IF NOT EXISTS press_media (',
+    ' evidence_id TEXT PRIMARY KEY, original_sha256 TEXT NOT NULL, verified_at TEXT NOT NULL,',
+    ' verified_by TEXT NOT NULL, key_id TEXT NOT NULL, plaintext_bytes INTEGER NOT NULL,',
+    ' FOREIGN KEY(evidence_id) REFERENCES evidence_records(id));'
   ].join('\n'))
   const timestamp = () => now().toISOString()
   function append(caseId, evidenceId, eventType, actorSubject, payload) {
@@ -55,7 +59,7 @@ export function createPressCustodyStore({ dbPath, testMemory = false, now = () =
   function lookup(id) {
     return db.prepare('SELECT e.id,e.asset,e.title,e.source_type,e.observed_at,m.case_id,m.original_sha256,m.locator_sha256,m.source_tier,m.editorial_state,m.access_level,m.reporter_subject FROM press_manifest m INNER JOIN evidence_records e ON e.id=m.evidence_id WHERE e.id=?').get(id) || null
   }
-  function ingest(input, actorSubject) {
+  function ingest(input, actorSubject, { sealedIntake = false } = {}) {
     const caseId = normalize(input?.caseId)
     if (typeof actorSubject !== 'string' || !actorSubject) throw new Error('verified_actor_required')
     const evidenceId = randomUUID()
@@ -73,7 +77,7 @@ export function createPressCustodyStore({ dbPath, testMemory = false, now = () =
     }
     const errors = validateEvidenceMetadata(meta)
     if (errors.length) throw new Error('invalid_press_metadata:' + errors.join(';'))
-    if (input.sourceKind === 'CREDENTIAL') throw new Error('credential_intake_requires_private_media_vault')
+    if (input.sourceKind === 'CREDENTIAL' && !sealedIntake) throw new Error('credential_intake_requires_private_media_vault')
     // No raw bytes, original URLs, source identities or credential images enter this DB.
     // Original hashes are DECLARED hashes, not verified original-asset attestations.
     db.exec('BEGIN IMMEDIATE')
@@ -109,6 +113,58 @@ export function createPressCustodyStore({ dbPath, testMemory = false, now = () =
       return { id, gate, decision, publicationPerformed: false }
     } catch (error) { db.exec('ROLLBACK'); throw error }
   }
+
+  function attachVerifiedMedia(id, sealedReceipt, verification, actorSubject) {
+    const item = lookup(id)
+    if (!item) throw new Error('press_evidence_not_found')
+    if (typeof actorSubject !== 'string' || !actorSubject) throw new Error('verified_actor_required')
+    if (!sealedReceipt || !verification ||
+      sealedReceipt.evidenceId !== id || verification.evidenceId !== id ||
+      sealedReceipt.caseId !== item.case_id || verification.caseId !== item.case_id ||
+      sealedReceipt.originalSha256 !== item.original_sha256 ||
+      verification.originalSha256 !== item.original_sha256 ||
+      verification.integrityVerified !== true ||
+      sealedReceipt.keyId !== verification.keyId ||
+      sealedReceipt.algorithm !== 'AES-256-GCM' ||
+      !Number.isSafeInteger(verification.plaintextBytes) || verification.plaintextBytes < 1 ||
+      verification.plaintextBytes !== sealedReceipt.plaintextBytes) {
+      throw new Error('verified_media_receipt_mismatch')
+    }
+    if (db.prepare('SELECT evidence_id FROM press_media WHERE evidence_id=?').get(id)) throw new Error('original_media_already_linked')
+    db.exec('BEGIN IMMEDIATE')
+    try {
+      const at = timestamp()
+      db.prepare('INSERT INTO press_media(evidence_id,original_sha256,verified_at,verified_by,key_id,plaintext_bytes) VALUES(?,?,?,?,?,?)')
+        .run(id, item.original_sha256, at, actorSubject, sealedReceipt.keyId, verification.plaintextBytes)
+      const head = append(item.case_id, id, 'ORIGINAL_MEDIA_VERIFIED', actorSubject,
+        { originalSha256: item.original_sha256, algorithm: sealedReceipt.algorithm, keyId: sealedReceipt.keyId })
+      db.prepare('INSERT INTO evidence_events(id,evidence_id,asset,event_type,actor,payload_json,created_at) VALUES(?,?,?,?,?,?,?)')
+        .run(randomUUID(), id, item.asset, 'press.media.verified', actorSubject, JSON.stringify({custodyHead:head}), at)
+      db.exec('COMMIT')
+      return { id, originalVerified: true, mediaEncrypted: true, externallyAttested: false }
+    } catch(error){ db.exec('ROLLBACK'); throw error }
+  }
+  function getMediaStatus(id) {
+    const row = db.prepare('SELECT original_sha256,verified_at,key_id,plaintext_bytes FROM press_media WHERE evidence_id=?').get(id)
+    return row ? { originalVerified:true, originalSha256:row.original_sha256,
+      verifiedAt:row.verified_at, keyId:row.key_id, plaintextBytes:row.plaintext_bytes } :
+      { originalVerified:false }
+  }
+  function publicationPreflight(id, mediaStore) {
+    const candidate = releaseCandidate(id)
+    if (!candidate) return null
+    const item = lookup(id)
+    const status = getMediaStatus(id)
+    if (!status.originalVerified || !mediaStore || typeof mediaStore.verify !== 'function') throw new Error('original_media_verification_required')
+    const verified = mediaStore.verify({ caseId:item.case_id, evidenceId:id, originalSha256:item.original_sha256 })
+    if (!verified.integrityVerified || verified.keyId !== status.keyId || verified.plaintextBytes !== status.plaintextBytes) {
+      throw new Error('original_media_integrity_failed')
+    }
+    return { ...candidate, originalMediaVerified:true, mediaEncrypted:true,
+      independentlyAnchored:false, publicationPerformed:false, readyForExternalPublication:false,
+      nextAction:'INDEPENDENT_CUSTODY_AND_HUMAN_PUBLICATION_APPROVAL' }
+  }
+
   function verifyCase(caseId) {
     const key = normalize(caseId)
     const events = db.prepare('SELECT * FROM press_custody WHERE case_id=? ORDER BY seq ASC').all(key)
@@ -141,5 +197,5 @@ export function createPressCustodyStore({ dbPath, testMemory = false, now = () =
     const integrity = verifyCase(caseId)
     return { integrity, events: db.prepare('SELECT seq,evidence_id,event_type,actor_subject,created_at,previous_hash,event_hash FROM press_custody WHERE case_id=? ORDER BY seq ASC').all(normalize(caseId)) }
   }
-  return { ingest, review, lookup, releaseCandidate, custody, verifyCase, normalize, hasCase, close: () => vault.close() }
+  return { ingest, review, lookup, attachVerifiedMedia, getMediaStatus, publicationPreflight, releaseCandidate, custody, verifyCase, normalize, hasCase, close: () => vault.close() }
 }
