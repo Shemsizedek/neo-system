@@ -58,3 +58,41 @@ jobs:
             echo "Scope: **read-only**. No billing, domain creation or DNS changes."
           } >> "$GITHUB_STEP_SUMMARY"
           echo "NEO Bank Render domain registered: $exists"
+
+      - name: Count existing workspace custom-domain registrations without changes
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_WORKSPACE_ID: tea-dbhtkc8473hc73933img
+        run: |
+          set -euo pipefail
+          services="$(curl --fail --silent --show-error --get --max-time 30 \
+            -H "Authorization: Bearer $RENDER_API_KEY" -H "Accept: application/json" \
+            --data-urlencode "ownerId=$RENDER_WORKSPACE_ID" \
+            --data-urlencode "includePreviews=false" --data-urlencode "limit=100" \
+            "https://api.render.com/v1/services")"
+          printf '%s' "$services" | jq -e 'type=="array"' >/dev/null
+          count="$(printf '%s' "$services" | jq 'length')"
+          if [ "$count" -ge 100 ]; then
+            echo "::error::Workspace service list may be paginated: capacity cannot be verified"
+            exit 1
+          fi
+          registered=0
+          while IFS= read -r service; do
+            test -n "$service" || continue
+            status="$(curl --silent --show-error --max-time 25 -o /tmp/render-svc-domains.json -w '%{http_code}' \
+              -H "Authorization: Bearer $RENDER_API_KEY" -H "Accept: application/json" \
+              "https://api.render.com/v1/services/$service/custom-domains")"
+            if [ "$status" != 200 ]; then
+              echo "::error::Cannot verify custom-domain count (HTTP $status); no changes made."
+              exit 1
+            fi
+            qty="$(jq -e 'if type=="array" then length else error("unexpected response") end' /tmp/render-svc-domains.json)"
+            registered=$((registered+qty))
+          done < <(printf '%s' "$services" | jq -r '.[].service.id // .[].id // empty')
+          {
+            echo "Services inspected in workspace: `$count`"
+            echo "Custom-domain registrations detected: `$registered`"
+            echo "Assume no free custom-domain slot if count is 2 or more until billing plan is verified."
+            echo "No domain was created, deleted, or billed by this job."
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "NEO Bank workspace existing custom-domain count: $registered"
