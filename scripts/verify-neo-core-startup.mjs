@@ -29,13 +29,15 @@ try {
   }
   if(!healthy)throw Error("NEO edge did not bind PORT or exited early. Logs: "+output.slice(-2200));
   const renderHealth=await fetchRoute("/health","neo-system.onrender.com");
-  const routes={"/health":healthy,"/render-health":renderHealth};
+  const renderMemberRoute=await fetchRoute("/neosync/","neo-system.onrender.com");
+  const routes={"/health":healthy,"/render-health":renderHealth,"/render-member-route":renderMemberRoute};
   for(const path of ["/","/neosync/","/corpus/"]){
     try{routes[path]=await fetchRoute(path)}catch(e){routes[path]={error:String(e.message||e)}}
   }
   console.log(JSON.stringify({serverBooted:true,portBound:port,routes,productionChanged:false},null,2));
   if(healthy.status!==200)throw Error("Health route did not return HTTP 200");
   if(renderHealth.status!==200 || renderHealth.recovery)throw Error("Render service hostname health must proxy canonical health, not serve 421");
+  if(renderMemberRoute.status!==421)throw Error("Render service hostname must not expose member routes");
   if(healthy.recovery)throw Error("Health route is recovery placeholder");
   console.log("NEO_EDGE_BOOT_SMOKE_PASS — member and corpus flows still require live tests");
 }catch(e){
