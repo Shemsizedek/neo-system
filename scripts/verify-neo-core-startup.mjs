@@ -11,9 +11,9 @@ let output="",exitCode=null;
 const capture=(buf)=>{output=(output+buf.toString()).slice(-10000)};
 child.stdout.on("data",capture);child.stderr.on("data",capture);
 child.once("exit",code=>{exitCode=code});
-const fetchRoute=async(path)=>{
+const fetchRoute=async(path,host="neo.holytemples.org")=>{
   const resp=await fetch("http://127.0.0.1:"+port+path,{
-    headers:{host:"neo.holytemples.org","x-forwarded-host":"neo.holytemples.org"},
+    headers:{host,"x-forwarded-host":host},
     redirect:"manual",
     signal:AbortSignal.timeout(1800)
   });
@@ -28,12 +28,14 @@ try {
     try{healthy=await fetchRoute("/health");break}catch{}
   }
   if(!healthy)throw Error("NEO edge did not bind PORT or exited early. Logs: "+output.slice(-2200));
-  const routes={"/health":healthy};
+  const renderHealth=await fetchRoute("/health","neo-system.onrender.com");
+  const routes={"/health":healthy,"/render-health":renderHealth};
   for(const path of ["/","/neosync/","/corpus/"]){
     try{routes[path]=await fetchRoute(path)}catch(e){routes[path]={error:String(e.message||e)}}
   }
   console.log(JSON.stringify({serverBooted:true,portBound:port,routes,productionChanged:false},null,2));
   if(healthy.status!==200)throw Error("Health route did not return HTTP 200");
+  if(renderHealth.status!==200 || renderHealth.recovery)throw Error("Render service hostname health must proxy canonical health, not serve 421");
   if(healthy.recovery)throw Error("Health route is recovery placeholder");
   console.log("NEO_EDGE_BOOT_SMOKE_PASS — member and corpus flows still require live tests");
 }catch(e){
