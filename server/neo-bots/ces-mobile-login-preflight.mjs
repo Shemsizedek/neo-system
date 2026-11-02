@@ -174,7 +174,12 @@ export async function probeCesMobileMemberLogin({env=process.env,fetchImpl=fetch
 
 }
 export async function runCesMobileLoginPreflight({env=process.env,fetchImpl=fetch,logger=x=>console.info(JSON.stringify(x))}={}){
-  const result=await probeCesMobileMemberLogin({env,fetchImpl,inspectAdministration:env.NEO_CES_MOBILE_ADMIN_PREFLIGHT_ON_START==='true'});
+  const checkUsersRoute=env.NEO_CES_USERS_ROUTE_PREFLIGHT_ON_START==='true';
+  const result=await probeCesMobileMemberLogin({
+    env,fetchImpl,
+    inspectAdministration:env.NEO_CES_MOBILE_ADMIN_PREFLIGHT_ON_START==='true'||checkUsersRoute,
+    checkUsersRoute
+  });
   logger({event:'ces_nmni_mobile_preflight',...result});
   return result;
 }
