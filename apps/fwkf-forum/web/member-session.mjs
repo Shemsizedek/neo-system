@@ -2,7 +2,7 @@
 export function createForumSession({auth,apiBase,fetcher=fetch}){
  if(!auth||typeof auth.signIn!=="function"||typeof auth.getSession!=="function"||typeof auth.getAccessToken!=="function"||typeof auth.signOut!=="function")throw Error("AUTH_NOT_CONFIGURED");
  const u=new URL(apiBase||"");
- if(u.origin!=="https://br-misty-sun-b850yi7t-fwkfalpha.compute.c-14.us-east-1.aws.neon.tech"||u.pathname!=="/"||u.search||u.hash)throw Error("STAGING_API_ALLOWLIST_FAILED");
+ if(u.origin!=="https://br-misty-sun-b850yi7t-fwkfdata.compute.c-14.us-east-1.aws.neon.tech"||u.pathname!=="/"||u.search||u.hash)throw Error("STAGING_API_ALLOWLIST_FAILED");
  const meUrl=u.origin+"/me";
  async function testIdentity(){
   const session=await auth.getSession();
@@ -10,10 +10,15 @@ export function createForumSession({auth,apiBase,fetcher=fetch}){
   const token=await auth.getAccessToken(); // memory only, not storage or logs.
   const res=await fetcher(meUrl,{method:"GET",redirect:"error",headers:{authorization:"Bearer "+token,accept:"application/json"},signal:AbortSignal.timeout(10000)});
   if(res.status===401)return {authenticated:false,reason:"TOKEN_REJECTED"};
+  if(res.status===403){
+   const refusal=await res.json();
+   if(refusal.error!=="MEMBERSHIP_NOT_APPROVED")throw Error("FORUM_MEMBERSHIP_UNAVAILABLE");
+   return {authenticated:true,posting:false,membership:"pending_approval"};
+  }
   if(!res.ok)throw Error("FORUM_IDENTITY_UNAVAILABLE");
   const data=await res.json();
-  if(data.authenticated!==true||data.posting!==false||data.membership!=="requires_invitation")throw Error("INVALID_API_RESPONSE");
-  return {authenticated:true,posting:false,membership:"requires_invitation"};
+  if(data.authenticated!==true||data.posting!==false||data.membership!=="approved"||!["member","moderator","admin"].includes(data.role))throw Error("INVALID_API_RESPONSE");
+  return {authenticated:true,posting:false,membership:"approved",role:data.role};
  }
  return Object.freeze({
   async signIn(email,password){
