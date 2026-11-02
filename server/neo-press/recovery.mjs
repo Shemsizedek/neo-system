@@ -9,7 +9,7 @@ function readSealed(path, maxBytes) {
   const fd = openSync(path, constants.O_RDONLY | (constants.O_NOFOLLOW || 0))
   try {
     const stat = fstatSync(fd)
-    if (!stat.isFile() || (stat.mode & 0o077) || stat.size > maxBytes + 64 || stat.size < 37) {
+    if (!stat.isFile() || (stat.mode & 0o077) || stat.size > maxBytes + 64 || stat.size < 36) {
       throw new Error('unsafe_encrypted_source')
     }
     const contents = readFileSync(fd)
