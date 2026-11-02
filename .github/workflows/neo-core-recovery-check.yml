@@ -1,0 +1,16 @@
+name: NEO Core recovery — manual non-mutating verification
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Check NEO Core Render origin and functional routes
+        run: node scripts/verify-neo-core-recovery.mjs https://neo-system.onrender.com
