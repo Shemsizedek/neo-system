@@ -2,6 +2,7 @@ import { verifyNeopassToken } from '../neo-platform-api/neopass-google-auth.mjs'
 import { randomBytes } from 'node:crypto'
 import { sha256 } from './evidence.mjs'
 import { renderPressPortal } from './portal.mjs'
+import { exchangeNooglePressSession } from './session-exchange.mjs'
 
 const PREFIX = '/api/v1/press'
 const MAX_BYTES = 12_000
@@ -115,6 +116,25 @@ export function createPressHttpHandler({
         'cache-control': 'no-store', 'vary': 'Origin'
       })
       res.end()
+      return true
+    }
+    // Exchange existing unscoped Noogle NEOpass session for a 5-minute
+    // audience-scoped press token. No browser passwords, user-supplied roles,
+    // refresh tokens, persistent storage or automatic membership creation.
+    if (url.pathname === '/api/v1/press/session/exchange' && req.method === 'POST') {
+      const result = await exchangeNooglePressSession({
+        baseToken:bearer(req),jwtSecret,jwtIssuer,authService,accessRegistry,now
+      })
+      respond(res,result.status,result.ok?{
+        token:result.token,tokenType:result.tokenType,expiresAt:result.expiresAt,
+        roleClaimsTrusted:false
+      }:{error:result.error},origin)
+      return true
+    }
+    // The public shell contains no source data, case IDs or credentials.
+    // All case data and the private portal endpoint still require press tokens.
+    if (url.pathname === '/api/v1/press/login' && req.method === 'GET') {
+      privatePortalResponse(res,renderPressPortal(),origin)
       return true
     }
     const token = bearer(req)
