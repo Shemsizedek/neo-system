@@ -13,12 +13,12 @@ child.stdout.on("data",capture);child.stderr.on("data",capture);
 child.once("exit",code=>{exitCode=code});
 const fetchRoute=async(path)=>{
   const resp=await fetch("http://127.0.0.1:"+port+path,{
-    headers:{host:"neo.holytemples.org"},
+    headers:{host:"neo.holytemples.org","x-forwarded-host":"neo.holytemples.org"},
     redirect:"manual",
     signal:AbortSignal.timeout(1800)
   });
   const body=(await resp.text()).slice(0,800);
-  return {status:resp.status,contentType:resp.headers.get("content-type"),recovery:/public-recovery|temple-continuity|is recovering/i.test(body)};
+  return {status:resp.status,contentType:resp.headers.get("content-type"),recovery:/public-recovery|temple-continuity|is recovering/i.test(body),preview:body.slice(0,230)};
 };
 try {
   let healthy=null;
