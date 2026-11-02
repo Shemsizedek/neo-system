@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {probeCesMobileMemberLogin,runCesMobileLoginPreflight} from './ces-mobile-login-preflight.mjs';
 const env={NEO_CES_NMNI_USERNAME:'NMNI0000',NEO_CES_NMNI_PASSWORD:'test-credential-not-a-real-password'};
-const loginHtml='<form action="rlogin.php" method="POST" id="enter"><input name="uid"><input type="password" name="passwd"><input type="hidden" name="by" value="usr"></form>';
+const loginHtml='<form action="rlogin.php" method="POST" id="enter"><input name="uid"><input type="password" name="passwd"><input type="hidden" name="by" value="usr"><button name="action" value="login" type="submit">Sign In</button></form>';
 const redirect=()=>new Response('',{status:302,headers:{location:'/index.php','set-cookie':'session=fixture-cookie; Path=/; HttpOnly; Secure'}});
 const protectedHtml='<h1>NMNI0000 account overview</h1><nav><a href="logout.php">Log out</a></nav>';
 function fakeFlow(protectedText=protectedHtml){
@@ -13,10 +13,11 @@ function fakeFlow(protectedText=protectedHtml){
     if(calls.length===1)return new Response(loginHtml,{status:200});
     if(calls.length===2){assert.equal(path,'/rlogin.php');assert.equal(method,'POST');
       const p=new URLSearchParams(options.body);
-      assert.deepEqual([...p.keys()],['uid','passwd','by','timezone']);
+      assert.deepEqual([...p.keys()],['uid','passwd','by','timezone','action']);
       assert.equal(p.get('uid'),'NMNI0000');
       assert.equal(p.get('passwd'),env.NEO_CES_NMNI_PASSWORD);
       assert.equal(p.get('by'),'usr');
+      assert.equal(p.get('action'),'login');
       return redirect();
     }
     if(calls.length===3){assert.equal(path,'/index.php');assert.equal(method,'GET');assert.match(options.headers.cookie,/session=fixture-cookie/);
@@ -76,4 +77,14 @@ test('preflight log is categorical and does not include credentials or HTML',asy
  await runCesMobileLoginPreflight({env,fetchImpl:f.fetchImpl,logger:x=>logs.push(x)});
  assert.deepEqual(logs,[{event:'ces_nmni_mobile_preflight',result:'member_session_verified',memberAuthenticated:true,adminAuthenticated:false}]);
  assert.doesNotMatch(JSON.stringify(logs),/password|cookie|credential|session=fixture-cookie/);
+});
+
+test('changed mobile form missing required Sign In action never submits credentials',async()=>{
+ let calls=0;
+ const suspicious=loginHtml.replace(/<button[^>]*>Sign In<\/button>/,'');
+ const result=await probeCesMobileMemberLogin({env,fetchImpl:async()=>{
+   calls++; return new Response(suspicious,{status:200});
+ }});
+ assert.equal(result.result,'unverified_mobile_form');
+ assert.equal(calls,1);
 });
