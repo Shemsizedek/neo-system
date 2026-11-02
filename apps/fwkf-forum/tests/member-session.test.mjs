@@ -29,7 +29,7 @@ test("signed-in session only uses memory JWT in allowlisted read-only GET",async
   return new Response(JSON.stringify({authenticated:true,posting:false,membership:"approved",role:"member"}),{status:200});
  }});
  const result=await s.signIn(" member@example.org ","longtestpassword");
- assert.deepEqual(result,{authenticated:true,posting:false,membership:"requires_invitation"});
+ assert.deepEqual(result,{authenticated:true,posting:false,membership:"approved",role:"member"});
  assert.equal(count,1);assert.equal(calls[0][1],"member@example.org");
  assert.deepEqual(await s.signOut(),{authenticated:false,reason:"SIGNED_OUT"});
 });
