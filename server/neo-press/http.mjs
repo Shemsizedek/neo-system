@@ -1,7 +1,11 @@
 import { verifyNeopassToken } from '../neo-platform-api/neopass-google-auth.mjs'
+import { randomBytes } from 'node:crypto'
+import { sha256 } from './evidence.mjs'
+import { renderPressPortal } from './portal.mjs'
 
 const PREFIX = '/api/v1/press'
 const MAX_BYTES = 12_000
+const MAX_MEDIA_BYTES = 8 * 1024 * 1024
 const REQUIRED_ROLES = Object.freeze({
   ACCURACY: 'press:editor',
   PRIVACY: 'press:privacy',
@@ -43,6 +47,38 @@ async function jsonBody(req) {
     throw Object.assign(new Error('invalid_json'), { status: 400 })
   }
 }
+async function mediaBody(req, maxBytes = MAX_MEDIA_BYTES) {
+  if (String(req.headers['content-type'] || '').toLowerCase() !== 'application/octet-stream') {
+    throw Object.assign(new Error('binary_media_content_type_required'), { status: 415 })
+  }
+  const declared = Number(req.headers['content-length'])
+  if (Number.isFinite(declared) && declared > maxBytes) {
+    throw Object.assign(new Error('media_too_large'), { status: 413 })
+  }
+  let size = 0
+  const chunks = []
+  for await (const chunk of req) {
+    size += chunk.length
+    if (size > maxBytes) throw Object.assign(new Error('media_too_large'), { status: 413 })
+    chunks.push(chunk)
+  }
+  if (size < 1) throw Object.assign(new Error('empty_media_not_allowed'), { status: 400 })
+  return Buffer.concat(chunks)
+}
+function privatePortalResponse(res, html, origin) {
+  const nonce = randomBytes(18).toString('base64url')
+  const content = html.replace('<script>', '<script nonce="' + nonce + '">')
+  const headers = {
+    'content-type': 'text/html; charset=utf-8', 'content-length': Buffer.byteLength(content),
+    'cache-control': 'no-store', 'x-content-type-options': 'nosniff',
+    'referrer-policy': 'no-referrer', 'x-frame-options': 'DENY',
+    'content-security-policy': "default-src 'none'; script-src 'nonce-" + nonce + "'; style-src 'unsafe-inline'; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'",
+    'vary': 'Origin'
+  }
+  if (origin) headers['access-control-allow-origin'] = origin
+  res.writeHead(200, headers)
+  res.end(content)
+}
 function bearer(req) {
   const m = /^Bearer ([a-zA-Z0-9._-]+)$/.exec(String(req.headers.authorization || ''))
   return m?.[1] || null
@@ -53,7 +89,7 @@ const hasRole = (actor, role) => actor.roles.includes(role)
 // Production must provide a real NEOpass issuer, authoritative press grant
 // registry, a dedicated private vault path and verified runtime controls.
 export function createPressHttpHandler({
-  store = null, authService = null, accessRegistry = null,
+  store = null, mediaStore = null, authService = null, accessRegistry = null,
   jwtSecret = '', jwtIssuer = 'neo-pass', enabled = false,
   allowedOrigins = defaultOrigins, now = () => Date.now()
 } = {}) {
@@ -112,6 +148,79 @@ export function createPressHttpHandler({
       return true
     }
     try {
+      if (url.pathname === '/api/v1/press/portal' && req.method === 'GET') {
+        if (!actor.roles.some(r => String(r).startsWith('press:')) || !actor.caseIds.length) {
+          respond(res, 403, { error: 'press_desk_access_forbidden' }, origin); return true
+        }
+        privatePortalResponse(res, renderPressPortal(), origin)
+        return true
+      }
+      async function sealAndLink(id, item, originalBytes) {
+        if (!mediaStore || typeof mediaStore.seal !== 'function' ||
+            typeof mediaStore.verify !== 'function' || typeof mediaStore.discardUnlinked !== 'function' ||
+            typeof store.attachVerifiedMedia !== 'function') {
+          throw Object.assign(new Error('verified_media_vault_unavailable'), { status: 503 })
+        }
+        const receipt = mediaStore.seal({
+          caseId: item.case_id, evidenceId: id, originalBytes, expectedSha256: item.original_sha256
+        })
+        try {
+          const proof = mediaStore.verify({caseId:item.case_id,evidenceId:id,originalSha256:item.original_sha256})
+          return store.attachVerifiedMedia(id,receipt,proof,actor.subject)
+        } catch (error) {
+          // A newly created encrypted orphan is discarded; raw source bytes were never persisted.
+          mediaStore.discardUnlinked(id)
+          throw error
+        }
+      }
+      const sealedIntake = /^\/api\/v1\/press\/cases\/([A-Za-z0-9_-]+)\/sealed-intake$/.exec(url.pathname)
+      if (sealedIntake && req.method === 'POST') {
+        const caseId = store.normalize(sealedIntake[1])
+        if (!hasRole(actor,'press:reporter') || !store.hasCase(actor,caseId)) {
+          respond(res,403,{error:'case_intake_forbidden'},origin);return true
+        }
+        if (!mediaStore) { respond(res,503,{error:'verified_media_vault_unavailable'},origin);return true }
+        const bytes = await mediaBody(req)
+        try {
+          const created = store.ingest({
+            caseId, title:'Restricted historical press credential',
+            originalSha256:sha256(bytes), sourceLocatorSha256:sha256(randomBytes(32)),
+            sourceTier:'LEAD', editorialState:'UNRESOLVED', accessLevel:'RESTRICTED',
+            sourceKind:'CREDENTIAL', observedAt:new Date(now()).toISOString()
+          }, actor.subject, {sealedIntake:true})
+          const item = store.lookup(created.id)
+          const verified = await sealAndLink(created.id,item,bytes)
+          respond(res,201,{evidenceId:created.id,media:verified,credentialCurrentStatusVerified:false,published:false},origin)
+        } finally { bytes.fill(0) }
+        return true
+      }
+      const media = /^\/api\/v1\/press\/evidence\/([0-9a-f-]{36})\/media$/.exec(url.pathname)
+      if (media && req.method === 'POST') {
+        const item = store.lookup(media[1])
+        if (!item) { respond(res,404,{error:'not_found'},origin);return true }
+        if (!hasRole(actor,'press:reporter') || !store.hasCase(actor,item.case_id)) {
+          respond(res,403,{error:'media_intake_forbidden'},origin);return true
+        }
+        if (store.getMediaStatus(media[1]).originalVerified) {
+          respond(res,409,{error:'original_media_already_linked'},origin);return true
+        }
+        const bytes = await mediaBody(req)
+        try {
+          const verified = await sealAndLink(media[1],item,bytes)
+          respond(res,201,{media:verified,published:false},origin)
+        } finally { bytes.fill(0) }
+        return true
+      }
+      const preflight = /^\/api\/v1\/press\/evidence\/([0-9a-f-]{36})\/release-preflight$/.exec(url.pathname)
+      if (preflight && req.method === 'GET') {
+        const item = store.lookup(preflight[1])
+        if (!item) { respond(res,404,{error:'not_found'},origin);return true }
+        if (!hasRole(actor,'press:editor') || !store.hasCase(actor,item.case_id)) {
+          respond(res,403,{error:'editor_case_access_required'},origin);return true
+        }
+        respond(res,200,{preflight:store.publicationPreflight(preflight[1],mediaStore),published:false},origin)
+        return true
+      }
       const intake = /^\/api\/v1\/press\/cases\/([A-Za-z0-9_-]+)\/evidence$/.exec(url.pathname)
       if (intake && req.method === 'POST') {
         const caseId = store.normalize(intake[1])
@@ -157,9 +266,10 @@ export function createPressHttpHandler({
       respond(res, ['GET','POST'].includes(req.method) ? 404 : 405, { error: 'not_found' }, origin)
     } catch (error) {
       const status = Number.isInteger(error.status) ? error.status :
-        /not_eligible|approval|required|restricted|independent_/.test(String(error.message)) ? 409 : 400
+        /not_eligible|approval|required|restricted|independent_|verification_|integrity_|original_media/.test(String(error.message)) ? 409 : 400
       respond(res, status, { error: status === 400 ? 'invalid_press_request' :
-        status === 409 ? 'review_or_integrity_gate_blocked' : error.message, published: false }, origin)
+        status === 409 ? 'review_or_integrity_gate_blocked' :
+        status === 503 ? 'verified_media_vault_unavailable' : error.message, published: false }, origin)
     }
     return true
   }
