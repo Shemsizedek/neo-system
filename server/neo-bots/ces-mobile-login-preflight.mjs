@@ -75,7 +75,7 @@ export function inspectCesMobileAdminPage(html) {
     /\bSend\s+statements\b/i.test(html);
 }
 
-export async function probeCesMobileMemberLogin({env=process.env,fetchImpl=fetch,inspectAdministration=false}={}){
+export async function probeCesMobileMemberLogin({env=process.env,fetchImpl=fetch,inspectAdministration=false,checkUsersRoute=false}={}){
   const username=env.NEO_CES_NMNI_USERNAME;
   const password=env.NEO_CES_NMNI_PASSWORD;
   if(username!==ADMIN||typeof password!=='string'||!password){
@@ -154,8 +154,23 @@ export async function probeCesMobileMemberLogin({env=process.env,fetchImpl=fetch
   let content;
   try{content=await page.text()}catch{content=''}
   const verified=inspectCesMobileAdminPage(content);
-  return {result:'member_session_verified',memberAuthenticated:true,adminAuthenticated:verified,
+  const result={result:'member_session_verified',memberAuthenticated:true,adminAuthenticated:verified,
     adminVerification:{navigationVisible:nav.seen,protectedPageVerified:verified}};
+  if(!checkUsersRoute || !verified)return result;
+  // The user's authenticated Administration tab identifies this read-only
+  // Users destination. Probe status only; never read/store account records.
+  const usersLink=/href\\s*=\\s*["']https:\\/\\/ces\\.community\\/members\\.php["']/i.test(content);
+  if(!usersLink)return {...result,usersRoute:{linked:false,reached:false,accountControlVerified:false}};
+  let reached=false;
+  try{
+    const response=await request(fetchImpl,ORIGIN+'/members.php',{
+      method:'GET',headers:jar.size?{cookie:cookieHeader(jar)}:{}
+    });
+    reached=response.status===200 && !response.redirected &&
+      (!response.url || new URL(response.url).origin===ORIGIN);
+    await response.body?.cancel?.();
+  }catch{}
+  return {...result,usersRoute:{linked:true,reached,accountControlVerified:false}};
 
 }
 export async function runCesMobileLoginPreflight({env=process.env,fetchImpl=fetch,logger=x=>console.info(JSON.stringify(x))}={}){
