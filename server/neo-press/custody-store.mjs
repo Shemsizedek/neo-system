@@ -115,11 +115,11 @@ export function createPressCustodyStore({ dbPath, testMemory = false, now = () =
     const item = lookup(id)
     if (!item) return null
     if (item.reporter_subject === actorSubject) throw new Error('independent_review_required')
-    if (db.prepare('SELECT 1 FROM press_reviews WHERE evidence_id=? AND reviewer_subject=?').get(id, actorSubject)) {
-      throw new Error('independent_reviewer_per_gate_required')
-    }
     db.exec('BEGIN IMMEDIATE')
     try {
+      if (db.prepare('SELECT 1 FROM press_reviews WHERE evidence_id=? AND reviewer_subject=?').get(id, actorSubject)) {
+        throw new Error('independent_reviewer_per_gate_required')
+      }
       const at = timestamp()
       db.prepare('INSERT INTO press_reviews(evidence_id,gate,reviewer_subject,decision,created_at) VALUES(?,?,?,?,?)').run(id, gate, actorSubject, decision, at)
       const hash = append(item.case_id, id, 'EDITORIAL_' + gate, actorSubject, { decision })
@@ -146,9 +146,9 @@ export function createPressCustodyStore({ dbPath, testMemory = false, now = () =
       verification.plaintextBytes !== sealedReceipt.plaintextBytes) {
       throw new Error('verified_media_receipt_mismatch')
     }
-    if (db.prepare('SELECT evidence_id FROM press_media WHERE evidence_id=?').get(id)) throw new Error('original_media_already_linked')
     db.exec('BEGIN IMMEDIATE')
     try {
+      if (db.prepare('SELECT evidence_id FROM press_media WHERE evidence_id=?').get(id)) throw new Error('original_media_already_linked')
       const at = timestamp()
       db.prepare('INSERT INTO press_media(evidence_id,original_sha256,verified_at,verified_by,key_id,plaintext_bytes) VALUES(?,?,?,?,?,?)')
         .run(id, item.original_sha256, at, actorSubject, sealedReceipt.keyId, verification.plaintextBytes)
@@ -270,11 +270,11 @@ export function createPressCustodyStore({ dbPath, testMemory = false, now = () =
       throw new Error('invalid_correction_decision')
     const reasonHash=ensureReviewNote(rationale)
     const evidence=lookup(item.evidence_id)
-    if(item.status!=='OPEN')throw new Error('correction_not_open')
     if(!actorSubject||actorSubject===item.actor_subject||actorSubject===evidence.reporter_subject)
       throw new Error('independent_correction_review_required')
     db.exec('BEGIN IMMEDIATE')
     try{
+      if(correctionLookup(correctionId).status!=='OPEN')throw new Error('correction_not_open')
       const prior=db.prepare('SELECT reviewer_subject FROM press_correction_decisions WHERE correction_id=?').all(correctionId)
       if(prior.some(row=>row.reviewer_subject===actorSubject))throw new Error('distinct_correction_reviewers_required')
       const at=timestamp()
@@ -299,10 +299,10 @@ export function createPressCustodyStore({ dbPath, testMemory = false, now = () =
       throw new Error('invalid_post_correction_review')
     const rationaleSha256=ensureReviewNote(rationale)
     if(!actorSubject||actorSubject===item.reporter_subject)throw new Error('independent_review_required')
-    const snap=correctionSnapshot(evidenceId)
-    if(!snap.rows.length || snap.rows.some(r=>r.status!=='RESOLVED'))throw new Error('unresolved_correction_publication_hold')
     db.exec('BEGIN IMMEDIATE')
     try{
+      const snap=correctionSnapshot(evidenceId)
+      if(!snap.rows.length || snap.rows.some(r=>r.status!=='RESOLVED'))throw new Error('unresolved_correction_publication_hold')
       const prior=db.prepare('SELECT reviewer_subject FROM press_post_correction_reviews WHERE evidence_id=? AND revision_hash=?')
         .all(evidenceId,snap.revisionHash)
       if(prior.some(x=>x.reviewer_subject===actorSubject))throw new Error('distinct_post_correction_reviewers_required')
