@@ -47,3 +47,18 @@ test("every database read runs under non-login reader role and read-only transac
  assert.equal(calls[1],"SET LOCAL ROLE fwkf_forum_reader");
  assert.equal(calls[3],"COMMIT");assert.equal(calls[4],"RELEASE");
 });
+
+test("database role failure fails closed and rolls back without exposing records",async()=>{
+ const queries=[];
+ const pool={connect:async()=>({query:async command=>{
+  queries.push(command);
+  if(command==="SET LOCAL ROLE fwkf_forum_reader")throw Error("Role unavailable");
+  return {rows:[]};
+ },release(){queries.push("RELEASE")}})};
+ const app=createForumDataHandler({pool,env});
+ const response=await app.fetch(new Request("https://staging.example.invalid/communities"));
+ assert.equal(response.status,503);
+ assert.deepEqual(await response.json(),{error:"DATA_UNAVAILABLE"});
+ assert.ok(queries.includes("ROLLBACK"));
+ assert.ok(!queries.includes("COMMIT"));
+});
