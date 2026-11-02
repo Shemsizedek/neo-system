@@ -13,8 +13,7 @@ const port=Number(process.env.PORT || 10000);
 server.listen(port,'0.0.0.0',()=>{
   // Explicit staging-only, one-shot check. Never runs by default.
   // Turn the flag off after the single verification rollout.
-  if(process.env.RENDER_SERVICE_NAME==='neo-ces-read-staging' &&
-     process.env.NEO_CES_AUTH_PREFLIGHT_ON_START==='true'){
+  if(process.env.NEO_CES_AUTH_PREFLIGHT_ON_START==='true'){
     const token=process.env.NEO_CES_BACKEND_TOKEN?.length>=32
       ? process.env.NEO_CES_BACKEND_TOKEN : process.env.NEO_CES_RUNTIME_TOKEN;
     void runCesAdminLoginPreflight({port,token});
