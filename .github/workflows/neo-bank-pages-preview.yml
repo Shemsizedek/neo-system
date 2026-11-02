@@ -1,0 +1,35 @@
+name: NEO Bank Pages Frontend Check
+on:
+  push:
+    branches:
+      - feat/neo-bank-github-pages-frontend-20261102
+    paths:
+      - 'apps/neo-bank-pages/**'
+      - '.github/workflows/pages.yml'
+      - '.github/workflows/neo-bank-pages-preview.yml'
+  pull_request:
+    paths:
+      - 'apps/neo-bank-pages/**'
+      - '.github/workflows/pages.yml'
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Check NEO Bank navigation and static safety rules
+        run: |
+          node --check apps/neo-bank-pages/preview.js
+          node --test apps/neo-bank-pages/preview.test.mjs
+      - name: Simulate isolated Pages route publishing
+        run: |
+          mkdir -p /tmp/neo-bank-pages-verify/neobank
+          cp apps/neo-bank-pages/{index.html,preview.css,preview.js,site-status.json} /tmp/neo-bank-pages-verify/neobank/
+          test -s /tmp/neo-bank-pages-verify/neobank/index.html
+          test -s /tmp/neo-bank-pages-verify/neobank/preview.css
+          test -s /tmp/neo-bank-pages-verify/neobank/preview.js
