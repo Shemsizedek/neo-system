@@ -241,6 +241,42 @@ export function createPressHttpHandler({
         respond(res,200,{preflight:store.publicationPreflight(preflight[1],mediaStore),published:false},origin)
         return true
       }
+      const catalog = /^\/api\/v1\/press\/cases\/([A-Za-z0-9_-]+)\/evidence$/.exec(url.pathname)
+      if (catalog && req.method === 'GET') {
+        const caseId=store.normalize(catalog[1])
+        if (!store.hasCase(actor,caseId) ||
+            !actor.roles.some(r=>['press:reporter','press:editor','press:auditor','press:privacy','press:legal'].includes(r))) {
+          respond(res,403,{error:'case_catalog_access_forbidden'},origin);return true
+        }
+        const rawLimit=url.searchParams.get('limit') ?? '25'
+        const rawOffset=url.searchParams.get('offset') ?? '0'
+        if(!/^\d{1,3}$/.test(rawLimit)||!/^\d{1,3}$/.test(rawOffset)){
+          respond(res,400,{error:'invalid_page'},origin);return true
+        }
+        respond(res,200,{catalog:store.listCaseEvidence(caseId,{limit:Number(rawLimit),offset:Number(rawOffset)}),
+          published:false},origin)
+        return true
+      }
+      const corrections = /^\/api\/v1\/press\/evidence\/([0-9a-f-]{36})\/corrections$/.exec(url.pathname)
+      if(corrections && ['GET','POST'].includes(req.method)){
+        const item=store.lookup(corrections[1])
+        if(!item){respond(res,404,{error:'not_found'},origin);return true}
+        if(!store.hasCase(actor,item.case_id) ||
+          !actor.roles.some(r=>['press:reporter','press:editor','press:auditor','press:privacy','press:legal'].includes(r))){
+          respond(res,403,{error:'case_correction_access_forbidden'},origin);return true
+        }
+        if(req.method==='GET'){
+          respond(res,200,{corrections:store.listCorrections(item.id),published:false},origin)
+          return true
+        }
+        if(!actor.roles.some(r=>['press:editor','press:privacy'].includes(r))){
+          respond(res,403,{error:'editorial_correction_role_required'},origin);return true
+        }
+        const body=await jsonBody(req)
+        const corrected=store.submitCorrection(item.id,{category:body.category,summary:body.summary},actor.subject)
+        respond(res,201,{correction:corrected,published:false},origin)
+        return true
+      }
       const intake = /^\/api\/v1\/press\/cases\/([A-Za-z0-9_-]+)\/evidence$/.exec(url.pathname)
       if (intake && req.method === 'POST') {
         const caseId = store.normalize(intake[1])
@@ -286,7 +322,7 @@ export function createPressHttpHandler({
       respond(res, ['GET','POST'].includes(req.method) ? 404 : 405, { error: 'not_found' }, origin)
     } catch (error) {
       const status = Number.isInteger(error.status) ? error.status :
-        /not_eligible|approval|required|restricted|independent_|verification_|integrity_|original_media/.test(String(error.message)) ? 409 : 400
+        /not_eligible|approval|required|restricted|independent_|verification_|integrity_|original_media|correction_publication_hold/.test(String(error.message)) ? 409 : 400
       respond(res, status, { error: status === 400 ? 'invalid_press_request' :
         status === 409 ? 'review_or_integrity_gate_blocked' :
         status === 503 ? 'verified_media_vault_unavailable' : error.message, published: false }, origin)

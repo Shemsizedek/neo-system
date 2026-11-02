@@ -37,7 +37,13 @@ export function createPressCustodyStore({ dbPath, testMemory = false, now = () =
     'CREATE TABLE IF NOT EXISTS press_media (',
     ' evidence_id TEXT PRIMARY KEY, original_sha256 TEXT NOT NULL, verified_at TEXT NOT NULL,',
     ' verified_by TEXT NOT NULL, key_id TEXT NOT NULL, plaintext_bytes INTEGER NOT NULL,',
-    ' FOREIGN KEY(evidence_id) REFERENCES evidence_records(id));'
+    ' FOREIGN KEY(evidence_id) REFERENCES evidence_records(id));',
+    'CREATE TABLE IF NOT EXISTS press_corrections (',
+    ' id TEXT PRIMARY KEY, evidence_id TEXT NOT NULL, case_id TEXT NOT NULL,',
+    ' category TEXT NOT NULL, summary TEXT NOT NULL, actor_subject TEXT NOT NULL,',
+    ' created_at TEXT NOT NULL, status TEXT NOT NULL DEFAULT \'OPEN\',',
+    ' FOREIGN KEY(evidence_id) REFERENCES evidence_records(id));',
+    'CREATE INDEX IF NOT EXISTS idx_press_corrections_evidence ON press_corrections(evidence_id,created_at);'
   ].join('\n'))
   const timestamp = () => now().toISOString()
   function append(caseId, evidenceId, eventType, actorSubject, payload) {
@@ -165,6 +171,62 @@ export function createPressCustodyStore({ dbPath, testMemory = false, now = () =
       nextAction:'INDEPENDENT_CUSTODY_AND_HUMAN_PUBLICATION_APPROVAL' }
   }
 
+
+  function listCaseEvidence(caseId, { limit = 25, offset = 0 } = {}) {
+    const key = normalize(caseId)
+    if (!Number.isSafeInteger(limit) || limit < 1 || limit > 50 ||
+        !Number.isSafeInteger(offset) || offset < 0 || offset > 500) throw new Error('invalid_page')
+    const records = db.prepare(
+      'SELECT e.id,e.title,e.observed_at,m.source_tier,m.editorial_state,m.access_level,' +
+      'CASE WHEN pm.evidence_id IS NULL THEN 0 ELSE 1 END AS media_verified,' +
+      '(SELECT COUNT(*) FROM press_corrections pc WHERE pc.evidence_id=e.id AND pc.status=\'OPEN\') AS correction_count ' +
+      'FROM evidence_records e JOIN press_manifest m ON m.evidence_id=e.id ' +
+      'LEFT JOIN press_media pm ON pm.evidence_id=e.id WHERE m.case_id=? ' +
+      'ORDER BY e.created_at DESC,e.id DESC LIMIT ? OFFSET ?'
+    ).all(key,limit,offset).map(r=>({
+      id:r.id, title:r.title, observedAt:r.observed_at,
+      sourceTier:r.source_tier, editorialState:r.editorial_state,
+      restricted:r.access_level !== 'PUBLIC', originalMediaVerified:r.media_verified===1,
+      correctionHold:r.correction_count>0, publicationPerformed:false
+    }))
+    const total=db.prepare('SELECT COUNT(*) AS n FROM press_manifest WHERE case_id=?').get(key).n
+    return { caseId:key,records,total,limit,offset,nextOffset:offset+records.length<total?offset+records.length:null,
+      publicAccess:false }
+  }
+  function submitCorrection(id,{category,summary},actorSubject){
+    const item=lookup(id)
+    if(!item)throw new Error('press_evidence_not_found')
+    if(!['FACTUAL_ERROR','SOURCE_DISPUTE','CONSENT_WITHDRAWN','REDACTION_REQUEST'].includes(category) ||
+       typeof summary!=='string' || summary.trim().length<8 || summary.length>500 ||
+       /[\x00-\x08\x0b\x0c\x0e-\x1f]/.test(summary))throw new Error('invalid_correction')
+    if(typeof actorSubject!=='string'||!actorSubject)throw new Error('verified_actor_required')
+    db.exec('BEGIN IMMEDIATE')
+    try{
+      const idCorrection=randomUUID(),createdAt=timestamp()
+      db.prepare('INSERT INTO press_corrections(id,evidence_id,case_id,category,summary,actor_subject,created_at) VALUES(?,?,?,?,?,?,?)')
+        .run(idCorrection,id,item.case_id,category,summary.trim(),actorSubject,createdAt)
+      const head=append(item.case_id,id,'EDITORIAL_CORRECTION_OPENED',actorSubject,
+        { correctionId:idCorrection,category,summarySha256:digest(summary.trim()) })
+      db.prepare('INSERT INTO evidence_events(id,evidence_id,asset,event_type,actor,payload_json,created_at) VALUES(?,?,?,?,?,?,?)')
+        .run(randomUUID(),id,item.asset,'press.correction.opened',actorSubject,
+          JSON.stringify({correctionId:idCorrection,category,custodyHead:head}),createdAt)
+      db.exec('COMMIT')
+      return {id:idCorrection,evidenceId:id,caseId:item.case_id,category,status:'OPEN',
+        publicationBlocked:true,publicationPerformed:false}
+    }catch(error){db.exec('ROLLBACK');throw error}
+  }
+  function listCorrections(id,{limit=25}={}){
+    if(!lookup(id))return null
+    if(!Number.isSafeInteger(limit)||limit<1||limit>50)throw new Error('invalid_page')
+    return db.prepare(
+      'SELECT id,category,summary,actor_subject,created_at,status FROM press_corrections ' +
+      'WHERE evidence_id=? ORDER BY created_at DESC,id DESC LIMIT ?'
+    ).all(id,limit).map(row=>({
+      id:row.id,category:row.category,summary:row.summary,recordedAt:row.created_at,
+      actorSubject:row.actor_subject,status:row.status
+    }))
+  }
+
   function verifyCase(caseId) {
     const key = normalize(caseId)
     const events = db.prepare('SELECT * FROM press_custody WHERE case_id=? ORDER BY seq ASC').all(key)
@@ -182,6 +244,8 @@ export function createPressCustodyStore({ dbPath, testMemory = false, now = () =
     const integrity = verifyCase(item.case_id)
     if (!integrity.valid) throw new Error('custody_integrity_failed')
     if (item.access_level !== 'PUBLIC' || item.editorial_state !== 'CORROBORATED') throw new Error('not_eligible_for_publication')
+    if(db.prepare('SELECT 1 FROM press_corrections WHERE evidence_id=? AND status=\'OPEN\' LIMIT 1').get(id))
+      throw new Error('unresolved_correction_publication_hold')
     const reviews = db.prepare('SELECT gate,reviewer_subject,decision FROM press_reviews WHERE evidence_id=?').all(id)
     if (reviews.some(r => r.decision === 'REJECT') ||
         !PRESS_REVIEW_GATES.every(gate => reviews.some(r => r.gate === gate && r.decision === 'APPROVE'))) {
@@ -197,5 +261,5 @@ export function createPressCustodyStore({ dbPath, testMemory = false, now = () =
     const integrity = verifyCase(caseId)
     return { integrity, events: db.prepare('SELECT seq,evidence_id,event_type,actor_subject,created_at,previous_hash,event_hash FROM press_custody WHERE case_id=? ORDER BY seq ASC').all(normalize(caseId)) }
   }
-  return { ingest, review, lookup, attachVerifiedMedia, getMediaStatus, publicationPreflight, releaseCandidate, custody, verifyCase, normalize, hasCase, close: () => vault.close() }
+  return { ingest, review, lookup, listCaseEvidence, submitCorrection, listCorrections, attachVerifiedMedia, getMediaStatus, publicationPreflight, releaseCandidate, custody, verifyCase, normalize, hasCase, close: () => vault.close() }
 }
