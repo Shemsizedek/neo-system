@@ -2,7 +2,7 @@
 // Invokes the existing protected read-only auth check on loopback only.
 // No secrets, cookies, source HTML or account data are logged or persisted.
 const stages=new Set(['configuration','login_page','login_submit','member_page','admin_transition','admin_page','other_ces_page']);
-const reasons=new Set(['login_contract_mismatch','admin_transition_missing','admin_transition_rejected','admin_redirect_rejected','admin_session_unavailable','admin_proof_missing','protected-page-verification-required','untrusted-protected-page','login-response-rejected','missing-login-redirect','untrusted-login-redirect','login-redirect-mismatch','protected-page-unavailable','untrusted-protected-response','login-form-returned','protected-page-marker-missing','request_unavailable','response_unverified']);
+const reasons=new Set(['login_contract_mismatch','admin_transition_missing','admin_transition_rejected','admin_redirect_rejected','admin_session_unavailable','admin_proof_missing','protected-page-verification-required','untrusted-protected-page','login-response-rejected','missing-login-redirect','untrusted-login-redirect','login-redirect-mismatch','protected-page-unavailable','untrusted-protected-response','login-form-returned','protected-page-marker-missing','request_unavailable','response_unverified', 'upstream_access_denied', 'login_page_unavailable']);
 
 export async function runCesAdminLoginPreflight({
  port,token,fetchImpl=fetch,logger=entry=>console.info(JSON.stringify(entry))
