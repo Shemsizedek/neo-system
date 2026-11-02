@@ -7,3 +7,11 @@ The front-end adapter `auth-sdk.mjs` uses the official `@neondatabase/auth` pack
 Tests so far cover crypto signatures, API authorization, forum workflows, transaction rollback and read-only prelaunch UI. **Not verified:** an actual Neon-managed user signing in, session refresh, email verification, or browser-to-Postgres write flow. No public registration, posting or user data is authorized.
 
 Staging branch expiry: **2026-11-15 23:00 UTC**. Extend it only deliberately after confirming the free-plan quota. No credentials committed.
+
+## Gate 021 implementation
+
+- Private alpha GET-only Neon Function: `fwkfalpha` on `br-misty-sun-b850yi7t`, with `/health` and bearer-only `/me`. All POST routes return `405`; CORS accepts only `https://worldcafe.holytemples.org`.
+- The staging Auth trusted-origin allowlist now contains exactly `https://worldcafe.holytemples.org`. The live main branch's Auth configuration remains unchanged.
+- Current official standalone browser import: `@neon/neon-js/auth` as documented in Neon’s React quickstart. The **unbundled**, invite-only sign-in UI is `alpha-login.html`/`alpha-login.mjs`; do not publish it until verified with a real test account and protected session.
+- JWT issuer **and audience** equal the origin of `NEON_AUTH_BASE_URL`, not the full URL path and not the static string `authenticated`. The gateway validates EdDSA signatures using the branch-injected JWKS, subject, timestamp, issuer and audience. No caller-supplied JWT roles are trusted.
+- Real member signup/signin/signout, token issuance, refresh and Postgres ACL were **not** demonstrated in a browser. Do not represent test stubs as a completed login integration.
