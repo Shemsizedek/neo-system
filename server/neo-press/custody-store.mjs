@@ -179,7 +179,7 @@ export function createPressCustodyStore({ dbPath, testMemory = false, now = () =
     const records = db.prepare(
       'SELECT e.id,e.title,e.observed_at,m.source_tier,m.editorial_state,m.access_level,' +
       'CASE WHEN pm.evidence_id IS NULL THEN 0 ELSE 1 END AS media_verified,' +
-      '(SELECT COUNT(*) FROM press_corrections pc WHERE pc.evidence_id=e.id AND pc.status=\\'OPEN\\') AS correction_count ' +
+      '(SELECT COUNT(*) FROM press_corrections pc WHERE pc.evidence_id=e.id AND pc.status=\'OPEN\') AS correction_count ' +
       'FROM evidence_records e JOIN press_manifest m ON m.evidence_id=e.id ' +
       'LEFT JOIN press_media pm ON pm.evidence_id=e.id WHERE m.case_id=? ' +
       'ORDER BY e.created_at DESC,e.id DESC LIMIT ? OFFSET ?'
