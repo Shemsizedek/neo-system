@@ -57,6 +57,18 @@ export function createCesSessionAdapter({
     }
 
     const loginPage = await request(credentials.loginPath || '/');
+    // A WAF or upstream access rejection is not a login-form mismatch.
+    // Never submit the account password after an unverified login-page response.
+    if ([401, 403, 429].includes(loginPage.status)) {
+      const error = new Error('CES upstream login page access denied');
+      error.validationReason = 'upstream_access_denied';
+      throw error;
+    }
+    if (loginPage.status < 200 || loginPage.status >= 300) {
+      const error = new Error('CES upstream login page unavailable');
+      error.validationReason = 'login_page_unavailable';
+      throw error;
+    }
     const html = await loginPage.text();
     validateCesLoginContract(html, {
       pageUrl: loginPage.url || loginUrl.toString(),
