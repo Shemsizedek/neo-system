@@ -1,0 +1,56 @@
+name: Export Standalone NEO Bank Pages Site
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - ops/neo-bank-site-export-20261102
+      - main
+    paths:
+      - '.github/workflows/neo-bank-site-export.yml'
+      - 'apps/neo-bank-pages/**'
+      - 'deploy/neo-bank-site-bootstrap/**'
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Checkout canonical NEO System frontend
+        uses: actions/checkout@v4
+      - name: Check static site scripts and financial safeguards
+        run: |
+          node --check apps/neo-bank-pages/preview.js
+          node --test apps/neo-bank-pages/preview.test.mjs
+          node -e "const r=require('./apps/neo-bank-pages/site-status.json');if(r.accountServices!==false||r.financialWrites!==false||r.database!=='not_attached')process.exit(1)"
+      - name: Assemble dedicated repository export
+        run: |
+          set -euo pipefail
+          mkdir -p neo-bank-site/.github/workflows
+          for file in index.html preview.css preview.js site-status.json preview.test.mjs; do
+            cp "apps/neo-bank-pages/$file" "neo-bank-site/$file"
+          done
+          cp deploy/neo-bank-site-bootstrap/pages.yml neo-bank-site/.github/workflows/pages.yml
+          cp deploy/neo-bank-site-bootstrap/README.md neo-bank-site/README.md
+          test ! -e neo-bank-site/CNAME
+          test ! -e neo-bank-site/.env
+          grep -q "https://neobank.holytemples.org" neo-bank-site/README.md
+          (cd neo-bank-site && node --check preview.js && node --test preview.test.mjs)
+          zip -qr neo-bank-site.zip neo-bank-site
+          test -s neo-bank-site.zip
+      - name: Upload exact public-only website bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: neo-bank-site-public-bootstrap
+          path: neo-bank-site.zip
+          retention-days: 30
+          if-no-files-found: error
+      - name: Export summary
+        run: |
+          echo '## NEO Bank dedicated hosting export' >> "$GITHUB_STEP_SUMMARY"
+          echo 'The artifact is a ZIP containing a ready-to-publish read-only GitHub Pages website.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Create the public Shemsizedek/neo-bank-site repository first, then unpack these source files to its main branch.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Do not change DNS before the dedicated Pages site and custom domain are verified.' >> "$GITHUB_STEP_SUMMARY"
