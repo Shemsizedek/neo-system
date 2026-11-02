@@ -80,8 +80,14 @@ export async function probeCesMobileMemberLogin({env=process.env,fetchImpl=fetch
   try{signedInHtml=await protectedPage.text()}catch{return {result:'protected_page_unavailable',memberAuthenticated:false,adminAuthenticated:false}}
   // A redirect or successful HTTP response alone never proves account control.
   // Enforce both user identifier and authenticated navigation indicators.
-  if(signedInHtml.length>200000||!memberMarker.test(signedInHtml)||!logoutMarker.test(signedInHtml)||loginForm.test(signedInHtml))
-    return {result:'member_session_unverified',memberAuthenticated:false,adminAuthenticated:false};
+  const signals={
+    accountMarkerFound:memberMarker.test(signedInHtml),
+    signOutFound:logoutMarker.test(signedInHtml),
+    loginFormReturned:loginForm.test(signedInHtml),
+    responseKind:protectedPage===posted?'inline':'same_origin_redirect'
+  };
+  if(signedInHtml.length>200000||!signals.accountMarkerFound||!signals.signOutFound||signals.loginFormReturned)
+    return {result:'member_session_unverified',memberAuthenticated:false,adminAuthenticated:false,signals};
   return {result:'member_session_verified',memberAuthenticated:true,adminAuthenticated:false};
 }
 export async function runCesMobileLoginPreflight({env=process.env,fetchImpl=fetch,logger=x=>console.info(JSON.stringify(x))}={}){
