@@ -27,7 +27,8 @@ async function identity(token){
  if(header.alg!=="EdDSA"||!map.has(header.kid))throw reject();
  if(!verifySignature(null,Buffer.from(bits[0]+"."+bits[1]),map.get(header.kid),Buffer.from(bits[2],"base64url")))throw reject();
  const now=Math.floor(Date.now()/1000),aud=Array.isArray(claims.aud)?claims.aud:[claims.aud];
- if(claims.iss!==process.env.NEON_AUTH_BASE_URL||!aud.includes("authenticated")||typeof claims.sub!=="string"||claims.sub.length<3||!Number.isInteger(claims.exp)||claims.exp<=now||claims.exp>now+3600||(claims.nbf&&claims.nbf>now+30)||(claims.iat&&claims.iat>now+30))throw reject();
+ const expectedOrigin=new URL(process.env.NEON_AUTH_BASE_URL).origin;
+ if(claims.iss!==expectedOrigin||!aud.includes(expectedOrigin)||typeof claims.sub!=="string"||claims.sub.length<3||!Number.isInteger(claims.exp)||claims.exp<=now||claims.exp>now+3600||(claims.nbf&&claims.nbf>now+30)||(claims.iat&&claims.iat>now+30))throw reject();
  return {valid:true};
 }
 export default {async fetch(req){
