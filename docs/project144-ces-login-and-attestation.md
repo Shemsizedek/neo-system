@@ -86,3 +86,15 @@ Use the CES interactive mobile login and official CES assistance to confirm whet
 **Authority boundary:** Verified Administrator access does *not* automatically prove authorized control of the separate `NMNIBANK` exchange account. The next required evidence is an authenticated read-only CES account record and authorized controller/delegation for `NMNIBANK`, separately from `XCPCBANK`. No account-link attestation keys were activated; no Neon account mapping, money movement, payment, DNS or other production configuration was changed.
 
 **Next gate:** Review the CES Administration page's `Users` (`/members.php`) or `Manage exchange` (`/editexchange.php`) read-only account search capability; use only an exact, reviewed GET path and require independently verified account-specific control. Do not assume an account is owned based solely on its presence in an administrator's list.
+
+## CES Users-route read-only access check — November 1, 2026 local / November 2 UTC
+
+**Confirmed connection:** The user's authenticated CES Administration browser tab exposed `https://ces.community/members.php` labeled `Users`. The server-side NEO CES runtime has now performed a controlled, status-only authenticated GET to that reviewed path, after verifying `NMNI0000` member authentication and exact `/manage.php` administrator controls. It does not parse, return, log, copy or persist the Users-page account listing.
+
+**Result:** Render emitted `ces_nmni_mobile_preflight` at `2026-11-02T02:17:42Z` with `result:member_session_verified`, `memberAuthenticated:true`, `adminAuthenticated:true`, `adminVerification.protectedPageVerified:true`, `usersRoute:{linked:true,reached:true,accountControlVerified:false}`. CES returned a successful response to this protected Users path. This is **access evidence only**, NOT verified ownership of `NMNIBANK` and not permission to move funds.
+
+**Code and tests:** `server/neo-bots/ces-mobile-login-preflight.mjs` gained `checkUsersRoute` behind `NEO_CES_USERS_ROUTE_PREFLIGHT_ON_START` for the existing one-shot Render staging process. The dedicated security tests verify exact reviewed same-origin Users link, GET-only access after administrator verification, no following cross-origin or query-string links, redirect denial, and suppression of list/credential content. GitHub NEO Bots Tests succeeded at commit `fac0d5e856b12cfacf0a2f2363f250b1e6ba226f`. Broad repository CI is independently failing and must not be described as passed.
+
+**Safe shutdown:** After the single live verification, `NEO_CES_USERS_ROUTE_PREFLIGHT_ON_START` was set back to `false` in the NEO SYSTEM Render workspace. The temporary check is not a recurring crawler.
+
+**Next verified prerequisite:** Inspect only the exact `NMNIBANK` record through an approved, minimized CES account view, and establish the authenticated authorized controller/delegation. Avoid bulk member data retrieval, report export, write forms, balances and NEO account linking until separately authorized and technically verified. The CES-side account-control attestor remains disabled and banking financial writes remain off.
