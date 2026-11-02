@@ -8,6 +8,7 @@ const formRequired=/\<form\b[^>]*action\s*=\s*["']rlogin\.php["'][^>]*method\s*=
 const uidField=/\<input\b[^>]*name\s*=\s*["']uid["']/i;
 const pwdField=/\<input\b[^>]*name\s*=\s*["']passwd["']/i;
 const byField=/\<input\b[^>]*name\s*=\s*["']by["'][^>]*value\s*=\s*["']usr["']/i;
+const signInButton=/\<button\b[^>]*name\s*=\s*["']action["'][^>]*value\s*=\s*["']login["']/i;
 const loginForm=/\<form\b[^>]*action\s*=\s*["']rlogin\.php["']/i;
 const memberMarker=/\bNMNI0000\b/i;
 const logoutMarker=/(?:logout|log\s*out|sign\s*out)(?:\.php|\b)/i;
@@ -53,10 +54,12 @@ export async function probeCesMobileMemberLogin({env=process.env,fetchImpl=fetch
   updateJar(jar,initial);
   let html;
   try{html=await initial.text()}catch{return {result:'login_page_unavailable',memberAuthenticated:false,adminAuthenticated:false}}
-  if(html.length>200000||!formRequired.test(html)||!uidField.test(html)||!pwdField.test(html)||!byField.test(html)){
+  if(html.length>200000||!formRequired.test(html)||!uidField.test(html)||!pwdField.test(html)||!byField.test(html)||!signInButton.test(html)){
     return {result:'unverified_mobile_form',memberAuthenticated:false,adminAuthenticated:false};
   }
-  const body=new URLSearchParams({uid:username,passwd:password,by:'usr',timezone:'UTC'});
+  // The CES mobile HTML uses a named submit button; browsers submit its
+  // action=login value. Without this field CES can redirect to login again.
+  const body=new URLSearchParams({uid:username,passwd:password,by:'usr',timezone:'UTC',action:'login'});
   let posted;
   try{posted=await request(fetchImpl,ORIGIN+SUBMIT,{
     method:'POST',
