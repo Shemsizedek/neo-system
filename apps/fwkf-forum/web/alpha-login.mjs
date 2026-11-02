@@ -17,7 +17,7 @@ if(!authBase||!apiBase){
   try{
    const r=await member.getStatus();
    form.hidden=r.authenticated;signout.hidden=!r.authenticated;
-   message(r.authenticated?"Identity verified. Forum posting remains closed.":"Sign in with an invited test account.");
+   message(r.authenticated?(r.membership==="approved"?"Member verified. Forum posting remains closed.":"Identity verified; moderator approval pending. Posting remains closed."):"Sign in with an invited test account.");
   }catch{message("Unable to verify the member session. Try again later.","error")}
  }
  form.addEventListener("submit",async e=>{
@@ -27,7 +27,7 @@ if(!authBase||!apiBase){
   try{
    const r=await member.signIn(email,password);
    if(!r.authenticated)throw Error("NOT_AUTHENTICATED");
-   form.hidden=true;signout.hidden=false;message("Test sign-in verified. Posting remains closed.","success");
+   form.hidden=true;signout.hidden=false;message(r.membership==="approved"?"Member sign-in verified. Posting remains closed.":"Sign-in verified. Membership approval is pending; posting remains closed.","success");
   }catch{message("Sign-in could not be verified. Check your invited account.","error")}
   finally{button.disabled=false}
  });
