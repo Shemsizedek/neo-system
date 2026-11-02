@@ -49,3 +49,11 @@
 3. Create a dedicated least-privilege staging DB role and token-routed mutation API with explicit preview write disable until tests pass; add rate limiting, durable audit, content rules and rollback.
 4. Test real private question -> moderation -> approved feed -> reply -> vote -> report with two separately authenticated users, access-denial checks and backup/restore.
 5. Consider time-bound controlled beta only after all acceptance checks; maintain full independence from Penguin.
+
+## Final security and live test receipt
+
+- GitHub Actions `FWKF Forum 022 staging database gateway build` run **41368062885** concluded **success**; this built the dependency-bundled `pg` Function deployed to Neon staging.
+- Live cloud smoke run **41368448912** concluded **success**: all eight HTTPS checks passed (real PostgreSQL community query, anonymous denial, POST 405, origin allowlist, cache control and missing routes).
+- Full `Free World Knowledge Forum - security and domain tests` run **41368448903** concluded **success** with existing SQLite, JWT, member-session, moderation, PostgreSQL adapter and gateway regression tests. A flaky signature-tampering test was corrected to change an actual signature byte; no production code, token or credential was changed by that fix.
+- `neon_auth` on the **main** branch still reports **not enabled**. No production branch mutation, no private user data, no token transactions.
+- Independent Neon Function inventory confirms `fwkfdata` staging deployment ID **1 completed**. This is a **read-only private alpha**, not an operational public Reddit/Quora-style service.
