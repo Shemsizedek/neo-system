@@ -1,0 +1,56 @@
+name: NEO Omarchy Gate 006
+
+on:
+  pull_request:
+    paths:
+      - 'server/neo-omarchy/**'
+      - 'scripts/neo-omarchy-pilot-006.mjs'
+      - 'docs/NEO-OMARCHY-006.md'
+      - '.github/workflows/neo-omarchy-006.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  device-enrollment-and-worker-pilot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: neo_omarchy_ci
+          POSTGRES_USER: neo_omarchy_ci
+          POSTGRES_PASSWORD: disposable_ci_only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U neo_omarchy_ci -d neo_omarchy_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      NEO_OMARCHY_PG_TEST_URL: postgres://neo_omarchy_ci:disposable_ci_only@127.0.0.1:5432/neo_omarchy_ci
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Validate Gate 006 syntax
+        run: |
+          node --check server/neo-omarchy/device-attestation-006.mjs
+          node --check server/neo-omarchy/device-enrollment-006.mjs
+          node --check server/neo-omarchy/gate-006.test.mjs
+          node --check scripts/neo-omarchy-pilot-006.mjs
+      - name: Install ephemeral PostgreSQL test client
+        run: npm install --no-save --package-lock=false --ignore-scripts pg@8
+      - name: Real PostgreSQL and synthetic machine credential E2E tests
+        run: node --test server/neo-omarchy/gate-006.test.mjs
+      - name: Previous gates regression
+        run: |
+          node --test server/neo-omarchy/gate-005.test.mjs
+          node --test server/neo-omarchy/gate-004.test.mjs
+          node --test server/neo-omarchy/coordination.test.mjs
+          node --test server/neo-omarchy/lab-bridge.test.mjs
+          node --test scripts/neo-omarchy-preflight.test.mjs
