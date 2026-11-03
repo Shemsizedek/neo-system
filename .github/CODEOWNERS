@@ -1,0 +1,7 @@
+# Reviewed NEO GitHub/agent control-plane configuration.
+# CODEOWNERS is advisory until a GitHub branch rule requires code-owner review.
+/.github/workflows/* @Shemsizedek
+/.opencode/* @Shemsizedek
+/opencode.json @Shemsizedek
+/AGENTS.md @Shemsizedek
+/.github/CODEOWNERS @Shemsizedek
