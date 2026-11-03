@@ -28,6 +28,7 @@ function App() {
   const [activePair, setActivePair] = useState('BTC/XCP');
   const [timeframe, setTimeframe] = useState(14400);
   const [indicator, setIndicator] = useState('SMA');
+  const [history, setHistory] = useState(null);
   const [side, setSide] = useState('BUY');
   const [orderType, setOrderType] = useState('LIMIT');
   const [assets, setAssets] = useState([]);
@@ -72,6 +73,18 @@ function App() {
       .catch(() => { if (!cancelled && feedState === 'LIVE') setFeedState('DEGRADED'); });
     return () => { cancelled = true; };
   }, [activePair]);
+
+  useEffect(() => {
+    const [base,quote]=activePair.split('/');
+    if(!base||!quote)return;
+    const ctrl=new AbortController();
+    setHistory(null);
+    fetch(`${API_BASE}/api/neo-exchange/history?base=${encodeURIComponent(base)}&quote=${encodeURIComponent(quote)}&timeframe=14400`,{signal:ctrl.signal})
+      .then(r=>{if(!r.ok)throw new Error('No verified history feed');return r.json()})
+      .then(d=>{if(!ctrl.signal.aborted)setHistory(d)})
+      .catch(()=>{if(!ctrl.signal.aborted)setHistory({trades:[],status:'UNAVAILABLE'})});
+    return()=>ctrl.abort();
+  },[activePair]);
 
   const displayMarkets = useMemo(() => {
     const live = markets.length ? markets : fallbackMarkets;
@@ -168,12 +181,21 @@ function App() {
           <div className="empty-book">Counterparty settles on-chain. This panel will derive positions and realized/unrealized P/L from wallet balances, completed matches and verified valuation feeds.</div>
         </div>
 
-        <div className="panel positions-panel">
+        <div className="panel checkout-panel">
           <div className="panel-header"><div><small>NEO COUNTER</small><h2>World Currency Checkout</h2></div><WalletCards size={18}/></div>
           <label>Amount (USD)<input value={checkoutAmount} onChange={e=>setCheckoutAmount(e.target.value)} inputMode="decimal"/></label>
           <label>World Currency<select value={checkoutCurrency} onChange={e=>setCheckoutCurrency(e.target.value)}>{worldCurrencies.map(c=><option key={c.id} value={c.symbol}>{c.symbol} — {c.name}</option>)}</select></label>
           <button className="submit buy" onClick={checkout}>PAY WITH NEO COUNTER</button>
           <p className="safety-note">{checkoutEntry?.counterpartyAsset?`Verified settlement asset: ${checkoutEntry.counterpartyAsset}`:`${checkoutCurrency} is available from the shared Treasury catalog; exact Counterparty asset mapping is required before token settlement is auto-verified.`}</p>
+        </div>
+
+        <div className="panel history-panel">
+          <div className="panel-header"><div><small>COUNTERPARTY SETTLEMENT HISTORY</small><h2>Verified Completed Matches — {activePair}</h2></div><Activity size={18}/></div>
+          <div className="history-table"><div className="history-head"><span>Time (UTC)</span><span>Price</span><span>Amount</span><span>Block</span></div>
+          {history?.trades?.length ? history.trades.slice(0,20).map((t,i)=><div className="history-row" key={t.id||i}><span>{new Date(t.time*1000).toISOString().slice(0,19).replace('T',' ')}</span><span>{fmt(t.price)}</span><span>{fmt(t.base_quantity)}</span><span>{t.block_index ?? '—'}</span></div>) :
+          <div className="book-empty-line">{history ? 'No verified completed trades in the available page' : 'Loading verified matches…'}</div>}
+          </div>
+          <p className="safety-note">{history?.status||'DATA CHECK'} · Only timestamped completed matches; paginated history is not a complete lifetime ledger.</p>
         </div>
 
         <div className="panel footer-terminal">
