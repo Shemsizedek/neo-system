@@ -1,3 +1,4 @@
+import {bitcoinTransaction,counterpartyAsset,issuerIssuances,TREASURY_WALLET,ORANGE_CHIP_WALLET,reconcileEvidence} from './gateway.js';
 const $=id=>document.getElementById(id);
 const wallet='18FyntJG9hdXYvanm67mGgbyo1P7adckvg';
 const state={feeds:{},issuances:[],lastTip:null};
@@ -24,3 +25,24 @@ async function treasury(){const b=$('treasuryRefresh');b.disabled=true;$('treasu
 document.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('[data-tab]').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.tab').forEach(s=>s.classList.toggle('hidden',s.id!==b.dataset.tab))}));
 $('refresh').addEventListener('click',refresh);$('treasuryRefresh').addEventListener('click',treasury);$('assetSearch').addEventListener('input',renderTreasury);
 refresh();
+
+let lastBitcoin=null,lastCounterparty=null;
+async function inspectGateway(kind){
+ const buttonIds=['verifyTx','verifyAsset','verifyTreasury','verifyOrange'];
+ buttonIds.forEach(id=>$(id).disabled=true);
+ $('evidenceState').textContent='Inspecting public evidence…';
+ try{
+  let result;
+  if(kind==='tx'){result=await bitcoinTransaction($('txidInput').value.trim());lastBitcoin=result}
+  else if(kind==='asset'){result=await counterpartyAsset($('assetInput').value.trim());lastCounterparty=result}
+  else if(kind==='treasury')result=await issuerIssuances(TREASURY_WALLET);
+  else result=await issuerIssuances(ORANGE_CHIP_WALLET);
+  $('evidenceState').textContent='Public API observation received · '+new Date().toLocaleString()+' · NOT an institutional attestation';
+  $('evidenceOutput').textContent=JSON.stringify({observation:result,reconciliation:reconcileEvidence({bitcoin:lastBitcoin,counterparty:lastCounterparty})},null,2);
+ }catch(e){$('evidenceState').textContent='Evidence unavailable: '+e.message;$('evidenceOutput').textContent='No observation accepted; previous values are not current.'}
+ finally{buttonIds.forEach(id=>$(id).disabled=false)}
+}
+$('verifyTx').addEventListener('click',()=>inspectGateway('tx'));
+$('verifyAsset').addEventListener('click',()=>inspectGateway('asset'));
+$('verifyTreasury').addEventListener('click',()=>inspectGateway('treasury'));
+$('verifyOrange').addEventListener('click',()=>inspectGateway('orange'));
