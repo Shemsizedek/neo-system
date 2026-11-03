@@ -48,3 +48,22 @@ authentication, live feed activation or deployment is included in this gate.
 
 Third-party reference: https://github.com/bilawalsidhu/gods-eye-view
 USGS source: https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson
+
+## Gate 003 addendum
+
+`public/gods-eye/` adds a zero-dependency schematic SVG globe with longitude
+rotation, two explicitly synthetic events, an official USGS link and downloadable
+simulated draft NEO-GAS records. This is an independently implemented visual
+foundation, not the upstream Cesium client. No basemap tiles, terrain, countries,
+models or third-party datasets are bundled. The Global Arms panel links to
+`gods-eye/` using Vite BASE_URL; public assets are served from that path by Vite.
+
+Seven Node tests pass, including projection and adapter-record contract checks
+against the existing NEO-GAS schema's current type, required, enum, minLength
+and date-time keywords. The checker is scoped to those schema keywords, not a
+general JSON Schema implementation. No repository schema is changed.
+
+Browser validation was attempted but Playwright could not launch because its
+Chromium executable is absent. Mobile behavior, export interaction, visual
+appearance, full Vite build and navigation remain unverified. Staging/live feed
+and NEOpass are still pending. This gate has no authenticated or private data.
