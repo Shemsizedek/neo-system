@@ -98,3 +98,34 @@ https://www.usgs.gov/information-policies-and-instructions/copyrights-and-credit
 All 11 local Node tests pass. Local Chromium and the full repository dependency checkout
 are unavailable, so browser/full-build results remain pending CI. Live USGS HTTP
 access was not performed here. No deployment or live data activation is claimed.
+
+## Gate 005: visual staging feed and CI reconciliation
+
+The globe now offers `Load staging USGS feed` and `Use demonstration` controls.
+Loading is manual and same-origin, without cookies; static hosting remains a
+simulation unless the separate staging bridge is explicitly enabled. Loading
+clears old events; disabled/unavailable/malformed responses clear the globe and
+disable exports rather than leaving synthetic points labeled live. A return to
+demonstration aborts the request and invalidates late replies.
+
+Browser-side validation checks source identity, event URL/ID, coordinates,
+timestamps and source hash before rendering observations. Live observations age
+to stale after five minutes. Exports preserve public-source provenance and remain
+DRAFT/LOW confidence; synthetic exports remain separately labeled system data.
+All data-derived labels use textContent. Exports contain only current view data.
+
+The Gate 004 dedicated workflow completed successfully:
+https://github.com/Shemsizedek/neo-system/actions/runs/41629510493
+This confirms the full build and mobile/desktop browser checks at Gate 004's
+commit, not this new Gate 005 implementation. Gate 005 has 13 passing local Node
+tests; updated browser scenarios cover disabled-provider failure, public-feed
+rendering/export and return to simulation using mocked network responses.
+Live USGS network access remains unverified.
+
+The service inventory is reconciled with verified apps-directory entries
+(gods-eye and the previously omitted neo-bank-pages); the God's Eye static route
+is added to the canonical Pages registry. Existing hosting-plane policy is not
+changed. The broader CI run also failed an unrelated school test expecting
+“Global Interdependent School District” while the page says “Global Interdependent
+School System” (server/neo-platform-api/server.test.mjs:37). That failure remains
+an explicit release blocker; this gate does not rewrite school naming or tests.

@@ -1,9 +1,9 @@
 import {createServer} from 'node:http';
 import {readFile} from 'node:fs/promises';
-import {fileURLToPath, pathToFileURL} from 'node:url';
+import {pathToFileURL} from 'node:url';
 import {fetchEarthquakes} from './earthquakes.mjs';
 const root = new URL('../../public/gods-eye/', import.meta.url);
-const assets = new Map([['/gods-eye/',['index.html','text/html']],['/gods-eye/view.mjs',['view.mjs','text/javascript']],['/gods-eye/globe.mjs',['globe.mjs','text/javascript']]]);
+const assets = new Map([['/gods-eye/',['index.html','text/html']],['/gods-eye/view.mjs',['view.mjs','text/javascript']],['/gods-eye/globe.mjs',['globe.mjs','text/javascript']],['/gods-eye/feed-state.mjs',['feed-state.mjs','text/javascript']]]);
 export function stagingServer({enabled=false,fetchSnapshot=fetchEarthquakes,clock=Date.now}={}) {
  let cached, expires=0, pending;
  return createServer(async(req,res)=>{
