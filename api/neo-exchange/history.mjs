@@ -23,7 +23,7 @@ export function normalizeCompletedMatch(row, base, quote) {
   const quoteQuantity = fa === quote ? fq : bq;
   const time = row.block_time ?? row.match_block_time ?? null;
   const timestamp = typeof time === 'number' && time > 1e9 ? time :
-    typeof time === 'string' && /^\\d{10}$/.test(time) ? Number(time) :
+    typeof time === 'string' && /^[0-9]{10}$/.test(time) ? Number(time) :
     typeof time === 'string' ? Math.floor(Date.parse(time) / 1000) : NaN;
   if (!Number.isFinite(timestamp) || timestamp <= 0) return null;
   const price = quoteQuantity / baseQuantity;
