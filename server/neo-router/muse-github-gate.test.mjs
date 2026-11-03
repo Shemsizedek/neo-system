@@ -41,7 +41,7 @@ test('Muse writer has deny-by-default shell and protected edit paths', () => {
 test('repository documents a human review boundary', () => {
   const rules = read('AGENTS.md')
   assert.match(rules, /pull request/i)
-  assert.match(rules, /never.*merge/i)
+  assert.match(rules, /approve\\/merge your own PR/i)
   const owners = read('.github/CODEOWNERS')
   assert.match(owners, /\.github\/workflows\/\* @Shemsizedek/)
 })
