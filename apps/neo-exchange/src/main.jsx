@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { Activity, BarChart3, Bitcoin, BookOpen, BriefcaseBusiness, CandlestickChart, CircleDollarSign, Gauge, Layers3, ListFilter, Search, ShieldCheck, Star, WalletCards } from 'lucide-react';
 import './styles.css';
+import HistoryChart from './HistoryChart.jsx';
 
 const FOUNDATION_ADDRESS = '1Ky2wRYYrJzqdQJH64F7TR98fqLxJs7LK8';
 const TREASURY_ADDRESS = '18FyntJG9hdXYvanm67mGgbyo1P7adckvg';
@@ -25,6 +26,8 @@ function fmt(value, digits = 8) {
 
 function App() {
   const [activePair, setActivePair] = useState('BTC/XCP');
+  const [timeframe, setTimeframe] = useState(14400);
+  const [indicator, setIndicator] = useState('SMA');
   const [side, setSide] = useState('BUY');
   const [orderType, setOrderType] = useState('LIMIT');
   const [assets, setAssets] = useState([]);
@@ -126,11 +129,8 @@ function App() {
       <section className="terminal-grid">
         <div className="panel chart-panel">
           <div className="panel-header"><div><small>MARKET</small><h1>{activePair}</h1></div><div className="quote"><b>{fmt(book.mid)}</b><span>BID {fmt(book.best_bid)} · ASK {fmt(book.best_ask)}</span></div></div>
-          <div className="toolbar"><button>1m</button><button>5m</button><button>15m</button><button>1H</button><button className="active">4H</button><button>1D</button><i/><button>Indicators</button><button>Objects</button></div>
-          <div className="chart-stage">
-            <div className="chart-watermark"><CandlestickChart size={50}/><b>NEO EXCHANGE</b><span>Verified historical OHLC adapter is the next data gate</span></div>
-            <div className="price-axis"><span>ASK {fmt(book.best_ask)}</span><span>MID {fmt(book.mid)}</span><span>BID {fmt(book.best_bid)}</span></div>
-          </div>
+          <div className="toolbar">{[[60,'1m'],[300,'5m'],[900,'15m'],[3600,'1H'],[14400,'4H'],[86400,'1D'],[604800,'1W']].map(([sec,label])=><button key={sec} className={timeframe===sec?'active':''} onClick={()=>setTimeframe(sec)}>{label}</button>)}<i/><select aria-label="Technical indicator" value={indicator} onChange={e=>setIndicator(e.target.value)}><option value="SMA">SMA(14)</option><option value="EMA">EMA(14)</option><option value="RSI">RSI(14)</option></select></div>
+          <div className="chart-stage"><HistoryChart apiBase={API_BASE} pair={activePair} timeframe={timeframe} indicator={indicator}/></div>
         </div>
 
         <div className="panel orderbook-panel">
