@@ -1,0 +1,32 @@
+name: NEO Omarchy Gate 002
+
+on:
+  pull_request:
+    paths:
+      - 'server/neo-omarchy/**'
+      - 'scripts/neo-omarchy-lab-smoke.mjs'
+      - 'scripts/neo-omarchy-preflight.mjs'
+      - 'docs/NEO-OMARCHY-002.md'
+      - '.github/workflows/neo-omarchy-002.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  local-bridge-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Validate syntax
+        run: |
+          node --check server/neo-omarchy/lab-bridge.mjs
+          node --check scripts/neo-omarchy-lab-smoke.mjs
+          node --check server/neo-omarchy/lab-bridge.test.mjs
+      - name: Synthetic local-only contract tests
+        run: |
+          node --test scripts/neo-omarchy-preflight.test.mjs server/neo-omarchy/lab-bridge.test.mjs
+          node --test server/neo-router/ollama-provider.test.mjs
