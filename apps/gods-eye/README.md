@@ -129,3 +129,34 @@ changed. The broader CI run also failed an unrelated school test expecting
 “Global Interdependent School District” while the page says “Global Interdependent
 School System” (server/neo-platform-api/server.test.mjs:37). That failure remains
 an explicit release blocker; this gate does not rewrite school naming or tests.
+
+## Gate 006: empty-feed freshness and public network evidence
+
+Gate 005's dedicated workflow passed the full build and mobile/desktop browser
+checks at https://github.com/Shemsizedek/neo-system/actions/runs/41630084759 .
+The app inventory and Pages route checks now pass. Architecture validation
+progressed to a separate existing deployment-authority failure in
+.github/workflows/neo-bank-site-bootstrap-check.yml; the school naming test is
+also unresolved. No unrelated deployment workflows or school code are modified.
+
+Snapshots now carry generatedAt/fetchedAt at envelope level, including feeds
+with no observations. The browser rejects undated envelopes and ages empty
+snapshots to stale, matching nonempty-feed behavior. This closes the prior case
+where an empty snapshot could retain its live label indefinitely.
+
+`node apps/gods-eye/live-probe.mjs` performs exactly one bounded read-only USGS
+request through the existing adapter, then applies the browser's source/format
+validation. It prints only provider, timestamps, freshness, event count and the
+snapshot hash when available; it writes no records and starts no service.
+Unavailable or malformed data produces a nonzero exit code. This checks source
+reachability and format, not independent event corroboration.
+
+A separate public-source-probe CI job runs this command without secrets or npm
+dependencies. Its external network result is separate from mocked unit/browser
+tests; review both jobs before describing the gate as verified. It does not
+activate the staging server or production feed. No recurring task is created.
+
+All 15 local Node tests pass. Gate 006 full build, browser and public-source probe
+results remain pending CI at commit publication. Local live network access was
+not attempted in the restricted executor. NEOpass/private staging and production
+deployment remain outside this implemented gate.

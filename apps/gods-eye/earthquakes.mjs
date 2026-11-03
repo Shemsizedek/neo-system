@@ -49,6 +49,6 @@ export async function fetchEarthquakes({ fetchImpl = globalThis.fetch, now = Dat
     const raw = Buffer.concat(chunks).toString('utf8');
     const observations = normalizeSnapshot(raw, { now, simulated: false });
     const generated = JSON.parse(raw).metadata.generated;
-    return { state: now - generated > 300000 ? 'stale' : 'live', observations, records: observations.map(toGasRecord) };
+    return { state: now - generated > 300000 ? 'stale' : 'live', generatedAt: timestamp(generated), fetchedAt: timestamp(now), observations, records: observations.map(toGasRecord) };
   } catch { return { state: 'unavailable', observations: [], records: [] }; }
 }

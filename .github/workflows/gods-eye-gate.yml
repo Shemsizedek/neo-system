@@ -31,3 +31,15 @@ jobs:
           node "$RUNNER_TEMP/gods-eye-browser/node_modules/playwright/cli.js" install --with-deps chromium
       - name: Verify built sandbox in mobile and desktop browsers
         run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/gods-eye-browser/node_modules/playwright/index.mjs" node apps/gods-eye/browser-smoke.mjs
+  public-source-probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Validate one read-only public USGS snapshot
+        run: node apps/gods-eye/live-probe.mjs

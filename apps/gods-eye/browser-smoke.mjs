@@ -40,7 +40,7 @@ try{
   await page.unroute(feedUrl);
   const now=Date.now();
   const observations=normalizeSnapshot(JSON.stringify({type:'FeatureCollection',metadata:{generated:now},features:[{type:'Feature',id:'test01',geometry:{type:'Point',coordinates:[0,0,0]},properties:{mag:2,time:now}}]}),{now,simulated:false});
-  await page.route(feedUrl,route=>route.fulfill({contentType:'application/json',body:JSON.stringify({state:'live',observations})}));
+  await page.route(feedUrl,route=>route.fulfill({contentType:'application/json',body:JSON.stringify({state:'live',generatedAt:new Date(now).toISOString(),fetchedAt:new Date(now).toISOString(),observations})}));
   await page.locator('#load-feed').click();await page.waitForFunction(()=>document.querySelector('#state').textContent.startsWith('LIVE'));
   assert.equal(await page.locator('#events li').count(),1);
   const realDownload=page.waitForEvent('download');await page.locator('#export').click();
