@@ -8,3 +8,19 @@
 .chart-history-empty{min-height:280px;display:grid;place-items:center;text-align:center;padding:30px;color:#8ba498;font-size:12px}
 .chart-rsi{color:#f0c36d;font-size:11px;padding:5px 12px}
 .toolbar select{font-size:10px;color:#2dff88;background:#08150d;border:1px solid #1e492d;padding:5px 7px;min-width:95px}
+
+/* Independent market-history and World Currency checkout slots. */
+.terminal-grid{grid-template-areas:"chart book ticket" "assets positions checkout" "history history history" "foot foot foot"}
+.checkout-panel{grid-area:checkout}
+.checkout-panel label{display:block;padding:12px 12px 0;font-size:9px}
+.checkout-panel input,.checkout-panel select{display:block;width:100%;background:#050a07;color:#d6e2da;border:1px solid #1a3525;padding:9px;margin-top:5px}
+.checkout-panel .submit{margin-top:12px}
+.history-panel{grid-area:history}
+.history-table{max-height:290px;overflow-y:auto}
+.history-head,.history-row{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:8px;padding:7px 12px;font-size:10px;align-items:center;font-variant-numeric:tabular-nums}
+.history-head{color:#688173;border-bottom:1px solid #173421}
+.history-row{border-bottom:1px solid #102218}
+.history-row span:nth-child(n+2){text-align:right}
+.chart-stage{height:auto;min-height:390px;overflow:visible}
+@media(max-width:1100px){.terminal-grid{grid-template-areas:"chart ticket" "book assets" "positions checkout" "history history" "foot foot"}}
+@media(max-width:760px){.terminal-grid{grid-template-areas:"chart" "ticket" "book" "assets" "positions" "checkout" "history" "foot"}.history-head,.history-row{font-size:8px}}
