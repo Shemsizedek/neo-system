@@ -2,12 +2,14 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { Activity, BarChart3, Bitcoin, BookOpen, BriefcaseBusiness, CandlestickChart, CircleDollarSign, Gauge, Layers3, ListFilter, Search, ShieldCheck, Star, WalletCards } from 'lucide-react';
 import './styles.css';
+import HistoryChart from './HistoryChart.jsx';
 
 const FOUNDATION_ADDRESS = '1Ky2wRYYrJzqdQJH64F7TR98fqLxJs7LK8';
 const TREASURY_ADDRESS = '18FyntJG9hdXYvanm67mGgbyo1P7adckvg';
-const API_BASE = window.NEO_EXCHANGE_API_BASE || '';
-const CURRENCY_REGISTRY = '/neo-system/api/neo-counter/currencies.json';
-const CHECKOUT_GATEWAY = '/neo-system/neo-counter/';
+const API_BASE = window.NEO_EXCHANGE_API_BASE || import.meta.env.VITE_NEO_EXCHANGE_API_BASE || '';
+const ECOSYSTEM_ORIGIN = import.meta.env.VITE_NEO_ECOSYSTEM_ORIGIN || 'https://shemsizedek.github.io';
+const CURRENCY_REGISTRY = `${ECOSYSTEM_ORIGIN}/neo-system/api/neo-counter/currencies.json`;
+const CHECKOUT_GATEWAY = `${ECOSYSTEM_ORIGIN}/neo-system/neo-counter/`;
 
 const fallbackMarkets = [
   { pair: 'BTC/XCP', best_bid: null, best_ask: null, mid: null, status: 'API REQUIRED' },
@@ -25,6 +27,9 @@ function fmt(value, digits = 8) {
 
 function App() {
   const [activePair, setActivePair] = useState('BTC/XCP');
+  const [timeframe, setTimeframe] = useState(14400);
+  const [indicator, setIndicator] = useState('SMA');
+  const [history, setHistory] = useState(null);
   const [side, setSide] = useState('BUY');
   const [orderType, setOrderType] = useState('LIMIT');
   const [assets, setAssets] = useState([]);
@@ -69,6 +74,18 @@ function App() {
       .catch(() => { if (!cancelled && feedState === 'LIVE') setFeedState('DEGRADED'); });
     return () => { cancelled = true; };
   }, [activePair]);
+
+  useEffect(() => {
+    const [base,quote]=activePair.split('/');
+    if(!base||!quote)return;
+    const ctrl=new AbortController();
+    setHistory(null);
+    fetch(`${API_BASE}/api/neo-exchange/history?base=${encodeURIComponent(base)}&quote=${encodeURIComponent(quote)}&timeframe=14400`,{signal:ctrl.signal})
+      .then(r=>{if(!r.ok)throw new Error('No verified history feed');return r.json()})
+      .then(d=>{if(!ctrl.signal.aborted)setHistory(d)})
+      .catch(()=>{if(!ctrl.signal.aborted)setHistory({trades:[],status:'UNAVAILABLE'})});
+    return()=>ctrl.abort();
+  },[activePair]);
 
   const displayMarkets = useMemo(() => {
     const live = markets.length ? markets : fallbackMarkets;
@@ -126,11 +143,8 @@ function App() {
       <section className="terminal-grid">
         <div className="panel chart-panel">
           <div className="panel-header"><div><small>MARKET</small><h1>{activePair}</h1></div><div className="quote"><b>{fmt(book.mid)}</b><span>BID {fmt(book.best_bid)} · ASK {fmt(book.best_ask)}</span></div></div>
-          <div className="toolbar"><button>1m</button><button>5m</button><button>15m</button><button>1H</button><button className="active">4H</button><button>1D</button><i/><button>Indicators</button><button>Objects</button></div>
-          <div className="chart-stage">
-            <div className="chart-watermark"><CandlestickChart size={50}/><b>NEO EXCHANGE</b><span>Verified historical OHLC adapter is the next data gate</span></div>
-            <div className="price-axis"><span>ASK {fmt(book.best_ask)}</span><span>MID {fmt(book.mid)}</span><span>BID {fmt(book.best_bid)}</span></div>
-          </div>
+          <div className="toolbar">{[[60,'1m'],[300,'5m'],[900,'15m'],[3600,'1H'],[14400,'4H'],[86400,'1D'],[604800,'1W']].map(([sec,label])=><button key={sec} className={timeframe===sec?'active':''} onClick={()=>setTimeframe(sec)}>{label}</button>)}<i/><select aria-label="Technical indicator" value={indicator} onChange={e=>setIndicator(e.target.value)}><option value="SMA">SMA(14)</option><option value="EMA">EMA(14)</option><option value="RSI">RSI(14)</option></select></div>
+          <div className="chart-stage"><HistoryChart apiBase={API_BASE} pair={activePair} timeframe={timeframe} indicator={indicator}/></div>
         </div>
 
         <div className="panel orderbook-panel">
@@ -168,12 +182,21 @@ function App() {
           <div className="empty-book">Counterparty settles on-chain. This panel will derive positions and realized/unrealized P/L from wallet balances, completed matches and verified valuation feeds.</div>
         </div>
 
-        <div className="panel positions-panel">
+        <div className="panel checkout-panel">
           <div className="panel-header"><div><small>NEO COUNTER</small><h2>World Currency Checkout</h2></div><WalletCards size={18}/></div>
           <label>Amount (USD)<input value={checkoutAmount} onChange={e=>setCheckoutAmount(e.target.value)} inputMode="decimal"/></label>
           <label>World Currency<select value={checkoutCurrency} onChange={e=>setCheckoutCurrency(e.target.value)}>{worldCurrencies.map(c=><option key={c.id} value={c.symbol}>{c.symbol} — {c.name}</option>)}</select></label>
           <button className="submit buy" onClick={checkout}>PAY WITH NEO COUNTER</button>
           <p className="safety-note">{checkoutEntry?.counterpartyAsset?`Verified settlement asset: ${checkoutEntry.counterpartyAsset}`:`${checkoutCurrency} is available from the shared Treasury catalog; exact Counterparty asset mapping is required before token settlement is auto-verified.`}</p>
+        </div>
+
+        <div className="panel history-panel">
+          <div className="panel-header"><div><small>COUNTERPARTY SETTLEMENT HISTORY</small><h2>Verified Completed Matches — {activePair}</h2></div><Activity size={18}/></div>
+          <div className="history-table"><div className="history-head"><span>Time (UTC)</span><span>Price</span><span>Amount</span><span>Block</span></div>
+          {history?.trades?.length ? history.trades.slice(0,20).map((t,i)=><div className="history-row" key={t.id||i}><span>{new Date(t.time*1000).toISOString().slice(0,19).replace('T',' ')}</span><span>{fmt(t.price)}</span><span>{fmt(t.base_quantity)}</span><span>{t.block_index ?? '—'}</span></div>) :
+          <div className="book-empty-line">{history ? 'No verified completed trades in the available page' : 'Loading verified matches…'}</div>}
+          </div>
+          <p className="safety-note">{history?.status||'DATA CHECK'} · Only timestamped completed matches; paginated history is not a complete lifetime ledger.</p>
         </div>
 
         <div className="panel footer-terminal">

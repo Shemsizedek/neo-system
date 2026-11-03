@@ -28,6 +28,8 @@ jobs:
           node-version: 24
       - name: Check backend syntax
         run: node --check api/neo-exchange/server.mjs
+      - name: Verify completed-trade data integrity
+        run: node --test api/neo-exchange/history.test.mjs
       - name: Install frontend dependencies
         working-directory: apps/neo-exchange
         run: npm install
