@@ -46,3 +46,17 @@ $('verifyTx').addEventListener('click',()=>inspectGateway('tx'));
 $('verifyAsset').addEventListener('click',()=>inspectGateway('asset'));
 $('verifyTreasury').addEventListener('click',()=>inspectGateway('treasury'));
 $('verifyOrange').addEventListener('click',()=>inspectGateway('orange'));
+
+async function loadWorldCurrencyPairs(){
+ try{
+  const observation=await issuerIssuances(TREASURY_WALLET);
+  const names=[...new Set(observation.record.records.map(r=>r.asset).filter(Boolean))].sort();
+  for(const name of names){if(![...$('deskBase').options].some(o=>o.value===name))$('deskBase').add(new Option(name,name));if(![...$('deskQuote').options].some(o=>o.value===name))$('deskQuote').add(new Option(name,name))}
+  $('deskPair').textContent='Treasury issuance candidates indexed: '+names.length+'. Select a pair to inspect; no executable USD liquidity has been established.';
+ }catch(e){$('deskPair').textContent='Treasury issuer feed unavailable: '+e.message+'. NOMNI/USD remains a requested market, not a verified listing.'}
+}
+$('deskRoute').addEventListener('click',()=>{
+ const base=$('deskBase').value,quote=$('deskQuote').value;
+ $('deskPair').textContent=base===quote?'Base and quote must differ.':base+'/'+quote+' selected · indicative market discovery only. No executable order book, fiat redemption, or settlement rail certified.';
+});
+loadWorldCurrencyPairs();
