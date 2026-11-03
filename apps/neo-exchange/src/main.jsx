@@ -6,9 +6,10 @@ import HistoryChart from './HistoryChart.jsx';
 
 const FOUNDATION_ADDRESS = '1Ky2wRYYrJzqdQJH64F7TR98fqLxJs7LK8';
 const TREASURY_ADDRESS = '18FyntJG9hdXYvanm67mGgbyo1P7adckvg';
-const API_BASE = window.NEO_EXCHANGE_API_BASE || '';
-const CURRENCY_REGISTRY = '/neo-system/api/neo-counter/currencies.json';
-const CHECKOUT_GATEWAY = '/neo-system/neo-counter/';
+const API_BASE = window.NEO_EXCHANGE_API_BASE || import.meta.env.VITE_NEO_EXCHANGE_API_BASE || '';
+const ECOSYSTEM_ORIGIN = import.meta.env.VITE_NEO_ECOSYSTEM_ORIGIN || 'https://shemsizedek.github.io';
+const CURRENCY_REGISTRY = `${ECOSYSTEM_ORIGIN}/neo-system/api/neo-counter/currencies.json`;
+const CHECKOUT_GATEWAY = `${ECOSYSTEM_ORIGIN}/neo-system/neo-counter/`;
 
 const fallbackMarkets = [
   { pair: 'BTC/XCP', best_bid: null, best_ask: null, mid: null, status: 'API REQUIRED' },
