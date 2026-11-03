@@ -81,8 +81,9 @@ test('private worker transport rejects public, non-TLS, and credentialed endpoin
 test('signed private transport authenticates request and response without a listener', async () => {
   let calls = 0
   const privatePem = getPem(machineKeys.privateKey, 'private')
+  const canonicalWire = v => Array.isArray(v) ? v.map(canonicalWire) : v && typeof v === 'object' ? Object.fromEntries(Object.keys(v).sort().map(k => [k, canonicalWire(v[k])])) : v
   const verifyRequest = (statement, signature) => verify(null,
-    Buffer.from(JSON.stringify(Object.fromEntries(Object.keys(statement).sort().map(k => [k, statement[k]])))),
+    Buffer.from(JSON.stringify(canonicalWire(statement))),
     machineKeys.publicKey, Buffer.from(signature, 'base64url'))
   const fetchImpl = async (url, options) => {
     calls++
