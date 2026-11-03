@@ -163,10 +163,12 @@ jobs:
         run: |
           test -s apps/neo-terminal/index.html
           node --check apps/neo-terminal/app.js
+          node --check apps/neo-terminal/activation.js
+          node --test apps/neo-terminal/activation.test.mjs
           node --check apps/neo-terminal/gateway.js
           node --test apps/neo-terminal/gateway.test.mjs
           mkdir -p dist/neo-terminal
-          cp apps/neo-terminal/index.html apps/neo-terminal/app.js apps/neo-terminal/gateway.js dist/neo-terminal/
+          cp apps/neo-terminal/index.html apps/neo-terminal/app.js apps/neo-terminal/gateway.js apps/neo-terminal/activation.js dist/neo-terminal/
           test -s dist/neo-terminal/index.html
           test -s dist/neo-terminal/app.js
       - name: Verify Pages artifact root
