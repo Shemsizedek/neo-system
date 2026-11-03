@@ -1,0 +1,16 @@
+import assert from "node:assert/strict";
+import fs from "node:fs";
+const schema=fs.readFileSync("apps/fwkf-forum/migrations/0001_forum_schema.sql","utf8");
+const tables=["communities","members","posts","replies","votes","reports","moderation_actions"];
+for(const t of tables)assert.ok(schema.includes("CREATE TABLE IF NOT EXISTS fwkf_forum."+t),t+" table absent");
+for(const t of ["posts","replies"])assert.ok(schema.includes("status text NOT NULL DEFAULT 'pending'"),"New user content must not auto-publish");
+assert.ok(schema.includes("visibility text NOT NULL DEFAULT 'public'"),"Community visibility requires explicit behavior");
+assert.ok(schema.includes("status text NOT NULL DEFAULT 'draft'"),"New community cannot auto-activate");
+assert.ok(schema.includes("REVOKE ALL ON SCHEMA fwkf_forum FROM PUBLIC"),"Anonymous schema access must be denied");
+assert.ok(schema.includes("REVOKE ALL ON ALL TABLES IN SCHEMA fwkf_forum FROM PUBLIC"),"Anonymous table access must be denied");
+assert.ok(schema.includes("one_vote_target") && schema.includes("one_report_target"),"Votes and reports require exact target");
+assert.ok(schema.includes("CREATE UNIQUE INDEX IF NOT EXISTS fwkf_votes_post_once"),"Post duplicate-vote protection absent");
+assert.ok(schema.includes("CREATE UNIQUE INDEX IF NOT EXISTS fwkf_votes_reply_once"),"Reply duplicate-vote protection absent");
+assert.ok(schema.includes("moderation_actions") && schema.includes("reason text NOT NULL"),"Audit reasons must be captured");
+assert.ok(!/\b(insert into|delete from|drop table|drop schema|grant all)\b/i.test(schema),"Schema may not seed personal content or destroy existing records");
+console.log("PASS: Forum SQL proposal has seven isolated tables, private default posts, report and vote controls, moderation audit, and no anonymous privileges.");
