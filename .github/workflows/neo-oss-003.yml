@@ -30,7 +30,8 @@ jobs:
   live-staging-smoke:
     if: github.event_name == 'workflow_dispatch' && inputs.live
     needs: staging-contract
-    runs-on: ubuntu-latest
+    # This label must identify an isolated runner on the Render private network.
+    runs-on: [self-hosted, linux, neo-crawl4ai-staging]
     timeout-minutes: 3
     steps:
       - uses: actions/checkout@v4
