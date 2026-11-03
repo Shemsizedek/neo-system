@@ -31,7 +31,7 @@ test('lab is disabled by default and credentials / model endpoint are constraine
   assert.equal(labConfigFromEnv(good).agentId, agentId)
   assert.throws(() => labConfigFromEnv({ ...good, OLLAMA_BASE_URL: 'http://example.com' }), /loopback/)
   assert.throws(() => labConfigFromEnv({ ...good, OLLAMA_BASE_URL: 'http://0.0.0.0:11434' }), /loopback/)
-  assert.throws(() => labConfigFromEnv({ ...good, NEO_OMARCHY_AGENT_ID: 'neo:founder:000001' }), /agent/)
+  assert.throws(() => labConfigFromEnv({ ...good, NEO_OMARCHY_AGENT_ID: 'neo:founder:000001' }), /AGENT_ID/)
   assert.throws(() => labConfigFromEnv({ ...good, NEO_OMARCHY_LAB_TOKEN: 'abc' }), /token/)
 })
 
