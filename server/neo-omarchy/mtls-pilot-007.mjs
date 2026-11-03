@@ -1,7 +1,7 @@
 // NEO-OMARCHY-007: loopback-only TLS 1.3 mutual-auth staging transport.
 // No public listener, automatic startup or production NEOpass integration.
 import { createServer } from 'node:https'
-import { createPublicKey, timingSafeEqual } from 'node:crypto'
+import { X509Certificate, timingSafeEqual } from 'node:crypto'
 
 const MACHINE = /^neo:machine:[a-z0-9][a-z0-9-]{0,63}$/
 const isLocal = address => ['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(address)
@@ -56,8 +56,10 @@ export function createBoundMtlsPilot({
       // mTLS CA membership alone is not enough: peer's *public key* must be
       // identical to the NEOpass-enrolled key in the trusted machine registry.
       const certificate = req.socket.getPeerCertificate()
-      if (!Buffer.isBuffer(certificate?.pubkey)) throw new Error('missing_peer_public_key')
-      const peerKey = createPublicKey({ key: certificate.pubkey, format: 'der', type: 'spki' })
+      if (!Buffer.isBuffer(certificate?.raw)) throw new Error('missing_peer_certificate')
+      // Node TLS peer-cert summaries need not expose pubkey directly. Parse the
+      // verified DER certificate and extract its SPKI public key explicitly.
+      const peerKey = new X509Certificate(certificate.raw).publicKey
       const approvedKey = await trustStore.machinePublicKey(machineId)
       if (peerKey.asymmetricKeyType !== 'ed25519' ||
           approvedKey.asymmetricKeyType !== 'ed25519') throw new Error('unsupported_machine_key')
