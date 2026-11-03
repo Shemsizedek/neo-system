@@ -24,8 +24,7 @@ BEGIN
   RAISE EXCEPTION 'neo_omarchy_audit_v2_append_only';
 END $$;
 
-DROP TRIGGER IF EXISTS audit_v2_append_only ON neo_omarchy.audit_v2;
-CREATE TRIGGER audit_v2_append_only
+CREATE OR REPLACE TRIGGER audit_v2_append_only
 BEFORE UPDATE OR DELETE ON neo_omarchy.audit_v2
 FOR EACH ROW EXECUTE FUNCTION neo_omarchy.deny_audit_v2_change();
 
