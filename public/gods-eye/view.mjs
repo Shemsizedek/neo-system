@@ -17,7 +17,7 @@ for(const e of events){const li=document.createElement('li');li.textContent=`${e
 document.querySelector('#rotation').addEventListener('input',draw);
 document.querySelector('#export').addEventListener('click',()=>{
  const time=new Date().toISOString();
- const records=events.map(e=>({id:e.id,recordType:'indicator',title:e.title,status:'DRAFT',domain:'Humanitarian',confidence:'LOW',createdAt:time,updatedAt:time,summary:'Synthetic demonstration only; not an observed earthquake.',provenance:{sourceType:'system',sourceRefs:['apps/gods-eye/view.mjs'],state:'simulated'},guardrailClass:'HUMANITARIAN'}));
+ const records=events.map(e=>({id:e.id,recordType:'indicator',title:e.title,status:'DRAFT',domain:'Humanitarian',confidence:'LOW',createdAt:time,updatedAt:time,summary:'Synthetic demonstration only; not an observed earthquake.',provenance:{sourceType:'system',sourceRefs:['public/gods-eye/view.mjs'],state:'simulated'},guardrailClass:'HUMANITARIAN'}));
  const url=URL.createObjectURL(new Blob([JSON.stringify(records,null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download='neo-gods-eye-simulated.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
 });
 draw();
