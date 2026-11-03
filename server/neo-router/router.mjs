@@ -2,6 +2,7 @@ import { DOCTRINE_PROFILE, EMERGING_INTERFACE_PROFILE, HUMAN_APPROVAL_ACTIONS, P
 import { buildNeoPerspectiveInstructions } from './neo-perspective.mjs'
 
 const DEFAULT_ROUTES = Object.freeze({
+  'local-inference': ['ollama'],
   orchestration: ['anthropic', 'openai', 'gemini', 'cloudflare'],
   planning: ['anthropic', 'openai', 'gemini', 'cloudflare'],
   review: ['anthropic', 'openai', 'gemini', 'cloudflare'],

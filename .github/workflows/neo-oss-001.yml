@@ -1,0 +1,19 @@
+name: NEO OSS Gate 001
+on:
+  pull_request:
+    paths:
+      - 'server/neo-router/**'
+      - 'config/neo-open-source-projects.json'
+      - '.github/workflows/neo-oss-001.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  local-inference-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: node --test server/neo-router/providers.test.mjs server/neo-router/ollama-provider.test.mjs server/neo-router/router.test.mjs
