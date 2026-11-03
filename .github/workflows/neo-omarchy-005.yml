@@ -1,0 +1,54 @@
+name: NEO Omarchy Gate 005
+
+on:
+  pull_request:
+    paths:
+      - 'server/neo-omarchy/**'
+      - 'docs/NEO-OMARCHY-005.md'
+      - '.github/workflows/neo-omarchy-005.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  signed-staging-coordinator:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: neo_omarchy_ci
+          POSTGRES_USER: neo_omarchy_ci
+          POSTGRES_PASSWORD: disposable_ci_only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U neo_omarchy_ci -d neo_omarchy_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      NEO_OMARCHY_PG_TEST_URL: postgres://neo_omarchy_ci:disposable_ci_only@127.0.0.1:5432/neo_omarchy_ci
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Check source syntax
+        run: |
+          node --check server/neo-omarchy/operator-approval.mjs
+          node --check server/neo-omarchy/trust-store.mjs
+          node --check server/neo-omarchy/staging-coordinator.mjs
+          node --check server/neo-omarchy/gate-005.test.mjs
+      - name: Install ephemeral PostgreSQL client for CI only
+        run: npm install --no-save --package-lock=false --ignore-scripts pg@8
+      - name: Test signed operator approvals, private staging coordination and real PostgreSQL
+        run: node --test server/neo-omarchy/gate-005.test.mjs
+      - name: Regression — Gates 002 through 004
+        run: |
+          node --test server/neo-omarchy/gate-004.test.mjs
+          node --test server/neo-omarchy/coordination.test.mjs
+          node --test server/neo-omarchy/lab-bridge.test.mjs
+          node --test scripts/neo-omarchy-preflight.test.mjs
