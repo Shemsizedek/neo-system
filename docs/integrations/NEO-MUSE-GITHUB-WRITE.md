@@ -55,6 +55,26 @@ Meta Muse app has already received GitHub authorization.
 - This code does **not** install the external app, configure its permissions,
   create a Model API key, or prove a live Muse session can write.
 
+## Gate 004 — fail-closed main-branch protection
+
+- The public GitHub `NEO` ruleset (ID `20772609`) was active on
+  November 3, 2026 but contained **no rules**. This does *not* certify
+  whether a separate legacy branch-protection rule exists.
+- The GitHub connector cannot read the legacy branch protection endpoint
+  (HTTP 403). It also cannot inspect the `MODEL_API_KEY` secret.
+- The `scripts/neo-muse-branch-guard.mjs` workflow preflight checks active
+  repository rulesets *before* invoking the secret-bearing AI coding action.
+  It **fails closed** unless an active ruleset covering `main` requires
+  at least one approval, code-owner review, and a nonempty set of required
+  status checks. No credentials are printed.
+- The owner must configure the ruleset in GitHub Settings → Rules →
+  Rulesets and choose the existing `NEO` ruleset (or create a new protected
+  main branch ruleset). Also verify Actions can create pull requests.
+- No `/oc` documentation smoke test should be issued before the ruleset
+  is configured, GitHub tests pass, and the Muse API live check succeeds.
+- `server/neo-router/muse-branch-guard.test.mjs` verifies the observed
+  empty ruleset is rejected and a correctly protected ruleset is accepted.
+
 ## Gate 002 validation
 - The new `server/neo-router/muse-github-gate.test.mjs` test verifies model
   environment references, owner-only triggers, bounded workflow rights,
