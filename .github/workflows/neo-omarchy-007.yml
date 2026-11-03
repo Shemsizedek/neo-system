@@ -1,0 +1,83 @@
+name: NEO Omarchy Gate 007
+
+on:
+  pull_request:
+    paths:
+      - 'server/neo-omarchy/**'
+      - 'docs/NEO-OMARCHY-007.md'
+      - '.github/workflows/neo-omarchy-007.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  mtls-and-recovery:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: neo_omarchy_ci
+          POSTGRES_USER: neo_omarchy_ci
+          POSTGRES_PASSWORD: disposable_ci_only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U neo_omarchy_ci -d neo_omarchy_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      NEO_OMARCHY_PG_TEST_URL: postgres://neo_omarchy_ci:disposable_ci_only@127.0.0.1:5432/neo_omarchy_ci
+      PGPASSWORD: disposable_ci_only
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Check source syntax and tools
+        run: |
+          node --check server/neo-omarchy/mtls-pilot-007.mjs
+          node --check server/neo-omarchy/audit-commitment-007.mjs
+          node --check server/neo-omarchy/gate-007.test.mjs
+          command -v openssl
+          if ! command -v pg_dump >/dev/null; then
+            sudo apt-get update -qq
+            sudo apt-get install -y postgresql-client
+          fi
+      - name: Install transient Postgres CI client
+        run: npm install --no-save --package-lock=false --ignore-scripts pg@8
+      - name: TLS 1.3 client certificates, app signing and evidence checks
+        run: node --test server/neo-omarchy/gate-007.test.mjs
+      - name: Gate 006 reference chain against disposable PostgreSQL
+        run: node --test server/neo-omarchy/gate-006.test.mjs
+      - name: PostgreSQL schema backup and independent restore test
+        run: |
+          set -euo pipefail
+          pg_dump -h 127.0.0.1 -U neo_omarchy_ci -d neo_omarchy_ci \
+            --schema=neo_omarchy --format=custom --file="$RUNNER_TEMP/omarchy-007.dump"
+          createdb -h 127.0.0.1 -U neo_omarchy_ci neo_omarchy_restore_ci
+          pg_restore -h 127.0.0.1 -U neo_omarchy_ci \
+            --dbname=neo_omarchy_restore_ci --no-owner --exit-on-error \
+            "$RUNNER_TEMP/omarchy-007.dump"
+          a=$(psql -h 127.0.0.1 -U neo_omarchy_ci -d neo_omarchy_ci -Atc \
+            "SELECT count(*) FROM neo_omarchy.audit_events")
+          b=$(psql -h 127.0.0.1 -U neo_omarchy_ci -d neo_omarchy_restore_ci -Atc \
+            "SELECT count(*) FROM neo_omarchy.audit_events")
+          test "$a" -gt 0
+          test "$a" = "$b"
+          original=$(psql -h 127.0.0.1 -U neo_omarchy_ci -d neo_omarchy_ci -Atc \
+            "SELECT event_hash FROM neo_omarchy.audit_events ORDER BY seq DESC LIMIT 1")
+          restored=$(psql -h 127.0.0.1 -U neo_omarchy_ci -d neo_omarchy_restore_ci -Atc \
+            "SELECT event_hash FROM neo_omarchy.audit_events ORDER BY seq DESC LIMIT 1")
+          test "$original" = "$restored"
+          echo "PASS: isolated PostgreSQL audit snapshot restored with matching count and head hash"
+      - name: Gate 005-002 source regression
+        run: |
+          node --test server/neo-omarchy/gate-005.test.mjs
+          node --test server/neo-omarchy/gate-004.test.mjs
+          node --test server/neo-omarchy/coordination.test.mjs
+          node --test server/neo-omarchy/lab-bridge.test.mjs
+          node --test scripts/neo-omarchy-preflight.test.mjs
