@@ -1,0 +1,36 @@
+name: NEO Omarchy Gate 004
+
+on:
+  pull_request:
+    paths:
+      - 'server/neo-omarchy/**'
+      - 'docs/NEO-OMARCHY-004.md'
+      - '.github/workflows/neo-omarchy-004.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  private-coordinator-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Syntax checks
+        run: |
+          node --check server/neo-omarchy/neopass-proof.mjs
+          node --check server/neo-omarchy/postgres-leases.mjs
+          node --check server/neo-omarchy/private-transport.mjs
+          node --check server/neo-omarchy/signed-evidence.mjs
+          node --check server/neo-omarchy/gate-004.test.mjs
+      - name: Gate 004 key verification and SQL mock contracts
+        run: node --test server/neo-omarchy/gate-004.test.mjs
+      - name: Previous gates compatibility
+        run: |
+          node --test server/neo-omarchy/coordination.test.mjs
+          node --test server/neo-omarchy/lab-bridge.test.mjs
+          node --test scripts/neo-omarchy-preflight.test.mjs
