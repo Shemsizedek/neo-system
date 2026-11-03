@@ -1,7 +1,7 @@
 import { project } from './globe.mjs';
 import { observationView, observationRecords } from './feed-state.mjs';
 const demoEvents = [ { id:'synthetic-nc', title:'Synthetic North Carolina example', lon:-79, lat:35, mag:2.8 }, { id:'synthetic-pacific', title:'Synthetic Pacific example', lon:140, lat:36, mag:4.1 } ];
-let events=demoEvents, mode='simulated', generation=0, request;
+let events=demoEvents, mode='simulated', generation=0, request, snapshotGeneratedAt;
 const ns = 'http://www.w3.org/2000/svg';
 function draw() {
  const center = Number(document.querySelector('#rotation').value);
@@ -24,7 +24,7 @@ function render(){
  document.querySelector('#feed-note').textContent=mode==='simulated'?'Synthetic demonstration only; no USGS reports displayed.':mode==='unavailable'?'Staging feed unavailable or disabled. No events are displayed.':'Credit: U.S. Geological Survey. Feed observations may be delayed or revised. Exports remain drafts.';
  draw();
 }
-function refreshAge(){if(mode==='live'&&events.some(e=>Date.now()-Date.parse(e.observation.generatedAt)>300000)){mode='stale';render();}}
+function refreshAge(){if(mode==='live'&&Date.now()-Date.parse(snapshotGeneratedAt)>300000){mode='stale';render();}}
 setInterval(refreshAge,10000);
 document.querySelector('#demo').addEventListener('click',()=>{generation++;request?.abort();events=demoEvents;mode='simulated';render();});
 document.querySelector('#load-feed').addEventListener('click',async()=>{
@@ -35,7 +35,7 @@ document.querySelector('#load-feed').addEventListener('click',async()=>{
   if(!response.ok)throw Error('Unavailable');
   const view=observationView(await response.json());
   if(current!==generation)return;
-  mode=view.state;events=view.events;
+  mode=view.state;events=view.events;snapshotGeneratedAt=view.generatedAt;
  }catch{if(current!==generation)return;mode='unavailable';events=[];}
  render();
 });
