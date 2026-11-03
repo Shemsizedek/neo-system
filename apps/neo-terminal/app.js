@@ -1,3 +1,4 @@
+import {inspectNomniMarket,evaluateActivation} from './activation.js';
 import {bitcoinTransaction,counterpartyAsset,issuerIssuances,TREASURY_WALLET,ORANGE_CHIP_WALLET,reconcileEvidence} from './gateway.js';
 const $=id=>document.getElementById(id);
 const wallet='18FyntJG9hdXYvanm67mGgbyo1P7adckvg';
@@ -60,3 +61,17 @@ $('deskRoute').addEventListener('click',()=>{
  $('deskPair').textContent=base===quote?'Base and quote must differ.':base+'/'+quote+' selected · indicative market discovery only. No executable order book, fiat redemption, or settlement rail certified.';
 });
 loadWorldCurrencyPairs();
+
+$('inspectNomni').addEventListener('click',async()=>{
+ $('inspectNomni').disabled=true;
+ $('activationStatus').textContent='Inspecting Counterparty NOMNI/USD market observations…';
+ try{
+  const observation=await inspectNomniMarket();
+  const readiness=evaluateActivation();
+  $('activationStatus').textContent='BLOCKED · No verified USD settlement, signer authorization or reconciliation attestations. Read-only inspection completed.';
+  $('activationOutput').textContent=JSON.stringify({observation,readiness},null,2);
+ }catch(error){
+  $('activationStatus').textContent='Market inspection unavailable: '+error.message;
+  $('activationOutput').textContent=JSON.stringify({readiness:evaluateActivation()},null,2);
+ }finally{$('inspectNomni').disabled=false}
+});
