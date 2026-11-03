@@ -1,0 +1,57 @@
+name: NEO Omarchy Gate 008
+
+on:
+  pull_request:
+    paths:
+      - 'server/neo-omarchy/**'
+      - 'docs/NEO-OMARCHY-008.md'
+      - '.github/workflows/neo-omarchy-008.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  canonical-audit-and-staging:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: neo_omarchy_ci
+          POSTGRES_USER: neo_omarchy_ci
+          POSTGRES_PASSWORD: disposable_ci_only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U neo_omarchy_ci -d neo_omarchy_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      NEO_OMARCHY_PG_TEST_URL: postgres://neo_omarchy_ci:disposable_ci_only@127.0.0.1:5432/neo_omarchy_ci
+      NEO_OMARCHY_LIVE_PILOT_ENABLED: "0"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Check Gate 008 source
+        run: |
+          node --check server/neo-omarchy/canonical-ledger-008.mjs
+          node --check server/neo-omarchy/mission-certification-008.mjs
+          node --check server/neo-omarchy/gate-008.test.mjs
+      - name: Install PostgreSQL client in disposable CI only
+        run: npm install --no-save --package-lock=false --ignore-scripts pg@8
+      - name: Verify exact canonical audit hashes, immutable rows, witness and readiness
+        run: node --test server/neo-omarchy/gate-008.test.mjs
+      - name: Gates 002 through 007 regression
+        run: |
+          node --test server/neo-omarchy/gate-007.test.mjs
+          node --test server/neo-omarchy/gate-006.test.mjs
+          node --test server/neo-omarchy/gate-005.test.mjs
+          node --test server/neo-omarchy/gate-004.test.mjs
+          node --test server/neo-omarchy/coordination.test.mjs
+          node --test server/neo-omarchy/lab-bridge.test.mjs
+          node --test scripts/neo-omarchy-preflight.test.mjs
