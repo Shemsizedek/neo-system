@@ -22,6 +22,12 @@ test('owner-gated Muse workflow uses fixed, bounded GitHub permissions', () => {
   assert.doesNotMatch(workflow, /id-token: write\s*$/m)
   assert.match(workflow, /anomalyco\/opencode\/github@[a-f0-9]{40}/)
   assert.match(workflow, /use_github_token: true/)
+  assert.ok(workflow.includes('node scripts/neo-muse-branch-guard.mjs'))
+  assert.ok(
+    workflow.indexOf('node scripts/neo-muse-branch-guard.mjs') <
+    workflow.indexOf('Run owner-gated Meta Muse PR agent'),
+    'Branch policy preflight must run before the Muse writer'
+  )
   assert.match(workflow, /secrets\.MODEL_API_KEY/)
 })
 

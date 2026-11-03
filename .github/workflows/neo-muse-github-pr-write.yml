@@ -43,6 +43,12 @@ jobs:
             exit 2
           fi
 
+      - name: Verify main-branch write protections before granting Muse execution
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: node scripts/neo-muse-branch-guard.mjs
+
       - name: Run owner-gated Meta Muse PR agent
         uses: anomalyco/opencode/github@77fc88c8ade8e5a620ebbe1197f3a572d29ae91a
         env:
