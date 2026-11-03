@@ -86,12 +86,14 @@ export function NeoExplorer(){
       tokenScan.getQuote(pair),
       tokenScan.getIssuances(CENTRAL_LISTING_WALLET),
       tokenScan.getOrderBook(pair),
+      counterparty.getQuote(pair),
     ]).then(results=>{
       if(cancelled)return
       const snapshot=results[0].status==='fulfilled'?results[0].value:null
       const tokenQuote=results[1].status==='fulfilled'?results[1].value:null
       const tokenIssuances=results[2].status==='fulfilled'?results[2].value:[]
       const nextTokenBook=results[3].status==='fulfilled'?results[3].value:null
+      const directQuote=results[4].status==='fulfilled'?results[4].value:null
       const combinedIssuances=[...(snapshot?.issuances??[]),...tokenIssuances]
       const stocks=issuedOrangeChipStocks(combinedIssuances)
       setStockIssuances(stocks)
@@ -100,6 +102,7 @@ export function NeoExplorer(){
 
       const nextQuotes:MarketQuote[]=[]
       const nextObservations:MarketObservation[]=[]
+      if(directQuote&&!snapshot?.quote)nextQuotes.push(directQuote)
       if(snapshot){
         setFoundationBalances(snapshot.balances)
         setAssetInfo(snapshot.assetInfo)
@@ -148,7 +151,7 @@ export function NeoExplorer(){
   const verification=useMemo(()=>getOrangeChipVerification(selectedAsset),[selectedAsset])
   const assessment=useMemo(()=>assessPersistentEvidence(selectedAsset,vaultEvidence,verification),[selectedAsset,vaultEvidence,verification])
   const xcpObservation=observations.find(o=>o.venue==='XCP_DEX')
-  const xcpQuote=xcpObservation?.quote
+  const xcpQuote=xcpObservation?.quote??marketQuotes.find(q=>q.venue==='XCP_DEX')
   const bestBidQuote=bestBid(marketQuotes)
   const bestAskQuote=bestAsk(marketQuotes)
   const tokenAsks=(tokenBook?.asks??[]).slice(0,8).map(([price,amount])=>[String(price),String(amount),'TOKENSCAN'])
@@ -164,7 +167,7 @@ export function NeoExplorer(){
 
   return <div className="neo-explorer">
     <section className="explorer-hero"><div><p>NEO EXPLORER • LIVE BITCOIN / COUNTERPARTY MARKET INTELLIGENCE</p><h2>NEO DEX</h2><span>Counterparty • TokenScan • Orange Chip™ Stocks • CES • NEO Prime • NEO Algo • Evidence Vault</span></div><div className="explorer-actions"><label className="explorer-search"><Search size={15}/><input value={search} onChange={event=>setSearch(event.target.value)} placeholder="Search Orange Chip™ stock"/></label><button onClick={refresh}><RefreshCw size={15}/> Refresh Live Data</button></div></section>
-    <section className="foundation-registry"><div><span>WORLD CURRENCY QUOTE RAIL</span><b>{pair}</b><small>{treasuryStatus==='loaded'?treasuryCurrencies.length+' Treasury-issued currency candidates indexed; USD is an indicative reference denomination unless a funded, executable venue is independently verified.':treasuryStatus==='loading'?'Loading Treasury issuances…':'Treasury issuer feed unavailable; fallback currencies are available for selection.'}</small></div><div className="foundation-links"><label>BASE <select aria-label="Base currency" value={selectedAsset} onChange={event=>setSelectedAsset(event.target.value)}>{[...new Set(['NOMNI','BTC','XCP',...treasuryCurrencies,selectedAsset])].map(asset=><option key={asset} value={asset}>{asset}</option>)}</select></label><label>QUOTE <select aria-label="Quote currency" value={quoteAsset} onChange={event=>setQuoteAsset(event.target.value)}>{[...new Set(['XCP','USD','BTC','NOMNI','EUROCASH',...treasuryCurrencies,quoteAsset])].filter(asset=>asset!==selectedAsset).map(asset=><option key={asset} value={asset}>{asset}</option>)}</select></label><a href="#/neofx">NEOfx ↗</a></div></section>
+    <section className="foundation-registry"><div><span>WORLD CURRENCY QUOTE RAIL</span><b>{pair}</b><small>{treasuryStatus==='loaded'?treasuryCurrencies.length+' Treasury-issued currency candidates indexed; USD is an indicative reference denomination unless a funded, executable venue is independently verified.':treasuryStatus==='loading'?'Loading Treasury issuances…':'Treasury issuer feed unavailable; fallback currencies are available for selection.'}</small></div><div className="foundation-links"><label>BASE <select aria-label="Base currency" value={selectedAsset} onChange={event=>{setSelectedAsset(event.target.value);if(event.target.value===quoteAsset)setQuoteAsset('USD')}}>{[...new Set(['NOMNI','BTC','XCP',...treasuryCurrencies,selectedAsset])].map(asset=><option key={asset} value={asset}>{asset}</option>)}</select></label><label>QUOTE <select aria-label="Quote currency" value={quoteAsset} onChange={event=>setQuoteAsset(event.target.value)}>{[...new Set(['XCP','USD','BTC','NOMNI','EUROCASH',...treasuryCurrencies,quoteAsset])].filter(asset=>asset!==selectedAsset).map(asset=><option key={asset} value={asset}>{asset}</option>)}</select></label><a href="#/neofx">NEOfx ↗</a></div></section>
     <XChainPanel/>
     <CounterpartyHealthPanel/>
     <section className="foundation-registry"><div><span>ORANGE CHIP™ CENTRAL LISTING WALLET</span><b>{CENTRAL_LISTING_WALLET}</b><small>{stockIssuances.length?`${formatCount(stockIssuances.length)} Orange Chip™ Stocks loaded from valid issuance provenance.`:feedState==='loading'?'Loading live issuance history…':'No valid issuance records returned by connected sources.'}</small></div><div className="foundation-links"><a href={`https://tokenscan.io/address/${CENTRAL_LISTING_WALLET}`} target="_blank" rel="noreferrer"><ExternalLink size={14}/> TokenScan</a><a href={`https://blockstream.info/address/${CENTRAL_LISTING_WALLET}`} target="_blank" rel="noreferrer"><ExternalLink size={14}/> Bitcoin</a></div></section>
