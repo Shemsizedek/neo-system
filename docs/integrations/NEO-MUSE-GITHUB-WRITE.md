@@ -27,8 +27,10 @@ Meta Muse app has already received GitHub authorization.
   code or publicly visible settings). This is a Meta Model API key.
 - Verify repository Actions settings permit GitHub Actions to create PRs;
   enable required checks and protected `main` reviews.
-- Prefer a pinned SHA for the third-party OpenCode action before production
-  enablement; `@latest` follows Meta's example but is not supply-chain pinned.
+- OpenCode GitHub Action is pinned to reviewed Git ref
+  `77fc88c8ade8e5a620ebbe1197f3a572d29ae91a` (resolved from `latest`
+  during Gate 002). Re-review on updates; the action still installs its
+  OpenCode runtime dynamically, so version control remains a residual risk.
 - Create an ordinary issue describing a small test code change. The
   `Shemsizedek` account triggers work by commenting `/oc <task>`.
 - Verify the workflow run, authored branch, tests, proposed PR and required
@@ -44,8 +46,22 @@ Meta Muse app has already received GitHub authorization.
 - `github.token` is granted only to this explicitly owner-gated job, not
   exposed to a static website. The app's own OAuth/GitHub permissions are
   independent from this workflow's token.
+- The Muse agent cannot run npm scripts, build commands or arbitrary shell
+  programs while its secret-bearing job is running; repository CI tests run
+  independently on the proposed PR. Sensitive control-plane paths are denied
+  at the agent tool-policy layer, with CODEOWNERS marking review ownership.
+- Branch protection rules and CODEOWNERS review enforcement must be confirmed
+  in GitHub; adding a CODEOWNERS file does not activate protection by itself.
 - This code does **not** install the external app, configure its permissions,
   create a Model API key, or prove a live Muse session can write.
+
+## Gate 002 validation
+- The new `server/neo-router/muse-github-gate.test.mjs` test verifies model
+  environment references, owner-only triggers, bounded workflow rights,
+  protected paths and review controls. It is part of the existing npm test
+  glob and should run in PR CI.
+- Verified repository CI before Gate 002 updates was green. Latest Gate 002
+  CI and live PR-writing behavior require independent verification.
 
 ## Verification
 1. Confirm GitHub app installation separately in Settings → Applications →
