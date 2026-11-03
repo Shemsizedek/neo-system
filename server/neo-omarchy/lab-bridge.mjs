@@ -61,7 +61,8 @@ function isLocalClient(address) {
   return address === '127.0.0.1' || address === '::1' || address === '::ffff:127.0.0.1'
 }
 
-export function createLabHandler({ token, router, audit = () => {}, now = () => Date.now() } = {}) {
+export function createLabHandler({ token, agentId, router, audit = () => {}, now = () => Date.now() } = {}) {
+  if (!SUBJECT_RE.test(agentId || '')) throw new Error('A fixed authorized agent identity is required')
   if (!TOKEN_RE.test(token || '')) throw new Error('NEO_OMARCHY_LAB_TOKEN requires 64 hex characters')
   if (!router || typeof router.execute !== 'function') throw new Error('A configured local Router is required')
   let busy = false
@@ -77,6 +78,7 @@ export function createLabHandler({ token, router, audit = () => {}, now = () => 
     if (body.error) return respond(res, body.error === 'too-large' ? 413 : 400, { error: body.error })
     const mission = validateInferenceMission(body.value)
     if (!mission) return respond(res, 400, { error: 'invalid_or_unapproved_mission' })
+    if (mission.subject !== agentId) return respond(res, 403, { error: 'identity_not_authorized' })
     busy = true
     const started = now()
     let resultStatus = 'blocked'
@@ -128,10 +130,11 @@ export function labConfigFromEnv(env = process.env) {
     throw new Error('Ollama must use an explicit loopback HTTP(S) origin')
   }
   if (!TOKEN_RE.test(env.NEO_OMARCHY_LAB_TOKEN || '')) throw new Error('Lab token must be 64 hex characters')
+  if (!SUBJECT_RE.test(env.NEO_OMARCHY_AGENT_ID || '')) throw new Error('A fixed NEO_OMARCHY_AGENT_ID is required')
   if (!env.OLLAMA_MODEL || !/^[a-zA-Z0-9._:/-]{1,128}$/.test(env.OLLAMA_MODEL)) {
     throw new Error('An explicitly reviewed local OLLAMA_MODEL is required')
   }
-  return { token: env.NEO_OMARCHY_LAB_TOKEN, baseUrl: env.OLLAMA_BASE_URL, model: env.OLLAMA_MODEL }
+  return { token: env.NEO_OMARCHY_LAB_TOKEN, agentId: env.NEO_OMARCHY_AGENT_ID, baseUrl: env.OLLAMA_BASE_URL, model: env.OLLAMA_MODEL }
 }
 
 export function createConfiguredLabServer(env = process.env) {
@@ -141,7 +144,7 @@ export function createConfiguredLabServer(env = process.env) {
   const provider = createOllamaAdapter({ baseUrl: config.baseUrl, model: config.model, timeoutMs: 30_000 })
   const router = createNeoRouter({ providers: [provider], routes: { 'local-inference': ['ollama'] }, maxHops: 1 })
   return createLabServer({
-    token: config.token, router,
+    token: config.token, agentId: config.agentId, router,
     audit: (event) => console.log(JSON.stringify({ ...event, recordedAt: new Date().toISOString() })),
   })
 }
