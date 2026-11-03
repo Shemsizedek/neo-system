@@ -98,7 +98,7 @@ test('signed private transport authenticates request and response without a list
       expiresAt: clock + 5000, issuedAt: clock, machineId,
       requestNonce: payload.nonce, schema: 'NEO-OMARCHY-PRIVATE-004',
     }
-    const canonical = Object.fromEntries(Object.keys(outgoing).sort().map(k => [k, outgoing[k]]))
+    const canonical = canonicalWire(outgoing)
     const envelope = { payload: outgoing,
       signature: sign(null, Buffer.from(JSON.stringify(canonical)), serverKeys.privateKey).toString('base64url') }
     return { ok: true, status: 200, headers: { get: () => 'application/json' },
