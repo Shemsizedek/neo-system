@@ -30,3 +30,9 @@ test('fixed source and redirect policy; failures do not fabricate observations',
 test('oversize stream is rejected', async () => {
  assert.equal((await fetchEarthquakes({ fetchImpl: async () => new Response('x'.repeat(2097153)) })).state, 'unavailable');
 });
+test('empty feeds preserve freshness and never infer health from row count', async()=>{
+ for(const [age,state] of [[0,'live'],[600000,'stale']]) {
+  const result=await fetchEarthquakes({now,fetchImpl:async()=>new Response(JSON.stringify({type:'FeatureCollection',metadata:{generated:now-age},features:[]}))});
+  assert.equal(result.state,state);assert.deepEqual(result.observations,[]);
+ }
+});

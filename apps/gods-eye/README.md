@@ -22,7 +22,7 @@ rejected, requests expire after ten seconds and response bytes are capped at
 2 MiB. Failures return unavailable with no observations or credentials/errors.
 Feed generation age determines freshness (five minutes by default); event time
 is separate and may be older. SHA-256 covers the received UTF-8 snapshot text.
-Fixtures default to simulated. A successful empty feed returns empty.
+Fixtures default to simulated. A successful empty feed retains its live/stale freshness state.
 Every event must have a stable ID, valid Point coordinates and event time.
 No caller-supplied URL or private credentials are accepted.
 
@@ -67,3 +67,34 @@ Browser validation was attempted but Playwright could not launch because its
 Chromium executable is absent. Mobile behavior, export interaction, visual
 appearance, full Vite build and navigation remain unverified. Staging/live feed
 and NEOpass are still pending. This gate has no authenticated or private data.
+
+## Gate 004: reproducible verification and staging bridge
+
+Run `node apps/gods-eye/staging-server.mjs` for a localhost-only static sandbox.
+Its fixed GET `/gods-eye/api/earthquakes` endpoint returns 503/disabled by
+default. Explicitly set `GODSEYE_USGS_ENABLED=1` to permit read-only USGS
+requests. Successful and unavailable snapshots are cached for 60 seconds;
+concurrent callers share one in-flight request. Methods other than GET and
+unregistered paths/query strings are rejected. No credentials, private records,
+database writes or NEOpass sessions are involved. The current globe remains
+synthetic; the API is not automatically loaded into the UI. Do not expose this
+localhost bridge as an authenticated private service.
+
+The dedicated GitHub Actions workflow runs Node tests, the full repository build,
+then pinned Playwright browser checks on built assets at a GitHub Pages-style
+base path. Browser checks cover mobile/desktop overflow, globe rotation, export
+schema contract, simulated labels, the back link and absence of external
+requests/page errors. It installs Chromium in CI rather than assuming the local
+runtime has it. CI results must be inspected before claiming browser/build success.
+
+Provider review (2026-11-03): USGS describes its GeoJSON feeds as intended for
+programmatic use and updated every minute. USGS-authored data is generally U.S.
+public domain, with credit requested; third-party content can retain separate
+rights. This bridge uses numeric/text earthquake feed data and credits USGS;
+it imports no logos, photography or third-party imagery. References:
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/geojson.php
+https://www.usgs.gov/information-policies-and-instructions/copyrights-and-credits
+
+All 11 local Node tests pass. Local Chromium and the full repository dependency checkout
+are unavailable, so browser/full-build results remain pending CI. Live USGS HTTP
+access was not performed here. No deployment or live data activation is claimed.
