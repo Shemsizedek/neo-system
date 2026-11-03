@@ -67,6 +67,11 @@ test('signed machine proof verifies only exact issuer, machine, nonce, audience,
     now: () => clock, isRevoked: async () => true,
   })
   assert.equal((await revoked({ machineId, nonce: 'b'.repeat(64), proof: signedProof() })).verified, false)
+  const unknownRevocation = createPinnedNEOpassVerifier({
+    issuer, keyId: 'neopass-k1', publicKeyPem: getPem(issuerKeys.publicKey),
+    now: () => clock, isRevoked: async () => undefined,
+  })
+  assert.equal((await unknownRevocation({ machineId, nonce: 'b'.repeat(64), proof: signedProof() })).verified, false)
 })
 
 test('private worker transport rejects public, non-TLS, and credentialed endpoints', () => {
