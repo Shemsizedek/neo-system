@@ -111,6 +111,19 @@ function App() {
     window.location.assign(url.toString());
   };
 
+  if (window.location.pathname === '/account') return <div className="app-shell">
+    <header className="topbar"><div className="brand"><div className="brand-mark">N</div><div><strong>NEO FX</strong><span>SECURE ACCOUNT PORTAL</span></div></div><a href="/" style={{color:'inherit'}}>Return to markets</a></header>
+    <main className="workspace" style={{maxWidth:840,margin:'24px auto',width:'100%'}}>
+      <section className="panel" style={{padding:24}}>
+        <ShieldCheck size={38}/>
+        <h1>Brokerage Connections</h1>
+        <p>NEO Pass authentication and Alpaca Connect authorization are being certified. This portal does not accept passwords, API keys or brokerage credentials.</p>
+        <div className="review-box"><span>NEO Pass</span><b>Pending secure session deployment</b><span>Alpaca paper trading</span><b>Not connected</b><span>Portfolio sync</span><b>Unavailable</b><span>Live order execution</span><b>Disabled</b></div>
+        <p className="safety-note">When the authenticated backend is deployed, this page will initiate broker consent through an approved, server-generated authorization link. Never enter an Alpaca Client Secret here.</p>
+        <a href="/" style={{display:'inline-block',marginTop:12,color:'inherit'}}>← Open NEO FX markets</a>
+      </section>
+    </main>
+  </div>;
   return <div className="app-shell">
     <header className="topbar">
       <div className="brand"><div className="brand-mark">N</div><div><strong>NEO EXCHANGE</strong><span>BITCOIN / COUNTERPARTY XCP</span></div></div>
