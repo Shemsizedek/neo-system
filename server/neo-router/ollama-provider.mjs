@@ -1,5 +1,5 @@
 // Ollama native API: https://github.com/ollama/ollama/blob/main/docs/api.md
-export function createOllamaAdapter({ baseUrl, model, fetchImpl = fetch, timeoutMs = 30_000 } = {}) {
+export function createOllamaAdapter({ baseUrl, model, apiKey, fetchImpl = fetch, timeoutMs = 30_000 } = {}) {
   let endpoint
   if (baseUrl) {
     const url = new URL(baseUrl)
@@ -21,7 +21,7 @@ export function createOllamaAdapter({ baseUrl, model, fetchImpl = fetch, timeout
       try {
         const response = await fetchImpl(endpoint, {
           method: 'POST', redirect: 'error', signal: controller.signal,
-          headers: { 'content-type': 'application/json' },
+          headers: { 'content-type': 'application/json', ...(apiKey ? { authorization: `Bearer ${apiKey}` } : {}) },
           body: JSON.stringify({
             model, stream: false,
             messages: [{ role: 'system', content: system }, { role: 'user', content: prompt }],
