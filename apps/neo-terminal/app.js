@@ -1,3 +1,4 @@
+import {reviewIntent} from './settlement.js';
 import {inspectNomniMarket,evaluateActivation} from './activation.js';
 import {bitcoinTransaction,counterpartyAsset,issuerIssuances,TREASURY_WALLET,ORANGE_CHIP_WALLET,reconcileEvidence} from './gateway.js';
 const $=id=>document.getElementById(id);
@@ -74,4 +75,13 @@ $('inspectNomni').addEventListener('click',async()=>{
   $('activationStatus').textContent='Market inspection unavailable: '+error.message;
   $('activationOutput').textContent=JSON.stringify({readiness:evaluateActivation()},null,2);
  }finally{$('inspectNomni').disabled=false}
+});
+
+$('intentReview').addEventListener('click',()=>{
+ try{
+  const intent=reviewIntent({side:$('intentSide').value,amount:$('intentAmount').value.trim(),limitPrice:$('intentPrice').value.trim(),settlementInstrument:'UNVERIFIED'});
+  $('intentOutput').textContent=JSON.stringify(intent,null,2);
+  $('intentStatus').textContent='Review intent prepared locally. No order submitted; no USD rail or signer connected.';
+  $('intentHandoff').classList.remove('hidden');
+ }catch(e){$('intentStatus').textContent='Review blocked: '+e.message;$('intentOutput').textContent='';$('intentHandoff').classList.add('hidden')}
 });
