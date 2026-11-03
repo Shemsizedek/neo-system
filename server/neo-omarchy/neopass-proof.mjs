@@ -52,7 +52,8 @@ export function createPinnedNEOpassVerifier({
           claims.iat > time + 10_000 || claims.iat < time - MAX_LIFETIME_MS ||
           claims.exp <= time || claims.exp <= claims.iat ||
           claims.exp - claims.iat > MAX_LIFETIME_MS) return denied
-      if (await isRevoked({ issuer, keyId, machineId, proofId: claims.jti })) return denied
+      // Revocation backend must explicitly return false; unknown/error fails closed.
+      if ((await isRevoked({ issuer, keyId, machineId, proofId: claims.jti })) !== false) return denied
       return {
         verified: true, issuer: 'NEOpass', machineId, nonce, audience,
         expiresAt: claims.exp, proofId: claims.jti, keyFingerprint,
