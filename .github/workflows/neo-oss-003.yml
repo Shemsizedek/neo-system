@@ -1,0 +1,46 @@
+name: NEO OSS Gate 003
+on:
+  pull_request:
+    paths:
+      - 'scripts/neo-crawl4ai-staging*'
+      - 'server/neo-crawler/**'
+      - '.github/workflows/neo-oss-003.yml'
+  workflow_dispatch:
+    inputs:
+      live:
+        description: Run one crawl against the configured isolated staging service
+        type: boolean
+        default: false
+permissions:
+  contents: read
+jobs:
+  staging-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: >-
+          node --test scripts/neo-crawl4ai-staging.test.mjs
+          server/neo-crawler/crawl4ai.test.mjs server/neo-crawler/index.test.mjs
+          server/neo-crawler/worker.test.mjs server/neo-crawler/v1-1.test.mjs
+          server/neo-router/ollama-provider.test.mjs server/neo-router/providers.test.mjs
+          server/neo-router/router.test.mjs
+  live-staging-smoke:
+    if: github.event_name == 'workflow_dispatch' && inputs.live
+    needs: staging-contract
+    # This label must identify an isolated runner on the Render private network.
+    runs-on: [self-hosted, linux, neo-crawl4ai-staging]
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Check authentication and one scoped extraction
+        env:
+          NEO_CRAWL4AI_ORIGIN: ${{ secrets.NEO_CRAWL4AI_STAGING_ORIGIN }}
+          NEO_CRAWL4AI_TOKEN: ${{ secrets.NEO_CRAWL4AI_STAGING_TOKEN }}
+          NEO_CRAWL4AI_STAGE: isolated-staging
+        run: node scripts/neo-crawl4ai-staging.mjs --live

@@ -1,3 +1,4 @@
+import { createOllamaAdapter } from './ollama-provider.mjs'
 import { createVertexGeminiAdapter } from './vertex-provider.mjs'
 
 const jsonHeaders = (apiKey, extra = {}) => ({
@@ -178,6 +179,7 @@ export function providersFromEnv(env = process.env) {
       })
 
   return [
+    ...(env.OLLAMA_BASE_URL && env.OLLAMA_MODEL ? [createOllamaAdapter({ baseUrl: env.OLLAMA_BASE_URL, model: env.OLLAMA_MODEL, timeoutMs })] : []),
     createAnthropicAdapter({ apiKey: env.ANTHROPIC_API_KEY, model: env.ANTHROPIC_MODEL || undefined, timeoutMs }),
     createOpenAIAdapter({ apiKey: env.OPENAI_API_KEY, model: env.OPENAI_MODEL || undefined, timeoutMs }),
     createMetaMuseAdapter({

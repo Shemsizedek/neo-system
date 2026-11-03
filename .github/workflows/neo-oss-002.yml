@@ -1,0 +1,28 @@
+name: NEO OSS Gate 002
+on:
+  pull_request:
+    paths:
+      - 'server/neo-crawler/**'
+      - 'server/neo-router/**'
+      - 'apps/noogle/index/**'
+      - '.github/workflows/neo-oss-002.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  crawl4ai-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: >-
+          node --test
+          server/neo-crawler/crawl4ai.test.mjs
+          server/neo-crawler/index.test.mjs
+          server/neo-crawler/worker.test.mjs
+          server/neo-crawler/v1-1.test.mjs
+          server/neo-router/ollama-provider.test.mjs
+          server/neo-router/providers.test.mjs
+          server/neo-router/router.test.mjs

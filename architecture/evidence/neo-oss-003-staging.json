@@ -1,0 +1,45 @@
+{
+  "gate": "NEO-OSS-003",
+  "observedAt": "2026-11-03T11:33:20.695Z",
+  "status": "BLOCKED",
+  "render": {
+    "workspaceId": "tea-dbhtkc8473hc73933img",
+    "workspaceName": "NEO SYSTEM",
+    "selectedByUser": true,
+    "servicesObserved": 12,
+    "crawl4aiServiceFound": false,
+    "scope": "Only selected workspace inspected"
+  },
+  "configuration": {
+    "endpointPresent": false,
+    "tokenPresent": false,
+    "scope": "current execution environment; GitHub and Render secret stores not enumerated"
+  },
+  "validation": {
+    "localTestsPassed": 56,
+    "liveSourceCrawlAttempts": 0,
+    "productionReady": false,
+    "networkIsolationVerified": false
+  },
+  "ci": {
+    "gate002": "passed",
+    "gate001": "passed",
+    "build": {
+      "status": "failed",
+      "runId": 41627799066,
+      "observedFailure": "server/neo-platform-api/server.test.mjs expects Global Interdependent School District; rendered page says Global Interdependent School System"
+    },
+    "architecture": {
+      "status": "failed",
+      "runId": 41627798881,
+      "observedFailure": "App directory inventory differs from architecture/neo-services-normalization.json"
+    },
+    "externalWorkers": "failed; causes not investigated"
+  },
+  "nextRequired": [
+    "Provision or identify an authenticated isolated Crawl4AI staging service in NEO SYSTEM",
+    "Verify immutable runtime revision and network egress isolation",
+    "Bind staging origin/token through secret storage and run the manual smoke",
+    "Resolve broader repository CI blockers before release"
+  ]
+}

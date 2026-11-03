@@ -1,0 +1,20 @@
+name: NEO OSS Gate 004
+on:
+  pull_request:
+    paths:
+      - 'deploy/neo-crawl4ai/**'
+      - 'architecture/neo-services-normalization.json'
+      - 'server/neo-platform-api/server.test.mjs'
+      - '.github/workflows/neo-oss-004.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  private-staging-plan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: node --test deploy/neo-crawl4ai/private-staging-plan.test.mjs
