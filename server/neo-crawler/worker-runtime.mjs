@@ -8,6 +8,7 @@ import { createUpstashStateStore } from '../neo-router/persistent-store.mjs';
 import { createRedisLeaseManager } from '../neo-router/distributed-lease.mjs';
 
 export function createCrawlerWorkerRuntime({
+  crawler,
   queue=createRedisCrawlQueue(),
   vault=createEvidenceVault(process.env.NEO_EVIDENCE_DB_PATH||'data/neo-evidence-vault.sqlite'),
   eventStore=createRedisEventStore(),
@@ -23,6 +24,6 @@ export function createCrawlerWorkerRuntime({
     try{return await ingestRouterEvent({event,store:eventStore,runtime:missionRuntime})}
     finally{await routeLease.release(leaseId,owner)}
   };
-  const worker=createCrawlerWorker({queue,evidenceSink,routeEvent});
+  const worker=createCrawlerWorker({queue,crawler,evidenceSink,routeEvent});
   return Object.freeze({worker,queue,vault,eventStore,missionRuntime,routeLease});
 }

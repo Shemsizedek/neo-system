@@ -6,6 +6,7 @@ export function fingerprintCrawlerEnvelope(envelope) {
     id: doc.id || null,
     canonicalUrl: doc.canonicalUrl || doc.url || null,
     contentHash: doc.contentHash || createHash('sha256').update(JSON.stringify(doc)).digest('hex'),
+    ...(doc.contentHashScope ? { contentHashScope: doc.contentHashScope } : {}),
     retrievedAt: doc.retrievedAt || envelope.generatedAt || new Date().toISOString(),
     title: doc.title || doc.canonicalUrl || doc.url || 'Crawler record',
     sourceClass: doc.sourceClass || 'other',
@@ -25,7 +26,7 @@ export function createEvidenceVaultSink(vault, { asset = 'NEO-CRAWLER', actor = 
           asset, id, title: item.title, sourceType: 'CRAWLER_SNAPSHOT',
           sourceUrl: item.canonicalUrl || undefined, observedAt: item.retrievedAt,
           claimType: 'RESEARCH_INPUT',
-          note: JSON.stringify({ contentHash: item.contentHash, sourceClass: item.sourceClass, evidenceState: item.evidenceState, adapter: envelope.adapter })
+          note: JSON.stringify({ contentHash: item.contentHash, contentHashScope: item.contentHashScope, sourceClass: item.sourceClass, evidenceState: item.evidenceState, adapter: envelope.adapter })
         }, actor);
       });
     }

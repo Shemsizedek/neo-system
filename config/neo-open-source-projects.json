@@ -94,9 +94,10 @@
       "license": "Apache-2.0",
       "checkedAt": "2026-11-03",
       "module": "NEO Crawler / Noogle",
-      "status": "planned",
-      "scope": "Normalize authorized public sources with URL, timestamp, hash and provenance.",
-      "enabledByDefault": false
+      "status": "adapter-implemented",
+      "scope": "Opt-in scoped extraction adapter; isolated service deployment and live egress verification pending.",
+      "enabledByDefault": false,
+      "contractRevision": "888299fb5f0b82181897dc0e61bfb4b036f0aea5"
     },
     {
       "id": "mitmproxy",
@@ -182,5 +183,6 @@
       "scope": "Deterministic UI tests with test accounts and isolated browser storage.",
       "enabledByDefault": false
     }
-  ]
+  ],
+  "lastUpdatedGate": "NEO-OSS-002"
 }
