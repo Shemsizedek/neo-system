@@ -1,0 +1,29 @@
+name: NEO Muse Activation Readiness
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Read-only main protection and secret-presence diagnostic
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          META_MODEL_SECRET_PRESENT: ${{ secrets.MODEL_API_KEY != '' }}
+        run: node scripts/neo-muse-activation-readiness.mjs
