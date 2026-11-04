@@ -7,7 +7,8 @@ test('readiness fails closed for missing API key or insufficient GitHub rules', 
   for (const arg of [
     { secretConfigured: false, protection: { ok: true, reviews: true, checks: true, activeRulesets: ['NEO'] } },
     { secretConfigured: true, protection: { ok: false, reviews: false, checks: false, activeRulesets: ['NEO'] } },
-    { secretConfigured: true, protectionError: true }
+    { secretConfigured: true, protectionError: true },
+    { secretConfigured: true, protection: { ok: false, reviews: true, checks: true, activeRulesets: ['NEO'] } }
   ]) assert.equal(summarizeMuseActivation(arg).status, 'BLOCKED')
 })
 
