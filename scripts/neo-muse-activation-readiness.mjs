@@ -9,7 +9,7 @@ export function summarizeMuseActivation({ secretConfigured = false, protection, 
     { name: 'Main branch protection: required CI checks', ok: protection?.checks === true && !protectionError }
   ]
   return {
-    status: checks.every(check => check.ok) ? 'READY_FOR_LIVE_API_PROBE' : 'BLOCKED',
+    status: rulesVerified && checks.every(check => check.ok) ? 'READY_FOR_LIVE_API_PROBE' : 'BLOCKED',
     checks,
     rulesetNames: protection?.activeRulesets ?? [],
     protectionError: protectionError ? 'Ruleset verification unavailable' : null,
