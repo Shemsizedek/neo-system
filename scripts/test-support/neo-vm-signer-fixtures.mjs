@@ -23,7 +23,7 @@ export async function startFixtureSigner({ directory, operatorPublicKey, subject
   const ready = await Promise.race([startup.then(([value]) => value), stopped.then(() => { throw Error(`fixture signer exited: ${stderr}`) }),
     new Promise((_, reject) => { timer = setTimeout(() => { child.kill('SIGKILL'); reject(Error('fixture signer startup timeout')) }, 5_000) })]).finally(() => clearTimeout(timer))
   return {
-    adapter: createExternalSignerClient({ url: ready.url, authenticationToken }), publicKey: createPublicKey(ready.publicKey),
+    adapter: createExternalSignerClient({ url: ready.url, authenticationToken }), publicKey: createPublicKey(ready.publicKey), endpoint: ready.url,
     async configure(mode) {
       const id = ++sequence, result = once(child, 'message'); child.send({ id, mode })
       const [reply] = await result

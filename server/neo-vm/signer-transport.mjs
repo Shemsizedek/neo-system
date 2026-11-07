@@ -1,20 +1,18 @@
 import { VmInputError } from '../../core/neo-bvm/input.mjs'
 import { canonicalSignerRequest } from './signer-protocol.mjs'
+import { canonicalPairingChallenge } from './pairing-protocol.mjs'
+import { normalizeSignerEndpoint } from './signer-endpoint.mjs'
 
 const fail = code => { throw new VmInputError(code) }
 const MAX_RESPONSE_BYTES = 140_000
 
 /** Explicitly configured endpoint only. No discovery, redirects, cookies or retries. */
 export function createExternalSignerClient({ url, authenticationToken, fetchImpl = globalThis.fetch } = {}) {
-  let endpoint
-  try { endpoint = new URL(url) } catch { fail('SIGNER_ENDPOINT_REQUIRED') }
-  if ((endpoint.protocol !== 'https:' && !(endpoint.protocol === 'http:' && ['127.0.0.1', '[::1]', 'localhost'].includes(endpoint.hostname))) ||
-      endpoint.pathname !== '/v1/neo-vm/sign' || endpoint.username || endpoint.password || endpoint.search || endpoint.hash) fail('SIGNER_ENDPOINT_INVALID')
+  const endpoint = new URL(normalizeSignerEndpoint(url))
   if (typeof authenticationToken !== 'string' || !/^[A-Za-z0-9_-]{32,512}$/.test(authenticationToken) || typeof fetchImpl !== 'function') fail('SIGNER_TRANSPORT_AUTH_REQUIRED')
   const address = endpoint.href, credential = authenticationToken
-  return Object.freeze({
-    async requestSignature({ request, signal }) {
-      const body = JSON.stringify(canonicalSignerRequest(request))
+  async function post(address, value, signal) {
+      const body = JSON.stringify(value)
       if (Buffer.byteLength(body) > 100_000 || !(signal instanceof AbortSignal)) fail('SIGNER_TRANSPORT_REQUEST_INVALID')
       let response
       try {
@@ -41,6 +39,9 @@ export function createExternalSignerClient({ url, authenticationToken, fetchImpl
         if (error instanceof VmInputError) throw error
         fail('SIGNER_TRANSPORT_UNAVAILABLE')
       }
-    },
+  }
+  return Object.freeze({
+    requestSignature: ({request,signal}) => post(address,canonicalSignerRequest(request),signal),
+    requestPairingProof: ({challenge,signal}) => post(new URL('/v1/neo-vm/pair',address).href,canonicalPairingChallenge(challenge),signal),
   })
 }
