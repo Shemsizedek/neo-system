@@ -48,7 +48,8 @@ test('a killed process leaves dispatched work visible for manual recovery and ne
  const s=setup(t),child=spawn(process.execPath,['scripts/test-support/neo-vm-state-worker.mjs',s.filename],{cwd:new URL('../../',import.meta.url),stdio:['ignore','ignore','pipe','ipc']})
  t.after(()=>{if(child.exitCode===null)child.kill('SIGKILL')})
  const committed=once(child,'message'),ended=once(child,'exit');child.send(record)
- const [message]=await committed;assert.equal(message.committed,true);child.kill('SIGKILL');await ended
+ const [message]=await committed;assert.equal(message.committed,true);child.kill('SIGKILL');const [status,signal]=await ended
+ assert.equal(status,null);assert.equal(signal,'SIGKILL')
  s.store.close();const store=s.open(),pending=store.listSigningAttempts(owner,{recoveryOnly:true})
  assert.equal(pending.length,1);assert.equal(pending[0].status,'DISPATCHED');assert.equal(pending[0].signatureMayExist,true)
  assert.equal(store.signingAudit(id,owner).valid,true)
