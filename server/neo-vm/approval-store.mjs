@@ -3,6 +3,7 @@ import { constants, openSync, closeSync, fstatSync, mkdirSync } from 'node:fs'
 import { dirname, isAbsolute } from 'node:path'
 import { sha256Hex } from '../../core/neo-bvm/runtime.mjs'
 import { requireFields, VmInputError } from '../../core/neo-bvm/input.mjs'
+import { installSignerState } from './signer-state.mjs'
 
 const stores = new WeakSet()
 const fail = code => { throw new VmInputError(code) }
@@ -47,7 +48,9 @@ export function createSqliteApprovalStore({ filename, now = () => Math.floor(Dat
       VALUES (?,?,?,?,?,?,?) ON CONFLICT(nonce_hash) DO NOTHING`)
     let closed = false
     const requireOpen = () => { if (closed) fail('PSBT_APPROVAL_STORE_CLOSED') }
+    const signerState = installSignerState(db, now, requireOpen)
     const store = Object.freeze({
+      ...signerState,
       consumeApproval(nonceKey, expiresAt, context) {
         requireOpen()
         if (typeof nonceKey !== 'string' || !NONCE_KEY.test(nonceKey)) fail('PSBT_APPROVAL_NONCE_INVALID')

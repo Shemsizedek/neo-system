@@ -66,6 +66,11 @@ validates the finalized transaction in [`docs/NEO-NVM-BVM-GATE-6.md`](docs/NEO-N
 Run `npm run neo-vm:signer` with the verified `BITCOIND_PATH` for the separate
 fixture-signer and combined Core regtest gate. Real device pairing remains pending.
 
+Gate 7 adds verified device-key pairing, revocation and durable signing records in
+[`docs/NEO-NVM-BVM-GATE-7.md`](docs/NEO-NVM-BVM-GATE-7.md). Run
+`npm run neo-vm:pairing` with the verified `BITCOIND_PATH` for the combined native
+gate. The read-only staging preflight reports missing live prerequisites.
+
 ## Current release boundary
 
 This build is **FOUNDATION / SANDBOX** software.

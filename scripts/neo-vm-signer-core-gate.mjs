@@ -12,9 +12,10 @@ import { sha256Hex } from '../core/neo-bvm/runtime.mjs'
 import { fixturePsbt, fixtureIntent, fixtureApproval } from './test-support/neo-vm-fixtures.mjs'
 import { startFixtureSigner } from './test-support/neo-vm-signer-fixtures.mjs'
 
-export async function runExternalSignerGate({ bitcoindPath, evidencePath } = {}) {
+export async function runExternalSignerGate({ bitcoindPath, evidencePath, afterExternalSignerChecks } = {}) {
   const previous = await runIdentityApprovalGate({ bitcoindPath,
-    afterIdentityChecks: async ({ program, plan, outpoint, reviewRpc, validationRpc, controlRpc, fundingBlock }) => {
+    afterIdentityChecks: async context => {
+      const { program, plan, outpoint, reviewRpc, validationRpc, controlRpc, fundingBlock }=context
       const directory = await mkdtemp(join(tmpdir(), 'neo-vm-external-signer-'))
       const subject = 'google:regtest-signer-operator', secret = randomBytes(48), operator = generateKeyPairSync('ed25519')
       const subjectHash = sha256Hex(Buffer.from(`neo-nvm/neopass-subject-v1\0${subject}`))
@@ -92,7 +93,8 @@ export async function runExternalSignerGate({ bitcoindPath, evidencePath } = {})
         await assert.rejects(() => fixture.adapter.requestSignature({ request: lastOutgoing, signal: new AbortController().signal }), error => error.code === 'SIGNER_TRANSPORT_RESPONSE_INVALID')
         cases.push({ name: 'device nonce history survives signer process restart and ephemeral attestation key rotation', passed: true, approved: false })
         assert.deepEqual(await controlRpc('getrawmempool', []), [])
-        return { status: 'PASS', cases, transport: 'authenticated loopback HTTP to separate fixture process', signerCalls,
+        const pairingGate=afterExternalSignerChecks?await afterExternalSignerChecks(context):null
+        return { status: 'PASS', cases, pairingGate, transport: 'authenticated loopback HTTP to separate fixture process', signerCalls,
           gatewayStore: store.inspect(), deviceStore: 'separate SQLite WAL/FULL nonce store', fixtureKeysOnly: true,
           liveNeopassConnected: false, productionSignerConnected: false, applicationBroadcasts: 0 }
       } finally { await fixture?.close(); store?.close(); await rm(directory, { recursive: true, force: true }) }

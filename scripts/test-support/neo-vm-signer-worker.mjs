@@ -1,13 +1,16 @@
 // TEST ONLY. This process is not a device adapter or a production signer service.
 // BTC private scalars 1/2/3 are public fixtures. Never fund them with real BTC.
 import { createServer } from 'node:http'
-import { createPublicKey, generateKeyPairSync, timingSafeEqual } from 'node:crypto'
+import { createPublicKey, generateKeyPairSync, timingSafeEqual,verify,sign } from 'node:crypto'
 import { join } from 'node:path'
 import { compileSignatureRefund } from '../../core/neo-nvm/signature-refund.mjs'
 import { verifySignerOperatorApproval } from '../../server/neo-vm/signer-protocol.mjs'
 import { createSqliteApprovalStore } from '../../server/neo-vm/approval-store.mjs'
 import { fixtureKey, signedFixtureSpend } from './neo-vm-fixtures.mjs'
 import { fixtureSignerResponse } from './neo-vm-signer-fixtures.mjs'
+import { fixturePairingDeviceProof,fixtureEdPublicHex } from './neo-vm-pairing-fixtures.mjs'
+import { canonicalPairingChallenge,pairingApprovalChallenge,pairingBitcoinKeyChallenge,pairingDeviceChallenge } from '../../server/neo-vm/pairing-protocol.mjs'
+import { sha256Hex } from '../../core/neo-bvm/runtime.mjs'
 
 process.once('message', configuration => {
   const keys = generateKeyPairSync('ed25519'), operatorKey = createPublicKey(configuration.operatorPublicKey)
@@ -17,10 +20,25 @@ process.once('message', configuration => {
     const send = (status, value) => { outgoing.writeHead(status, { 'content-type': 'application/json' }); outgoing.end(JSON.stringify(value)) }
     try {
       const auth = Buffer.from(incoming.headers.authorization || ''), expected = Buffer.from('Bearer ' + configuration.authenticationToken)
-      if (incoming.method !== 'POST' || incoming.url !== '/v1/neo-vm/sign' || auth.length !== expected.length || !timingSafeEqual(auth, expected)) return send(403, { error: 'fixture_forbidden' })
+      if (incoming.method !== 'POST' || !['/v1/neo-vm/sign','/v1/neo-vm/pair'].includes(incoming.url) || auth.length !== expected.length || !timingSafeEqual(auth, expected)) return send(403, { error: 'fixture_forbidden' })
       const chunks = []; let size = 0
       for await (const chunk of incoming) { size += chunk.length; if (size > 100_000) return send(413, { error: 'fixture_size' }); chunks.push(chunk) }
-      const request = verifySignerOperatorApproval(JSON.parse(Buffer.concat(chunks).toString()), operatorKey)
+      const value=JSON.parse(Buffer.concat(chunks).toString())
+      if(incoming.url==='/v1/neo-vm/pair'){
+        const challenge=canonicalPairingChallenge(value),{signatureHex,...approval}=challenge.approval
+        if(challenge.ownerHash!==configuration.subjectHash || challenge.approverId!=='fixture-operator' || challenge.approvalKeyHash!==sha256Hex(operatorKey.export({type:'spki',format:'der'})) ||
+          challenge.proposal.signerId!=='fixture-device' || challenge.proposal.devicePublicKeyHex!==fixtureEdPublicHex(keys.publicKey) ||
+          challenge.proposal.endpoint!==`http://127.0.0.1:${server.address().port}/v1/neo-vm/sign` || challenge.issuedAt>1100 || challenge.expiresAt<=1100 ||
+          !verify(null,pairingApprovalChallenge(approval),operatorKey,Buffer.from(signatureHex,'hex')))return send(403,{error:'fixture_pairing_forbidden'})
+        store.savePairingChallenge(challenge,`neo-nvm/pairing-approval-v1:${challenge.approverId}:${challenge.approval.nonce}`)
+        const proof=fixturePairingDeviceProof(challenge,keys.privateKey)
+        if(mode==='wrong-pairing-key'){
+          proof.bitcoinProofs[0].signatureHex=sign('sha256',pairingBitcoinKeyChallenge(challenge,proof.bitcoinProofs[0].publicKeyHex),fixtureKey(3).privateKey).toString('hex')
+          proof.deviceSignatureHex=sign(null,pairingDeviceChallenge(challenge,proof.bitcoinProofs),keys.privateKey).toString('hex')
+        }
+        return send(200,proof)
+      }
+      const request = verifySignerOperatorApproval(value, operatorKey)
       const plan = compileSignatureRefund(request.program), branch = request.intent.branch, keyId = branch === 'redeem' ? 1 : 2
       if (request.signerId !== 'fixture-device' || request.approval.authorizerId !== 'fixture-operator' ||
           request.neopassSubjectHash !== configuration.subjectHash || request.issuedAt > 1_100 || request.expiresAt <= 1_100 ||
