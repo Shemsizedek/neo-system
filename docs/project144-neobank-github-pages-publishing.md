@@ -31,3 +31,13 @@ A dedicated public GitHub Pages repository for the bank is the clean alternative
 5. In parallel, keep the existing Neon `neo-bank-staging` PostgreSQL tables read-only and empty until authenticated account control, backend APIs, audit and financial compliance are independently verified.
 
 No production DNS cutover, Render upgrade, new paid hosting, banking transactions, Neon writes or new GitHub repository were performed in this gate.
+
+## November 6, 2026 — public hostname recovery attempt
+
+- Rechecked connected GitHub: `Shemsizedek/neo-bank-site` returned 404 and exact owner-scoped repository search found no match. The dedicated repository remains the required prerequisite for a proper standalone GitHub Pages hostname.
+- Independently verified `https://shemsizedek.github.io/neo-system/neobank/`, `/preview.js` and `/site-status.json`: HTTP 200. The readiness file explicitly states no attached database, `accountServices:false`, `financialWrites:false`.
+- Independent browser-based check of `https://neobank.holytemples.org/` failed with `ERR_CONNECTION_CLOSED`. WordPress public DNS still resolves `neobank.holytemples.org` to its existing A `8.232.127.249`, TTL 3600, propagated.
+- Tried a **temporary HTTPS subdomain redirect** through WordPress.com forwarding to `https://shemsizedek.github.io/neo-system/neobank/`, no path forwarding, not permanent. The forwarding service rejected both the direct and explicitly site-scoped attempt as **temporarily unavailable**. A subsequent read showed zero configured forwards and the original A record intact. **No production DNS change occurred.**
+- Do not blindly change `neobank` to a CNAME for a GitHub Pages origin unless the intended Pages repository has successfully bound and verified the exact custom hostname. Shared `neo-system` Pages is the wrong custom-domain owner.
+- If bypassing the dedicated repository temporarily, only use a provider-managed HTTPS redirect that has been proven functional; do not present a redirect as native bank-domain hosting.
+- Remaining user-side prerequisite: create `Shemsizedek/neo-bank-site` public repository via https://github.com/new?name=neo-bank-site; the prepared source package and dedicated Pages workflow are available in `neo-system`, including the verified GitHub Actions artifact. Use account-approved connectors to publish and test after the repository is present.
