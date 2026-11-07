@@ -16,6 +16,10 @@ const bounded = async operation => {
   try { return await Promise.race([Promise.resolve().then(operation), new Promise((_, reject) => { timer = setTimeout(() => reject(new Error('verification_timeout')), 5000); })]); }
   finally { clearTimeout(timer); }
 };
+// Existing Crown interfaces can return Unix seconds; ISO remains supported.
+const expiryMilliseconds = value => typeof value === 'number' ?
+  (Number.isSafeInteger(value) && value > 0 && value <= 253402300799 ? value * 1000 : NaN) :
+  (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(value) ? Date.parse(value) : NaN);
 
 /** verifyCapability wraps the existing verifyCrownAuthorization trusted introspector.
  * Do not use /crown/prove here: that workload flow signs a challenge.
@@ -26,7 +30,7 @@ export async function checkEgaasPublishingAuthority({ policy, verifyCapability, 
   if (typeof verifyCapability !== 'function') return blocked('crown_introspector_unconfigured');
   try {
     const proof = await bounded(() => verifyCapability({ requiredScope: EGAAS_PUBLISH_SCOPE }));
-    const expires = Date.parse(proof?.expires_at);
+    const expires = expiryMilliseconds(proof?.expires_at);
     if (proof?.ok !== true || proof.service_id !== EGAAS_SERVICE_ID || !Array.isArray(proof.scopes) ||
         !proof.scopes.includes(EGAAS_PUBLISH_SCOPE) || proof.manifest_hash !== policy.manifestHash ||
         !Number.isFinite(expires) || expires <= now()) return blocked('crown_publishing_capability_denied');
