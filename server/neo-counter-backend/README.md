@@ -71,3 +71,19 @@ For multi-node production deployment, keep the API contract and replace the stor
 Allocation records do not transfer funds or authorize fulfillment. Continue to enforce merchant authorization and Crown policy at any future HTTP integration, and revalidate chain finality before irreversible fulfillment. The generic event ledger and browser callback remain untrusted for payment proof. This module does not change the Redis, Firestore or Cloudflare adapters. Keep their allocation capability disabled until equivalent atomic constraints and tests exist.
 
 Run `npm run neo-counter:server:test` to include synthetic evidence, rejection, retry, restart and two-connection race tests. No built-in live chain verifier, HTTP allocation route or deployed staging integration is supplied here.
+
+### Connect the read-only verifier in trusted staging code
+
+`payment-verifier.mjs` supplies `createCheckoutPaymentVerifier({ rpc, counterpartyGet, now })` and `createCounterpartyPaymentReader({ baseUrl, fetchImpl })`. Use these in the trusted bootstrap, then pass the resulting verifier into `createStore`:
+
+```js
+const counterpartyGet = createCounterpartyPaymentReader({ baseUrl: operatorConfiguredCounterpartyV2Url });
+const paymentVerifier = createCheckoutPaymentVerifier({ rpc: operatorConfiguredBitcoinCoreClient, counterpartyGet });
+const store = createStore(stagingDatabasePath, { paymentVerifier });
+```
+
+The Bitcoin client must be operator-configured outside public requests, with bounded timeouts and access restricted to read methods. The verifier uses only `getblockchaininfo`, `getrawtransaction`, `getblockheader` and `getblockhash`; transaction lookup requires a suitable indexed node or equivalent read service. Reuses the existing NEO Prime Bitcoin RPC inclusion verifier for a final confirmation check.
+
+This version supports Bitcoin mainnet only. Counterparty sends use their canonical `msg_index` as `eventIndex`. Ambiguous MPMA rows sharing that locator fail closed. Counterparty block hash must agree with the active Bitcoin block. Both nodes must report readiness and synchronized heights. Raw `quantity` is already in protocol atomic units; `quantity_normalized` is not treated as atomic units. Unsafe JSON numeric quantities above JavaScript's safe integer range are rejected; exact integer strings are supported. Prepare order amounts using verified asset divisibility in trusted order code.
+
+The Counterparty reader performs fixed-path HTTPS GETs with a ten-second timeout, no redirects or credentials, and rejects incomplete/paginated results. No API route, production configuration, identity privilege, wallet signing or fulfillment permission is enabled by importing these factories. A public reference API health response does not prove that Counterpay's own node is connected or that it is an independent source of Bitcoin confirmation.
