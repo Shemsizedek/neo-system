@@ -1,6 +1,14 @@
 name: Global NEO IP NET-003 Read-Only Gateway Inventory
 
 on:
+  # Read-only inventory executes once when this workflow is merged to main
+  # (and on future changes to these same audit files). No cloud resources created.
+  push:
+    branches: [main]
+    paths:
+      - 'services/neo-vpn/diagnostics/**'
+      - 'services/neo-vpn/tests/gcp-inventory-report.test.mjs'
+      - '.github/workflows/global-neo-ip-net-003.yml'
   pull_request:
     paths:
       - 'services/neo-vpn/diagnostics/**'
@@ -26,7 +34,7 @@ jobs:
 
   discover-existing-node:
     # A read-only GCP audit; NEVER runs for untrusted pull requests.
-    if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
+    if: ${{ (github.event_name == 'workflow_dispatch' || github.event_name == 'push') && github.ref == 'refs/heads/main' && github.repository == 'Shemsizedek/neo-system' }}
     needs: verify-parser
     runs-on: ubuntu-latest
     environment: neo-vpn-plan
