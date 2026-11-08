@@ -1,0 +1,45 @@
+name: NEO Bank Cloudflare Domain TLS Check
+on:
+  push:
+    branches: [ops/neo-bank-cloudflare-pages-20261108]
+    paths: ['.github/workflows/neo-bank-cloudflare-tls-check.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+    steps:
+      - name: Read bank domain registration and certificate validation status
+        run: |
+          set -euo pipefail
+          api="https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/neo-bank-project144/domains/neobank.holytemples.org"
+          for attempt in 1 2 3 4 5 6; do
+            curl -fsS --max-time 20 -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" "$api" > /tmp/neobank-domain.json
+            jq -e '.success==true and .result.name=="neobank.holytemples.org"' /tmp/neobank-domain.json >/dev/null
+            jq -c '.result|{name,status,verification_status:.verification_data.status,validation_status:.validation_data.status,validation_error:.validation_data.error_message,verification_error:.verification_data.error_message}' /tmp/neobank-domain.json
+            status="$(jq -r '.result.status' /tmp/neobank-domain.json)"
+            if [ "$status" = active ]; then break; fi
+            sleep 10
+          done
+          echo "## NEO Bank HTTPS readiness check" >> "$GITHUB_STEP_SUMMARY"
+          echo "Cloudflare Pages domain status: `$(jq -r '.result.status' /tmp/neobank-domain.json)`" >> "$GITHUB_STEP_SUMMARY"
+      - name: Verify externally reachable HTTPS without bypassing certificates
+        run: |
+          set -euo pipefail
+          origin="https://neobank.holytemples.org"
+          code="$(curl -sS -L --max-time 15 -o /tmp/neobank-home.html -w '%{http_code}' "$origin/" || true)"
+          if [ "$code" != 200 ] || ! grep -q 'Your community, your future' /tmp/neobank-home.html; then
+            echo "::error::NEO Bank custom hostname still not serving public dashboard with valid HTTPS (HTTP $code)."
+            exit 1
+          fi
+          code="$(curl -sS -L --max-time 15 -o /tmp/neobank-status.json -w '%{http_code}' "$origin/site-status.json" || true)"
+          test "$code" = 200
+          jq -e '.mode=="read-only-preview" and .financialWrites==false and .accountServices==false' /tmp/neobank-status.json >/dev/null
+          curl -fsS --max-time 15 "$origin/preview.css" -o /dev/null
+          curl -fsS --max-time 15 "$origin/preview.js" -o /dev/null
+          echo "NEO Bank public HTTPS is verified and read-only." >> "$GITHUB_STEP_SUMMARY"
