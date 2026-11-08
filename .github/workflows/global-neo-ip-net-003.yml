@@ -9,12 +9,14 @@ on:
       - 'services/neo-vpn/diagnostics/**'
       - 'services/neo-vpn/tests/gcp-inventory-report.test.mjs'
       - 'services/neo-vpn/tests/gcp-workflow-auth-config.test.mjs'
+      - 'services/neo-vpn/tests/direct-gcp-readonly.test.mjs'
       - '.github/workflows/global-neo-ip-net-003.yml'
   pull_request:
     paths:
       - 'services/neo-vpn/diagnostics/**'
       - 'services/neo-vpn/tests/gcp-inventory-report.test.mjs'
       - 'services/neo-vpn/tests/gcp-workflow-auth-config.test.mjs'
+      - 'services/neo-vpn/tests/direct-gcp-readonly.test.mjs'
       - '.github/workflows/global-neo-ip-net-003.yml'
   workflow_dispatch:
 
@@ -32,7 +34,7 @@ jobs:
         with:
           node-version: '24'
       - name: Test fail-closed reporting
-        run: node --test services/neo-vpn/tests/gcp-inventory-report.test.mjs services/neo-vpn/tests/gcp-workflow-auth-config.test.mjs
+        run: node --test services/neo-vpn/tests/gcp-inventory-report.test.mjs services/neo-vpn/tests/gcp-workflow-auth-config.test.mjs services/neo-vpn/tests/direct-gcp-readonly.test.mjs
 
   discover-existing-node:
     # A read-only GCP audit; NEVER runs for untrusted pull requests.
