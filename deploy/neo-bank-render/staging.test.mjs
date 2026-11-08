@@ -14,6 +14,8 @@ async function running(options,fn){
 }
 test('preview hides the upstream platform and blocks financial actions',async()=>running({},async base=>{
  assert.equal((await fetch(base+'/healthz')).status,200);
+ const status=await (await fetch(base+'/site-status.json')).json();
+ assert.equal(status.mode,'read-only-preview');assert.equal(status.accountServices,false);assert.equal(status.financialWrites,false);
  assert.equal((await fetch(base+'/health')).status,503);
  assert.equal((await fetch(base+'/api/v1/community/status')).status,503);
  for(const path of ['/api/v1/transfers','/api/v1/offers'])assert.equal((await fetch(base+path,{method:'POST',body:'{}'})).status,503);
@@ -22,10 +24,10 @@ test('preview hides the upstream platform and blocks financial actions',async()=
  const response=await fetch(base);
  const page=await response.text();
  assert.match(page,/NEO Bank \| Community Finance/);
- assert.match(page,/data-section="overview"/);
+ assert.match(page,/data-section="home"/);
  assert.match(page,/data-open="accounts"/);
  assert.match(page,/id="runtimeStatus"/);
- assert.match(page,/Staging interface/);
+ assert.match(page,/Read-only preview/);
  assert.doesNotMatch(page,/\bCES\b|community-exchange|NMNI|private-source|SOURCE_TOKEN|name="toAccount"/i);
  const policy=response.headers.get('content-security-policy')||'';
  assert.match(policy,/script-src 'self'/);
@@ -99,13 +101,13 @@ test('untrusted error text never becomes a bank response',async()=>running({sour
 
 test('new dashboard view is read-only without private account data or actionable money forms',async()=>running({},async base=>{
  const page=await (await fetch(base+'/index.html')).text();
- for(const key of ['overview','accounts','exchange','markets','activity','integrations']){
+ for(const key of ['home','accounts','community','activity']){
   assert.match(page,new RegExp('data-view="'+key+'"'));
  }
  assert.match(page,/Transfers are not available/);
- assert.match(page,/No live listings connected/);
- assert.match(page,/No verified statement available/);
- assert.match(page,/No connected account or financial balance/);
+ assert.match(page,/No listings connected/);
+ assert.match(page,/No verified activity to show/);
+ assert.match(page,/Banking services are not open yet/);
  assert.doesNotMatch(page,/id="transferForm"|id="offerForm"|id="googleButton"|\bNMNIBANK\b|seed phrase.*input/i);
  for(const path of ['/api/v1/transfers','/api/v1/offers','/api/v1/auth/google']){
   assert.equal((await fetch(base+path,{method:'POST',headers:{'content-type':'application/json'},body:'{}'})).status,503);
