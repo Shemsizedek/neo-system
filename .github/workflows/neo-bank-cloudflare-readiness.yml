@@ -1,0 +1,45 @@
+name: NEO Bank Cloudflare Pages Readiness
+on:
+  push:
+    branches: [ops/neo-bank-cloudflare-pages-20261108]
+    paths: ['.github/workflows/neo-bank-cloudflare-readiness.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check configured credentials and read existing Pages projects
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          if [ -z "${CLOUDFLARE_API_TOKEN:-}" ] || [ -z "${CLOUDFLARE_ACCOUNT_ID:-}" ]; then
+            echo "::error::Cloudflare account ID or API token not configured. No changes made."
+            exit 1
+          fi
+          # Never print a token, an account ID, or raw response bodies to CI logs.
+          status="$(curl --silent --show-error --max-time 20 -o /tmp/neobank-pages-read.json -w '%{http_code}' \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" -H "Accept: application/json" \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects?per_page=100")"
+          if [ "$status" != "200" ]; then
+            echo "::error::Cloudflare Pages read rejected (HTTP $status). No changes made."
+            exit 1
+          fi
+          jq -e '.success == true and (.result | type == "array")' /tmp/neobank-pages-read.json >/dev/null || {
+            echo "::error::Cloudflare Pages returned unexpected response. No changes made."
+            exit 1
+          }
+          count="$(jq '.result | length' /tmp/neobank-pages-read.json)"
+          existing="$(jq -r 'any(.result[]; .name == "neo-bank-project144")' /tmp/neobank-pages-read.json)"
+          {
+            echo "## NEO Bank alternative frontend hosting"
+            echo "Cloudflare Pages API: reachable."
+            echo "Visible Pages projects: $count."
+            echo "NEO Bank Pages project already exists: $existing."
+            echo "Read-only preflight. No project, domain, or DNS change."
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "Cloudflare Pages reachable; existing NEO Bank project: $existing"
