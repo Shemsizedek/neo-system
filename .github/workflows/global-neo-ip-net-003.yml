@@ -8,11 +8,13 @@ on:
     paths:
       - 'services/neo-vpn/diagnostics/**'
       - 'services/neo-vpn/tests/gcp-inventory-report.test.mjs'
+      - 'services/neo-vpn/tests/gcp-workflow-auth-config.test.mjs'
       - '.github/workflows/global-neo-ip-net-003.yml'
   pull_request:
     paths:
       - 'services/neo-vpn/diagnostics/**'
       - 'services/neo-vpn/tests/gcp-inventory-report.test.mjs'
+      - 'services/neo-vpn/tests/gcp-workflow-auth-config.test.mjs'
       - '.github/workflows/global-neo-ip-net-003.yml'
   workflow_dispatch:
 
@@ -30,7 +32,7 @@ jobs:
         with:
           node-version: '24'
       - name: Test fail-closed reporting
-        run: node --test services/neo-vpn/tests/gcp-inventory-report.test.mjs
+        run: node --test services/neo-vpn/tests/gcp-inventory-report.test.mjs services/neo-vpn/tests/gcp-workflow-auth-config.test.mjs
 
   discover-existing-node:
     # A read-only GCP audit; NEVER runs for untrusted pull requests.
@@ -38,6 +40,12 @@ jobs:
     needs: verify-parser
     runs-on: ubuntu-latest
     environment: neo-vpn-plan
+    # Match other NEO GCP workflows: prefer environment/repo Variables, then
+    # same-workflow accessible Secrets. Never copy credentials into source.
+    env:
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID || secrets.GCP_PROJECT_ID }}
+      GCP_WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER || secrets.GCP_WIF_PROVIDER }}
+      GCP_SERVICE_ACCOUNT: ${{ vars.GCP_SERVICE_ACCOUNT || secrets.GCP_SERVICE_ACCOUNT }}
     permissions:
       contents: read
       id-token: write
@@ -45,30 +53,34 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Require existing approved GCP environment
         shell: bash
-        env:
-          GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
-          GCP_WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER }}
-          GCP_SERVICE_ACCOUNT: ${{ vars.GCP_SERVICE_ACCOUNT }}
         run: |
           set -euo pipefail
+          missing=0
           for key in GCP_PROJECT_ID GCP_WIF_PROVIDER GCP_SERVICE_ACCOUNT; do
             if [[ -z "${!key:-}" ]]; then
-              echo "::error::Missing existing authorized GCP variable: $key."
-              exit 1
+              echo "::error::Missing approved GCP configuration: $key (check neo-vpn-plan environment and repo Variables/Secrets)."
+              missing=1
             fi
           done
+          if (( missing )); then
+            echo "::error::Read-only inventory blocked; no GCP authentication was attempted."
+            exit 1
+          fi
+          # Provider must be a resource name, not a URL, placeholder or workload secret.
+          if [[ ! "$GCP_WIF_PROVIDER" =~ ^projects/[0-9]+/locations/global/workloadIdentityPools/[A-Za-z0-9_-]+/providers/[A-Za-z0-9_-]+$ ]]; then
+            echo "::error::GCP_WIF_PROVIDER is not a canonical Workload Identity provider resource name."
+            exit 1
+          fi
       - name: Authenticate through existing short-lived OIDC
         uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
         with:
-          project_id: ${{ vars.GCP_PROJECT_ID }}
-          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
-          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+          project_id: ${{ env.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
       - name: Setup Google Cloud read-only CLI
         uses: google-github-actions/setup-gcloud@v3
       - name: Inventory existing Compute resources (list ONLY)
         shell: bash
-        env:
-          GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
         run: |
           set -euo pipefail
           umask 077
