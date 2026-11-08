@@ -1,0 +1,89 @@
+name: Global NEO IP NET-003 Read-Only Gateway Inventory
+
+on:
+  pull_request:
+    paths:
+      - 'services/neo-vpn/diagnostics/**'
+      - 'services/neo-vpn/tests/gcp-inventory-report.test.mjs'
+      - '.github/workflows/global-neo-ip-net-003.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-parser:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Test fail-closed reporting
+        run: node --test services/neo-vpn/tests/gcp-inventory-report.test.mjs
+
+  discover-existing-node:
+    # A read-only GCP audit; NEVER runs for untrusted pull requests.
+    if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
+    needs: verify-parser
+    runs-on: ubuntu-latest
+    environment: neo-vpn-plan
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Require existing approved GCP environment
+        shell: bash
+        env:
+          GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+          GCP_WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER }}
+          GCP_SERVICE_ACCOUNT: ${{ vars.GCP_SERVICE_ACCOUNT }}
+        run: |
+          set -euo pipefail
+          for key in GCP_PROJECT_ID GCP_WIF_PROVIDER GCP_SERVICE_ACCOUNT; do
+            if [[ -z "${!key:-}" ]]; then
+              echo "::error::Missing existing authorized GCP variable: $key."
+              exit 1
+            fi
+          done
+      - name: Authenticate through existing short-lived OIDC
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
+        with:
+          project_id: ${{ vars.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+      - name: Setup Google Cloud read-only CLI
+        uses: google-github-actions/setup-gcloud@v3
+      - name: Inventory existing Compute resources (list ONLY)
+        shell: bash
+        env:
+          GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+        run: |
+          set -euo pipefail
+          umask 077
+          if ! gcloud compute instances list --project="$GCP_PROJECT_ID" --filter='name=neo-vpn-node-001' --format=json > "$RUNNER_TEMP/neo-vpn-instances.json" 2> "$RUNNER_TEMP/neo-vpn-instances.err"; then
+            echo "::error::Compute instance LIST access unavailable; inventory UNVERIFIED."
+            exit 1
+          fi
+          if ! gcloud compute addresses list --project="$GCP_PROJECT_ID" --format=json > "$RUNNER_TEMP/neo-vpn-addresses.json" 2> "$RUNNER_TEMP/neo-vpn-addresses.err"; then
+            echo "::error::Compute addresses LIST access unavailable; reservation UNVERIFIED."
+            exit 1
+          fi
+          node services/neo-vpn/diagnostics/gcp-inventory-report.mjs \
+            "$RUNNER_TEMP/neo-vpn-instances.json" \
+            "$RUNNER_TEMP/neo-vpn-addresses.json" \
+            > "$RUNNER_TEMP/neo-vpn-gateway-evidence.json"
+      - name: Publish restricted summary, never endpoint or keys
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo '## NEO IP NET-003 — EXISTING gateway inventory'
+            echo 'This read-only cloud inventory cannot certify WireGuard, member sessions, firewall controls or live end-to-end encrypted communication.'
+            echo '```json'
+            cat "$RUNNER_TEMP/neo-vpn-gateway-evidence.json"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
