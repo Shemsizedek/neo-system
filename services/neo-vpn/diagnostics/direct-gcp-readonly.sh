@@ -40,19 +40,23 @@ fi
 echo "PROJECT_ACCESS=VERIFIED"
 
 # Obtain inventory even if GitHub's WIF provider is absent: this is the independent path.
+INVENTORY_OK=1
 if ! gcloud compute instances list --project="$PROJECT" --filter='name=neo-vpn-node-001' --format=json >"$TMP/instances.json" 2>"$TMP/instances-error"; then
   echo "COMPUTE_INVENTORY=UNVERIFIED_OR_DENIED"
-  echo "NODE_LIVE=NOT_CERTIFIED"
-  exit 4
+  INVENTORY_OK=0
 fi
-if ! gcloud compute addresses list --project="$PROJECT" --format=json >"$TMP/addresses.json" 2>"$TMP/addresses-error"; then
-  echo "ADDRESS_INVENTORY=UNVERIFIED_OR_DENIED"
-  echo "NODE_LIVE=NOT_CERTIFIED"
-  exit 4
+if (( INVENTORY_OK )); then
+  if ! gcloud compute addresses list --project="$PROJECT" --format=json >"$TMP/addresses.json" 2>"$TMP/addresses-error"; then
+    echo "ADDRESS_INVENTORY=UNVERIFIED_OR_DENIED"
+    INVENTORY_OK=0
+  fi
 fi
-
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
-node "$ROOT/services/neo-vpn/diagnostics/gcp-inventory-report.mjs" "$TMP/instances.json" "$TMP/addresses.json"
+if (( INVENTORY_OK )); then
+  ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+  node "$ROOT/services/neo-vpn/diagnostics/gcp-inventory-report.mjs" "$TMP/instances.json" "$TMP/addresses.json"
+else
+  echo "COMPUTE_AND_ADDRESS_INVENTORY=UNVERIFIED"
+fi
 
 # Existing defaults from configure-wif.sh. No identity resources are created.
 POOL_ID="${NEO_VPN_WIF_POOL_ID:-github}"
@@ -92,3 +96,6 @@ echo "WIREGUARD_HANDSHAKE=NOT_VERIFIED"
 echo "TWO_PEER_ACCEPTANCE=NOT_VERIFIED"
 echo "NODE_LIVE=NOT_CERTIFIED"
 echo "NO_CLOUD_MUTATION=TRUE"
+if (( ! INVENTORY_OK )); then
+  exit 4
+fi
