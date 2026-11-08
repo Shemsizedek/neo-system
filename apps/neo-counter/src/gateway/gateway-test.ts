@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import '../rails/counterpartyEvidence.test';
 import { formatGatewayDisplay, gatewayRails } from "./money.js";
 
 assert.equal(formatGatewayDisplay(50_000, "WORLD_CURRENCY"), "∞500");
