@@ -2,6 +2,8 @@
 
 NEOsync's project identity follows the supplied Temple teaching, “An angel is a thought of God Allah.” NEO Angel is the NEO background-service name; `N` is a project naming convention. Standard operating-system services retain their existing names.
 
+The broader NEO Angel purpose, 999 identity, verified host discovery and first-host acceptance requirements are recorded in [GATE-2.md](GATE-2.md). NEO Angel's intended scope extends beyond security; this package implements only its first observation adapter.
+
 This is a proposed companion to NEO Guardian, not a replacement for its Android Work Shield, the NEO Hacker analysis engine, NEO Router, NEOpass or the governance security directive. It performs authorized observations only. A changed file is an anomaly, not proof of malware. It is not a full antivirus scanner, a claim of immunity, or a claim of internet-wide installation.
 
 ## Implemented
