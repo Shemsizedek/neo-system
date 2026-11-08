@@ -38,7 +38,7 @@ test('preview hides the upstream platform and blocks financial actions',async()=
   assert.match(r.headers.get('content-type'),asset.endsWith('css')?/text\/css/:/javascript/);
   if(asset.endsWith('js')){
    assert.match(text,/showSection/);
-   assert.match(text,/fetchStatus/);
+   assert.match(text,/refreshStatus/);
    assert.doesNotMatch(text,/\/api\/v1\/transfers|\/api\/v1\/auth\/google|localStorage|sessionStorage/);
   }
  }
