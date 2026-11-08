@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NEO Voice · Local</title>
+<style>body{font:18px system-ui;background:#071b15;color:#e7f8ef;max-width:740px;margin:3rem auto;padding:1rem}button,select,textarea,input{font:inherit;margin:.5rem 0;padding:.6rem}textarea{width:94%;height:110px}button{background:#b9ef68;border:0;border-radius:8px}pre{white-space:pre-wrap;overflow-wrap:anywhere}small{color:#a7c9bb}</style>
+<h1>NEO Voice</h1><p>Your local AI conversation desk.</p>
+<p id="health" role="status">Checking local model…</p>
+<label>Agent <select id="role"><option value="sales">Sales</option><option value="donation">Donation</option><option value="operations">Operations</option></select></label>
+<p><small>Local prototype. No telephone connection, meeting attendance or payment processing.</small></p>
+<label for="text">Message</label><textarea id="text" maxlength="4000"></textarea>
+<button id="send">Ask NEO</button>
+<p><label>Or upload a short WAV recording <input id="wav" type="file" accept=".wav,audio/wav"></label><button id="transcribe">Transcribe locally</button></p>
+<label><input id="speak" type="checkbox"> Read replies with an on-device voice</label>
+<pre id="output" aria-live="polite"></pre>
+<small>Audio goes only to your local whisper.cpp service. No browser cloud speech recognition is used. On-device speech output is available only when your browser exposes a local voice.</small>
+<script src="/client.js"></script></html>
