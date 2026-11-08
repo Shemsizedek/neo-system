@@ -30,8 +30,10 @@ test('an unconfigured method never displays a failed-password accusation',()=>{
   assert.doesNotMatch(renderTemplistLogin({passwordLoginAvailable:'true'}),/<form/);
   assert.doesNotMatch(renderTemplistLogin({googleClientId:'   '}),/g_id_signin/);
 });
-test('Google client identifier cannot inject an HTML element or attribute',()=>{
-  const html=renderTemplistLogin({googleClientId:'"><script>alert(1)</script>'});
-  assert.match(html,/data-client_id="&quot;&gt;&lt;script&gt;/);
-  assert.doesNotMatch(html,/<script|data-client_id="">/);
+test('Google client identifier cannot inject HTML with lower, upper or mixed-case tags',()=>{
+  for(const tag of ['script','SCRIPT','ScRiPt']){
+    const html=renderTemplistLogin({googleClientId:'"><'+tag+'>alert(1)</'+tag+'>'});
+    assert.match(html,/data-client_id="&quot;&gt;&lt;script&gt;/i);
+    assert.doesNotMatch(html,/<script|data-client_id="">/i);
+  }
 });
