@@ -1,0 +1,25 @@
+{
+  "route": {
+    "match": {
+      "0": {
+        "if": "is_local_domain(rcpt_domain)",
+        "then": "'local'"
+      }
+    },
+    "else": "'resend-smarthost'"
+  },
+  "resend-smarthost": {
+    "@type": "Relay",
+    "name": "resend-smarthost",
+    "host": "smtp.resend.com",
+    "port": 465,
+    "protocol": "smtp",
+    "implicitTls": true,
+    "allowInvalidCerts": false,
+    "authUsername": "resend",
+    "authSecret": {
+      "@type": "EnvironmentVariable",
+      "variableName": "RESEND_SMTP_PASSWORD"
+    }
+  }
+}
