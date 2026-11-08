@@ -22,11 +22,13 @@ Find out whether NEO VPN Node 001 is already provisioned and safe to use, WITHOU
 
 - `services/neo-vpn/diagnostics/gcp-inventory-report.mjs`: fail-closed classification of Compute instance/address inventory, prints no actual public endpoint, peer key or secret.
 - `services/neo-vpn/tests/gcp-inventory-report.test.mjs`: asserts that an apparently running VM plus a reserved public IP still yields `NOT_CERTIFIED`.
-- `.github/workflows/global-neo-ip-net-003.yml`: unit tests on pull requests; ONLY a manual dispatch from trusted `main` can query existing Google Cloud with existing `neo-vpn-plan` environment and WIF identity.
+- `.github/workflows/global-neo-ip-net-003.yml`: unit tests on pull requests; ONLY a trusted `main` push affecting the NET-003 audit files, or a manual workflow dispatch from trusted `main`, can query existing Google Cloud with the `neo-vpn-plan` environment and WIF identity.
 
 ### Secure execution after reviewed merge
 
-On GitHub, Actions > **Global NEO IP NET-003 Read-Only Gateway Inventory** > Run workflow, branch `main`. No `apply`, `deploy`, `create`, `patch` or `update` operations exist in this workflow. Do not run under any credential other than the authorized existing workload identity.
+A `push` to trusted `main` that changes NET-003 audit sources triggers a ONE-TIME read-only inventory for that merge. Thereafter it re-runs only on changes to those same files, or when an operator manually chooses Actions > **Global NEO IP NET-003 Read-Only Gateway Inventory** > Run workflow, branch `main`. The existing `neo-vpn-plan` environment remains the authorization boundary. No `apply`, `deploy`, `create`, `patch` or `update` operations exist in this workflow. Do not run under any credential other than the authorized existing workload identity.
+
+If authentication or project variables are unavailable, the workflow fails and the runtime is marked UNVERIFIED; never infer that Node 001 is absent. Even a successful inventory does not validate UDP reachability or a VPN handshake.
 
 The workflow:
 1. Requires the existing GCP project, workload identity provider and service account variables.
