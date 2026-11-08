@@ -1,0 +1,106 @@
+name: NEO Bank - Cloudflare Pages Frontend
+on:
+  push:
+    branches: [ops/neo-bank-cloudflare-pages-20261108]
+    paths: ['.github/workflows/neo-bank-cloudflare-deploy.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: neo-bank-cloudflare-pages-deploy
+  cancel-in-progress: false
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      PROJECT_NAME: neo-bank-project144
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Validate canonical NEO Bank public frontend
+        run: |
+          set -euo pipefail
+          node --check apps/neo-bank-pages/preview.js
+          node --test apps/neo-bank-pages/preview.test.mjs
+          node -e "const s=require('./apps/neo-bank-pages/site-status.json');if(s.accountServices!==false||s.financialWrites!==false||s.database!=='not_attached')process.exit(1)"
+      - name: Assemble strictly public Cloudflare Pages artifact
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/neobank-public
+          cp apps/neo-bank-pages/index.html /tmp/neobank-public/index.html
+          cp apps/neo-bank-pages/preview.css /tmp/neobank-public/preview.css
+          cp apps/neo-bank-pages/preview.js /tmp/neobank-public/preview.js
+          cp apps/neo-bank-pages/site-status.json /tmp/neobank-public/site-status.json
+          cat > /tmp/neobank-public/_headers <<'HEADERS'
+          /*
+            Content-Security-Policy: default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; object-src 'none'
+            X-Content-Type-Options: nosniff
+            Referrer-Policy: no-referrer
+            X-Frame-Options: DENY
+          HEADERS
+          for file in index.html preview.css preview.js site-status.json _headers; do test -s "/tmp/neobank-public/$file"; done
+          ! grep -Eq 'DATABASE_URL|NEON_API_KEY|CES_SOURCE|PRIVATE_KEY|BEGIN [A-Z ]*PRIVATE KEY' /tmp/neobank-public/*
+      - name: Ensure exact Cloudflare account and project
+        run: |
+          set -euo pipefail
+          if [ -z "${CLOUDFLARE_ACCOUNT_ID:-}" ] || [ -z "${CLOUDFLARE_API_TOKEN:-}" ]; then
+            echo "::error::Cloudflare secrets are unavailable"; exit 1
+          fi
+          status="$(curl -sS --max-time 20 -o /tmp/neobank-project.json -w '%{http_code}' \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/$PROJECT_NAME")"
+          if [ "$status" = 200 ]; then
+            jq -e --arg n "$PROJECT_NAME" '.success==true and .result.name==$n' /tmp/neobank-project.json >/dev/null
+            echo "Existing NEO Bank Cloudflare Pages project verified"
+            exit 0
+          fi
+          if [ "$status" != 404 ]; then
+            echo "::error::Cloudflare project lookup HTTP $status. No project created."
+            exit 1
+          fi
+          # Authorized creation of a dedicated no-cost Pages frontend; never touch other Cloudflare projects.
+          status="$(curl -sS --max-time 30 -o /tmp/neobank-created.json -w '%{http_code}' -X POST \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" -H "Content-Type: application/json" \
+            --data '{"name":"neo-bank-project144","production_branch":"main"}' \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects")"
+          if [ "$status" -lt 200 ] || [ "$status" -gt 299 ]; then
+            detail="$(jq -r '[(.errors//[])[] | ((.code|tostring)+": "+(.message|tostring))] | join("; ") | .[0:220]' /tmp/neobank-created.json 2>/dev/null || echo 'unavailable')"
+            echo "::error::Cloudflare Pages project creation rejected (HTTP $status): $detail"
+            exit 1
+          fi
+          jq -e --arg n "$PROJECT_NAME" '.success==true and .result.name==$n' /tmp/neobank-created.json >/dev/null
+          echo "Created dedicated NEO Bank Cloudflare Pages project"
+      - name: Deploy verified read-only site to Cloudflare Pages
+        run: |
+          set -euo pipefail
+          npx --yes wrangler@4 pages deploy /tmp/neobank-public \
+            --project-name "$PROJECT_NAME" --branch main \
+            --commit-hash "$GITHUB_SHA" --commit-message "NEO Bank Project 144 read-only dashboard"
+      - name: Confirm origin host and preview state
+        run: |
+          set -euo pipefail
+          origin="https://$PROJECT_NAME.pages.dev"
+          for attempt in 1 2 3 4 5 6 7 8; do
+            if curl -fsS --max-time 15 "$origin/site-status.json" -o /tmp/neobank-status.json; then
+              jq -e '.ok==true and .mode=="read-only-preview" and .accountServices==false and .financialWrites==false' /tmp/neobank-status.json >/dev/null
+              curl -fsS --max-time 15 "$origin/" | grep -q "Your community, your future"
+              curl -fsS --max-time 15 "$origin/preview.css" -o /dev/null
+              curl -fsS --max-time 15 "$origin/preview.js" -o /dev/null
+              echo "NEO Bank Cloudflare Pages live and verified: $origin"
+              {
+                echo "## NEO Bank frontend hosted on Cloudflare Pages"
+                echo "Public HTTPS origin verified: $origin"
+                echo "All operations remain read-only and account services disconnected."
+                echo "No DNS or custom-domain binding was changed by this workflow."
+              } >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            sleep 8
+          done
+          echo "::error::Cloudflare Pages origin did not verify as healthy"
+          exit 1
