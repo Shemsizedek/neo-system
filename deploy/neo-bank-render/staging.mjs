@@ -28,6 +28,7 @@ export function createNeoBankStagingServer({sourceClient=createBankSourceClient(
     const path=new URL(req.url||'/', 'http://localhost').pathname;
     if(req.method!=='GET')return send(res,503,{ok:false,error:'staging_writes_disabled',mode:'read-only-preview'});
     if(path==='/healthz')return send(res,200,{ok:true,service:'neo-bank-render-staging',mode:'read-only-preview',bankOperational:false});
+    if(path==='/site-status.json')return send(res,200,{ok:true,mode:'read-only-preview',service:'neo-bank-render-staging',accountServices:false,database:'not_attached',financialWrites:false});
     if(path==='/health')return send(res,503,{ok:false,service:'neo-bank',reason:'bank_backend_not_deployed'});
     if(path==='/api/v1/community/status')return send(res,503,{ok:false,service:'NEO Bank',database:'not_attached',accountServices:false,mode:'read-only-preview'});
     if(path==='/api/v1/auth/config')return send(res,200,{enabled:false,mode:'read-only-preview'});
