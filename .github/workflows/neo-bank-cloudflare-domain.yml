@@ -1,0 +1,61 @@
+name: NEO Bank Cloudflare Custom Domain Registration
+on:
+  push:
+    branches: [ops/neo-bank-cloudflare-pages-20261108]
+    paths: ['.github/workflows/neo-bank-cloudflare-domain.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: neo-bank-cloudflare-domain-binding
+  cancel-in-progress: false
+jobs:
+  register:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      BANK_DOMAIN: neobank.holytemples.org
+      PROJECT: neo-bank-project144
+    steps:
+      - name: Verify approved NEO Bank Cloudflare project exists and deployment is complete
+        run: |
+          set -euo pipefail
+          curl -fsS --max-time 20 \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/$PROJECT" > /tmp/bank-project.json
+          jq -e --arg name "$PROJECT" '.success==true and .result.name==$name and .result.latest_deployment.latest_stage.status=="success"' /tmp/bank-project.json >/dev/null
+      - name: Register only the authorized NEO Bank custom subdomain
+        run: |
+          set -euo pipefail
+          curl -fsS --max-time 20 \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/$PROJECT/domains" > /tmp/bank-domains-before.json
+          jq -e '.success==true and (.result|type=="array")' /tmp/bank-domains-before.json >/dev/null
+          if jq -e --arg domain "$BANK_DOMAIN" 'any(.result[]; .name == $domain)' /tmp/bank-domains-before.json >/dev/null; then
+            echo "Exact bank hostname already registered in intended Pages project."
+            exit 0
+          fi
+          status="$(curl -sS --max-time 30 -o /tmp/bank-domain-added.json -w '%{http_code}' -X POST \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            -H "Content-Type: application/json" \
+            --data '{"name":"neobank.holytemples.org"}' \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/$PROJECT/domains")"
+          if [ "$status" -lt 200 ] || [ "$status" -ge 300 ]; then
+            detail="$(jq -r '[(.errors//[])[]|((.code|tostring)+": "+(.message|tostring))]|join("; ")|.[0:240]' /tmp/bank-domain-added.json 2>/dev/null || echo 'unknown')"
+            echo "::error::Bank custom-domain registration failed, HTTP $status: $detail. DNS unchanged."
+            exit 1
+          fi
+          jq -e --arg domain "$BANK_DOMAIN" '.success==true and .result.name==$domain' /tmp/bank-domain-added.json >/dev/null
+          echo "NEO Bank custom-domain registration accepted. DNS still unchanged."
+      - name: Confirm Cloudflare registered exact hostname
+        run: |
+          set -euo pipefail
+          curl -fsS --max-time 20 \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/$PROJECT/domains" > /tmp/bank-domains-after.json
+          jq -e --arg domain "$BANK_DOMAIN" 'any(.result[]; .name == $domain)' /tmp/bank-domains-after.json >/dev/null
+          jq -c --arg domain "$BANK_DOMAIN" '.result[] | select(.name==$domain) | {name,status,validation_status:.validation_data.status,verification_status:.verification_data.status}' /tmp/bank-domains-after.json
+          echo "## NEO Bank Cloudflare domain configured (DNS NOT yet changed)" >> "$GITHUB_STEP_SUMMARY"
+          echo "CNAME after binding: `neobank.holytemples.org` to `neo-bank-project144.pages.dev`" >> "$GITHUB_STEP_SUMMARY"
