@@ -37,7 +37,7 @@ Use an already authorized persistent host with Node 22+ and systemd. No installe
 node /opt/neo-angelN/angelN.mjs --config /etc/neo-angelN/config.json --state-dir /tmp/neo-angelN-acceptance --once
 ```
 
-5. Review the report, inspect the unit and confirm `/usr/bin/node` is the correct Node 22+ executable. Then an authorized administrator can install the unit in `/etc/systemd/system/` and run:
+5. Review the report, inspect the unit and confirm Node 22+ is available through `/usr/bin/env` in the unit’s fixed system PATH. Then an authorized administrator can install the unit in `/etc/systemd/system/` and run:
 
 ```
 sudo systemctl daemon-reload
