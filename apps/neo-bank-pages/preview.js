@@ -1,81 +1,82 @@
 'use strict';
-const sections=new Set(['overview','accounts','exchange','markets','activity','integrations']);
-const titles={overview:'Overview',accounts:'Accounts',exchange:'Exchange',markets:'Markets',activity:'Activity',integrations:'Integrations'};
-const byId=id=>document.getElementById(id);
-const buttons=()=>[...document.querySelectorAll('[data-section]')];
-const cards=()=>[...document.querySelectorAll('[data-open]')];
-function showSection(section,{setHash=true}={}){
-  const id=sections.has(section)?section:'overview';
-  for(const view of document.querySelectorAll('[data-view]')){
-    const active=view.dataset.view===id;
-    view.classList.toggle('active',active);
-    view.hidden=!active;
+
+// Public preview navigation only. No sign-in, account lookup, or financial API calls.
+const sections = new Set(['home', 'accounts', 'community', 'activity']);
+const legacy = {overview: 'home', exchange: 'community', markets: 'community', integrations: 'home'};
+const byId = (id) => document.getElementById(id);
+const normalize = (name) => {
+  const target = legacy[name] || name;
+  return sections.has(target) ? target : 'home';
+};
+
+function showSection(name, {updateHash = true} = {}) {
+  const section = normalize(name);
+  for (const view of document.querySelectorAll('[data-view]')) {
+    view.hidden = view.dataset.view !== section;
   }
-  for(const nav of buttons()){
-    const active=nav.dataset.section===id;
-    nav.classList.toggle('active',active);
-    if(active)nav.setAttribute('aria-current','page');
-    else nav.removeAttribute('aria-current');
+  for (const button of document.querySelectorAll('[data-section]')) {
+    const selected = button.dataset.section === section;
+    button.classList.toggle('is-active', selected);
+    if (selected) button.setAttribute('aria-current', 'page');
+    else button.removeAttribute('aria-current');
   }
-  byId('breadcrumb').textContent=titles[id];
-  byId('page-heading').textContent={
-    overview:'Good things are taking shape.',accounts:'Accounts, with confidence.',
-    exchange:'Community exchange.',markets:'A marketplace for everyone.',
-    activity:'Every movement, accounted for.',integrations:'Connected, carefully.'
-  }[id];
-  if(setHash && window.location.hash!=='#'+id)history.replaceState(null,'','#'+id);
+  if (updateHash && window.location.hash !== '#' + section) {
+    window.location.hash = section;
+  }
+  document.title = section === 'home'
+    ? 'NEO Bank | Community Finance'
+    : section.charAt(0).toUpperCase() + section.slice(1) + ' | NEO Bank';
 }
-async function fetchStatus(path){
-  try{
-    const controller=new AbortController();
-    const timeout=setTimeout(()=>controller.abort(),6000);
-    try {
-      const response=await fetch(path,{method:'GET',headers:{accept:'application/json'},credentials:'omit',cache:'no-store',signal:controller.signal,redirect:'error'});
-      const data=await response.json().catch(()=>null);
-      return {status:response.status,ok:response.ok,data};
-    }finally{clearTimeout(timeout)}
-  }catch{return {status:0,ok:false,data:null}}
+
+for (const button of document.querySelectorAll('[data-section]')) {
+  button.addEventListener('click', () => showSection(button.dataset.section));
 }
-function statusText(id,text,warning){
-  const node=byId(id);
-  if(!node)return;
-  node.textContent=text;
-  node.classList.toggle('warn',warning);
+for (const card of document.querySelectorAll('[data-open]')) {
+  card.addEventListener('click', () => {
+    showSection(card.dataset.open);
+    byId('main').focus({preventScroll: true});
+    window.scrollTo({top: 0, behavior: 'smooth'});
+  });
 }
-let refreshInProgress=false;
-async function refreshStatus(){
-  if(refreshInProgress)return;
-  refreshInProgress=true;
-  const triggers=[byId('refreshStatus'),byId('refreshDetail')].filter(Boolean);
-  triggers.forEach(x=>{x.disabled=true;x.setAttribute('aria-busy','true')});
-  statusText('runtimeStatus','Checking…',false);
-  statusText('bankStatus','Checking…',false);
-  try{
-    const preview=await fetchStatus('./site-status.json');
-    // Financial API is intentionally not connected to the public Pages frontend.
-    const bank={ok:false,data:null};
-    const runtimeHealthy=preview.ok && preview.data?.ok===true && preview.data?.mode==='read-only-preview';
-    // A 503 is the expected safe response while the bank has no connected account backend.
-    const bankReady=false; // No verified authenticated finance API on Pages
-    const runtimeLabel=runtimeHealthy?'Preview online':'Unavailable';
-    const bankLabel=bankReady?'Connected':'Not connected';
-    statusText('runtimeStatus',runtimeLabel,!runtimeHealthy);
-    statusText('runtimeStatusDetail',runtimeLabel,!runtimeHealthy);
-    statusText('bankStatus',bankLabel,!bankReady);
-    statusText('bankStatusDetail',bankLabel,!bankReady);
-    byId('checkedAt').textContent='Last checked '+new Date().toLocaleTimeString([], {hour:'numeric',minute:'2-digit'});
-  }finally{
-    refreshInProgress=false;
-    triggers.forEach(x=>{x.disabled=false;x.removeAttribute('aria-busy')});
+window.addEventListener('hashchange', () =>
+  showSection(window.location.hash.slice(1), {updateHash: false}));
+showSection(window.location.hash.slice(1), {updateHash: false});
+
+let checking = false;
+async function refreshStatus() {
+  if (checking) return;
+  checking = true;
+  const button = byId('refreshStatus');
+  const runtime = byId('runtimeStatus');
+  const checked = byId('checkedAt');
+  button.disabled = true;
+  button.setAttribute('aria-busy', 'true');
+  runtime.textContent = 'Checking…';
+  runtime.classList.remove('is-good');
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 6000);
+  try {
+    const response = await fetch('./site-status.json', {
+      method: 'GET', headers: {'accept': 'application/json'},
+      credentials: 'omit', cache: 'no-store', redirect: 'error', signal: controller.signal
+    });
+    const status = response.ok ? await response.json() : null;
+    const available = Boolean(status && status.ok === true &&
+      status.mode === 'read-only-preview' &&
+      status.accountServices === false && status.financialWrites === false);
+    runtime.textContent = available ? 'Preview available' : 'Status not verified';
+    runtime.classList.toggle('is-good', available);
+  } catch {
+    runtime.textContent = 'Unable to check';
+  } finally {
+    clearTimeout(timer);
+    checked.textContent = 'Checked ' + new Date().toLocaleTimeString([], {hour: 'numeric', minute: '2-digit'}) +
+      ' · Banking services remain unavailable';
+    button.disabled = false;
+    button.removeAttribute('aria-busy');
+    checking = false;
   }
 }
-buttons().forEach(node=>node.addEventListener('click',()=>showSection(node.dataset.section)));
-cards().forEach(node=>node.addEventListener('click',()=>{
-  showSection(node.dataset.open);
-  byId('main').focus({preventScroll:true});
-  window.scrollTo({top:0,behavior:'smooth'});
-}));
-window.addEventListener('hashchange',()=>showSection(location.hash.slice(1),{setHash:false}));
-for(const id of ['refreshStatus','refreshDetail'])byId(id)?.addEventListener('click',refreshStatus);
-showSection(location.hash.slice(1),{setHash:!location.hash});
+byId('refreshStatus').addEventListener('click', refreshStatus);
 refreshStatus();
