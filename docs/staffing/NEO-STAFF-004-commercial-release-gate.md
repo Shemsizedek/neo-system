@@ -63,3 +63,11 @@ Source: https://www.reddit.com/r/appointmentsetter/comments/1xj32l7/hiring_exper
 **BLOCKED:** formal employer verification; approved specific deliverable, live checkout, customer terms, actual commission rate and payment schedule; global worker classification; a genuine opt-in applicant; external job-board account; paid staff assignment.
 
 **Next gate NEO-STAFF-005:** employer and merchant proof → one legal, fulfilled nonregulated sale → signed commercial commission plan → first opt-in screenings and first lawful onboarding. No binding commitments before approvals.
+
+
+## Organic distribution activated (2026-11-08)
+
+- Connected Metricool brand **Shemsizedek** (brand ID 7080510) verified. Existing post schedule for Nov 8–14 was empty before creation.
+- Created a single **unpaid Facebook business/community expression-of-interest post**, scheduled for **2026-11-09 at 09:00 America/Chicago** (status **PENDING**, not yet published). Metricool post ID **421119917**; [open planner](https://app.metricool.com/planner/calendar?blogId=7080510&openWithPostUuid=-3508730711083236265).
+- Post accurately says **no approved vacancy, compensation, equity, guarantees, or placement**, links [public intake #1373](https://github.com/Shemsizedek/neo-system/issues/1373), and routes opted-in inquiries to official Gmail. No candidate names, private contact information, payment request, or paid advertising used.
+- Private ATS `Recruitment_Channels` and `Dashboard` updated with the actual pending schedule. This is a scheduled public recruitment-interest publication, **not evidence of a published job vacancy, candidate hire, or revenue**.
