@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "deviceId": "replace-with-enrolled-host",
+  "operator": "NEOsync",
+  "authorized": false,
+  "enabled": true,
+  "intervalSeconds": 300,
+  "timeoutMs": 8000,
+  "targets": ["school", "neopass", "prime", "temple"],
+  "integrity": { "files": {} }
+}
