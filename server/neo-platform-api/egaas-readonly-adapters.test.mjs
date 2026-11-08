@@ -8,7 +8,7 @@ import { prepareEgaasAnchor } from './egaas-anchors.mjs';
 const hash = value => createHash('sha256').update(value).digest();
 const json = data => new Response(JSON.stringify(data), { headers: { 'content-type': 'application/json' } });
 const txid = 'a'.repeat(64), blockHash = 'b'.repeat(64), tipHash = 'c'.repeat(64);
-const root = { server_ready: true, network: 'signet', backend_height: 102, counterparty_height: 102 };
+const root = { server_ready: true, ledger_state: 'Following', network: 'signet', backend_height: 102, counterparty_height: 102 };
 const broadcast = { tx_hash: txid, block_index: 100, status: 'valid', source: 'SYNTHETIC-PUBLISHER', text: 'SYNTHETIC-TEXT' };
 function counterpartyFixture({ change = (path, value) => value, origin = 'https://parser.invalid', calls = [] } = {}) {
   return createEgaasCounterpartyReader({ origin, nodeId: 'fixture-node', operatorId: 'fixture-operator', network: 'signet',
@@ -46,6 +46,12 @@ test('same-height Counterparty tip changes invalidate the snapshot', async () =>
   let tips = 0;
   const reader = counterpartyFixture({ change: (path, value) => path === '/v2/blocks/102' && ++tips === 2 ? { ...value, block_hash: blockHash } : value });
   await assert.rejects(reader.read({ txid, blockHeight: 100 }), /snapshot_changed/);
+});
+test('server-ready cannot override missing or non-Following ledger state', async () => {
+  for (const ledger_state of [undefined, null, 'Rebuilding', 'Starting', 'following']) {
+    const reader = counterpartyFixture({ change: (path, value) => path === '/v2/' ? { ...value, ledger_state } : value });
+    await assert.rejects(reader.probe(), /counterparty_not_synchronized/);
+  }
 });
 test('trusted origins reject embedded credentials, query strings, paths and insecure remote transport', () => {
   for (const origin of ['https://user:credential@example.invalid', 'https://example.invalid/?key=value', 'https://example.invalid/untrusted', 'http://remote.invalid']) {

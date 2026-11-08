@@ -67,7 +67,7 @@ export function createEgaasBitcoinReader({ origin, headers = {}, fetchImpl = fet
 
 function serverInfo(envelope, network) {
   const info = envelope.result;
-  if (!info || info.server_ready !== true || info.network !== network || !HEIGHT(info.backend_height) ||
+  if (!info || info.server_ready !== true || info.ledger_state !== 'Following' || info.network !== network || !HEIGHT(info.backend_height) ||
       !HEIGHT(info.counterparty_height) || info.backend_height !== info.counterparty_height) throw new Error('counterparty_not_synchronized');
   return info;
 }
