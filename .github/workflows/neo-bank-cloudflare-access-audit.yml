@@ -33,6 +33,17 @@ jobs:
           else
             echo "Cloudflare Access app inspection unavailable: HTTP $status (no configuration changed)."
           fi
+      - name: Inspect Pages-related Access app hostnames only
+        run: |
+          set -euo pipefail
+          status="$(curl -sS --max-time 20 -o /tmp/neobank-all-access-apps.json -w '%{http_code}' \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/access/apps")"
+          if [ "$status" = 200 ]; then
+            jq -c '{app_count:(.result|length),pages_domains:[.result[]|select((.domain // "" | contains("pages.dev")))|.domain]}' /tmp/neobank-all-access-apps.json
+          else
+            echo "Account Access list not readable (HTTP $status); no changes made"
+          fi
       - name: Verify public Pages URL without following redirects
         run: |
           set -euo pipefail
@@ -40,6 +51,10 @@ jobs:
             url="https://neo-bank-project144.pages.dev$path"
             status="$(curl -sS --max-time 15 -o /tmp/neobank-public-body -D /tmp/neobank-public-headers -w '%{http_code}' "$url")"
             echo "NEO Bank Pages path $path: HTTP $status"
+            if [ "$status" = "302" ]; then
+              echo "NEO Bank Pages path $path is protected by an HTTP redirect. No public cutover."
+              continue
+            fi
             if grep -qi 'cloudflareaccess\.com\|Sign in .* Cloudflare Access' /tmp/neobank-public-body; then
               echo "NEO Bank Pages path $path is gated by Cloudflare Access."
             elif [ "$path" = /site-status.json ]; then
