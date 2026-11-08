@@ -20,6 +20,16 @@ function neo_counter_prepare_merchant($input,$request_key){
         $terms=$input['terms']??'';if(!is_string($terms)||strlen($terms)<10||strlen($terms)>4096)throw new InvalidArgumentException('Enter the order terms (10–4096 bytes).');
         if(!is_string($request_key)||!preg_match('/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i',$request_key))throw new InvalidArgumentException('Reload before preparing another order.');
         $now=time();$p=array('version'=>2,'order_kind'=>$kind,'item_reference'=>$ref,'currency_asset'=>$asset,'currency_id'=>$entry['id'],'currency_symbol'=>$entry['symbol'],'currency_market'=>$market,'currency_decimals'=>$decimals,'amount_minor'=>$amount,'base_minor'=>$base,'markup_bps'=>900,'ledger'=>$ledger,'payer'=>$payer,'destination'=>NEO_STEWARDSHIP_COLLECTION,'created_at'=>$now,'expires_at'=>$now+1800,'confirmations'=>3,'terms_hash'=>hash('sha256',$terms),'terms_snapshot'=>$terms,'terms_accepted'=>false,'payable'=>false,'settlement_method'=>'merchant_inventory');
+        // Only this authenticated operator path may choose a merchant recipient.
+        // Existing callers retain their current collection destination; Holy Stewardship uses its own path.
+        if (array_key_exists('merchant_wallet',$input)) {
+            $wallet=$input['merchant_wallet'];
+            if (!is_string($wallet)||!neo_stewardship_wallet_valid($wallet)) throw new InvalidArgumentException('Enter a valid Bitcoin mainnet legacy receiving wallet.');
+            $p['destination']=$wallet;
+        }
+        $name=$input['merchant_name']??'Merchant';
+        if (!is_string($name)||strlen(trim($name))<1||strlen($name)>100) throw new InvalidArgumentException('Enter the merchant name (1–100 characters).');
+        $p['merchant_name']=trim($name);
         global $wpdb;$t=neo_counter_tables();$key=hash('sha256',get_current_user_id().':merchant:'.$request_key);
         // Reject repeat requests before creating a private WordPress order; DB uniqueness is authoritative.
         if($wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$t['invoices']} WHERE request_key = %s",$key)))throw new RuntimeException('This order request was already prepared.');
@@ -31,7 +41,7 @@ function neo_counter_prepare_merchant($input,$request_key){
 }
 add_action('admin_post_neo_counter_merchant_prepare',function(){
     if(!current_user_can('manage_options'))wp_die('Operator access required.','',array('response'=>403));check_admin_referer('neo_counter_merchant_prepare');
-    $input=array();foreach(array('order_kind','ledger','currency_id','base_price','payer','item_reference','terms') as $key)$input[$key]=isset($_POST[$key])&&is_string($_POST[$key])?trim(wp_unslash($_POST[$key])):'';
+    $input=array();foreach(array('order_kind','ledger','currency_id','base_price','payer','item_reference','terms','merchant_name','merchant_wallet') as $key)$input[$key]=isset($_POST[$key])&&is_string($_POST[$key])?trim(wp_unslash($_POST[$key])):'';
     $input['member_id']=isset($_POST['member_id'])&&is_string($_POST['member_id'])&&ctype_digit($_POST['member_id'])?(int)$_POST['member_id']:0;
     $request=isset($_POST['request_key'])&&is_string($_POST['request_key'])?wp_unslash($_POST['request_key']):'';$order=neo_counter_prepare_merchant($input,$request);
     if(is_wp_error($order))wp_die(esc_html($order->get_error_message()),'',array('response'=>409));wp_safe_redirect(admin_url('post.php?post='.$order.'&action=edit'));exit;
@@ -45,7 +55,7 @@ function neo_counter_merchant_admin(){
     echo '<input type="hidden" name="action" value="neo_counter_merchant_prepare"><input type="hidden" name="request_key" value="'.esc_attr(wp_generate_uuid4()).'"><table class="form-table"><tr><th><label for="neo-kind">Order type</label></th><td><select id="neo-kind" name="order_kind"><option value="digital_goods">Digital product</option><option value="physical_goods">Physical product</option><option value="service_bill">Service bill</option></select></td></tr><tr><th><label for="neo-ledger">Ledger</label></th><td><select id="neo-ledger" name="ledger"><option value="classic">Counterparty Classic</option><option value="cp20">Counterparty 2.0</option></select></td></tr><tr><th><label for="neo-pay-asset">Price currency</label></th><td><select id="neo-pay-asset" name="currency_id">';
     foreach(neo_stewardship_currency_catalog() as $currency)echo '<option value="'.esc_attr($currency['id']).'"'.($currency['id']==='btc'?' selected':'').(empty($currency['counterpartyAsset'])?' disabled':'').'>'.esc_html($currency['symbol'].' — '.$currency['name'].(empty($currency['counterpartyAsset'])?' (token pending)':'')).'</option>';
     echo '</select></td></tr>';
-    $fields=array('member_id'=>array('Member account ID','number'),'payer'=>array('Member wallet','text'),'item_reference'=>array('Item or bill reference','text'),'base_price'=>array('Base price','text'));
+    $fields=array('merchant_name'=>array('Merchant name','text'),'merchant_wallet'=>array('Merchant receiving wallet','text'),'member_id'=>array('Customer account ID','number'),'payer'=>array('Customer payment wallet','text'),'item_reference'=>array('Item or bill reference','text'),'base_price'=>array('Price before markup','text'));
     foreach($fields as $name=>$f)echo '<tr><th><label for="neo-'.esc_attr($name).'">'.esc_html($f[0]).'</label></th><td><input required id="neo-'.esc_attr($name).'" name="'.esc_attr($name).'" type="'.esc_attr($f[1]).'" class="regular-text"></td></tr>';
     echo '<tr><th><label for="neo-terms">Order terms</label></th><td><textarea required id="neo-terms" name="terms" rows="4" maxlength="4096" class="large-text"></textarea></td></tr></table><p>Enter the price in the selected token. Whole-unit tokens cannot use fractional amounts. The daily market rate and asset identity must be available. The total adds 9%, rounded up once. This creates a private draft; member acceptance is still required.</p>';submit_button('Prepare draft order');echo '</form></div>';
 }

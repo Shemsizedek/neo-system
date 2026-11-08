@@ -7,7 +7,7 @@ function add_action($name,$fn,...$rest){global $actions;$actions[$name][]=$fn;}
 function get_option($key){return false;}function update_option(...$args){}
 function get_current_user_id(){global $uid;return $uid;}function is_user_logged_in(){global $uid;return $uid>0;}function current_user_can($cap){global $admin;return $admin;}
 function wp_generate_uuid4(){return bin2hex(random_bytes(16));}
-function wp_json_encode($x){return json_encode($x);}function is_wp_error($x){return $x instanceof WP_Error;}function wp_next_scheduled(...$a){return false;}function wp_schedule_single_event(...$a){}
+function wp_json_encode($x,$options=0){return json_encode($x,$options);}function is_wp_error($x){return $x instanceof WP_Error;}function wp_next_scheduled(...$a){return false;}function wp_schedule_single_event(...$a){}
 function register_rest_route($ns,$route,$args){global $routes;$routes[$route]=$args;}
 class WP_Error {public function __construct(public $code,public $message,public $data=null){}public function get_error_message(){return $this->message;}}
 class WP_REST_Response {public $headers=array();public function __construct(public $data){}public function header($k,$v){$this->headers[$k]=$v;}}
