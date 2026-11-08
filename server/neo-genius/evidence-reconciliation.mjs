@@ -25,7 +25,6 @@ export function reconcilePropertyMarketing(claims) {
     const cap = claim.capRateBasisPoints;
     if(cap !== null && cap !== undefined && (!Number.isSafeInteger(cap) || cap < 0 || cap > 10000)) throw new TypeError('Invalid cap rate basis points');
     const reportedNOI = claim.reportedNoiUsd === undefined || claim.reportedNoiUsd === null ? null : decimalUSD(integerUSD(claim.reportedNoiUsd)*100n);
-    const implied = cap === null || cap === undefined ? null : decimalUSD(price * BigInt(cap));
     // price[USD] * cap[bps]/10000 => NOI[USD]; -> cents via /100.
     const impliedCorrected = cap === null || cap === undefined ? null : decimalUSD((price * 100n * BigInt(cap)) / 10000n);
     return Object.freeze({
