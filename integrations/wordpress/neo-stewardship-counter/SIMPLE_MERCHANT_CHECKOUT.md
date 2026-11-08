@@ -43,10 +43,17 @@ The existing 9% markup and World Currency pricing rules are unchanged. The invoi
 - Changed PHP files pass syntax checks.
 - Independently decoded token-address and BTC-URI QR round trips pass using jsQR; DOM checks confirm local SVG rendering, inert merchant text and no paid status from a success URL.
 - `git diff --check` passes.
-- Cloud browser could not connect to the local preview server (`ERR_CONNECTION_REFUSED`). Actual desktop/mobile visual QA remains outstanding; DOM checks are not visual screenshots.
+- Live desktop browser QA passed on the published preview: NOMNI/BTC controls render, Paid hides the QR and disables copy, and the customer page displays its sign-in card. The existing Temple welcome overlay must be dismissed before viewing the card. Actual mobile device visual QA remains outstanding.
 
 ## Deployment and rollback
 
-This is a feature-branch change against the existing `feat/holy-stewardship-counter-gate1` source branch. Plugin version 0.22.0 is prepared only, not deployed. Maintainer review is required by the repository's `AGENTS.md`; the contributor does not merge its own PR or deploy production workloads. No live order, address, setting, page layout or payment capability was changed.
+NEO Counter 0.22.0 was installed and activated on holytemples.org on 2026-11-08 under the user's explicit “Go live” authorization. The customer page is published at https://holytemples.org/neo-counter-checkout/ (WordPress page 3832). The source remains on the feature branch in PR #1352; no own-PR merge occurred. A fresh plugin inventory confirms 0.22.0 active. The settlement status endpoint retains its hardcoded 0.21.0 API contract label and reports paymentsEnabled:false and automaticDelivery:false.
 
-After review, preview on staging with synthetic orders and verify mobile layout, copy behavior, locked/expired handling and access isolation before deploying. Preserve all existing files/assets and create a plugin backup. Rollback restores the prior plugin version and removes the newly added checkout shortcode from any newly configured page. No schema migration is introduced; existing saved invoice payloads remain readable.
+Published preview: https://holytemples.org/wp-content/plugins/neo-stewardship-counter/preview/simple-checkout.html . Its intentionally invalid address and synthetic invoice must never be used for payment. The real customer page requires sign-in and an owned invoice; no live customer order, wallet or financial transaction was created during deployment.
+
+Release source commit: d2783cd5d08bc57c27b423e0b8cf0bb5a1383d0b.
+Release ZIP SHA-256: 9cbb2ee52db5ba2ea975b6c711239513c9bb2e3eb07c0905640da0dfff6050cd.
+
+Before replacement, Jetpack reported its latest successful backup at 2026-11-08 12:33:23, with managed credentials active and no failed backup attempt. A rollback ZIP was prepared from the prior 0.21.0 source commit 694d20ce454758f0468de9d2a945d4f007e6e55f; its SHA-256 is 622e76a1cc36969579dbe76a7ab9a818312c263dc0028d4dc339f064122c04a1. This source package is not asserted to be a byte-for-byte copy of the former installation. Rollback restores that prior source release and unpublishes page 3832 if the shortcode is removed. No schema migration is introduced.
+
+Next gate: complete mobile visual QA, remove the unrelated welcome overlay from checkout through its owning integration, verify merchant wallet authority and bounded synthetic invoice/settlement evidence, then implement explicit invoice activation before enabling actual payment instructions. The deployed shortcode intentionally preserves the global payment hold. Do not label the release as accepting live payments or supporting all currencies/wallets.
