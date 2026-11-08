@@ -10,7 +10,7 @@ const flow = readFileSync(
 test('NET-005 accepts only the existing authorized GCP WIF configuration', () => {
   for (const key of ['GCP_PROJECT_ID', 'GCP_WIF_PROVIDER', 'GCP_SERVICE_ACCOUNT']) {
     assert.ok(flow.includes(key + ': ${{ vars.' + key + ' || secrets.' + key + ' }}'), key);
-    assert.match(flow, new RegExp('Missing approved GCP configuration: \\$key|Missing approved GCP configuration: \\$key'.replace('\\$key', '\\$key')));
+    assert.ok(flow.includes('Missing approved GCP configuration: $key'))
   }
   assert.match(flow, /environment: neo-vpn-plan/);
   assert.match(flow, /github\.ref == 'refs\/heads\/main'/);
