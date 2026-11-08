@@ -24,9 +24,10 @@ jobs:
           # Never print a token, an account ID, or raw response bodies to CI logs.
           status="$(curl --silent --show-error --max-time 20 -o /tmp/neobank-pages-read.json -w '%{http_code}' \
             -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" -H "Accept: application/json" \
-            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects?per_page=100")"
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects")"
           if [ "$status" != "200" ]; then
-            echo "::error::Cloudflare Pages read rejected (HTTP $status). No changes made."
+            detail="$(jq -r '[(.errors // [])[] | ((.code|tostring) + ": " + (.message|tostring))] | join("; ") | .[0:220]' /tmp/neobank-pages-read.json 2>/dev/null || echo "provider response unavailable")"
+            echo "::error::Cloudflare Pages read rejected (HTTP $status; provider: $detail). No changes made."
             exit 1
           fi
           jq -e '.success == true and (.result | type == "array")' /tmp/neobank-pages-read.json >/dev/null || {
