@@ -51,3 +51,19 @@ Technical references:
 - https://docs.ollama.com/api/chat
 - https://github.com/ggml-org/whisper.cpp/blob/master/examples/server/README.md
 - https://developer.mozilla.org/en-US/docs/Web/API/SpeechSynthesisVoice/localService
+
+
+## VOICE-005 — target readiness and smoke checks
+November 8, 2026: SentinelX reports enrolled crown-node-001 offline; no remote install or model test possible. No paid host was provisioned. PR remains review-only.
+
+Read-only baseline (no installs or model downloads):
+
+    node server/neo-router/voice-preflight.mjs
+
+After the owned node reconnects, local models are installed and Ollama cloud is disabled:
+
+    NEO_VOICE_MODEL=<installed-local-model-name> node server/neo-router/voice-preflight.mjs --smoke --wav /path/to/short-test.wav
+
+The report contains hardware counts and check results, not prompts, audio contents, transcription text, credentials or local filenames. Successful nonempty inference/transcription proves responses only, not quality. Exit 0 requires both checks to respond; exit 1 reports missing readiness, and invalid CLI usage exits 2. Browser speech and phone connectivity remain separate unverified capabilities. The probe never dials, joins meetings, purchases capacity or pulls models.
+
+Validation: 9 local tests passed (5 prototype, 4 preflight). Injected services test failure/success behavior. A baseline probe in the temporary development environment correctly returned exit 1 for no configured model. This is not a test on crown-node-001.
