@@ -46,5 +46,6 @@ test('no blanket NEO VPN forwarding or Internet NAT is present', () => {
 
 test('remote management access is limited to existing IAP range', () => {
   assert.match(rules, /ip saddr 35\.235\.240\.0\/20 tcp dport 22 accept/);
-  assert.doesNotMatch(rules, /tcp dport 22 accept(?![\s\S]*?)$/m);
+  const sshRules = rules.split('
+').filter(x => x.trim().endsWith('tcp dport 22 accept'));\n  assert.equal(sshRules.length, 1);
 });
