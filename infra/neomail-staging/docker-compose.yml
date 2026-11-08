@@ -1,0 +1,24 @@
+services:
+  stalwart:
+    image: stalwartlabs/stalwart:v1
+    container_name: neomail-stalwart
+    init: true
+    restart: unless-stopped
+    ports:
+      - "25:25"
+      - "465:465"
+      - "993:993"
+      - "443:443"
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - stalwart-etc:/etc/stalwart
+      - stalwart-data:/var/lib/stalwart
+    healthcheck:
+      test: ["CMD", "sh", "-c", "wget -qO- http://127.0.0.1:8080/ >/dev/null 2>&1 || wget -qO- https://127.0.0.1/ >/dev/null 2>&1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+volumes:
+  stalwart-etc:
+  stalwart-data:
