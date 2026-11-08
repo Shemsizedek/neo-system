@@ -1,0 +1,50 @@
+name: NEO Bank Cloudflare Public-Access Diagnostics
+on:
+  push:
+    branches: [ops/neo-bank-cloudflare-pages-20261108]
+    paths: ['.github/workflows/neo-bank-cloudflare-access-audit.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+    steps:
+      - name: Inspect only NEO Bank Pages project metadata
+        run: |
+          set -euo pipefail
+          curl -fsS --max-time 20 \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/neo-bank-project144" > /tmp/neobank-project.json
+          jq -e '.success==true and .result.name=="neo-bank-project144"' /tmp/neobank-project.json >/dev/null
+          jq -c '{name:.result.name,subdomain:.result.subdomain,production_branch:.result.production_branch,latest_deployment_status:.result.latest_deployment.latest_stage.status,canonical_deployment_status:.result.canonical_deployment.latest_stage.status,production_access_policy_enabled:.result.deployment_configs.production.access_policy_enabled}' /tmp/neobank-project.json
+      - name: Read-only lookup of exact NEO Bank Cloudflare Access app
+        run: |
+          set -euo pipefail
+          status="$(curl -sS --max-time 20 -o /tmp/neobank-access.json -w '%{http_code}' \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/access/apps?domain=neo-bank-project144.pages.dev")"
+          if [ "$status" = 200 ]; then
+            jq -c '{matching_access_apps:(.result|length), matching_domains:[.result[]|.domain]}' /tmp/neobank-access.json
+          else
+            echo "Cloudflare Access app inspection unavailable: HTTP $status (no configuration changed)."
+          fi
+      - name: Verify public Pages URL without following redirects
+        run: |
+          set -euo pipefail
+          for path in / /site-status.json; do
+            url="https://neo-bank-project144.pages.dev$path"
+            status="$(curl -sS --max-time 15 -o /tmp/neobank-public-body -D /tmp/neobank-public-headers -w '%{http_code}' "$url")"
+            echo "NEO Bank Pages path $path: HTTP $status"
+            if grep -qi 'cloudflareaccess\.com\|Sign in .* Cloudflare Access' /tmp/neobank-public-body; then
+              echo "NEO Bank Pages path $path is gated by Cloudflare Access."
+            elif [ "$path" = /site-status.json ]; then
+              jq -e '.mode=="read-only-preview" and .financialWrites==false' /tmp/neobank-public-body >/dev/null && echo "NEO Bank public status JSON verified"
+            else
+              grep -q 'Your community, your future' /tmp/neobank-public-body && echo "NEO Bank public HTML verified"
+            fi
+          done
