@@ -18,11 +18,11 @@ function publicUrl(value) {
   } catch { return false; }
 }
 function rejectUnexpected(value, permitted, path) {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) throw new TypeError(\`\${path} must be an object\`);
-  for (const key of Object.keys(value)) if (!permitted.has(key)) throw new TypeError(\`\${path} contains unsupported/sensitive field: \${key}\`);
+  if (!value || typeof value !== 'object' || Array.isArray(value)) throw new TypeError(`${path} must be an object`);
+  for (const key of Object.keys(value)) if (!permitted.has(key)) throw new TypeError(`${path} contains unsupported/sensitive field: ${key}`);
 }
 function normalize(row, i) {
-  rejectUnexpected(row, RECORD_KEYS, \`row[\${i}]\`);
+  rejectUnexpected(row, RECORD_KEYS, `row[${i}]`);
   const { leaCode, fiscalYear, instrumentType, amountCents, source } = row;
   if(typeof leaCode !== 'string' || !ENTITY_PATTERN.test(leaCode)) throw new TypeError('Invalid synthetic LEA identifier');
   if(!Number.isInteger(fiscalYear) || fiscalYear < 2025 || fiscalYear > 2029) throw new TypeError('Fiscal year outside synthetic pilot coverage');
@@ -42,8 +42,8 @@ export function validateSyntheticBondBatch(rows = []) {
   const seen = new Set(); let total = 0n;
   const normalized = rows.map((row,i) => {
     const rec = normalize(row,i);
-    const key = \`\${rec.leaCode}|\${rec.fiscalYear}|\${rec.instrumentType}\`;
-    if(seen.has(key)) throw new Error(\`Duplicate synthetic key \${key}: no double counting\`);
+    const key = `${rec.leaCode}|${rec.fiscalYear}|${rec.instrumentType}`;
+    if(seen.has(key)) throw new Error(`Duplicate synthetic key ${key}: no double counting`);
     seen.add(key); total += BigInt(rec.amountCents);
     return {leaCode:rec.leaCode, fiscalYear:rec.fiscalYear, instrumentType:rec.instrumentType, amountCents:rec.amountCents, sourceUrl:rec.source.url, observedAt:rec.source.observedAt, evidenceDigest:SHA(JSON.stringify(rec))};
   });
