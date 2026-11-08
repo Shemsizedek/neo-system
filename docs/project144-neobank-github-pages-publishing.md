@@ -41,3 +41,13 @@ No production DNS cutover, Render upgrade, new paid hosting, banking transaction
 - Do not blindly change `neobank` to a CNAME for a GitHub Pages origin unless the intended Pages repository has successfully bound and verified the exact custom hostname. Shared `neo-system` Pages is the wrong custom-domain owner.
 - If bypassing the dedicated repository temporarily, only use a provider-managed HTTPS redirect that has been proven functional; do not present a redirect as native bank-domain hosting.
 - Remaining user-side prerequisite: create `Shemsizedek/neo-bank-site` public repository via https://github.com/new?name=neo-bank-site; the prepared source package and dedicated Pages workflow are available in `neo-system`, including the verified GitHub Actions artifact. Use account-approved connectors to publish and test after the repository is present.
+
+## November 8, 2026 — next-gate verification
+
+- Connected GitHub `get_repo` for `Shemsizedek/neo-bank-site` returned **404**; owner-scoped repository search also returned zero matches. Dedicated Pages repository is still absent, so no new deploy to that repository was possible.
+- Existing public dashboard `https://shemsizedek.github.io/neo-system/neobank/` independently returned **HTTP 200**, title `NEO Bank | Community Finance`. It remains a read-only public UI.
+- Attempted to create the approved temporary **HTTPS 302** WordPress.com forwarding rule for only `neobank.holytemples.org` → `https://shemsizedek.github.io/neo-system/neobank/`. WordPress.com again reported that the forwarding service was temporarily unavailable.
+- **Verified no mutation:** WordPress forwarding list returned zero forwards; the original `neobank` DNS A `8.232.127.249`, TTL 3600 remains unchanged.
+- Do not switch `neobank.holytemples.org` to a CNAME for the shared GitHub Pages site without registering a legitimate site custom-domain binding. Do not expose Neon credentials, accept deposits or enable transactions from the public frontend.
+- Exact required prerequisite: create the public `Shemsizedek/neo-bank-site` GitHub repository through the GitHub UI (or enable an authorized repo-creation connector). The tested standalone site is already packaged by `neo-system` GitHub Actions workflow `.github/workflows/neo-bank-site-export.yml`, and its deployment template is at `deploy/neo-bank-site-bootstrap/pages.yml`.
+- Once the repository exists, publish and verify its default Pages address, register the custom domain and HTTPS, and only then execute the single-record WordPress DNS cutover with rollback.
