@@ -84,7 +84,7 @@ export function createEgaasCounterpartyReader({ origin, nodeId, operatorId, netw
       !['mainnet', 'testnet', 'signet'].includes(network)) throw new Error('pinned_counterparty_identity_and_network_required');
   const privateHeaders = { ...headers };
   const get = path => requestJson(`${base}/v2/${path}`, { fetchImpl, headers: privateHeaders });
-  return Object.freeze({ nodeId, operatorId, origin: base,
+  return Object.freeze({ nodeId, operatorId, origin: base, network,
     async probe() {
       const info = serverInfo(await get(''), network);
       return { network, backendHeight: info.backend_height, parserHeight: info.counterparty_height, ready: true };
@@ -133,6 +133,38 @@ export function createEgaasReadOnlyReview({ policy, bitcoin, counterparty = [], 
   });
   const verifyCapability = crown ? createEgaasCrownCapabilityReader({ ...crown, fetchImpl }) : undefined;
   return Object.freeze({
+    checkAuthority: () => checkEgaasPublishingAuthority({ policy: pinnedPolicy, verifyCapability, now }),
+    checkInclusion: input => verifyEgaasInclusion(input, { policy: pinnedPolicy, rpc, counterpartyNodes: nodes, now }),
+  });
+}
+
+/** Reuse protected Counterpay backend readers without copying credentials or
+ * creating another transport/node. Never wire this from public wallet JSON.
+ */
+export function createEgaasCounterpayReview({ policy, counterpay, independentCounterpartyReader, verifyCapability, now = Date.now } = {}) {
+  const pinnedPolicy = policy ? Object.freeze({ ...policy }) : undefined;
+  if (counterpay && counterpay.network !== pinnedPolicy?.network) throw new Error('counterpay_policy_network_mismatch');
+  const originalRpc = counterpay?.bitcoinRpc;
+  const rpc = typeof originalRpc === 'function' ? async (method, params) => {
+    if (!validRpcParams(method, params)) throw new Error('readonly_rpc_method_or_params_rejected');
+    return originalRpc(method, params);
+  } : undefined;
+  const pinReader = reader => {
+    if (!reader) return null;
+    if (reader.network !== pinnedPolicy?.network || typeof reader.read !== 'function' ||
+        ![reader.nodeId, reader.operatorId].every(value => typeof value === 'string' && /^[a-zA-Z0-9:_-]{1,100}$/.test(value))) throw new Error('invalid_counterpay_reader_binding');
+    return Object.freeze({ nodeId: reader.nodeId, operatorId: reader.operatorId, network: reader.network,
+      origin: endpoint(reader.origin), read: reader.read.bind(reader) });
+  };
+  const primary = pinReader(counterpay?.counterpartyReader);
+  const secondary = pinReader(independentCounterpartyReader);
+  if (secondary && !primary) throw new Error('counterpay_primary_reader_required');
+  if (primary && secondary && (primary.nodeId === secondary.nodeId || primary.operatorId === secondary.operatorId || primary.origin === secondary.origin)) throw new Error('counterpay_reader_is_not_independent_corroboration');
+  const nodes = [primary, secondary].filter(Boolean);
+  return Object.freeze({
+    status: Object.freeze({ source: 'counterpay', network: pinnedPolicy?.network || null,
+      bitcoinReaderBound: Boolean(rpc), primaryCounterpartyReaderBound: Boolean(primary),
+      independentCounterpartyReaderBound: Boolean(secondary), liveVerified: false, publishingEnabled: false }),
     checkAuthority: () => checkEgaasPublishingAuthority({ policy: pinnedPolicy, verifyCapability, now }),
     checkInclusion: input => verifyEgaasInclusion(input, { policy: pinnedPolicy, rpc, counterpartyNodes: nodes, now }),
   });
