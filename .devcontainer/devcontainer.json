@@ -1,0 +1,47 @@
+{
+  "name": "NEO Mail / SentinelX Lab",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {
+      "version": "latest",
+      "moby": true,
+      "dockerDashComposeVersion": "v2"
+    }
+  },
+  "forwardPorts": [8080, 443, 465, 993, 25],
+  "portsAttributes": {
+    "8080": {
+      "label": "Stalwart bootstrap/admin",
+      "visibility": "private"
+    },
+    "443": {
+      "label": "Stalwart HTTPS/JMAP",
+      "visibility": "private"
+    },
+    "465": {
+      "label": "SMTP submission test",
+      "visibility": "private"
+    },
+    "993": {
+      "label": "IMAP TLS test",
+      "visibility": "private"
+    },
+    "25": {
+      "label": "SMTP server-to-server LAB ONLY",
+      "visibility": "private"
+    }
+  },
+  "postCreateCommand": "bash .devcontainer/post-create.sh",
+  "remoteEnv": {
+    "NEOMAIL_MODE": "codespaces-lab",
+    "HOSTNAME_FQDN": "mailtest.holytemples.org"
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-azuretools.vscode-docker",
+        "redhat.vscode-yaml"
+      ]
+    }
+  }
+}
