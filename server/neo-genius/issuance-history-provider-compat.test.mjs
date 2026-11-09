@@ -48,7 +48,8 @@ test('source total is reported, never converted into completeness certification'
 });
 test('TokenScan zero-quantity lock flag never independently certifies genesis or lock transaction',()=>{
  const r=analyzeIssuanceEvidence({asset:'NOMNI',pages:[{sourceUrl:ts,retrievedAt:now,payload:{data:[row(1,'0')].map(x=>({...x,locked:true}))}}]});
- assert.equal(r.anyLockEventObserved,true);
+ assert.equal(r.anyLockFieldReported,true);
+  assert.equal(r.anyLockEventObserved,false);
  assert.equal(r.issuanceLockIndependentlyVerified,false);
  assert.equal(r.tokenSupplyIndependentlyVerified,false);
 });
