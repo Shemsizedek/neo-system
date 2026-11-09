@@ -67,3 +67,19 @@ test('no configured persistent store is not represented as durable', () => {
   assert.equal(runtime.stateStatus().durable, false);
   assert.equal(runtime.listAgents(bearer()).agents.find(a => a.id === 'NIA-013').status, 'routing_only');
 });
+
+test('real NEO Algo and social policy adapters classify locally without external actions', () => {
+  const runtime = createNousRuntime({ identityVerifier: verifier });
+  const adapters = runtime.listAdapters(bearer()).adapters;
+  assert.equal(adapters.length, 3);
+  assert.equal(runtime.classifyAdapter(bearer(), { adapterId: 'neo-algo-risk', value: 'financial_transfer' }).risk, 'red');
+  assert.equal(runtime.classifyAdapter(bearer(), { adapterId: 'neo-algo-risk', value: 'publish' }).risk, 'yellow');
+  const harmless = runtime.classifyAdapter(bearer(), { adapterId: 'neo-algo-risk', value: 'read' });
+  assert.equal(harmless.risk, 'green');
+  assert.equal(harmless.execution, 'disabled');
+  assert.equal(runtime.classifyAdapter(bearer(), { adapterId: 'rudwaan-intent', value: 'publish_content' }).classification, 'privileged');
+  assert.equal(runtime.classifyAdapter(bearer(), { adapterId: 'meta-muse-capability', value: 'canonical_doctrine' }).classification, 'nous');
+  assert.throws(() => runtime.listAdapters(bearer('nous.task.plan')), /scope_denied/);
+  assert.throws(() => runtime.classifyAdapter(bearer(), { adapterId: 'neo-algo-risk', value: 'x!bad' }), /invalid_adapter_input/);
+  assert.throws(() => runtime.classifyAdapter(bearer(), { adapterId: 'unknown', value: 'read' }), /unknown_adapter/);
+});
