@@ -1,0 +1,23 @@
+{
+  "schema": "neo-genius-010/nomni-historical-third-party-proof-v1",
+  "asset": "NOMNI",
+  "recordClass": "third-party-historical-owner-verification-claim",
+  "recordSource": "https://whois.coindaddy.io/xcp/asset/NOMNI",
+  "reportedTimestampUTC": "2017-03-20T12:34:47Z",
+  "reportedBitcoinBlockHeight": 458112,
+  "reportedVerificationAmountBTC": "0.00025250",
+  "reportedTxid": "02b553692692fc4db8400f0433a8599969ea6340b92e60b72e83647abd17b7f7",
+  "reportedSourceOrOwnerAddress": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+  "reportedVerificationDestination": "1Proofn4XbGRE9Puxd594A4XPjEMzpppKK",
+  "reportedExplorerStatus": "Confirmed",
+  "onPageConflict": "CoinDaddy page simultaneously contains default text saying owner has NOT verified and a completed verified deposit table; cannot assume current issuer control without independent check.",
+  "independentBitcoinTxVerified": false,
+  "verifiedActualInputOutputAndDestination": false,
+  "currentAssetOwnerControlVerified": false,
+  "genesisIssuanceTransaction": false,
+  "assetSupplyLockTransaction": false,
+  "redemptionRightsVerified": false,
+  "availableInvestorCapitalUsd": null,
+  "qualification": "SUPPORTING-PROVENANCE-NOT-ISSUANCE-ATTESTATION",
+  "note": "Historical third-party verification deposit is not original NOMNI issuance TXID and does not prove present-day key control, reserves, securities rights, or regulator approval."
+}
