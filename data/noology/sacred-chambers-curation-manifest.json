@@ -1,0 +1,77 @@
+{
+  "schemaVersion": "1.0",
+  "bundleId": "SCN-607",
+  "title": "Sacred Chambers institutional curation",
+  "status": "DRAFT_REVIEW_REQUIRED",
+  "publication": {
+    "public": false,
+    "adultOnly": true,
+    "minimumAge": 18,
+    "studentFacing": false,
+    "requiresGovernanceApproval": true,
+    "requiresSafeguardingReview": true,
+    "requiresLegalReview": true,
+    "automaticEnrollment": false
+  },
+  "consumers": {
+    "gissNeoLms": "NOT_PUBLISHED",
+    "neoOracle": "NOT_INGESTED",
+    "neoLaw": "DRAFT_ONLY",
+    "neoSociety": "EDITORIAL_REVIEW_REQUIRED",
+    "neoSync": "MANIFEST_ONLY"
+  },
+  "artifacts": [
+    {
+      "id": "SCN-CUR-01",
+      "path": "docs/sacred-chambers/WIFE-SCHOOL-CURRICULUM.md",
+      "type": "CURRICULUM",
+      "access": "ADULT_RESTRICTED"
+    },
+    {
+      "id": "SCN-CUR-02",
+      "path": "docs/sacred-chambers/CONCUBINE-ETHICS-CHARTER.md",
+      "type": "ETHICS",
+      "access": "REVIEW_ONLY"
+    },
+    {
+      "id": "SCN-CUR-03",
+      "path": "docs/sacred-chambers/ARCHETYPES-AND-IDENTITIES.md",
+      "type": "CULTURAL_IDENTITIES",
+      "access": "REVIEW_ONLY"
+    },
+    {
+      "id": "SCN-CUR-04",
+      "path": "docs/sacred-chambers/RELATIONSHIP-PROTOCOLS.md",
+      "type": "PROTOCOL",
+      "access": "ADULT_RESTRICTED"
+    },
+    {
+      "id": "SCN-CUR-05",
+      "path": "docs/sacred-chambers/TEMPLE-LAW-MARRIAGE-CONCUBINAGE-DRAFT.md",
+      "type": "DRAFT_CANON",
+      "access": "LEGAL_REVIEW"
+    },
+    {
+      "id": "SCN-CUR-06",
+      "path": "docs/sacred-chambers/DIGNIFIED-TERMINOLOGY.md",
+      "type": "TERMINOLOGY",
+      "access": "EDITORIAL_REVIEW"
+    }
+  ],
+  "requiredControls": [
+    "no-minor-facing-distribution",
+    "consent-revocable",
+    "no-person-as-property",
+    "no-civil-marriage-status-inference",
+    "no-financial-instrument-issuance",
+    "no-clinical-diagnosis-claims",
+    "provenance-neology-labeled",
+    "no-automatic-course-publication"
+  ],
+  "approvalEvidence": {
+    "templeGovernance": null,
+    "safeguardingReviewer": null,
+    "legalReviewer": null,
+    "adultLmsAuthorization": null
+  }
+}
