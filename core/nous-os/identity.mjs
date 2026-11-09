@@ -11,7 +11,7 @@ const decode = (part) => {
 };
 
 /** Signature-only trust: callers cannot establish identity using unsigned headers. */
-export function createIdentityVerifier({ publicKeyPem, issuer, audience, now = () => Date.now() } = {}) {
+export function createIdentityVerifier({ publicKeyPem, issuer, audience, tokenUse, maxLifetimeSeconds, now = () => Date.now() } = {}) {
   let key;
   try {
     if (publicKeyPem && issuer && audience) {
@@ -42,6 +42,13 @@ export function createIdentityVerifier({ publicKeyPem, issuer, audience, now = (
       if (typeof claims.sub !== 'string' || !claims.sub.trim() || !Number.isSafeInteger(claims.exp) || claims.exp <= epoch) throw new IdentityError('invalid_claims');
       if (claims.nbf !== undefined && (!Number.isSafeInteger(claims.nbf) || claims.nbf > epoch)) throw new IdentityError('invalid_claims');
       if (claims.iat !== undefined && (!Number.isSafeInteger(claims.iat) || claims.iat > epoch + 60)) throw new IdentityError('invalid_claims');
+      if (tokenUse && claims.token_use !== tokenUse) throw new IdentityError('invalid_token_use');
+      if (maxLifetimeSeconds !== undefined && (
+        !Number.isSafeInteger(maxLifetimeSeconds) || maxLifetimeSeconds <= 0 ||
+        !Number.isSafeInteger(claims.iat) ||
+        claims.exp <= claims.iat ||
+        claims.exp - claims.iat > maxLifetimeSeconds
+      )) throw new IdentityError('invalid_token_lifetime');
       const scopes = Array.isArray(claims.scopes) ? claims.scopes : (typeof claims.scope === 'string' ? claims.scope.split(/\s+/) : []);
       if (!scopes.every(scope => typeof scope === 'string' && scope.length <= 128)) throw new IdentityError('invalid_claims');
       return Object.freeze({ subject: claims.sub, scopes: new Set(scopes), issuer });
@@ -53,5 +60,5 @@ export function identityFromEnv(env = process.env) {
   let publicKeyPem;
   try { if (env.NOUS_IDENTITY_PUBLIC_KEY_PEM_BASE64) publicKeyPem = Buffer.from(env.NOUS_IDENTITY_PUBLIC_KEY_PEM_BASE64, 'base64').toString('utf8'); }
   catch { /* Fail closed */ }
-  return createIdentityVerifier({ publicKeyPem, issuer: env.NOUS_IDENTITY_ISSUER, audience: env.NOUS_IDENTITY_AUDIENCE });
+  return createIdentityVerifier({ publicKeyPem, issuer: env.NOUS_IDENTITY_ISSUER, audience: env.NOUS_IDENTITY_AUDIENCE, tokenUse: 'nous-read', maxLifetimeSeconds: 120 });
 }
