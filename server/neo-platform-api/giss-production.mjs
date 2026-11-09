@@ -9,6 +9,7 @@ import { createFirestoreCrmStore } from './firestore-crm-store.mjs';
 import { createFirestoreSchoolStore } from './firestore-school-store.mjs';
 import { createSchoolActionHandler } from './giss-school-actions.mjs';
 import { attachNeopassBrowserTokenExchange } from './browser-token-exchange.mjs';
+import { createNousTokenExchange } from './nous-token-exchange.mjs';
 import { createGissAuthorizationBridge, createFirestoreGissCodeStore } from './giss-authorization-bridge.mjs';
 import { createCrownServiceAuthorizer } from './crown-service-authorizer.mjs';
 import { createFirestoreDealDeskOutbox } from '../neo-deal-desk/firestore-outbox.mjs';
@@ -66,12 +67,25 @@ export function createGissProductionServer({
   // independent registry-bound curator identity certification.
   const server = createNeoPlatformApi({ templeGissRuntime, subjectResolver, authService, knowindexAuthService, knowindexContributionLedger, knowindexWriteEnabled, knowindexJwtSecret:jwtSecret, knowindexJwtIssuer:jwtIssuer || 'neo-pass', crmStore, schoolStore, dealDeskOutbox, dealDeskMailAdapter, dealDeskInboundReader, crownServiceAuthorizer:serviceAuthorizer, now });
   const gissBridge = authService ? createGissAuthorizationBridge({codeStore:createFirestoreGissCodeStore({db}),authService,subjectResolver,gissService:templeGissRuntime.service,jwtSecret,jwtIssuer,now}) : null;
+  // Explicitly opt-in; disabled by default. Secrets stay inside the NEOpass boundary.
+  // Configuration must be injected from a protected staging secret store.
+  const nousExchange = process.env.NOUS_TOKEN_EXCHANGE_ENABLED === 'true'
+    ? createNousTokenExchange({
+        jwtSecret,
+        jwtIssuer: jwtIssuer || 'neo-pass',
+        privateKeyPem: Buffer.from(process.env.NOUS_EXCHANGE_ED25519_PRIVATE_KEY_PEM_BASE64 || '', 'base64').toString('utf8'),
+        tokenIssuer: 'neo-pass-nous-exchange',
+        audience: 'neo-nous',
+        authService,
+      })
+    : null;
   const coreHandler = server.listeners('request')[0];
   const schoolActions = createSchoolActionHandler({ schoolStore, subjectResolver });
   server.removeAllListeners('request');
   server.on('request', async (req, res) => {
     try {
       const url = new URL(req.url || '/', 'http://neo.local');
+      if (nousExchange && await nousExchange(req,res,url)) return;
       if (gissBridge && await gissBridge(req,res,url)) return;
       if (await schoolActions(req, res, url)) return;
       return coreHandler(req, res);
