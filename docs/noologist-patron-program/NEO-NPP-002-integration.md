@@ -1,36 +1,33 @@
-# NEO-NPP-002 — GISD LMS / NEO Algo Integration Contract (Review Gate)
+# NEO-NPP-003 — Neotherapist Client Service Integration (Corrected)
 
-## Existing interfaces inspected
-- `apps/gisd/curriculum.ts` defines 144-degree learner records, Temple Degree 36 Rekai threshold, assignments and source boundary.
-- `apps/gisd/gissNeoLms.ts` defines portfolio evidence and internal learner terminology.
-- `data/neo-sync/noology-gisd-canonical.json` preserves Rekai doctrine and source-integrity requirements.
+## Authoritative program boundary
+The **30-day Noologist Patron Program is a client-facing Neotherapy service**, not a GISD/GISS school course. Only a Neotherapist who has **completed the apprenticeship** and whose service authorization and permitted scope have been verified may deliver it. A client is **not** a Templist, student, initiate or apprenticeship candidate by virtue of buying this program.
 
-## Proposed ingest
-Use `data/noology/noologist-patron-program.json` as a **draft, read-only curriculum registry**, not a live student database. Join by program ID, not by replacing or overwriting existing Temple Degree records. A 30-day completion does **not** confer any Temple Degree or Holy Order automatically. The existing 36° Major Lesson 1 Rekai threshold is a separate prerequisite/entitlement, to be verified by Temple authorities.
+## Separation of systems
+- **School / apprenticeship:** GISD/GISS may hold practitioner training and apprenticeship evidence, but must not enroll clients into a degree program.
+- **Client services:** NEO Neotherapy / NEO Lifestyle manages client intake, consent, appointment schedule, 30-day wellness sessions, optional journaling, progress review, payment disclosures and completion summary.
+- **NEO Algo / Oracle:** may retrieve approved program information and practitioner guidance, subject to privacy and source boundaries.
+- **NEOsync:** preserves approved versions and audit evidence; no personal client information in public GitHub.
 
-## Required interfaces before activation
-1. GISD LMS: curriculum view, instructor-assigned Templist enrollment, daily progress, portfolio evidence, consent and accessibility accommodations.
-2. NEO Algo: retrieve program-defined doctrine with explicit SOURCE_SUPPLIED_DOCTRINE classification; do not present symbolic claims as empirical findings.
-3. NEO Oracle: read-only program question answering with source citations and clear boundaries around medical/linguistic claims.
-4. NEOsync: versioned source hashes and approval log; corrections append, never silently rewrite source.
-5. Certificates: verified instructor and Temple approver, separate signed issuance, revocation and audit trail; Ankh / emerald-green artwork is design-only until reviewed.
+## Client journey
+1. Client receives scope, price ($288/month proposed), session frequency, cancellation/refund and privacy disclosures.
+2. Practitioner eligibility gate verifies completed apprenticeship, active authorization, identity and lawful scope of service.
+3. Client opts into specific spiritual practices, consents, and books a private session.
+4. Neotherapist delivers 30-day program, documents only necessary service events and agreed goals in access-controlled storage.
+5. At day 30, client receives a wellness progress/continuation summary, **not a Temple degree or practitioner certification**.
 
-## Authorization matrix
-- Visitor: view approved public brochure only.
-- Enrolled Templist: view own lessons and own progress.
-- Assigned instructor: review only assigned learners; no self-issuance of certificates.
-- Temple approver: approve/reject internal completion credential with audit evidence.
-- System administrator: manage technical access, not alter learner attestations without a recorded correction.
+## Permissions
+- Client: only own appointments, preferences and progress.
+- Assigned Neotherapist: assigned clients only, with active verified authorization.
+- Supervisor: limited quality/safeguarding oversight where authorized.
+- Administrator: operations access, not unrestricted sensitive notes.
 
-## Acceptance tests (not yet executed)
-- Exactly 30 unique consecutive days; no missing or duplicate lessons.
-- Holy Orders mapping: Sage 1–2, Magi 3, Mystic 4–5, Sorcerer 6–9; both Mystic and Sorcerer are Level 3 per current directive.
-- Enrolling a participant does not change 144-degree standing.
-- Unauthorized user cannot access another participant's records.
-- Missing consent prevents practice participation; missing instructor review prevents credential issuance.
-- Nootropics educational only; no dosage or treatment advice.
-- Revoked instructor cannot approve or issue records.
-- Production remains off until privacy, legal, safeguarding and Temple review.
+## Release tests
+- Client enrollment never creates a GISD student record, Temple degree, Holy Order membership or Neotherapist credential.
+- Practitioner without completed apprenticeship or active authorization cannot accept sessions.
+- Consent is recorded before optional practices; withdrawal is honored.
+- Client A cannot read client B's information; practitioner revocation blocks access.
+- No diagnosis, disease-treatment claims, supplement prescribing or unsupervised clinical interventions.
+- Billing is disabled until terms and payment integration are approved.
 
-## Release decision
-**DOCUMENTATION / STRUCTURED DATA PREPARED; RUNTIME INTEGRATION NOT IMPLEMENTED OR TESTED.** No live enrollment, billing, client data storage, medical practice, certification or deployment is authorized by this change.
+**State:** design/registry correction committed; runtime, identity checks, scheduling, payments and production service are NOT implemented or tested.
