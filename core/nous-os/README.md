@@ -5,9 +5,9 @@ This is the first coherent bootable **application runtime** for Nous OS, not a k
 ## Existing sources reused, not relocated
 
 - Canonical N.I.A. IDs: `registry/agents.yaml`
-- Noological reasoning: `src/noology/neoAlgo.ts`
+- Noological reasoning: `src/noology/neoAlgo.ts` (source inventory only) and `core/neo-algo/runtime.mjs` (bounded, executable **read-only risk classifier**)
 - Economic value modeling: `src/noology/nousEconomicValueKernel.ts`
-- Social routing: `src/social/rudwaan-nous-bridge.mjs`
+- Social routing: `src/social/rudwaan-nous-bridge.mjs` and `src/social/meta-muse-policy.mjs` (pure read-only policy classifiers)
 - Existing Crown workload definitions: `server/crown-workload-agent/` and `.github/workflows/deploy-crown-tier1-agents.yml`
 
 `registry.mjs` reads all canonical IDs from `registry/agents.yaml` at startup and fails closed on malformed records. Only five explicitly mapped agents have planning capabilities. All agents remain metadata-only, not connected processes.
@@ -23,7 +23,9 @@ Provide a trusted Ed25519 token *verification* key (never a signing key), issuer
 - `PORT`: defaults to `8080`
 - `NOUS_STATE_DIR`: optional writable directory for a single-process append-only planning receipt log; leave unset for ephemeral development
 
-Protected requests use an EdDSA-signed JWT with validated `iss`, `aud`, `sub`, and `exp`; optional `nbf` and `iat` are also checked. Explicit scope `nous.agents.read` is required for agent listing; `nous.task.plan` is required for planning. Unsigned identity headers, generic API keys, and wildcard scopes are rejected. **The real NEOpass issuer and key format remain unverified**; do not claim integration until its signing and rotation contracts are proven.
+The deployed runtime additionally requires `token_use: "nous-read"` and an at-most 120-second signed lifetime. Protected requests use an EdDSA-signed JWT with validated `iss`, `aud`, `sub`, and `exp`; optional `nbf` and `iat` are also checked. Explicit scope `nous.agents.read` is required for agent listing; `nous.task.plan` is required for planning. Unsigned identity headers, generic API keys, and wildcard scopes are rejected. **The live NEOpass service uses HS256 session tokens**, not EdDSA. The opt-in, disabled-by-default exchange adapter is `server/neo-platform-api/nous-token-exchange.mjs`, registered only when `NOUS_TOKEN_EXCHANGE_ENABLED=true` on the GISS API. It verifies existing HS256 sessions **inside NEOpass**, checks active membership, then signs EdDSA Nous tokens for **read-only scopes only**: `nous.agents.read nous.sources.read nous.adapters.read`. It rejects browser/crown-purpose tokens, cookie-based minting, expired sessions and untrusted origins. Configure `NOUS_EXCHANGE_ED25519_PRIVATE_KEY_PEM_BASE64` as a protected GISS-side secret and give Nous OS only the matching public key. Both components must agree on exchange issuer `neo-pass-nous-exchange` and audience `neo-nous`. The private key **must never** be stored in Nous OS or committed to GitHub. 
+
+The exchange has not been enabled in a running service; revocation and key rotation policies remain unverified. Never enable this on production without an identity review and a tested ingress/throttling/revocation plan.
 
 Without the three identity settings, protected APIs fail closed and readiness reports 503.
 
@@ -49,6 +51,8 @@ The service binds `127.0.0.1:18080` on the staging host; never publish the port 
 - `GET /health`: liveness only, not integration readiness
 - `GET /ready`: identity verification configuration status; external adapters always remain disabled
 - `GET /v1/agents`: protected canonical registry catalog, each listed as `routing_only`
+- `GET /v1/adapters`: protected catalog of three local read-only NEO policy adapters, requiring `nous.adapters.read`.
+- `POST /v1/adapters/classify`: protected bounded input `{"adapterId":"neo-algo-risk","value":"financial_transfer"}` calls the existing `core/neo-algo/runtime.mjs` *only* for advisory risk classification; social intent and Meta Muse capability classification are also available. No network access or action execution is possible.
 - `GET /v1/sources`: protected SHA-256 inventory of the NEO Algo and economic-kernel source files, requiring `nous.sources.read`; source verification is **not execution**
 - `POST /v1/tasks/plan`: protected body `{"requestId":"REQ-001","agentId":"NIA-008","capability":"development.plan"}`. Returns a plan receipt with `execution:"disabled"`. When `NOUS_STATE_DIR` is configured, receipt history survives a single-process restart and duplicate request IDs replay their original receipts.
 
@@ -57,7 +61,7 @@ Receipts never mean tasks ran, were queued, or were approved. No task body or cr
 ## Next release gates
 
 1. Independently verify NEOpass issuer, revocation/key rotation, ingress rate limits, token lifetime policy, and replay protection.
-2. Connect an actual authorized NEOpass token exchange, then add scoped read-only NEO Algo, GISD and economic adapters. Source SHA-256 inventories are available now; they do not execute those modules.
+2. Verify opt-in NEOpass exchange in **isolated staging**, with issuer/key rotation and revocation checks. Nous now has bounded read-only NEO Algo runtime and social policy adapters; GISD and economic **TypeScript** adapters are not yet executed. Source inventories remain non-executable.
 3. Add an encrypted, multi-replica-safe durable queue, append-only independently anchored audit, backup, observability and tested rollback. The current append-only receipt log is a single-process staging primitive.
 4. Implement independently approved capability grants for any external actions. Wallet signing and regulated activities require separate authorization and compliance checks.
-5. Confirm CI, staging smoke tests and operator-approved promotion before any production deployment.
+5. Confirm dedicated GitHub CI, ephemeral loopback container smoke tests, private hosted staging tests, and an approved rollback before any production deployment. No Render service is created or changed by this branch.
