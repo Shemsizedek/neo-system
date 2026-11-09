@@ -1,0 +1,101 @@
+{
+  "schema": "global-neo-ip.provider-federation.v1",
+  "reviewed_at": "2026-11-08",
+  "source_of_truth": "Shemsizedek/neo-system",
+  "canonical_neo_private_overlay": "10.144.0.0/16",
+  "rule": "Transport providers are replaceable; never claim a live address or network from static configuration.",
+  "budget_rule": "No paid resource, trial auto-conversion, additional account, or quota-evasion rotation.",
+  "member_rule": "No public guest enrollment until independent device handshake, least privilege, revocation and consent are accepted.",
+  "candidates": [
+    {
+      "id": "netbird-cloud-free",
+      "priority": 1,
+      "mode": "managed-wireguard-mesh",
+      "role": "first zero-new-host-cost encrypted pilot",
+      "supported_free_plan": "5 users, 100 machines as of 2026-10-06; re-verify at signup",
+      "control_plane": "NetBird Cloud",
+      "native_overlay": "provider-assigned 100.64.0.0/10 subrange, not NEO's 10.144.0.0/16",
+      "neo_subnet_preservation": "Route 10.144.0.0/16 or narrower segments through an authorized existing NEO routing peer only after non-overlap and ACL testing.",
+      "public_udp_inbound_host_required": false,
+      "existing_account_verified": false,
+      "provider_policy_accepted": false,
+      "live_peers_verified": false,
+      "approval_state": "NOT_CONNECTED",
+      "signup": "https://app.netbird.io/",
+      "source": "https://docs.netbird.io/manage/settings/plans-and-billing"
+    },
+    {
+      "id": "neo-owned-community-peer",
+      "priority": 2,
+      "mode": "self-operated-wireguard-or-netbird-peer",
+      "role": "first independent NEO/community-owned bridge and preferred long-term autonomy",
+      "controls_required": [
+        "owned-or-explicitly-donated device",
+        "reliable electricity and network",
+        "root access",
+        "durable private-key storage",
+        "reachable UDP or approved mesh relay",
+        "backup and rollback"
+      ],
+      "public_udp_inbound_host_required": "only if deployed as standalone reachable WireGuard gateway",
+      "existing_account_verified": false,
+      "live_peers_verified": false,
+      "approval_state": "NO_HOST_VERIFIED",
+      "source": "https://github.com/Shemsizedek/neo-system/blob/main/services/neo-vpn/docs/GATEWAY-DEPLOYMENT.md"
+    },
+    {
+      "id": "oracle-always-free",
+      "priority": 3,
+      "mode": "free-eligible-persistent-vm",
+      "role": "optional dedicated UDP WireGuard endpoint if free VM is genuinely available and explicitly approved",
+      "conditions": [
+        "existing Oracle account or user-approved enrollment",
+        "Always Free eligible shape and quotas verified",
+        "region has available capacity",
+        "no payment obligation beyond free quota",
+        "existing free credit/trial terms reviewed"
+      ],
+      "public_udp_inbound_host_required": true,
+      "existing_account_verified": false,
+      "live_peers_verified": false,
+      "approval_state": "ACCOUNT_NOT_CONNECTED",
+      "source": "https://docs.oracle.com/en-us/iaas/Content/FreeTier/freetier_topic-Always_Free_Resources.htm"
+    }
+  ],
+  "non_gateway_surfaces": [
+    {
+      "id": "render-free-web",
+      "reason": "Public HTTP(S) ingress only, no publicly reachable unmanaged WireGuard UDP gateway; preserve for HTTPS applications."
+    },
+    {
+      "id": "github-pages",
+      "reason": "Static site, not a persistent VPN data plane."
+    },
+    {
+      "id": "github-codespaces",
+      "reason": "Development session, not an accepted always-on production VPN host."
+    },
+    {
+      "id": "tailscale-personal",
+      "reason": "Personal free plan limited to non-commercial use; do not apply it to NEO commercial network without documented eligibility."
+    },
+    {
+      "id": "zerotier-personal",
+      "reason": "Personal free plan limited to non-commercial use; cannot assume eligibility for NEO commercial network."
+    }
+  ],
+  "first_pilot": {
+    "state": "NOT_ENROLLED",
+    "required_distinct_devices": 2,
+    "required_evidence": [
+      "approved identity and separate device ownership",
+      "two independent peer handshakes and encrypted exchange",
+      "ACL deny for guest-to-admin and guest-to-bot",
+      "revocation from control plane and application sessions",
+      "provider exhaustion/standby migration record"
+    ],
+    "canonical_guest_network": "10.144.50.0/24",
+    "canonical_partner_network": "10.144.60.0/24",
+    "note": "A cloud mesh peer address (100.64/10) is NOT itself a NEO 10.144.x.x address. NEO subnet reachability requires an approved routing peer."
+  }
+}
