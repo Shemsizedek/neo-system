@@ -1,3 +1,4 @@
+import { runNeoAlgo } from '../neo-algo/runtime.mjs';
 import { classifyRudwaanIntent } from '../../src/social/rudwaan-nous-bridge.mjs';
 import { classifyMetaMuseCapability } from '../../src/social/meta-muse-policy.mjs';
 
@@ -8,6 +9,7 @@ export function createReadOnlyAdapters() {
   return Object.freeze({
     list() {
       return [
+        { id: 'neo-algo-risk', source: 'core/neo-algo/runtime.mjs', status: 'local_read_only' },
         { id: 'rudwaan-intent', source: 'src/social/rudwaan-nous-bridge.mjs', status: 'local_read_only' },
         { id: 'meta-muse-capability', source: 'src/social/meta-muse-policy.mjs', status: 'local_read_only' },
       ];
@@ -15,6 +17,10 @@ export function createReadOnlyAdapters() {
     classify(id, value) {
       if (typeof value !== 'string' || !INPUT.test(value)) {
         return { error: 'invalid_adapter_input', status: 400 };
+      }
+      if (id === 'neo-algo-risk') {
+        const result = runNeoAlgo({ id: 'nous-readonly-review', objective: 'Classify an action risk without executing it.', requestedAction: value }, 'human');
+        return { adapter: id, action: value, risk: result.risk, approvalRequired: result.approvalRequired, provenance: result.provenance, execution: 'disabled', readOnly: true };
       }
       if (id === 'rudwaan-intent') {
         const result = classifyRudwaanIntent(value);
