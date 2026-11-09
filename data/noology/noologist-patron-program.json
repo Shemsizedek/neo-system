@@ -1,0 +1,424 @@
+{
+  "id": "NEO-NPP-001",
+  "version": "0.1.0",
+  "status": "DRAFT_REVIEW",
+  "classification": "SOURCE_SUPPLIED_DOCTRINE_WITH_EDUCATIONAL_ADAPTATION",
+  "title": "Noologist Patron Program",
+  "durationDays": 30,
+  "price": {
+    "amount": 288,
+    "currency": "USD",
+    "period": "month",
+    "status": "PROPOSED"
+  },
+  "systems": [
+    "GISD LMS",
+    "GISS NEO LMS",
+    "NEO Algo",
+    "NEO Oracle",
+    "NEOsync"
+  ],
+  "learnerTerm": "Templist",
+  "holyOrders": [
+    {
+      "name": "Sage",
+      "level": 1,
+      "majorLessons": [
+        1,
+        2
+      ]
+    },
+    {
+      "name": "Magi",
+      "level": 2,
+      "majorLessons": [
+        3
+      ]
+    },
+    {
+      "name": "Mystic",
+      "level": 3,
+      "majorLessons": [
+        4,
+        5
+      ]
+    },
+    {
+      "name": "Sorcerer",
+      "level": 3,
+      "majorLessons": [
+        6,
+        7,
+        8,
+        9
+      ]
+    }
+  ],
+  "rekaiThreshold": "36th degree of Major Lesson 1 (Temple source-defined; not automatic program certification)",
+  "practiceTerms": [
+    "Wazufa",
+    "Smai",
+    "Huwa",
+    "Hahka",
+    "Hu",
+    "Ashutat"
+  ],
+  "days": [
+    {
+      "day": 1,
+      "week": 1,
+      "title": "Posture and presence",
+      "activityType": "guided_reflection",
+      "evidence": [
+        "attendance",
+        "journal"
+      ],
+      "requiresConsent": true
+    },
+    {
+      "day": 2,
+      "week": 1,
+      "title": "Smai sacred breath",
+      "activityType": "guided_reflection",
+      "evidence": [
+        "attendance",
+        "journal"
+      ],
+      "requiresConsent": true
+    },
+    {
+      "day": 3,
+      "week": 1,
+      "title": "Nous screen imagery",
+      "activityType": "guided_reflection",
+      "evidence": [
+        "attendance",
+        "journal"
+      ],
+      "requiresConsent": true
+    },
+    {
+      "day": 4,
+      "week": 1,
+      "title": "Reflective problem solving",
+      "activityType": "guided_reflection",
+      "evidence": [
+        "attendance",
+        "journal"
+      ],
+      "requiresConsent": true
+    },
+    {
+      "day": 5,
+      "week": 1,
+      "title": "Home environment",
+      "activityType": "guided_reflection",
+      "evidence": [
+        "attendance",
+        "journal"
+      ],
+      "requiresConsent": true
+    },
+    {
+      "day": 6,
+      "week": 1,
+      "title": "Wazufa cleansing",
+      "activityType": "guided_reflection",
+      "evidence": [
+        "attendance",
+        "journal"
+      ],
+      "requiresConsent": true
+    },
+    {
+      "day": 7,
+      "week": 1,
+      "title": "Values compass",
+      "activityType": "guided_reflection",
+      "evidence": [
+        "attendance",
+        "journal"
+      ],
+      "requiresConsent": true
+    },
+    {
+      "day": 8,
+      "week": 2,
+      "title": "Intuition and uncertainty",
+      "activityType": "guided_reflection",
+      "evidence": [
+        "attendance",
+        "journal"
+      ],
+      "requiresConsent": true
+    },
+    {
+      "day": 9,
+      "week": 2,
+      "title": "Material symbolism",
+      "activityType": "guided_reflection",
+      "evidence": [
+        "attendance",
+        "journal"
+      ],
+      "requiresConsent": true
+    },
+    {
+      "day": 10,
+      "week": 2,
+      "title": "Three scenes visualization",
+      "activityType": "guided_reflection",
+      "evidence": [
+        "attendance",
+        "journal"
+      ],
+      "requiresConsent": true
+    },
+    {
+      "day": 11,
+      "week": 2,
+      "title": "Choosing techniques",
+      "activityType": "guided_reflection",
+      "evidence": [
+        "attendance",
+        "journal"
+      ],
+      "requiresConsent": true
+    },
+    {
+      "day": 12,
+      "week": 2,
+      "title": "Huwa voiced breath",
+      "activityType": "guided_reflection",
+      "evidence": [
+        "attendance",
+        "journal"
+      ],
+      "requiresConsent": true
+    },
+    {
+      "day": 13,
+      "week": 2,
+      "title": "Psychometry and evidence",
+      "activityType": "guided_reflection",
+      "evidence": [
+        "attendance",
+        "journal"
+      ],
+      "requiresConsent": true
+    },
+    {
+      "day": 14,
+      "week": 2,
+      "title": "Plant observation",
+      "activityType": "guided_reflection",
+      "evidence": [
+        "attendance",
+        "journal"
+      ],
+      "requiresConsent": true
+    },
+    {
+      "day": 15,
+      "week": 3,
+      "title": "Purpose and goals",
+      "activityType": "guided_reflection",
+      "evidence": [
+        "attendance",
+        "journal"
+      ],
+      "requiresConsent": true
+    },
+    {
+      "day": 16,
+      "week": 3,
+      "title": "Belief and expectancy",
+      "activityType": "guided_reflection",
+      "evidence": [
+        "attendance",
+        "journal"
+      ],
+      "requiresConsent": true
+    },
+    {
+      "day": 17,
+      "week": 3,
+      "title": "Centering IV",
+      "activityType": "guided_reflection",
+      "evidence": [
+        "attendance",
+        "journal"
+      ],
+      "requiresConsent": true
+    },
+    {
+      "day": 18,
+      "week": 3,
+      "title": "Mind body wellbeing",
+      "activityType": "guided_reflection",
+      "evidence": [
+        "attendance",
+        "journal"
+      ],
+      "requiresConsent": true
+    },
+    {
+      "day": 19,
+      "week": 3,
+      "title": "Rekai wellbeing ritual",
+      "activityType": "guided_reflection",
+      "evidence": [
+        "attendance",
+        "journal"
+      ],
+      "requiresConsent": true
+    },
+    {
+      "day": 20,
+      "week": 3,
+      "title": "Compassionate animal care",
+      "activityType": "guided_reflection",
+      "evidence": [
+        "attendance",
+        "journal"
+      ],
+      "requiresConsent": true
+    },
+    {
+      "day": 21,
+      "week": 3,
+      "title": "Habit design",
+      "activityType": "guided_reflection",
+      "evidence": [
+        "attendance",
+        "journal"
+      ],
+      "requiresConsent": true
+    },
+    {
+      "day": 22,
+      "week": 4,
+      "title": "Centering V",
+      "activityType": "guided_reflection",
+      "evidence": [
+        "attendance",
+        "journal"
+      ],
+      "requiresConsent": true
+    },
+    {
+      "day": 23,
+      "week": 4,
+      "title": "Human anatomy literacy",
+      "activityType": "guided_reflection",
+      "evidence": [
+        "attendance",
+        "journal"
+      ],
+      "requiresConsent": true
+    },
+    {
+      "day": 24,
+      "week": 4,
+      "title": "Body awareness",
+      "activityType": "guided_reflection",
+      "evidence": [
+        "attendance",
+        "journal"
+      ],
+      "requiresConsent": true
+    },
+    {
+      "day": 25,
+      "week": 4,
+      "title": "Ashutat group supplication",
+      "activityType": "guided_reflection",
+      "evidence": [
+        "attendance",
+        "journal"
+      ],
+      "requiresConsent": true
+    },
+    {
+      "day": 26,
+      "week": 4,
+      "title": "Metacognition",
+      "activityType": "guided_reflection",
+      "evidence": [
+        "attendance",
+        "journal"
+      ],
+      "requiresConsent": true
+    },
+    {
+      "day": 27,
+      "week": 4,
+      "title": "Supervised case reflection",
+      "activityType": "guided_reflection",
+      "evidence": [
+        "attendance",
+        "journal"
+      ],
+      "requiresConsent": true
+    },
+    {
+      "day": 28,
+      "week": 4,
+      "title": "Sustainable lifestyle",
+      "activityType": "guided_reflection",
+      "evidence": [
+        "attendance",
+        "journal"
+      ],
+      "requiresConsent": true
+    },
+    {
+      "day": 29,
+      "week": 5,
+      "title": "Personal lifestyle plan",
+      "activityType": "portfolio",
+      "evidence": [
+        "lifestyle_plan"
+      ],
+      "requiresConsent": true
+    },
+    {
+      "day": 30,
+      "week": 5,
+      "title": "Final reflection and Temple recognition review",
+      "activityType": "assessment",
+      "evidence": [
+        "reflection",
+        "instructor_review"
+      ],
+      "requiresConsent": true
+    }
+  ],
+  "credentialPolicy": {
+    "issuer": "Science Temple (subject to approval)",
+    "type": "internal_completion_only",
+    "automatedIssuance": false,
+    "licensedMedicalCredential": false,
+    "requiresInstructorReview": true
+  },
+  "safety": {
+    "medicalTreatmentClaims": false,
+    "automaticNootropicPrescriptions": false,
+    "psychedelicAdministration": false,
+    "consentRequired": true,
+    "referralProtocolRequired": true
+  },
+  "integration": {
+    "mode": "read_only_draft",
+    "studentEnrollment": false,
+    "progressWrites": false,
+    "certificateIssuance": false,
+    "productionEnabled": false
+  },
+  "sourceRefs": [
+    "docs/noologist-patron-program/30-day-curriculum.md",
+    "apps/gisd/curriculum.ts",
+    "apps/gisd/gissNeoLms.ts",
+    "data/neo-sync/noology-gisd-canonical.json"
+  ]
+}
