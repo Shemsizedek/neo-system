@@ -61,7 +61,7 @@ check($wpdb->db->query('SELECT state FROM t_neo_counter_delivery WHERE invoice_i
 echo "PASS: merchant drafts, authorization, collection isolation, exact markup, fulfillment routing, escrow capability boundaries, service payment replay and reorg\n";
 function esc_url($x){return htmlspecialchars($x,ENT_QUOTES);}function esc_attr($x){return htmlspecialchars($x,ENT_QUOTES);}function esc_html($x){return htmlspecialchars($x,ENT_QUOTES);}
 function admin_url($x){return 'https://example.test/wp-admin/'.$x;}function home_url($x){return 'https://example.test'.$x;}
-function wp_nonce_field($action){echo '<input type="hidden" name="_wpnonce" value="fixture-'.htmlspecialchars($action,ENT_QUOTES).'">';}
+function wp_nonce_field($action,$name='_wpnonce',$referer=true,$display=true){$html='<input type="hidden" name="'.htmlspecialchars($name,ENT_QUOTES).'" value="fixture-'.htmlspecialchars($action,ENT_QUOTES).'">';if($display)echo $html;return $html;}
 function submit_button($text){echo '<button>'.htmlspecialchars($text,ENT_QUOTES).'</button>';}
 $admin=true;ob_start();neo_counter_merchant_admin();$html=ob_get_clean();
 check(strpos($html,'name="base_price"')!==false&&strpos($html,'fixture-neo_counter_merchant_prepare')!==false,'Admin form uses human price and nonce');
