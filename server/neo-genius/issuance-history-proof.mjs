@@ -18,8 +18,10 @@ function endpoint(asset,raw) {
     if(u.protocol!=='https:'||u.username||u.password||u.search||u.hash) return null;
     if(u.hostname==='api.counterparty.io' && u.port==='4000'
       && u.pathname==='/v2/assets/'+asset+'/issuances') return 'counterparty-v2';
-    if(u.hostname==='tokenscan.io' && !u.port
-      && new RegExp('^/api/issuances/'+asset+'(?:/[1-9][0-9]*/[1-9][0-9]*)?$').test(u.pathname)) return 'tokenscan';
+    const tokenScanPath='/api/issuances/'+asset;
+    const remaining=u.pathname.startsWith(tokenScanPath)?u.pathname.slice(tokenScanPath.length):null;
+    if(u.hostname==='tokenscan.io' && !u.port && remaining!==null
+      && (remaining===''||/^\/[1-9][0-9]*\/[1-9][0-9]*$/.test(remaining))) return 'tokenscan';
     return null;
   }catch{return null;}
 }
