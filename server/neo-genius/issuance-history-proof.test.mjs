@@ -18,7 +18,8 @@ test('a supplied NOMNI history is a candidate, never independently attested',()=
   const result=analyzeIssuanceEvidence({asset:'NOMNI',pages:[page([rec(1,'900000000'),rec(2,'0',{lock:true})])]});
   assert.equal(result.quantityFromSuppliedValidRowsBaseUnits,'900000000');
   assert.equal(result.firstObservedIssuance.txHash,tx(1));
-  assert.equal(result.anyLockEventObserved,true);
+  assert.equal(result.anyLockFieldReported,true);
+  assert.equal(result.anyLockEventObserved,false);
   assert.equal(result.tokenSupplyIndependentlyVerified,false);
   assert.equal(result.bitcoinConfirmationsIndependentlyValidated,false);
   assert.equal(result.legalStablecoinOrSecuritiesComplianceVerified,false);
