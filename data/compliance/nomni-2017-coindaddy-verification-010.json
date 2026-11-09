@@ -19,5 +19,13 @@
   "redemptionRightsVerified": false,
   "availableInvestorCapitalUsd": null,
   "qualification": "SUPPORTING-PROVENANCE-NOT-ISSUANCE-ATTESTATION",
-  "note": "Historical third-party verification deposit is not original NOMNI issuance TXID and does not prove present-day key control, reserves, securities rights, or regulator approval."
+  "note": "Historical third-party verification deposit is not original NOMNI issuance TXID and does not prove present-day key control, reserves, securities rights, or regulator approval. Live CounterPay response independently of CoinDaddy page showed transaction confirmed at block 458112; it did NOT independently verify spending address, deposit output, custody, or asset issuance.",
+  "separateBitcoinTransactionStatusReader": {
+    "service": "connected NEO CounterPay read-only transaction-status",
+    "confirmed": true,
+    "blockHeight": 458112,
+    "checkedDate": "2026-11-08",
+    "method": "bitcoin transaction confirmation lookup, not independently operated full node",
+    "fullyIndependentNodeValidation": false
+  }
 }
