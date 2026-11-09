@@ -14,7 +14,7 @@ const { publicKey, privateKey } = generateKeyPairSync('ed25519');
 const publicKeyPem = publicKey.export({ format: 'pem', type: 'spki' });
 const now = 1780000000000;
 const verifier = createIdentityVerifier({ publicKeyPem, issuer: 'test', audience: 'nous', now: () => now });
-function bearer(scope = 'nous.task.plan nous.agents.read nous.sources.read') {
+function bearer(scope = 'nous.task.plan nous.agents.read nous.sources.read nous.adapters.read') {
   const header = Buffer.from(JSON.stringify({ typ: 'JWT', alg: 'EdDSA' })).toString('base64url');
   const claims = Buffer.from(JSON.stringify({ sub: 'user', iss: 'test', aud: 'nous', exp: Math.floor(now / 1000) + 120, scope })).toString('base64url');
   const body = header + '.' + claims;
