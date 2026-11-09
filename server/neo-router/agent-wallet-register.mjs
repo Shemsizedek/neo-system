@@ -29,12 +29,14 @@ export function createAgentWalletRegister({ principals = DEFAULT_WORKER_PROFILES
   const receipts = new Map()
 
   function propose(input) {
-    if (!input || Object.keys(input).some(key => !['principalId', 'ownerId', 'address', 'protocol'].includes(key))) throw new TypeError('Only public binding fields accepted')
-    const { principalId, ownerId, address, protocol } = input
+    if (!input || Object.keys(input).some(key => !['principalId', 'ownerId', 'address', 'protocol', 'provider', 'ledger'].includes(key))) throw new TypeError('Only public binding fields accepted')
+    const { principalId, ownerId, address, protocol, provider = 'existing-wallet', ledger = protocol === 'bitcoin' ? 'bitcoin' : 'unverified' } = input
     if (!known.has(principalId) || !identifier(ownerId)) throw new TypeError('Known principal and owner reference required')
     if (!['bitcoin', 'counterparty'].includes(protocol) || !isLegacyMainnetAddress(address)) throw new TypeError('Supported mainnet public address required')
+    if (!['existing-wallet', 'freewallet.io', 'xcp-wallet', 'counterpay', 'other-counterparty-wallet'].includes(provider)) throw new TypeError('Supported provider label required')
+    if (protocol === 'bitcoin' ? ledger !== 'bitcoin' : !['unverified', 'counterparty-2.0', 'counterparty-classic'].includes(ledger)) throw new TypeError('Explicit compatible ledger label required')
     if (bindings.has(principalId) || addresses.has(address)) throw new Error('Principal or address already assigned')
-    const binding = { principalId, ownerId, address, protocol, network: 'bitcoin-mainnet', status: 'pending-control-verification', signingEnabled: false }
+    const binding = { principalId, ownerId, address, protocol, provider, ledger, network: 'bitcoin-mainnet', status: 'pending-control-verification', signingEnabled: false }
     bindings.set(principalId, binding)
     addresses.add(address)
     return structuredClone(binding)
