@@ -30,17 +30,28 @@ function vwap(rows,quantity){
  return filled>0&&remaining<=0?{filled,price:cost/filled}:null
 }
 
-export function scoreRoute({venue,book,rfq,side='BUY',quantity,referencePrice,requester_id,maxSlippageBps=100}={}){
+export function scoreRoute({venue,book,rfq,side='BUY',quantity,referencePrice,requester_id,maxSlippageBps=100,resolveControlGroup}={}){
  const health=evaluateVenueHealth(venue)
  if(!health.healthy)return {eligible:false,reason:health.reason,venue_id:venue?.venue_id}
+ // Optional trusted server-side resolver groups multiple bot IDs under common control.
+ // Missing attribution is ineligible in this mode. Wallet labels are not control proof.
+ const validGroup=g=>typeof g==='string'&&g.trim().length>0
+ const requesterGroup=resolveControlGroup?.(requester_id)
+ if(resolveControlGroup&&!validGroup(requesterGroup))return {eligible:false,reason:'unverified_requester_control',venue_id:venue.venue_id}
+ const independent=id=>{
+   if(!resolveControlGroup)return !requester_id||!id||id!==requester_id
+   if(!id||id===requester_id)return false
+   const group=resolveControlGroup(id)
+   return validGroup(group)&&group!==requesterGroup
+ }
  const candidates=[]
  if(book){
    const rows=String(side).toUpperCase()==='BUY'?book.asks:book.bids
-   const filtered=rows.filter(r=>!requester_id||!r.owner_id||r.owner_id!==requester_id)
-   if(filtered.length!==rows.length&&filtered.length===0)return {eligible:false,reason:'self_trade_only_liquidity',venue_id:venue.venue_id}
+   const filtered=rows.filter(r=>independent(r.owner_id))
+   if(filtered.length!==rows.length&&filtered.length===0&&!rfq?.executable)return {eligible:false,reason:resolveControlGroup?'no_verified_independent_liquidity':'self_trade_only_liquidity',venue_id:venue.venue_id}
    const fill=vwap(filtered,quantity);if(fill)candidates.push({type:'ORDER_BOOK',price:fill.price,filled:fill.filled})
  }
- if(rfq?.executable&&(!requester_id||!rfq.counterparty_id||rfq.counterparty_id!==requester_id)&&Number(rfq.quantity)>=Number(quantity))candidates.push({type:'RFQ',price:Number(rfq.price),filled:Number(quantity),rfq_id:rfq.rfq_id})
+ if(rfq?.executable&&independent(rfq.counterparty_id)&&(!resolveControlGroup||!rfq.owner_id||independent(rfq.owner_id))&&Number(rfq.quantity)>=Number(quantity))candidates.push({type:'RFQ',price:Number(rfq.price),filled:Number(quantity),rfq_id:rfq.rfq_id})
  if(!candidates.length)return {eligible:false,reason:'insufficient_executable_liquidity',venue_id:venue.venue_id}
  candidates.sort((a,b)=>String(side).toUpperCase()==='BUY'?a.price-b.price:b.price-a.price)
  const best=candidates[0],slippageBps=referencePrice?Math.abs((best.price-Number(referencePrice))/Number(referencePrice))*10000:0
@@ -49,8 +60,8 @@ export function scoreRoute({venue,book,rfq,side='BUY',quantity,referencePrice,re
  return {eligible:true,venue_id:venue.venue_id,execution_type:best.type,execution_price:best.price,quantity:best.filled,slippage_bps:slippageBps,score,rfq_id:best.rfq_id||null}
 }
 
-export function chooseBestRoute({venues=[],books=[],rfqs=[],request}={}){
- const scored=venues.map(v=>scoreRoute({venue:v,book:books.find(b=>b.venue_id===v.venue_id&&b.base_asset===request.base_asset&&b.quote_asset===request.quote_asset),rfq:rfqs.find(r=>r.venue_id===v.venue_id&&r.base_asset===request.base_asset&&r.quote_asset===request.quote_asset&&r.side===request.side),side:request.side,quantity:request.quantity,referencePrice:request.reference_price,requester_id:request.requester_id,maxSlippageBps:request.max_slippage_bps??100}))
+export function chooseBestRoute({venues=[],books=[],rfqs=[],request,resolveControlGroup}={}){
+ const scored=venues.map(v=>scoreRoute({venue:v,book:books.find(b=>b.venue_id===v.venue_id&&b.base_asset===request.base_asset&&b.quote_asset===request.quote_asset),rfq:rfqs.find(r=>r.venue_id===v.venue_id&&r.base_asset===request.base_asset&&r.quote_asset===request.quote_asset&&r.side===request.side),side:request.side,quantity:request.quantity,referencePrice:request.reference_price,requester_id:request.requester_id,maxSlippageBps:request.max_slippage_bps??100,resolveControlGroup}))
  const eligible=scored.filter(x=>x.eligible).sort((a,b)=>b.score-a.score)
  return {selected:eligible[0]||null,evaluated:scored}
 }

@@ -58,3 +58,19 @@ test('another worker or missing engine cannot claim completed work', () => {
   offline.propose(input)
   assert.throws(() => offline.recordWork({ principalId: input.principalId, missionId: 'work-2' }), /completion evidence/)
 })
+
+test('existing wallet providers use the same enrollment path with explicit ledger labels', () => {
+  for (const provider of ['freewallet.io', 'xcp-wallet', 'counterpay', 'other-counterparty-wallet', 'existing-wallet']) {
+    const register = createAgentWalletRegister()
+    const binding = register.propose({ ...input, provider, ledger: 'counterparty-2.0' })
+    assert.equal(binding.provider, provider)
+    assert.equal(binding.ledger, 'counterparty-2.0')
+    assert.equal(binding.signingEnabled, false)
+  }
+  assert.equal(createAgentWalletRegister().propose(input).ledger, 'unverified')
+  assert.equal(createAgentWalletRegister().propose({ ...input, protocol: 'bitcoin' }).ledger, 'bitcoin')
+  assert.equal(createAgentWalletRegister().propose({ ...input, ledger: 'counterparty-classic' }).ledger, 'counterparty-classic')
+  for (const invalid of [{ provider: 'xcp.io' }, { ledger: 'bitcoin' }, { protocol: 'bitcoin', ledger: 'counterparty-2.0' }]) {
+    assert.throws(() => createAgentWalletRegister().propose({ ...input, ...invalid }))
+  }
+})
