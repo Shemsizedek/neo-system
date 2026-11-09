@@ -44,3 +44,19 @@ jobs:
           node --test core/nous-os/*.test.mjs server/neo-platform-api/nous-token-exchange.test.mjs
       - name: Validate private staging image
         run: docker build -f core/nous-os/Dockerfile -t neo-nous-os:ci .
+
+      - name: Private loopback container smoke (fail-closed identity)
+        run: |
+          set -euo pipefail
+          docker run -d --name neo-nous-smoke -p 127.0.0.1:18080:8080 neo-nous-os:ci
+          trap 'docker rm -f neo-nous-smoke >/dev/null 2>&1 || true' EXIT
+          for i in $(seq 1 20); do
+            if curl -fsS --max-time 2 http://127.0.0.1:18080/health >/dev/null; then break; fi
+            sleep 1
+          done
+          curl -fsS http://127.0.0.1:18080/health | grep -q '"mode":"plan-only"'
+          code=$(curl -sS -o /tmp/nous-ready.json -w '%{http_code}' http://127.0.0.1:18080/ready)
+          test "$code" = "503"
+          grep -q '"identityConfigured":false' /tmp/nous-ready.json
+          code=$(curl -sS -o /tmp/nous-adapters.json -w '%{http_code}' http://127.0.0.1:18080/v1/adapters)
+          test "$code" = "503"
