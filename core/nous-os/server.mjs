@@ -37,6 +37,11 @@ export function createNousServer({ runtime } = {}) {
         const ready = runtime.identityReady();
         return send(res, ready ? 200 : 503, { service: 'neo-nous-os', identityConfigured: ready, adaptersConfigured: false, state: runtime.stateStatus(), mode: 'plan-only' });
       }
+      if (req.method === 'GET' && pathname === '/v1/adapters') return send(res, 200, runtime.listAdapters(req.headers.authorization));
+      if (req.method === 'POST' && pathname === '/v1/adapters/classify') {
+        const input = await readBody(req);
+        return send(res, 200, runtime.classifyAdapter(req.headers.authorization, input));
+      }
       if (req.method === 'GET' && pathname === '/v1/sources') return send(res, 200, runtime.listSources(req.headers.authorization));
       if (req.method === 'GET' && pathname === '/v1/agents') return send(res, 200, runtime.listAgents(req.headers.authorization));
       if (req.method === 'POST' && pathname === '/v1/tasks/plan') {
