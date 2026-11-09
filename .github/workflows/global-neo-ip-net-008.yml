@@ -1,0 +1,57 @@
+name: Global NEO IP NET-008 Read-Only Mesh Pilot
+
+on:
+  pull_request:
+    paths:
+      - 'services/neo-vpn/federation/netbird-*.mjs'
+      - 'services/neo-vpn/tests/netbird-pilot-audit.test.mjs'
+      - 'docs/global-neo-ip/NET-008-FIRST-MESH-ACCEPTANCE.md'
+      - '.github/workflows/global-neo-ip-net-008.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  observer-regression:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Test fail-closed NetBird observer
+        run: node --test services/neo-vpn/tests/netbird-pilot-audit.test.mjs
+
+  observe-actual-cloud:
+    if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && github.repository == 'Shemsizedek/neo-system' }}
+    needs: observer-regression
+    runs-on: ubuntu-latest
+    environment: neo-ip-pilot
+    timeout-minutes: 5
+    env:
+      NETBIRD_PAT: ${{ secrets.NETBIRD_PAT }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Read peer and access-policy inventory only
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          result=0
+          node services/neo-vpn/federation/netbird-cloud-observe.mjs > "$RUNNER_TEMP/net008-observation.json" || result=$?
+          {
+            echo '## Global NEO IP NET-008 — Management API observation'
+            echo 'This checks registered peer status and policies ONLY. It does NOT prove a handshake, real ACL denial, 10.144/16 routing or revocation.'
+            echo 'No public/member registration and no provider mutation are performed.'
+            echo '```json'
+            cat "$RUNNER_TEMP/net008-observation.json"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit "$result"
