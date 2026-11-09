@@ -2,7 +2,7 @@
 /**
  * Plugin Name: NEO Counter
  * Description: Bitcoin and Counterparty merchant invoices, payment verification and fulfillment routing.
- * Version: 0.22.0
+ * Version: 0.22.1
  */
 defined('ABSPATH') || exit;
 require_once __DIR__ . '/retail.php';

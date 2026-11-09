@@ -1,8 +1,16 @@
 <?php
 defined('ABSPATH') || exit;
+// Temple Suite mounts a sitewide welcome dialog. Keep the invoice route focused;
+// do not change the Suite or other Temple pages, or touch authentication scripts.
+add_action('wp_enqueue_scripts', function() {
+    $post = get_queried_object();
+    if (is_singular() && $post instanceof WP_Post && has_shortcode($post->post_content, 'neo_counter_checkout')) {
+        wp_dequeue_script('neo-temple-suite');
+    }
+}, 100);
 /** Separate retail presentation. Holy Stewardship and settlement rules are untouched. */
 add_shortcode('neo_counter_checkout', function($attributes) {
-    wp_enqueue_style('neo-counter-merchant-checkout',plugins_url('merchant-checkout.css',__FILE__),array(),'0.22.0');
+    wp_enqueue_style('neo-counter-merchant-checkout',plugins_url('merchant-checkout.css',__FILE__),array(),'0.22.1');
     $attributes=shortcode_atts(array('order_id'=>0),$attributes);
     $order=absint($attributes['order_id']);
     if (!$order && isset($_GET['neo_order']) && is_string($_GET['neo_order']) && preg_match('/^[1-9][0-9]{0,9}$/',$_GET['neo_order'])) $order=(int)$_GET['neo_order'];
