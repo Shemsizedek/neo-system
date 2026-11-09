@@ -25,4 +25,7 @@ jobs:
           node --check core/nous-os/identity.mjs
           node --check core/nous-os/runtime.mjs
           node --check core/nous-os/server.mjs
+          node --check core/nous-os/registry.mjs
+          node --check core/nous-os/sources.mjs
+          node --check core/nous-os/receipt-store.mjs
           node --test core/nous-os/*.test.mjs
