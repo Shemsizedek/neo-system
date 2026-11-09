@@ -12,7 +12,7 @@ function register_rest_route($ns,$route,$args){global $routes;$routes[$route]=$a
 class WP_Error {public function __construct(public $code,public $message,public $data=null){}public function get_error_message(){return $this->message;}}
 class WP_REST_Response {public $headers=array();public function __construct(public $data){}public function header($k,$v){$this->headers[$k]=$v;}}
 class DB {
- public $prefix='t_',$insert_id=0,$fail_job=false;public $db;
+ public $prefix='t_',$insert_id=0,$fail_job=false,$fail_update=false;public $db;
  function __construct(){ $this->db=new PDO('sqlite::memory:');$this->db->setAttribute(PDO::ATTR_ERRMODE,PDO::ERRMODE_EXCEPTION);
   $this->db->exec('CREATE TABLE t_neo_counter_invoices(id INTEGER PRIMARY KEY AUTOINCREMENT,order_id INTEGER UNIQUE,user_id INTEGER,request_key TEXT UNIQUE,payload TEXT,payload_hash TEXT,state TEXT,payment_txid TEXT,observation TEXT,created_at INTEGER,expires_at INTEGER,updated_at INTEGER)');
   $this->db->exec('CREATE TABLE t_neo_counter_claims(txid TEXT PRIMARY KEY,invoice_id INTEGER UNIQUE,vout INTEGER,block_hash TEXT,claimed_at INTEGER)');
@@ -23,7 +23,7 @@ class DB {
  function query($sql){$sql=str_replace('INSERT IGNORE','INSERT OR IGNORE',$sql);try{return $this->db->exec($sql==='START TRANSACTION'?'BEGIN':$sql);}catch(Throwable $e){return false;}}
  function get_row($sql,$mode){if(str_starts_with($sql,'SHOW TABLE STATUS'))return array('Engine'=>'InnoDB');return $this->db->query(str_replace(' FOR UPDATE','',$sql))->fetch(PDO::FETCH_ASSOC)?:null;}
  function insert($table,$data){if($this->fail_job&&$table==='t_neo_counter_delivery')return false;try{$sql='INSERT INTO '.$table.' ('.implode(',',array_keys($data)).') VALUES ('.implode(',',array_fill(0,count($data),'?')).')';$this->db->prepare($sql)->execute(array_values($data));$this->insert_id=(int)$this->db->lastInsertId();return 1;}catch(Throwable $e){return false;}}
- function update($table,$data,$where){$set=implode(',',array_map(fn($k)=>$k.'=?',array_keys($data)));$clause=implode(' AND ',array_map(fn($k)=>$k.'=?',array_keys($where)));try{$s=$this->db->prepare('UPDATE '.$table.' SET '.$set.' WHERE '.$clause);$s->execute(array_merge(array_values($data),array_values($where)));return $s->rowCount();}catch(Throwable $e){return false;}}
+ function update($table,$data,$where){if($this->fail_update)return false;$set=implode(',',array_map(fn($k)=>$k.'=?',array_keys($data)));$clause=implode(' AND ',array_map(fn($k)=>$k.'=?',array_keys($where)));try{$s=$this->db->prepare('UPDATE '.$table.' SET '.$set.' WHERE '.$clause);$s->execute(array_merge(array_values($data),array_values($where)));return $s->rowCount();}catch(Throwable $e){return false;}}
  function suppress_errors($value){return false;}
  function get_var($sql){return $this->db->query($sql)->fetchColumn();}
  function count($table){return (int)$this->db->query('SELECT COUNT(*) FROM t_neo_counter_'.$table)->fetchColumn();}
