@@ -1,12 +1,14 @@
 # Noologist Patron Program — 30-Day Curriculum (Draft)
-**Program sponsor:** Dr. Lawiy Zodok Shamu-El / Science Temple  
+**Program sponsor:** Dr. Lawiy Zodok Shamu-El / NEO Neotherapy  
 **Price:** $288 per month (proposed; commercial terms subject to approval)  
 **Status:** Curriculum draft for review; not a medical treatment protocol or accredited clinical credential.
+
+**Audience:** Neotherapy clients served by apprenticeship-completed, authorized Neotherapists; **not a school program.**
 
 ## Purpose
 A facilitated 30-day program integrating Noological sound right reasoning, the Neoteric Method, contemplative practices, lifestyle design, ethical service and culturally situated Rekai (True Light Therapy). The program emphasizes observable habits, reflective journaling and community practice. Spiritual and symbolic interpretations are distinguished from established clinical evidence.
 
-## Holy Orders / instructor alignment
+## Neotherapist delivery qualification and apprenticeship context
 | Order | Program level | Temple major lessons |
 |---|---|---|
 | Sage | Level 1 | 1–2 |
@@ -14,7 +16,7 @@ A facilitated 30-day program integrating Noological sound right reasoning, the N
 | Mystic | Level 3 | 4–5 |
 | Sorcerer | Level 3 | 6–9 |
 
-These are internal temple designations, not state-issued medical licenses. Instructor authorization requires documented training, supervision, safeguarding and scope-of-practice review. Rekai instruction may align with the 36th degree of Major Lesson 1, subject to Temple confirmation.
+The table above describes practitioner training provenance only. **Clients do not enter these levels, the school LMS or the Temple degree sequence.** Delivery requires a Neotherapist who has completed the apprenticeship and has verified active service authorization and lawful scope. These designations do not constitute medical licenses.
 
 ## Daily learning structure
 Each day: opening centering; 15–30 minute guided lesson; optional reflective or visualization exercise; journal prompt; practical action; end-of-day check-in. Never promise paranormal abilities or disease treatment.
@@ -57,7 +59,7 @@ Each day: opening centering; 15–30 minute guided lesson; optional reflective o
 
 ### Completion and continuation
 29. Personal Noological lifestyle plan: sleep, movement, nutrition, study, service and reflection
-30. Final presentation, reflective assessment, feedback and optional Temple recognition
+30. Client progress review, feedback and optional continuation plan
 
 ## Rekai / True Light Therapy terminology
 Wazufa — symbolic spiritual cleansing; Smai — sacred breath; Huwa — divine utterance; Hahka — spiritual guidance; Hu — will-tone contemplation; Ashutat — collective supplication. These are program-defined cultural correspondences, not verified linguistic translations or substitutes for healthcare.
@@ -67,15 +69,15 @@ Include an **educational** module on cognition, nutrition, caffeine and the limi
 
 ## Program delivery and assessment
 - Audience: adults, with accommodations and opt-in spiritual practices.
-- Delivery: live weekly coaching plus daily guided activities; instructor qualifications verified.
+- Delivery: Neotherapist-led client sessions and guided activities; completed apprenticeship and active practitioner authorization verified.
 - Evidence: attendance, self-reported wellbeing, goal completion, participant feedback; do not claim proven efficacy without studies.
 - Pricing: $288/month; disclose refund terms, session count and what is included before enrollment.
-- Credentials: Temple-issued completion records only, subject to approved policy. No representation of licensure.
+- Client outcome: optional service-completion and progress summary; no Temple degree, school credit or practitioner credential.
 - Privacy: store minimum necessary client data with access controls; avoid collecting medical histories unless legally justified and appropriately protected.
 
 ## Release gates
-1. Temple curriculum and Holy Orders approval.
+1. Neotherapy service owner approval and verification of practitioner apprenticeship/authorization.
 2. Clinical/legal review of 'therapy', 'patient', nootropic and practitioner marketing language.
 3. Accessibility, consent, privacy and safeguarding review.
-4. Publish the visual schedule, enrollment terms and instructor handbook only after approval.
-5. Integrate with GISD LMS / NEO Algo via reviewed content interfaces; no production deployment from this draft.
+4. Publish the client schedule, service terms and practitioner handbook only after approval.
+5. Integrate with Neotherapy client services and NEO Algo via reviewed interfaces; GISD/GISS remain separate practitioner-training systems. No production deployment from this draft.
