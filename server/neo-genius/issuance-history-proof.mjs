@@ -31,14 +31,14 @@ function exactBaseUnits(raw,source,divisible) {
   if(source==='counterparty-v2') {
     if(!/^(0|[1-9][0-9]*)$/.test(value))throw new TypeError('Counterparty v2 quantity must be an integer base-unit string');
     const n=BigInt(value);
-    if(n>MAX)throw new RangeError('Quantity exceeds bound');
+    if(n>MAX)throw new RangeError('Quantity exceeds evidence bound');
     return n;
   }
   if(!/^(0|[1-9][0-9]*)(?:\.[0-9]{1,8})?$/.test(value))throw new TypeError('TokenScan quantity must be valid decimal human units');
   const [whole,frac='']=value.split('.');
   if(!divisible && frac.replace(/0/g,'')!=='')throw new TypeError('Indivisible TokenScan quantity cannot have fractional units');
   const n=divisible?BigInt(whole)*100000000n + BigInt(frac.padEnd(8,'0')):BigInt(whole);
-  if(n>MAX)throw new RangeError('Quantity exceeds bound');
+  if(n>MAX)throw new RangeError('Quantity exceeds evidence bound');
   return n;
 }
 function decodedRows(payload,provider) {
