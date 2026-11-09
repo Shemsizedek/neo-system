@@ -82,9 +82,14 @@ export function classifyNeoIpEvidence({
   routeAclVerified = false,
   independentGatewayVerified = false
 } = {}) {
-  const providerOverlay = typeof netbirdPeerIp === 'string' && /^100\.(6[4-9]|[7-9][0-9]|1[01][0-9]|12[0-7])\.(?:\d{1,3})\.(?:\d{1,3})$/.test(netbirdPeerIp);
+  const parts = typeof netbirdPeerIp === 'string' ? netbirdPeerIp.split('.') : [];
+  const octets = parts.length === 4 &&
+    parts.every(p=>/^(0|[1-9][0-9]{0,2})$/.test(p) && Number(p) <= 255)
+      ? parts.map(Number) : [];
+  const providerOverlay = octets.length === 4 &&
+    octets[0] === 100 && octets[1] >= 64 && octets[1] <= 127;
   return {
-    netbird_provider_overlay: providerOverlay ? 'CGNAT_PEER_IP' : 'NOT_VERIFIED',
+    netbird_provider_overlay: providerOverlay ? 'CGNAT_FORMAT_ONLY' : 'NOT_VERIFIED',
     neo_overlay: canonicalNeoOverlay,
     neo_private_subnet_reachable: Boolean(neoRoutedSubnetVerified && routeAclVerified && independentGatewayVerified),
     public_routable_ip_allocated: false,
