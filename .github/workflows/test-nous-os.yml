@@ -1,0 +1,28 @@
+name: NEO Nous OS foundation
+on:
+  pull_request:
+    paths:
+      - 'core/nous-os/**'
+      - '.github/workflows/test-nous-os.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'core/nous-os/**'
+      - '.github/workflows/test-nous-os.yml'
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Node syntax and unit/integration tests
+        run: |
+          node --check core/nous-os/agents.mjs
+          node --check core/nous-os/identity.mjs
+          node --check core/nous-os/runtime.mjs
+          node --check core/nous-os/server.mjs
+          node --test core/nous-os/*.test.mjs
