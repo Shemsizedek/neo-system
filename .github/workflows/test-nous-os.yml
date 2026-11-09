@@ -13,6 +13,11 @@ on:
     branches: [main]
     paths:
       - 'core/nous-os/**'
+      - 'server/neo-platform-api/nous-token-exchange*'
+      - 'server/neo-platform-api/giss-production.mjs'
+      - 'core/neo-algo/runtime.mjs'
+      - 'src/social/rudwaan-nous-bridge.mjs'
+      - 'src/social/meta-muse-policy.mjs'
       - '.github/workflows/test-nous-os.yml'
 permissions:
   contents: read
