@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { loadAgentRegistry } from './registry.mjs';
 import { createSourceInventory } from './sources.mjs';
 import { IdentityError } from './identity.mjs';
+import { createReadOnlyAdapters } from './adapters.mjs';
 
 const HIGH_RISK = new Set(['finance.transfer', 'wallet.sign', 'code.deploy', 'content.publish', 'records.write', 'credentials.change']);
 const IDENTIFIER = /^[a-zA-Z0-9._:-]{1,80}$/;
@@ -17,6 +18,7 @@ export function createNousRuntime({
   now = () => new Date().toISOString(),
   registry = loadAgentRegistry(),
   sources = createSourceInventory(),
+  adapters = createReadOnlyAdapters(),
   receiptStore = null,
 } = {}) {
   if (!identityVerifier || typeof identityVerifier.verifyAuthorization !== 'function') throw new TypeError('identity_verifier_required');
@@ -37,6 +39,23 @@ export function createNousRuntime({
     listSources(header) {
       authorize(header, 'nous.sources.read');
       return { mode: 'read-only', sources: sources.list() };
+    },
+    listAdapters(header) {
+      authorize(header, 'nous.adapters.read');
+      return { mode: 'read-only', adapters: adapters.list() };
+    },
+    classifyAdapter(header, request) {
+      authorize(header, 'nous.adapters.read');
+      if (!request || typeof request !== 'object' || Array.isArray(request)) {
+        throw new NousPolicyError('invalid_adapter_request', 400);
+      }
+      const { adapterId, value } = request;
+      if (typeof adapterId !== 'string' || !IDENTIFIER.test(adapterId)) {
+        throw new NousPolicyError('invalid_adapter_request', 400);
+      }
+      const result = adapters.classify(adapterId, value);
+      if (result.error) throw new NousPolicyError(result.error, result.status || 400);
+      return Object.freeze(result);
     },
     plan(header, task) {
       const identity = authorize(header, 'nous.task.plan');
