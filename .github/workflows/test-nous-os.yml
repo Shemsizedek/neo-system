@@ -3,6 +3,11 @@ on:
   pull_request:
     paths:
       - 'core/nous-os/**'
+      - 'server/neo-platform-api/nous-token-exchange*'
+      - 'server/neo-platform-api/giss-production.mjs'
+      - 'core/neo-algo/runtime.mjs'
+      - 'src/social/rudwaan-nous-bridge.mjs'
+      - 'src/social/meta-muse-policy.mjs'
       - '.github/workflows/test-nous-os.yml'
   push:
     branches: [main]
@@ -28,4 +33,9 @@ jobs:
           node --check core/nous-os/registry.mjs
           node --check core/nous-os/sources.mjs
           node --check core/nous-os/receipt-store.mjs
-          node --test core/nous-os/*.test.mjs
+          node --check core/nous-os/adapters.mjs
+          node --check core/neo-algo/runtime.mjs
+          node --check server/neo-platform-api/nous-token-exchange.mjs
+          node --test core/nous-os/*.test.mjs server/neo-platform-api/nous-token-exchange.test.mjs
+      - name: Validate private staging image
+        run: docker build -f core/nous-os/Dockerfile -t neo-nous-os:ci .
