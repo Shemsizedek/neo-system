@@ -1,6 +1,6 @@
 {
   "id": "NEO-NPP-001",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "status": "DRAFT_REVIEW",
   "classification": "SOURCE_SUPPLIED_DOCTRINE_WITH_EDUCATIONAL_ADAPTATION",
   "title": "Noologist Patron Program",
@@ -12,13 +12,12 @@
     "status": "PROPOSED"
   },
   "systems": [
-    "GISD LMS",
-    "GISS NEO LMS",
+    "NEO Neotherapy Client Services",
+    "NEO Lifestyle",
     "NEO Algo",
     "NEO Oracle",
     "NEOsync"
   ],
-  "learnerTerm": "Templist",
   "holyOrders": [
     {
       "name": "Sage",
@@ -385,21 +384,20 @@
     {
       "day": 30,
       "week": 5,
-      "title": "Final reflection and Temple recognition review",
+      "title": "Client progress review and continuation plan",
       "activityType": "assessment",
       "evidence": [
         "reflection",
-        "instructor_review"
+        "neotherapist_review"
       ],
       "requiresConsent": true
     }
   ],
   "credentialPolicy": {
-    "issuer": "Science Temple (subject to approval)",
-    "type": "internal_completion_only",
-    "automatedIssuance": false,
-    "licensedMedicalCredential": false,
-    "requiresInstructorReview": true
+    "clientOutcome": "service_completion_summary",
+    "practitionerCredentialAwarded": false,
+    "templeDegreeAwarded": false,
+    "automaticIssuance": false
   },
   "safety": {
     "medicalTreatmentClaims": false,
@@ -410,15 +408,26 @@
   },
   "integration": {
     "mode": "read_only_draft",
-    "studentEnrollment": false,
-    "progressWrites": false,
-    "certificateIssuance": false,
-    "productionEnabled": false
+    "clientIntake": false,
+    "appointmentBooking": false,
+    "clientProgressWrites": false,
+    "paymentCollection": false,
+    "productionEnabled": false,
+    "schoolLmsIntegration": false
   },
   "sourceRefs": [
     "docs/noologist-patron-program/30-day-curriculum.md",
-    "apps/gisd/curriculum.ts",
-    "apps/gisd/gissNeoLms.ts",
-    "data/neo-sync/noology-gisd-canonical.json"
-  ]
+    "docs/noologist-patron-program/NEO-NPP-002-integration.md"
+  ],
+  "audience": "Paying clients receiving services from apprenticeship-completed, authorized Neotherapists",
+  "programType": "CLIENT_WELLNESS_SERVICE",
+  "clientTerm": "client",
+  "providerEligibility": {
+    "role": "Neotherapist",
+    "apprenticeshipCompleted": true,
+    "authorizationVerified": true,
+    "scopeOfPracticeVerified": true,
+    "independentMedicalLicenseNotImplied": true
+  },
+  "holyOrdersContext": "Practitioner training provenance only; client program does not award degrees or enter school LMS"
 }
