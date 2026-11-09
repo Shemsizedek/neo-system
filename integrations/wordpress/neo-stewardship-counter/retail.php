@@ -9,7 +9,7 @@ function neo_counter_retail_references($references){
     $out=array();$keys=array_flip(array('ledger','currency','currencyAsset','currencyId','currencyDecimals','unitPriceMinor','conversion','feeAllowanceMinor','spreadBps','processorFeeBps','roundingMinor','source','referenceId','observedAt','expiresAt','valuationDay'));
     foreach($references as $asset=>$r)if(in_array($asset,array('TEMPLEBOND','PLEDGEBOND'),true)&&is_array($r))$out[$asset]=array_intersect_key($r,$keys);return $out;
 }
-function neo_counter_retail_invoice($invoice){return array_intersect_key($invoice,array_flip(array('version','order_id','order_kind','item_reference','currency_asset','currency_id','currency_symbol','currency_decimals','amount_minor','base_minor','markup_bps','ledger','payer','destination','created_at','expires_at','confirmations','terms_hash','terms_snapshot','terms_accepted','payable','delivery_asset','delivery_quantity','delivery_wallet')));}
+function neo_counter_retail_invoice($invoice){return array_intersect_key($invoice,array_flip(array('version','order_id','order_kind','item_reference','merchant_name','currency_asset','currency_id','currency_symbol','currency_decimals','amount_minor','base_minor','markup_bps','ledger','payer','destination','created_at','expires_at','confirmations','terms_hash','terms_snapshot','terms_accepted','payable','delivery_asset','delivery_quantity','delivery_wallet')));}
 function neo_counter_display_amount($minor,$currency,$decimals=8){
     if(!is_string($minor)||!ctype_digit($minor)||!in_array($decimals,array(0,8),true))return '—';
     if($decimals===0)return $minor.' '.$currency;$s=str_pad($minor,9,'0',STR_PAD_LEFT);return substr($s,0,-8).'.'.substr($s,-8).' '.$currency;

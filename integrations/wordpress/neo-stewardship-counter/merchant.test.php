@@ -17,6 +17,10 @@ $input=array('order_kind'=>'service_bill','ledger'=>'classic','payment_asset'=>'
 $order=neo_counter_prepare_merchant($input,request_key(101));check(is_int($order),'Operator prepares merchant invoice');$m=neo_counter_invoice($order);$p=$m['invoice'];
 check($p['order_kind']==='service_bill'&&$p['amount_minor']==='109000000','Bill type and once-rounded 9 percent');
 check($p['destination']===NEO_STEWARDSHIP_COLLECTION&&!$p['payable']&&!$p['terms_accepted'],'Caller cannot override collection, activation or member acceptance');
+$vendor=$input;$vendor['merchant_name']='Example vendor';$vendor['merchant_wallet']='1BoatSLRHtKNngkdXEeobR76b53LETtpyT';
+$vendor_order=neo_counter_prepare_merchant($vendor,request_key(150));check(is_int($vendor_order),'Operator can prepare a direct merchant invoice');
+$vendor_invoice=neo_counter_invoice($vendor_order)['invoice'];check($vendor_invoice['destination']===$vendor['merchant_wallet']&&$vendor_invoice['merchant_name']==='Example vendor'&&!$vendor_invoice['payable'],'Vendor recipient is explicit, remains locked and does not activate payment');
+$vendor['merchant_wallet']='not-a-wallet';check(is_wp_error(neo_counter_prepare_merchant($vendor,request_key(151))),'Invalid vendor wallet is rejected');
 check((int)$m['user_id']===99&&$posts[$order]['post_status']==='private','Private member-owned invoice');
 $n=count($posts);check(is_wp_error(neo_counter_prepare_merchant($input,request_key(101)))&&count($posts)===$n,'Duplicate request creates no orphan order');
 $admin=false;check(is_wp_error(neo_counter_prepare_merchant($input,request_key(102))),'Member cannot set merchant prices');$admin=true;
