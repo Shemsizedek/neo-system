@@ -2,6 +2,7 @@ import { createServer as createHttpServer } from 'node:http';
 import { fileURLToPath } from 'node:url';
 import { identityFromEnv } from './identity.mjs';
 import { createNousRuntime } from './runtime.mjs';
+import { createReceiptStore } from './receipt-store.mjs';
 
 const send = (res, status, payload) => {
   res.writeHead(status, {
@@ -34,8 +35,9 @@ export function createNousServer({ runtime } = {}) {
       if (req.method === 'GET' && pathname === '/health') return send(res, 200, { service: 'neo-nous-os', status: 'alive', mode: 'plan-only' });
       if (req.method === 'GET' && pathname === '/ready') {
         const ready = runtime.identityReady();
-        return send(res, ready ? 200 : 503, { service: 'neo-nous-os', identityConfigured: ready, adaptersConfigured: false, mode: 'plan-only' });
+        return send(res, ready ? 200 : 503, { service: 'neo-nous-os', identityConfigured: ready, adaptersConfigured: false, state: runtime.stateStatus(), mode: 'plan-only' });
       }
+      if (req.method === 'GET' && pathname === '/v1/sources') return send(res, 200, runtime.listSources(req.headers.authorization));
       if (req.method === 'GET' && pathname === '/v1/agents') return send(res, 200, runtime.listAgents(req.headers.authorization));
       if (req.method === 'POST' && pathname === '/v1/tasks/plan') {
         const task = await readBody(req);
@@ -52,7 +54,8 @@ export function createNousServer({ runtime } = {}) {
 
 export function startNousServer(env = process.env) {
   const identityVerifier = identityFromEnv(env);
-  const runtime = createNousRuntime({ identityVerifier, audit: event => process.stdout.write(JSON.stringify({ type: 'nous.audit', ...event }) + '\n') });
+  const receiptStore = env.NOUS_STATE_DIR ? createReceiptStore(env.NOUS_STATE_DIR) : null;
+  const runtime = createNousRuntime({ identityVerifier, receiptStore, audit: event => process.stdout.write(JSON.stringify({ type: 'nous.audit', ...event }) + '\n') });
   const server = createNousServer({ runtime });
   server.requestTimeout = 10000;
   server.headersTimeout = 8000;
