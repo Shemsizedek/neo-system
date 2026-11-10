@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#071512">
+  <title>NeoCast | A Neofinity service</title>
+  <style>
+    :root { color-scheme: dark; --bg:#06110e; --surface:#11241f; --line:#35584d; --fg:#e9fff6; --muted:#b4cfc5; --accent:#90f1bf }
+    * { box-sizing:border-box }
+    body { font:16px/1.55 system-ui, -apple-system, sans-serif; color:var(--fg); background:radial-gradient(circle at top left,#173b2e, var(--bg) 60%); margin:0; min-height:100vh }
+    header, main, footer { width:min(1020px,calc(100% - 36px)); margin:auto }
+    header { padding:24px 0; display:flex; justify-content:space-between; align-items:center; gap:18px; flex-wrap:wrap }
+    .brand { font-size:14px; font-weight:800; letter-spacing:.16em; text-transform:uppercase }
+    a { color:var(--accent) }
+    nav a { display:inline-block; margin:0 0 0 14px; text-decoration:none }
+    main { padding:36px 0 60px }
+    .eyebrow { letter-spacing:.16em; text-transform:uppercase; font-size:12px; color:var(--accent) }
+    h1 { font-size:clamp(46px,9vw,94px); line-height:1; margin:14px 0 20px }
+    h2 { font-size:24px }
+    p { max-width:68ch }
+    .subhead, .muted { color:var(--muted) }
+    .subhead { font-size:20px }
+    .status { border:1px solid var(--line); background:rgba(17,36,31,.8); border-radius:14px; padding:16px 18px; margin:24px 0 }
+    .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:16px }
+    .card { padding:22px; border-radius:18px; border:1px solid var(--line); background:var(--surface) }
+    .card h3 { margin:0; font-size:21px }
+    .card small { color:var(--muted); display:block; margin-top:8px }
+    .button { display:inline-flex; margin-top:15px; padding:11px 16px; border-radius:12px; background:var(--accent); color:#06110e; font-weight:800; text-decoration:none }
+    .button:focus-visible, a:focus-visible { outline:3px solid white; outline-offset:3px }
+    .section { margin-top:40px }
+    .steps { display:grid; gap:12px; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)) }
+    footer { border-top:1px solid var(--line); padding:18px 0 36px; color:var(--muted); font-size:13px }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">Neofinity <span aria-hidden="true">/</span> NeoCast</div>
+    <nav aria-label="Related services">
+      <a href="../neo-tv/">NEO TV</a>
+      <a href="../neo-tv/guide.html">TV guide</a>
+    </nav>
+  </header>
+  <main>
+    <section aria-labelledby="pageTitle">
+      <div class="eyebrow">NEOCAST-001 • Broadcast discovery foundation</div>
+      <h1 id="pageTitle">NeoCast.</h1>
+      <p class="subhead">The proposed broadcast and media distribution layer for Neofinity, designed to connect authorized programming across NEO TV, NeoTube and Omnicast.</p>
+      <div class="status"><strong>Prelaunch:</strong> NeoCast does not operate an independently verified live broadcasting origin or public retransmission service. The viewing links below open third-party official players; availability and geographic restrictions are controlled by their providers.</div>
+    </section>
+    <section class="section" aria-labelledby="providersTitle">
+      <h2 id="providersTitle">Official viewing services</h2>
+      <p class="muted">These are external destinations, not channels broadcast or licensed for redistribution by NeoCast.</p>
+      <div id="providers" class="grid" aria-live="polite" aria-busy="true"><p>Loading approved provider directory…</p></div>
+      <p id="message" class="muted" role="status"></p>
+    </section>
+    <section class="section" aria-labelledby="roadmapTitle">
+      <h2 id="roadmapTitle">Planned broadcast capabilities</h2>
+      <div class="steps">
+        <div class="card"><h3>Own productions</h3><p>Authorized events, Temple broadcasts, courses, creator channels and media archives.</p><small>Rights and operator approval required</small></div>
+        <div class="card"><h3>Distribution</h3><p>Provider-neutral delivery across authorized partner endpoints and connected devices.</p><small>Origin, capacity and contractual clearance pending</small></div>
+        <div class="card"><h3>Coordination</h3><p>NEOsync scheduling, NEO TV discovery, approved analytics and optional creator support.</p><small>Integrations are planned, not live</small></div>
+      </div>
+    </section>
+  </main>
+  <footer>NeoCast is a proposed Neofinity service. No IPTV rebroadcast, media proxy, payments, recording, direct media capture or unlicensed content delivery is enabled by this page.</footer>
+  <script>
+    (async function loadApprovedProviders() {
+      const mount = document.getElementById('providers');
+      const message = document.getElementById('message');
+      try {
+        const [providerResponse, policyResponse] = await Promise.all([
+          fetch('../neo-tv/data/public-tv-providers.json', {cache:'no-store'}),
+          fetch('./approved-origins.json', {cache:'no-store'})
+        ]);
+        if (!providerResponse.ok || !policyResponse.ok) throw new Error('Registry unavailable');
+        const [registry, policy] = await Promise.all([providerResponse.json(),policyResponse.json()]);
+        if (policy.brand !== 'Neofinity' || policy.subsystem !== 'NeoCast' ||
+          policy.mode !== 'read-only-official-launch' ||
+          !registry.policy?.acceptedSourceClasses?.includes('green') ||
+          !Array.isArray(registry.providers) || !policy.originPermissions ||
+          typeof policy.originPermissions !== 'object') {
+          throw new Error('Policy mismatch');
+        }
+        mount.replaceChildren();
+        const seen = new Set();
+        let rendered = 0;
+        for (const p of registry.providers) {
+          if (typeof p.id !== 'string' || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(p.id) || seen.has(p.id)) continue;
+          seen.add(p.id);
+          if (p.status !== 'live' || p.sourceClass !== 'green' || p.playbackMode !== 'official-player') continue;
+          const approved = policy.originPermissions[p.id];
+          if (!Array.isArray(approved)) continue;
+          let target;
+          try {
+            target = new URL(p.officialUrl);
+            if (target.protocol !== 'https:' || target.username || target.password ||
+              target.port && target.port !== '443' || !approved.includes(target.hostname.toLowerCase())) continue;
+          } catch { continue; }
+          const card = document.createElement('article');
+          card.className = 'card';
+          const h = document.createElement('h3');
+          h.textContent = String(p.name || p.id);
+          const desc = document.createElement('p');
+          desc.textContent = String(p.description || 'Official provider destination.');
+          const geo = document.createElement('small');
+          geo.textContent = 'Availability: ' + String(p.geo || 'subject to provider restrictions');
+          const a = document.createElement('a');
+          a.className = 'button'; a.href = target.href;
+          a.target = '_blank'; a.rel = 'noopener noreferrer';
+          a.textContent = 'Open official player';
+          card.append(h,desc,geo,a);
+          mount.append(card);
+          rendered++;
+        }
+        if (!rendered) mount.textContent = 'No approved official destinations are currently listed.';
+        message.textContent = rendered + ' approved external destinations. No third-party stream is hosted or rebroadcast by NeoCast.';
+      } catch {
+        mount.textContent = 'Official directory temporarily unavailable. No unverified providers will be displayed.';
+        message.textContent = 'The catalog cannot be opened until its current policy and source registry are available.';
+      } finally {
+        mount.setAttribute('aria-busy','false');
+      }
+    })();
+  </script>
+</body>
+</html>
