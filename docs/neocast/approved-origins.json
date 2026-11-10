@@ -1,0 +1,19 @@
+{
+  "schema": "neo.neocast.official-origins/v1",
+  "version": "1.0.0",
+  "brand": "Neofinity",
+  "subsystem": "NeoCast",
+  "mode": "read-only-official-launch",
+  "description": "Public-safe allowlist of external official player hosts. It does not grant retransmission, embedding, recording or live broadcast rights.",
+  "originPermissions": {
+    "nasa-plus": [
+      "plus.nasa.gov"
+    ],
+    "pbs": [
+      "www.pbs.org"
+    ]
+  },
+  "operatorBroadcastOriginVerified": false,
+  "thirdPartyRebroadcastLicensed": false,
+  "subscriptionOrPaidStreamEnabled": false
+}
