@@ -24,7 +24,7 @@ export function createOraclePremiumGate({ verifyNeopassSession, verifySettledEnt
     if (!session || session.verified !== true || typeof session.subject !== "string" ||
         session.subject.length < 1 || session.subject.length > 256 ||
         session.audience !== "neo-oracle" ||
-        !Array.isArray(session.scopes) || !session.scopes.includes("oracle.premium") ||
+        !Array.isArray(session.scopes) || !session.scopes.includes("oracle.execute") ||
         !Number.isFinite(session.expiresAtMs) || session.expiresAtMs <= timestamp) {
       return { ok: false, status: 403, code: "NEOPASS_PREMIUM_DENIED" };
     }
