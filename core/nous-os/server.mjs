@@ -6,8 +6,6 @@ import { createReceiptStore } from './receipt-store.mjs';
 import { createPostgresReceiptStore } from './postgres-receipts.mjs';
 import { createRequestGate } from './rate-limit.mjs';
 import { createStagingOidcVerifier } from './github-oidc.mjs';
-import { createStagingOidcVerifier } from './github-oidc.mjs';
-import { createStagingOidcVerifier } from './github-oidc.mjs';
 
 const send = (res, status, payload) => {
   res.writeHead(status, {
@@ -46,27 +44,8 @@ export function createNousServer({ runtime, requestGate = createRequestGate(), s
         const ready = runtime.identityReady() && await runtime.stateReady();
         return send(res, ready ? 200 : 503, { service: 'neo-nous-os', identityConfigured: ready, adaptersConfigured: false, state: runtime.stateStatus(), mode: 'plan-only' });
       }
-      if (pathname === '/v1/staging/receipts/plan') {
-        if (!stagingOidcVerifier) return send(res, 404, { error: 'not_found' });
+      if (pathname === '/v1/staging/receipt') {
         if (req.method !== 'POST') return send(res, 405, { error: 'method_not_allowed' });
-        // Only GitHub's signed OIDC token from the exact approved staging PR workflow.
-        const identity = await stagingOidcVerifier.verifyAuthorization(req.headers.authorization);
-        const input = await readBody(req);
-        if (!input || typeof input !== 'object' || Array.isArray(input) ||
-            typeof input.requestId !== 'string' || !/^NOUS-OIDC-[A-Za-z0-9-]{1,48}$/.test(input.requestId) ||
-            Object.keys(input).some(key => key !== 'requestId')) {
-          return send(res, 400, { error: 'invalid_staging_receipt_request' });
-        }
-        // Fixed non-executing fixture only: OIDC cannot select a capability or agent.
-        const task = { requestId: input.requestId, agentId: 'NIA-008', capability: 'development.plan' };
-        return send(res, 200, await runtime.planHostedIdentity(identity, task));
-      }
-      if (req.method === 'POST' && pathname === '/v1/staging/plan' && stagingOidc) {
-        const identity = await stagingOidc.verifyAuthorization(req.headers.authorization);
-        const task = await readBody(req);
-        return send(res, 200, await runtime.planHostedIdentity(identity, task));
-      }
-      if (req.method === 'POST' && pathname === '/v1/staging/receipt') {
         if (!stagingOidcVerifier) return send(res, 404, { error: 'not_found' });
         // Authenticate BEFORE reading the body to prevent anonymous storage writes.
         const identity = await stagingOidcVerifier.verifyAuthorization(req.headers.authorization);
