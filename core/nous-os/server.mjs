@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { identityFromEnv } from './identity.mjs';
 import { createNousRuntime } from './runtime.mjs';
 import { createReceiptStore } from './receipt-store.mjs';
+import { createPostgresReceiptStore } from './postgres-receipts.mjs';
 
 const send = (res, status, payload) => {
   res.writeHead(status, {
@@ -34,7 +35,7 @@ export function createNousServer({ runtime } = {}) {
       const pathname = new URL(req.url, 'http://localhost').pathname;
       if (req.method === 'GET' && pathname === '/health') return send(res, 200, { service: 'neo-nous-os', status: 'alive', mode: 'plan-only' });
       if (req.method === 'GET' && pathname === '/ready') {
-        const ready = runtime.identityReady();
+        const ready = runtime.identityReady() && await runtime.stateReady();
         return send(res, ready ? 200 : 503, { service: 'neo-nous-os', identityConfigured: ready, adaptersConfigured: false, state: runtime.stateStatus(), mode: 'plan-only' });
       }
       if (req.method === 'GET' && pathname === '/v1/adapters') return send(res, 200, runtime.listAdapters(req.headers.authorization));
@@ -46,7 +47,7 @@ export function createNousServer({ runtime } = {}) {
       if (req.method === 'GET' && pathname === '/v1/agents') return send(res, 200, runtime.listAgents(req.headers.authorization));
       if (req.method === 'POST' && pathname === '/v1/tasks/plan') {
         const task = await readBody(req);
-        return send(res, 200, runtime.plan(req.headers.authorization, task));
+        return send(res, 200, await (runtime.stateStatus().backend === 'postgresql' ? runtime.planHosted(req.headers.authorization, task) : runtime.plan(req.headers.authorization, task)));
       }
       return send(res, 404, { error: 'not_found' });
     } catch (error) {
@@ -57,10 +58,11 @@ export function createNousServer({ runtime } = {}) {
   });
 }
 
-export function startNousServer(env = process.env) {
+export async function startNousServer(env = process.env) {
   const identityVerifier = identityFromEnv(env);
-  const receiptStore = env.NOUS_STATE_DIR ? createReceiptStore(env.NOUS_STATE_DIR) : null;
-  const runtime = createNousRuntime({ identityVerifier, receiptStore, audit: event => process.stdout.write(JSON.stringify({ type: 'nous.audit', ...event }) + '\n') });
+  const postgresReceiptStore = env.NOUS_DATABASE_URL ? await createPostgresReceiptStore({ connectionString: env.NOUS_DATABASE_URL }) : null;
+  const receiptStore = !postgresReceiptStore && env.NOUS_STATE_DIR ? createReceiptStore(env.NOUS_STATE_DIR) : null;
+  const runtime = createNousRuntime({ identityVerifier, receiptStore, postgresReceiptStore, audit: event => process.stdout.write(JSON.stringify({ type: 'nous.audit', ...event }) + '\n') });
   const server = createNousServer({ runtime });
   server.requestTimeout = 10000;
   server.headersTimeout = 8000;
@@ -68,4 +70,4 @@ export function startNousServer(env = process.env) {
   return server;
 }
 
-if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) startNousServer();
+if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) startNousServer().catch(error => { console.error('nous_startup_failed', error?.code || error?.message || 'unknown'); process.exitCode = 1; });
