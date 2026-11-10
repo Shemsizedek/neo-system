@@ -60,8 +60,14 @@ export function createNousRuntime({
       return Object.freeze(result);
     },
     async planHosted(header, task) {
-      if (!postgresReceiptStore) throw new NousPolicyError('nous_postgres_not_configured', 503);
       const identity = authorize(header, 'nous.task.plan');
+      return this.planHostedIdentity(identity, task);
+    },
+    async planHostedIdentity(identity, task) {
+      if (!postgresReceiptStore) throw new NousPolicyError('nous_postgres_not_configured', 503);
+      if (!identity || typeof identity.subject !== 'string' || !identity.scopes?.has('nous.task.plan')) {
+        throw new NousPolicyError('scope_denied', 403);
+      }
       if (!task || typeof task !== 'object' || Array.isArray(task)) throw new NousPolicyError('invalid_task', 400);
       const { requestId, agentId, capability } = task;
       if (![requestId, agentId, capability].every(v => typeof v === 'string' && IDENTIFIER.test(v))) throw new NousPolicyError('invalid_task', 400);
