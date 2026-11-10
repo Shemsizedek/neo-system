@@ -65,7 +65,7 @@ export function createNousTokenExchange({
         claims.iat > timestamp + 30 || claims.exp <= timestamp ||
         claims.exp - claims.iat > 8 * 3600 || claims.iat < timestamp - 8 * 3600 ||
         typeof claims.sub !== 'string' || !claims.sub ||
-        (claims.token_use !== undefined && claims.token_use !== 'session')) {
+        (claims.token_use !== 'session' || claims.aud !== 'neopass-session')) {
       json(res, 401, { error: 'neopass_session_invalid' });
       return true;
     }
