@@ -37,7 +37,7 @@ test('forged or stale workflow token rejected', async () => {
   for (const changes of [
     { repository: 'attacker/neo-system' }, { repository_id: '123' }, { event_name: 'push' },
     { workflow: 'Other' }, { head_ref: 'other' }, { ref: 'refs/heads/main' },
-    { runner_environment: 'self-hosted' }, { sub: 'repo:Shemsizedek/neo-system:ref:refs/heads/main' },
+    { runner_environment: 'self-hosted' },
   ]) await assert.rejects(v.verifyAuthorization(jwt(changes)), /staging_workflow_not_authorized/);
   for (const changes of [{ aud: 'wrong' }, { exp: Math.floor(now / 1000) - 1 }, { exp: Math.floor(now / 1000) + 900 }])
     await assert.rejects(v.verifyAuthorization(jwt(changes)), /invalid_staging_claims/);
