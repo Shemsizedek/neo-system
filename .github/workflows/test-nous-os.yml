@@ -4,6 +4,7 @@ on:
     paths:
       - 'core/nous-os/**'
       - 'server/neo-platform-api/nous-token-exchange*'
+      - 'server/neo-platform-api/nous-membership-guard*'
       - 'server/neo-platform-api/giss-production.mjs'
       - 'core/neo-algo/runtime.mjs'
       - 'src/social/rudwaan-nous-bridge.mjs'
@@ -14,6 +15,7 @@ on:
     paths:
       - 'core/nous-os/**'
       - 'server/neo-platform-api/nous-token-exchange*'
+      - 'server/neo-platform-api/nous-membership-guard*'
       - 'server/neo-platform-api/giss-production.mjs'
       - 'core/neo-algo/runtime.mjs'
       - 'src/social/rudwaan-nous-bridge.mjs'
@@ -42,8 +44,9 @@ jobs:
           node --check core/nous-os/receipt-store.mjs
           node --check core/nous-os/adapters.mjs
           node --check core/neo-algo/runtime.mjs
+          node --check server/neo-platform-api/nous-membership-guard.mjs
           node --check server/neo-platform-api/nous-token-exchange.mjs
-          node --test core/nous-os/*.test.mjs server/neo-platform-api/nous-token-exchange.test.mjs
+          node --test core/nous-os/*.test.mjs server/neo-platform-api/nous-token-exchange.test.mjs server/neo-platform-api/nous-membership-guard.test.mjs
       - name: Validate private staging image
         run: docker build -f core/nous-os/Dockerfile -t neo-nous-os:ci .
 
