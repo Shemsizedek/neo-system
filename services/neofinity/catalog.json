@@ -1,0 +1,74 @@
+{
+  "program": "NEOFINITY-INF-001",
+  "as_of": "2026-11-09",
+  "status": "prelaunch",
+  "brand": {
+    "proposed_name": "Neofinity",
+    "clearance_status": "pending",
+    "legal_operator_verified": false
+  },
+  "network": {
+    "private_ipv4_cidr": "10.144.0.0/16",
+    "internal_namespace": "*.estate.neo",
+    "public_ipv6_prefix": null,
+    "public_asn": null,
+    "public_internet_live": false,
+    "independent_public_routing_verified": false,
+    "mesh": {
+      "provider_account_enrolled": false,
+      "real_two_peer_handshake": false,
+      "revocation_verified": false,
+      "access_policy_tested": false
+    },
+    "access": {
+      "authorized_premise": false,
+      "authorized_backhaul_contract": false,
+      "link_healthy": false,
+      "consumer_labels_approved": false,
+      "regulatory_applicability_reviewed": false,
+      "site_security_tested": false
+    },
+    "route": {
+      "upstream_peering_verified": false,
+      "rir_resource_rights_verified": false,
+      "rpki_verified": false
+    }
+  },
+  "operations": {
+    "customer_support_ready": false,
+    "privacy_and_terms_approved": false,
+    "incident_response_ready": false,
+    "redacted_operational_evidence_approved": false
+  },
+  "commercial": {
+    "accepting_customers": false,
+    "accepting_payments": false,
+    "paid_resource_authorization": false
+  },
+  "services": [
+    {
+      "id": "neofinity-mesh",
+      "kind": "encrypted-overlay",
+      "status": "prelaunch",
+      "description": "Encrypted private connectivity. Not a substitute for upstream Internet access."
+    },
+    {
+      "id": "neofinity-access",
+      "kind": "broadband-access",
+      "status": "prelaunch",
+      "description": "Authorized fixed broadband access via fiber or wireless."
+    },
+    {
+      "id": "neofinity-business",
+      "kind": "broadband-access",
+      "status": "prelaunch",
+      "description": "Managed institutional and business Internet connectivity."
+    },
+    {
+      "id": "neofinity-ip",
+      "kind": "independent-routing",
+      "status": "prelaunch",
+      "description": "Future ASN, IPv6, BGP, upstream and exchange interconnection."
+    }
+  ]
+}
