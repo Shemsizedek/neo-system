@@ -9,6 +9,9 @@ permissions:
 jobs:
   hosted-readiness:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - name: Check hosted Neon-backed staging health and fail-closed auth
         env:
@@ -39,3 +42,43 @@ jobs:
           grep -iq '^content-security-policy: default-src' /tmp/nous-headers.txt
           grep -q 'bearer_required' /tmp/nous-security.json
           echo 'Hosted health, Neon readiness, security headers, and unauthenticated access denial verified'
+
+      - name: Verify GitHub OIDC signed planning against hosted Neon staging
+        if: github.event_name == 'pull_request' && github.event.pull_request.number == 1388
+        env:
+          BASE_URL: https://neo-nous-os-db-staging.onrender.com
+        run: |
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          const requestUrl = process.env.ACTIONS_ID_TOKEN_REQUEST_URL;
+          const runnerToken = process.env.ACTIONS_ID_TOKEN_REQUEST_TOKEN;
+          assert.ok(requestUrl && runnerToken, 'GitHub OIDC requester unavailable');
+          const separator = requestUrl.includes('?') ? '&' : '?';
+          const response = await fetch(requestUrl + separator + 'audience=neo-nous-staging-ci', {
+            headers: { Authorization: 'Bearer ' + runnerToken },
+            signal: AbortSignal.timeout(15000),
+          });
+          assert.equal(response.status, 200, 'OIDC credential mint refused');
+          const { value: jwt } = await response.json();
+          assert.ok(typeof jwt === 'string' && jwt.length > 100, 'OIDC JWT unavailable');
+          const task = { requestId: 'NOUS-OIDC-PR1388-SMOKE-01', agentId: 'NIA-008', capability: 'project.plan' };
+          async function post(body) {
+            const res = await fetch(process.env.BASE_URL + '/v1/staging/receipts/plan', {
+              method: 'POST',
+              headers: { authorization: 'Bearer ' + jwt, 'content-type': 'application/json' },
+              body: JSON.stringify(body),
+              signal: AbortSignal.timeout(20000),
+            });
+            return { status: res.status, body: await res.json() };
+          }
+          const first = await post(task);
+          assert.equal(first.status, 200, 'signed hosted planning failed: ' + JSON.stringify(first.body));
+          assert.equal(first.body.execution, 'disabled');
+          assert.equal(first.body.status, 'planned');
+          const replay = await post(task);
+          assert.equal(replay.status, 200);
+          assert.deepEqual(replay.body, first.body);
+          const collision = await post({ ...task, capability: 'development.plan' });
+          assert.equal(collision.status, 409, 'conflicting planning request must be rejected');
+          console.log('GitHub OIDC signed hosted planning, receipt idempotency, and conflict: PASS');
+          NODE
