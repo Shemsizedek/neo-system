@@ -5,6 +5,7 @@ import { createNousRuntime } from './runtime.mjs';
 import { createReceiptStore } from './receipt-store.mjs';
 import { createPostgresReceiptStore } from './postgres-receipts.mjs';
 import { createRequestGate } from './rate-limit.mjs';
+import { createStagingOidcVerifier } from './github-oidc.mjs';
 
 const send = (res, status, payload) => {
   res.writeHead(status, {
@@ -32,7 +33,7 @@ async function readBody(req) {
   catch { throw Object.assign(new Error('invalid_json'), { status: 400 }); }
 }
 
-export function createNousServer({ runtime, requestGate = createRequestGate() } = {}) {
+export function createNousServer({ runtime, requestGate = createRequestGate(), stagingOidcVerifier = null } = {}) {
   if (!runtime) throw new TypeError('runtime_required');
   return createHttpServer(async (req, res) => {
     try {
@@ -42,6 +43,14 @@ export function createNousServer({ runtime, requestGate = createRequestGate() } 
       if (req.method === 'GET' && pathname === '/ready') {
         const ready = runtime.identityReady() && await runtime.stateReady();
         return send(res, ready ? 200 : 503, { service: 'neo-nous-os', identityConfigured: ready, adaptersConfigured: false, state: runtime.stateStatus(), mode: 'plan-only' });
+      }
+      if (pathname === '/v1/staging/receipts/plan') {
+        if (!stagingOidcVerifier) return send(res, 404, { error: 'not_found' });
+        if (req.method !== 'POST') return send(res, 405, { error: 'method_not_allowed' });
+        // Only GitHub's signed OIDC token from the exact approved staging PR workflow.
+        const identity = await stagingOidcVerifier.verifyAuthorization(req.headers.authorization);
+        const task = await readBody(req);
+        return send(res, 200, await runtime.planHostedIdentity(identity, task));
       }
       if (req.method === 'GET' && pathname === '/v1/adapters') return send(res, 200, runtime.listAdapters(req.headers.authorization));
       if (req.method === 'POST' && pathname === '/v1/adapters/classify') {
@@ -68,7 +77,13 @@ export async function startNousServer(env = process.env) {
   const postgresReceiptStore = env.NOUS_DATABASE_URL ? await createPostgresReceiptStore({ connectionString: env.NOUS_DATABASE_URL }) : null;
   const receiptStore = !postgresReceiptStore && env.NOUS_STATE_DIR ? createReceiptStore(env.NOUS_STATE_DIR) : null;
   const runtime = createNousRuntime({ identityVerifier, receiptStore, postgresReceiptStore, audit: event => process.stdout.write(JSON.stringify({ type: 'nous.audit', ...event }) + '\n') });
-  const server = createNousServer({ runtime });
+  const stagingOidcVerifier =
+    env.NOUS_STAGE === 'neon-locked-staging' &&
+    env.NOUS_STAGING_GITHUB_OIDC_ENABLED === 'true' &&
+    postgresReceiptStore && identityVerifier.configured
+      ? createStagingOidcVerifier()
+      : null;
+  const server = createNousServer({ runtime, stagingOidcVerifier });
   server.requestTimeout = 10000;
   server.headersTimeout = 8000;
   server.listen(Number(env.PORT || 8080), env.NOUS_HOST || '127.0.0.1');
