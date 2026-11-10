@@ -51,7 +51,14 @@ export function createNousServer({ runtime, requestGate = createRequestGate(), s
         if (req.method !== 'POST') return send(res, 405, { error: 'method_not_allowed' });
         // Only GitHub's signed OIDC token from the exact approved staging PR workflow.
         const identity = await stagingOidcVerifier.verifyAuthorization(req.headers.authorization);
-        const task = await readBody(req);
+        const input = await readBody(req);
+        if (!input || typeof input !== 'object' || Array.isArray(input) ||
+            typeof input.requestId !== 'string' || !/^NOUS-OIDC-[A-Za-z0-9-]{1,48}$/.test(input.requestId) ||
+            Object.keys(input).some(key => key !== 'requestId')) {
+          return send(res, 400, { error: 'invalid_staging_receipt_request' });
+        }
+        // Fixed non-executing fixture only: OIDC cannot select a capability or agent.
+        const task = { requestId: input.requestId, agentId: 'NIA-008', capability: 'development.plan' };
         return send(res, 200, await runtime.planHostedIdentity(identity, task));
       }
       if (req.method === 'POST' && pathname === '/v1/staging/plan' && stagingOidc) {
