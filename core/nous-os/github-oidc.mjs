@@ -76,7 +76,8 @@ export function createStagingOidcVerifier({ fetchImpl = fetch, now = () => Date.
           claims.ref !== REF || claims.event_name !== 'pull_request' ||
           claims.head_ref !== HEAD_REF || claims.base_ref !== 'main' ||
           claims.workflow !== WORKFLOW || claims.workflow_ref !== WORKFLOW_REF ||
-          typeof claims.sub !== 'string' || !claims.sub.endsWith(':pull_request')) {
+          claims.runner_environment !== 'github-hosted' ||
+          typeof claims.sub !== 'string' || !claims.sub.trim() || claims.sub.length > 512) {
         throw new StagingOidcError('staging_workflow_not_authorized', 403);
       }
       return Object.freeze({ subject: 'github-actions-nous-staging', scopes: new Set(['nous.task.plan']), issuer: ISSUER });
