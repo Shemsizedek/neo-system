@@ -41,7 +41,7 @@ for segment in "${segments[@]}"; do
   test -s "$segment"
   video_codec="$(ffprobe -v error -select_streams v:0 \
     -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 "$segment")"
-  if [[ "$video_codec" != "h264" ]]; then
+  if ! grep -Fxq "h264" <<< "$video_codec"; then
     echo "FAIL: segment missing H.264 video." >&2
     exit 1
   fi
