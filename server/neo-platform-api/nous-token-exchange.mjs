@@ -26,15 +26,16 @@ function json(res, status, payload) {
  */
 export function createNousTokenExchange({
   jwtSecret, jwtIssuer, privateKeyPem, tokenIssuer = 'neo-pass-nous-exchange',
-  audience = 'neo-nous', authService, now = () => Date.now(),
+  audience = 'neo-nous', authService, membershipGuard, signingKeyId, now = () => Date.now(),
   allowedOrigins = ALLOWED_ORIGINS,
 } = {}) {
   if (!jwtSecret || !jwtIssuer || !privateKeyPem || !tokenIssuer || !audience ||
-      !authService || typeof authService.session !== 'function') {
+      !authService || typeof authService.session !== 'function' || typeof membershipGuard !== 'function') {
     throw new Error('nous_token_exchange_configuration_required');
   }
   const key = createPrivateKey(privateKeyPem);
   if (key.asymmetricKeyType !== 'ed25519') throw new Error('nous_token_exchange_key_invalid');
+  if (signingKeyId !== undefined && !/^[a-zA-Z0-9._-]{1,64}$/.test(signingKeyId)) throw new Error('nous_token_exchange_key_id_invalid');
   const trustedOrigins = new Set(allowedOrigins);
   return async function nousTokenExchange(req, res, url) {
     if (url.pathname !== '/api/v1/auth/nous-token') return false;
@@ -78,8 +79,14 @@ export function createNousTokenExchange({
       json(res, 403, { error: 'neopass_active_membership_required' });
       return true;
     }
+    // Registry checks bypass executive-session claim shortcuts and confirm consent.
+    // On lookup failure or absent consent, the exchange refuses issuance.
+    let allowed = false;
+    try { allowed = await membershipGuard(claims) === true; }
+    catch { json(res, 503, { error: 'neopass_membership_unavailable' }); return true; }
+    if (!allowed) { json(res, 403, { error: 'nous_registry_authorization_required' }); return true; }
     const issuedAt = timestamp;
-    const jwtHeader = encode({ typ: 'JWT', alg: 'EdDSA' });
+    const jwtHeader = encode({ typ: 'JWT', alg: 'EdDSA', ...(signingKeyId ? { kid: signingKeyId } : {}) });
     const payload = encode({
       iss: tokenIssuer, aud: audience, sub: claims.sub, iat: issuedAt,
       nbf: issuedAt, exp: issuedAt + 120,
