@@ -6,6 +6,7 @@ import { createReceiptStore } from './receipt-store.mjs';
 import { createPostgresReceiptStore } from './postgres-receipts.mjs';
 import { createRequestGate } from './rate-limit.mjs';
 import { createStagingOidcVerifier } from './github-oidc.mjs';
+import { createStagingOidcVerifier } from './github-oidc.mjs';
 
 const send = (res, status, payload) => {
   res.writeHead(status, {
@@ -49,6 +50,11 @@ export function createNousServer({ runtime, requestGate = createRequestGate(), s
         if (req.method !== 'POST') return send(res, 405, { error: 'method_not_allowed' });
         // Only GitHub's signed OIDC token from the exact approved staging PR workflow.
         const identity = await stagingOidcVerifier.verifyAuthorization(req.headers.authorization);
+        const task = await readBody(req);
+        return send(res, 200, await runtime.planHostedIdentity(identity, task));
+      }
+      if (req.method === 'POST' && pathname === '/v1/staging/plan' && stagingOidc) {
+        const identity = await stagingOidc.verifyAuthorization(req.headers.authorization);
         const task = await readBody(req);
         return send(res, 200, await runtime.planHostedIdentity(identity, task));
       }
