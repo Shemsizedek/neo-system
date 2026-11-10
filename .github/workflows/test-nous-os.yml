@@ -29,6 +29,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
+      - name: Install isolated Nous OS PostgreSQL client
+        run: npm install --prefix core/nous-os --ignore-scripts --no-audit --no-fund
       - name: Node syntax and unit/integration tests
         run: |
           node --check core/nous-os/agents.mjs
