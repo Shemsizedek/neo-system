@@ -84,3 +84,42 @@ export function createStagingOidcVerifier({ fetchImpl = fetch, now = () => Date.
     },
   };
 }
+
+test('staging receipt endpoint is off by default, accepts signed scoped workflow only, replays safely', async () => {
+  const { createNousServer } = await import('./server.mjs');
+  const { createNousRuntime } = await import('./runtime.mjs');
+  const { createIdentityVerifier } = await import('./identity.mjs');
+  const receipt = new Map();
+  const db = {
+    stats: () => ({ backend: 'postgresql', durable: true }),
+    async ping() { return true; },
+    async getOrCreate(value) {
+      const key = value.subject + '/' + value.requestId;
+      if (receipt.has(key)) return { receipt: receipt.get(key), inserted: false };
+      receipt.set(key, value);
+      return { receipt: value, inserted: true };
+    },
+  };
+  const runtime = createNousRuntime({ identityVerifier: createIdentityVerifier({}), postgresReceiptStore: db });
+  for (const enabled of [false, true]) {
+    const server = createNousServer({ runtime, stagingOidcVerifier: enabled ? verifier() : null });
+    await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+    try {
+      const url = 'http://127.0.0.1:' + server.address().port + '/v1/staging/receipt';
+      const post = (body, authorization = jwt()) => fetch(url, {
+        method: 'POST', headers: { authorization, 'content-type': 'application/json' }, body: JSON.stringify(body),
+      });
+      if (!enabled) { assert.equal((await post({ requestId: 'CI-P144-SMOKE-1' })).status, 404); continue; }
+      assert.equal((await post({ requestId: 'CI-P144-SMOKE-1' }, 'Bearer fake')).status, 401);
+      assert.equal((await post({ requestId: 'INVALID' })).status, 400);
+      const response = await post({ requestId: 'CI-P144-SMOKE-1' });
+      assert.equal(response.status, 200);
+      const first = await response.json();
+      assert.equal(first.capability, 'development.plan');
+      assert.equal(first.execution, 'disabled');
+      assert.equal(first.subject, 'github-actions-nous-staging');
+      assert.deepEqual(await (await post({ requestId: 'CI-P144-SMOKE-1' })).json(), first);
+      assert.equal((await post({ requestId: 'CI-P144-SMOKE-1', capability: 'finance.transfer' })).status, 400);
+    } finally { await new Promise(resolve => server.close(resolve)); }
+  }
+});
