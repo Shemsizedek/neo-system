@@ -54,3 +54,12 @@ The same authenticated intake can use Neon/Postgres rather than ephemeral file s
 
 ## ChatGPT editorial automation status
 The separate NEO Bulletin Editorial Desk task had a completed recorded run requiring user action and was observed disabled on November 10. It was re-enabled through the task-management integration in Gate 5. A new successful scheduled execution has not yet been observed; do not represent it as continuously operational.
+
+## Gate 6 — isolated Neon staging verified (2026-11-10)
+- Created Neon Free-plan project `neo-bulletin-staging` (project `red-wind-26570753`), branch `br-mute-shadow-bbxba6r9`, database `neo_bulletin`.
+- Applied the additive migration: `neo_bulletin.marketer_queue` exists; verified 2 indexes, 0 queued records.
+- Created restricted runtime role `neo_bulletin_marketer_intake`; verified SELECT and INSERT, but not UPDATE or DELETE, by querying as that role.
+- Public Neon connections were temporarily allowed for administration, then blocked again; final project readback confirmed `block_public_connections: true`. This means ordinary public Render connections will not work until an approved private connectivity arrangement is established. Do not disable this protection silently.
+- The role password was returned during provisioning and must be rotated before any runtime deployment; do not copy it to code, tickets, or logs. No service secrets are configured.
+- GitHub CI for PR head `db93073393ebac13ae7736695a0cdf19d1d40856` succeeded (Bulletin Agent and general CI). PR #1399 remains a draft; merging may trigger legacy Cloud Run deployment. No live Marketer service or end-to-end signed handoff was verified.
+- Next gate: rotate runtime credential through approved secret storage, select an authorized network path from Render to Neon, configure separate HMAC secrets, deploy isolated staging, test an authorized synthetic handoff and restart persistence, then inspect audit logs. Keep public distribution disabled.
