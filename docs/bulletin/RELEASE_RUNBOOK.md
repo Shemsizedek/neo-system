@@ -40,3 +40,17 @@ Changes to a published article invalidate its approval. A corrected article must
 
 ## Evidence status
 GitHub CI success proves mock WordPress readback, approval verification and queue behavior in tests. It does not establish production deployment, live source retrieval, durable cloud storage or completed public distribution.
+
+
+## Gate 5 — optional existing Neon queue
+The same authenticated intake can use Neon/Postgres rather than ephemeral file storage. The new adapter is additive and only active when a protected `NEO_MARKETER_HANDOFF_DB_URL` is supplied. Without that variable, the existing disk-backed queue path remains available. Keep `NEO_MARKETER_HANDOFF_SECRET` set separately. If both storage backends are absent, intake responds with 503.
+
+- Migration: `server/neo-marketer/migrations/001-bulletin-queue.sql` is additive and must be reviewed and applied explicitly by a database administrator. No migration is executed at startup.
+- Runtime dependency: `server/neo-marketer/package.json` declares `pg`; `deploy/neo-marketer/Dockerfile` installs production dependencies. This PR **still affects the legacy Cloud Run deployment path** if merged into main.
+- Access: the Neon approvals-staging database project identified in Gate 5 has inbound network restrictions and could not be inspected or modified by this connector. No migration was applied. Do not use unrelated production accounts or disable protected-network settings to force deployment.
+- Queue state is limited to `pending_editorial_marketing_review`; social distribution and automated article publication are not enabled.
+- The Marketer service must use a scoped Postgres role with only INSERT and SELECT permissions for this schema, rotation and revocation procedures, backups, and restart checks.
+- Unit tests use an injected query adapter to verify parameterization and idempotence. They do not prove a real Neon connection, database persistence, backup restoration, or live public deployment.
+
+## ChatGPT editorial automation status
+The separate NEO Bulletin Editorial Desk task had a completed recorded run requiring user action and was observed disabled on November 10. It was re-enabled through the task-management integration in Gate 5. A new successful scheduled execution has not yet been observed; do not represent it as continuously operational.
