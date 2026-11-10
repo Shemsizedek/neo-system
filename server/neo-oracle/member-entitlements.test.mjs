@@ -8,7 +8,7 @@ const validSession = () => ({
   verified: true,
   subject: "temple-member-001",
   audience: "neo-oracle",
-  scopes: ["oracle.premium"],
+  scopes: ["oracle.execute"],
   expiresAtMs: now() + 60_000
 });
 const validEntitlement = ({subject, product}) => ({
@@ -40,7 +40,7 @@ test("authorized only with independently verified NEOpass and settled entitlemen
 
 test("rejects invalid signature status, wrong audience, scope and expiry", async () => {
   for (const change of [
-    {verified: false}, {audience: "other-app"}, {scopes: ["oracle.basic"]},
+    {verified: false}, {audience: "other-app"}, {scopes: ["oracle.invalid"]},
     {expiresAtMs: now() - 1}, {subject: ""}
   ]) {
     const result = await gate({verifyNeopassSession: async () => ({...validSession(), ...change})})({bearerToken: token});
