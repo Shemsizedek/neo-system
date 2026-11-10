@@ -1,6 +1,7 @@
 FROM node:24-alpine
 WORKDIR /app
 COPY server/neo-marketer ./server/neo-marketer
+RUN npm install --prefix server/neo-marketer --omit=dev --ignore-scripts --no-audit --no-fund
 ENV NODE_ENV=production
 ENV PORT=8080
 EXPOSE 8080
