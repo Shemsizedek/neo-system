@@ -1,0 +1,64 @@
+{
+  "schema": "neo.neocast.original-pilot/v1",
+  "brand": "Neofinity",
+  "service": "NeoCast",
+  "pilotId": "world-temple-education-001",
+  "phase": "draft",
+  "title": "World Temple Education — first original broadcast concept",
+  "category": "education",
+  "description": "Proposed educational programming. Content, event schedule, owner rights and operator have not been provided or approved.",
+  "content": {
+    "sourceAssetProvided": false,
+    "sourceAssetSha256": null,
+    "ownerIdentityVerified": false,
+    "ownerEvidenceReference": null,
+    "participantsAndLocationsConsented": false,
+    "thirdPartyMaterialCleared": false
+  },
+  "rights": {
+    "ownedOrLicensed": false,
+    "liveDistributionAuthorized": false,
+    "recordingAuthorized": false,
+    "replayAuthorized": false,
+    "advertisingOrMonetizationAuthorized": false,
+    "authorizedTerritories": [],
+    "signedLicenseEvidenceReference": null
+  },
+  "schedule": {
+    "timezone": "America/Chicago",
+    "startIso": null,
+    "durationMinutes": 30,
+    "operatorIdentified": false,
+    "operatorApprovalReference": null
+  },
+  "delivery": {
+    "mode": "none",
+    "publicEndpoint": null,
+    "persistentOriginVerified": false,
+    "actualEndToEndPlaybackVerified": false,
+    "audienceIsolationTested": false,
+    "revocationOrTakedownTested": false,
+    "measuredEgressMbps": null,
+    "receiverNetworkEvidenceReference": null
+  },
+  "audienceCapacityEstimate": {
+    "concurrentViewers": 10,
+    "averageTotalBitrateKbps": 1500,
+    "egressHeadroomFactor": 1.3,
+    "ingestHeadroomFactor": 1.5
+  },
+  "governance": {
+    "neoLawApproved": false,
+    "budgetApproved": false,
+    "newPaidResourcesAuthorized": false,
+    "siteNetworkOwnerAuthorized": false,
+    "emergencyContactVerified": false
+  },
+  "release": {
+    "live": false,
+    "publicPromotion": false,
+    "recordingEnabled": false,
+    "acceptingPayments": false,
+    "automaticPublishing": false
+  }
+}
