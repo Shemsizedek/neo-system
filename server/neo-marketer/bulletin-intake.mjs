@@ -1,6 +1,7 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
+import { persistBulletinPostgres, getBulletinPostgresPool } from "./bulletin-postgres.mjs";
 
 function json(res, status, payload) {
   res.writeHead(status, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" });
@@ -71,9 +72,11 @@ export async function persistBulletinHandoff(payload, queueDir) {
 export async function intakeBulletin(req, res, {
   secret = process.env.NEO_MARKETER_HANDOFF_SECRET,
   queueDir = process.env.NEO_MARKETER_HANDOFF_DIR,
+  databaseUrl = process.env.NEO_MARKETER_HANDOFF_DB_URL,
+  databasePool = null,
   at = new Date()
 } = {}) {
-  if (!secret || secret.length < 32 || !queueDir) {
+  if (!secret || secret.length < 32 || (!queueDir && !databaseUrl && !databasePool)) {
     return json(res, 503, {error: "bulletin_intake_not_configured"});
   }
   let body = "";
@@ -86,7 +89,10 @@ export async function intakeBulletin(req, res, {
       return json(res, 401, {error: "unauthorized_handoff"});
     }
     const payload = validateBulletinHandoff(JSON.parse(body), at);
-    const saved = await persistBulletinHandoff(payload, queueDir);
+    const store = databasePool || (databaseUrl ? await getBulletinPostgresPool(databaseUrl) : null);
+    const saved = store
+      ? await persistBulletinPostgres(payload, store)
+      : await persistBulletinHandoff(payload, queueDir);
     return json(res, saved.status === "queued" ? 201 : 200, saved);
   } catch (error) {
     const invalid = /^(invalid_|unsafe_|handoff_timestamp|second_reviewer|handoff_id_conflict)/.test(error.message);
