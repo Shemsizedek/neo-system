@@ -4,8 +4,10 @@ on:
   pull_request:
     paths:
       - '.github/workflows/nous-hosted-smoke.yml'
+      - 'core/nous-os/**'
 permissions:
   contents: read
+  id-token: write
 jobs:
   hosted-readiness:
     runs-on: ubuntu-latest
@@ -13,6 +15,10 @@ jobs:
       contents: read
       id-token: write
     steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
       - name: Check hosted Neon-backed staging health and fail-closed auth
         env:
           BASE_URL: https://neo-nous-os-db-staging.onrender.com
@@ -82,3 +88,6 @@ jobs:
           assert.equal(collision.status, 409, 'conflicting planning request must be rejected');
           console.log('GitHub OIDC signed hosted planning, receipt idempotency, and conflict: PASS');
           NODE
+
+      - name: Signed ephemeral GitHub OIDC proof and durable Neon receipt replay
+        run: node core/nous-os/deploy/hosted-oidc-smoke.mjs
