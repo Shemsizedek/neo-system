@@ -71,9 +71,15 @@ export function createNousConsentHandler({ jwtSecret, jwtIssuer = 'neo-pass', re
         if (!credential || credential.subject !== claims.sub) {
           reply(res, 404, { error: 'neopass_credential_not_found' }); return true;
         }
+        if (Number.isSafeInteger(credential.sessionRevokedAfter) && claims.iat <= credential.sessionRevokedAfter) {
+          reply(res, 403, { error: 'neopass_session_revoked' }); return true;
+        }
+        const expiry = credential.nousAccessExpiresAt
+          ? Date.parse(credential.nousAccessExpiresAt) : NaN;
         reply(res, 200, {
           nousAccessEnabled: credential.nousAccessEnabled === true && credential.status === 'active' &&
-            credential.disabled !== true && credential.suspended !== true,
+            credential.disabled !== true && credential.suspended !== true &&
+            Number.isFinite(expiry) && expiry > now(),
           expiresAt: credential.nousAccessExpiresAt || null,
         });
         return true;
@@ -84,7 +90,7 @@ export function createNousConsentHandler({ jwtSecret, jwtIssuer = 'neo-pass', re
             Object.keys(body).length !== 1 || body.acknowledge !== CONSENT_ACK) {
           reply(res, 400, { error: 'explicit_consent_required' }); return true;
         }
-      } else if (req.headers['content-length'] && Number(req.headers['content-length']) > 0 || req.headers['transfer-encoding']) {
+      } else if ((req.headers['content-length'] && Number(req.headers['content-length']) > 0) || req.headers['transfer-encoding']) {
         reply(res, 400, { error: 'body_not_allowed' }); return true;
       }
       const result = await registry.setNEOpassNousAccess(claims.sub, {
