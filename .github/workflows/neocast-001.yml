@@ -1,0 +1,30 @@
+name: NeoCast 001 Authorized Distribution Gate
+
+on:
+  pull_request:
+    paths:
+      - 'services/neocast/**'
+      - 'docs/neocast/**'
+      - 'docs/neo-tv/index.html'
+      - '.github/workflows/neocast-001.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  neocast-policy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Confirm syntax
+        run: node --check services/neocast/discovery.mjs
+      - name: Prove official-origin-only policy
+        run: node --test services/neocast/tests/discovery.test.mjs
+      - name: Generate read-only launch discovery
+        run: |
+          node services/neocast/discovery.mjs > /tmp/neocast-official-discovery.json
+          node -e "const x=require('/tmp/neocast-official-discovery.json'); if(x.brand!=='Neofinity'||x.service!=='NeoCast'||x.broadcastOriginLiveVerified||x.networkLiveVerified||!x.entries?.length||x.entries.some(y=>y.licenseToRebroadcast||y.mediaDelivery!=='provider-operated')) process.exit(1)"
+      - name: State production boundary
+        run: echo "Review-only official player navigation. No media origin, broadcast transmission, streaming VM, domain, credentials, billing or provider account is created."
