@@ -4,12 +4,16 @@ import { identityFromEnv } from './identity.mjs';
 import { createNousRuntime } from './runtime.mjs';
 import { createReceiptStore } from './receipt-store.mjs';
 import { createPostgresReceiptStore } from './postgres-receipts.mjs';
+import { createRequestGate } from './rate-limit.mjs';
 
 const send = (res, status, payload) => {
   res.writeHead(status, {
     'Content-Type': 'application/json; charset=utf-8',
     'Cache-Control': 'no-store',
     'X-Content-Type-Options': 'nosniff',
+    'Referrer-Policy': 'no-referrer',
+    'X-Frame-Options': 'DENY',
+    'Content-Security-Policy': "default-src 'none'; frame-ancestors 'none'",
   });
   res.end(JSON.stringify(payload));
 };
@@ -28,11 +32,12 @@ async function readBody(req) {
   catch { throw Object.assign(new Error('invalid_json'), { status: 400 }); }
 }
 
-export function createNousServer({ runtime } = {}) {
+export function createNousServer({ runtime, requestGate = createRequestGate() } = {}) {
   if (!runtime) throw new TypeError('runtime_required');
   return createHttpServer(async (req, res) => {
     try {
       const pathname = new URL(req.url, 'http://localhost').pathname;
+      if (pathname.startsWith('/v1/') && !requestGate.allow(req.socket?.remoteAddress || 'unknown')) return send(res, 429, { error: 'rate_limit_exceeded' });
       if (req.method === 'GET' && pathname === '/health') return send(res, 200, { service: 'neo-nous-os', status: 'alive', mode: 'plan-only' });
       if (req.method === 'GET' && pathname === '/ready') {
         const ready = runtime.identityReady() && await runtime.stateReady();
