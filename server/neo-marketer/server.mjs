@@ -32,7 +32,7 @@ export function createMarketerServer() {
       res.end(JSON.stringify({
         ok: true,
         service: 'NEO Marketer',
-        mode: 'production',
+        mode: process.env.NEO_MARKETER_MODE === 'staging' ? 'staging' : 'production',
         modules: [
           'brand-intelligence',
           'audience-intelligence',
