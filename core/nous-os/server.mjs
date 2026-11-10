@@ -7,6 +7,7 @@ import { createPostgresReceiptStore } from './postgres-receipts.mjs';
 import { createRequestGate } from './rate-limit.mjs';
 import { createStagingOidcVerifier } from './github-oidc.mjs';
 import { createStagingOidcVerifier } from './github-oidc.mjs';
+import { createStagingOidcVerifier } from './github-oidc.mjs';
 
 const send = (res, status, payload) => {
   res.writeHead(status, {
@@ -57,6 +58,17 @@ export function createNousServer({ runtime, requestGate = createRequestGate(), s
         const identity = await stagingOidc.verifyAuthorization(req.headers.authorization);
         const task = await readBody(req);
         return send(res, 200, await runtime.planHostedIdentity(identity, task));
+      }
+      if (req.method === 'POST' && pathname === '/v1/staging/receipt') {
+        if (!stagingOidcVerifier) return send(res, 404, { error: 'not_found' });
+        // Authenticate BEFORE reading the body to prevent anonymous storage writes.
+        const identity = await stagingOidcVerifier.verifyAuthorization(req.headers.authorization);
+        const body = await readBody(req);
+        if (!body || Object.keys(body).length !== 1 || typeof body.requestId !== 'string' ||
+            !/^CI-P144-[A-Z0-9-]{1,60}$/.test(body.requestId)) return send(res, 400, { error: 'invalid_staging_request' });
+        return send(res, 200, await runtime.planHostedIdentity(identity, {
+          requestId: body.requestId, agentId: 'NIA-008', capability: 'development.plan',
+        }));
       }
       if (req.method === 'GET' && pathname === '/v1/adapters') return send(res, 200, runtime.listAdapters(req.headers.authorization));
       if (req.method === 'POST' && pathname === '/v1/adapters/classify') {
