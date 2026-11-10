@@ -1,0 +1,51 @@
+name: NEO Bulletin Agent — Draft Research
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '15 13 * * *'
+  push:
+    branches: [main]
+    paths:
+      - 'agents/neo-bulletin/**'
+      - '.github/workflows/neo-bulletin-agent.yml'
+  pull_request:
+    paths:
+      - 'agents/neo-bulletin/**'
+      - '.github/workflows/neo-bulletin-agent.yml'
+permissions:
+  contents: read
+concurrency:
+  group: neo-bulletin-editorial-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Test bulletin agent
+        run: node --test agents/neo-bulletin/worker.test.mjs
+      - name: Source checks and research worksheet
+        if: github.event_name != 'pull_request'
+        id: draft
+        continue-on-error: true
+        env:
+          # No secrets in this scheduled gate: emits GitHub evidence artifacts only.
+          TZ: America/Chicago
+        run: node agents/neo-bulletin/worker.mjs
+      - name: Save editorial receipt
+        if: github.event_name != 'pull_request' && always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: neo-bulletin-research-${{ github.run_id }}
+          path: artifacts/bulletin/
+          if-no-files-found: ignore
+          retention-days: 30
+      - name: Fail if research stage failed
+        if: github.event_name != 'pull_request' && steps.draft.outcome != 'success'
+        run: |
+          echo 'NEO Bulletin source verification failed or evidence is incomplete.'
+          exit 1
