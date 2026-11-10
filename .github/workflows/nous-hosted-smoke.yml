@@ -44,3 +44,5 @@ jobs:
           grep -q 'bearer_required' /tmp/nous-security.json
       - name: Verify GitHub signed OIDC receipt in hosted Neon
         run: node core/nous-os/deploy/hosted-oidc-smoke.mjs
+
+# Project 144: repeat the same signed receipt smoke after the 2026-11-10 staging redeploy.
