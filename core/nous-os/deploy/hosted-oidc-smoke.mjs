@@ -13,10 +13,10 @@ const issued = await provider.json();
 const token = issued.value;
 assert.ok(typeof token === 'string' && token.split('.').length === 3, 'OIDC token missing');
 const headers = { authorization: 'Bearer ' + token, 'content-type': 'application/json' };
-const task = { requestId: 'NOUS-CI-HOSTED-1388-1', agentId: 'NIA-008', capability: 'development.plan' };
+const task = { requestId: 'CI-P144-HOSTED-1388-1' };
 
 async function post(body, authorization = headers.authorization) {
-  const res = await fetch(base + '/v1/staging/receipts/plan', {
+  const res = await fetch(base + '/v1/staging/receipt', {
     method: 'POST', headers: { ...headers, authorization },
     body: JSON.stringify(body), signal: AbortSignal.timeout(20000),
   });
@@ -25,8 +25,8 @@ async function post(body, authorization = headers.authorization) {
 const first = await post(task);
 assert.equal(first.status, 200, 'signed hosted receipt creation failed: ' + first.data?.error);
 assert.equal(first.data.requestId, task.requestId);
-assert.equal(first.data.agentId, task.agentId);
-assert.equal(first.data.capability, task.capability);
+assert.equal(first.data.agentId, 'NIA-008');
+assert.equal(first.data.capability, 'development.plan');
 assert.equal(first.data.execution, 'disabled');
 assert.equal(first.data.subject, 'github-actions-nous-staging');
 
@@ -34,11 +34,11 @@ const replay = await post(task);
 assert.equal(replay.status, 200);
 assert.deepEqual(replay.data, first.data, 'hosted persisted receipt is not idempotent');
 
-const conflict = await post({ ...task, capability: 'project.plan' });
-assert.equal(conflict.status, 409);
-assert.equal(conflict.data.error, 'nous_request_id_conflict');
+const invalid = await post({ ...task, capability: 'project.plan' });
+assert.equal(invalid.status, 400);
+assert.equal(invalid.data.error, 'invalid_staging_request');
 
-const forged = await post({ ...task, requestId: 'NOUS-CI-INVALID' }, 'Bearer malformed');
+const forged = await post({ ...task, requestId: 'CI-P144-INVALID' }, 'Bearer malformed');
 assert.equal(forged.status, 401);
 
 console.log('HOSTED_OIDC_PASS: signed GitHub workflow token verified, receipt idempotent and conflict denied, no external action executed');
