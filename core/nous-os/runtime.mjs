@@ -20,6 +20,7 @@ export function createNousRuntime({
   sources = createSourceInventory(),
   adapters = createReadOnlyAdapters(),
   receiptStore = null,
+  postgresReceiptStore = null,
 } = {}) {
   if (!identityVerifier || typeof identityVerifier.verifyAuthorization !== 'function') throw new TypeError('identity_verifier_required');
   const agents = [...registry];
@@ -31,7 +32,8 @@ export function createNousRuntime({
   };
   return {
     identityReady: () => identityVerifier.configured,
-    stateStatus: () => receiptStore ? receiptStore.stats() : { durable: false, multiWriter: false },
+    stateStatus: () => postgresReceiptStore ? postgresReceiptStore.stats() : (receiptStore ? receiptStore.stats() : { durable: false, multiWriter: false }),
+    stateReady: async () => postgresReceiptStore ? postgresReceiptStore.ping() : true,
     listAgents(header) {
       authorize(header, 'nous.agents.read');
       return { mode: 'plan-only', agents: agents.map(agent => ({ ...agent, status: 'routing_only' })) };
@@ -56,6 +58,28 @@ export function createNousRuntime({
       const result = adapters.classify(adapterId, value);
       if (result.error) throw new NousPolicyError(result.error, result.status || 400);
       return Object.freeze(result);
+    },
+    async planHosted(header, task) {
+      if (!postgresReceiptStore) throw new NousPolicyError('nous_postgres_not_configured', 503);
+      const identity = authorize(header, 'nous.task.plan');
+      if (!task || typeof task !== 'object' || Array.isArray(task)) throw new NousPolicyError('invalid_task', 400);
+      const { requestId, agentId, capability } = task;
+      if (![requestId, agentId, capability].every(v => typeof v === 'string' && IDENTIFIER.test(v))) throw new NousPolicyError('invalid_task', 400);
+      const agent = agents.find(item => item.id === agentId);
+      if (!agent) throw new NousPolicyError('unknown_agent', 404);
+      const allowed = agent.capabilities.includes(capability) && !HIGH_RISK.has(capability);
+      const receipt = Object.freeze({
+        receiptId: randomUUID(), requestId, agentId, capability,
+        subject: identity.subject, status: allowed ? 'planned' : 'approval_required',
+        execution: 'disabled', createdAt: now(),
+      });
+      let result;
+      try { result = await postgresReceiptStore.getOrCreate(receipt); }
+      catch { throw new NousPolicyError('nous_receipt_persistence_failed', 503); }
+      const prior = result.receipt;
+      if (prior.agentId !== agentId || prior.capability !== capability) throw new NousPolicyError('nous_request_id_conflict', 409);
+      if (result.inserted) audit({ receiptId: prior.receiptId, requestId, agentId, capability, subject: identity.subject, disposition: prior.status, at: prior.createdAt });
+      return prior;
     },
     plan(header, task) {
       const identity = authorize(header, 'nous.task.plan');
