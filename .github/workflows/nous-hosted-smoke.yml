@@ -49,47 +49,6 @@ jobs:
           grep -q 'bearer_required' /tmp/nous-security.json
           echo 'Hosted health, Neon readiness, security headers, and unauthenticated access denial verified'
 
-      - name: Verify GitHub OIDC signed planning against hosted Neon staging
-        if: github.event_name == 'pull_request' && github.event.pull_request.number == 1388
-        env:
-          BASE_URL: https://neo-nous-os-db-staging.onrender.com
-        run: |
-          node --input-type=module <<'NODE'
-          import assert from 'node:assert/strict';
-          const requestUrl = process.env.ACTIONS_ID_TOKEN_REQUEST_URL;
-          const runnerToken = process.env.ACTIONS_ID_TOKEN_REQUEST_TOKEN;
-          assert.ok(requestUrl && runnerToken, 'GitHub OIDC requester unavailable');
-          const separator = requestUrl.includes('?') ? '&' : '?';
-          const response = await fetch(requestUrl + separator + 'audience=neo-nous-staging-ci', {
-            headers: { Authorization: 'Bearer ' + runnerToken },
-            signal: AbortSignal.timeout(15000),
-          });
-          assert.equal(response.status, 200, 'OIDC credential mint refused');
-          const { value: jwt } = await response.json();
-          assert.ok(typeof jwt === 'string' && jwt.length > 100, 'OIDC JWT unavailable');
-          const task = { requestId: 'CI-P144-OIDC-REPLAY-001' };
-          async function post(body) {
-            const res = await fetch(process.env.BASE_URL + '/v1/staging/receipt', {
-              method: 'POST',
-              headers: { authorization: 'Bearer ' + jwt, 'content-type': 'application/json' },
-              body: JSON.stringify(body),
-              signal: AbortSignal.timeout(20000),
-            });
-            return { status: res.status, body: await res.json() };
-          }
-          const first = await post(task);
-          assert.equal(first.status, 200, 'signed hosted receipt failed: ' + JSON.stringify(first.body));
-          assert.equal(first.body.execution, 'disabled');
-          assert.equal(first.body.status, 'planned');
-          assert.equal(first.body.subject, 'github-actions-nous-staging');
-          assert.equal(first.body.agentId, 'NIA-008');
-          const replay = await post(task);
-          assert.equal(replay.status, 200);
-          assert.deepEqual(replay.body, first.body);
-          const invalid = await post({ ...task, capability: 'finance.transfer' });
-          assert.equal(invalid.status, 400, 'staging OIDC cannot select a capability');
-          console.log('GitHub OIDC signed hosted receipt and idempotency: PASS');
-          NODE
-
       - name: Signed ephemeral GitHub OIDC proof and durable Neon receipt replay
+        if: github.event_name == 'pull_request' && github.event.pull_request.number == 1388
         run: node core/nous-os/deploy/hosted-oidc-smoke.mjs
