@@ -1,0 +1,40 @@
+name: Mirror critical NEO infrastructure to GitLab
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'infra/**'
+      - '.github/workflows/mirror-neomail-to-gitlab.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout GitHub source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Require mirror secret
+        shell: bash
+        env:
+          GITLAB_MIRROR_TOKEN: ${{ secrets.GITLAB_MIRROR_TOKEN }}
+        run: |
+          set -euo pipefail
+          test -n "$GITLAB_MIRROR_TOKEN"
+
+      - name: Push mirror branch to GitLab
+        shell: bash
+        env:
+          GITLAB_MIRROR_TOKEN: ${{ secrets.GITLAB_MIRROR_TOKEN }}
+        run: |
+          set -euo pipefail
+          git config user.name "NEO Federation Mirror"
+          git config user.email "nooneuniversity@gmail.com"
+          git remote add gitlab "https://oauth2:${GITLAB_MIRROR_TOKEN}@gitlab.com/neo470335/project-144.git"
+          git push --force gitlab HEAD:refs/heads/github-main-mirror
