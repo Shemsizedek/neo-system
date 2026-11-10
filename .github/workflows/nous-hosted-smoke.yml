@@ -33,4 +33,9 @@ jobs:
           grep -q 'bearer_required' /tmp/nous-agents.json
           code=$(curl --max-time 12 -sS -o /tmp/nous-adapters.json -w '%{http_code}' "$BASE_URL/v1/adapters")
           test "$code" = "401"
-          echo 'Hosted health, Neon readiness, and unauthenticated access denial verified'
+          curl --max-time 12 -sS -D /tmp/nous-headers.txt -o /tmp/nous-security.json "$BASE_URL/v1/sources"
+          grep -iq '^referrer-policy: no-referrer' /tmp/nous-headers.txt
+          grep -iq '^x-frame-options: DENY' /tmp/nous-headers.txt
+          grep -iq '^content-security-policy: default-src' /tmp/nous-headers.txt
+          grep -q 'bearer_required' /tmp/nous-security.json
+          echo 'Hosted health, Neon readiness, security headers, and unauthenticated access denial verified'
