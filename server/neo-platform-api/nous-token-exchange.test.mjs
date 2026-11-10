@@ -22,7 +22,7 @@ const valid = (claims = {}) => issueNeopassToken({
   issuer: 'neo-pass',
   now: () => now,
   ttlSeconds: 3600,
-  claims,
+  claims: { token_use: 'session', aud: 'neopass-session', ...claims },
 });
 function tokenWithoutExpiry() {
   const h = Buffer.from(JSON.stringify({ typ: 'JWT', alg: 'HS256' })).toString('base64url');
@@ -100,6 +100,8 @@ test('exchange refuses cookie, wrong origin, browser token, expired/missing exp,
     assert.equal((await fetch(url, { method: 'POST', headers: { cookie: 'neo_pass_session=' + valid() } })).status, 401);
     assert.equal((await post('Bearer ' + valid(), { origin: 'https://evil.example' })).status, 403);
     assert.equal((await post('Bearer ' + valid({ token_use: 'browser' }))).status, 401);
+    assert.equal((await post('Bearer ' + valid({ aud: 'other' }))).status, 401);
+    assert.equal((await post('Bearer ' + valid({ token_use: undefined }))).status, 401);
     assert.equal((await post('Bearer ' + tokenWithoutExpiry())).status, 401);
     assert.equal((await post('Bearer ' + issueNeopassToken({ subject: 'user:123', secret, issuer: 'neo-pass', now: () => now, ttlSeconds: -1 }))).status, 401);
     assert.equal((await fetch(url, { method: 'POST', headers: { authorization: 'Bearer ' + valid(), 'content-type': 'application/json' }, body: '{}' })).status, 400);
