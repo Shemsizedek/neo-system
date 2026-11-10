@@ -33,7 +33,7 @@ export function createNousRuntime({
   return {
     identityReady: () => identityVerifier.configured,
     stateStatus: () => postgresReceiptStore ? postgresReceiptStore.stats() : (receiptStore ? receiptStore.stats() : { durable: false, multiWriter: false }),
-    stateReady: async () => postgresReceiptStore ? postgresReceiptStore.ping() : true,
+    stateReady: async () => { try { return postgresReceiptStore ? await postgresReceiptStore.ping() : true; } catch { return false; } },
     listAgents(header) {
       authorize(header, 'nous.agents.read');
       return { mode: 'plan-only', agents: agents.map(agent => ({ ...agent, status: 'routing_only' })) };
