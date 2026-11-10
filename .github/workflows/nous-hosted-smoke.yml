@@ -67,9 +67,9 @@ jobs:
           assert.equal(response.status, 200, 'OIDC credential mint refused');
           const { value: jwt } = await response.json();
           assert.ok(typeof jwt === 'string' && jwt.length > 100, 'OIDC JWT unavailable');
-          const task = { requestId: 'NOUS-OIDC-PR1388-SMOKE-01', agentId: 'NIA-008', capability: 'project.plan' };
+          const task = { requestId: 'CI-P144-OIDC-REPLAY-001' };
           async function post(body) {
-            const res = await fetch(process.env.BASE_URL + '/v1/staging/receipts/plan', {
+            const res = await fetch(process.env.BASE_URL + '/v1/staging/receipt', {
               method: 'POST',
               headers: { authorization: 'Bearer ' + jwt, 'content-type': 'application/json' },
               body: JSON.stringify(body),
@@ -78,15 +78,17 @@ jobs:
             return { status: res.status, body: await res.json() };
           }
           const first = await post(task);
-          assert.equal(first.status, 200, 'signed hosted planning failed: ' + JSON.stringify(first.body));
+          assert.equal(first.status, 200, 'signed hosted receipt failed: ' + JSON.stringify(first.body));
           assert.equal(first.body.execution, 'disabled');
           assert.equal(first.body.status, 'planned');
+          assert.equal(first.body.subject, 'github-actions-nous-staging');
+          assert.equal(first.body.agentId, 'NIA-008');
           const replay = await post(task);
           assert.equal(replay.status, 200);
           assert.deepEqual(replay.body, first.body);
-          const collision = await post({ ...task, capability: 'development.plan' });
-          assert.equal(collision.status, 409, 'conflicting planning request must be rejected');
-          console.log('GitHub OIDC signed hosted planning, receipt idempotency, and conflict: PASS');
+          const invalid = await post({ ...task, capability: 'finance.transfer' });
+          assert.equal(invalid.status, 400, 'staging OIDC cannot select a capability');
+          console.log('GitHub OIDC signed hosted receipt and idempotency: PASS');
           NODE
 
       - name: Signed ephemeral GitHub OIDC proof and durable Neon receipt replay
