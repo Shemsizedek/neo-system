@@ -10,6 +10,7 @@ import { createFirestoreSchoolStore } from './firestore-school-store.mjs';
 import { createSchoolActionHandler } from './giss-school-actions.mjs';
 import { attachNeopassBrowserTokenExchange } from './browser-token-exchange.mjs';
 import { createNousTokenExchange } from './nous-token-exchange.mjs';
+import { createNousMembershipGuard } from './nous-membership-guard.mjs';
 import { createGissAuthorizationBridge, createFirestoreGissCodeStore } from './giss-authorization-bridge.mjs';
 import { createCrownServiceAuthorizer } from './crown-service-authorizer.mjs';
 import { createFirestoreDealDeskOutbox } from '../neo-deal-desk/firestore-outbox.mjs';
@@ -77,6 +78,8 @@ export function createGissProductionServer({
         tokenIssuer: 'neo-pass-nous-exchange',
         audience: 'neo-nous',
         authService,
+        membershipGuard: createNousMembershipGuard({ getCredential: subject => registry.getNEOpassCredential(subject) }),
+        signingKeyId: process.env.NOUS_EXCHANGE_KEY_ID || undefined,
       })
     : null;
   const coreHandler = server.listeners('request')[0];
