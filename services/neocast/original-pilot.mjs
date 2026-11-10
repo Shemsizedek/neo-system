@@ -72,7 +72,7 @@ export function assessOriginalPilot(pilot) {
   if (pilot?.delivery?.mode !== 'none' || pilot?.delivery?.publicEndpoint != null) {
     violations.push('public_media_endpoint_forbidden_in_gate_002');
   }
-  if (!pilot?.release || Object.values(pilot.release).some(x=>x!==false)) {
+  if (!pilot?.release || ['live','publicPromotion','recordingEnabled','acceptingPayments','automaticPublishing'].some(k => pilot.release[k] !== false)) {
     violations.push('publication_or_payment_claim_forbidden');
   }
   if (pilot?.governance?.newPaidResourcesAuthorized !== false) violations.push('new_paid_resource_approval_forbidden');
