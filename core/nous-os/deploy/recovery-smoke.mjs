@@ -50,8 +50,16 @@ function run() {
     '-e', 'NOUS_IDENTITY_PUBLIC_KEY_PEM_BASE64=' + publicKeyBase64,
     image);
 }
-function stop() {
-  try { exec('stop', '--time', '3', name); } catch {}
+async function stop() {
+  try { exec('rm', '-f', name); } catch {}
+  // Docker --rm removal is asynchronous; wait for the named container
+  // to disappear before attempting a restart on the same port.
+  for (let i = 0; i < 40; i++) {
+    try { exec('inspect', name); }
+    catch { return; }
+    await sleep(150);
+  }
+  throw new Error('container_cleanup_timeout');
 }
 async function request(path, { method = 'GET', bearer, body } = {}) {
   const res = await fetch(endpoint + path, {
@@ -78,7 +86,7 @@ try {
   assert.equal(first.status, 200);
   assert.equal(first.data.execution, 'disabled');
   assert.equal(first.data.status, 'planned');
-  stop();
+  await stop();
   run();
   await waitForHealth();
   const second = await request('/v1/tasks/plan', { method: 'POST', bearer, body: task });
@@ -91,6 +99,6 @@ try {
   assert.equal(ready.data.state.records, 1);
   console.log('Nous OS isolated container recovery: auth, replay and conflict protection PASS');
 } finally {
-  stop();
+  await stop();
   rmSync(stateDir, { recursive: true, force: true });
 }
