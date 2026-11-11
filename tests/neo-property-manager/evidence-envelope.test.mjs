@@ -30,7 +30,9 @@ test('public commitment does not expose private source references',()=>{
   const {publicReceipt,privateVerification}=preparePublicCommitment(ledger,'ab'.repeat(32));
   assert.equal(verifyCommitment(publicReceipt,privateVerification),true);
   assert.equal(JSON.stringify(publicReceipt).includes('PRIVATE_OWNER_NAME'),false);
-  assert.equal(JSON.stringify(publicReceipt).includes('e1'),false);
+  assert.deepEqual(Object.keys(publicReceipt).sort(),['schema','commitment','evidenceCount','publicationStatus'].sort());
+  assert.equal(Object.hasOwn(publicReceipt,'sourceRef'),false);
+  assert.equal(Object.hasOwn(publicReceipt,'eventId'),false);
   assert.equal(publicReceipt.publicationStatus,'NOT_PUBLISHED');
 });
 
