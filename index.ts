@@ -13,7 +13,7 @@ async function main() {
   console.log(text);
 }
 
-main().catch((error) => {
-  console.error('Holiday generation failed:', error instanceof Error ? error.message : 'Unknown error');
+main().catch(() => {
+  console.error('Holiday generation failed. Check credentials, model access, and network connectivity.');
   process.exitCode = 1;
 });
