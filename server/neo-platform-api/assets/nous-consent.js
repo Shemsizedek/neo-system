@@ -10,6 +10,7 @@
   const retry = byId('nous-consent-retry');
   const ACK = 'ENABLE_NOUS_READ_ONLY_FOR_24_HOURS';
   let busy = false;
+  let accessEnabled = false;
   let token = null; // Only in this closure; never in URL, browser storage or DOM.
 
   function notify(message, error = false) {
@@ -19,7 +20,7 @@
   function toggleBusy(value) {
     busy = value;
     grant.disabled = busy || !ack.checked || !token;
-    revoke.disabled = busy || !token;
+    revoke.disabled = busy || !token || !accessEnabled;
     retry.disabled = busy;
   }
   async function getIntent() {
@@ -59,6 +60,7 @@
     toggleBusy(true);
     controls.hidden = true;
     token = null;
+    accessEnabled = false;
     expiry.hidden = true;
     notify('Checking your current Nous access…');
     try {
@@ -66,7 +68,7 @@
       const data = await callApi('status');
       controls.hidden = false;
       notify(data.nousAccessEnabled ? 'Read-only Nous OS access is enabled.' : 'Nous OS access is not enabled.');
-      revoke.disabled = !data.nousAccessEnabled;
+      accessEnabled = data.nousAccessEnabled === true;
       if (data.expiresAt && data.nousAccessEnabled) {
         const until = new Date(data.expiresAt);
         if (Number.isFinite(until.getTime())) {
@@ -91,7 +93,7 @@
       ack.checked = false;
       controls.hidden = false;
       notify(data.nousAccessEnabled ? 'Read-only Nous access has been granted for up to 24 hours.' : 'Nous access has been revoked. Already-issued tokens may remain valid for up to 120 seconds.');
-      revoke.disabled = !data.nousAccessEnabled;
+      accessEnabled = data.nousAccessEnabled === true;
       if (data.expiresAt && data.nousAccessEnabled) {
         expiry.textContent = 'Access expires: ' + new Date(data.expiresAt).toLocaleString();
         expiry.hidden = false;
