@@ -50,3 +50,13 @@ This verifies **branch snapshot accessibility and copied receipt integrity**, no
 4. Review PR, confirm all CI checks, and obtain promotion approval before merge or production activation.
 
 No autonomous agent execution, payments, wallet signing, transfers, production membership modification, or production configuration changes are authorized by this gate.
+
+## Member-facing consent interface — November 11, 2026
+
+A responsive same-origin NEOpass consent UI has been committed at `/neopass/nous-access`, with static assets under `/neopass/nous-access.css` and `/neopass/nous-access.js`. The screen discloses access boundaries, 24-hour grant duration, token lifetime, withdrawal behavior, and the distinction between consent records and Nous planning receipts.
+
+**Default-off**: GISS serves the screen, its static assets, the `GET /api/v1/auth/nous-consent/intent` endpoint and the grant/status/revoke API only when `NOUS_CONSENT_ENABLED=true`. This is not configured on a running NEOpass service by this gate.
+
+The UI obtains a 120-second `nous-consent-intent` token via a same-origin GET request authenticated by an HttpOnly cookie from a recent NEOpass login. It does not read the cookie into JavaScript. The temporary token stays in memory, and is destroyed when the page is left. A cookie-only consent mutation remains forbidden. The intent credential is limited to `aud=neopass-consent`, `scope=nous:consent:self`, and includes the original `auth_time`. The consent API checks the original authentication time and the current credential-revocation cutoff. This is not a Nous access token or an agent-execution grant.
+
+Production readiness requires an authorized user-facing enrollment/reauthentication path on the NEOpass domain, secure cookie and cross-origin validation at the actual ingress, monitored error handling, and an independent live test of opt-in and revocation. The ordinary `NeoPass.getAccessToken` browser token is not a consent-capable credential and must not be reused for this grant.
