@@ -31,3 +31,10 @@ Before runtime activation:
 6. Verify independent hosting, domain/naming control and encrypted restore-tested backups before claiming decentralization or performing any DNS/primary database switch.
 
 GitHub CI success is scoped to the tests it actually ran. Keep the PR draft until end-to-end integration and operational controls pass.
+
+## Verified GitHub CI evidence (2026-11-12)
+
+- Verify NEO Chords workflow run **43189823186**, associated with commit `35aa3d1a2243633aa9b120fcdd2846324f2b280d`, completed **success**. Its job completed static syntax checks, 57 source tests (3 integration tests skipped by design in the source-only step), and the separate **3/3 actual Redis 7 EVAL** integration tests using the isolated Redis service.
+- Earlier run **43189667101** failed the live Redis step because its synthetic runner supplied a 5,000 ms lease despite a 500 ms timeout and a required 5,000 ms safety margin. The 6,000 ms test lease fixed this; no production queue behavior was changed.
+- Normal CI and architecture checks were also successful at the corrected commit; five unrelated Vercel deployment statuses previously reported build-rate-limit errors, not Chords worker integration outcomes.
+- This evidence verifies **ephemeral GitHub CI Redis**, not any Render/Neon/Upstash production configuration. NEOpass-authenticated staging and external AI/MCP invocation remain unverified and inactive.
