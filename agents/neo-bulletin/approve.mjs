@@ -2,6 +2,8 @@ import { createHash } from "node:crypto";
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { dirname } from "node:path";
 import { signEditorialApproval, BULLETIN_CATEGORY_ID } from "./release.mjs";
+import { persistApprovalReceipt } from "./approval-ledger.mjs";
+import { getBulletinPostgresPool } from "../../server/neo-marketer/bulletin-postgres.mjs";
 
 // Draft-first: human authorization is recorded BEFORE publishing, never inferred
 // from an automated quality-control verdict. The same digest must survive
@@ -78,7 +80,12 @@ if (process.argv[1] && import.meta.url === new URL("file://" + process.argv[1]).
     ).then(async approval => {
       await mkdir(dirname(outputPath), { recursive: true });
       await writeFile(outputPath, JSON.stringify(approval, null, 2), { flag: "wx", mode: 0o600 });
-      console.log(JSON.stringify({ status: "draft_approval_created", postId: approval.postId, outputPath }));
+      let ledger = {status:"not_configured",durability:"local_file_only"};
+      if (process.env.NEO_BULLETIN_LEDGER_DB_URL) {
+        const pool = await getBulletinPostgresPool(process.env.NEO_BULLETIN_LEDGER_DB_URL);
+        ledger = await persistApprovalReceipt(approval, pool);
+      }
+      console.log(JSON.stringify({ status:"draft_approval_created",postId:approval.postId,outputPath,ledger }));
     }).catch(error => {
       console.error(JSON.stringify({ status: "blocked", error: error.message }));
       process.exitCode = 1;
