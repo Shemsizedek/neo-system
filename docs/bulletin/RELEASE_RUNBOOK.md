@@ -76,3 +76,21 @@ The separate NEO Bulletin Editorial Desk task had a completed recorded run requi
 - The operator-provisioned ID allowlist prevents arbitrary reviewer labels but does not itself authenticate an individual. Use verified logged-in identities, controlled credentials, and audit records before real releases; high-risk items still require true independent reviewer signoff.
 - A WordPress editor or plugin may modify HTML when publishing. Hash mismatch is an intended stop condition requiring comparison and a new review; never auto-resign.
 - Release CI alone cannot prove Neon persistence, secure network connectivity, application credential provision, Render deployment, reviewer authority or publish readiness. PR remains draft until deployment effects and conflict checks are resolved.
+
+
+## Gate 9 — automatic routine publication receipts, separate from human signoff (November 11, 2026)
+
+Owner authorization for **routine, non-adversarial educational bulletins** was recorded November 11, 2026. The ChatGPT NEO Bulletin Editorial Desk recurring task was enabled to publish after independent checks. WordPress post 3868, slug `neo-bulletin-2026-11-11-wednesday`, was independently read back with status `publish`; newsletter and Jetpack auto-share opt-outs are true/false as required. This **does not establish that the GitHub source worker performs WordPress auto-publication**: it remains a separate implementation. The previous Gate 7 "draft #3868" statement is historical and superseded by this readback.
+
+The new `agents/neo-bulletin/auto-release.mjs` is a bounded **post-publication receipt worker**, not a new publishing mechanism. It:
+1. Fetches an already published post with restricted authenticated WordPress `context=edit`, including `meta`, `content`, slug and category.
+2. Requires a fresh, explicitly machine-labeled `AUTOMATED_ROUTINE_CONTENT` editorial checklist (all pass), two independent source hosts with titles, per-source evidence and recent check timestamps, non-sensitive educational classification, and the expected local-date slug.
+3. Requires the reviewed SHA-256 of the *rendered* post to equal WordPress live readback; rejects draft/changed content, invalid source lists, wrong category, or missing subscriber/social opt-outs.
+4. With an authorized protected Neon connection, inserts an append-only receipt into `neo_bulletin.publication_receipts` (migration `003-bulletin-publication-receipts.sql`). Identical retries return `already_recorded`; contradictory duplicate IDs raise `publication_receipt_conflict`.
+5. Optionally places a distinct **machine-approved** entry into the existing `neo_bulletin.marketer_queue` with `pending_editorial_marketing_review` status, `approvedBy:null`, and `autoPublishSocial:false`. It does not use or forge the human-signed approval path. This queueing step is entirely internal; no social posting, email, or marketer service is called.
+
+**Current blockers:** `neo-bulletin-staging` Neon still has `block_public_connections:true`; the connector cannot inspect the database from the current network. Migration 003 is not applied, database secrets/network are not configured, the receipt job is not deployed, and no real database receipt or marketer queue item is verified. The PR must remain unmerged until its legacy Cloud Run deployment triggers, staging, secret controls and regression checks are reviewed. No new infrastructure spending or public outreach was initiated.
+
+**Safety:** A machine checklist does not confer court findings, law-firm review or authenticated human approvals. Sensitive allegations, legal/rebuttal material, or contested official doctrinal pronouncements still require proper human review. Existing World Bulletin routing locks and the Daily Noocracy Report World Bulletin exclusion remain unchanged.
+
+**Rollback:** Disable only the optional receipt/queue job, do not remove existing WordPress publications or ledger records. A post correction generates a new SHA and must pass the approval checks again; old receipts remain as audit history.
