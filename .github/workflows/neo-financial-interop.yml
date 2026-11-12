@@ -1,0 +1,20 @@
+name: NEO financial surface isolation
+on:
+  pull_request:
+    paths:
+      - 'architecture/neo-financial-surface-boundaries.json'
+      - 'server/neo-financial-interop/**'
+      - 'config/neo-ui-production.json'
+      - '.github/workflows/neo-financial-interop.yml'
+  workflow_dispatch:
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: node --test server/neo-financial-interop/fabric.test.mjs
