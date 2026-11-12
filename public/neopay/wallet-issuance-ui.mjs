@@ -106,6 +106,7 @@ function init() {
   verify.innerHTML = '<div class="eyebrow">STEP 2 OF 2 — VERIFY BACKUP</div><h2>Confirm your backup</h2><p>Enter three requested words from your private written backup.</p><div class="backup-challenge">' + [0,1,2].map(i => '<label><span id="confirmLabel' + i + '">Word</span><input type="text" id="confirmWord' + i + '" autocomplete="off" autocapitalize="none" spellcheck="false"></label>').join('') + '</div><div class="wallet-actions"><button type="button" class="btn" id="confirmNewWallet">Confirm &amp; open wallet</button><button type="button" class="btn secondary" id="viewWordsAgain">View words again</button><button type="button" class="btn secondary" id="cancelConfirmation">Cancel</button></div>';
   restorePanel.before(welcome, backup, verify);
   restorePanel.classList.remove('active');
+  if ($('portfolioPanel')?.classList.contains('active')) welcome.classList.remove('active');
   const bip39Button = document.createElement('button');
   bip39Button.type = 'button'; bip39Button.className = 'btn'; bip39Button.id = 'restoreBip39'; bip39Button.textContent = 'Restore standard BIP39 wallet';
   restorePanel.querySelector('.wallet-actions')?.prepend(bip39Button);
