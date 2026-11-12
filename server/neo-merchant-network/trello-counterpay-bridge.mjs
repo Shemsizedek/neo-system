@@ -45,7 +45,7 @@ export function createTrelloCounterpayBridge({resolveApproval,paymentRequests,hm
     catch { return fail('trusted_approval_unavailable'); }
     if(!plain(a) || Object.keys(a).length !== FIELDS.length || Object.keys(a).some(k=>!FIELDS.includes(k)) ||
        a.decision !== 'APPROVED' || a.cardId !== opportunity.cardId ||
-       !REF.test(a.approvalId??'') || !REF.test(a.campaignRef??'') || !REF.test(a.walletBindingId??'') ||
+       !REF.test(a.approvalId??'') || a.approvalId !== approvalRef || !REF.test(a.campaignRef??'') || !REF.test(a.walletBindingId??'') ||
        a.consentConfirmed !== true || a.legalReview !== 'CLEARED' ||
        !['TEMPLE','SALES'].includes(a.channel) ||
        (a.channel==='TEMPLE' ? a.purpose!=='VOLUNTARY_DONATION' : a.purpose!=='COMMERCIAL_SERVICE_SALE')) {
@@ -56,7 +56,7 @@ export function createTrelloCounterpayBridge({resolveApproval,paymentRequests,hm
     if(a.channel==='SALES' && (!REF.test(a.orderRef??'') || !Number.isSafeInteger(a.amountSats) || a.amountSats<1000))return fail('approved_fixed_price_required');
     if(a.channel==='TEMPLE' && (a.orderRef!==null || (a.amountSats!==null && (!Number.isSafeInteger(a.amountSats)||a.amountSats<1000))))return fail('invalid_donation_mandate');
     const expiry=Date.parse(a.expiresAt),at=now();
-    if(!(at instanceof Date)||!Number.isFinite(at.valueOf()) || !Number.isFinite(expiry) || expiry<=at.valueOf() || expiry-at.valueOf()>30*86400000)
+    if(!(at instanceof Date)||!Number.isFinite(at.valueOf()) || !Number.isFinite(expiry) || expiry<=at.valueOf() || expiry-at.valueOf()>30*86400000 || expiry-at.valueOf()<3600000)
       return fail('mandate_expired_or_invalid');
     // Opaque, secret-derived identifiers only. Never include personal contact data.
     const leadRef='tr:'+token('lead',opportunity.cardId).slice(0,56);
@@ -66,7 +66,7 @@ export function createTrelloCounterpayBridge({resolveApproval,paymentRequests,hm
       request=paymentRequests.prepare({
         channel:a.channel,campaignRef:a.campaignRef,leadRef,orderRef:a.channel==='SALES'?a.orderRef:undefined,
         walletBindingId:a.walletBindingId,amountSats:a.amountSats,
-        idempotencyKey,expiresHours:72
+        idempotencyKey,expiresHours:Math.min(72,Math.floor((expiry-at.valueOf())/3600000))
       });
     } catch { return fail('verified_wallet_or_payment_request_unavailable'); }
     // This is an internal return value. The public checkout renderer intentionally omits it.
