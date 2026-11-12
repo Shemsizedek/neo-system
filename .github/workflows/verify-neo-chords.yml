@@ -1,0 +1,32 @@
+name: Verify NEO Chords
+
+on:
+  pull_request:
+    paths:
+      - 'orchestration/neo-chords/**'
+      - 'server/neo-accords/**'
+      - '.github/workflows/verify-neo-chords.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'orchestration/neo-chords/**'
+      - 'server/neo-accords/**'
+      - '.github/workflows/verify-neo-chords.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Static syntax checks
+        run: |
+          for file in orchestration/neo-chords/*.mjs server/neo-accords/*.mjs; do node --check "$file"; done
+      - name: Source-only unit and simulated Redis semantics
+        run: node --test orchestration/neo-chords/*.test.mjs server/neo-accords/*.test.mjs
