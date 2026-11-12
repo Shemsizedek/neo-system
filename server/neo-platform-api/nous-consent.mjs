@@ -54,15 +54,21 @@ export function createNousConsentHandler({ jwtSecret, jwtIssuer = 'neo-pass', re
     }
     const claims = verifyNeopassToken(authorization.slice(7), { secret: jwtSecret, issuer: jwtIssuer, now });
     const epoch = Math.floor(now() / 1000);
-    if (!claims || claims.token_use !== 'session' || claims.aud !== 'neopass-session' ||
+    const isSession = claims?.token_use === 'session' && claims?.aud === 'neopass-session';
+    const isConsentIntent = claims?.token_use === 'nous-consent-intent' &&
+      claims?.aud === 'neopass-consent' && claims?.scope === 'nous:consent:self';
+    const sessionIssuedAt = isConsentIntent ? claims?.auth_time : claims?.iat;
+    if (!claims || (!isSession && !isConsentIntent) ||
         typeof claims.sub !== 'string' || !claims.sub ||
         !Number.isSafeInteger(claims.iat) || !Number.isSafeInteger(claims.exp) ||
+        !Number.isSafeInteger(sessionIssuedAt) ||
         claims.iat > epoch + 30 || claims.exp <= epoch || claims.exp <= claims.iat ||
-        claims.exp - claims.iat > 8 * 3600 ||
+        claims.exp - claims.iat > (isConsentIntent ? 120 : 8 * 3600) ||
+        sessionIssuedAt > epoch + 30 || sessionIssuedAt > claims.iat + 30 ||
         (claims.nbf !== undefined && (!Number.isSafeInteger(claims.nbf) || claims.nbf > epoch))) {
       reply(res, 401, { error: 'neopass_session_invalid' }); return true;
     }
-    if (operation !== 'status' && epoch - claims.iat > 5 * 60) {
+    if (operation !== 'status' && epoch - sessionIssuedAt > 5 * 60) {
       reply(res, 401, { error: 'fresh_neopass_signin_required' }); return true;
     }
     try {
@@ -71,7 +77,7 @@ export function createNousConsentHandler({ jwtSecret, jwtIssuer = 'neo-pass', re
         if (!credential || credential.subject !== claims.sub) {
           reply(res, 404, { error: 'neopass_credential_not_found' }); return true;
         }
-        if (Number.isSafeInteger(credential.sessionRevokedAfter) && claims.iat <= credential.sessionRevokedAfter) {
+        if (Number.isSafeInteger(credential.sessionRevokedAfter) && sessionIssuedAt <= credential.sessionRevokedAfter) {
           reply(res, 403, { error: 'neopass_session_revoked' }); return true;
         }
         const expiry = credential.nousAccessExpiresAt
@@ -95,7 +101,7 @@ export function createNousConsentHandler({ jwtSecret, jwtIssuer = 'neo-pass', re
       }
       const result = await registry.setNEOpassNousAccess(claims.sub, {
         enabled: operation === 'grant',
-        sessionIssuedAt: claims.iat,
+        sessionIssuedAt,
         nowEpochSeconds: epoch,
       });
       reply(res, 200, { nousAccessEnabled: result.nousAccessEnabled, expiresAt: result.nousAccessExpiresAt || null });
