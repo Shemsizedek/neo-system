@@ -125,7 +125,7 @@ test('Redis 7 EVAL: cancel and bounded mock read produce a persisted digest', { 
   assert.equal((await q.complete(taken.claim, { resultDigest: 'a'.repeat(64), provider: 'ci-worker' })).status, 'STALE_CLAIM');
   await q.enqueue(job('live-run-1'));
   const runner = createReadJobRunner({
-    queue: q, workerId: 'worker-r', leaseMs: 5000, timeoutMs: 500,
+    queue: q, workerId: 'worker-r', leaseMs: 6000, timeoutMs: 500,
     readWorker: {
       async run({ capability, dataClass, parameters }) {
         assert.equal(dataClass, 'public');
