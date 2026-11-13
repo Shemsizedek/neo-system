@@ -1,0 +1,22 @@
+name: NEO Crown Automatic Issuance Watch
+# Opt-in-only hourly inspection of approved Bitcoin/Counterparty creation events.
+# Main is the scheduler carrier; all issuance logic and commits stay in staging.
+on:
+  schedule:
+    - cron: '17 * * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  reconcile-approved-only:
+    # Do not activate until repository owner verifies branch protections,
+    # NEO canonical metadata hosting, and the existing free Render deploy hook.
+    if: >-
+      github.repository == 'Shemsizedek/neo-system' &&
+      github.ref == 'refs/heads/main' &&
+      vars.NEO_CROWN_AUTO_PUBLICATION_ENABLED == 'true'
+    uses: Shemsizedek/neo-system/.github/workflows/crown-issuance-metadata.yml@feat/ncc-007-render-runtime-hardening
+    permissions:
+      contents: write
+    secrets:
+      CROWN_STATIC_RENDER_DEPLOY_HOOK: ${{ secrets.CROWN_STATIC_RENDER_DEPLOY_HOOK }}
