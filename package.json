@@ -165,8 +165,8 @@
   },
   "dependencies": {
     "@composio/core": "^0.18.1",
-    "@composio/openai-agents": "^0.11.0",
-    "@openai/agents": "^0.1.11",
+    "@composio/openai-agents": "^0.11.2",
+    "@openai/agents": "^0.21.0",
     "lucide-react": "^0.468.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1"
