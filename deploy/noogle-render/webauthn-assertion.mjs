@@ -1,4 +1,4 @@
-import { createHash, createPublicKey, verify } from 'node:crypto';
+import { createHash, createPublicKey, KeyObject, verify } from 'node:crypto';
 
 // Isolated WebAuthn assertion verifier; no routes, no issued permissions.
 // Credential registration, challenge issuance, user-verification policy, and
@@ -22,7 +22,10 @@ export function createAssertionVerifier({rpId,origin,consumeChallenge,getCredent
    const credential=await getCredential(credentialId);
    if(!credential || credential.revoked || credential.rpId!==rpId)return null;
    const counter=authData.readUInt32BE(33);
-   const key=createPublicKey(credential.publicKey);
+   // Node rejects createPublicKey(publicKeyObject); retain an already-public
+   // trusted stored key and continue verifying the signature in both paths.
+   const key=credential.publicKey instanceof KeyObject && credential.publicKey.type==='public'
+    ? credential.publicKey : createPublicKey(credential.publicKey);
    const signed=Buffer.concat([authData,sha256(clientRaw)]);
    if(!verify('sha256',signed,key,Buffer.from(signature,'base64url')))return null;
    if(!await consumeChallenge({challenge:client.challenge,credentialId,subject:credential.subject}))return null;
