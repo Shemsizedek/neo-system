@@ -1,9 +1,16 @@
-name: NEO Bitcoin-only VM regtest unit gate
+name: NEO Bitcoin-only VM validation gate
 on:
   pull_request:
     paths:
       - 'server/neo-vm/**'
+      - 'core/neo-bvm/**'
+      - 'core/neo-nvm/**'
+      - 'server/miner-production/bitcoinWallet.mjs'
+      - 'scripts/neo-vm-*.mjs'
       - 'docs/NVM_BVM_GATE_2.md'
+      - 'docs/NEO-NVM-BVM-GATE-3.md'
+      - 'architecture/neo-virtual-machines.json'
+      - 'package.json'
       - '.github/workflows/neo-vm-gate.yml'
   workflow_dispatch:
 permissions:
@@ -16,4 +23,35 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
-      - run: node --test server/neo-vm/*.test.mjs
+      - run: node --test server/neo-vm/*.test.mjs core/neo-bvm/*.test.mjs core/neo-nvm/*.test.mjs
+  bitcoin-core-regtest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Download pinned Bitcoin Core 31.1 and verify release checksum
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/neo-bitcoin-core"
+          cd "$RUNNER_TEMP/neo-bitcoin-core"
+          curl --fail --location --retry 3 --proto '=https' --tlsv1.2 \
+            --output bitcoin.tar.gz \
+            https://bitcoincore.org/bin/bitcoin-core-31.1/bitcoin-31.1-x86_64-linux-gnu.tar.gz
+          printf '%s  %s\n' \
+            b80d9c3e04da78fb6f0569685673418cf686fadba9042d926d13fb87ff503f9e \
+            bitcoin.tar.gz | sha256sum --check -
+          tar -xzf bitcoin.tar.gz bitcoin-31.1/bin/bitcoind
+          echo "BITCOIND_PATH=$RUNNER_TEMP/neo-bitcoin-core/bitcoin-31.1/bin/bitcoind" >> "$GITHUB_ENV"
+      - name: Run isolated Core acceptance, rejection and reorg gate
+        env:
+          NEO_VM_EVIDENCE: ${{ runner.temp }}/neo-vm-core-evidence.json
+        run: node scripts/neo-vm-core-gate.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: neo-vm-core-regtest-evidence
+          path: ${{ runner.temp }}/neo-vm-core-evidence.json
+          if-no-files-found: error

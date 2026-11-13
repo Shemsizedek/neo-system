@@ -37,6 +37,19 @@ The World Credit Clock—also called the **Clock of Destiny** or **Cloak of Dest
 
 See [`docs/NEO_ALGO.md`](docs/NEO_ALGO.md) and `src/noology/`.
 
+## NEO virtual machines
+
+**NEO NVM** compiles Bitcoin hashlock contracts. **NEO BVM** supplies a bounded
+local Bitcoin Script evaluator and an independent Bitcoin Core regtest adapter.
+The approved Gate 1 runtime and existing Gate 2 adapter share one Script emitter.
+
+Run `npm run neo-vm:test` and `npm run neo-vm:demo`. With a verified Bitcoin
+Core 31.1 binary, `BITCOIND_PATH=/absolute/path/to/bitcoind npm run neo-vm:core`
+starts a disposable node and runs the native validation gate.
+
+See [`docs/NEO-NVM-BVM-GATE-3.md`](docs/NEO-NVM-BVM-GATE-3.md) for evidence,
+the two input formats, execution limits and the next milestone.
+
 ## Current release boundary
 
 This build is **FOUNDATION / SANDBOX** software.
