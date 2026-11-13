@@ -161,7 +161,8 @@
     "neo-origination:test": "node --test server/neo-origination/*.test.mjs",
     "knowindex:contributions:test": "node --test server/neo-knowindex/*.test.mjs",
     "neo-credit-lifecycle:server": "node server/neo-credit-lifecycle/server.mjs",
-    "neo-credit-lifecycle:test": "node --test server/neo-credit-lifecycle/*.test.mjs"
+    "neo-credit-lifecycle:test": "node --test server/neo-credit-lifecycle/*.test.mjs",
+    "ai:gateway:holiday": "node --env-file=.env.local index.ts"
   },
   "dependencies": {
     "@composio/core": "^0.18.1",
@@ -169,7 +170,8 @@
     "@openai/agents": "^0.1.11",
     "lucide-react": "^0.468.0",
     "react": "^19.1.1",
-    "react-dom": "^19.1.1"
+    "react-dom": "^19.1.1",
+    "ai": "^7.0.0"
   },
   "devDependencies": {
     "@types/react": "^19.0.3",
