@@ -1,0 +1,46 @@
+name: Verify NEO Chords
+
+on:
+  pull_request:
+    paths:
+      - 'orchestration/neo-chords/**'
+      - 'server/neo-accords/**'
+      - '.github/workflows/verify-neo-chords.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'orchestration/neo-chords/**'
+      - 'server/neo-accords/**'
+      - '.github/workflows/verify-neo-chords.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Static syntax checks
+        run: |
+          for file in orchestration/neo-chords/*.mjs server/neo-accords/*.mjs; do node --check "$file"; done
+      - name: Source unit tests (mock transport only)
+        run: node --test orchestration/neo-chords/*.test.mjs server/neo-accords/*.test.mjs
+      - name: Real Redis 7 EVAL integration (isolated CI, no external API credentials)
+        env:
+          NEO_CHORDS_TEST_REDIS: '1'
+        run: node --test orchestration/neo-chords/redis-live.test.mjs
