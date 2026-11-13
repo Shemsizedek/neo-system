@@ -1,0 +1,4 @@
+[
+  { "name": "core.neo", "address": "10.144.20.10" },
+  { "name": "wallet.neo", "address": "10.144.20.11" }
+]
