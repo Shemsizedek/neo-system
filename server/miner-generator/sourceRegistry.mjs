@@ -79,3 +79,19 @@ registerMiningSource({
   adapter: 'cryptotab',
   notes: 'External production source. Account/payout integration requires supported credentials or an approved import path; never store user passwords in source configuration.',
 });
+
+
+// ECOS is a cloud Bitcoin-mining provider. Account/dashboard snapshots may report TH/s
+// and BTC accruals, but NEO does not treat those values as independent pool-share evidence.
+registerMiningSource({
+  id: 'ecos',
+  name: 'ECOS',
+  type: MINING_SOURCE_TYPES.CLOUD_HASHPOWER,
+  status: SOURCE_STATUS.TEST,
+  payoutAsset: 'BTC',
+  underlyingAsset: 'BTC_SHA256_HASHPOWER',
+  directBitcoinHashing: true,
+  authoritativeForHashrate: false,
+  adapter: 'ecos-read-only',
+  notes: 'Read-only evidence bridge. No public ECOS customer API is verified; account-reported TH/s is not eligible for NEO allocatable capacity, settlement, resale, or token issuance without stronger evidence and approved terms.',
+});

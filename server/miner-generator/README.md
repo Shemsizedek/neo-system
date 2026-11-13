@@ -18,3 +18,8 @@ Optimization may recommend operating modes and pool routes, but hard electrical 
 ## Data quality
 
 Live profitability and revenue decisions require verified network difficulty, pool payout, BTC price, electricity rate, and miner telemetry. Missing live inputs must not be replaced with fabricated production values.
+
+
+## External cloud-provider evidence
+
+ECOS account/app data can be ingested through `ecosReadOnly.mjs` as read-only evidence. Provider-reported TH/s remains non-authoritative for NEO capacity until stronger telemetry, accepted-share/payout evidence, and any required commercial permissions are verified. Credentials, cookies, 2FA values, wallet keys, purchases, withdrawals, and resale actions are outside this bridge.
