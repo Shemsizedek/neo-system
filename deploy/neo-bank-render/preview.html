@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#124a38">
+<meta name="description" content="NEO Bank community finance dashboard. Preview account and community services and check service availability.">
+<title>NEO Bank | Community Finance</title>
+<link rel="stylesheet" href="./preview.css">
+<script src="./preview.js" defer></script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<div class="app">
+  <header class="site-header">
+    <a class="brand" href="./" aria-label="NEO Bank home">
+      <span class="brand-symbol" aria-hidden="true">N</span>
+      <span class="brand-name"><strong>NEO Bank</strong><small>Community finance</small></span>
+    </a>
+    <div class="header-actions">
+      <span class="preview-label"><span aria-hidden="true" class="status-dot"></span> Preview only</span>
+      <a class="header-link" href="https://holytemples.org/neo-system/neopay/" rel="noopener noreferrer" target="_blank">NEOpay <span aria-hidden="true">↗</span><span class="sr-only"> (opens in a new tab)</span></a>
+    </div>
+  </header>
+  <nav class="tabs" aria-label="Main navigation">
+    <button class="tab is-active" type="button" data-section="home" aria-current="page">Home</button>
+    <button class="tab" type="button" data-section="accounts">Accounts</button>
+    <button class="tab" type="button" data-section="community">Community</button>
+    <button class="tab" type="button" data-section="activity">Activity</button>
+  </nav>
+  <main id="main" tabindex="-1">
+    <section class="view" id="view-home" data-view="home" aria-labelledby="home-title">
+      <div class="welcome">
+        <span class="eyebrow">WELCOME TO NEO BANK</span>
+        <h1 id="home-title">Your community, your future.</h1>
+        <p>A simple place to explore NEO Bank services and see what's available.</p>
+      </div>
+      <div class="notice" role="note">
+        <span class="notice-icon" aria-hidden="true">i</span>
+        <div>
+          <strong>Banking services are not open yet.</strong>
+          <p>This is a preview. Sign-in, balances, and transfers are unavailable until verified services are connected.</p>
+        </div>
+      </div>
+      <div class="section-head"><h2>Where would you like to go?</h2></div>
+      <div class="quick-grid">
+        <button class="quick-card" type="button" data-open="accounts">
+          <span class="card-symbol" aria-hidden="true">▤</span>
+          <strong>Accounts <span aria-hidden="true" class="card-arrow">→</span></strong>
+          <span>Account access and readiness</span>
+          <small>Not connected yet</small>
+        </button>
+        <button class="quick-card" type="button" data-open="community">
+          <span class="card-symbol" aria-hidden="true">↗</span>
+          <strong>Community <span aria-hidden="true" class="card-arrow">→</span></strong>
+          <span>Exchange and marketplace</span>
+          <small>Preview details</small>
+        </button>
+        <button class="quick-card" type="button" data-open="activity">
+          <span class="card-symbol" aria-hidden="true">≡</span>
+          <strong>Activity <span aria-hidden="true" class="card-arrow">→</span></strong>
+          <span>Statements and account records</span>
+          <small>No records connected</small>
+        </button>
+      </div>
+      <section class="system-status" aria-labelledby="status-title">
+        <div class="status-head"><div><h2 id="status-title">Service status</h2><p>What is available right now</p></div><button id="refreshStatus" type="button" class="refresh-button">Check again</button></div>
+        <div class="status-rows">
+          <div><span>Website preview</span><strong id="runtimeStatus" role="status" aria-live="polite">Checking…</strong></div>
+          <div><span>Bank accounts</span><strong id="bankStatus">Not connected</strong></div>
+          <div><span>Transfers and payments</span><strong>Unavailable</strong></div>
+        </div>
+        <p class="checked-at" id="checkedAt" aria-live="polite">Checking website status…</p>
+      </section>
+    </section>
+
+    <section class="view" id="view-accounts" data-view="accounts" aria-labelledby="accounts-title" hidden>
+      <div class="page-intro"><span class="eyebrow">ACCOUNTS</span><h1 id="accounts-title">Your accounts</h1><p>Account access will appear here after secure sign-in and ownership verification are ready.</p></div>
+      <div class="detail-card">
+        <span class="detail-icon" aria-hidden="true">▤</span>
+        <h2>Accounts are not connected yet</h2>
+        <p>NEOpass sign-in and verified balances are not available in this preview. No personal information or account details are shown.</p>
+        <div class="plain-info"><span>Available balance</span><strong>Not available</strong></div>
+        <span class="availability">Account linking unavailable</span>
+      </div>
+    </section>
+
+    <section class="view" id="view-community" data-view="community" aria-labelledby="community-title" hidden>
+      <div class="page-intro"><span class="eyebrow">COMMUNITY</span><h1 id="community-title">Community services</h1><p>Explore what's being built for NEO members.</p></div>
+      <div class="detail-grid">
+        <article class="detail-card">
+          <span class="detail-icon" aria-hidden="true">↔</span>
+          <h2>Community exchange</h2>
+          <p>Transfers are not available. Secure identity and account permissions must be verified first.</p>
+          <span class="availability">Not available yet</span>
+        </article>
+        <article class="detail-card">
+          <span class="detail-icon" aria-hidden="true">◇</span>
+          <h2>Offers &amp; needs</h2>
+          <p>The member marketplace will appear when verified listings and access are connected.</p>
+          <span class="availability">No listings connected</span>
+        </article>
+      </div>
+      <div class="wallet-link">
+        <div><strong>Looking for Bitcoin or Counterparty tools?</strong><p>Wallet services are separate from this NEO Bank preview.</p></div>
+        <a href="https://holytemples.org/neo-system/neopay/" target="_blank" rel="noopener noreferrer">Open NEOpay <span aria-hidden="true">↗</span><span class="sr-only"> (opens in a new tab)</span></a>
+      </div>
+    </section>
+
+    <section class="view" id="view-activity" data-view="activity" aria-labelledby="activity-title" hidden>
+      <div class="page-intro"><span class="eyebrow">ACTIVITY</span><h1 id="activity-title">Activity &amp; statements</h1><p>Account history will appear here after your account is securely connected.</p></div>
+      <div class="detail-card">
+        <span class="detail-icon" aria-hidden="true">≡</span>
+        <h2>No verified activity to show</h2>
+        <p>Statements and transactions are not connected. No example transactions or invented financial information are displayed.</p>
+        <span class="availability">No records connected</span>
+      </div>
+    </section>
+  </main>
+  <footer><span>NEO System · Project 144</span><span>Read-only preview · No financial transactions</span><a href="https://holytemples.org/" rel="noopener noreferrer">Holy Temples <span aria-hidden="true">↗</span></a></footer>
+</div>
+<noscript><p class="noscript-note">JavaScript is required to switch sections. This preview does not provide banking transactions.</p></noscript>
+</body>
+</html>

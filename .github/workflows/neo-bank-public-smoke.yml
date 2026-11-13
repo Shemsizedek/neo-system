@@ -1,0 +1,20 @@
+name: NEO Bank External Staging Smoke
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'deploy/neo-bank-render/public-smoke.mjs'
+      - '.github/workflows/neo-bank-public-smoke.yml'
+permissions:
+  contents: read
+jobs:
+  public-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Validate staged HTTPS endpoints without credentials or writes
+        run: node deploy/neo-bank-render/public-smoke.mjs
