@@ -103,3 +103,51 @@ test('bank bot blocks issuance above configured policy limit', async () => {
     /exceeds bot policy limit/,
   );
 });
+
+
+test('NEO Bank Bot refuses caller-forged read-only risk on every write scope', async () => {
+ const registry=new BotRegistry(); registry.register(NEO_BANK_BOT);
+ const runtime=new NeoBotRuntime({registry});
+ runtime.attach(NEO_BANK_BOT.id,createNeoBankHandler({cesAdapter:createStubCesAdapter()}));
+ for(const action of [
+   'ces.transactions.approve','ces.vdollars.issue','ces.publications.upload',
+   'ces.subscriptions.maintain',
+ ]) {
+   await assert.rejects(()=>runtime.execute(NEO_BANK_BOT.id,{
+     action,risk:'read-only',payload:{amount:1},
+   }),/read-only risk escalation blocked/);
+ }
+ assert.equal(runtime.approvals.requests.size,0);
+});
+
+test('CES write approval is bound to exact amount and consumed once before execution', async () => {
+ const registry=new BotRegistry();registry.register(NEO_BANK_BOT);
+ const runtime=new NeoBotRuntime({registry});
+ const calls=[];
+ runtime.attach(NEO_BANK_BOT.id,async job=>{calls.push(job.payload);return {ok:true}});
+ const proposal={action:'ces.vdollars.issue',risk:'value-movement',payload:{amount:3,recipient:'fixture'}};
+ const pending=await runtime.execute(NEO_BANK_BOT.id,proposal);
+ assert.equal(pending.status,'approval_required');
+ runtime.approvals.resolve(pending.approval.id,{decision:'approved',actor:'admin'});
+ await assert.rejects(()=>runtime.execute(NEO_BANK_BOT.id,{
+  ...proposal,payload:{amount:4,recipient:'fixture'},
+ },{approval:pending.approval.id}),/exact payload/);
+ assert.equal(calls.length,0);
+ const outcome=await runtime.execute(NEO_BANK_BOT.id,proposal,{approval:pending.approval.id});
+ assert.equal(outcome.status,'completed');
+ assert.equal(calls.length,1);
+ await assert.rejects(()=>runtime.execute(NEO_BANK_BOT.id,proposal,{approval:pending.approval.id}),/exact payload/);
+ assert.equal(calls.length,1);
+ assert.equal(runtime.approvals.requests.get(pending.approval.id).status,'consumed');
+});
+
+test('failed CES financial action still consumes prior approval to prevent replay', async () => {
+ const registry=new BotRegistry();registry.register(NEO_BANK_BOT);
+ const runtime=new NeoBotRuntime({registry});
+ runtime.attach(NEO_BANK_BOT.id,async()=>{throw new Error('adapter unavailable')});
+ const proposal={action:'ces.transactions.approve',risk:'value-movement',payload:{id:'synthetic'}};
+ const pending=await runtime.execute(NEO_BANK_BOT.id,proposal);
+ runtime.approvals.resolve(pending.approval.id,{decision:'approved',actor:'admin'});
+ await assert.rejects(()=>runtime.execute(NEO_BANK_BOT.id,proposal,{approval:pending.approval.id}),/adapter unavailable/);
+ await assert.rejects(()=>runtime.execute(NEO_BANK_BOT.id,proposal,{approval:pending.approval.id}),/exact payload/);
+});
