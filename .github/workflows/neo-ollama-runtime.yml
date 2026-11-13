@@ -1,0 +1,20 @@
+name: NEO Ollama Runtime
+on:
+  pull_request:
+    paths:
+      - 'deploy/neo-ollama/**'
+      - 'server/neo-router/**'
+      - '.github/workflows/neo-ollama-runtime.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  gateway-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: node --test deploy/neo-ollama/gateway.test.mjs server/neo-router/ollama-provider.test.mjs server/neo-router/providers.test.mjs server/neo-router/router.test.mjs
+      - run: node --check deploy/neo-ollama/start.mjs
