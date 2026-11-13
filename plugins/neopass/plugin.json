@@ -1,0 +1,6 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "neopass",
+  "version": "0.1.0",
+  "description": "Connect an existing NEO Pass account to read authorized NEO service access."
+}

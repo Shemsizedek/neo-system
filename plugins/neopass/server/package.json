@@ -1,0 +1,1 @@
+{"name":"neopass-chatgpt-mcp","private":true,"version":"0.1.0","type":"module","engines":{"node":"24.x"},"scripts":{"test":"node --test *.test.mjs"},"dependencies":{"@modelcontextprotocol/sdk":"1.32.2"}}
