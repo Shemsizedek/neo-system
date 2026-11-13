@@ -65,7 +65,7 @@ export function createGissProductionServer({
   // Future activation requires separately authorized durable storage and
   // independent registry-bound curator identity certification.
   const server = createNeoPlatformApi({ templeGissRuntime, subjectResolver, authService, knowindexAuthService, knowindexContributionLedger, knowindexWriteEnabled, knowindexJwtSecret:jwtSecret, knowindexJwtIssuer:jwtIssuer || 'neo-pass', crmStore, schoolStore, dealDeskOutbox, dealDeskMailAdapter, dealDeskInboundReader, crownServiceAuthorizer:serviceAuthorizer, now });
-  const gissBridge = authService ? createGissAuthorizationBridge({codeStore:createFirestoreGissCodeStore({db}),authService,subjectResolver,gissService:templeGissRuntime.service,jwtSecret,jwtIssuer,now}) : null;
+  const gissBridge = authService ? createGissAuthorizationBridge({codeStore:createFirestoreGissCodeStore({db}),authService,subjectResolver,gissService:templeGissRuntime.service,jwtSecret,jwtIssuer,now,careersRedirect:process.env.NEO_CAREERS_GISS_REDIRECT || null}) : null;
   const coreHandler = server.listeners('request')[0];
   const schoolActions = createSchoolActionHandler({ schoolStore, subjectResolver });
   server.removeAllListeners('request');
