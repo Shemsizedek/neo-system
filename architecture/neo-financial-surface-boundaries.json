@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "gate": "P144-FINANCIAL-UI-SEPARATION",
+  "mode": "contract-only-no-runtime-changes",
+  "surfaces": {
+    "NEOPAY": {
+      "host": "pay.holytemples.org",
+      "sources": ["apps/neopay", "src/neopay"],
+      "purpose": "Existing simple customer wallet/payment application and approved service entry",
+      "uiOwned": true,
+      "uiChangeAuthorized": false
+    },
+    "COUNTERPAY": {
+      "host": "counterpay.holytemples.org",
+      "sources": ["public/neopay"],
+      "sourceBinding": "unverified",
+      "purpose": "Separate Counterparty wallet and checkout site; reusable internal BTC receipt-intent rail",
+      "uiOwned": true,
+      "uiChangeAuthorized": false
+    },
+    "NEOBANK": {
+      "host": "neobank.holytemples.org",
+      "sources": ["server/neo-bank", "apps/neo-bank-pages"],
+      "purpose": "Distinct community-finance and CES operations application; backend ledger services consumed by NEO Pay",
+      "uiOwned": true,
+      "uiChangeAuthorized": false
+    },
+    "NEOFX": {
+      "host": "neofx.holytemples.org",
+      "sources": ["apps/neo-exchange"],
+      "purpose": "Distinct FX/conversion market experience",
+      "uiOwned": true,
+      "uiChangeAuthorized": false
+    }
+  },
+  "backends": {
+    "COUNTERPAY_RAIL": "server/neo-merchant-network/outreach-payment-requests.mjs",
+    "NEO_BANK": "server/neo-bank",
+    "NIBIRU_RESERVE": "server/nibiru-reserve",
+    "NEO_CONVERSION": "server/neo-conversion",
+    "NEO_BOOKS": "src/books",
+    "CES": "apps/neoscan/adapters/ces",
+    "NEOMASK": "security signer integration; not permission to transmit private keys"
+  },
+  "rules": {
+    "sharedLoginMayDelegateButNoSharedUi": true,
+    "tenantIsolationRequired": true,
+    "serverControlledAuthorization": true,
+    "customerOwnsPaymentSignature": true,
+    "agentsMayPrepareReceivables": true,
+    "agentsMaySpendUnrestricted": false,
+    "noUiEmbeddingOrCrossProductCss": true,
+    "noUnverifiedFiatOrTokenRedemption": true,
+    "noUnlicensedBankingOrRailAccessClaim": true,
+    "cesCreditsNotAssumedToBeCashOrReserves": true,
+    "productionExecutionEnabled": false
+  }
+}
