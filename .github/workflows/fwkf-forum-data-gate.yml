@@ -1,0 +1,49 @@
+name: FWKF Forum 022 staging database gateway build
+on:
+  pull_request:
+    paths:
+      - 'apps/fwkf-forum/functions/data/**'
+      - 'apps/fwkf-forum/tests/data-api.test.mjs'
+      - '.github/workflows/fwkf-forum-data-gate.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  gateway:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Test fail-closed database gateway
+        run: node --test apps/fwkf-forum/tests/data-api.test.mjs
+      - name: Bundle for Neon staging Functions without credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/forum022/dist"
+          cp apps/fwkf-forum/functions/data/index.mjs "$RUNNER_TEMP/forum022/"
+          cp apps/fwkf-forum/functions/data/handler.mjs "$RUNNER_TEMP/forum022/"
+          cd "$RUNNER_TEMP/forum022"
+          printf '{"name":"fwkf-staging-data-build","private":true,"type":"module"}\n' > package.json
+          npm install --no-save --ignore-scripts --no-audit --no-fund pg @neon/functions esbuild
+          ./node_modules/.bin/esbuild index.mjs --bundle --platform=node --target=node24 --format=esm --banner:js="import{createRequire as ___cr}from'module';import{fileURLToPath as ___f}from'url';import{dirname as ___d}from'path';const require=___cr(import.meta.url);const __filename=___f(import.meta.url);const __dirname=___d(__filename);" --outfile=dist/index.mjs
+          cd dist
+          zip -q -9 ../function.zip index.mjs
+          sha256sum ../function.zip
+      - name: Save compiled bundle (no credentials or environment values)
+        uses: actions/upload-artifact@v4
+        with:
+          name: fwkf-forum-g022-neon-function
+          path: ${{ runner.temp }}/forum022/function.zip
+          retention-days: 3
+      - name: Emit staged bundle for manual Neon connector deployment
+        shell: bash
+        run: |
+          set -eu
+          echo GATE022_BUNDLE_BEGIN
+          base64 -w0 "$RUNNER_TEMP/forum022/function.zip"
+          echo
+          echo GATE022_BUNDLE_END

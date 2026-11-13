@@ -3,7 +3,7 @@
   "name": "NEO Knowledge — KNOWINDEX",
   "description": "KNOWINDEX is the initial 1,000-share issuance identified by the issuer for NEO Knowledge: the partnership described by the project sponsor between Shelton Estate & Co. and the James A. Stanback Family Trust and its Free World Knowledge Foundation. The initiative connects the World Library with Moorish and Indigenous knowledge contributions, provenance, preservation, learning and documented knowledge-economy activity through NEO Crown Chain and NEO Nous OS. Specific share rights remain subject to governing documents. NEO measurements are independently defined; references to the UNDP/MBRF Global Knowledge Index are attributed external benchmarks.",
   "image": "https://crown.holytemples.org/assets/KNOWINDEX/icon.png",
-  "website": "https://holytemples.org/world-library/",
+  "website": "https://worldcafe.holytemples.org/investor-relations.html",
   "images": [
     {
       "type": "icon",
@@ -27,7 +27,27 @@
       "type": "other",
       "name": "Global Knowledge Index 2025 — UNDP / MBRF external reference",
       "data": "https://www.undp.org/arab-states/publications/global-knowledge-index-2025"
+    },
+    {
+      "type": "other",
+      "name": "Free World Knowledge Index — public definitions only",
+      "data": "https://worldcafe.holytemples.org/knowledge-index.json"
+    },
+    {
+      "type": "other",
+      "name": "World Temple City — Holy See Global District and proposed Nu Cities of Peace",
+      "data": "https://holytemples.org/world-temple-city/"
+    },
+    {
+      "type": "other",
+      "name": "KNOWINDEX — publicly indexed Bitcoin/Counterparty asset record (supply 1,000, owner rights not certified by this metadata draft)",
+      "data": "https://xcp.io/asset/KNOWINDEX"
+    },
+    {
+      "type": "other",
+      "name": "Counterparty TokenScan public KNOWINDEX asset record",
+      "data": "https://tokenscan.io/asset/KNOWINDEX"
     }
   ],
-  "html": "<section><h2>NEO Knowledge</h2><p>World Library, knowledge contributions and the knowledge economy.</p><p><a href=\"https://holytemples.org/world-library/\">Explore the Hall of Knowledge World Library</a></p><p>NEO methodology: draft 0.1.0. Independent measurements; external GKI sources retain their attribution.</p></section>"
+  "html": "<section><h2>KNOWINDEX</h2><p>Public asset information is available through Free World Knowledge Foundation Investor Relations.</p><p><a href=\"https://worldcafe.holytemples.org/investor-relations.html\">Investor Relations</a> | <a href=\"https://worldcafe.holytemples.org/knowledge.html\">Knowledge &amp; Learning</a> | <a href=\"https://holytemples.org/world-library/\">World Library</a></p><p>Legal rights, current ownership and authorizations require review before any on-chain metadata broadcast. This is a draft record.</p></section>"
 }

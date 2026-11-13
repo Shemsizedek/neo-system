@@ -1,0 +1,22 @@
+name: FWKF 022 live staging API smoke tests
+on:
+  pull_request:
+    paths:
+      - 'scripts/verify-fwkf-forum-staging.mjs'
+      - 'apps/fwkf-forum/functions/data/**'
+      - 'apps/fwkf-forum/migrations/0002_readonly_api_role.sql'
+      - '.github/workflows/fwkf-forum-staging-smoke.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  staging-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Verify live API without private accounts or writes
+        run: node scripts/verify-fwkf-forum-staging.mjs
