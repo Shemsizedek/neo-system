@@ -1,0 +1,69 @@
+{
+  "schema": "neo.nomni.protocol.snapshot.v1",
+  "observedDateUtc": "2026-10-29",
+  "dataClassification": "PUBLIC_BLOCKCHAIN_METADATA_AND_AGGREGATES",
+  "sourceType": "single-public-counterparty-core-mainnet-node",
+  "sources": [
+    "https://api.counterparty.io:4000/v2/",
+    "https://api.counterparty.io:4000/v2/blocks/last",
+    "https://api.counterparty.io:4000/v2/assets/NOMNI",
+    "https://api.counterparty.io:4000/v2/assets/NOMNI/issuances?limit=1000",
+    "https://api.counterparty.io:4000/v2/assets/NOMNI/holders?limit=1000",
+    "https://api.counterparty.io:4000/v2/assets/NOMNI/balances?limit=1000",
+    "https://api.counterparty.io:4000/v2/assets/NOMNI/destructions?limit=1000"
+  ],
+  "node": {
+    "network": "mainnet",
+    "version": "11.5.0",
+    "serverReady": true,
+    "ledgerState": "Following",
+    "bitcoinHeight": 973747,
+    "counterpartyHeight": 973747,
+    "latestObservedBlock": 973747
+  },
+  "asset": {
+    "asset": "NOMNI",
+    "assetId": "6195210",
+    "divisible": false,
+    "locked": true,
+    "issuedQuantity": "900000000",
+    "currentOwner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+    "originalIssuer": "1NySA74g62Mr28Unp4uCxwtQv9FkD7AVpk",
+    "firstIssuanceBlock": 421813,
+    "firstIssuanceTransaction": "83c5e316c4ecce8bab8c5ec966da754da32548105c6fd6eb5349659d06c70925",
+    "lastIssuanceFamilyEventBlock": 972822
+  },
+  "issuances": {
+    "validEventRows": 5,
+    "firstPositiveQuantity": "900000000",
+    "additionalPositiveIssuance": "0",
+    "destructionRows": 0,
+    "destructionQuantity": "0"
+  },
+  "holderReconciliation": {
+    "holderEndpointRows": 915,
+    "holderBalancesRows": 906,
+    "holderBalanceUnits": "894011631",
+    "openDispenserEscrowRows": 9,
+    "openDispenserEscrowUnits": "5988369",
+    "holderTotalUnits": "900000000",
+    "balanceEndpointRows": 837,
+    "unreconciledUnits": "0",
+    "completePagination": true
+  },
+  "historicalComparison": {
+    "sheltonEstate2022PostClaimedPremineShares": "800000000",
+    "classification": "EARLIER_OFFERING_PROPOSAL_UNRECONCILED_TO_CURRENT_ISSUANCE",
+    "additional100mMintObserved": false
+  },
+  "authorization": {
+    "secondIndependentNode": false,
+    "issuerLegalAuthorityVerified": false,
+    "eligibleReserveAssetsVerified": false,
+    "usdOneToOneRedemptionAuthorized": false,
+    "cesVDollarAsUsdReserve": false,
+    "coinbaseNomniAccess": false,
+    "issuanceAuthorized": false
+  },
+  "notes": "Node-reported readiness and a complete holder endpoint resolve supply plus escrow; independent second-node replay, source provenance, wallet control, legal issuer, beneficiary claims, CES V-Dollar records and reserve evidence remain open. No custodian statements or customer records stored."
+}

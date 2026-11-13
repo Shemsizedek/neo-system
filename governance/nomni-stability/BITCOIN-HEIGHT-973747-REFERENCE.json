@@ -1,0 +1,17 @@
+{
+  "auditDateUtc": "2026-10-29",
+  "bitcoinHeight": 973747,
+  "blockHash": "00000000000000000000e5ec8afda9ea0fafaa223be5d259dd73bd933407a9fe",
+  "counterpartyLedgerHash": "ee720769a1992c56e51a620222d327f1f39541e67dfefce8d9740dd18d4ab1a4",
+  "counterpartyMessagesHash": "dee5fb1b61e2e15aac44708155550470de1ee5ab49b10e8c39766c9314ebe30a",
+  "counterpartyTxlistHash": "003a2ebd82ab40c536acbc0b376b77571657b65d230a71eb94b61dbefde19b7f",
+  "blockstreamBitcoinHashMatched": true,
+  "mempoolBitcoinHashMatched": true,
+  "secondCounterpartyCoreNodeVerified": false,
+  "usdReserveCustodyVerified": false,
+  "sourceUrls": [
+    "https://api.counterparty.io:4000/v2/blocks/973747",
+    "https://blockstream.info/api/block-height/973747",
+    "https://mempool.space/api/block-height/973747"
+  ]
+}
