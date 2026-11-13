@@ -1,0 +1,29 @@
+name: NEO Omarchy Gate 001
+
+on:
+  pull_request:
+    paths:
+      - 'config/neo-omarchy-profile.json'
+      - 'scripts/neo-omarchy-preflight.mjs'
+      - 'scripts/neo-omarchy-preflight.test.mjs'
+      - 'docs/NEO-OMARCHY-001.md'
+      - '.github/workflows/neo-omarchy-001.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  source-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Validate profile JSON
+        run: node -e "const fs=require('node:fs');const p=JSON.parse(fs.readFileSync('config/neo-omarchy-profile.json'));if(p.enabled_by_default!==false||p.approved_for_production!==false)process.exit(1)"
+      - name: Validate preflight syntax
+        run: node --check scripts/neo-omarchy-preflight.mjs
+      - name: Test simulated host and security contracts
+        run: node --test scripts/neo-omarchy-preflight.test.mjs

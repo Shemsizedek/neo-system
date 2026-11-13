@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "gate": "NEO-OMARCHY-001",
+  "status": "proposed-lab-integration",
+  "approved_for_production": false,
+  "enabled_by_default": false,
+  "upstream": {
+    "repository": "omacom/omarchy",
+    "homepage": "https://omarchy.org/",
+    "license": "MIT",
+    "reviewed_release": "v4.0.6",
+    "release_policy": "verify-signed-official-release-before-install"
+  },
+  "host": {
+    "role": "optional-linux-agent-workstation",
+    "deployment": "separate-owned-device-or-lab-vm",
+    "architecture": "operator-verified",
+    "installation": "manual-official-ISO-only",
+    "automatic_disk_operations": false
+  },
+  "alignment": [
+    {
+      "component": "NEO Router",
+      "purpose": "governed local-inference routing via the existing Ollama adapter",
+      "state": "adapter-already-in-repository"
+    },
+    {
+      "component": "NEO Oracle AI",
+      "purpose": "operator-controlled local model execution and research",
+      "state": "candidate"
+    },
+    {
+      "component": "NEOsync and NEO Agent Runtime",
+      "purpose": "scoped agent workflows and audit events",
+      "state": "candidate"
+    },
+    {
+      "component": "NEO Terminal",
+      "purpose": "local developer/operator dashboard, not custody or trading authority",
+      "state": "candidate"
+    },
+    {
+      "component": "NEO Guardian",
+      "purpose": "endpoint health, update and evidence review",
+      "state": "candidate"
+    },
+    {
+      "component": "NEOpass",
+      "purpose": "future machine identity and authentication; no local passwords or passkeys are copied",
+      "state": "deferred"
+    }
+  ],
+  "security": {
+    "network": "private-or-loopback-only",
+    "default_agent_authority": "review-only",
+    "automatic_execution": false,
+    "root_or_passwordless_sudo": false,
+    "external_public_listener": false,
+    "expose_ollama_to_internet": false,
+    "wallet_keys_or_financial_credentials": false,
+    "financial_or_destructive_actions": "explicit-human-authorization-required",
+    "persistent_agent_gateway": "disabled-until-reviewed",
+    "production_traffic": "disabled",
+    "secret_storage": "operator-managed-outside-repository",
+    "update_policy": "pinned-and-verified-before-promotion"
+  },
+  "validation": {
+    "script": "scripts/neo-omarchy-preflight.mjs",
+    "tests": "scripts/neo-omarchy-preflight.test.mjs",
+    "mode": "read-only-host-capability-discovery",
+    "live_omarchy_host_tested": false,
+    "live_model_inference_tested": false
+  }
+}
