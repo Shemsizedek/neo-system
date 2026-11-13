@@ -1,0 +1,11 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {bitcoinTransaction,counterpartyAsset,issuerIssuances,reconcileEvidence,validTxid,TREASURY_WALLET} from './gateway.js';
+const tx='a'.repeat(64);
+const fake=data=>async()=>({ok:true,json:async()=>data});
+test('rejects malformed txid before network call',async()=>{assert.equal(validTxid('bad'),false);await assert.rejects(bitcoinTransaction('bad',{fetchImpl:()=>{throw Error('should not fetch')}}),/64 hexadecimal/)});
+test('verifies txid matches returned Bitcoin observation',async()=>{const r=await bitcoinTransaction(tx,{fetchImpl:fake({txid:tx,status:{confirmed:true,block_height:100},fee:123})});assert.equal(r.record.blockHeight,100);assert.equal(r.scope,'ON_CHAIN_ONLY')});
+test('rejects Bitcoin provider mismatch',async()=>{await assert.rejects(bitcoinTransaction(tx,{fetchImpl:fake({txid:'b'.repeat(64)})}),/mismatch/)});
+test('asset lookup requires matching identity',async()=>{const r=await counterpartyAsset('NOMNI',{fetchImpl:fake({result:{asset:'NOMNI',issuer:TREASURY_WALLET}})});assert.equal(r.record.asset,'NOMNI')});
+test('issuer issuance filter excludes unrelated and invalid sources',async()=>{const r=await issuerIssuances(TREASURY_WALLET,{fetchImpl:fake({result:[{source:TREASURY_WALLET,asset:'COIN',status:'valid'},{source:'another',asset:'BAD',status:'valid'},{source:TREASURY_WALLET,asset:'REJECT',status:'invalid'}]})});assert.equal(r.record.records.length,1)});
+test('reconciliation never infers Crown Chain or books from Bitcoin',()=>{const r=reconcileEvidence({bitcoin:{source:'BITCOIN'}});assert.equal(r.reconciled,false);assert.equal(r.attestation.status,'NOT_CONNECTED')});
