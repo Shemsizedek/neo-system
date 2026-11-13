@@ -28,12 +28,21 @@ function snapshot(){
   };
 }
 
-export function createGeneratorServer(){
+export function createGeneratorServer({env=process.env,fetchImpl=fetch}={}){
   return http.createServer((req,res)=>{
     const url=new URL(req.url||'/','http://neo-generator.local');
     if(req.method!=='GET'){
       res.setHeader('allow','GET');
       return send(res,405,{error:'method_not_allowed',service:'neo-generator'});
+    }
+    // Service-to-service only: no browser token form, query-string credentials or mutation.
+    if(url.pathname==='/sandbox/status'){
+      if(req.headers.origin||url.search)return send(res,403,{error:'SANDBOX_SERVER_TO_SERVER_ONLY'});
+      return void import('./cloudSandbox.mjs').then(async({sandboxReadAuthorized,probeSandboxProvider})=>{
+        if(!sandboxReadAuthorized(req.headers.authorization,env.NEO_CLOUD_SANDBOX_READ_TOKEN))return send(res,401,{error:'SANDBOX_AUTH_REQUIRED'});
+        const report=await probeSandboxProvider({env,fetchImpl});
+        return send(res,report.status==='TEST_ACCOUNT_AND_ORDER_READ_VERIFIED'?200:503,report);
+      }).catch(()=>send(res,503,{error:'SANDBOX_DIAGNOSTIC_UNAVAILABLE'}));
     }
     if(url.pathname==='/health') return send(res,200,{ok:true,...snapshot()});
     if(url.pathname==='/ready') return send(res,200,{ok:true,...snapshot(),runtime:'standalone-http',optimizerLoaded:true});

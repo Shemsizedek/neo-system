@@ -1,0 +1,87 @@
+name: NEO Cloud Sandbox Evidence Gate
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'server/miner-generator/**'
+      - 'docs/NEO_CLOUD_002_SANDBOX.md'
+      - '.github/workflows/neo-cloud-sandbox.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: neo-cloud-sandbox-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verification:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Run synthetic regression tests (not live account evidence)
+        run: |
+          mkdir -p build/neo-cloud-002
+          node --test --test-reporter=tap server/miner-generator/cloudRetail.test.mjs server/miner-generator/cloudSandbox*.test.mjs | tee build/neo-cloud-002/tests.tap
+      - name: Public-only sandbox observation (never authenticates an account)
+        env:
+          NEO_CLOUD_SANDBOX_ENABLED: 'true'
+        run: |
+          set +e
+          node server/miner-generator/cloudSandboxGate.mjs --probe-public > build/neo-cloud-002/public-observation.json
+          result=$?
+          set -e
+          test "$result" = 2
+          node --input-type=module - <<'NODE'
+          import fs from 'node:fs';
+          const report=JSON.parse(fs.readFileSync('build/neo-cloud-002/public-observation.json','utf8'));
+          if(report.gatePassed!==false || report.provider.authenticated!==false) throw new Error('Public observation must not imply authentication');
+          NODE
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: neo-cloud-002-validation
+          path: build/neo-cloud-002/
+          if-no-files-found: error
+          retention-days: 14
+
+  authenticated-provider-check:
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: neo-cloud-sandbox
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Read sandbox account and selected order (no purchases)
+        env:
+          NEO_CLOUD_SANDBOX_ENABLED: 'true'
+          NICEHASH_TEST_API_KEY: ${{ secrets.NICEHASH_TEST_API_KEY }}
+          NICEHASH_TEST_API_SECRET: ${{ secrets.NICEHASH_TEST_API_SECRET }}
+          NICEHASH_TEST_ORGANIZATION_ID: ${{ secrets.NICEHASH_TEST_ORGANIZATION_ID }}
+          NICEHASH_TEST_ORDER_ID: ${{ secrets.NICEHASH_TEST_ORDER_ID }}
+        run: |
+          mkdir -p build/neo-cloud-002
+          node --input-type=module - <<'NODE'
+          import fs from 'node:fs';
+          import {probeSandboxProvider} from './server/miner-generator/cloudSandbox.mjs';
+          const report=await probeSandboxProvider();
+          fs.writeFileSync('build/neo-cloud-002/provider-check.json',JSON.stringify(report,null,2));
+          console.log(report.status);
+          if(report.status!=='TEST_ACCOUNT_AND_ORDER_READ_VERIFIED') process.exitCode=2;
+          NODE
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: neo-cloud-002-provider-check
+          path: build/neo-cloud-002/provider-check.json
+          if-no-files-found: error
+          retention-days: 7
