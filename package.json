@@ -161,7 +161,8 @@
     "neo-origination:test": "node --test server/neo-origination/*.test.mjs",
     "knowindex:contributions:test": "node --test server/neo-knowindex/*.test.mjs",
     "neo-credit-lifecycle:server": "node server/neo-credit-lifecycle/server.mjs",
-    "neo-credit-lifecycle:test": "node --test server/neo-credit-lifecycle/*.test.mjs"
+    "neo-credit-lifecycle:test": "node --test server/neo-credit-lifecycle/*.test.mjs",
+    "pages:verify:static": "node scripts/verify-neo-static-integrity.mjs"
   },
   "dependencies": {
     "@composio/core": "^0.18.1",
