@@ -32,6 +32,51 @@ export function createFirestoreTempleRegistry({ db, now = () => new Date().toISO
     async getNEOpassCredential(subject) {
       return firstWhere(collections.neopassCredentials, 'subject', subject);
     },
+    /**
+     * Atomic self-service Nous consent change. A previously looked-up document
+     * is re-read within the transaction to avoid stale status or cutoff grants.
+     */
+    async setNEOpassNousAccess(subject, { enabled, sessionIssuedAt, nowEpochSeconds } = {}) {
+      if (typeof subject !== 'string' || !subject ||
+          typeof enabled !== 'boolean' ||
+          !Number.isSafeInteger(sessionIssuedAt) ||
+          !Number.isSafeInteger(nowEpochSeconds) ||
+          sessionIssuedAt > nowEpochSeconds + 30 ||
+          nowEpochSeconds - sessionIssuedAt > 300) throw new Error('nous_consent_invalid_input');
+      const found = await firstWhere(collections.neopassCredentials, 'subject', subject);
+      if (!found?.id || found.subject !== subject) {
+        const error = new Error('nous_credential_not_found'); error.code = error.message; throw error;
+      }
+      const ref = db.collection(collections.neopassCredentials).doc(found.id);
+      if (typeof db.runTransaction !== 'function') throw new Error('nous_transaction_required');
+      return db.runTransaction(async tx => {
+        const snapshot = await tx.get(ref);
+        const record = snapshot.exists ? snapshot.data() : null;
+        if (!record || record.subject !== subject) {
+          const error = new Error('nous_credential_not_found'); error.code = error.message; throw error;
+        }
+        if (record.status !== 'active' || record.disabled === true || record.suspended === true) {
+          const error = new Error('nous_member_not_active'); error.code = error.message; throw error;
+        }
+        const cutoff = record.sessionRevokedAfter;
+        if (cutoff !== undefined && cutoff !== null &&
+            (!Number.isSafeInteger(cutoff) || sessionIssuedAt <= cutoff)) {
+          const error = new Error('neopass_session_revoked'); error.code = error.message; throw error;
+        }
+        const next = enabled ? {
+          nousAccessEnabled: true,
+          nousAccessExpiresAt: new Date((nowEpochSeconds + 24 * 3600) * 1000).toISOString(),
+          nousConsentUpdatedAt: new Date(nowEpochSeconds * 1000).toISOString(),
+        } : {
+          nousAccessEnabled: false,
+          nousAccessExpiresAt: null,
+          sessionRevokedAfter: Math.max(Number.isSafeInteger(cutoff) ? cutoff : 0, nowEpochSeconds),
+          nousConsentUpdatedAt: new Date(nowEpochSeconds * 1000).toISOString(),
+        };
+        tx.set(ref, next, { merge: true });
+        return next;
+      });
+    },
     async getNEOpassCredentialByLogin(login) {
       const value = String(login || '').trim().toLowerCase();
       return await firstWhere(collections.neopassCredentials, 'usernameKey', value)

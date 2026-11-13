@@ -9,6 +9,11 @@ import { createFirestoreCrmStore } from './firestore-crm-store.mjs';
 import { createFirestoreSchoolStore } from './firestore-school-store.mjs';
 import { createSchoolActionHandler } from './giss-school-actions.mjs';
 import { attachNeopassBrowserTokenExchange } from './browser-token-exchange.mjs';
+import { createNousTokenExchange } from './nous-token-exchange.mjs';
+import { createNousMembershipGuard } from './nous-membership-guard.mjs';
+import { createNousConsentHandler } from './nous-consent.mjs';
+import { createNousConsentIntentHandler } from './nous-consent-intent.mjs';
+import { createNousConsentPageHandler } from './nous-consent-page.mjs';
 import { createGissAuthorizationBridge, createFirestoreGissCodeStore } from './giss-authorization-bridge.mjs';
 import { createCrownServiceAuthorizer } from './crown-service-authorizer.mjs';
 import { createFirestoreDealDeskOutbox } from '../neo-deal-desk/firestore-outbox.mjs';
@@ -66,12 +71,38 @@ export function createGissProductionServer({
   // independent registry-bound curator identity certification.
   const server = createNeoPlatformApi({ templeGissRuntime, subjectResolver, authService, knowindexAuthService, knowindexContributionLedger, knowindexWriteEnabled, knowindexJwtSecret:jwtSecret, knowindexJwtIssuer:jwtIssuer || 'neo-pass', crmStore, schoolStore, dealDeskOutbox, dealDeskMailAdapter, dealDeskInboundReader, crownServiceAuthorizer:serviceAuthorizer, now });
   const gissBridge = authService ? createGissAuthorizationBridge({codeStore:createFirestoreGissCodeStore({db}),authService,subjectResolver,gissService:templeGissRuntime.service,jwtSecret,jwtIssuer,now}) : null;
+  // Explicitly opt-in; disabled by default. Secrets stay inside the NEOpass boundary.
+  // Configuration must be injected from a protected staging secret store.
+  const nousExchange = process.env.NOUS_TOKEN_EXCHANGE_ENABLED === 'true'
+    ? createNousTokenExchange({
+        jwtSecret,
+        jwtIssuer: jwtIssuer || 'neo-pass',
+        privateKeyPem: Buffer.from(process.env.NOUS_EXCHANGE_ED25519_PRIVATE_KEY_PEM_BASE64 || '', 'base64').toString('utf8'),
+        tokenIssuer: 'neo-pass-nous-exchange',
+        audience: 'neo-nous',
+        authService,
+        membershipGuard: createNousMembershipGuard({ getCredential: subject => registry.getNEOpassCredential(subject) }),
+        signingKeyId: process.env.NOUS_EXCHANGE_KEY_ID || undefined,
+      })
+    : null;
+  const nousConsent = process.env.NOUS_CONSENT_ENABLED === 'true'
+    ? createNousConsentHandler({ jwtSecret, jwtIssuer: jwtIssuer || 'neo-pass', registry })
+    : null;
+  const nousConsentEnabled = process.env.NOUS_CONSENT_ENABLED === 'true';
+  const nousConsentIntent = nousConsentEnabled
+    ? createNousConsentIntentHandler({ jwtSecret, jwtIssuer: jwtIssuer || 'neo-pass', registry })
+    : null;
+  const nousConsentPage = createNousConsentPageHandler({ enabled: nousConsentEnabled });
   const coreHandler = server.listeners('request')[0];
   const schoolActions = createSchoolActionHandler({ schoolStore, subjectResolver });
   server.removeAllListeners('request');
   server.on('request', async (req, res) => {
     try {
       const url = new URL(req.url || '/', 'http://neo.local');
+      if (nousConsentPage(req,res,url)) return;
+      if (nousConsentIntent && await nousConsentIntent(req,res,url)) return;
+      if (nousConsent && await nousConsent(req,res,url)) return;
+      if (nousExchange && await nousExchange(req,res,url)) return;
       if (gissBridge && await gissBridge(req,res,url)) return;
       if (await schoolActions(req, res, url)) return;
       return coreHandler(req, res);

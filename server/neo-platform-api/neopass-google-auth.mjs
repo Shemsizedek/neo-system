@@ -62,6 +62,7 @@ async function verifyPassword(password, encoded) {
 export function createGoogleNeopassAuth({ clientId, jwtSecret, jwtIssuer = 'neo-pass', registry, verifyGoogleCredential, executiveAdminEmail = process.env.NEO_EXECUTIVE_ADMIN_EMAIL, executiveAdminUsername = process.env.NEO_EXECUTIVE_ADMIN_USERNAME || 'Shemsizedek', now = () => Date.now() } = {}) {
   if (!clientId || !jwtSecret || !registry || !verifyGoogleCredential) return null;
   const executiveMember = subject => ({ subject, email: executiveAdminEmail, username: executiveAdminUsername, displayName: 'H.I.M Dr. Lawiy Zodok', neopassStatus: 'active', role: 'executive-admin', crownOfficeSlot: 'CROWN-ROOT-A', hasPassword: false, storageStatus: 'activation-pending' });
+  const sessionClaims = claims => ({ ...claims, token_use: 'session', aud: 'neopass-session' });
   return {
     clientId,
     async session(subject, sessionClaims = {}) {
@@ -127,7 +128,7 @@ export function createGoogleNeopassAuth({ clientId, jwtSecret, jwtIssuer = 'neo-
         catch {
           if (isExecutive) {
             const claims = { role: 'executive-admin', email: profile.email };
-            return { token: issueNeopassToken({ subject, secret: jwtSecret, issuer: jwtIssuer, now, claims }), member: executiveMember(subject) };
+            return { token: issueNeopassToken({ subject, secret: jwtSecret, issuer: jwtIssuer, now, claims: sessionClaims(claims) }), member: executiveMember(subject) };
           }
           const error = new Error('neopass_registry_unavailable'); error.code = 'neopass_registry_unavailable'; throw error;
         }
@@ -154,13 +155,13 @@ export function createGoogleNeopassAuth({ clientId, jwtSecret, jwtIssuer = 'neo-
         catch {
           if (isExecutive) {
             const claims = { role: 'executive-admin', email: profile.email };
-            return { token: issueNeopassToken({ subject, secret: jwtSecret, issuer: jwtIssuer, now, claims }), member: executiveMember(subject) };
+            return { token: issueNeopassToken({ subject, secret: jwtSecret, issuer: jwtIssuer, now, claims: sessionClaims(claims) }), member: executiveMember(subject) };
           }
           const error = new Error('neopass_registry_unavailable'); error.code = 'neopass_registry_unavailable'; throw error;
         }
       }
       return {
-        token: issueNeopassToken({ subject, secret: jwtSecret, issuer: jwtIssuer, now }),
+        token: issueNeopassToken({ subject, secret: jwtSecret, issuer: jwtIssuer, now, claims: sessionClaims({}) }),
         member: { subject, email: record.email, username: record.username, displayName: record.displayName, picture: record.picture, neopassStatus: record.status, role: record.role, hasPassword: Boolean(record.passwordHash) }
       };
     },
@@ -175,7 +176,7 @@ export function createGoogleNeopassAuth({ clientId, jwtSecret, jwtIssuer = 'neo-
       const record = await registry.getNEOpassCredentialByLogin(login);
       if (!record || record.status !== 'active' || !await verifyPassword(password, record.passwordHash)) throw new Error('invalid_credentials');
       return {
-        token: issueNeopassToken({ subject: record.subject, secret: jwtSecret, issuer: jwtIssuer, now }),
+        token: issueNeopassToken({ subject: record.subject, secret: jwtSecret, issuer: jwtIssuer, now, claims: sessionClaims({}) }),
         member: { subject: record.subject, email: record.email, username: record.username, displayName: record.displayName, picture: record.picture, neopassStatus: record.status, role: record.role || 'member', hasPassword: true }
       };
     }

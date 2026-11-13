@@ -1,0 +1,83 @@
+name: NEO Nous OS foundation
+on:
+  pull_request:
+    paths:
+      - 'core/nous-os/**'
+      - 'server/neo-platform-api/nous-token-exchange*'
+      - 'server/neo-platform-api/nous-membership-guard*'
+      - 'server/neo-platform-api/nous-consent*'
+      - 'server/neo-platform-api/assets/nous-consent*'
+      - 'server/neo-platform-api/firestore-temple-registry.mjs'
+      - 'server/neo-platform-api/neopass-google-auth.mjs'
+      - 'server/neo-platform-api/giss-production.mjs'
+      - 'core/neo-algo/runtime.mjs'
+      - 'src/social/rudwaan-nous-bridge.mjs'
+      - 'src/social/meta-muse-policy.mjs'
+      - '.github/workflows/test-nous-os.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'core/nous-os/**'
+      - 'server/neo-platform-api/nous-token-exchange*'
+      - 'server/neo-platform-api/nous-membership-guard*'
+      - 'server/neo-platform-api/nous-consent*'
+      - 'server/neo-platform-api/assets/nous-consent*'
+      - 'server/neo-platform-api/firestore-temple-registry.mjs'
+      - 'server/neo-platform-api/neopass-google-auth.mjs'
+      - 'server/neo-platform-api/giss-production.mjs'
+      - 'core/neo-algo/runtime.mjs'
+      - 'src/social/rudwaan-nous-bridge.mjs'
+      - 'src/social/meta-muse-policy.mjs'
+      - '.github/workflows/test-nous-os.yml'
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install isolated Nous OS PostgreSQL client
+        run: npm install --prefix core/nous-os --ignore-scripts --no-audit --no-fund
+      - name: Node syntax and unit/integration tests
+        run: |
+          node --check core/nous-os/agents.mjs
+          node --check core/nous-os/identity.mjs
+          node --check core/nous-os/runtime.mjs
+          node --check core/nous-os/server.mjs
+          node --check core/nous-os/registry.mjs
+          node --check core/nous-os/sources.mjs
+          node --check core/nous-os/receipt-store.mjs
+          node --check core/nous-os/adapters.mjs
+          node --check core/neo-algo/runtime.mjs
+          node --check server/neo-platform-api/nous-consent-intent.mjs
+          node --check server/neo-platform-api/nous-consent-page.mjs
+          node --check server/neo-platform-api/assets/nous-consent.js
+          node --check server/neo-platform-api/nous-consent.mjs
+          node --check server/neo-platform-api/firestore-temple-registry.mjs
+          node --check server/neo-platform-api/nous-membership-guard.mjs
+          node --check server/neo-platform-api/nous-token-exchange.mjs
+          node --test core/nous-os/*.test.mjs server/neo-platform-api/nous-token-exchange.test.mjs server/neo-platform-api/nous-membership-guard.test.mjs server/neo-platform-api/nous-consent.test.mjs server/neo-platform-api/nous-consent-registry.test.mjs server/neo-platform-api/nous-consent-intent.test.mjs
+      - name: Validate private staging image
+        run: docker build -f core/nous-os/Dockerfile -t neo-nous-os:ci .
+
+      - name: Private loopback container smoke (fail-closed identity)
+        run: |
+          set -euo pipefail
+          docker run -d --name neo-nous-smoke -p 127.0.0.1:18080:8080 neo-nous-os:ci
+          trap 'docker rm -f neo-nous-smoke >/dev/null 2>&1 || true' EXIT
+          for i in $(seq 1 20); do
+            if curl -fsS --max-time 2 http://127.0.0.1:18080/health >/dev/null; then break; fi
+            sleep 1
+          done
+          curl -fsS http://127.0.0.1:18080/health | grep -q '"mode":"plan-only"'
+          code=$(curl -sS -o /tmp/nous-ready.json -w '%{http_code}' http://127.0.0.1:18080/ready)
+          test "$code" = "503"
+          grep -q '"identityConfigured":false' /tmp/nous-ready.json
+          code=$(curl -sS -o /tmp/nous-adapters.json -w '%{http_code}' http://127.0.0.1:18080/v1/adapters)
+          test "$code" = "503"
+
+      - name: Stateful container recovery with ephemeral signed identity
+        run: node core/nous-os/deploy/recovery-smoke.mjs
