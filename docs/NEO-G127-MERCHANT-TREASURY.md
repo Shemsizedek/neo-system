@@ -9,3 +9,5 @@ verified final payment -> merchant balance -> fee/reserve accounting -> settleme
 Refunds require evidence of the original final payment. Disputes may create reserves that reduce available merchant balance. The service never stores wallet private keys.
 
 Automatic asset conversion is disabled unless separately authorized with a verified pricing source and execution adapter. External acquiring, banking, tax, custodial, venue or jurisdictional requirements apply at the relevant interface.
+
+Modern Treasury sandbox account verification and discovery are documented in the [Project 144 integration runbook](integrations/modern-treasury.md). These operator-only read endpoints do not execute payments or change merchant ledger balances.

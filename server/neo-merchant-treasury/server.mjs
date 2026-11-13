@@ -1,15 +1,18 @@
 import http from 'node:http'
+import {createModernTreasuryConnector} from './modern-treasury.mjs'
+import {createModernTreasuryHttpHandler} from './modern-treasury-http.mjs'
 import {createMerchantLedger,creditFinalPayment,holdReserve,releaseReserve,createSettlementBatch,reconcileBatch,createPayout,approvePayout,recordPayoutEvidence,createRefund,createDispute,treasurySnapshot} from './fabric.mjs'
 const PORT=Number(process.env.PORT||8812),TOKEN=String(process.env.NEO_MERCHANT_TREASURY_OPERATOR_TOKEN||'')
 const ledger=createMerchantLedger(),batches=[],payouts=[],refunds=[],disputes=[],reserves=[]
 const json=(res,s,b)=>{res.writeHead(s,{'content-type':'application/json; charset=utf-8','cache-control':'no-store'});res.end(JSON.stringify(b))}
-const auth=req=>TOKEN&&String(req.headers.authorization||'')===`Bearer ${TOKEN}`
+const auth=(req,token)=>token&&String(req.headers.authorization||'')===`Bearer ${token}`
 const body=async req=>{const c=[];for await(const x of req)c.push(x);return c.length?JSON.parse(Buffer.concat(c).toString('utf8')):{}}
-export function createTreasuryServer(){return http.createServer(async(req,res)=>{try{
+export function createTreasuryServer({operatorToken=TOKEN,modernTreasury=createModernTreasuryConnector()}={}){const handleModernTreasury=createModernTreasuryHttpHandler({operatorToken,connector:modernTreasury});return http.createServer(async(req,res)=>{try{
  const u=new URL(req.url||'/','http://neo.local')
  if(req.method==='GET'&&u.pathname==='/health')return json(res,200,{ok:true,service:'neo-merchant-treasury'})
  if(req.method==='GET'&&u.pathname==='/v1/estate/merchant-treasury')return json(res,200,treasurySnapshot({ledger,batches,payouts,refunds,disputes,reserves}))
- if(!auth(req))return json(res,401,{error:'operator_auth_required'})
+ if(await handleModernTreasury(req,res,u))return
+ if(!auth(req,operatorToken))return json(res,401,{error:'operator_auth_required'})
  if(req.method==='POST'&&u.pathname==='/v1/credits'){return json(res,201,creditFinalPayment(ledger,await body(req)))}
  if(req.method==='POST'&&u.pathname==='/v1/reserves'){const x=holdReserve(ledger,await body(req));reserves.push(x.reserve);return json(res,201,x)}
  const rr=u.pathname.match(/^\/v1\/reserves\/([^/]+)\/release$/);if(req.method==='POST'&&rr){const r=reserves.find(x=>x.reserve_id===decodeURIComponent(rr[1]));if(!r)return json(res,404,{error:'reserve_not_found'});const x=releaseReserve(ledger,r);Object.assign(r,x.reserve);return json(res,200,x)}
