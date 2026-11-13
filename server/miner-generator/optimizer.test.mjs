@@ -27,3 +27,35 @@ test('pool selector prefers low-fee low-latency online route',()=>{
   ])
   assert.equal(pool.id,'B')
 })
+
+test('non-operating miners never back contracts',()=>{
+  const result=optimizeHashpower({
+    miners:[
+      {...miners[0],id:'OFF',status:'OFFLINE',hashrateTh:500},
+      {...miners[1],id:'MAINT',status:'MAINTENANCE',hashrateTh:400},
+      {...miners[2],id:'UNKNOWN',status:'UNVERIFIED',hashrateTh:300}
+    ],
+    contracts:[{id:'TEST',targetHashrateTh:10}],
+    reservePct:0
+  })
+  assert.equal(result.totalHashrateTh,0)
+  assert.equal(result.allocations[0].allocatedHashrateTh,0)
+  assert.equal(result.allocations[0].status,'PARTIAL')
+})
+
+test('invalid reserve values cannot overallocate contract capacity',()=>{
+  const result=optimizeHashpower({
+    miners:[miners[0]],
+    contracts:[{id:'TEST',targetHashrateTh:120}],
+    reservePct:-20
+  })
+  assert.equal(result.reserveTargetTh,0)
+  assert.equal(result.allocations[0].allocatedHashrateTh,120)
+  const failClosed=optimizeHashpower({
+    miners:[miners[0]],
+    contracts:[{id:'TEST',targetHashrateTh:120}],
+    reservePct:'bad-input'
+  })
+  assert.equal(failClosed.reserveTargetTh,120)
+  assert.equal(failClosed.allocations[0].allocatedHashrateTh,0)
+})
