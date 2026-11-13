@@ -1,0 +1,135 @@
+import http from 'node:http';
+import { timingSafeEqual } from 'node:crypto';
+import { nmniReadiness, createNmniReadCredentialProvider } from './nmni-login-profile.mjs';
+import { createCesSessionAdapter } from './ces-session-adapter.mjs';
+import { resolveCesIdentity } from './bank-bot.mjs';
+
+const json = (res, status, value) => { res.writeHead(status, { 'content-type': 'application/json', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff' }); res.end(JSON.stringify(value)); };
+const validationReasons = new Set(['protected-page-verification-required', 'untrusted-protected-page', 'login-response-rejected', 'missing-login-redirect', 'untrusted-login-redirect', 'login-redirect-mismatch', 'protected-page-unavailable', 'untrusted-protected-response', 'login-form-returned', 'protected-page-marker-missing', 'upstream_access_denied', 'login_page_unavailable']);
+const failureReasons = new Map([
+  ['CES login contract mismatch: configured POST action or credential field names were not found on the login page', 'login_contract_mismatch'],
+  ['CES administrator transition unavailable', 'admin_transition_missing'],
+  ['CES administrator transition rejected', 'admin_transition_rejected'],
+  ['CES administrator redirect rejected', 'admin_redirect_rejected'],
+  ['CES administrator session unavailable', 'admin_session_unavailable'],
+  ['CES administrator proof missing', 'admin_proof_missing'],
+  ['CES report could not be verified', 'report_format_unverified'],
+]);
+function requestStage(url, options) {
+  const path = new URL(url).pathname;
+  if (path === '/home/user-login/' || path === '/login.asp') return 'login_page';
+  if (path === '/rlogin.asp') return options?.method === 'POST' ? 'login_submit' : 'admin_transition';
+  if (path === '/memac.asp') return 'member_page';
+  if (path === '/_admin/statstrading.asp') return 'trading_report';
+  if (path.startsWith('/_admin/')) return 'admin_page';
+  return 'other_ces_page';
+}
+function authorized(req, token) {
+  if (!token || token.length < 32) return false;
+  const actual = Buffer.from(req.headers.authorization || '');
+  const expected = Buffer.from('Bearer ' + token);
+  return actual.length === expected.length && timingSafeEqual(actual, expected);
+}
+
+export function createCesReadServer({ env = process.env, store, fetchImpl = fetch, reader, accountAttestor, now = () => new Date().toISOString(), logger = entry => console.info(JSON.stringify(entry)) } = {}) {
+  let busy = false;
+  const debugEnabled = env.NEO_CES_DEBUG_ENABLED === 'true';
+  const debug = entry => { if (debugEnabled) { try { logger(entry); } catch {} } };
+  debug({ event: 'ces_debug_enabled' });
+  const read = reader || (async collect => {
+    let stage = 'configuration', httpStatus;
+    try {
+      const adapter = createCesSessionAdapter({ credentialProvider: createNmniReadCredentialProvider(env), fetchImpl: async (url, options) => {
+        stage = requestStage(url, options); httpStatus = undefined;
+        const started = performance.now();
+        const method = options?.method === 'POST' ? 'POST' : 'GET';
+        try {
+          const response = await fetchImpl(url, { ...options, signal: AbortSignal.timeout(20000) });
+          httpStatus = response.status;
+          debug({ event: 'ces_request', stage, method, httpStatus, durationMs: Math.max(0, Math.round(performance.now() - started)) });
+          return response;
+        } catch (error) {
+          debug({ event: 'ces_request_unavailable', stage, method, durationMs: Math.max(0, Math.round(performance.now() - started)) });
+          throw error;
+        }
+      } });
+      return await adapter.readNmniTradingStatistics({ exchange: resolveCesIdentity('NMNI'), collect });
+    } catch (error) {
+      const reason = validationReasons.has(error?.validationReason) ? error.validationReason : failureReasons.get(error?.message) || (httpStatus === undefined ? 'request_unavailable' : 'response_unverified');
+      debug({ event: 'ces_read_failed', stage, reason, ...(httpStatus === undefined ? {} : { httpStatus }) });
+      // Only fixed vocabulary and numeric HTTP status survive this boundary.
+      throw Object.assign(new Error('CES read failed'), { cesDiagnostic: { stage, reason, ...(httpStatus === undefined ? {} : { httpStatus }) } });
+    }
+  });
+  return http.createServer(async (req, res) => {
+    const path = new URL(req.url || '/', 'http://localhost').pathname;
+    if (req.method === 'GET' && path === '/health') {
+      let database = false;
+      try { database = Boolean(await store?.ping()); } catch {}
+      return json(res, 200, { ok: true, service: 'neo-ces-read-runtime', database, timestamp: now(), version: env.RENDER_GIT_COMMIT || 'local' });
+    }
+    const controlAuthorized = authorized(req, env.NEO_CES_RUNTIME_TOKEN);
+    const backendAuthorized = authorized(req, env.NEO_CES_BACKEND_TOKEN);
+    if (!controlAuthorized && !backendAuthorized) return json(res, 401, { error: 'authentication_required' });
+    if (req.headers.origin) return json(res, 403, { error: 'browser_origin_not_supported' });
+    // A backend-only account-control attestation, disabled unless an independently
+    // verified CES account-record reader AND runtime signing key are installed.
+    if (path === '/v1/account/attest') {
+      if (!backendAuthorized || req.method !== 'POST') return json(res, 403, { error: 'operation_not_permitted' });
+      if (!accountAttestor?.attest) return json(res, 503, { error: 'account_attestation_unavailable' });
+      if (req.headers['content-type']?.split(';')[0]?.trim().toLowerCase() !== 'application/json' ||
+          Number(req.headers['content-length'] || 0) > 2048 ||
+          req.headers['transfer-encoding'] || new URL(req.url||'/', 'https://ces.invalid').search)
+        return json(res, 400, { error: 'invalid_account_challenge' });
+      try {
+        let size = 0;
+        const chunks = [];
+        for await (const chunk of req) {
+          size += chunk.length;
+          if (size > 2048) return json(res, 413, { error: 'account_challenge_too_large' });
+          chunks.push(chunk);
+        }
+        const body = JSON.parse(Buffer.concat(chunks).toString('utf8'));
+        if (!body || typeof body !== 'object' || Array.isArray(body) ||
+          Object.keys(body).some(k => !['audience','neoSubject','exchangeId','externalAccount','challenge','expiresAt'].includes(k)))
+          return json(res, 400, { error: 'invalid_account_challenge' });
+        const result = await accountAttestor.attest(body);
+        // Authenticated backend responses only; no upstream CES content or
+        // account balances ever enter this endpoint.
+        return json(res, 200, { attestation: result.attestation, signature: result.signature });
+      } catch {
+        return json(res, 422, { error: 'ces_account_control_not_verified' });
+      }
+    }
+    const backendReadAllowed = (req.method === 'GET' && ['/v1/status', '/v1/reports/trading/latest'].includes(path)) || (req.method === 'POST' && path === '/v1/auth/check');
+    if (!controlAuthorized && !backendReadAllowed) return json(res, 403, { error: 'operation_not_permitted' });
+    if (req.method === 'GET' && path === '/v1/status') return json(res, 200, { ...nmniReadiness(env), databaseConfigured: Boolean(store), financialWritesEnabled: false, debugEnabled });
+    if (req.method === 'GET' && path === '/v1/imports') {
+      try { return json(res, 200, { imports: await store.list() }); } catch { return json(res, 503, { error: 'source_store_unavailable' }); }
+    }
+    if (req.method === 'GET' && path === '/v1/reports/trading/latest') {
+      try {
+        const report = await store.latest();
+        return json(res, report ? 200 : 404, report ? { report } : { error: 'report_not_available' });
+      } catch { return json(res, 503, { error: 'source_store_unavailable' }); }
+    }
+    if (req.method !== 'POST' || !['/v1/auth/check', '/v1/collect-import'].includes(path)) return json(res, 404, { error: 'not_found' });
+    if (path === '/v1/collect-import' && env.NEO_CES_IMPORT_ENABLED !== 'true') return json(res, 403, { error: 'source_import_disabled' });
+    if (!nmniReadiness(env).credentialsConfigured) return json(res, 503, { error: 'ces_credentials_not_configured' });
+    if (busy) return json(res, 409, { error: 'collection_in_progress' });
+    if (req.headers['transfer-encoding'] || Number(req.headers['content-length'] || 0) > 0) return json(res, 400, { error: 'request_body_not_supported' });
+    busy = true;
+    try {
+      if (!store || !await store.ping()) return json(res, 503, { error: 'source_store_unavailable' });
+      const result = await read(path === '/v1/collect-import');
+      if (result?.proof?.adminAuthenticated !== true || result.proof.memberAuthenticated !== true || result.proof.exchangeId !== 'NMNI') return json(res, 502, { error: 'ces_administrator_verification_failed' });
+      if (path === '/v1/auth/check') return json(res, 200, { proof: result.proof });
+      const imported = await store.importSnapshot(result.snapshot);
+      return json(res, 200, { proof: result.proof, import: imported });
+    } catch (error) {
+      // CES errors may contain credential-bearing navigation URLs. Never return
+      // or log the underlying exception, HTML, session material or secrets.
+      return json(res, 502, { error: 'ces_read_or_import_failed', ...(reader ? {} : { diagnostic: error?.cesDiagnostic }) });
+    } finally { busy = false; }
+  });
+}
