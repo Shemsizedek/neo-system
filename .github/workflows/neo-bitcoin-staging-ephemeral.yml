@@ -1,0 +1,24 @@
+name: NEO Bitcoin staging ephemeral deployment smoke
+on:
+  pull_request:
+    paths:
+      - 'deploy/neo-bitcoin-gateway-staging/**'
+      - 'server/neo-vm/**'
+      - 'server/neo-platform-api/bitcoin-gateway*'
+      - '.github/workflows/neo-bitcoin-staging-ephemeral.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  ephemeral-staging:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Run isolated staging source tests
+        run: node --test deploy/neo-bitcoin-gateway-staging/*.test.mjs
+      - name: Deploy, health check, stop and restart on runner loopback
+        run: node deploy/neo-bitcoin-gateway-staging/ephemeral-smoke.mjs

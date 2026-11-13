@@ -1,0 +1,22 @@
+name: NEO Bitcoin-wide policy and VM safety gate
+on:
+  pull_request:
+    paths:
+      - 'architecture/neo-bitcoin-execution-standard.json'
+      - 'server/neo-vm/**'
+      - 'server/neo-platform-api/counterparty-mainnet-*'
+      - 'server/neo-platform-api/server.mjs'
+      - 'docs/NEO_BITCOIN_WIDE_STANDARD.md'
+      - '.github/workflows/neo-bitcoin-policy-gate.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  policy-and-vm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: node --test server/neo-vm/*.test.mjs server/neo-platform-api/counterparty-mainnet-gateway.test.mjs

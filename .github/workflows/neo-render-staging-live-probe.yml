@@ -1,0 +1,22 @@
+name: NEO SYSTEM live Render staging safety probe
+on:
+  pull_request:
+    paths:
+      - 'deploy/neo-bitcoin-gateway-staging/**'
+      - 'server/neo-platform-api/bitcoin-gateway*'
+      - 'server/neo-platform-api/counterparty-mainnet-gateway*'
+      - '.github/workflows/neo-render-staging-live-probe.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  render-external-probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Probe actual deployed NEO SYSTEM staging service
+        run: node deploy/neo-bitcoin-gateway-staging/render-live-probe.mjs
