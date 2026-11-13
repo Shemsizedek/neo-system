@@ -1,0 +1,57 @@
+#!/usr/sbin/nft -f
+# GLOBAL-NEO-IP-NET-002 REVIEW TEMPLATE — NOT FOR DIRECT PRODUCTION APPLY.
+# Full ruleset replacement: obtain console/recovery access, inspect WAN interface,
+# and certify target service IPs before installing. Never auto-apply from CI.
+#
+# Assumptions:
+# - WireGuard enforces a unique AllowedIPs /32 for each peer's public key.
+# - Public websites terminate on a separately hardened HTTPS ingress, not this VPN.
+# - 10.144.20.10 and 10.144.20.20 are RESERVED EXAMPLE service targets,
+#   not evidence that any service is currently deployed at either address.
+# - No general Internet egress, east-west peer routing, or privileged admin service
+#   access is granted to guest/partner peers.
+flush ruleset
+
+define WAN_IF = "eth0"
+define WG_IF = "wg0"
+define NEO_ADMIN = 10.144.10.0/24
+define NEO_SERVICES = 10.144.20.0/24
+define NEO_GUESTS = 10.144.50.0/24
+define NEO_PARTNERS = 10.144.60.0/24
+define NEO_PUBLIC_PROXY = 10.144.20.10
+define NEO_PARTNER_PROXY = 10.144.20.20
+
+table inet neo_vpn_segmented {
+  chain input {
+    type filter hook input priority 0; policy drop;
+    iifname "lo" accept
+    ct state invalid drop
+    ct state established,related accept
+    ip protocol icmp accept
+    ip6 nexthdr icmpv6 accept
+    # Restrict administrative SSH to Google IAP only for the existing GCP design.
+    # For other providers, replace with an explicitly authorized management path.
+    ip saddr 35.235.240.0/20 tcp dport 22 accept
+    udp dport 51820 accept
+  }
+  chain forward {
+    type filter hook forward priority 0; policy drop;
+    ct state invalid drop
+    ct state established,related accept
+
+    # Narrow guest/partner access: only approved HTTPS reverse-proxy targets.
+    # Applications still require separate authentication and authorization.
+    iifname $WG_IF oifname $WG_IF ip saddr $NEO_GUESTS ip daddr $NEO_PUBLIC_PROXY tcp dport 443 accept
+    iifname $WG_IF oifname $WG_IF ip saddr $NEO_PARTNERS ip daddr $NEO_PUBLIC_PROXY tcp dport 443 accept
+    iifname $WG_IF oifname $WG_IF ip saddr $NEO_PARTNERS ip daddr $NEO_PARTNER_PROXY tcp dport 443 accept
+
+    # Admin segment gets HTTPS to service segment ONLY; not blanket access.
+    iifname $WG_IF oifname $WG_IF ip saddr $NEO_ADMIN ip daddr $NEO_SERVICES tcp dport 443 accept
+
+    # Remaining traffic (including guest-to-admin, guest-to-bot,
+    # partner-to-admin, lateral peer traffic, and VPN-to-WAN) is dropped.
+  }
+  chain output {
+    type filter hook output priority 0; policy accept;
+  }
+}

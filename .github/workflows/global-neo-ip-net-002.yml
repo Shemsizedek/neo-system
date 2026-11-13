@@ -1,0 +1,35 @@
+name: GLOBAL NEO IP NET-002 Segmentation Review
+
+on:
+  pull_request:
+    paths:
+      - 'services/neo-vpn/nftables/neo-vpn-segmented.review.nft'
+      - 'services/neo-vpn/identity/**'
+      - 'services/neo-vpn/tests/**'
+      - 'docs/global-neo-ip/**'
+      - '.github/workflows/global-neo-ip-net-002.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout project
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Test role-zone, expiry and review-only firewall policies
+        run: node --test services/neo-vpn/tests/*.test.mjs
+      - name: Install nftables parser (no host configuration changes)
+        run: |
+          if ! command -v nft >/dev/null 2>&1; then
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq nftables
+          fi
+      - name: Check firewall syntax ONLY — never apply
+        run: sudo nft -c -f services/neo-vpn/nftables/neo-vpn-segmented.review.nft
