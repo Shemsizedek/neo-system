@@ -35,6 +35,7 @@ export function createWhatsMinerAdapter(config={}){
         rejectedShares:Number(s.Rejected||s.rejected||0),
         uptimeSeconds:Number(s.Elapsed||s.uptime||0),
         pool:String(s.Pool||s.pool||''),
+        poolConnected:String(s['Pool Status']||s.poolStatus||'').toLowerCase()==='alive',
         worker:String(s.Worker||s.worker||''),
         firmware:String(s.Firmware||s.firmware||''),
         source:'WHATSMINER_STYLE'

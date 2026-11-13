@@ -8,13 +8,18 @@ export function validateConfig(env=process.env){
   const publicToken=clean(env.NEO_MINER_TELEMETRY_TOKEN)
   const internalToken=clean(env.NEO_MINER_API_TOKEN)
   const rawUrl=clean(env.NEO_MINER_INTERNAL_SNAPSHOT_URL||'http://127.0.0.1:8890/snapshot')
+  const rawCapacityUrl=clean(env.NEO_MINER_INTERNAL_CAPACITY_URL||'http://127.0.0.1:8890/fleet/capacity')
   if(!/^[0-9a-f]{64}$/i.test(publicToken))throw new Error('NEO_MINER_TELEMETRY_TOKEN_64_HEX_REQUIRED')
   if(!internalToken)throw new Error('NEO_MINER_API_TOKEN_REQUIRED')
   const url=new URL(rawUrl)
   if(!['http:','https:'].includes(url.protocol)||!LOOPBACK.has(url.hostname)||url.pathname!=='/snapshot'||url.username||url.password||url.search||url.hash){
     throw new Error('INTERNAL_SNAPSHOT_URL_MUST_BE_LOOPBACK_EXACT_SNAPSHOT')
   }
-  return {publicToken,internalToken,url:url.toString()}
+  const capacityUrl=new URL(rawCapacityUrl)
+  if(!['http:','https:'].includes(capacityUrl.protocol)||!LOOPBACK.has(capacityUrl.hostname)||capacityUrl.pathname!=='/fleet/capacity'||capacityUrl.username||capacityUrl.password||capacityUrl.search||capacityUrl.hash){
+    throw new Error('INTERNAL_CAPACITY_URL_MUST_BE_LOOPBACK_EXACT_FLEET_CAPACITY')
+  }
+  return {publicToken,internalToken,url:url.toString(),capacityUrl:capacityUrl.toString()}
 }
 function authorized(header,expected){
   if(typeof header!=='string'||!header.startsWith('Bearer '))return false
@@ -37,6 +42,18 @@ function allowlist(data={}){
     generatedAt:typeof data.generatedAt==='string'?data.generatedAt.slice(0,80):new Date().toISOString()
   }
 }
+function allowlistCapacity(data){
+  if(!data||data.source!=='SIGNED_AGENT_FLEET'||!['VERIFIED','BLOCKED'].includes(data.status)||
+     !Number.isSafeInteger(data.eligibleMiners)||data.eligibleMiners<0||
+     typeof data.eligibleHashrateTh!=='number'||!Number.isFinite(data.eligibleHashrateTh)||data.eligibleHashrateTh<0||
+     typeof data.generatedAt!=='string'||!Number.isFinite(Date.parse(data.generatedAt)))return null
+  if((data.status==='VERIFIED')!==(data.eligibleMiners>0&&data.eligibleHashrateTh>0))return null
+  return {
+    source:'SIGNED_AGENT_FLEET',status:data.status,
+    eligibleMiners:data.eligibleMiners,eligibleHashrateTh:data.eligibleHashrateTh,
+    generatedAt:data.generatedAt
+  }
+}
 function send(res,status,body,extra={}){
   res.writeHead(status,{'content-type':'application/json; charset=utf-8','cache-control':'no-store','x-content-type-options':'nosniff','referrer-policy':'no-referrer',...extra})
   res.end(JSON.stringify(body))
@@ -49,14 +66,18 @@ export function createServer({env=process.env,fetchImpl=fetch}={}){
     const path=pathOf(req)
     if(path===null)return send(res,400,{error:'INVALID_REQUEST_TARGET'})
     if(req.method==='GET'&&path==='/health')return send(res,200,{service:'neo-miner-telemetry-sidecar',status:'UP',mutates:false})
-    if(path==='/snapshot'){
+    if(path==='/snapshot'||path==='/capacity'){
       if(req.method!=='GET')return send(res,405,{error:'METHOD_NOT_ALLOWED'},{allow:'GET'})
       if(!authorized(req.headers.authorization,config.publicToken))return send(res,401,{error:'UNAUTHORIZED'})
       try{
-        const response=await fetchImpl(config.url,{method:'GET',headers:{accept:'application/json',authorization:`Bearer ${config.internalToken}`},redirect:'error',signal:AbortSignal.timeout(8000)})
+        const response=await fetchImpl(path==='/capacity'?config.capacityUrl:config.url,{method:'GET',headers:{accept:'application/json',authorization:`Bearer ${config.internalToken}`},redirect:'error',signal:AbortSignal.timeout(8000)})
         if(!response.ok)return send(res,503,{error:'INTERNAL_SNAPSHOT_UNAVAILABLE',status:response.status})
         const data=await response.json()
         if(!data||typeof data!=='object'||Array.isArray(data))return send(res,503,{error:'INTERNAL_SNAPSHOT_INVALID'})
+        if(path==='/capacity'){
+          const capacity=allowlistCapacity(data)
+          return capacity?send(res,200,capacity):send(res,503,{error:'INTERNAL_CAPACITY_INVALID'})
+        }
         return send(res,200,allowlist(data))
       }catch{return send(res,503,{error:'INTERNAL_SNAPSHOT_UNREACHABLE'})}
     }

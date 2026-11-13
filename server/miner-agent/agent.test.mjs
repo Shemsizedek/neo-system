@@ -12,6 +12,8 @@ test('signed envelope verifies and tampering fails',()=>{
   const {signature,...body}=env
   assert.equal(verifyEvent(body,signature,publicPem),true)
   assert.equal(verifyEvent({...body,minerId:'M2'},signature,publicPem),false)
+  assert.equal(verifyEvent({...body,payload:{hashrateTh:999}},signature,publicPem),false)
+  assert.equal(verifyEvent({...body,payload:{hashrateTh:100,powerW:999}},signature,publicPem),false)
 })
 
 test('gateway transport refuses insecure HTTP',async()=>{
@@ -27,6 +29,16 @@ test('gateway transport posts JSON over HTTPS',async()=>{
   const result=await postEnvelope('https://example.test/events',{hello:'world'},fakeFetch)
   assert.equal(received.url,'https://example.test/events')
   assert.equal(received.init.method,'POST')
+  assert.equal(received.init.headers.authorization,undefined)
   assert.deepEqual(JSON.parse(received.init.body),{hello:'world'})
   assert.deepEqual(result,{ok:true})
+})
+
+test('agent uplink sends scoped bearer token only via HTTPS',async()=>{
+  let request
+  await postEnvelope('https://miner.example/fleet/M1/telemetry',{type:'TELEMETRY'},async(url,options)=>{
+    request={url,options}
+    return {ok:true,json:async()=>({ok:true})}
+  },{token:'scoped-secret'})
+  assert.equal(request.options.headers.authorization,'Bearer scoped-secret')
 })
