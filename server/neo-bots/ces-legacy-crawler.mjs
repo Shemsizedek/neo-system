@@ -34,7 +34,19 @@ export function createLegacyCesCrawler({
     const response = await request(surface.path, { method: 'GET' });
     const html = await response.text();
     const finalUrl = response.url || new URL(surface.path, baseUrl).toString();
-    const forms = inventoryCesForms(html, { pageUrl: finalUrl });
+    // Legacy CES sometimes includes login secrets in links. No query-bearing
+    // redirect or form action may be copied into a persisted discovery manifest.
+    const resolved = new URL(finalUrl, baseUrl);
+    if (resolved.origin !== new URL(baseUrl).origin || resolved.search ||
+        resolved.hash || resolved.username || resolved.password) {
+      throw new Error('Unsafe CES discovery response URL');
+    }
+    const forms = inventoryCesForms(html, { pageUrl: finalUrl })
+      .filter((form) => {
+        const action = new URL(form.action, finalUrl);
+        return action.origin === resolved.origin && !action.search && !action.hash &&
+          !action.username && !action.password;
+      });
     const links = inventoryLinks(html, { pageUrl: finalUrl, baseUrl }).slice(0, maxLinksPerPage);
 
     return {
@@ -92,7 +104,10 @@ export function inventoryLinks(html = '', { pageUrl, baseUrl = 'https://www.comm
     if (!attrs.href) continue;
     let url;
     try { url = new URL(attrs.href, pageUrl || baseUrl); } catch { continue; }
-    if (url.origin !== new URL(baseUrl).origin) continue;
+    // Never persist credential-bearing links, including historical login-as-user
+    // navigation URLs. Drop all query-bearing links rather than guessing safe keys.
+    if (url.origin !== new URL(baseUrl).origin || url.search || url.hash ||
+        url.username || url.password) continue;
     links.push({
       url: url.toString(),
       path: `${url.pathname}${url.search}`,

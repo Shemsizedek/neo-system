@@ -79,3 +79,32 @@ test('crawler marks unknown routes without requesting them', async () => {
   assert.equal(calls, 0);
   assert.equal(manifest.pages[0].status, 'route-unknown');
 });
+
+
+test('discovery never persists password-bearing links, forms or redirects', async () => {
+  const secret = 'SYNTHETIC_TEST_SECRET_NEVER_REAL';
+  const html = '<h1>Admin</h1>' +
+    '<a href="/rlogin.asp?uid=example&pw='+secret+'">User Login</a>' +
+    '<a href="/_admin/reptrades.asp">Safe Report</a>' +
+    '<form method="POST" action="/_admin/tx.asp?pw='+secret+'"><input name="amount"></form>' +
+    '<form method="GET" action="/_admin/reptrades.asp"><input name="sort"></form>';
+  const links = inventoryLinks(html, { pageUrl:'https://www.community-exchange.org/_admin/admain.asp' });
+  assert.deepEqual(links.map(link => link.path), ['/_admin/reptrades.asp']);
+  const crawler = createLegacyCesCrawler({
+    request: async () => ({
+      ok:true, status:200,
+      url:'https://www.community-exchange.org/_admin/admain.asp',
+      text: async () => html,
+    }),
+    surfaces:[{ key:'manage', label:'Manage', path:'/_admin/admain.asp', risk:'admin-read' }],
+  });
+  const result=await crawler.crawl({exchangeId:'NMNI',adminAccount:'NMNI0000',bankAccount:'NMNIBANK'});
+  assert.equal(result.pages[0].forms.length,1);
+  assert.equal(result.pages[0].forms[0].method,'GET');
+  assert.doesNotMatch(JSON.stringify(result), new RegExp(secret));
+  const bad = createLegacyCesCrawler({
+    request: async () => ({ok:true,status:200,url:'https://www.community-exchange.org/_admin/admain.asp?pw='+secret,text:async()=>html}),
+    surfaces:[{key:'manage',label:'Manage',path:'/_admin/admain.asp',risk:'admin-read'}],
+  });
+  await assert.rejects(()=>bad.crawl({exchangeId:'NMNI'}), /Unsafe CES discovery response URL/);
+});

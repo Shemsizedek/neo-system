@@ -110,3 +110,52 @@ test('legacy control-panel discovery persists a reusable manifest', async () => 
   assert.equal(persisted.interface, 'legacy');
   assert.equal(postCount, 1, 'discovery must not submit any POST after login');
 });
+
+
+test('CES form discovery redacts hidden credentials and excludes query-bearing actions',async()=>{
+ const marker='SYNTHETIC_PRIVATE_TOKEN_DO_NOT_COPY';
+ const fetchImpl=async(url,opts={})=>{
+  const p=new URL(url).pathname;
+  if(opts.method==='POST')return response('',{status:302,headers:{location:'/win/home.asp'}});
+  if(p==='/login.asp')return response(loginForm);
+  return response('<h1>Reports</h1>'+
+   '<form method="get" action="/_admin/reptrades.asp"><input type="hidden" name="csrf" value="'+marker+'"></form>'+
+   '<form method="post" action="/_admin/tx.asp?pw='+marker+'"><input name="amount"></form>',{url:'https://www.community-exchange.org/_admin/reptrades.asp'});
+ };
+ const adapter=createCesSessionAdapter({fetchImpl,sessionValidator:validatedSession,credentialProvider:trustedCredentialProvider});
+ const result=await adapter.discoverForms(resolveCesIdentity('NMNI'),'/_admin/reptrades.asp');
+ assert.equal(result.ok,true);
+ assert.equal(result.forms.length,1);
+ assert.equal(result.forms[0].fields[0].name,'csrf');
+ assert.equal(Object.hasOwn(result.forms[0].fields[0],'value'),false);
+ assert.doesNotMatch(JSON.stringify(result),new RegExp(marker));
+});
+
+
+test('default CES session validation rejects HTTP-200 and absent success marker', async () => {
+  const fixture='<form method="post" action="/login.asp"><input name="account"><input name="password" type="password"></form>';
+  const adapter=createCesSessionAdapter({
+    fetchImpl:async(_url,options={}) => (options.method==='POST' ?
+      response('<h1>Welcome</h1>',{status:200}) : response(fixture)),
+    credentialProvider:async()=>({
+      username:'synthetic-admin',password:'synthetic-only',
+      loginPath:'/login.asp',submitPath:'/login.asp',
+      usernameField:'account',passwordField:'password',
+    }),
+  });
+  await assert.rejects(()=>adapter.login(resolveCesIdentity('NMNI')),/did not validate an authenticated session/);
+});
+
+test('legacy CES credential-in-query login path is rejected before any request',async()=>{
+ let calls=0;
+ const adapter=createCesSessionAdapter({
+  fetchImpl:async()=>{calls++;return response('');},
+  credentialProvider:async()=>({
+   username:'synthetic-admin',password:'synthetic-only',
+   loginPath:'/login.asp?pw=bogus',submitPath:'/login.asp',
+   successLocationPattern:'^/win/',
+  }),
+ });
+ await assert.rejects(()=>adapter.login(resolveCesIdentity('NMNI')),/query strings/);
+ assert.equal(calls,0);
+});
