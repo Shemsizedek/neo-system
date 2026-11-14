@@ -4,6 +4,10 @@ import {readFileSync} from 'node:fs';
 import {spawnSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 
+import {mkdtempSync, writeFileSync, chmodSync, rmSync} from 'node:fs';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
+
 const script=fileURLToPath(new URL('../diagnostics/multicloud-009-rootless-service.sh',import.meta.url));
 const source=readFileSync(script,'utf8');
 
@@ -58,4 +62,63 @@ test('no private traffic or peer handshake success is fabricated',()=>{
   assert.ok(!source.includes('PRIVATE_WIREGUARD_VERIFIED'));
   assert.match(source,/HOLD_NO_LOCAL_TEST_SERVICE_RESPONSE/);
   assert.match(source,/ANDROID_REQUEST_AND_HANDSHAKE_NOT_VERIFIED/);
+});
+
+function mockDockerStatus(envOverrides={}) {
+  const dir=mkdtempSync(join(tmpdir(),'neo-mc011-docker-'));
+  const command=join(dir,'docker');
+  const scriptText=[
+    '#!/bin/sh',
+    'case "$1" in',
+    ' info) exit 0 ;;',
+    ' container) exit 0 ;;',
+    ' inspect)',
+    '   case "$3" in',
+    "     '{{.Config.Image}}') printf '%s\\n' 'netbirdio/netbird:rootless-latest' ;;",
+    "     '{{.Config.User}}') printf '%s\\n' 'netbird:netbird' ;;",
+    "     '{{.HostConfig.NetworkMode}}') printenv MOCK_NET_MODE ;;",
+    "     '{{.HostConfig.Privileged}}') printenv MOCK_PRIVILEGED ;;",
+    "     '{{json .HostConfig.PortBindings}}') printenv MOCK_PORTS ;;",
+    "     '{{json .HostConfig.CapAdd}}') printenv MOCK_CAPS ;;",
+    '     *) exit 99 ;;',
+    '   esac ;;',
+    ' exec) exit 0 ;;',
+    ' *) exit 99 ;;',
+    'esac',
+  ].join('\n')+'\n';
+  writeFileSync(command,scriptText);
+  chmodSync(command,0o700);
+  try {
+    const env={...process.env,
+      PATH:dir+':'+process.env.PATH,
+      CODESPACES:'true',CI:'',GITHUB_ACTIONS:'',
+      MOCK_NET_MODE:'bridge',MOCK_PRIVILEGED:'false',
+      MOCK_PORTS:'{}',MOCK_CAPS:'null',...envOverrides};
+    return spawnSync('bash',[script,'status'],{env,encoding:'utf8',timeout:5000});
+  } finally { rmSync(dir,{recursive:true,force:true}); }
+}
+test('existing container must have an unexposed unprivileged Docker runtime',()=>{
+  const r=mockDockerStatus();
+  assert.equal(r.status,0,r.stdout+' '+r.stderr);
+  assert.match(r.stdout,/LOCAL_CONTAINER_TEST_RESPONSE_OK_ANDROID_REQUEST_AND_HANDSHAKE_NOT_VERIFIED/);
+});
+test('published host port blocks private probe before any container service attempt',()=>{
+  const r=mockDockerStatus({MOCK_PORTS:'{"18443/tcp":[{"HostIp":"0.0.0.0","HostPort":"18443"}]}'});
+  assert.equal(r.status,2);
+  assert.match(r.stdout,/HOLD_CONTAINER_EXPOSURE_OR_PRIVILEGE_POLICY/);
+});
+test('privileged container cannot host this purported rootless pilot',()=>{
+  const r=mockDockerStatus({MOCK_PRIVILEGED:'true'});
+  assert.equal(r.status,2);
+  assert.match(r.stdout,/HOLD_CONTAINER_EXPOSURE_OR_PRIVILEGE_POLICY/);
+});
+test('host networking is rejected even if no explicit port publishing',()=>{
+  const r=mockDockerStatus({MOCK_NET_MODE:'host'});
+  assert.equal(r.status,2);
+  assert.match(r.stdout,/HOLD_CONTAINER_EXPOSURE_OR_PRIVILEGE_POLICY/);
+});
+test('extra Docker network capabilities are rejected before the probe',()=>{
+  const r=mockDockerStatus({MOCK_CAPS:'["NET_ADMIN"]'});
+  assert.equal(r.status,2);
+  assert.match(r.stdout,/HOLD_CONTAINER_EXPOSURE_OR_PRIVILEGE_POLICY/);
 });
