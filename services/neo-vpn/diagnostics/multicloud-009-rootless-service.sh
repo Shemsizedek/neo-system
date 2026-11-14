@@ -37,6 +37,21 @@ if [[ "$ACTUAL_IMAGE" != "$IMAGE" || -z "$ACTUAL_USER" ||
   say "HOLD_UNEXPECTED_CONTAINER_IDENTITY"
   exit 2
 fi
+# Reject any preexisting container that could expose the probe beyond the
+# intended unprivileged Docker bridge namespace. Read only specific host config
+# properties: never use unrestricted docker inspect (which includes setup keys).
+NET_MODE="$(docker inspect --format '{{.HostConfig.NetworkMode}}' "$CONTAINER" 2>/dev/null)" || exit 2
+PRIVILEGED="$(docker inspect --format '{{.HostConfig.Privileged}}' "$CONTAINER" 2>/dev/null)" || exit 2
+PORT_BINDINGS="$(docker inspect --format '{{json .HostConfig.PortBindings}}' "$CONTAINER" 2>/dev/null)" || exit 2
+ADDED_CAPS="$(docker inspect --format '{{json .HostConfig.CapAdd}}' "$CONTAINER" 2>/dev/null)" || exit 2
+if [[ "$PRIVILEGED" != "false" ||
+      ( "$NET_MODE" != "bridge" && "$NET_MODE" != "default" ) ||
+      ( "$PORT_BINDINGS" != "null" && "$PORT_BINDINGS" != "{}" ) ||
+      ( "$ADDED_CAPS" != "null" && "$ADDED_CAPS" != "[]" ) ]]; then
+  say "HOLD_CONTAINER_EXPOSURE_OR_PRIVILEGE_POLICY"
+  exit 2
+fi
+
 if ! docker exec "$CONTAINER" netbird status --check ready >/dev/null 2>&1; then
   say "HOLD_NETBIRD_PEER_DAEMON_NOT_READY"
   exit 2
