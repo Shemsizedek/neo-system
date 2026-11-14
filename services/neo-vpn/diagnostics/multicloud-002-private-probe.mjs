@@ -67,6 +67,7 @@ export function startProbe(config, {createServer=http.createServer, schedule=set
   server=createServer(makeHandler({allowedSource:peerIp,onAccepted:stop}));
   server.once('error',()=>{ // A missing NetBird interface or bound port is a normal hold.
     process.stderr.write('NEO_PRIVATE_PROBE_NOT_LISTENING\n');
+    process.exitCode = 2;
   });
   server.listen(port,listenIp,()=>{
     process.stdout.write('NEO_PRIVATE_PROBE_LISTENING_RESTRICTED\n');
