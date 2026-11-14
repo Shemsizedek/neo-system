@@ -94,3 +94,36 @@ This stops only the named pilot container and deletes the dedicated test identit
 
 Decision: **HOLD_SECOND_PEER_ENROLLMENT_AND_REAL_PRIVATE_REQUEST**.
 No cloud deployment, firewall, DNS, key or route has been modified by the authoring agent.
+
+
+## NEO-MULTICLOUD-011 — Rootless container isolation acceptance
+
+Before the Codespaces test can run, the NEO-MULTICLOUD-009 service launcher now checks
+only selected (non-secret) Docker metadata. It must observe all of the following:
+
+- Exact expected official rootless image and a non-root runtime user.
+- Docker HostConfig.Privileged is false.
+- NetworkMode is the default isolated bridge, never host or a shared existing container namespace.
+- No HostConfig.PortBindings (null or empty object).
+- No added Docker capabilities (null or empty array).
+
+Any exception returns HOLD_CONTAINER_EXPOSURE_OR_PRIVILEGE_POLICY and prevents the
+test listener from starting. This reduces the risk that a preexisting container with
+the correct name could have exposed its listening port outside the Codespace.
+It does not independently verify the actual NetBird ACL or external firewall.
+
+The test runner uses a mock Docker executable to verify five real shell outcomes,
+including refusal of public port mappings, extra capabilities, host networking
+and privileged execution, without running or touching a real Docker daemon.
+
+On the user's Codespaces terminal, the usual reviewed command remains:
+
+    bash "$HOME/neo-private-service.sh" serve
+
+**Re-download the reviewed service launcher from the feature branch** to obtain
+the new checks before executing it. If the security preflight fails, do not add
+privileges or publish a Codespaces port to bypass it. Inspect the existing pilot's
+deployment with its owner and recreate it only after deliberate review.
+
+Current state: code validation pending latest CI; no second NetBird peer,
+private HTTP response, handshake or failover is certified by this change.
