@@ -96,3 +96,43 @@ health, quota headroom, sleeping tiers, capability mismatch, stateful recovery,
 explicit preapproval, unique identities, no input mutation and legacy continuity.
 These tests establish decision behavior only, not deployed failover readiness.
 Result: all 27 tests passed on Node v24.22.1; git diff --check also passed.
+
+## November 15 health-observer gate
+
+PR 1383 remains unmerged. Its six recorded GitHub workflows completed
+successfully for the initial commit; that does not validate deployed failover.
+The branch was updated against main 4bd0471 before the following tests.
+
+Added health-observer.mjs: a read-only CLI and importable collector with three
+fixed HTTPS destinations, ten-second request deadlines, a 16 KiB JSON limit,
+no credentials, no redirects and no arbitrary target input. It checks service
+identity and returns sanitized evidence only. A healthy observation deliberately
+retains failoverEligible=false and functionalValidation=false. A trusted runtime
+still needs independent provider/dependency, quota and recovery evidence.
+
+Run: node server/neo-continuity/health-observer.mjs
+
+Observed around 5:48 p.m. America/Chicago on November 15, 2026:
+
+| Path | Result | Meaning |
+| --- | --- | --- |
+| Prime /health | 503 | Canonical health path from runtime target registry unavailable |
+| Prime /healthz | 525 | Separate bounded operations probe unavailable |
+| School / and /health | 503 | Public entry failed twice; application identity unverified |
+| temple-continuity.shemsizedek.chatgpt.site/healthz | 200; ok=true; service=temple-continuity; mode=public-recovery | Existing public recovery gateway identity verified |
+| neo-platform-api-recovery.onrender.com/health | 503 | Gateway's configured portal backend unavailable in this observation |
+
+The recovery gateway source is deploy/temple-continuity/worker/index.js. Its
+public health handler is local to that gateway and does not check the portal
+backend. It must not be used as proof of functioning member services, NEOpass,
+school learning flows, or an independent stateful replica. Source inventory
+maps school to gisd and Prime to neo-prime; neither named service appears in the
+19-service NEO SYSTEM Render inventory returned during this gate. Actual origin
+mapping and the other NEO Render workspace require separate verification.
+
+Updated validation: all 34 continuity tests passed. New cases cover wrong app
+identity, HTML setup shells, redirects, unavailable responses, oversized JSON,
+network errors, fixed destinations and isolation of failed probes. No scheduled
+runner, production route or database promotion was added. Next: verify actual
+origins, restore portal backend, then exercise independent application recovery
+with provider/quota/restore evidence and rollback.

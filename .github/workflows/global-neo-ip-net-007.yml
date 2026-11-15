@@ -1,0 +1,33 @@
+name: Global NEO IP NET-007 Provider-Neutral Mesh Gate
+
+on:
+  pull_request:
+    paths:
+      - 'architecture/global-neo-ip-provider-policy.json'
+      - 'services/neo-vpn/federation/**'
+      - 'services/neo-vpn/tests/provider-federation.test.mjs'
+      - 'docs/global-neo-ip/NET-007-FREE-MESH-PILOT.md'
+      - '.github/workflows/global-neo-ip-net-007.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  provider-neutral-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Setup Node 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Validate provider policy and source
+        run: |
+          node --check services/neo-vpn/federation/provider-policy.mjs
+          node -e "const p=require('./architecture/global-neo-ip-provider-policy.json');if(p.canonical_neo_private_overlay!=='10.144.0.0/16')process.exit(1)"
+      - name: Test no-spend and fail-closed migration decisions
+        run: node --test services/neo-vpn/tests/provider-federation.test.mjs
+      - name: Confirm no cloud deployment is triggered
+        run: echo "NET-007 tests only; no provider account, WireGuard peer, billing or cloud resource is changed."

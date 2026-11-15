@@ -1,0 +1,21 @@
+services:
+  stalwart:
+    image: stalwartlabs/stalwart:v1
+    container_name: neomail-codespaces
+    init: true
+    restart: unless-stopped
+    ports:
+      - "25:25"
+      - "443:443"
+      - "465:465"
+      - "993:993"
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - stalwart-codespaces-etc:/etc/stalwart
+      - stalwart-codespaces-data:/var/lib/stalwart
+    environment:
+      - NEOMAIL_MODE=codespaces-lab
+
+volumes:
+  stalwart-codespaces-etc:
+  stalwart-codespaces-data:

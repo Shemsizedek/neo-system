@@ -1,0 +1,17 @@
+# Crown Chain NOMNI custom-domain recovery — isolated Render Blueprint
+# Purpose: register the existing NOMNI metadata hostname on the healthy mirror.
+# This does not modify asset issuance, Bitcoin records, wallet authority, or DNS.
+services:
+  - type: web
+    runtime: static
+    name: neo-crown-nomni-mirror
+    repo: https://github.com/Shemsizedek/neo-system
+    branch: main
+    autoDeployTrigger: commit
+    buildCommand: >-
+      test -f server/crown-metadata/attachments/NOMNI/assets/NOMNI/tokenscan.json &&
+      cmp -s server/crown-metadata/attachments/NOMNI/tokenscan.json server/crown-metadata/attachments/NOMNI/assets/NOMNI/tokenscan.json &&
+      test -f server/crown-metadata/attachments/NOMNI/assets/NOMNI/nomni-bill-1.jpg
+    staticPublishPath: server/crown-metadata/attachments/NOMNI
+    domains:
+      - crown.holytemples.org

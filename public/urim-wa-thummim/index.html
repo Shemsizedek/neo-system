@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#04160d"><title>Urim wa Thummim · NEO Oracle</title>
+<style>
+:root{font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:#eaffed;background:#031009}*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(ellipse at top,#113920,#031009 55%);min-height:100vh}
+main{max-width:1000px;padding:24px 18px 60px;margin:auto}header{display:flex;align-items:center;gap:14px;border-bottom:1px solid #295b39;padding-bottom:20px}.mark{font-size:38px;color:#aafbbb}
+h1{font-size:clamp(26px,5vw,43px);margin:16px 0 6px}h2{font-size:20px}p{line-height:1.55;color:#b5d5bf}
+a{color:#b9fbbd}.sub{font-size:14px;color:#b7d5bb}.pane{background:#091e13;border:1px solid #315b3e;border-radius:20px;padding:22px;margin-top:22px;box-shadow:0 16px 30px #0004}
+label{font-weight:650;display:block;margin:14px 0 7px;font-size:14px}
+textarea,input,select{display:block;width:100%;background:#06140b;border:1px solid #426f4d;color:#f4fff5;padding:12px;border-radius:9px;font:inherit}textarea{min-height:80px}
+button{background:#a6f98d;color:#07200e;padding:12px 18px;font:inherit;font-weight:750;border:0;border-radius:10px;cursor:pointer;margin:14px 8px 0 0}
+button.secondary{background:#183a26;color:#dcffde;border:1px solid #436e4e}
+fieldset{border:0;padding:0;margin:0}section[hidden]{display:none}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(185px,1fr));gap:16px;margin-top:16px}
+.stone{background:radial-gradient(ellipse at 34% 22%,#434e47,#080b09 63%,#030403);border:2px solid #67756b;box-shadow:inset 0 7px 12px #ffffff10,0 7px 18px #0008;min-height:220px;border-radius:44% 46% 39% 45%;padding:24px 16px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.stone b{font-size:23px}.stone small{font-size:13px;color:#cbdfc9}.stone .place{color:#a2f6b7;font-size:12px;min-height:24px}.stone .orient{font-size:11px;margin:8px 0;border:1px solid #72927a;border-radius:14px;padding:3px 8px}
+.stone.reversed{border-color:#d0b27b}.detail{font-size:14px;line-height:1.5;margin:12px 0 0;color:#d0e8d3}
+.note{font-size:12px;color:#a7c9b0}.sr-only{position:absolute;clip:rect(0,0,0,0);width:1px;height:1px;overflow:hidden}
+@media(max-width:600px){.pane{padding:16px}.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.stone{min-height:195px;padding:12px}}
+</style></head><body><main>
+<header><div class="mark" aria-hidden="true">☥</div><div><strong>NEO ORACLE · NOUS FIELD</strong><div class="sub">World Temple · Nuwaubic divination practice</div></div></header>
+<h1>Urim wa Thummim</h1><p>Lights of Perfection · 25 Nuwaubian stones · Noological interpretation grounded in sound right reasoning.</p>
+<div class="pane"><h2>Prepare your consultation</h2><label for="issue">What issue or question would you like to reflect on?</label><textarea id="issue" maxlength="1200" placeholder="Describe the situation and what is within your control."></textarea>
+<label for="context">Useful background (optional)</label><textarea id="context" maxlength="1500" placeholder="What happened? What options are you considering?"></textarea>
+<label for="spread">Reading structure</label><select id="spread">
+<option value="one">1 — Direct message</option><option value="future">3 — Future · Present · Past</option>
+<option value="action">3 — New situation · Action · Situation</option>
+<option value="challenge">3 — Best outcome · Challenge · Present now</option>
+<option value="life">5 — Past · Present · Future · Foundation · Challenge</option>
+<option value="soul">5 — Birth and childhood · Present · Present future · Past incarnation · Future incarnation</option>
+</select><button id="cast">Cast the stones</button><button class="secondary" id="journal">Download journal entry</button><p class="note">Interpretations are symbolic prompts, not verified predictions, medical diagnosis, or evidence of external communication. Incomplete historical claims are identified as such.</p></div>
+<section id="reading" class="pane" hidden aria-live="polite"><h2>The stone field</h2><p id="intro"></p><div class="grid" id="stones"></div><div id="interpretations"></div></section>
+<section class="pane"><h2>Practice and provenance</h2><p>Following the Nuwaubic rune names and attributes supplied for the Noological Doctrine, each selection invites examination of the issue from more than one perspective. The visual onyx stones are conceptual until their approved sigil artwork is incorporated.</p>
+<p>Nine stones are described by the teaching as non-reversible. Their exact identities have not all been verified, so this release disables reversal for Hayuh and Blank and flags all other reversals as provisional until the official neutral list is supplied. No Dhikr, deity chant or vibration mapping is included.</p></section>
+</main><script>
+const RUNES=[{"name":"Nasuf","meaning":"The Self","neutral":false},{"name":"Sharukuf","meaning":"Unity / Partnership","neutral":false},{"name":"Rawuh","meaning":"Messenger / Spirit","neutral":false},{"name":"Hen","meaning":"Inherited pathways / Here","neutral":false},{"name":"Gawu","meaning":"Change, growth / Strength","neutral":false},{"name":"Sarun","meaning":"Mystic transformation / Secret","neutral":false},{"name":"Ka'wub","meaning":"Difficult limitations","neutral":false},{"name":"Batul","meaning":"Hero / Fertility","neutral":false},{"name":"Dafu","meaning":"Power / Defense","neutral":false},{"name":"Istahraas","meaning":"Emotion control / Protection","neutral":false},{"name":"Mamluk","meaning":"Success, fulfillment / Possession","neutral":false},{"name":"Faruh","meaning":"Light, joy, happiness","neutral":false},{"name":"Hasud","meaning":"Harvest","neutral":false},{"name":"Faatuh","meaning":"Opening, clarity, fire","neutral":false},{"name":"Mujahud","meaning":"Spirit, battles, wars","neutral":false},{"name":"Zaru","meaning":"Fertility, birth, development","neutral":false},{"name":"Harukant","meaning":"Transition and movement","neutral":false},{"name":"Sabub","meaning":"Conducting power and water","neutral":false},{"name":"Matur","meaning":"Element power, freedom, creator / Rain","neutral":false},{"name":"Safur","meaning":"Journey, union, reunion, communication","neutral":false},{"name":"Bab","meaning":"Gateway / Non-action","neutral":false},{"name":"Najuh","meaning":"Result, breakthrough, transformation","neutral":false},{"name":"Bagum","meaning":"Winter, stillness, powerlessness","neutral":false},{"name":"Hayuh","meaning":"Life force and wholeness","neutral":true},{"name":"Blank","meaning":"Unknown, destiny, beginning and end","neutral":true}];
+const POS={one:["Direct message"],future:["Future","Present","Past"],action:["New situation","Action","Situation"],challenge:["Best outcome","Challenge","Present now"],life:["Past","Present now","Future","Foundation","Challenge"],soul:["Birth and childhood","Present","Present future","Past incarnation","Future incarnation"]};
+let current=null;
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pick=(n)=>{const pool=[...RUNES];const out=[];for(let i=0;i<n;i++){const index=Math.floor(Math.random()*pool.length);out.push(pool.splice(index,1)[0])}return out};
+const guidance=r=>{const lower=r.meaning.toLowerCase();return "Consider how "+lower+" relates to the facts, your assumptions, and the action you can take responsibly."};
+document.getElementById('cast').addEventListener('click',()=>{
+ const question=document.getElementById('issue').value.trim(),context=document.getElementById('context').value.trim(),key=document.getElementById('spread').value;
+ if(!question){document.getElementById('issue').focus();return}
+ const positions=POS[key];const stones=pick(positions.length).map((r,i)=>({...r,position:positions[i],orientation:r.neutral?"Neutral":(Math.random()<.5?"Upright":"Reversed (provisional)")}));
+ current={date:new Date().toISOString(),question,context,spread:key,stones};
+ document.getElementById('reading').hidden=false;
+ document.getElementById('intro').textContent="Reading for: "+question;
+ document.getElementById('stones').innerHTML=stones.map(r=>'<article class="stone '+(r.orientation.startsWith("Reversed")?'reversed':'')+'"><div class="place">'+esc(r.position)+'</div><b>'+esc(r.name)+'</b><small>'+esc(r.meaning)+'</small><span class="orient">'+esc(r.orientation)+'</span></article>').join('');
+ document.getElementById('interpretations').innerHTML=stones.map(r=>'<p class="detail"><strong>'+esc(r.position)+' — '+esc(r.name)+':</strong> '+esc(guidance(r))+(r.orientation.startsWith("Reversed")?" Reflect on what may be obstructed or underdeveloped.":"")+'</p>').join('')+'<p class="detail"><b>Neoteric probate:</b> Which observation supports your interpretation? What evidence would challenge it? What is one reversible next step?</p>';
+ document.getElementById('reading').scrollIntoView({behavior:'smooth'});
+});
+document.getElementById('journal').addEventListener('click',()=>{
+ if(!current){alert('Cast a reading before downloading your journal entry.');return}
+ const b=new Blob([JSON.stringify(current,null,2)],{type:'application/json'});const url=URL.createObjectURL(b);const a=document.createElement('a');a.href=url;a.download='nous-stone-journal-'+current.date.slice(0,10)+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+});
+</script></body></html>

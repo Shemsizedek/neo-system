@@ -1,0 +1,13 @@
+# Preliminary release plan for the legacy NOMNI metadata service.
+# Isolated Blueprint only: do not approve until legacy domain assignments are reviewed.
+# Asset records, supply, wallet permissions, and DNS remain unchanged by planning.
+services:
+  - type: web
+    runtime: static
+    name: neo-nomni-metadata
+    repo: https://github.com/Shemsizedek/neo-system
+    branch: main
+    autoDeployTrigger: commit
+    buildCommand: test -f server/crown-metadata/attachments/NOMNI/tokenscan.json
+    staticPublishPath: server/crown-metadata/attachments/NOMNI
+    domains: []

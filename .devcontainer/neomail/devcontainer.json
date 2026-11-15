@@ -1,0 +1,26 @@
+{
+  "name": "NEO Mail Stalwart Development Lab",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+  },
+  "workspaceFolder": "/workspaces/neo-system",
+  "forwardPorts": [
+    8080
+  ],
+  "portsAttributes": {
+    "8080": {
+      "label": "Stalwart local development console",
+      "onAutoForward": "notify",
+      "visibility": "private"
+    }
+  },
+  "postCreateCommand": "echo 'NEO Mail lab ready: use infra/neomail-staging/ for staged deployment files; do not publish SMTP or production MX from Codespaces.'",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-azuretools.vscode-docker"
+      ]
+    }
+  }
+}

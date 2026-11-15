@@ -1,0 +1,38 @@
+#cloud-config
+package_update: true
+package_upgrade: false
+
+packages:
+  - ca-certificates
+  - curl
+  - git
+  - docker.io
+  - docker-compose-plugin
+  - ufw
+  - dnsutils
+
+write_files:
+  - path: /etc/sysctl.d/99-neomail.conf
+    permissions: "0644"
+    content: |
+      net.ipv4.tcp_syncookies = 1
+      net.ipv4.conf.all.rp_filter = 1
+      net.ipv4.conf.default.rp_filter = 1
+
+runcmd:
+  - systemctl enable --now docker
+  - mkdir -p /opt/neomail
+  - ufw default deny incoming
+  - ufw default allow outgoing
+  - ufw allow 22/tcp
+  - ufw allow 25/tcp
+  - ufw allow 443/tcp
+  - ufw allow 465/tcp
+  - ufw allow 993/tcp
+  - ufw --force enable
+  - sysctl --system
+
+final_message: |
+  NEO Mail base host initialized.
+  Copy the committed docker-compose.yml and bootstrap.sh into /opt/neomail.
+  Do not modify holytemples.org production MX records at this stage.
