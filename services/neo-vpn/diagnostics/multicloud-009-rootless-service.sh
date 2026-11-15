@@ -73,16 +73,32 @@ if [[ "$ACTION" == "serve" ]]; then
     say "HOLD_BUSYBOX_HTTPD_NOT_AVAILABLE"
     exit 2
   fi
-  # No user-controlled path, command, hostname, setup key or public bind.
+  # Fresh 128-bit random correlation value, NOT a credential or authorization.
+  # Helps the Android test reject a stale or generic static HTTP response.
+  if ! command -v node >/dev/null 2>&1; then
+    say "HOLD_NODE_CRYPTO_UNAVAILABLE"
+    exit 2
+  fi
+  TEST_CHALLENGE="$(node -e 'process.stdout.write(require("node:crypto").randomBytes(16).toString("hex"))')" || {
+    say "HOLD_RANDOM_CHALLENGE_UNAVAILABLE"
+    exit 2
+  }
+  if [[ ! "$TEST_CHALLENGE" =~ ^[0-9a-f]{32}$ ]]; then
+    say "HOLD_RANDOM_CHALLENGE_INVALID"
+    exit 2
+  fi
+  # The random correlation value is public test data, never a NetBird setup
+  # key, Docker environment value, or authentication token.
   if ! docker exec "$CONTAINER" sh -ec '
     test ! -e /tmp/neo-mc009-www/neo-private-probe
     mkdir -p /tmp/neo-mc009-www
-    printf "%s\n" "{\"gate\":\"NEO-MULTICLOUD-002\",\"response\":\"PRIVATE_APPLICATION_RESPONSE\",\"private_tunnel_verified\":false,\"gateway_production_verified\":false}" > /tmp/neo-mc009-www/neo-private-probe
+    printf "{\"gate\":\"NEO-MULTICLOUD-002\",\"response\":\"PRIVATE_APPLICATION_RESPONSE\",\"challenge\":\"%s\",\"private_tunnel_verified\":false,\"gateway_production_verified\":false}\n" "$1" > /tmp/neo-mc009-www/neo-private-probe
     chmod 644 /tmp/neo-mc009-www/neo-private-probe
-  ' >/dev/null 2>&1; then
+  ' sh "$TEST_CHALLENGE" >/dev/null 2>&1; then
     say "HOLD_EXISTING_TEST_RESPONSE_OR_CONTAINER_FILE_ERROR"
     exit 2
   fi
+
   # This listener is bound INSIDE the Docker container only. No -p/--publish
   # and no Codespaces port forwarding. The NetBird rootless image provides
   # userspace local forwarding, subject to the approved peer policy.
@@ -98,6 +114,7 @@ if docker exec "$CONTAINER" sh -c \
   'busybox wget -q -O - http://127.0.0.1:18443/neo-private-probe | grep -q PRIVATE_APPLICATION_RESPONSE' \
     >/dev/null 2>&1; then
   say "LOCAL_CONTAINER_TEST_RESPONSE_OK_ANDROID_REQUEST_AND_HANDSHAKE_NOT_VERIFIED"
+  if [[ "$ACTION" == "serve" ]]; then say "NON_SECRET_TEST_CHALLENGE=$TEST_CHALLENGE"; fi
   say "Test from Android NetBird using the operator-only private IP within the 120-second window."
   say "After the test, use the NEO-MULTICLOUD-008 bootstrap stop command for cleanup."
 else
