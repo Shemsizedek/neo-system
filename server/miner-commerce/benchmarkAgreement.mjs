@@ -83,7 +83,11 @@ export function calculateComposite(observations, weights = DEFAULT_WEIGHTS, opti
   const maxAgeMs = options.maxAgeMs ?? 15 * 60 * 1000
   const futureToleranceMs = options.futureToleranceMs ?? 60 * 1000
   const maxSourceSpread = options.maxSourceSpread ?? 0.05
+  const reference = options.reference
   if (!Array.isArray(observations)) return failure('INVALID_OBSERVATIONS')
+  if (![maxAgeMs, futureToleranceMs].every(v => typeof v === 'number' && Number.isFinite(v) && v >= 0)) {
+    return failure('INVALID_TIME_WINDOW')
+  }
   if (!weights || Object.keys(weights).length !== BENCHMARK_COMPONENTS.length ||
       !BENCHMARK_COMPONENTS.every(a => typeof weights[a] === 'number' && Number.isFinite(weights[a]) && weights[a] >= 0 && weights[a] <= 1) ||
       Math.abs(BENCHMARK_COMPONENTS.reduce((sum, a) => sum + weights[a], 0) - 1) > 1e-9) {
@@ -92,6 +96,15 @@ export function calculateComposite(observations, weights = DEFAULT_WEIGHTS, opti
   if (typeof maxSourceSpread !== 'number' || !Number.isFinite(maxSourceSpread) || maxSourceSpread < 0 || maxSourceSpread > 1) {
     return failure('INVALID_SPREAD_LIMIT')
   }
+  const validReference = reference && reference.simulation === true &&
+    nonempty(reference.id) && typeof reference.as_of === 'string' &&
+    Number.isFinite(Date.parse(reference.as_of)) &&
+    /^[A-Z]{3,8}$/.test(reference.quote_currency ?? '') &&
+    reference.prices && Object.keys(reference.prices).length === BENCHMARK_COMPONENTS.length &&
+    BENCHMARK_COMPONENTS.every(asset => Object.hasOwn(reference.prices, asset) &&
+      typeof reference.prices[asset] === 'number' &&
+      Number.isFinite(reference.prices[asset]) && reference.prices[asset] > 0)
+  if (!validReference) return failure('INVALID_SYNTHETIC_REFERENCE')
   const inspected = observations.map(o => validateBenchmarkObservation(o, {now, maxAgeMs, futureToleranceMs}))
   if (inspected.some(o => !o.valid)) {
     return failure('INVALID_OBSERVATIONS', {rejected: inspected.map((o, index) => ({index, reasons: o.reasons})).filter(x => x.reasons.length)})
@@ -103,6 +116,7 @@ export function calculateComposite(observations, weights = DEFAULT_WEIGHTS, opti
   if (absent.length) return failure('MISSING_MARKET_DATA', {missing: absent})
   const quotes = new Set(normalized.map(o => o.quote_currency))
   if (quotes.size !== 1) return failure('MIXED_QUOTE_CURRENCY')
+  if (!quotes.has(reference.quote_currency)) return failure('REFERENCE_QUOTE_MISMATCH')
 
   const component_prices = {}
   for (const asset of BENCHMARK_COMPONENTS) {
@@ -119,15 +133,31 @@ export function calculateComposite(observations, weights = DEFAULT_WEIGHTS, opti
     }
     component_prices[asset] = median
   }
-  const value = BENCHMARK_COMPONENTS.reduce((sum, a) => sum + component_prices[a] * weights[a], 0)
-  if (!Number.isFinite(value) || value <= 0) return failure('INVALID_COMPOSITE')
+  // A weighted sum of different asset prices is not a coherent benchmark.
+  // Express each synthetic asset price relative to an explicitly declared synthetic base,
+  // then express the dimensionless basket as INDEX_POINTS (base 100).
+  const component_ratios = Object.fromEntries(
+    BENCHMARK_COMPONENTS.map(asset => [asset, component_prices[asset] / reference.prices[asset]])
+  )
+  const index_value = 100 * BENCHMARK_COMPONENTS.reduce((sum, asset) =>
+    sum + component_ratios[asset] * weights[asset], 0)
+  if (!Number.isFinite(index_value) || index_value <= 0) return failure('INVALID_COMPOSITE')
   const as_of = (now instanceof Date ? now : new Date(now)).toISOString()
   const stableInputs = normalized.sort((a, b) => `${a.asset}|${a.source}|${a.observation_id}`.localeCompare(`${b.asset}|${b.source}|${b.observation_id}`))
+  const stableWeights = Object.fromEntries(BENCHMARK_COMPONENTS.map(asset => [asset, weights[asset]]))
+  const stableReference = {
+    id: reference.id, as_of: reference.as_of, simulation: true,
+    quote_currency: reference.quote_currency,
+    prices: Object.fromEntries(BENCHMARK_COMPONENTS.map(asset => [asset, reference.prices[asset]]))
+  }
+  const rules = {maxAgeMs, futureToleranceMs, maxSourceSpread}
   return {
     status: 'SIMULATED', simulation: true, executable: false, not_for_trading: true,
-    value, quote_currency: normalized[0].quote_currency, weights: {...weights},
-    component_prices, as_of, input_count: stableInputs.length,
-    inputs_hash: sha256(JSON.stringify({observations: stableInputs, weights, as_of})),
-    disclaimer: 'Research simulation only; not a live market price, settlement rate, reserve claim or regulatory approval.'
+    index_value, unit: 'INDEX_POINTS', base_index: 100,
+    input_quote_currency: reference.quote_currency,
+    weights: stableWeights, synthetic_reference: stableReference,
+    component_ratios, component_prices, as_of, input_count: stableInputs.length,
+    inputs_hash: sha256(JSON.stringify({observations: stableInputs, weights: stableWeights, reference: stableReference, rules, as_of})),
+    disclaimer: 'Synthetic, dimensionless research index only; not a live price, settlement rate, NOMNI valuation, reserve claim or regulatory approval.'
   }
 }
