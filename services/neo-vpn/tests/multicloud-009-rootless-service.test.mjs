@@ -122,3 +122,12 @@ test('extra Docker network capabilities are rejected before the probe',()=>{
   assert.equal(r.status,2);
   assert.match(r.stdout,/HOLD_CONTAINER_EXPOSURE_OR_PRIVILEGE_POLICY/);
 });
+
+test('test server binds a fresh random nonce rather than a reusable fixed success',()=>{
+  assert.match(source,/randomBytes\(16\)\.toString\("hex"\)/);
+  assert.match(source,/TEST_CHALLENGE/);
+  assert.match(source,/challenge/);
+  assert.match(source,/NON_SECRET_TEST_CHALLENGE=/);
+  assert.match(source,/HOLD_RANDOM_CHALLENGE_INVALID/);
+  assert.match(source,/exec "\$CONTAINER" sh -ec/);
+});
