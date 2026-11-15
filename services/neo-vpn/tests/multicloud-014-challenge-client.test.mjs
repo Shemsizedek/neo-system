@@ -53,7 +53,7 @@ test('fixed private destination only, no redirects or arbitrary endpoints',async
     [peer,18443,'/neo-private-probe','GET']);
   assert.equal(s.calls[0].timeout,8000);
 });
-test('refuses static legacy payload without challenge',()=>{
+test('refuses static legacy payload without challenge',async()=>{
   const s=mockRequest({body:JSON.stringify({
     gate:'NEO-MULTICLOUD-002',response:'PRIVATE_APPLICATION_RESPONSE',
     private_tunnel_verified:false,gateway_production_verified:false
