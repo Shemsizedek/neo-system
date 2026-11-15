@@ -23,8 +23,15 @@ const agreement = canonicalAgreement({
   methodology: '70% BTC / 15% XCP / 15% NOMNI; synthetic USD observations only',
   governance: 'Independent technical evaluation; no legal or governmental recognition claimed'
 })
-const composite = calculateComposite(observations, undefined, {now})
-if (composite.status !== 'SIMULATED' || composite.executable !== false) {
+const reference = {
+  id: 'SYNTHETIC-BASE-001',
+  as_of: now,
+  simulation: true,
+  quote_currency: 'USD',
+  prices: {BTC: 100000, XCP: 10, NOMNI: 1}
+}
+const composite = calculateComposite(observations, undefined, {now, reference})
+if (composite.status !== 'SIMULATED' || composite.executable !== false || composite.unit !== 'INDEX_POINTS') {
   throw new Error('research_demo_fail_closed')
 }
 console.log(JSON.stringify({warning: 'SYNTHETIC RESEARCH DATA ONLY — NOT AN OFFER OR LIVE QUOTE', agreement, composite}, null, 2))
