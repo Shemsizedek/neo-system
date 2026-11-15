@@ -106,6 +106,25 @@ jobs:
           cp -R apps/neoscan/web/. dist/neoscan/
           grep -q 'id="crownAssetFrame"' dist/neoscan/index.html
           test -f dist/neoscan/crown-media.js
+      - name: Publish Crown Chain read-only metadata mirror
+        run: |
+          set -eu
+          source="server/crown-metadata/attachments/NOMNI"
+          test -s "$source/assets/NOMNI/tokenscan.json"
+          test -s "$source/assets/NOMNI/info.json"
+          test -s "$source/assets/NOMNI/bill-1.json"
+          test -s "$source/assets/NOMNI/nomni-bill-1.jpg"
+          test -s docs/crown-chain/index.html
+          cmp "$source/tokenscan.json" "$source/assets/NOMNI/tokenscan.json"
+          cmp "$source/tokenscan.json" "$source/assets/NOMNI/info.json"
+          node -e "for(const name of ['tokenscan','info','bill-1']) {const p=require('./'+process.argv[1]+'/assets/NOMNI/'+name+'.json'); if(p.asset!=='NOMNI') process.exit(1)}" "$source"
+          mkdir -p dist/crown-chain/assets/NOMNI
+          cp docs/crown-chain/index.html dist/crown-chain/index.html
+          cp "$source/assets/NOMNI/tokenscan.json" dist/crown-chain/assets/NOMNI/tokenscan.json
+          cp "$source/assets/NOMNI/info.json" dist/crown-chain/assets/NOMNI/info.json
+          cp "$source/assets/NOMNI/bill-1.json" dist/crown-chain/assets/NOMNI/bill-1.json
+          cp "$source/assets/NOMNI/nomni-bill-1.jpg" dist/crown-chain/assets/NOMNI/nomni-bill-1.jpg
+          echo "NEO Crown Chain public mirror: /crown-chain/" >> "$GITHUB_STEP_SUMMARY"
       - name: Build NEOscan GitHub-native statement snapshots
         env:
           NEOSCAN_STATEMENT_ACCOUNTS: ${{ vars.NEOSCAN_STATEMENT_ACCOUNTS }}
