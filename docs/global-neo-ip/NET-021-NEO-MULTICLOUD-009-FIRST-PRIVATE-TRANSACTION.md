@@ -137,8 +137,10 @@ The Android app showed NetBird Connected by screenshot; a Codespaces screenshot 
 
 On the **actual Codespaces terminal**, download/review the new feature-branch source, then run the code with the Android NetBird IP, which stays local. Do not paste the IP or full NetBird CLI output into public GitHub issues:
 
-    curl -fsSL 'https://raw.githubusercontent.com/Shemsizedek/neo-system/feat/neo-multicloud-003-peer-evidence/services/neo-vpn/diagnostics/multicloud-013-rootless-peer-readiness.mjs' -o "$HOME/neo-peer-readiness.mjs"
-    node "$HOME/neo-peer-readiness.mjs" --android-peer-ip ANDROID_NETBIRD_IP
+    mkdir -p "$HOME/neo-mc013"
+    curl -fsSL 'https://raw.githubusercontent.com/Shemsizedek/neo-system/feat/neo-multicloud-003-peer-evidence/services/neo-vpn/diagnostics/multicloud-013-rootless-peer-readiness.mjs' -o "$HOME/neo-mc013/multicloud-013-rootless-peer-readiness.mjs"
+    curl -fsSL 'https://raw.githubusercontent.com/Shemsizedek/neo-system/feat/neo-multicloud-003-peer-evidence/services/neo-vpn/diagnostics/multicloud-004-peer-observe.mjs' -o "$HOME/neo-mc013/multicloud-004-peer-observe.mjs"
+    node "$HOME/neo-mc013/multicloud-013-rootless-peer-readiness.mjs" --android-peer-ip ANDROID_NETBIRD_IP
 
 The exact read-only steps are: inspect only non-secret Docker runtime fields for neo-cs-netbird-pilot; refuse privileged/host-networked/port-published/unexpected containers; check local NetBird daemon readiness; then run a scoped status query for the exact Android peer inside the rootless container and reduce the result to categorical fields. No Docker env values, keys, addresses, hostnames or raw status are printed.
 
