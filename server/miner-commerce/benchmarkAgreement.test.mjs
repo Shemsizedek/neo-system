@@ -12,7 +12,11 @@ const fixture = () => ['BTC', 'XCP', 'NOMNI'].flatMap((asset, i) => [0, 1].map(j
   source_market: `simulation-venue-${j + 1}`,
   observed_at: AT, status: 'VALID', simulation: true, executable: false
 })))
-const calculate = (records, weights, options = {}) => calculateComposite(records, weights ?? {BTC: 0.7, XCP: 0.15, NOMNI: 0.15}, {now: AT, ...options})
+const REFERENCE = Object.freeze({
+  id: 'SYNTHETIC-BASE-001', as_of: AT, simulation: true,
+  quote_currency: 'USD', prices: {BTC: 100000, XCP: 10, NOMNI: 1}
+})
+const calculate = (records, weights, options = {}) => calculateComposite(records, weights ?? {BTC: 0.7, XCP: 0.15, NOMNI: 0.15}, {now: AT, reference: REFERENCE, ...options})
 const changed = (index, changes) => fixture().map((v, i) => i === index ? {...v, ...changes} : v)
 
 test('agreement is deterministic and has snake_case contract fields', () => {
@@ -50,10 +54,14 @@ test('complete independent synthetic observations generate reproducible non-exec
   assert.equal(a.simulation, true)
   assert.equal(a.executable, false)
   assert.equal(a.not_for_trading, true)
-  assert.ok(a.value > 0)
-  assert.equal(a.quote_currency, 'USD')
+  assert.ok(a.index_value > 0)
+  assert.equal(a.unit, 'INDEX_POINTS')
+  assert.equal(a.base_index, 100)
+  assert.equal(a.input_quote_currency, 'USD')
+  assert.equal(a.synthetic_reference.id, REFERENCE.id)
   assert.equal(a.inputs_hash, b.inputs_hash)
-  assert.equal(a.value, b.value)
+  assert.equal(a.index_value, b.index_value)
+  assert.equal(a.index_value, 100.5)
 })
 
 test('mismatched quote currencies rejected', () => {
@@ -98,5 +106,29 @@ test('invalid weights rejected', () => {
 test('never returns a PUBLISHED or live quote even for a valid sample', () => {
   const result = calculate(fixture())
   assert.notEqual(result.status, 'PUBLISHED')
-  assert.match(result.disclaimer, /not a live market price/)
+  assert.match(result.disclaimer, /not a live price/)
+})
+
+test('explicit synthetic reference is required; zero, malformed and real references fail closed', () => {
+  assert.equal(calculate(fixture(), undefined, {reference: undefined}).reason, 'INVALID_SYNTHETIC_REFERENCE')
+  assert.equal(calculate(fixture(), undefined, {reference: {...REFERENCE, simulation: false}}).reason, 'INVALID_SYNTHETIC_REFERENCE')
+  assert.equal(calculate(fixture(), undefined, {reference: {...REFERENCE, prices: {...REFERENCE.prices, BTC: 0}}}).reason, 'INVALID_SYNTHETIC_REFERENCE')
+  assert.equal(calculate(fixture(), undefined, {reference: {...REFERENCE, quote_currency: 'EUR'}}).reason, 'REFERENCE_QUOTE_MISMATCH')
+})
+test('normalized index avoids mixing asset prices and responds proportionally to component changes', () => {
+  const baseline = fixture().map(o => ({...o, price: REFERENCE.prices[o.asset]}))
+  assert.equal(calculate(baseline).index_value, 100)
+  const doubledNomni = baseline.map(o => o.asset === 'NOMNI' ? {...o, price: o.price * 2} : o)
+  // Uniform doubling is valid because each component has two agreeing observations.
+  assert.equal(calculate(doubledNomni).index_value, 115)
+})
+test('input hash commits to weights, reference, and calculation rules', () => {
+  const original = calculate(fixture())
+  assert.notEqual(original.inputs_hash, calculate(fixture(), {BTC: 0.6, XCP: 0.2, NOMNI: 0.2}).inputs_hash)
+  assert.notEqual(original.inputs_hash, calculate(fixture(), undefined, {reference: {...REFERENCE, id: 'SYNTHETIC-BASE-002'}}).inputs_hash)
+  assert.notEqual(original.inputs_hash, calculate(fixture(), undefined, {maxSourceSpread: 0.1}).inputs_hash)
+})
+test('invalid window configuration fails closed', () => {
+  assert.equal(calculate(fixture(), undefined, {maxAgeMs: -1}).reason, 'INVALID_TIME_WINDOW')
+  assert.equal(calculate(fixture(), undefined, {futureToleranceMs: Infinity}).reason, 'INVALID_TIME_WINDOW')
 })
