@@ -1,0 +1,42 @@
+name: Crown Chain Canonical Metadata Contract
+on:
+  pull_request:
+    paths:
+      - 'server/crown-metadata/**'
+      - '.github/workflows/crown-chain-contract.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'server/crown-metadata/**'
+      - '.github/workflows/crown-chain-contract.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Validate builder, paths, bill digest and exact metadata response
+        run: node --test server/crown-metadata/neon-origin/handler.test.mjs
+  canonical-https:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Check real NOMNI HTTPS JSON, no redirects and artwork digest
+        run: |
+          set -e
+          for attempt in 1 2 3; do
+            if node server/crown-metadata/neon-origin/check-live.mjs; then
+              exit 0
+            fi
+            echo "Crown origin check failed on attempt $attempt"
+            sleep 6
+          done
+          exit 1

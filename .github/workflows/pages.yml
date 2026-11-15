@@ -126,6 +126,8 @@ jobs:
           cp "$source/assets/NOMNI/bill-1.json" dist/crown-chain/assets/NOMNI/bill-1.json
           cp "$source/assets/NOMNI/nomni-bill-1.jpg" dist/crown-chain/assets/NOMNI/nomni-bill-1.jpg
           echo "NEO Crown Chain public mirror: /crown-chain/" >> "$GITHUB_STEP_SUMMARY"
+      - name: Verify Crown Chain Neon origin build and HTTP contract
+        run: node --test server/crown-metadata/neon-origin/handler.test.mjs
       - name: Build NEOscan GitHub-native statement snapshots
         env:
           NEOSCAN_STATEMENT_ACCOUNTS: ${{ vars.NEOSCAN_STATEMENT_ACCOUNTS }}
