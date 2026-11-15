@@ -60,3 +60,18 @@ A responsive same-origin NEOpass consent UI has been committed at `/neopass/nous
 The UI obtains a 120-second `nous-consent-intent` token via a same-origin GET request authenticated by an HttpOnly cookie from a recent NEOpass login. It does not read the cookie into JavaScript. The temporary token stays in memory, and is destroyed when the page is left. A cookie-only consent mutation remains forbidden. The intent credential is limited to `aud=neopass-consent`, `scope=nous:consent:self`, and includes the original `auth_time`. The consent API checks the original authentication time and the current credential-revocation cutoff. This is not a Nous access token or an agent-execution grant.
 
 Production readiness requires an authorized user-facing enrollment/reauthentication path on the NEOpass domain, secure cookie and cross-origin validation at the actual ingress, monitored error handling, and an independent live test of opt-in and revocation. The ordinary `NeoPass.getAccessToken` browser token is not a consent-capable credential and must not be reused for this grant.
+
+
+## November 15 gate: synthetic staging identity lifecycle verification
+
+The proposed **real-user** NEOpass staging login remains blocked by the absence of a verified, isolated GISS issuer and a dedicated staging credential registry. Do not substitute production NEOpass JWT secrets, Google credentials or Firestore member data into a test service.
+
+A non-production, ephemeral identity test is now committed at `server/neo-platform-api/nous-e2e-staging.test.mjs`. It imports the actual NEOpass Google-login service, consent-intent handler, consent grant/revoke handler, exchange, membership guard, Nous identity verifier and Nous runtime. A stub `verifyGoogleCredential` accepts one literal **test fixture**; its simulated member registry is memory-only and uses `example.test` addresses. Test Ed25519 keys are generated per run, with no persistent signing keys, external API requests or live provider permissions.
+
+The acceptance sequence is: simulated login → opt-out exchange denied → consent-intent minted → read-only consent granted → scoped Nous exchange → authorized agents and source inventory reads → planning scope denied → consent revoked → previous session denied a new exchange → emergency verifier key denial rejects existing token. The test explicitly documents that previously issued read-only tokens may stay valid until 120-second expiry, except for an emergency revoked signing key.
+
+**This proves code-path compatibility in an isolated integration test, not a successful live Google OAuth sign-in or a real NEOpass staging environment.** The existing Render Nous staging service remains separate and its public endpoint is not an authorized member enrollment portal. Do not enable `NOUS_CONSENT_ENABLED`, `NOUS_TOKEN_EXCHANGE_ENABLED`, or real key grants there.
+
+Current PR #1388 is marked **unmergeable/conflicted** against `main`; reconcile and retest on a staging-only integration branch before requesting a merge. Preserve production and the currently running Nous service while that is investigated.
+
+Next gate: provision a separate NEOpass staging issuer/credential directory **without reusing production identities**, verify actual OAuth redirect and cookie security, connect its Ed25519 public verification key to Nous staging, and run real negative-case browser tests. Follow with an authenticated hosted consent exchange and independent Neon receipt review.
