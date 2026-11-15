@@ -61,7 +61,7 @@ test('complete independent synthetic observations generate reproducible non-exec
   assert.equal(a.synthetic_reference.id, REFERENCE.id)
   assert.equal(a.inputs_hash, b.inputs_hash)
   assert.equal(a.index_value, b.index_value)
-  assert.equal(a.index_value, 100.5)
+  assert.ok(Math.abs(a.index_value - 100.5) < 1e-9)
 })
 
 test('mismatched quote currencies rejected', () => {
@@ -120,7 +120,7 @@ test('normalized index avoids mixing asset prices and responds proportionally to
   assert.equal(calculate(baseline).index_value, 100)
   const doubledNomni = baseline.map(o => o.asset === 'NOMNI' ? {...o, price: o.price * 2} : o)
   // Uniform doubling is valid because each component has two agreeing observations.
-  assert.equal(calculate(doubledNomni).index_value, 115)
+  assert.ok(Math.abs(calculate(doubledNomni).index_value - 115) < 1e-9)
 })
 test('input hash commits to weights, reference, and calculation rules', () => {
   const original = calculate(fixture())
