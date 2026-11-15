@@ -127,3 +127,29 @@ deployment with its owner and recreate it only after deliberate review.
 
 Current state: code validation pending latest CI; no second NetBird peer,
 private HTTP response, handshake or failover is certified by this change.
+
+
+## NEO-MULTICLOUD-013 — One-command redacted live peer assessment
+
+Purpose: before creating more services or policies, determine whether the operator-owned Codespace has a running, isolated NetBird rootless container and whether it reports a recent handshake with the exact Android peer. This is read-only: no install, enrollment, port creation, setup key inspection, Docker environment dump or route changes.
+
+The Android app showed NetBird Connected by screenshot; a Codespaces screenshot showed Docker ready. Neither proved a rootless peer had enrolled. SentinelX continues to show the Crown host offline; this is not the NetBird inventory. This chat cannot access the user's originating Codespaces browser or an authenticated NetBird MCP client.
+
+On the **actual Codespaces terminal**, download/review the new feature-branch source, then run the code with the Android NetBird IP, which stays local. Do not paste the IP or full NetBird CLI output into public GitHub issues:
+
+    curl -fsSL 'https://raw.githubusercontent.com/Shemsizedek/neo-system/feat/neo-multicloud-003-peer-evidence/services/neo-vpn/diagnostics/multicloud-013-rootless-peer-readiness.mjs' -o "$HOME/neo-peer-readiness.mjs"
+    node "$HOME/neo-peer-readiness.mjs" --android-peer-ip ANDROID_NETBIRD_IP
+
+The exact read-only steps are: inspect only non-secret Docker runtime fields for neo-cs-netbird-pilot; refuse privileged/host-networked/port-published/unexpected containers; check local NetBird daemon readiness; then run a scoped status query for the exact Android peer inside the rootless container and reduce the result to categorical fields. No Docker env values, keys, addresses, hostnames or raw status are printed.
+
+Decision meanings:
+
+- HOLD_NO_ROOTLESS_PILOT_CONTAINER: run the separately reviewed NET-020 one-off operator bootstrap using a private, short-lived NetBird setup key in the Codespaces terminal.
+- HOLD_CONTAINER_*: unexpected runtime identity or exposure; do not force privileges or publish a port.
+- HOLD_NETBIRD_DAEMON_NOT_READY: check enrollment locally/dashboard before continuing.
+- HOLD_EXACT_PEER_HANDSHAKE_UNCONFIRMED: same Android peer not shown connected with a recent handshake; inspect NetBird peer groups and narrowly scoped policies.
+- LOCAL_RECENT_PEER_HANDSHAKE_APP_TEST_REQUIRED: local NetBird status reports a recent exact-peer handshake. Proceed to the NET-021 private HTTP transaction test; do not claim independent verification, private application traffic, production routing, or cellular failover from this result alone.
+
+Institutional acceptance also requires independently proven default-deny policy, unauthorized-access denial, revocation, separate authorized operators and approved routes. Codespaces remains temporary developer compute, not a permanent Wi-Fi extension or WAN gateway.
+
+Test: node --test services/neo-vpn/tests/multicloud-013-rootless-peer-readiness.test.mjs
