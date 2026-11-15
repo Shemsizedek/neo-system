@@ -61,7 +61,7 @@ test("receipt insert is parameterized and idempotent",async()=>{
   const receipt=buildAutomatedPublicationReceipt(post,review,at);
   let digestFromInsert;
   const pool={query:async(sql,args)=>{
-    if(sql.startsWith("INSERT")) {digestFromInsert=args[4];return {rows:[]};}
+    if(sql.startsWith("INSERT")) {if (digestFromInsert === undefined) digestFromInsert=args[4];return {rows:[]};}
     return {rows:[{receipt_sha256:digestFromInsert}]};
   }};
   assert.equal((await persistPublicationReceipt(receipt,pool)).status,"already_recorded");
