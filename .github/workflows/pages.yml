@@ -101,6 +101,7 @@ jobs:
           test -f apps/neoscan/web/index.html
           test -f apps/neoscan/web/crown-media.js
           node --check apps/neoscan/web/crown-media.js
+          node --test apps/neoscan/web/crown-media.test.mjs
           grep -q 'id="crownAssetFrame"' apps/neoscan/web/index.html
           mkdir -p dist/neoscan
           cp -R apps/neoscan/web/. dist/neoscan/
