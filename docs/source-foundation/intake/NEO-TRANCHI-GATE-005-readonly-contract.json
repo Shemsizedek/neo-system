@@ -1,0 +1,217 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Shemsizedek/neo-system/blob/main/docs/source-foundation/intake/NEO-TRANCHI-GATE-005-readonly-contract.json",
+  "title": "NEO estate-sourcing read-only vendor lead record - proposal",
+  "description": "NEO internal normalization contract only. Not a documented Tranchi API, not validated against authenticated vendor export.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "lead_id",
+    "vendor",
+    "captured_at",
+    "source_url",
+    "county",
+    "state",
+    "asset_type",
+    "record_status",
+    "price_basis",
+    "provenance_status",
+    "authority_verified"
+  ],
+  "properties": {
+    "lead_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "vendor": {
+      "const": "Tranchi AI"
+    },
+    "vendor_record_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "captured_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "source_url": {
+      "type": "string",
+      "format": "uri"
+    },
+    "original_registry_url": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "uri"
+    },
+    "county": {
+      "type": "string",
+      "minLength": 1
+    },
+    "state": {
+      "type": "string",
+      "minLength": 2
+    },
+    "asset_type": {
+      "type": "string",
+      "enum": [
+        "single_family",
+        "multifamily",
+        "land",
+        "other",
+        "unknown"
+      ]
+    },
+    "record_status": {
+      "type": "string",
+      "enum": [
+        "marketing_claim",
+        "vendor_estimate",
+        "public_source_unverified",
+        "public_source_verified",
+        "documented_authorized_sale",
+        "under_contract",
+        "closed",
+        "unknown"
+      ]
+    },
+    "estate_status": {
+      "type": "string",
+      "enum": [
+        "probate_filed",
+        "estate_administered",
+        "inherited",
+        "deceased_owner_claim",
+        "none",
+        "unknown"
+      ]
+    },
+    "estate_source_reference": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "authority_verified": {
+      "type": "boolean",
+      "default": false
+    },
+    "verified_authority_source": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "ask_price": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "minimum": 0
+    },
+    "price_basis": {
+      "type": "string",
+      "enum": [
+        "verified_listing",
+        "court_order",
+        "accepted_offer",
+        "vendor_estimate",
+        "marketing_claim",
+        "unknown"
+      ]
+    },
+    "price_source_url": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "uri"
+    },
+    "no_heir_claim": {
+      "type": [
+        "boolean",
+        "null"
+      ],
+      "default": null
+    },
+    "no_heir_verified": {
+      "type": "boolean",
+      "default": false
+    },
+    "units": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 0
+    },
+    "noi": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "cap_rate": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "minimum": 0
+    },
+    "financials_source_url": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "uri"
+    },
+    "provenance_status": {
+      "type": "string",
+      "enum": [
+        "missing",
+        "primary_record",
+        "secondary_independent",
+        "vendor_only",
+        "conflicted"
+      ]
+    },
+    "notes_public_redacted": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "examples": [
+    {
+      "lead_id": "DEMO-ONLY-0001",
+      "vendor": "Tranchi AI",
+      "vendor_record_id": null,
+      "captured_at": "2026-11-15T13:00:00Z",
+      "source_url": "https://tranchi.ai/",
+      "original_registry_url": null,
+      "county": "Harris",
+      "state": "TX",
+      "asset_type": "unknown",
+      "record_status": "marketing_claim",
+      "estate_status": "unknown",
+      "estate_source_reference": null,
+      "authority_verified": false,
+      "verified_authority_source": null,
+      "ask_price": null,
+      "price_basis": "unknown",
+      "price_source_url": null,
+      "no_heir_claim": null,
+      "no_heir_verified": false,
+      "units": null,
+      "noi": null,
+      "cap_rate": null,
+      "financials_source_url": null,
+      "provenance_status": "vendor_only",
+      "notes_public_redacted": "Synthetic example; not a property or a real lead."
+    }
+  ]
+}
