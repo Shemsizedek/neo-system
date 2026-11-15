@@ -1,0 +1,137 @@
+{
+  "intake_id": "NEO-RE-INTAKE-2026-11-15-001",
+  "status": "read_only_staging",
+  "source_url": "https://www.instagram.com/reel/DfvJN6CNz3x/",
+  "original_source_created": "2026-11-14",
+  "claim_count": 9,
+  "record_policy": "reported statuses are only from upload; never independently adjudicated by this file",
+  "claims": [
+    {
+      "claim_id": "NEO-RE-INTAKE-2026-11-15-001-C1",
+      "source_claim_id": "C1",
+      "claim_text": "You can make $200,000 per year from probate wholesaling.",
+      "preliminary_source_status": "unverified",
+      "independent_verdict": null,
+      "production_ready": false
+    },
+    {
+      "claim_id": "NEO-RE-INTAKE-2026-11-15-001-C2",
+      "source_claim_id": "C2",
+      "claim_text": "The government will pay $200,000 per year from deceased people's estates.",
+      "preliminary_source_status": "disputed",
+      "independent_verdict": null,
+      "production_ready": false
+    },
+    {
+      "claim_id": "NEO-RE-INTAKE-2026-11-15-001-C3",
+      "source_claim_id": "C3",
+      "claim_text": "The featured house is listed at $40,000 and worth $183,000.",
+      "preliminary_source_status": "partly_confirmed",
+      "independent_verdict": null,
+      "production_ready": false
+    },
+    {
+      "claim_id": "NEO-RE-INTAKE-2026-11-15-001-C4",
+      "source_claim_id": "C4",
+      "claim_text": "AI can put the home under contract and a title company will pay an assignment spread.",
+      "preliminary_source_status": "partly_confirmed",
+      "independent_verdict": null,
+      "production_ready": false
+    },
+    {
+      "claim_id": "NEO-RE-INTAKE-2026-11-15-001-C5",
+      "source_claim_id": "C5",
+      "claim_text": "The AI got the house under a $40,000 executed contract.",
+      "preliminary_source_status": "unverified",
+      "independent_verdict": null,
+      "production_ready": false
+    },
+    {
+      "claim_id": "NEO-RE-INTAKE-2026-11-15-001-C6",
+      "source_claim_id": "C6",
+      "claim_text": "AI found a cash buyer for $100,000, making a $60,000 fee.",
+      "preliminary_source_status": "unverified",
+      "independent_verdict": null,
+      "production_ready": false
+    },
+    {
+      "claim_id": "NEO-RE-INTAKE-2026-11-15-001-C7",
+      "source_claim_id": "C7",
+      "claim_text": "Tranchi suggested an after-repair value of $224,127.",
+      "preliminary_source_status": "partly_confirmed",
+      "independent_verdict": null,
+      "production_ready": false
+    },
+    {
+      "claim_id": "NEO-RE-INTAKE-2026-11-15-001-C8",
+      "source_claim_id": "C8",
+      "claim_text": "Tranchi claims 44 agents, 2,742 users, $20K/month income, a 5.0 rating.",
+      "preliminary_source_status": "partly_confirmed",
+      "independent_verdict": null,
+      "production_ready": false
+    },
+    {
+      "claim_id": "NEO-RE-INTAKE-2026-11-15-001-C9",
+      "source_claim_id": "C9",
+      "claim_text": "Tranchi probate list shows properties from recently deceased owners.",
+      "preliminary_source_status": "partly_confirmed",
+      "independent_verdict": null,
+      "production_ready": false
+    }
+  ],
+  "external_checks": [
+    {
+      "source": "https://codes.ohio.gov/ohio-revised-code/section-5301.95",
+      "scope": "Effective March 2 2026: signed separate written wholesaler disclosure required before a covered binding contract",
+      "verification": "official_statute"
+    },
+    {
+      "source": "https://www.zillow.com/homedetails/4766-Henley-Ave-Columbus-OH-43228/34057715_zpid/",
+      "scope": "Nearby card shows 4742 Henley as off market at 972 square feet",
+      "verification": "secondary_snapshot"
+    },
+    {
+      "source": "https://www.redfin.com/OH/Columbus/4733-Henley-Ave-43228/home/79579922",
+      "scope": "Nearby card shows 4742 Henley at 1412 square feet",
+      "verification": "secondary_snapshot"
+    }
+  ],
+  "arithmetic": {
+    "supplied_comp_ppsf": [
+      85,
+      170,
+      185,
+      181,
+      159
+    ],
+    "reported_median": 159,
+    "recalculated_median": 170,
+    "reported_size_sqft": 1412,
+    "proxy_at_159": 224508,
+    "proxy_at_170": 240040,
+    "reported_purchase_price": 40000,
+    "spoken_resale_price": 100000,
+    "theoretical_gross_spread": 60000
+  },
+  "unresolved": [
+    "Auditor parcel and deed details",
+    "Executed signed purchase and assignment",
+    "Sale listing at $40000",
+    "Probate status",
+    "Actual dimensions/condition and rehab",
+    "Agent claims/pricing/testimonials"
+  ],
+  "routing": {
+    "archive": "SCROLL/NIA-002",
+    "verification": "ATHENAEUM/NIA-003",
+    "primary": "NEO Real Estate / Deal Desk",
+    "secondary": [
+      "NEO Algo",
+      "NEO Oracle",
+      "NEO Houses",
+      "NEO Law"
+    ],
+    "approval": "ORIGIN"
+  },
+  "sensitive_originals": "Retained outside public repository; original uploaded package includes private-person identifiers"
+}
