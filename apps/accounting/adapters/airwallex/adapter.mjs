@@ -27,7 +27,7 @@ export function createAirwallexAccountingAdapter(config={}){
   async function getAccessToken({signal}={}){
     if(!clientId||!apiKey)throw new Error('Airwallex Client ID and API key are required');
     if(accessToken&&Date.now()<tokenExpiresAt-60000)return accessToken;
-    const headers={'x-client-id':clientId,'x-api-key':apiKey,accept:'application/json'};
+    const headers={'x-client-id':clientId,'x-api-key':apiKey,accept:'application/json','content-type':'application/json'};
     if(loginAs)headers['x-login-as']=loginAs;
     const response=await fetchImpl(`${baseUrl}/api/v1/authentication/login`,{method:'POST',headers,signal});
     if(!response.ok)throw new Error(`Airwallex authentication returned ${response.status}`);
