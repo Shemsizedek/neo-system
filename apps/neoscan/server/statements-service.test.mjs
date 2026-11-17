@@ -9,6 +9,7 @@ test('builds a public statement without leaking CES token',async()=>{
   const fetchImpl=async url=>{
     seen.push(String(url));
     if(String(url).includes('/address/'))return response({chain_stats:{funded_txo_sum:200000000,spent_txo_sum:50000000}});
+    if(String(url).includes('tokenscan.io'))return response({asset:'NOMNI',issuer:'issuer-address',supply:'900000000',divisible:false,locked:true});
     return response({result:[{asset:'NOMNI',quantity_normalized:'12'}]});
   };
   const cesAdapter={
@@ -18,12 +19,14 @@ test('builds a public statement without leaking CES token',async()=>{
   };
   const service=createStatementsService({fetchImpl,cesAdapter});
   const statement=await service.buildPublicStatement({address:'1BoatSLRHtKNngkdXEeobR76b53LETtpyT',cesToken:'super-secret'});
+  assert.equal(statement.sources.tokenscan.status,'source-observed');
+  assert.equal(statement.sources.tokenscan.metadata.supply,'900000000');
   assert.equal(statement.sources.bitcoin.entries[0].amount,1.5);
   assert.equal(statement.sources.counterparty.entries[0].unit,'NOMNI');
   assert.equal(statement.sources.ces.status,'verified');
   assert.equal(JSON.stringify(statement).includes('super-secret'),false);
   assert.equal(statement.consolidatedTotal,null);
-  assert.equal(seen.length,2);
+  assert.equal(seen.length,3);
 });
 
 test('keeps CES unavailable when no token or imported snapshot is supplied',async()=>{
