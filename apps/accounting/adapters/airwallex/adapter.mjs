@@ -6,6 +6,7 @@ function clean(value){return String(value??'').trim();}
 
 export function createAirwallexAccountingAdapter(config={}){
   const baseUrl=String(config.baseUrl||SANDBOX).replace(/\/$/,'');
+  if(new URL(baseUrl).protocol!=='https:')throw new Error('Airwallex base URL must use HTTPS');
   const clientId=clean(config.clientId);
   const apiKey=clean(config.apiKey);
   const loginAs=clean(config.loginAs);
