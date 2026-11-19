@@ -10,11 +10,19 @@ const makeKey=()=>generateKeyPairSync('ed25519');
 
 test('staging issuer requires trusted identity decision, authentic Ed25519 and unrevoked session',async()=>{
   const {privateKey,publicKey}=makeKey();
-  let active=true;
+  let active=true, persistenceOnline=true;
+  const sessions=new Map();
+  const registerSession=async record=>{
+    if(!persistenceOnline)throw Error('simulated_session_store_offline');
+    if(sessions.has(record.jti))return false;
+    sessions.set(record.jti,record);return true;
+  };
+  const isSessionActive=async ({subject,jti})=>
+    persistenceOnline&&active&&sessions.get(jti)?.subject===subject;
   const issuer=createNeoKeyStagingIssuer({privateKey,publicKey,now:()=>now,
     authorizeSession:async ({subject,evidence})=>evidence==='trusted-server-proof'
       ? {approved:true,subject,method:'verified-identity'}:null,
-    isSessionActive:async()=>active});
+    registerSession,isSessionActive});
   await assert.rejects(()=>issuer.issue({subject,evidence:{approved:true}}),/identity_approval_required/);
   const token=await issuer.issue({subject,evidence:'trusted-server-proof'});
   const claims=await issuer.verify(token);
@@ -25,16 +33,20 @@ test('staging issuer requires trusted identity decision, authentic Ed25519 and u
   const {publicKey:wrongPublicKey}=makeKey();
   const stranger=createNeoKeyStagingIssuer({privateKey,publicKey:wrongPublicKey,now:()=>now,
     authorizeSession:async()=>({approved:true,subject,method:'verified-identity'}),
-    isSessionActive:async()=>true});
+    registerSession:async()=>true,isSessionActive:async()=>true});
   assert.equal(await stranger.verify(token),null);
   active=false;
   assert.equal(await issuer.verify(token),null);
+  active=true;persistenceOnline=false;
+  assert.equal(await issuer.verify(token),null);
+  await assert.rejects(()=>issuer.issue({subject,evidence:'trusted-server-proof'}),
+    /simulated_session_store_offline/);
 });
 test('issuer rejects unsupported keys and missing trusted callbacks',()=>{
   assert.throws(()=>createNeoKeyStagingIssuer(),/configuration_required/);
   const key=generateKeyPairSync('ec',{namedCurve:'prime256v1'});
   assert.throws(()=>createNeoKeyStagingIssuer({privateKey:key.privateKey,publicKey:key.publicKey,
-    authorizeSession:()=>{},isSessionActive:()=>{}}),/configuration_required/);
+    authorizeSession:()=>{},registerSession:()=>{},isSessionActive:()=>{}}),/configuration_required/);
 });
 function approvals(){
   const a=makeKey(),b=makeKey(), c=makeKey();
