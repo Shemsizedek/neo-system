@@ -42,12 +42,14 @@ export function createNeoKeyStagingAdapter({
         return {allowed:true,method:'verified-existing-passkey',
           authorizationRef:randomBytes(20).toString('base64url')};
       }
-      const approved=await verifyOperatorBootstrap({subject,
+      const approved=await verifyOperatorBootstrap({subject,rpId,origin,
         bootstrapEvidence:session?.bootstrapEvidence});
       if(approved?.verified!==true || approved.method!=='dual-control' ||
-         approved.subject!==subject)return null;
+         approved.subject!==subject ||
+         typeof approved.authorizationRef!=='string' ||
+         !/^[A-Za-z0-9_-]{16,128}$/.test(approved.authorizationRef))return null;
       return {allowed:true,method:'verified-operator-bootstrap',
-        authorizationRef:randomBytes(20).toString('base64url')};
+        authorizationRef:approved.authorizationRef};
     },
     verifyExistingAssertion:response=>assertion.verify({response}),now
   });
