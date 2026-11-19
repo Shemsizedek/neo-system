@@ -29,7 +29,7 @@ if (!connectionString) {
         const hash=createHash('sha256').update(randomBytes(32)).digest('hex');
         await store.insertRegistrationChallenge({subject,rpId,origin,
           challengeHash:hash,expiresAt:now+120000,method,authorizationRef:`${subject}-${ref}`});
-        return {subject,rpId,origin,challengeHash:hash,now,credentialId:`key-${ref}-${randomBytes(5).toString('hex')}`,publicKeyPem:'TEST ONLY PUBLIC KEY',signCount:0};
+        return {subject,rpId,origin,challengeHash:hash,now,credentialId:`key-${ref}-${randomBytes(5).toString('hex')}`,publicKeyPem:'TEST ONLY PUBLIC KEY',publicKeyCose:Buffer.alloc(80,2).toString('base64url'),signCount:0};
       }
       const invalid=await challenge('verified-existing-passkey','invalid');
       assert.equal(await store.registerAtomic(invalid),false);
