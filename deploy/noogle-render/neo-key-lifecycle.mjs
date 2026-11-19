@@ -1,4 +1,4 @@
-import { createHash, randomBytes } from 'node:crypto';
+import { createHash, randomBytes, createPublicKey } from 'node:crypto';
 
 // Gate 3: server-only composition. No route, token issuer, recovery override,
 // device-control authorization or live hardware attestation is included.
@@ -72,6 +72,15 @@ export function createNeoKeyLifecycle({
           proof.publicKeyPem.length > 8192 ||
           !Number.isSafeInteger(proof.signCount) || proof.signCount < 0 ||
           proof.algorithm !== -7) {
+        throw new Error('neo_key_registration_verification_failed');
+      }
+      // Validate importability and the advertised ES256 key curve even when
+      // a trusted verification adapter supplies the public-key material.
+      let parsedKey;
+      try { parsedKey = createPublicKey(proof.publicKeyPem); }
+      catch { throw new Error('neo_key_registration_verification_failed'); }
+      if (parsedKey.asymmetricKeyType !== 'ec' ||
+          parsedKey.asymmetricKeyDetails?.namedCurve !== 'prime256v1') {
         throw new Error('neo_key_registration_verification_failed');
       }
       const saved = await store.registerAtomic({
