@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS neo_key_registration_challenges (
   expires_at BIGINT NOT NULL,
   consumed_at BIGINT,
   enrollment_method TEXT NOT NULL CHECK (enrollment_method IN ('verified-existing-passkey','verified-operator-bootstrap')),
-  authorization_ref TEXT NOT NULL
+  authorization_ref TEXT NOT NULL UNIQUE
 );
 CREATE INDEX IF NOT EXISTS neo_key_registration_expiry_idx ON neo_key_registration_challenges(expires_at);
 CREATE TABLE IF NOT EXISTS neo_key_credentials (
