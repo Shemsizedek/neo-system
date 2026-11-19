@@ -15,6 +15,15 @@ export function createNeoKeyStagingIssuer({
      typeof isSessionActive!=='function'||
      !validId(kid)||!Number.isSafeInteger(ttlSeconds)||
      ttlSeconds<30||ttlSeconds>300)throw Error('neo_key_staging_issuer_configuration_required');
+  // Refuse mismatched signer and verifier keys at initialization rather than
+  // persist unusable session IDs and issue unverifiable tokens.
+  const probe=Buffer.from('NEO Key staging signer pair check v1');
+  try {
+    if(!verify(null,probe,publicKey,sign(null,probe,privateKey)))
+      throw Error('neo_key_staging_signer_pair_mismatch');
+  } catch {
+    throw Error('neo_key_staging_signer_pair_mismatch');
+  }
   return Object.freeze({
     async issue({subject,evidence}={}) {
       if(typeof subject!=='string'||subject.length<3||subject.length>256)throw Error('neo_key_issuer_subject_invalid');
