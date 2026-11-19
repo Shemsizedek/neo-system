@@ -57,6 +57,7 @@ export function createVerifiedRegistrationAdapter() {
       return Object.freeze({
         verified:true, userVerified:true, credentialId:cred.id,
         publicKeyPem:key.export({type:'spki',format:'pem'}),
+        publicKeyCose:Buffer.from(cred.publicKey).toString('base64url'),
         signCount:cred.counter, algorithm:-7
       });
     } catch { return null; }
