@@ -5,6 +5,22 @@ CREATE TABLE IF NOT EXISTS neo_key_subjects (
   subject_id TEXT PRIMARY KEY,
   user_handle VARCHAR(43) UNIQUE NOT NULL CHECK (user_handle ~ '^[A-Za-z0-9_-]{43}$')
 );
+-- Staging-only issued session allowlist. No JWTs, secrets, or bearer tokens
+-- are persisted. Times are Unix seconds, unlike WebAuthn challenge millisecond
+-- timestamps. Never apply this proposed schema to a live database.
+CREATE TABLE IF NOT EXISTS neo_key_staging_sessions (
+  jti TEXT PRIMARY KEY,
+  subject_id TEXT NOT NULL,
+  issued_at BIGINT NOT NULL,
+  expires_at BIGINT NOT NULL,
+  revoked_at BIGINT,
+  CHECK (expires_at > issued_at AND expires_at <= issued_at + 300),
+  CHECK (length(jti) BETWEEN 24 AND 128)
+);
+CREATE INDEX IF NOT EXISTS neo_key_staging_sessions_owner_idx
+  ON neo_key_staging_sessions(subject_id) WHERE revoked_at IS NULL;
+CREATE INDEX IF NOT EXISTS neo_key_staging_sessions_expiry_idx
+  ON neo_key_staging_sessions(expires_at);
 -- One-time approvals require two separately verified Ed25519 endorsers.
 -- Expiration and consumption are enforced within registerAtomic.
 CREATE TABLE IF NOT EXISTS neo_key_bootstrap_approvals (
