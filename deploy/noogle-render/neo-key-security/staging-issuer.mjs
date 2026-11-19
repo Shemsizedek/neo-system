@@ -7,11 +7,12 @@ const validId=v=>typeof v==='string'&&/^[A-Za-z0-9_-]{8,128}$/.test(v);
 const canonical=v=>typeof v==='string'&&/^[A-Za-z0-9_-]+$/.test(v)&&Buffer.from(v,'base64url').toString('base64url')===v;
 export function createNeoKeyStagingIssuer({
   privateKey, publicKey, kid='neo-key-staging-v1',
-  authorizeSession, isSessionActive, now=()=>Date.now(), ttlSeconds=120
+  authorizeSession, registerSession, isSessionActive, now=()=>Date.now(), ttlSeconds=120
 }={}) {
   if(privateKey?.asymmetricKeyType!=='ed25519'||
      publicKey?.asymmetricKeyType!=='ed25519'||
-     typeof authorizeSession!=='function'||typeof isSessionActive!=='function'||
+     typeof authorizeSession!=='function'||typeof registerSession!=='function'||
+     typeof isSessionActive!=='function'||
      !validId(kid)||!Number.isSafeInteger(ttlSeconds)||
      ttlSeconds<30||ttlSeconds>300)throw Error('neo_key_staging_issuer_configuration_required');
   return Object.freeze({
@@ -24,6 +25,11 @@ export function createNeoKeyStagingIssuer({
       const iat=Math.floor(now()/1000);
       const claims={iss:'neo-pass',aud:'neo-key',token_use:'neo-key-session',
         sub:subject,iat,exp:iat+ttlSeconds,jti:randomBytes(24).toString('base64url')};
+      // Persist a one-use unique session identifier before signing.
+      // No service availability or DB persistence => no token issuance.
+      if(await registerSession({subject,jti:claims.jti,iat,exp:claims.exp})!==true) {
+        throw Error('neo_key_issuer_session_persistence_required');
+      }
       const payload=`${b64({alg:'EdDSA',typ:'JWT',kid})}.${b64(claims)}`;
       const signature=sign(null,Buffer.from(payload),privateKey).toString('base64url');
       return `${payload}.${signature}`;
@@ -44,7 +50,7 @@ export function createNeoKeyStagingIssuer({
           typeof c.sub!=='string'||c.sub.length<3||c.sub.length>256||
           !validId(c.jti)||!Number.isSafeInteger(c.iat)||!Number.isSafeInteger(c.exp)||
           c.iat>epoch+30||c.iat<epoch-300||c.exp<=epoch||c.exp>c.iat+300)return null;
-        if(await isSessionActive({subject:c.sub,jti:c.jti})!==true)return null;
+        if(await isSessionActive({subject:c.sub,jti:c.jti,now:epoch})!==true)return null;
         return c;
       }catch{return null;}
     }
