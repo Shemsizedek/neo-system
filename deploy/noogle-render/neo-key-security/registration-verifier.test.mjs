@@ -34,21 +34,6 @@ test('vetted WebAuthn verifier accepts cryptographically valid P256 none-attesta
   const verify=createVerifiedRegistrationAdapter();
   const response=registration({challenge});
   const result=await verify({response,expectedChallenge:challenge,expectedRPID:rpId,expectedOrigin:origin,requireUserVerification:true});
-  if (!result) {
-    // Synthetic fixture diagnostic: no user data or secrets; remove after CI.
-    try {
-      const sw=await import('@simplewebauthn/server');
-      const raw=await sw.verifyRegistrationResponse({response,expectedChallenge:challenge,expectedRPID:rpId,expectedOrigin:origin,requireUserVerification:true,requireUserPresence:true,supportedAlgorithmIDs:[-7]});
-      console.log('fixture_registration_verified',raw.verified,'credential_fields',Object.keys(raw.registrationInfo?.credential??{}));
-      const helpers=await import('@simplewebauthn/server/helpers');
-      const key=helpers.convertCOSEtoPKCS(raw.registrationInfo.credential.publicKey);
-      const crypto=await import('node:crypto');
-      try {
-        const parsed=crypto.createPublicKey({key:Buffer.from(key),format:'der',type:'spki'});
-        console.log('fixture_key_parsed',parsed.asymmetricKeyType,parsed.asymmetricKeyDetails?.namedCurve);
-      } catch(e) { console.log('fixture_key_parse_error',e.message); }
-    } catch(e) { console.log('fixture_library_rejected',e.message); }
-  }
   assert.equal(result?.verified,true);
   assert.equal(result?.userVerified,true);
   assert.equal(result.credentialId,response.id);
