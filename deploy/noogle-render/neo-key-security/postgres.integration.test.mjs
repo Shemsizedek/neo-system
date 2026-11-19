@@ -276,5 +276,86 @@ if (!connectionString) {
     }finally{await pool.end();}
   });
 
+  test('session allowlist enforces duplicate IDs, expiry, revocation and database errors',async()=>{
+    const u=new URL(connectionString);
+    assert.equal(u.hostname,'127.0.0.1');
+    assert.equal(u.pathname,'/neo_key_gate4');
+    const pool=new pg.Pool({connectionString,max:4,connectionTimeoutMillis:5000});
+    try {
+      await pool.query(await readFile(new URL('../sql/003_neo_key_credentials.sql',import.meta.url),'utf8'));
+      const sessions=createPostgresNeoKeySessionStore(pool);
+      const subject='session-'+randomBytes(8).toString('hex');
+      const jti=randomBytes(24).toString('base64url');
+      const now=Math.floor(Date.now()/1000);
+      assert.equal(await sessions.registerSession({subject,jti,iat:now,exp:now+120}),true);
+      assert.equal(await sessions.registerSession({subject,jti,iat:now,exp:now+120}),false);
+      assert.equal(await sessions.isSessionActive({subject,jti,now}),true);
+      assert.equal(await sessions.isSessionActive({subject:'attacker',jti,now}),false);
+      assert.equal(await sessions.isSessionActive({subject,jti,now:now+120}),false);
+      assert.equal(await sessions.revokeSession({subject,jti,now:now+1}),true);
+      assert.equal(await sessions.revokeSession({subject,jti,now:now+2}),false);
+      assert.equal(await sessions.isSessionActive({subject,jti,now:now+1}),false);
+      const newer=randomBytes(24).toString('base64url');
+      assert.equal(await sessions.registerSession({subject,jti:newer,iat:now,exp:now+90}),true);
+      assert.equal(await sessions.revokeSubjectSessions({subject,now:now+2}),1);
+      assert.equal(await sessions.isSessionActive({subject,jti:newer,now:now+2}),false);
+      assert.equal(await sessions.registerSession({subject,jti:randomBytes(24).toString('base64url'),
+        iat:now,exp:now+301}),false);
+    }finally{await pool.end();}
+  });
+
+  test('recovery audit write failure rolls back key revocation; retry succeeds',async()=>{
+    const u=new URL(connectionString);
+    assert.equal(u.hostname,'127.0.0.1');
+    assert.equal(u.pathname,'/neo_key_gate4');
+    const pool=new pg.Pool({connectionString,max:5,connectionTimeoutMillis:5000});
+    const subject='rollback-'+randomBytes(8).toString('hex');
+    const rpId='connect.example.test',now=Date.now();
+    const a=randomBytes(24).toString('base64url');
+    const b=randomBytes(24).toString('base64url');
+    const fn='neo_key_gate8_audit_block';
+    const trigger='neo_key_gate8_audit_block_trigger';
+    try {
+      await pool.query(await readFile(new URL('../sql/003_neo_key_credentials.sql',import.meta.url),'utf8'));
+      const store=createPostgresNeoKeyStore(pool);
+      await store.getOrCreateUserHandle(subject,randomBytes(32).toString('base64url'));
+      for(const id of [a,b]) await pool.query(`INSERT INTO neo_key_credentials
+        (credential_id,subject_id,rp_id,public_key_pem,public_key_cose,sign_count,created_at)
+        VALUES($1,$2,$3,$4,$5,$6,$7)`,
+        [id,subject,rpId,'CI-ONLY-PUBLIC',Buffer.alloc(80,3).toString('base64url'),0,now]);
+      // SQL test subject is a bound parameter, never inserted as SQL text.
+      // Use a transient, subject-specific trigger to prove audit failure
+      // cannot leave an unaudited revoked credential committed.
+      await pool.query(`CREATE OR REPLACE FUNCTION ${fn}() RETURNS trigger
+        LANGUAGE plpgsql AS $$
+        BEGIN
+          IF NEW.subject_id LIKE 'rollback-%' AND NEW.event_type='revoked' THEN
+            RAISE EXCEPTION 'gate8_test_audit_unavailable';
+          END IF;
+          RETURN NEW;
+        END; $$`);
+      await pool.query(`CREATE TRIGGER ${trigger}
+        BEFORE INSERT ON neo_key_audit_events
+        FOR EACH ROW EXECUTE FUNCTION ${fn}()`);
+      await assert.rejects(()=>store.revokeAtomic({subject,rpId,targetCredentialId:a,
+        backupCredentialId:b,now:now+1}),/gate8_test_audit_unavailable/);
+      const stillActive=await pool.query(`SELECT credential_id FROM neo_key_credentials
+        WHERE subject_id=$1 AND revoked_at IS NULL`,[subject]);
+      assert.deepEqual(new Set(stillActive.rows.map(r=>r.credential_id)),new Set([a,b]));
+      await pool.query(`DROP TRIGGER ${trigger} ON neo_key_audit_events`);
+      await pool.query(`DROP FUNCTION ${fn}()`);
+      assert.equal(await store.revokeAtomic({subject,rpId,targetCredentialId:a,
+        backupCredentialId:b,now:now+2}),true);
+      const remaining=await pool.query(`SELECT credential_id FROM neo_key_credentials
+        WHERE subject_id=$1 AND revoked_at IS NULL`,[subject]);
+      assert.deepEqual(remaining.rows.map(r=>r.credential_id),[b]);
+    }finally{
+      // Test-only cleanup in disposable database, never external infrastructure.
+      try{await pool.query(`DROP TRIGGER IF EXISTS ${trigger} ON neo_key_audit_events`);}catch{}
+      try{await pool.query(`DROP FUNCTION IF EXISTS ${fn}()`);}catch{}
+      await pool.end();
+    }
+  });
+
 }
 
