@@ -88,3 +88,14 @@ test('single approver, duplicate approver, tampering and unsigned payload fail c
   await assert.rejects(()=>f.service.acceptSignedApproval({...f.req,
     endorsements:[f.endorsements[0],{...f.endorsements[1],signature:randomBytes(64).toString('base64url')}]}),/invalid_signature/);
 });
+
+test('separate approver aliases pointing at the same public key are forbidden',()=>{
+  const one=makeKey();
+  const approverKeys=new Map([
+    ['security-reviewer-a',one.publicKey],
+    ['security-reviewer-b',one.publicKey]
+  ]);
+  assert.throws(()=>createNeoKeyBootstrapApprovalService({approverKeys,store:{
+    insertApproval:async()=>{},findValidApproval:async()=>null
+  }}),/configuration_required/);
+});
