@@ -31,10 +31,10 @@ test('staging issuer requires trusted identity decision, authentic Ed25519 and u
   assert.ok(claims.exp-claims.iat<=300);
   assert.equal(await issuer.verify(token.slice(0,-2)+'aa'),null);
   const {publicKey:wrongPublicKey}=makeKey();
-  const stranger=createNeoKeyStagingIssuer({privateKey,publicKey:wrongPublicKey,now:()=>now,
+  assert.throws(()=>createNeoKeyStagingIssuer({privateKey,publicKey:wrongPublicKey,now:()=>now,
     authorizeSession:async()=>({approved:true,subject,method:'verified-identity'}),
-    registerSession:async()=>true,isSessionActive:async()=>true});
-  assert.equal(await stranger.verify(token),null);
+    registerSession:async()=>true,isSessionActive:async()=>true}),
+    /neo_key_staging_signer_pair_mismatch/);
   active=false;
   assert.equal(await issuer.verify(token),null);
   active=true;persistenceOnline=false;
