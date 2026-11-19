@@ -1,0 +1,55 @@
+{
+  "schema": "neo.accounting.implementation-gates.v1",
+  "systemOfRecord": "NEO Ledger",
+  "externalAccountingReference": "Airwallex Accounting Fields API",
+  "asOf": "2026-11-17",
+  "governance": {
+    "sourceAdaptersReadOnly": true,
+    "airwallexWritesEnabled": false,
+    "financialTransfersEnabled": false,
+    "journalPostingEnabled": false,
+    "financialStatementCertificationAuthorized": false
+  },
+  "workstreams": [
+    {
+      "name": "TokenScan / Counterparty",
+      "status": "adapter-scaffolded-live-connection-pending",
+      "scope": "read-only asset metadata; no ownership inference"
+    },
+    {
+      "name": "NEO Scan / Bitcoin",
+      "status": "existing-adapter-runtime-revalidation-pending",
+      "scope": "read-only Bitcoin and Counterparty address observations"
+    },
+    {
+      "name": "NEO Bank / CES",
+      "status": "existing-adapter-runtime-revalidation-pending",
+      "scope": "read-only CES balances and transaction snapshots"
+    },
+    {
+      "name": "NEO Ledger reconciliation",
+      "status": "pending-source-data",
+      "scope": "immutable source events, exact-unit balances, journal mapping and exceptions"
+    },
+    {
+      "name": "Airwallex accounting dimensions",
+      "status": "adapter-scaffolded-credentials-pending",
+      "scope": "GET-only accounting fields and accounting field values"
+    },
+    {
+      "name": "Financial statement certification",
+      "status": "not-authorized",
+      "scope": "no certification or attestation"
+    }
+  ],
+  "implementationGates": [
+    {"gate":"001","deliverable":"Source of Wealth framework","status":"accepted"},
+    {"gate":"002","deliverable":"NEO accounting architecture","status":"established"},
+    {"gate":"003","deliverable":"Connect TokenScan, NEO Scan and CES data adapters; prepare Airwallex read-only accounting-field reference","status":"adapter-scaffolding-in-progress-live-connections-pending"},
+    {"gate":"004","deliverable":"Build canonical chart of accounts and double-entry engine","status":"pending"},
+    {"gate":"005","deliverable":"Reconcile wallets, tokens and CES balances","status":"pending"},
+    {"gate":"006","deliverable":"Generate regular management statements","status":"pending"},
+    {"gate":"007","deliverable":"Prepare Airwallex supporting-document package","status":"pending"},
+    {"gate":"008","deliverable":"Independent audit-readiness framework","status":"future"}
+  ]
+}
