@@ -43,6 +43,16 @@ export function createPostgresNeoKeyStore(pool) {
           RETURNING enrollment_method,authorization_ref`,
           [data.challengeHash,data.subject,data.rpId,data.origin,data.now,data.now]);
         if (consumed.rows.length !== 1) return false;
+        // Under the owner-scoped lock, enforce first-key bootstrap and
+        // distinguish later authorized passkey additions.
+        const enrolled = await client.query(`SELECT COUNT(*)::int AS count
+          FROM neo_key_credentials WHERE subject_id=$1 AND rp_id=$2
+          AND revoked_at IS NULL`, [data.subject,data.rpId]);
+        const existing = Number(enrolled.rows[0]?.count);
+        const enrollmentMethod = consumed.rows[0]?.enrollment_method;
+        if (!Number.isSafeInteger(existing) || existing < 0 ||
+            (existing === 0 && enrollmentMethod !== 'verified-operator-bootstrap') ||
+            (existing > 0 && enrollmentMethod !== 'verified-existing-passkey')) return false;
         const result = await client.query(`INSERT INTO neo_key_credentials
           (credential_id,subject_id,rp_id,public_key_pem,sign_count,created_at)
           VALUES($1,$2,$3,$4,$5,$6) ON CONFLICT(credential_id) DO NOTHING
