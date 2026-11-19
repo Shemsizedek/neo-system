@@ -180,10 +180,15 @@ if (!connectionString) {
       await assert.rejects(()=>staging.beginRegistration({session,bootstrapEvidence}),
         /neo_key_enrollment_authorization_required/);
 
+      // A general login assertion must not authorize adding a backup key.
+      const loginChallenge=await staging.beginAuthentication({session,credentialId:primary.id});
+      await assert.rejects(()=>staging.beginRegistration({session,
+        stepUpResponse:primary.assertion(loginChallenge.publicKey.challenge,{counter:1})}),
+        /neo_key_enrollment_authorization_required/);
       const step=await staging.beginEnrollmentStepUp({session,credentialId:primary.id});
       assert.ok(step?.publicKey.challenge);
       const second=await staging.beginRegistration({session,
-        stepUpResponse:primary.assertion(step.publicKey.challenge,{counter:1})});
+        stepUpResponse:primary.assertion(step.publicKey.challenge,{counter:2})});
       assert.equal((await staging.finishRegistration({session,
         challenge:second.publicKey.challenge,
         response:backup.registration(second.publicKey.challenge)})).registered,true);
@@ -221,6 +226,47 @@ if (!connectionString) {
       sessionActive=true;
       registryOnline=false;
       assert.equal(await staging.beginRecovery({session,backupCredentialId:backup.id,targetCredentialId:primary.id}),null);
+    }finally{await pool.end();}
+  });
+
+  test('bootstrap approval and challenge roll back atomically on credential conflict',async()=>{
+    const url=new URL(connectionString);
+    assert.equal(url.hostname,'127.0.0.1');
+    assert.equal(url.pathname,'/neo_key_gate4');
+    const pool=new pg.Pool({connectionString,max:8,connectionTimeoutMillis:5000});
+    try {
+      await pool.query(await readFile(new URL('../sql/003_neo_key_credentials.sql',import.meta.url),'utf8'));
+      const store=createPostgresNeoKeyStore(pool),now=Date.now();
+      const rpId='connect.example.test',origin=`https://${rpId}`;
+      const owner='owner-'+randomBytes(6).toString('hex');
+      const candidate='candidate-'+randomBytes(6).toString('hex');
+      const conflictId=randomBytes(24).toString('base64url');
+      await store.getOrCreateUserHandle(owner,randomBytes(32).toString('base64url'));
+      await store.getOrCreateUserHandle(candidate,randomBytes(32).toString('base64url'));
+      const cose=Buffer.alloc(80,1).toString('base64url');
+      await pool.query(`INSERT INTO neo_key_credentials
+        (credential_id,subject_id,rp_id,public_key_pem,public_key_cose,sign_count,created_at)
+        VALUES($1,$2,$3,$4,$5,$6,$7)`,[conflictId,owner,rpId,'PUBLIC TEST',cose,0,now]);
+      const ref=randomBytes(24).toString('base64url');
+      await pool.query(`INSERT INTO neo_key_bootstrap_approvals
+        (authorization_ref,subject_id,rp_id,origin,expires_at,approver_one,approver_two)
+        VALUES($1,$2,$3,$4,$5,$6,$7)`,
+        [ref,candidate,rpId,origin,now+120000,'security-reviewer-a','security-reviewer-b']);
+      const challengeHash=createHash('sha256').update(randomBytes(32)).digest('hex');
+      await store.insertRegistrationChallenge({challengeHash,subject:candidate,rpId,origin,
+        expiresAt:now+120000,method:'verified-operator-bootstrap',authorizationRef:ref});
+      const attempt={subject:candidate,rpId,origin,now,challengeHash,
+        credentialId:conflictId,publicKeyPem:'PUBLIC TEST',publicKeyCose:cose,signCount:0};
+      await assert.rejects(()=>store.registerAtomic(attempt),/neo_key_duplicate_credential/);
+      const readStatus=async()=>({
+        approval:(await pool.query('SELECT consumed_at FROM neo_key_bootstrap_approvals WHERE authorization_ref=$1',[ref])).rows[0].consumed_at,
+        challenge:(await pool.query('SELECT consumed_at FROM neo_key_registration_challenges WHERE challenge_hash=$1',[challengeHash])).rows[0].consumed_at
+      });
+      assert.deepEqual(await readStatus(),{approval:null,challenge:null});
+      assert.equal(await store.registerAtomic({...attempt,credentialId:randomBytes(24).toString('base64url')}),true);
+      const state=await readStatus();
+      assert.ok(state.approval!==null&&state.challenge!==null);
+      assert.equal((await pool.query('SELECT count(*)::int AS count FROM neo_key_credentials WHERE subject_id=$1',[candidate])).rows[0].count,1);
     }finally{await pool.end();}
   });
 
