@@ -80,7 +80,7 @@ if (!connectionString) {
         return {challengeHash,subject,credentialId,rpId,origin,now,newCounter:0,label};
       }
       const a=await makeChallenge('zero');
-      assert.equal(await store.getPendingAuthenticationChallenge(a),true);
+      assert.equal((await store.getPendingAuthenticationChallenge(a))?.action,'authenticate');
       const [first,second]=await Promise.all([
         store.confirmAuthenticationAtomic(a),
         store.confirmAuthenticationAtomic(a)
@@ -92,7 +92,7 @@ if (!connectionString) {
       assert.equal((await store.getActiveCredential(credentialId)).signCount,1);
       const c=await makeChallenge('regression');
       assert.equal(await store.confirmAuthenticationAtomic({...c,newCounter:1}),false);
-      assert.equal(await store.getPendingAuthenticationChallenge(c),true);
+      assert.equal((await store.getPendingAuthenticationChallenge(c))?.action,'authenticate');
       const d=await makeChallenge('higher');
       assert.equal(await store.confirmAuthenticationAtomic({...d,newCounter:2}),true);
       const e=await makeChallenge('wrong-owner');
@@ -105,3 +105,4 @@ if (!connectionString) {
     }finally{await pool.end();}
   });
 }
+
