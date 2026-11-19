@@ -5,6 +5,21 @@ CREATE TABLE IF NOT EXISTS neo_key_subjects (
   subject_id TEXT PRIMARY KEY,
   user_handle VARCHAR(43) UNIQUE NOT NULL CHECK (user_handle ~ '^[A-Za-z0-9_-]{43}$')
 );
+-- One-time approvals require two separately verified Ed25519 endorsers.
+-- Expiration and consumption are enforced within registerAtomic.
+CREATE TABLE IF NOT EXISTS neo_key_bootstrap_approvals (
+  authorization_ref TEXT PRIMARY KEY,
+  subject_id TEXT NOT NULL,
+  rp_id TEXT NOT NULL,
+  origin TEXT NOT NULL,
+  expires_at BIGINT NOT NULL,
+  consumed_at BIGINT,
+  approver_one TEXT NOT NULL,
+  approver_two TEXT NOT NULL,
+  CHECK (approver_one <> approver_two)
+);
+CREATE INDEX IF NOT EXISTS neo_key_bootstrap_approval_expiry_idx
+  ON neo_key_bootstrap_approvals(expires_at);
 CREATE TABLE IF NOT EXISTS neo_key_registration_challenges (
   challenge_hash CHAR(64) PRIMARY KEY,
   subject_id TEXT NOT NULL REFERENCES neo_key_subjects(subject_id),
