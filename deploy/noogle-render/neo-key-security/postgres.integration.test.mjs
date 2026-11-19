@@ -220,15 +220,18 @@ if (!connectionString) {
       const signedAgain=backup.assertion(secondRecovery.publicKey.challenge,{counter:3});
       assert.equal((await staging.finishRecovery({session,targetCredentialId:primary.id,
         response:signedAgain})).revoked,true);
+      // The successful lost-key recovery invalidates its own former session.
       await assert.rejects(()=>staging.finishRecovery({session,targetCredentialId:primary.id,
-        response:signedAgain}),/neo_key_recovery_requires_backup/);
+        response:signedAgain}),/neopass_session_required/);
       assert.equal(await staging.beginEnrollmentStepUp({session,credentialId:primary.id}),null);
       assert.equal(await staging.beginRecovery({session,backupCredentialId:primary.id,targetCredentialId:backup.id}),null);
       const remaining=await pool.query('SELECT credential_id FROM neo_key_credentials WHERE subject_id=$1 AND revoked_at IS NULL',[subject]);
       assert.deepEqual(remaining.rows.map(x=>x.credential_id),[backup.id]);
-      assert.equal(await sessions.revokeSession({subject,jti:issued.jti,now:Math.floor(now/1000)}),true);
-      assert.equal(await staging.beginEnrollmentStepUp({session,credentialId:backup.id}),null);
+      // Session must already be revoked by the SAME transaction that revoked
+      // the lost credential. A second manual revocation is a no-op.
       assert.equal(await issuer.verify(session.token),null);
+      assert.equal(await sessions.revokeSession({subject,jti:issued.jti,now:Math.floor(now/1000)}),false);
+      assert.equal(await staging.beginEnrollmentStepUp({session,credentialId:backup.id}),null);
       session={token:await issuer.issue({subject,evidence:'verified-test-identity'})};
       registryOnline=false;
       assert.equal(await staging.beginRecovery({session,backupCredentialId:backup.id,targetCredentialId:primary.id}),null);
