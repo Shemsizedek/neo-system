@@ -109,6 +109,8 @@ export function createNeoKeyLifecycle({
           proof.assurance !== 'webauthn-verified' ||
           proof.rpId !== rpId || proof.origin !== origin ||
           proof.purpose !== 'authenticate' ||
+          proof.action !== 'recover' ||
+          proof.targetCredentialId !== targetCredentialId ||
           !Number.isSafeInteger(proof.verifiedAt) ||
           proof.verifiedAt > now() || now() - proof.verifiedAt > 60_000) {
         throw new Error('neo_key_recovery_requires_backup');
