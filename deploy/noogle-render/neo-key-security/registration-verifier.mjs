@@ -1,6 +1,6 @@
 import { createPublicKey } from 'node:crypto';
 import { verifyRegistrationResponse } from '@simplewebauthn/server';
-import { convertCOSEtoPKCS } from '@simplewebauthn/server/helpers';
+import { decodeCredentialPublicKey, cose } from '@simplewebauthn/server/helpers';
 
 // Inactive Gate 4 integration; no HTTP routes or account issuance.
 // This module never accepts an untrusted "verified: true" flag as proof.
@@ -37,8 +37,21 @@ export function createVerifiedRegistrationAdapter() {
           !(cred.publicKey instanceof Uint8Array) || cred.publicKey.length > 8192) {
         return null;
       }
-      const der = convertCOSEtoPKCS(cred.publicKey);
-      const key = createPublicKey({key:Buffer.from(der),format:'der',type:'spki'});
+      // The library exposes a COSE key, not an SPKI document. Decode
+      // the verified EC2/P-256 coordinates and import via JWK.
+      const coseKey = decodeCredentialPublicKey(cred.publicKey);
+      if (coseKey.get(cose.COSEKEYS.kty) !== cose.COSEKTY.EC2 ||
+          coseKey.get(cose.COSEKEYS.alg) !== cose.COSEALG.ES256 ||
+          coseKey.get(cose.COSEKEYS.crv) !== cose.COSECRV.P256) return null;
+      const x = coseKey.get(cose.COSEKEYS.x);
+      const y = coseKey.get(cose.COSEKEYS.y);
+      if (!(x instanceof Uint8Array) || x.length !== 32 ||
+          !(y instanceof Uint8Array) || y.length !== 32) return null;
+      const key = createPublicKey({format:'jwk',key:{
+        kty:'EC',crv:'P-256',
+        x:Buffer.from(x).toString('base64url'),
+        y:Buffer.from(y).toString('base64url')
+      }});
       if (key.asymmetricKeyType !== 'ec' ||
           key.asymmetricKeyDetails?.namedCurve !== 'prime256v1') return null;
       return Object.freeze({
