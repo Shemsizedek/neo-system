@@ -70,6 +70,8 @@ export function createNeoKeyLifecycle({
           !validId(proof.credentialId) || typeof proof.publicKeyPem !== 'string' ||
           !proof.publicKeyPem.startsWith('-----BEGIN PUBLIC KEY-----') ||
           proof.publicKeyPem.length > 8192 ||
+          typeof proof.publicKeyCose !== 'string' ||
+          !/^[A-Za-z0-9_-]{48,11000}$/.test(proof.publicKeyCose) ||
           !Number.isSafeInteger(proof.signCount) || proof.signCount < 0 ||
           proof.algorithm !== -7) {
         throw new Error('neo_key_registration_verification_failed');
@@ -86,7 +88,7 @@ export function createNeoKeyLifecycle({
       const saved = await store.registerAtomic({
         challengeHash: hash(challenge), subject, rpId, origin, now: now(),
         credentialId: proof.credentialId, publicKeyPem: proof.publicKeyPem,
-        signCount: proof.signCount
+        publicKeyCose: proof.publicKeyCose, signCount: proof.signCount
       });
       if (!saved) throw new Error('neo_key_registration_rejected');
       return Object.freeze({registered: true, credentialId: proof.credentialId,
