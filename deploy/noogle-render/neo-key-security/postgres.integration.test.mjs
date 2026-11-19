@@ -79,7 +79,8 @@ if (!connectionString) {
       async function makeChallenge(label){
         const challengeHash=createHash('sha256').update(randomBytes(32)).digest('hex');
         await store.insertAuthenticationChallenge({challengeHash,subject,credentialId,rpId,origin,expiresAt:now+120000});
-        return {challengeHash,subject,credentialId,rpId,origin,now,newCounter:0,label};
+        return {challengeHash,subject,credentialId,rpId,origin,now,
+          action:'authenticate',targetCredentialId:null,newCounter:0,label};
       }
       const a=await makeChallenge('zero');
       assert.equal((await store.getPendingAuthenticationChallenge(a))?.action,'authenticate');
