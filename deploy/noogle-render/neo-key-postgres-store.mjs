@@ -99,6 +99,12 @@ export function createPostgresNeoKeyStore(pool) {
           (subject_id,credential_id,authorizing_credential_id,event_type,created_at)
           VALUES($1,$2,$3,'revoked',$4)`,
           [data.subject,data.targetCredentialId,data.backupCredentialId,data.now]);
+        // A lost-key recovery must invalidate all existing NEO Key sessions;
+        // this update is in the same transaction as key revocation and audit.
+        // If it fails, the credential revocation MUST also roll back.
+        await client.query(`UPDATE neo_key_staging_sessions
+          SET revoked_at=$2 WHERE subject_id=$1 AND revoked_at IS NULL`,
+          [data.subject,Math.floor(data.now/1000)]);
         return true;
       });
     }
