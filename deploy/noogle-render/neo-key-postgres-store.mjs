@@ -54,10 +54,10 @@ export function createPostgresNeoKeyStore(pool) {
             (existing === 0 && enrollmentMethod !== 'verified-operator-bootstrap') ||
             (existing > 0 && enrollmentMethod !== 'verified-existing-passkey')) return false;
         const result = await client.query(`INSERT INTO neo_key_credentials
-          (credential_id,subject_id,rp_id,public_key_pem,sign_count,created_at)
-          VALUES($1,$2,$3,$4,$5,$6) ON CONFLICT(credential_id) DO NOTHING
+          (credential_id,subject_id,rp_id,public_key_pem,public_key_cose,sign_count,created_at)
+          VALUES($1,$2,$3,$4,$5,$6,$7) ON CONFLICT(credential_id) DO NOTHING
           RETURNING credential_id`,
-          [data.credentialId,data.subject,data.rpId,data.publicKeyPem,data.signCount,data.now]);
+          [data.credentialId,data.subject,data.rpId,data.publicKeyPem,data.publicKeyCose,data.signCount,data.now]);
         if (result.rows.length !== 1) {
           // Raise to roll back consumed challenge too. A retry may then be
           // explicitly rejected by the duplicate credential constraint.
