@@ -10,6 +10,8 @@ export function createNeoKeyBootstrapApprovalService({
 }={}) {
   if(!(approverKeys instanceof Map)||approverKeys.size<2||
      [...approverKeys.entries()].some(([k,v])=>!id(k)||v?.asymmetricKeyType!=='ed25519')||
+     new Set([...approverKeys.values()].map(key=>
+       key.export({format:'der',type:'spki'}).toString('hex'))).size!==approverKeys.size||
      typeof store?.insertApproval!=='function'||typeof store?.findValidApproval!=='function') {
     throw Error('neo_key_bootstrap_approval_configuration_required');
   }
