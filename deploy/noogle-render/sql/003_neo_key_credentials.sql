@@ -21,11 +21,24 @@ CREATE TABLE IF NOT EXISTS neo_key_credentials (
   subject_id TEXT NOT NULL REFERENCES neo_key_subjects(subject_id),
   rp_id TEXT NOT NULL,
   public_key_pem TEXT NOT NULL,
+  public_key_cose TEXT NOT NULL CHECK (length(public_key_cose) BETWEEN 48 AND 11000),
   sign_count BIGINT NOT NULL DEFAULT 0 CHECK(sign_count >= 0),
   created_at BIGINT NOT NULL,
   revoked_at BIGINT
 );
 CREATE INDEX IF NOT EXISTS neo_key_active_owner_idx ON neo_key_credentials(subject_id,rp_id) WHERE revoked_at IS NULL;
+-- Subject, credential and RP scoped one-use WebAuthn assertion challenges.
+CREATE TABLE IF NOT EXISTS neo_key_authentication_challenges (
+  challenge_hash CHAR(64) PRIMARY KEY,
+  subject_id TEXT NOT NULL REFERENCES neo_key_subjects(subject_id),
+  credential_id TEXT NOT NULL REFERENCES neo_key_credentials(credential_id),
+  rp_id TEXT NOT NULL,
+  origin TEXT NOT NULL,
+  expires_at BIGINT NOT NULL,
+  consumed_at BIGINT
+);
+CREATE INDEX IF NOT EXISTS neo_key_auth_challenge_expiry_idx
+  ON neo_key_authentication_challenges(expires_at);
 CREATE TABLE IF NOT EXISTS neo_key_audit_events (
   event_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   subject_id TEXT NOT NULL REFERENCES neo_key_subjects(subject_id),
