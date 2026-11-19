@@ -360,5 +360,64 @@ if (!connectionString) {
     }
   });
 
+  test('failed session invalidation rolls back recovery credential and audit changes',async()=>{
+    const u=new URL(connectionString);
+    assert.equal(u.hostname,'127.0.0.1');
+    assert.equal(u.pathname,'/neo_key_gate4');
+    const pool=new pg.Pool({connectionString,max:6,connectionTimeoutMillis:5000});
+    const store=createPostgresNeoKeyStore(pool);
+    const subject='gate9-rollback-'+randomBytes(8).toString('hex');
+    const rpId='connect.example.test',now=Date.now();
+    const primary=randomBytes(24).toString('base64url');
+    const backup=randomBytes(24).toString('base64url');
+    const jti=randomBytes(24).toString('base64url');
+    const fn='neo_key_gate9_session_block';
+    const trigger='neo_key_gate9_session_block_trigger';
+    try {
+      await pool.query(await readFile(new URL('../sql/003_neo_key_credentials.sql',import.meta.url),'utf8'));
+      await store.getOrCreateUserHandle(subject,randomBytes(32).toString('base64url'));
+      for(const id of [primary,backup])await pool.query(`INSERT INTO neo_key_credentials
+        (credential_id,subject_id,rp_id,public_key_pem,public_key_cose,sign_count,created_at)
+        VALUES($1,$2,$3,$4,$5,$6,$7)`,
+        [id,subject,rpId,'CI-ONLY-PUBLIC',Buffer.alloc(80,4).toString('base64url'),0,now]);
+      const sessions=createPostgresNeoKeySessionStore(pool);
+      const nowSec=Math.floor(now/1000);
+      assert.equal(await sessions.registerSession({subject,jti,iat:nowSec,exp:nowSec+120}),true);
+      await pool.query(`CREATE OR REPLACE FUNCTION ${fn}() RETURNS trigger
+        LANGUAGE plpgsql AS $$
+        BEGIN
+          IF NEW.subject_id LIKE 'gate9-rollback-%' THEN
+            RAISE EXCEPTION 'gate9_session_revoke_unavailable';
+          END IF;
+          RETURN NEW;
+        END; $$`);
+      await pool.query(`CREATE TRIGGER ${trigger}
+        BEFORE UPDATE ON neo_key_staging_sessions
+        FOR EACH ROW EXECUTE FUNCTION ${fn}()`);
+      await assert.rejects(()=>store.revokeAtomic({subject,rpId,targetCredentialId:primary,
+        backupCredentialId:backup,now:now+1000}),/gate9_session_revoke_unavailable/);
+      const state=await pool.query(`SELECT credential_id FROM neo_key_credentials
+        WHERE subject_id=$1 AND revoked_at IS NULL`,[subject]);
+      assert.deepEqual(new Set(state.rows.map(x=>x.credential_id)),new Set([primary,backup]));
+      const audit=await pool.query(`SELECT event_type FROM neo_key_audit_events WHERE subject_id=$1`,[subject]);
+      assert.equal(audit.rows.length,0);
+      assert.equal(await sessions.isSessionActive({subject,jti,now:nowSec+1}),true);
+      await pool.query(`DROP TRIGGER ${trigger} ON neo_key_staging_sessions`);
+      await pool.query(`DROP FUNCTION ${fn}()`);
+      assert.equal(await store.revokeAtomic({subject,rpId,targetCredentialId:primary,
+        backupCredentialId:backup,now:now+2000}),true);
+      assert.equal(await sessions.isSessionActive({subject,jti,now:nowSec+2}),false);
+      const survivors=await pool.query(`SELECT credential_id FROM neo_key_credentials
+        WHERE subject_id=$1 AND revoked_at IS NULL`,[subject]);
+      assert.deepEqual(survivors.rows.map(x=>x.credential_id),[backup]);
+      const finalAudit=await pool.query(`SELECT event_type FROM neo_key_audit_events WHERE subject_id=$1`,[subject]);
+      assert.deepEqual(finalAudit.rows.map(x=>x.event_type),['revoked']);
+    }finally{
+      try{await pool.query(`DROP TRIGGER IF EXISTS ${trigger} ON neo_key_staging_sessions`);}catch{}
+      try{await pool.query(`DROP FUNCTION IF EXISTS ${fn}()`);}catch{}
+      await pool.end();
+    }
+  });
+
 }
 
