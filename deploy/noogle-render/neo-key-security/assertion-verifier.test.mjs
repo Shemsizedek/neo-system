@@ -24,20 +24,23 @@ function fixture({initialCounter=0}={}){
   const jwk=publicKey.export({format:'jwk'});
   const cose=cbor(new Map([[1,2],[3,-7],[-1,1],[-2,Buffer.from(jwk.x,'base64url')],[-3,Buffer.from(jwk.y,'base64url')]]));
   const id=randomBytes(24).toString('base64url');
+  const targetId=randomBytes(24).toString('base64url');
   let storedCounter=initialCounter,revoked=false;
   const store={
     async getActiveCredential(credentialId){
-      return credentialId===id&&!revoked?{subject:'member-1',rpId,publicKeyCose:cose.toString('base64url'),signCount:storedCounter,revokedAt:null}:null;
+      return [id,targetId].includes(credentialId)&&!revoked?{subject:'member-1',rpId,publicKeyCose:cose.toString('base64url'),signCount:storedCounter,revokedAt:null}:null;
     },
     async insertAuthenticationChallenge(p){records.set(p.challengeHash,{...p,used:false});},
     async getPendingAuthenticationChallenge(p){
       const r=records.get(p.challengeHash);
-      return Boolean(r&&!r.used&&r.expiresAt>p.now&&r.subject===p.subject&&r.credentialId===p.credentialId&&r.rpId===p.rpId&&r.origin===p.origin);
+      return (r&&!r.used&&r.expiresAt>p.now&&r.subject===p.subject&&r.credentialId===p.credentialId&&r.rpId===p.rpId&&r.origin===p.origin)
+        ? {action:r.action,targetCredentialId:r.targetCredentialId??null}:null;
     },
     async confirmAuthenticationAtomic(p){
       const r=records.get(p.challengeHash);
       if(!r||r.used||r.expiresAt<=p.now||r.subject!==p.subject||r.credentialId!==p.credentialId||
-         r.rpId!==p.rpId||r.origin!==p.origin||revoked||
+         r.rpId!==p.rpId||r.origin!==p.origin||r.action!==p.action||
+         r.targetCredentialId!==p.targetCredentialId||revoked||
          !(storedCounter===0&&p.newCounter===0||p.newCounter>storedCounter))return false;
       r.used=true;storedCounter=p.newCounter;return true;
     }
@@ -56,7 +59,7 @@ function fixture({initialCounter=0}={}){
       userHandle:null
     },clientExtensionResults:{}};
   }
-  return {service,id,assertion,records,getCounter:()=>storedCounter,revoke:()=>{revoked=true;},
+  return {service,id,targetId,assertion,records,getCounter:()=>storedCounter,revoke:()=>{revoked=true;},
     advance:ms=>{clock+=ms;},session:{authenticated:true,subject:'member-1'}};
 }
 
@@ -104,4 +107,19 @@ test('zero counters accepted for synced authenticators, but challenge remains on
 test('assertion service fails closed when trusted DB or identity adapter missing',()=>{
   assert.throws(()=>createNeoKeyAssertionService({rpId,origin}),/neo_key_assertion_configuration_required/);
   assert.throws(()=>createNeoKeyAssertionService({rpId,origin:'http://connect.example.test'}),/neo_key_assertion_configuration_required/);
+});
+
+test('recovery assertion proof is bound to target credential and cannot be repurposed',async()=>{
+  const f=fixture();
+  const normal=await f.service.begin({session:f.session,credentialId:f.id});
+  const normalProof=await f.service.verify({response:f.assertion(normal.publicKey.challenge)});
+  assert.equal(normalProof?.action,'authenticate');
+  assert.equal(normalProof?.targetCredentialId,null);
+  assert.equal(await f.service.begin({session:f.session,credentialId:f.id,action:'recover',targetCredentialId:f.id}),null);
+  assert.equal(await f.service.begin({session:f.session,credentialId:f.id,action:'recover',targetCredentialId:'missing-key'}),null);
+  const recovery=await f.service.begin({session:f.session,credentialId:f.id,action:'recover',targetCredentialId:f.targetId});
+  const result=await f.service.verify({response:f.assertion(recovery.publicKey.challenge,{counter:2})});
+  assert.equal(result?.action,'recover');
+  assert.equal(result?.targetCredentialId,f.targetId);
+  assert.equal(await f.service.verify({response:f.assertion(recovery.publicKey.challenge,{counter:3})}),null);
 });
