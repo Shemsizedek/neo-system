@@ -7,6 +7,7 @@ function dbFixture({duplicate=false}={}){
     calls.push({sql,args});
     if(sql.startsWith('SELECT user_handle')) return {rows:[{user_handle:'X'.repeat(43)}]};
     if(sql.includes('UPDATE neo_key_registration_challenges'))return {rows:[{enrollment_method:'verified-operator-bootstrap'}]};
+    if(sql.includes('UPDATE neo_key_bootstrap_approvals'))return {rows:[{authorization_ref:'bootstrap-ref'}]};
     if(sql.includes('INSERT INTO neo_key_credentials'))return {rows:duplicate?[]:[{credential_id:'key-12345678'}]};
     if(sql.includes('SELECT COUNT(*)::int AS count'))return {rows:[{count:0}]};
     if(sql.includes('SELECT credential_id FROM neo_key_credentials'))return {rows:[{credential_id:'key-12345678'},{credential_id:'backup-98765'}]};
