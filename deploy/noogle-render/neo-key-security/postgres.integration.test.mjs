@@ -6,6 +6,7 @@ import {createPostgresNeoKeyStore} from '../neo-key-postgres-store.mjs';
 import {createPostgresNeoKeyAssertionStore} from './postgres-assertion-store.mjs';
 import {randomBytes,createHash,generateKeyPairSync,sign} from 'node:crypto';
 import {createNeoKeyStagingIssuer} from './staging-issuer.mjs';
+import {createPostgresNeoKeySessionStore} from './postgres-session-store.mjs';
 import {createNeoKeyBootstrapApprovalService} from './bootstrap-approval.mjs';
 import {createPostgresNeoKeyApprovalStore} from './postgres-approval-store.mjs';
 import {createNeoKeyStagingAdapter} from './staging-adapter.mjs';
@@ -124,20 +125,24 @@ if (!connectionString) {
       await pool.query(await readFile(new URL('../sql/003_neo_key_credentials.sql',import.meta.url),'utf8'));
       const subject=`google:lab-${randomBytes(6).toString('hex')}`;
       const rpId='connect.example.test',origin=`https://${rpId}`,now=Date.now();
-      let registryOnline=true,sessionActive=true;
+      let registryOnline=true;
       const getAuthoritativeAccount=async id=>{
         if(!registryOnline)throw Error('simulated_registry_failure');
         return id===subject?{subject:id,status:'active',provider:'google'}:null;
       };
       const issuerKeys=generateKeyPairSync('ed25519');
+      const sessions=createPostgresNeoKeySessionStore(pool);
       const issuer=createNeoKeyStagingIssuer({
         ...issuerKeys, now:()=>now,
         authorizeSession:async ({subject:requested,evidence})=>
           requested===subject && evidence==='verified-test-identity'
             ? {approved:true,subject:requested,method:'verified-identity'}:null,
-        isSessionActive:async()=>sessionActive
+        registerSession:input=>sessions.registerSession(input),
+        isSessionActive:input=>sessions.isSessionActive(input)
       });
-      const session={token:await issuer.issue({subject,evidence:'verified-test-identity'})};
+      let session={token:await issuer.issue({subject,evidence:'verified-test-identity'})};
+      const issued=await issuer.verify(session.token);
+      assert.ok(issued?.jti);
       const verifyIssuerToken=token=>issuer.verify(token);
       const signerA=generateKeyPairSync('ed25519');
       const signerB=generateKeyPairSync('ed25519');
@@ -221,9 +226,10 @@ if (!connectionString) {
       assert.equal(await staging.beginRecovery({session,backupCredentialId:primary.id,targetCredentialId:backup.id}),null);
       const remaining=await pool.query('SELECT credential_id FROM neo_key_credentials WHERE subject_id=$1 AND revoked_at IS NULL',[subject]);
       assert.deepEqual(remaining.rows.map(x=>x.credential_id),[backup.id]);
-      sessionActive=false;
+      assert.equal(await sessions.revokeSession({subject,jti:issued.jti,now:Math.floor(now/1000)}),true);
       assert.equal(await staging.beginEnrollmentStepUp({session,credentialId:backup.id}),null);
-      sessionActive=true;
+      assert.equal(await issuer.verify(session.token),null);
+      session={token:await issuer.issue({subject,evidence:'verified-test-identity'})};
       registryOnline=false;
       assert.equal(await staging.beginRecovery({session,backupCredentialId:backup.id,targetCredentialId:primary.id}),null);
     }finally{await pool.end();}
