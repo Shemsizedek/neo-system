@@ -78,6 +78,7 @@ test('invalid attestation, mismatched challenge and expired ceremony do not regi
   await assert.rejects(()=>f.lifecycle.finishRegistration({session:f.session,challenge,response:attestation(challenge,{userVerified:false})}),/neo_key_registration_verification_failed/);
   await assert.rejects(()=>f.lifecycle.finishRegistration({session:f.session,challenge,response:attestation('A'.repeat(43))}),/neo_key_registration_verification_failed/);
   await assert.rejects(()=>f.lifecycle.finishRegistration({session:f.session,challenge,response:attestation(challenge,{algorithm:-257})}),/neo_key_registration_verification_failed/);
+  await assert.rejects(()=>f.lifecycle.finishRegistration({session:f.session,challenge,response:attestation(challenge,{publicKeyPem:'-----BEGIN PUBLIC KEY-----BAD'})}),/neo_key_registration_verification_failed/);
   assert.equal(f.keys.size,0);
   f.advance(120001);
   await assert.rejects(()=>f.lifecycle.finishRegistration({session:f.session,challenge,response:attestation(challenge)}),/neo_key_registration_rejected/);
