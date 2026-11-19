@@ -39,6 +39,7 @@ test('vetted WebAuthn verifier accepts cryptographically valid P256 none-attesta
   assert.equal(result.credentialId,response.id);
   assert.equal(result.signCount,0);
   assert.match(result.publicKeyPem,/BEGIN PUBLIC KEY/);
+  assert.ok(Buffer.from(result.publicKeyCose,'base64url').length>64);
 });
 test('reject wrong challenge, RP origin and missing user verification',async()=>{
   const verify=createVerifiedRegistrationAdapter();
