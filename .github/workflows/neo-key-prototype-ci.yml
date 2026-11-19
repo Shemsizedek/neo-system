@@ -1,0 +1,20 @@
+name: NEO Key isolated security prototype
+on:
+  pull_request:
+    paths:
+      - 'deploy/noogle-render/neo-key-*'
+      - 'deploy/noogle-render/webauthn-assertion*'
+      - 'deploy/noogle-render/challenge-service*'
+      - 'deploy/noogle-render/postgres-challenge-store*'
+      - '.github/workflows/neo-key-prototype-ci.yml'
+permissions:
+  contents: read
+jobs:
+  prototype-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: node --test deploy/noogle-render/neo-key-prototype.test.mjs deploy/noogle-render/neo-key-lifecycle.test.mjs deploy/noogle-render/neo-key-postgres-store.test.mjs deploy/noogle-render/webauthn-assertion.test.mjs deploy/noogle-render/challenge-service.test.mjs
