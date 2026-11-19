@@ -12,12 +12,12 @@ function signedAssertion({challenge='test-nonce',clientOrigin=origin,flags=5,cou
 }
 test('valid device-bound signed assertion with fresh challenge succeeds',async()=>{
  let consumed=0;
- const verify=createAssertionVerifier({rpId,origin,consumeChallenge:async()=>{consumed++;return consumed===1;},getCredential:async()=>({subject:'person-1',rpId,publicKey,confirmCounter:async n=>n===1})});
+ const verify=createAssertionVerifier({rpId,origin,consumeChallenge:async()=>{consumed++;return consumed===1;},getCredential:async()=>({subject:'person-1',rpId,publicKey:publicKey.export({type:'spki',format:'pem'}),confirmCounter:async n=>n===1})});
  const a=signedAssertion();assert.deepEqual(await verify(a),{subject:'person-1',credentialId,assurance:'device-bound'});
  assert.equal(await verify(a),null);
 });
 test('rejects wrong origin, user verification absent and invalid signature',async()=>{
- const verify=createAssertionVerifier({rpId,origin,consumeChallenge:async()=>true,getCredential:async()=>({subject:'p',rpId,publicKey,confirmCounter:async()=>true})});
+ const verify=createAssertionVerifier({rpId,origin,consumeChallenge:async()=>true,getCredential:async()=>({subject:'p',rpId,publicKey:publicKey.export({type:'spki',format:'pem'}),confirmCounter:async()=>true})});
  assert.equal(await verify(signedAssertion({clientOrigin:'https://evil.example.test'})),null);
  assert.equal(await verify(signedAssertion({flags:1})),null);
  assert.equal(await verify({...signedAssertion(),signature:Buffer.from('wrong').toString('base64url')}),null);
