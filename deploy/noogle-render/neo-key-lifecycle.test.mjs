@@ -49,7 +49,7 @@ function fixture({allow=true, bootstrap=false, preseed=false}={}) {
 }
 
 const attestation=(challenge,changes={})=>({challenge,proof:{verified:true,userVerified:true,
-  credentialId:'new-key-third',publicKeyPem,signCount:0,algorithm:-7,...changes}});
+  credentialId:'new-key-third',publicKeyPem,publicKeyCose:Buffer.alloc(80,1).toString('base64url'),signCount:0,algorithm:-7,...changes}});
 
 test('registration is session/step-up bound, stable opaque user handle and one-use',async()=>{
   const f=fixture({bootstrap:true});
