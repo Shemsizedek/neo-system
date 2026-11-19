@@ -29,16 +29,25 @@ export function createNeoKeyAssertionService({
     return row;
   };
   return Object.freeze({
-    async begin({session,credentialId}={}) {
+    async begin({session,credentialId,action='authenticate',targetCredentialId=null}={}) {
       const subject = await resolveSessionSubject(session);
       if(typeof subject!=='string'||!subject||subject.length>256||
-         !credentialPattern.test(credentialId??'')) return null;
+         !credentialPattern.test(credentialId??'') ||
+         !['authenticate','enroll','recover'].includes(action) ||
+         (action==='recover'
+           ? (!credentialPattern.test(targetCredentialId??'') || targetCredentialId===credentialId)
+           : targetCredentialId!==null)) return null;
       const row = await active(credentialId);
       if(!row || row.subject!==subject)return null;
+      if(action==='recover') {
+        const target=await active(targetCredentialId);
+        if(!target || target.subject!==subject)return null;
+      }
       const challenge = randomBytes(32).toString('base64url');
       const expiresAt = now()+ttlMs;
       await store.insertAuthenticationChallenge({
-        challengeHash:digest(challenge),subject,credentialId,rpId,origin,expiresAt
+        challengeHash:digest(challenge),subject,credentialId,rpId,origin,expiresAt,
+        action,targetCredentialId
       });
       return Object.freeze({
         publicKey:{
@@ -66,7 +75,12 @@ export function createNeoKeyAssertionService({
         if(!row)return null;
         const scope={challengeHash:digest(client.challenge),subject:row.subject,
           credentialId:response.id,rpId,origin,now:now()};
-        if(!await store.getPendingAuthenticationChallenge(scope))return null;
+        const pending=await store.getPendingAuthenticationChallenge(scope);
+        if(!pending || !['authenticate','enroll','recover'].includes(pending.action) ||
+          (pending.action==='recover'
+            ? (!credentialPattern.test(pending.targetCredentialId??'') ||
+               pending.targetCredentialId===response.id)
+            : pending.targetCredentialId!==null))return null;
         const verified=await verifyAuthenticationResponse({
           response,expectedChallenge:client.challenge,
           expectedOrigin:origin,expectedRPID:rpId,
@@ -80,11 +94,14 @@ export function createNeoKeyAssertionService({
             info?.credentialID!==response.id||info.origin!==origin||info.rpID!==rpId||
             !Number.isSafeInteger(info.newCounter)||info.newCounter<0)return null;
         if(!await store.confirmAuthenticationAtomic({
-          ...scope,now:now(),newCounter:info.newCounter
+          ...scope,action:pending.action,targetCredentialId:pending.targetCredentialId,
+          now:now(),newCounter:info.newCounter
         }))return null;
         return Object.freeze({
           assurance:'webauthn-verified',subject:row.subject,credentialId:response.id,
-          rpId,origin,purpose:'authenticate',verifiedAt:now()
+          rpId,origin,purpose:'authenticate',
+          action:pending.action,targetCredentialId:pending.targetCredentialId,
+          verifiedAt:now()
         });
       }catch{return null;}
     }
