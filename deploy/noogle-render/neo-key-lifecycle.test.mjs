@@ -87,11 +87,11 @@ test('invalid attestation, mismatched challenge and expired ceremony do not regi
 
 test('lost-key revocation requires distinct valid existing backup and preserves a key',async()=>{
   const f=fixture({preseed:true});
-  f.setProof({subject:'member-1',credentialId:backupId});
+  f.setProof({subject:'member-1',credentialId:backupId,assurance:'webauthn-verified',rpId,origin,purpose:'authenticate',verifiedAt:1000});
   assert.deepEqual(await f.lifecycle.revokeLostCredential({session:f.session,targetCredentialId:firstId,backupAssertion:{signed:true}}),
     {revoked:true,credentialId:firstId,permissionGranted:false});
   assert.equal(f.keys.get(firstId).revoked,true);
-  f.setProof({subject:'member-1',credentialId:firstId});
+  f.setProof({subject:'member-1',credentialId:firstId,assurance:'webauthn-verified',rpId,origin,purpose:'authenticate',verifiedAt:1000});
   await assert.rejects(()=>f.lifecycle.revokeLostCredential({session:f.session,targetCredentialId:backupId,backupAssertion:{signed:true}}),/neo_key_recovery_rejected/);
   assert.equal(f.keys.get(backupId).revoked,false);
 });
@@ -100,7 +100,7 @@ test('cannot revoke with unverified session, wrong owner or same key',async()=>{
   const f=fixture({preseed:true});
   f.setProof({subject:'attacker',credentialId:backupId});
   await assert.rejects(()=>f.lifecycle.revokeLostCredential({session:f.session,targetCredentialId:firstId,backupAssertion:{signed:true}}),/neo_key_recovery_requires_backup/);
-  f.setProof({subject:'member-1',credentialId:firstId});
+  f.setProof({subject:'member-1',credentialId:firstId,assurance:'webauthn-verified',rpId,origin,purpose:'authenticate',verifiedAt:1000});
   await assert.rejects(()=>f.lifecycle.revokeLostCredential({session:f.session,targetCredentialId:firstId,backupAssertion:{signed:true}}),/neo_key_recovery_requires_backup/);
   await assert.rejects(()=>f.lifecycle.revokeLostCredential({session:{trusted:false,subject:'member-1'},targetCredentialId:firstId,backupAssertion:{signed:true}}),/neopass_session_required/);
   assert.equal(f.keys.get(firstId).revoked,false);
@@ -109,4 +109,16 @@ test('cannot revoke with unverified session, wrong owner or same key',async()=>{
 test('configuration without trusted adapters or persistent atomic store fails closed',()=>{
   assert.throws(()=>createNeoKeyLifecycle({rpId,origin}),/neo_key_lifecycle_configuration_required/);
   assert.throws(()=>createNeoKeyLifecycle({rpId,origin:'http://connect.example.test'}),/neo_key_lifecycle_configuration_required/);
+});
+
+test('backup recovery rejects expired, wrong-RP or unscoped evidence',async()=>{
+  const f=fixture({preseed:true});
+  const valid={subject:'member-1',credentialId:backupId,assurance:'webauthn-verified',rpId,origin,purpose:'authenticate',verifiedAt:1000};
+  f.setProof({...valid,origin:'https://evil.example.test'});
+  await assert.rejects(()=>f.lifecycle.revokeLostCredential({session:f.session,targetCredentialId:firstId,backupAssertion:{signed:true}}),/neo_key_recovery_requires_backup/);
+  f.advance(60001);f.setProof(valid);
+  await assert.rejects(()=>f.lifecycle.revokeLostCredential({session:f.session,targetCredentialId:firstId,backupAssertion:{signed:true}}),/neo_key_recovery_requires_backup/);
+  f.setProof({...valid,verifiedAt:61001,purpose:'register'});
+  await assert.rejects(()=>f.lifecycle.revokeLostCredential({session:f.session,targetCredentialId:firstId,backupAssertion:{signed:true}}),/neo_key_recovery_requires_backup/);
+  assert.equal(f.keys.get(firstId).revoked,false);
 });
