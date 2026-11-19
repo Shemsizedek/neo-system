@@ -53,6 +53,18 @@ export function createPostgresNeoKeyStore(pool) {
         if (!Number.isSafeInteger(existing) || existing < 0 ||
             (existing === 0 && enrollmentMethod !== 'verified-operator-bootstrap') ||
             (existing > 0 && enrollmentMethod !== 'verified-existing-passkey')) return false;
+        if (existing === 0) {
+          // Atomic, one-use dual-control authorization; a signed client
+          // endorsement alone is not a consumable credential-issuance right.
+          const approval=await client.query(`UPDATE neo_key_bootstrap_approvals
+            SET consumed_at=$6 WHERE authorization_ref=$1
+              AND subject_id=$2 AND rp_id=$3 AND origin=$4
+              AND expires_at>$5 AND consumed_at IS NULL
+              AND approver_one<>approver_two
+            RETURNING authorization_ref`,
+            [consumed.rows[0].authorization_ref,data.subject,data.rpId,data.origin,data.now,data.now]);
+          if(approval.rows.length!==1) return false;
+        }
         const result = await client.query(`INSERT INTO neo_key_credentials
           (credential_id,subject_id,rp_id,public_key_pem,public_key_cose,sign_count,created_at)
           VALUES($1,$2,$3,$4,$5,$6,$7) ON CONFLICT(credential_id) DO NOTHING
