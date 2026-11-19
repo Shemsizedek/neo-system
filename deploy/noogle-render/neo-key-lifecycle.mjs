@@ -100,8 +100,15 @@ export function createNeoKeyLifecycle({
       // The trusted verifier MUST consume a new one-use authenticate challenge.
       // The backup key cannot be the key being revoked.
       const proof = await verifyExistingAssertion(backupAssertion);
+      // Trusted verifier must attest a fresh consumed assertion and scope;
+      // browser-supplied metadata is never sufficient.
       if (proof?.subject !== subject || !validId(proof?.credentialId) ||
-          proof.credentialId === targetCredentialId) {
+          proof.credentialId === targetCredentialId ||
+          proof.assurance !== 'webauthn-verified' ||
+          proof.rpId !== rpId || proof.origin !== origin ||
+          proof.purpose !== 'authenticate' ||
+          !Number.isSafeInteger(proof.verifiedAt) ||
+          proof.verifiedAt > now() || now() - proof.verifiedAt > 60_000) {
         throw new Error('neo_key_recovery_requires_backup');
       }
       const revoked = await store.revokeAtomic({subject, rpId,
