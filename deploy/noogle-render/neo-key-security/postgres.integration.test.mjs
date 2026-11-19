@@ -4,7 +4,10 @@ import {readFile} from 'node:fs/promises';
 import pg from 'pg';
 import {createPostgresNeoKeyStore} from '../neo-key-postgres-store.mjs';
 import {createPostgresNeoKeyAssertionStore} from './postgres-assertion-store.mjs';
-import {randomBytes,createHash,createHmac,timingSafeEqual} from 'node:crypto';
+import {randomBytes,createHash,generateKeyPairSync,sign} from 'node:crypto';
+import {createNeoKeyStagingIssuer} from './staging-issuer.mjs';
+import {createNeoKeyBootstrapApprovalService} from './bootstrap-approval.mjs';
+import {createPostgresNeoKeyApprovalStore} from './postgres-approval-store.mjs';
 import {createNeoKeyStagingAdapter} from './staging-adapter.mjs';
 import {createSoftwareAuthenticator} from './staging-fixtures.mjs';
 
@@ -37,6 +40,11 @@ if (!connectionString) {
       const invalid=await challenge('verified-existing-passkey','invalid');
       assert.equal(await store.registerAtomic(invalid),false);
       const bootstrap=await challenge('verified-operator-bootstrap','bootstrap');
+      await pool.query(`INSERT INTO neo_key_bootstrap_approvals
+        (authorization_ref,subject_id,rp_id,origin,expires_at,approver_one,approver_two)
+        VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+        [`${subject}-bootstrap`,subject,rpId,origin,now+120000,
+          'security-reviewer-a','security-reviewer-b']);
       const [x,y]=await Promise.all([store.registerAtomic(bootstrap),store.registerAtomic(bootstrap)]);
       assert.deepEqual([x,y].sort(),[false,true]);
       const secondBootstrap=await challenge('verified-operator-bootstrap','rebootstrap');
@@ -116,48 +124,43 @@ if (!connectionString) {
       await pool.query(await readFile(new URL('../sql/003_neo_key_credentials.sql',import.meta.url),'utf8'));
       const subject=`google:lab-${randomBytes(6).toString('hex')}`;
       const rpId='connect.example.test',origin=`https://${rpId}`,now=Date.now();
-      const issuerKey=randomBytes(32),operatorKey=randomBytes(32);
-      const encode=v=>Buffer.from(JSON.stringify(v)).toString('base64url');
-      const signJwt=claims=>{
-        const h=encode({alg:'HS256',typ:'JWT'}),p=encode(claims);
-        const sig=createHmac('sha256',issuerKey).update(`${h}.${p}`).digest('base64url');
-        return `${h}.${p}.${sig}`;
-      };
-      const verifyIssuerToken=async token=>{
-        const parts=token.split('.');
-        if(parts.length!==3)return null;
-        const header=JSON.parse(Buffer.from(parts[0],'base64url').toString());
-        if(header.alg!=='HS256'||header.typ!=='JWT')return null;
-        const wanted=createHmac('sha256',issuerKey).update(`${parts[0]}.${parts[1]}`).digest();
-        const actual=Buffer.from(parts[2],'base64url');
-        if(wanted.length!==actual.length||!timingSafeEqual(wanted,actual))return null;
-        return JSON.parse(Buffer.from(parts[1],'base64url').toString());
-      };
-      const claims={iss:'neo-pass',aud:'neo-key',token_use:'neo-key-session',
-        sub:subject,iat:Math.floor(now/1000)-15,exp:Math.floor(now/1000)+180};
-      const session={token:signJwt(claims)};
-      let registryOnline=true;
+      let registryOnline=true,sessionActive=true;
       const getAuthoritativeAccount=async id=>{
         if(!registryOnline)throw Error('simulated_registry_failure');
         return id===subject?{subject:id,status:'active',provider:'google'}:null;
       };
-      const operatorClaims={subject,action:'neo-key-bootstrap',dualControl:true,
-        exp:Math.floor(now/1000)+180,ref:randomBytes(16).toString('base64url')};
-      const raw=encode(operatorClaims);
-      const bootstrapEvidence=`${raw}.${createHmac('sha256',operatorKey).update(raw).digest('base64url')}`;
-      const verifyOperatorBootstrap=async ({subject:requested,bootstrapEvidence:ticket})=>{
-        try {
-          const parts=String(ticket||'').split('.');
-          if(parts.length!==2)return null;
-          const wanted=createHmac('sha256',operatorKey).update(parts[0]).digest();
-          const got=Buffer.from(parts[1],'base64url');
-          if(wanted.length!==got.length||!timingSafeEqual(wanted,got))return null;
-          const body=JSON.parse(Buffer.from(parts[0],'base64url').toString());
-          return body.subject===requested && body.action==='neo-key-bootstrap' &&
-            body.dualControl===true && body.exp>Math.floor(now/1000)
-            ? {verified:true,method:'dual-control',subject:requested}:null;
-        }catch{return null;}
-      };
+      const issuerKeys=generateKeyPairSync('ed25519');
+      const issuer=createNeoKeyStagingIssuer({
+        ...issuerKeys, now:()=>now,
+        authorizeSession:async ({subject:requested,evidence})=>
+          requested===subject && evidence==='verified-test-identity'
+            ? {approved:true,subject:requested,method:'verified-identity'}:null,
+        isSessionActive:async()=>sessionActive
+      });
+      const session={token:await issuer.issue({subject,evidence:'verified-test-identity'})};
+      const verifyIssuerToken=token=>issuer.verify(token);
+      const signerA=generateKeyPairSync('ed25519');
+      const signerB=generateKeyPairSync('ed25519');
+      const approverKeys=new Map([
+        ['security-reviewer-a',signerA.publicKey],
+        ['security-reviewer-b',signerB.publicKey]
+      ]);
+      const approvals=createNeoKeyBootstrapApprovalService({
+        approverKeys,store:createPostgresNeoKeyApprovalStore(pool),now:()=>now
+      });
+      const approvalReq={subject,rpId,origin,
+        authorizationRef:randomBytes(24).toString('base64url'),
+        expiresAt:now+120000};
+      const approvalMessage=approvals.signingMessage(approvalReq);
+      const endorsements=[
+        {approverId:'security-reviewer-a',
+          signature:sign(null,approvalMessage,signerA.privateKey).toString('base64url')},
+        {approverId:'security-reviewer-b',
+          signature:sign(null,approvalMessage,signerB.privateKey).toString('base64url')}
+      ];
+      await approvals.acceptSignedApproval({...approvalReq,endorsements});
+      const bootstrapEvidence=approvalReq.authorizationRef;
+      const verifyOperatorBootstrap=input=>approvals.verifyOperatorBootstrap(input);
       const staging=createNeoKeyStagingAdapter({enabled:true,rpId,origin,pool,
         verifyIssuerToken,getAuthoritativeAccount,verifyOperatorBootstrap,now:()=>now});
       const primary=createSoftwareAuthenticator(rpId),backup=createSoftwareAuthenticator(rpId);
@@ -165,7 +168,7 @@ if (!connectionString) {
       // Absent or forged bootstrap authorization never grants first enrollment.
       await assert.rejects(()=>staging.beginRegistration({session,bootstrapEvidence:'forged'}),/neo_key_enrollment_authorization_required/);
       await assert.rejects(()=>staging.beginRegistration({
-        session:{token:signJwt({...claims,token_use:'browser'})},bootstrapEvidence
+        session:{token:session.token+'tampered'},bootstrapEvidence
       }),/neopass_session_required/);
       const initial=await staging.beginRegistration({session,bootstrapEvidence});
       assert.equal((await staging.finishRegistration({session,
@@ -174,10 +177,8 @@ if (!connectionString) {
 
       // Reusing first-key bootstrap is blocked even if the separate operator
       // ticket is valid. Secondary requires a new primary-key signature.
-      const repeatedBootstrap=await staging.beginRegistration({session,bootstrapEvidence});
-      await assert.rejects(()=>staging.finishRegistration({session,
-        challenge:repeatedBootstrap.publicKey.challenge,
-        response:backup.registration(repeatedBootstrap.publicKey.challenge)}),/neo_key_registration_rejected/);
+      await assert.rejects(()=>staging.beginRegistration({session,bootstrapEvidence}),
+        /neo_key_enrollment_authorization_required/);
 
       const step=await staging.beginEnrollmentStepUp({session,credentialId:primary.id});
       assert.ok(step?.publicKey.challenge);
@@ -215,6 +216,9 @@ if (!connectionString) {
       assert.equal(await staging.beginRecovery({session,backupCredentialId:primary.id,targetCredentialId:backup.id}),null);
       const remaining=await pool.query('SELECT credential_id FROM neo_key_credentials WHERE subject_id=$1 AND revoked_at IS NULL',[subject]);
       assert.deepEqual(remaining.rows.map(x=>x.credential_id),[backup.id]);
+      sessionActive=false;
+      assert.equal(await staging.beginEnrollmentStepUp({session,credentialId:backup.id}),null);
+      sessionActive=true;
       registryOnline=false;
       assert.equal(await staging.beginRecovery({session,backupCredentialId:backup.id,targetCredentialId:primary.id}),null);
     }finally{await pool.end();}
