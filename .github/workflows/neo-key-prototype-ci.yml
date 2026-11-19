@@ -34,12 +34,7 @@ jobs:
         with:
           node-version: '24'
       - name: Install isolated pinned WebAuthn and PostgreSQL test dependencies
-        run: npm install --prefix deploy/noogle-render/neo-key-security --ignore-scripts --no-audit --no-fund
-      - name: Emit deterministic lockfile candidate for audited PR
-        run: |
-          echo NEO_KEY_LOCK_BEGIN
-          cat deploy/noogle-render/neo-key-security/package-lock.json
-          echo NEO_KEY_LOCK_END
+        run: npm ci --prefix deploy/noogle-render/neo-key-security --ignore-scripts --no-audit --no-fund
       - name: Test isolated assertions and lifecycle
         run: node --test deploy/noogle-render/neo-key-prototype.test.mjs deploy/noogle-render/neo-key-lifecycle.test.mjs deploy/noogle-render/neo-key-postgres-store.test.mjs deploy/noogle-render/webauthn-assertion.test.mjs deploy/noogle-render/challenge-service.test.mjs deploy/noogle-render/neo-key-security/registration-verifier.test.mjs
       - name: Test live transactions against ephemeral PostgreSQL service
