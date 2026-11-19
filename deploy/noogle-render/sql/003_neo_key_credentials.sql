@@ -35,7 +35,13 @@ CREATE TABLE IF NOT EXISTS neo_key_authentication_challenges (
   rp_id TEXT NOT NULL,
   origin TEXT NOT NULL,
   expires_at BIGINT NOT NULL,
-  consumed_at BIGINT
+  consumed_at BIGINT,
+  action TEXT NOT NULL DEFAULT 'authenticate' CHECK (action IN ('authenticate','enroll','recover')),
+  target_credential_id TEXT,
+  CONSTRAINT neo_key_assertion_action_scope CHECK (
+    (action='recover' AND target_credential_id IS NOT NULL) OR
+    (action IN ('authenticate','enroll') AND target_credential_id IS NULL)
+  )
 );
 CREATE INDEX IF NOT EXISTS neo_key_auth_challenge_expiry_idx
   ON neo_key_authentication_challenges(expires_at);
