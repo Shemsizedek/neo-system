@@ -29,16 +29,19 @@ export function createPostgresNeoKeyAssertionStore(pool) {
     },
     async insertAuthenticationChallenge(p) {
       await pool.query(`INSERT INTO neo_key_authentication_challenges
-        (challenge_hash,subject_id,credential_id,rp_id,origin,expires_at)
-        VALUES($1,$2,$3,$4,$5,$6)`,
-        [p.challengeHash,p.subject,p.credentialId,p.rpId,p.origin,p.expiresAt]);
+        (challenge_hash,subject_id,credential_id,rp_id,origin,expires_at,action,target_credential_id)
+        VALUES($1,$2,$3,$4,$5,$6,$7,$8)`,
+        [p.challengeHash,p.subject,p.credentialId,p.rpId,p.origin,p.expiresAt,
+         p.action??'authenticate',p.targetCredentialId??null]);
     },
     async getPendingAuthenticationChallenge(p) {
-      const r=await pool.query(`SELECT challenge_hash FROM neo_key_authentication_challenges
+      const r=await pool.query(`SELECT action,target_credential_id FROM neo_key_authentication_challenges
         WHERE challenge_hash=$1 AND subject_id=$2 AND credential_id=$3
         AND rp_id=$4 AND origin=$5 AND expires_at>$6 AND consumed_at IS NULL`,
         [p.challengeHash,p.subject,p.credentialId,p.rpId,p.origin,p.now]);
-      return r.rows.length===1;
+      if(r.rows.length!==1)return null;
+      return {action:r.rows[0].action,
+        targetCredentialId:r.rows[0].target_credential_id??null};
     },
     async confirmAuthenticationAtomic(p) {
       if(!Number.isSafeInteger(p.newCounter)||p.newCounter<0)return false;
@@ -57,8 +60,10 @@ export function createPostgresNeoKeyAssertionStore(pool) {
           SET consumed_at=$7
           WHERE challenge_hash=$1 AND subject_id=$2 AND credential_id=$3
           AND rp_id=$4 AND origin=$5 AND expires_at>$6 AND consumed_at IS NULL
+          AND action=$8 AND target_credential_id IS NOT DISTINCT FROM $9
           RETURNING challenge_hash`,
-          [p.challengeHash,p.subject,p.credentialId,p.rpId,p.origin,p.now,p.now]);
+          [p.challengeHash,p.subject,p.credentialId,p.rpId,p.origin,p.now,p.now,
+           p.action,p.targetCredentialId??null]);
         if(consumed.rows.length!==1)return false;
         const updated=await db.query(`UPDATE neo_key_credentials SET sign_count=$4
           WHERE credential_id=$1 AND subject_id=$2 AND rp_id=$3
