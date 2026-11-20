@@ -11,6 +11,7 @@ import org.bitcoinj.crypto.ECKey;
 import org.bitcoinj.crypto.TransactionSignature;
 import org.bitcoinj.script.Script;
 import org.bitcoinj.script.ScriptBuilder;
+import org.bitcoinj.script.ScriptChunk;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -155,7 +156,240 @@ final class XcpTransactionSigner {
         prevouts.sort((a,b)->Integer.compare(a.index,b.index));
         long outputSats=0; for(TransactionOutput out:unsigned.getOutputs()) outputSats=Math.addExact(outputSats,out.getValue().value);
         long fee=inputSats-outputSats; if(fee<0) throw new IllegalArgumentException("Provided input values are below transaction outputs");
-        return new RequestData(unsigned,prevouts,root.optJSONObject("summary")==null?new JSONObject():root.optJSONObject("summary"),inputSats,outputSats);
+        
+        // SECURITY: Bind the displayed summary to the actual transaction content
+        JSONObject summary=root.optJSONObject("summary");
+        if(summary!=null && !summary.isEmpty()) {
+            validateCounterpartySummary(unsigned,summary,key);
+        }
+        
+        return new RequestData(unsigned,prevouts,summary==null?new JSONObject():summary,inputSats,outputSats);
+    }
+    
+    /**
+     * Validates that the Counterparty summary matches the actual transaction outputs and payload.
+     * This prevents blind signing attacks where the displayed intent diverges from the signed transaction.
+     */
+    private static void validateCounterpartySummary(Transaction tx, JSONObject summary, ECKey key) throws Exception {
+        String summaryAction = summary.optString("action","").trim();
+        String summaryAsset = summary.optString("asset","").trim().toUpperCase();
+        String summaryQuantity = summary.optString("quantity","").trim();
+        String summaryDestination = summary.optString("destination","").trim();
+        
+        // Only validate if summary contains Counterparty SEND fields
+        if(summaryAction.isEmpty() && summaryAsset.isEmpty() && summaryQuantity.isEmpty() && summaryDestination.isEmpty()) {
+            return; // No Counterparty summary to validate
+        }
+        
+        // Extract and validate the Counterparty payload from OP_RETURN output
+        byte[] payload = extractCounterpartyPayload(tx);
+        if(payload == null || payload.length < 1) {
+            throw new IllegalArgumentException("Summary claims Counterparty action but transaction contains no valid OP_RETURN payload");
+        }
+        
+        // Parse Counterparty message: first byte is message type
+        // Type 0 = Enhanced Send, Type 2 = Standard Send
+        int messageType = payload[0] & 0xFF;
+        if(messageType != 0 && messageType != 2) {
+            throw new IllegalArgumentException("Summary claims SEND but transaction contains unsupported Counterparty message type: " + messageType);
+        }
+        
+        // Parse the Counterparty SEND message structure
+        CounterpartySend parsed = parseCounterpartySend(payload, messageType);
+        
+        // Validate asset matches
+        if(!summaryAsset.isEmpty() && !summaryAsset.equals(parsed.asset)) {
+            throw new IllegalArgumentException("Summary asset '" + summaryAsset + "' does not match transaction asset '" + parsed.asset + "'");
+        }
+        
+        // Validate quantity matches (extract numeric part from summary)
+        if(!summaryQuantity.isEmpty()) {
+            String summaryQtyNumeric = summaryQuantity.replaceAll("[^0-9]", "");
+            if(!summaryQtyNumeric.isEmpty() && !summaryQtyNumeric.equals(String.valueOf(parsed.quantity))) {
+                throw new IllegalArgumentException("Summary quantity '" + summaryQuantity + "' does not match transaction quantity " + parsed.quantity);
+            }
+        }
+        
+        // Validate destination address matches
+        if(!summaryDestination.isEmpty()) {
+            String txDestination = extractDestinationAddress(tx, key);
+            if(txDestination == null || !summaryDestination.equals(txDestination)) {
+                throw new IllegalArgumentException("Summary destination '" + summaryDestination + "' does not match transaction destination '" + txDestination + "'");
+            }
+        }
+        
+        // Validate output structure: must have OP_RETURN + dust to destination + optional change
+        validateCounterpartyOutputStructure(tx, key, summaryDestination);
+    }
+    
+    private static final class CounterpartySend {
+        final String asset;
+        final long quantity;
+        CounterpartySend(String asset, long quantity) {
+            this.asset = asset;
+            this.quantity = quantity;
+        }
+    }
+    
+    /**
+     * Extracts the Counterparty payload from the transaction's OP_RETURN output.
+     */
+    private static byte[] extractCounterpartyPayload(Transaction tx) {
+        for(TransactionOutput out : tx.getOutputs()) {
+            Script script = out.getScriptPubKey();
+            if(script.isOpReturn()) {
+                List<ScriptChunk> chunks = script.chunks();
+                if(chunks.size() >= 2 && chunks.get(1).data != null) {
+                    byte[] data = chunks.get(1).data;
+                    if(data.length == 0) continue;
+                    
+                    // Counterparty uses prefix "CNTRPRTY" for identification in some encodings
+                    if(data.length >= 8) {
+                        try {
+                            byte[] prefix = Arrays.copyOf(data, 8);
+                            String prefixStr = new String(prefix, java.nio.charset.StandardCharsets.US_ASCII);
+                            if("CNTRPRTY".equals(prefixStr) && data.length > 8) {
+                                return Arrays.copyOfRange(data, 8, data.length);
+                            }
+                        } catch(Exception e) {
+                            // Not ASCII, continue with raw data
+                        }
+                    }
+                    // Return the raw data for parsing (may be compressed or encoded)
+                    return data;
+                }
+            }
+        }
+        return null;
+    }
+    
+    /**
+     * Parses a Counterparty SEND message to extract asset and quantity.
+     */
+    private static CounterpartySend parseCounterpartySend(byte[] payload, int messageType) throws Exception {
+        if(payload.length < 1) throw new IllegalArgumentException("Invalid Counterparty payload");
+        
+        ByteBuffer buf = ByteBuffer.wrap(payload);
+        buf.get(); // Skip message type byte (already validated)
+        
+        if(messageType == 0) {
+            // Enhanced Send (type 0): address_index(1) + asset_id(8) + quantity(8) + memo(variable)
+            if(buf.remaining() < 17) throw new IllegalArgumentException("Invalid Enhanced Send payload length");
+            buf.get(); // Skip address index
+            long assetId = buf.getLong();
+            long quantity = buf.getLong();
+            String asset = assetIdToName(assetId);
+            return new CounterpartySend(asset, quantity);
+        } else if(messageType == 2) {
+            // Standard Send (type 2): asset_id(8) + quantity(8)
+            if(buf.remaining() < 16) throw new IllegalArgumentException("Invalid Standard Send payload length");
+            long assetId = buf.getLong();
+            long quantity = buf.getLong();
+            String asset = assetIdToName(assetId);
+            return new CounterpartySend(asset, quantity);
+        }
+        
+        throw new IllegalArgumentException("Unsupported Counterparty message type: " + messageType);
+    }
+    
+    /**
+     * Converts a Counterparty asset ID to its name.
+     * Asset IDs are 8-byte integers where:
+     * - 0 = BTC
+     * - 1 = XCP
+     * - 26^n encoded names for other assets
+     */
+    private static String assetIdToName(long assetId) {
+        if(assetId == 0) return "BTC";
+        if(assetId == 1) return "XCP";
+        
+        // Numeric assets (A-prefixed)
+        if(assetId >= 26 * 26 * 26 * 26 * 26 * 26 * 26 * 26) {
+            return "A" + assetId;
+        }
+        
+        // Named assets: decode from base-26
+        StringBuilder name = new StringBuilder();
+        long remaining = assetId;
+        while(remaining > 0) {
+            int digit = (int)((remaining - 1) % 26);
+            name.insert(0, (char)('A' + digit));
+            remaining = (remaining - 1) / 26;
+        }
+        
+        return name.toString();
+    }
+    
+    /**
+     * Extracts the destination address from the transaction outputs.
+     * For Counterparty sends, this is typically the first non-OP_RETURN output.
+     */
+    private static String extractDestinationAddress(Transaction tx, ECKey key) {
+        byte[] sourceScript = ScriptBuilder.createP2PKHOutputScript(key).program();
+        
+        for(TransactionOutput out : tx.getOutputs()) {
+            Script script = out.getScriptPubKey();
+            if(!script.isOpReturn()) {
+                byte[] outScript = script.program();
+                // Skip if this is change back to source
+                if(!Arrays.equals(outScript, sourceScript)) {
+                    // This should be the destination
+                    try {
+                        return script.getToAddress(BitcoinNetwork.MAINNET).toString();
+                    } catch(Exception e) {
+                        // If we can't parse the address, continue
+                    }
+                }
+            }
+        }
+        return null;
+    }
+    
+    /**
+     * Validates that the transaction output structure matches expected Counterparty pattern:
+     * - One OP_RETURN output with the payload
+     * - One dust output to the destination
+     * - Optional change output back to source
+     */
+    private static void validateCounterpartyOutputStructure(Transaction tx, ECKey key, String expectedDestination) throws Exception {
+        byte[] sourceScript = ScriptBuilder.createP2PKHOutputScript(key).program();
+        boolean hasOpReturn = false;
+        boolean hasDestination = false;
+        int nonOpReturnCount = 0;
+        
+        for(TransactionOutput out : tx.getOutputs()) {
+            Script script = out.getScriptPubKey();
+            if(script.isOpReturn()) {
+                if(hasOpReturn) throw new IllegalArgumentException("Transaction contains multiple OP_RETURN outputs");
+                hasOpReturn = true;
+            } else {
+                nonOpReturnCount++;
+                byte[] outScript = script.program();
+                if(!Arrays.equals(outScript, sourceScript)) {
+                    // This is not change, should be destination
+                    if(hasDestination) throw new IllegalArgumentException("Transaction contains multiple non-change outputs");
+                    hasDestination = true;
+                    
+                    // Verify it matches the expected destination
+                    if(expectedDestination != null && !expectedDestination.isEmpty()) {
+                        try {
+                            String actualDest = script.getToAddress(BitcoinNetwork.MAINNET).toString();
+                            if(!expectedDestination.equals(actualDest)) {
+                                throw new IllegalArgumentException("Transaction destination '" + actualDest + "' does not match expected '" + expectedDestination + "'");
+                            }
+                        } catch(IllegalArgumentException e) {
+                            throw e;
+                        } catch(Exception e) {
+                            throw new IllegalArgumentException("Cannot parse destination address from transaction output");
+                        }
+                    }
+                }
+            }
+        }
+        
+        if(!hasOpReturn) throw new IllegalArgumentException("Counterparty transaction must contain an OP_RETURN output");
+        if(!hasDestination) throw new IllegalArgumentException("Counterparty transaction must contain a destination output");
+        if(nonOpReturnCount > 2) throw new IllegalArgumentException("Transaction contains unexpected outputs (expected: destination + optional change)");
     }
 
     private static Transaction copySkeleton(Transaction src,List<Prevout> prevouts,boolean signed,ECKey key) throws Exception {
