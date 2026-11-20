@@ -1,0 +1,29 @@
+name: Neofinity INF-001 Prelaunch Guardrails
+
+on:
+  pull_request:
+    paths:
+      - 'services/neofinity/**'
+      - 'docs/neofinity/**'
+      - '.github/workflows/neofinity-inf-001.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  no-false-launch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout read-only source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Check Node availability
+        run: node --version
+      - name: Lint machine-readable launch policy
+        run: |
+          node --check services/neofinity/assess-catalog.mjs
+          node services/neofinity/assess-catalog.mjs
+      - name: Reject false operational claims
+        run: node --test services/neofinity/tests/catalog.test.mjs
+      - name: Explicitly prohibit actual deployments
+        run: echo "No network provisioning, accounts, carrier calls, subscriptions, DNS or customer enrollment are made by this workflow."
