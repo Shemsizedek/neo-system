@@ -1,5 +1,6 @@
 import type { PaymentObservation, RailQuote, ReadOnlyRail } from './types';
 import { quoteFromCesPacket } from './cesQuote';
+import { observeCounterpartyReceives } from './counterpartyObservation';
 
 const COUNTERPARTY_API = import.meta.env.VITE_COUNTERPARTY_API || 'https://api.counterparty.io:4000/v2';
 const QUOTE_ENDPOINT = import.meta.env.VITE_NEO_COUNTER_QUOTE_ENDPOINT || '';
@@ -39,28 +40,14 @@ export class CounterpartyReadOnlyRail implements ReadOnlyRail {
   }
 
   async observe(input: { address: string; expectedAmount: number; startedAt: string }): Promise<PaymentObservation> {
-    const endpoint = `${COUNTERPARTY_API}/addresses/${encodeURIComponent(input.address)}/receives/${encodeURIComponent(this.asset)}`;
+    const endpoint = `${COUNTERPARTY_API}/addresses/${encodeURIComponent(input.address)}/receives/${encodeURIComponent(this.asset)}?verbose=true`;
     const response = await fetch(endpoint);
     if (!response.ok) throw new Error(`${this.asset} receive observation unavailable`);
-    const payload = await response.json() as any;
-    const rows = Array.isArray(payload?.result) ? payload.result : Array.isArray(payload) ? payload : [];
-    const started = Date.parse(input.startedAt);
-
-    for (const row of rows) {
-      const timestamp = Date.parse(row?.block_time || row?.timestamp || row?.created_at || '');
-      if (Number.isFinite(timestamp) && timestamp < started) continue;
-      const quantity = Number(row?.quantity_normalized ?? row?.quantity ?? row?.amount ?? 0);
-      if (quantity >= input.expectedAmount) {
-        return {
-          detected: true,
-          confirmed: true,
-          reference: row?.tx_hash || row?.tx_hash_index || row?.event_index?.toString(),
-          amount: quantity,
-          source: 'Counterparty API v2',
-        };
-      }
-    }
-
-    return { detected: false, confirmed: false, source: 'Counterparty API v2' };
+    const payload: unknown = await response.json();
+    const nodeResponse = await fetch(`${COUNTERPARTY_API.replace(/\/$/, '')}/`);
+    if (!nodeResponse.ok) throw new Error(`${this.asset} node status unavailable`);
+    const nodePayload: unknown = await nodeResponse.json();
+    return observeCounterpartyReceives(payload, nodePayload, { ...input, asset: this.asset });
   }
 }
+
