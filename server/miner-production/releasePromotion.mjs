@@ -11,8 +11,8 @@ const canonical=value=>{
 
 export const sha256=value=>createHash('sha256').update(typeof value==='string'?value:canonical(value)).digest('hex')
 
-export function buildReleaseAttestation({attestation,commitSha,imageDigest,environment='neo-miner-production',generatedAt=new Date().toISOString()}={}){
-  assertGreenAttestation(attestation)
+export function buildReleaseAttestation({attestation,commitSha,imageDigest,environment='neo-miner-production',generatedAt=new Date().toISOString(),maxAttestationAgeMs=30*60*1000}={}){
+  assertGreenAttestation(attestation,{maxAgeMs:maxAttestationAgeMs,now:Date.parse(generatedAt)})
   if(!/^[0-9a-f]{40}$/i.test(String(commitSha||'')))throw new Error('RELEASE_COMMIT_SHA_INVALID')
   if(!/^sha256:[0-9a-f]{64}$/i.test(String(imageDigest||'')))throw new Error('RELEASE_IMAGE_DIGEST_INVALID')
   const payload={
