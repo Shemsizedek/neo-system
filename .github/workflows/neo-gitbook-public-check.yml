@@ -1,0 +1,30 @@
+name: NEO GitBook public docs preflight
+
+on:
+  pull_request:
+    paths:
+      - 'docs/gitbook-public/**'
+      - 'scripts/check-gitbook-public.mjs'
+      - 'scripts/check-gitbook-public.test.mjs'
+      - '.github/workflows/neo-gitbook-public-check.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  docs-preflight:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out public docs source
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test GitBook documentation security guardrail
+        run: node --test scripts/check-gitbook-public.test.mjs
+      - name: Check curated GitBook documentation
+        run: node scripts/check-gitbook-public.mjs
