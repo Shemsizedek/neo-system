@@ -1,0 +1,98 @@
+{
+  "schema": "neo-genius-008/public-counterpay-snapshot-v1",
+  "observedDate": "2026-11-08",
+  "source": "NEO CounterPay connected public wallet balance reader",
+  "sourceStatus": "live",
+  "rawResponseHash": null,
+  "rawIssuanceTxidsAvailable": false,
+  "blockHeight": null,
+  "explicitDisclosure": "API-reported public address balances and token metadata only. Not independent full-node attestation, legal beneficial ownership, current total minted supply, collateral, executable liquidity, or government vendor qualification.",
+  "addresses": {
+    "treasury": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+    "originalIssuer": "1NySA74g62Mr28Unp4uCxwtQv9FkD7AVpk",
+    "orangeChipListing": "1Ky2wRYYrJzqdQJH64F7TR98fqLxJs7LK8"
+  },
+  "observations": [
+    {
+      "asset": "NOMNI",
+      "address": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+      "quantity": "166414131",
+      "divisible": false,
+      "locked": true,
+      "issuer": "1NySA74g62Mr28Unp4uCxwtQv9FkD7AVpk",
+      "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg"
+    },
+    {
+      "asset": "NOMNI",
+      "address": "1NySA74g62Mr28Unp4uCxwtQv9FkD7AVpk",
+      "quantity": "101898388",
+      "divisible": false,
+      "locked": true,
+      "issuer": "1NySA74g62Mr28Unp4uCxwtQv9FkD7AVpk",
+      "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg"
+    },
+    {
+      "asset": "NOMNI",
+      "address": "1Ky2wRYYrJzqdQJH64F7TR98fqLxJs7LK8",
+      "quantity": "34",
+      "divisible": false,
+      "locked": true,
+      "issuer": "1NySA74g62Mr28Unp4uCxwtQv9FkD7AVpk",
+      "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg"
+    },
+    {
+      "asset": "STANSHARES",
+      "address": "1Ky2wRYYrJzqdQJH64F7TR98fqLxJs7LK8",
+      "quantity": "1000",
+      "divisible": false,
+      "locked": false,
+      "issuer": "1Ky2wRYYrJzqdQJH64F7TR98fqLxJs7LK8",
+      "owner": "1Ky2wRYYrJzqdQJH64F7TR98fqLxJs7LK8"
+    },
+    {
+      "asset": "KNOWINDEX",
+      "address": "1Ky2wRYYrJzqdQJH64F7TR98fqLxJs7LK8",
+      "quantity": "1000",
+      "divisible": false,
+      "locked": false,
+      "issuer": "1Ky2wRYYrJzqdQJH64F7TR98fqLxJs7LK8",
+      "owner": "1Ky2wRYYrJzqdQJH64F7TR98fqLxJs7LK8"
+    },
+    {
+      "asset": "WORLDCREDIT",
+      "address": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+      "quantity": "999999106297930",
+      "divisible": false,
+      "locked": false,
+      "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+      "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg"
+    },
+    {
+      "asset": "DOLLARCASH",
+      "address": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+      "quantity": "999029546379",
+      "divisible": false,
+      "locked": false,
+      "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+      "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg"
+    },
+    {
+      "asset": "NOMNICASH",
+      "address": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+      "quantity": "999999899356383",
+      "divisible": false,
+      "locked": false,
+      "issuer": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+      "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg"
+    },
+    {
+      "asset": "NEOCASH",
+      "address": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg",
+      "quantity": "6619385850",
+      "divisible": false,
+      "locked": false,
+      "issuer": "1AssetiB9oec9pmbTThvCLFqBPcLSaQGjB",
+      "owner": "18FyntJG9hdXYvanm67mGgbyo1P7adckvg"
+    }
+  ]
+}
