@@ -2,6 +2,7 @@ import http from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { intakeBulletin } from './bulletin-intake.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const indexPath = join(__dirname, 'public', 'index.html');
@@ -9,6 +10,16 @@ const indexPath = join(__dirname, 'public', 'index.html');
 export function createMarketerServer() {
   return http.createServer(async (req, res) => {
     const url = new URL(req.url ?? '/', 'http://localhost');
+
+    if (url.pathname === '/api/marketer/bulletin-intake') {
+      if (req.method !== 'POST') {
+        res.writeHead(405, { 'content-type': 'application/json', 'allow': 'POST' });
+        res.end(JSON.stringify({ error: 'method_not_allowed' }));
+        return;
+      }
+      await intakeBulletin(req, res);
+      return;
+    }
 
     if (url.pathname === '/health') {
       res.writeHead(200, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' });
@@ -21,7 +32,7 @@ export function createMarketerServer() {
       res.end(JSON.stringify({
         ok: true,
         service: 'NEO Marketer',
-        mode: 'production',
+        mode: process.env.NEO_MARKETER_MODE === 'staging' ? 'staging' : 'production',
         modules: [
           'brand-intelligence',
           'audience-intelligence',
