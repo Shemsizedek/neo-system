@@ -21,7 +21,7 @@ export function normalizeClerkIntake(input){
   const sourceId=bounded(input.sourceId,256,'sourceId')
   if(!sourceId)throw new Error('Source identifier required')
   const receivedAt=normalized(input.receivedAt)
-  if(!receivedAt||!Number.isFinite(Date.parse(receivedAt))||!/^\\d{4}-\\d{2}-\\d{2}T/.test(receivedAt))throw new Error('Valid ISO receivedAt required')
+  if(!receivedAt||!Number.isFinite(Date.parse(receivedAt))||!/^\d{4}-\d{2}-\d{2}T/.test(receivedAt))throw new Error('Valid ISO receivedAt required')
   const receiptCode=bounded(input.receiptCode,120,'receiptCode')
   const existingClaimNo=bounded(input.existingClaimNo,120,'existingClaimNo')
   const attachmentHashes=input.attachmentHashes??[]
