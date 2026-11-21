@@ -1,0 +1,1 @@
+{"name":"neo-efax-staging","private":true,"type":"module","scripts":{"start":"node src/server.mjs","test":"node --test src/index.test.mjs"},"engines":{"node":">=20"}}
