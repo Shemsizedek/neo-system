@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: neo-efax-staging
+    runtime: node
+    plan: free
+    rootDir: apps/neo-efax-worker
+    buildCommand: npm install --ignore-scripts
+    startCommand: node src/server.mjs
+    healthCheckPath: /health
+    autoDeployTrigger: off
+    envVars:
+      - key: FAX_TRANSMISSION_ENABLED
+        value: "false"
