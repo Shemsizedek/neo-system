@@ -17,8 +17,9 @@ export function createGate5PostgresStore(pool){
    await c.query('BEGIN');active=true;
    const i=await c.query('INSERT INTO neo_flipper.audit_events(request_key,payload_hash,actor_subject,operation,entity_id) VALUES($1,$2,$3,$4,$5) ON CONFLICT DO NOTHING RETURNING request_key',[key,digest,actor,op,id]);
    if(!i.rowCount){
-    const r=await c.query('SELECT payload_hash FROM neo_flipper.audit_events WHERE request_key=$1',[key]);
-    if(r.rows[0]?.payload_hash!==digest)fail('idempotency_conflict');
+    const r=await c.query('SELECT payload_hash,actor_subject,operation,entity_id FROM neo_flipper.audit_events WHERE request_key=$1',[key]);
+    const prior=r.rows[0];
+    if(!prior||prior.payload_hash!==digest||prior.actor_subject!==actor||prior.operation!==op||prior.entity_id!==id)fail('idempotency_conflict');
     await c.query('COMMIT');active=false;return {idempotent:true,entityId:id}
    }
    const result=await callback(c);await c.query('COMMIT');active=false;return result;
@@ -52,6 +53,21 @@ export function createGate5PostgresStore(pool){
   async getListing(id){const r=await pool.query('SELECT * FROM neo_flipper.listings WHERE listing_id=$1',[id]);return r.rows[0]?listing(r.rows[0]):null},
   async listListings(){const r=await pool.query('SELECT * FROM neo_flipper.listings ORDER BY status_verified_at DESC LIMIT 100');return r.rows.map(listing)},
   async savePreview(p,actor,key,digest){return write('preview_record',p.listingId,actor,key,digest,async c=>{
+   // Hold a SHARE lock on the listing and all matched buyers until the preview commits.
+   // Concurrent opt-out UPDATEs and listing status refreshes cannot race the persisted match.
+   if(!Array.isArray(p.matches)||p.matches.length>100)fail('preview_matches_invalid');
+   const ids=p.matches.map(m=>m?.buyerId);
+   if(ids.some(x=>typeof x!=='string'||!/^B-[A-Za-z0-9_-]{3,64}$/.test(x))||new Set(ids).size!==ids.length)fail('preview_buyer_ids_invalid');
+   const listingCheck=await c.query(
+    "SELECT listing_id FROM neo_flipper.listings WHERE listing_id=$1 AND listing_status IN ('active','for_sale') AND status_verified_at BETWEEN now()-interval '72 hours' AND now() FOR SHARE",
+    [p.listingId]);
+   if(listingCheck.rowCount!==1)fail('listing_status_expired');
+   if(ids.length){
+    const matched=await c.query(
+     "SELECT buyer_id FROM neo_flipper.buyers WHERE buyer_id=ANY($1::text[]) AND suppressed_at IS NULL AND consent_at BETWEEN now()-interval '365 days' AND now() AND funds_verified_at BETWEEN now()-interval '90 days' AND now() FOR SHARE",
+     [ids]);
+    if(matched.rowCount!==ids.length)fail('buyer_consent_or_funds_revoked');
+   }
    await c.query('INSERT INTO neo_flipper.deal_previews(request_key,listing_id,buyer_matches,valuation_evidence_ref,status_evidence_ref) VALUES($1,$2,$3::jsonb,$4,$5)',[key,p.listingId,JSON.stringify(p.matches),p.valuationEvidenceRef,p.sourceEvidenceRef]);
    return {...p,idempotent:false};
   })},
