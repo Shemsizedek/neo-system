@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>NEOpass Authenticator | Project 144</title>
+<style>body{font:16px system-ui;background:#101820;color:#f5f7fa;max-width:680px;margin:5vh auto;padding:24px}button{padding:12px 18px;margin:8px 8px 8px 0;border:0;border-radius:8px;cursor:pointer}button:disabled{opacity:.4;cursor:not-allowed}small{color:#a8bbc9}section{background:#202e3b;border-radius:14px;padding:22px}#status{white-space:pre-wrap}</style></head>
+<body><main><h1>NEOpass Authenticator</h1><p>Project 144 · isolated staging interface</p><section><h2>Security readiness</h2><p id="status" role="status">Checking browser…</p><button id="enroll" disabled>Enroll passkey</button><button id="auth" disabled>Authenticate</button><p><small>Requires an authenticated server implementing the reviewed NEO Key registration and assertion contract. A regular USB flash drive is not a FIDO2 key. Never enter recovery secrets on shared computers.</small></p></section></main>
+<script type="module">
+import {makeAuthenticatorClient} from './webauthn-client.mjs';
+const status=document.querySelector('#status');
+const secure=window.isSecureContext && !!window.PublicKeyCredential && !!navigator.credentials;
+status.textContent=secure?'Browser supports WebAuthn. Server enrollment is not enabled in this standalone preview.':'A secure HTTPS or localhost context and a WebAuthn-capable browser are required.';
+const approvedServerIntegration=false; // Intentionally inactive until reviewed backend is connected.
+if(secure && approvedServerIntegration){
+ const client=makeAuthenticatorClient({csrfToken:document.querySelector('meta[name="csrf-token"]')?.content});
+ for(const [id,action] of [['enroll',()=>client.enroll()],['auth',()=>client.authenticate()]]){
+   const button=document.getElementById(id); button.disabled=false;
+   button.addEventListener('click',async()=>{button.disabled=true;status.textContent='Waiting for key confirmation…';try{await action();status.textContent='Server verified the request.'}catch{status.textContent='Authentication was not completed.'}finally{button.disabled=false}});
+ }
+}
+</script></body></html>
