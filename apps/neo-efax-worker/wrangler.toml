@@ -1,0 +1,6 @@
+name = "neo-efax-api"
+main = "src/index.mjs"
+compatibility_date = "2026-11-20"
+
+[vars]
+FAX_TRANSMISSION_ENABLED = "false"
