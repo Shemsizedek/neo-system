@@ -1,0 +1,40 @@
+schema_version: "1.0"
+workflow_id: "NEO-FLIP-001"
+owner_agent: "NEO-FLIP-001"
+parent_pipeline: "NEO-DEALDESK-002"
+status: "proposed_staging_only"
+runtime: "server/neo-flipper/core.mjs"
+stages:
+  - id: source
+    action: "Collect public provenance and seller authority."
+  - id: verify_principal
+    action: "Verify executed assignable principal interest, seller written disclosure, legal/brokerage review and contract expiry."
+  - id: buyer_match
+    action: "Rank opted-in buyers with compatible market, asset, and total purchase capacity."
+  - id: diligence
+    action: "Verify buyer written disclosure, funds, title provider, seller consent if needed and counsel-approved document."
+  - id: human_approval
+    action: "Obtain authenticated approval of parties, terms, documents and fees."
+  - id: signatures
+    status: "not_connected"
+    action: "Use an approved external e-sign provider with each party signing independently."
+  - id: escrow
+    status: "not_connected"
+    action: "Await third-party settlement confirmation; prohibit autonomous funds transfer."
+  - id: deal_desk
+    status: "adapter_not_connected"
+    action: "Write authenticated and minimized opportunity and evidence references only after persistence integration."
+autopilot:
+  allowed:
+    - research_public_data
+    - rank_consented_buyers
+    - prepare_non_binding_drafts
+    - evaluate_compliance_blockers
+    - propose_deal_desk_handoff
+  prohibited:
+    - impersonate_signers
+    - initiate_payments
+    - broker_real_property_without_license
+    - fabricate_proof_of_funds
+    - claim_unverified_revenue
+    - use_unconsented_bulk_outreach

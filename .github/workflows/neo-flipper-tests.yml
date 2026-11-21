@@ -1,0 +1,28 @@
+name: NEO Flipper isolated staging tests
+on:
+  pull_request:
+    paths:
+      - 'server/neo-flipper/**'
+      - 'db/migrations/*neo_flipper*'
+      - '.github/workflows/neo-flipper-tests.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  gate-checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Syntax validation
+        run: |
+          for file in server/neo-flipper/*.mjs server/neo-flipper/staging/*.mjs; do node --check "$file"; done
+      - name: All NEO Flipper tests
+        run: node --test server/neo-flipper/*.test.mjs server/neo-flipper/staging/*.test.mjs
+      - name: No production provider secrets required
+        run: |
+          test -f server/neo-flipper/gate6-neopass-verifier.mjs
+          test -f server/neo-flipper/gate6-runtime.mjs
