@@ -65,6 +65,24 @@ test('preview is advisory with no reported revenue or signature',async()=>{
  const p=await service.preview('bearer',{listingId:baseListing.id,valuation:{},costs:{},valuationEvidenceRef:'vault:comps'},'requestkey-9012');
  assert.equal(p.status,'research_only');assert.equal(p.matches.length,1);assert.equal(p.recognizedRevenueUsd,0);assert.equal(p.contractSigned,false);
 });
+test('buyer matching provider outages reject entire preview rather than silently omitting matches',async()=>{
+ const state={buyers:new Map(),listings:new Map()};
+ const store={
+  async saveBuyer(b){state.buyers.set(b.buyerId,b);return {stored:true}},
+  async saveListing(l){state.listings.set(l.id,l);return {stored:true}},
+  async listBuyers(){return [...state.buyers.values()]},
+  async getListing(id){return state.listings.get(id)},
+  async savePreview(){throw Error('must_not_persist_preview_after_matching_failure')}
+ };
+ const service=createFlipperGate5({store,clock:()=>now,verifyToken:async()=>token,verifyBuyer:async()=>true,
+  verifyListing:async()=>true,verifyValuation:async()=>true,
+  matchBuyer:async()=>{throw Error('provider_offline')}});
+ await service.saveBuyer('bearer',baseBuyer,'requestkey-outage1');
+ await service.importListing('bearer',baseListing,'requestkey-outage2');
+ await assert.rejects(service.preview('bearer',
+  {listingId:baseListing.id,valuation:{},costs:{},valuationEvidenceRef:'vault:comps'},
+  'requestkey-outage3'),/buyer_matching_provider_unavailable/);
+});
 test('suppress buyer prevents matches',async()=>{
  const {service}=create();await service.saveBuyer('bearer',baseBuyer,'requestkey-1234');
  await service.importListing('bearer',baseListing,'requestkey-5678');
