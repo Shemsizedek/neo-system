@@ -27,10 +27,10 @@ function buyerRecord(input){
 }
 function listingRecord(input){
  if(!input||typeof input!=='object'||Array.isArray(input)||!lId.test(input.id||''))fail('listing_invalid');
- let u;try{u=new URL(input.sourceUrl)}catch{fail('listing_source_url_invalid')}
- if(u.protocol!=='https:'||u.username||u.password||u.search||u.hash)fail('listing_source_url_with_secrets_or_non_https');
+ if(typeof input.sourceUrl!=='string'||!/^https:\/\/[^\s/@?#]+(?::[0-9]{1,5})?\/[^\s?#]*$/i.test(input.sourceUrl))fail('listing_source_url_with_secrets_or_non_https');
+ const cleanUrl=input.sourceUrl;
  return {id:input.id,address:str(input.address,180),market:str(input.market,100),
-  assetType:str(input.assetType,100),jurisdiction:str(input.jurisdiction,20),sourceUrl:u.toString(),
+  assetType:str(input.assetType,100),jurisdiction:str(input.jurisdiction,20),sourceUrl:cleanUrl,
   listingStatus:str(input.listingStatus,40),daysOnMarket:input.daysOnMarket,listPriceUsd:input.listPriceUsd,
   statusVerifiedAt:str(input.statusVerifiedAt,60),statusEvidenceRef:str(input.statusEvidenceRef)};
 }
