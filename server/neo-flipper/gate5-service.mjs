@@ -26,7 +26,7 @@ function validateListing(x,now){
  if(!recent(x.statusVerifiedAt,now,72*3600000)||!ok(x.statusEvidenceRef)||!ok(x.sourceGrantRef)||!ok(x.providerId))fail('listing_evidence_expired_or_missing');
  let url;try{url=new URL(x.sourceUrl)}catch{fail('source_url_invalid')};
  if(url.protocol!=='https:'||url.username||url.password||url.search||url.hash||url.port)fail('source_url_not_public_https');
- if(url.hostname.endsWith('har.com')&&x.sourceType!=='licensed_feed')fail('har_feed_license_required');
+ if((url.hostname==='har.com'||url.hostname.endsWith('.har.com'))&&x.sourceType!=='licensed_feed')fail('har_feed_license_required');
  return {id:x.id,address:x.address.slice(0,160),market:x.market.slice(0,100),assetType:x.assetType.slice(0,100),
   listPriceUsd:x.listPriceUsd,daysOnMarket:x.daysOnMarket,jurisdiction:'US-TX',sourceUrl:url.toString(),
   status:x.status,statusVerifiedAt:x.statusVerifiedAt,statusEvidenceRef:x.statusEvidenceRef,
@@ -62,7 +62,7 @@ export function createFlipperGate5({store,verifyToken,verifyBuyer,verifyListing,
    await validated(verifyValuation,{listing:l,valuation,costs,valuationEvidenceRef},sub,'valuation_not_verified');
    const matches=[];
    for(const b of await store.listBuyers(clock())){
-    let m;try{m=await matchBuyer({listing:l,buyer:b,valuation,costs})}catch{continue}
+    let m;try{m=await matchBuyer({listing:l,buyer:b,valuation,costs})}catch{fail('buyer_matching_provider_unavailable',503)}
     if(m?.status==='indicative_buyer_first_ceiling'&&Number.isFinite(m.maximumSellerContractPriceUsd)&&m.maximumSellerContractPriceUsd>0&&
       Number.isFinite(m.estimatedNetAssignmentFeeUsd)&&m.estimatedNetAssignmentFeeUsd>=0)
       matches.push({buyerId:b.buyerId,maximumSellerContractPriceUsd:m.maximumSellerContractPriceUsd,
