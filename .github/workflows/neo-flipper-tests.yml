@@ -19,9 +19,9 @@ jobs:
           node-version: '24'
       - name: Syntax validation
         run: |
-          for file in server/neo-flipper/*.mjs; do node --check "$file"; done
+          for file in server/neo-flipper/*.mjs server/neo-flipper/staging/*.mjs; do node --check "$file"; done
       - name: All NEO Flipper tests
-        run: node --test server/neo-flipper/*.test.mjs
+        run: node --test server/neo-flipper/*.test.mjs server/neo-flipper/staging/*.test.mjs
       - name: No production provider secrets required
         run: |
           test -f server/neo-flipper/gate6-neopass-verifier.mjs
