@@ -61,11 +61,11 @@ test('accepts read-only assembly with restricted identity but does not deploy',a
 });
 test('rejects non-synthetic buyer and listing at boundary',async()=>{
  const r=await createGate9ScratchRuntime(opts());
- await assert.rejects(r.service.saveBuyer('fake',{buyerId:'B-REAL987',identityRef:'vault:real',fundsRef:'fixture:funds',consentRef:'fixture:consent'},'requestkey-009'),/only_synthetic_buyer_records_allowed/);
- await assert.rejects(r.service.importListing('fake',{id:'LIST-GATE9GOOD',statusEvidenceRef:'fixture:status',sourceGrantRef:'fixture:license',sourceUrl:'https://example.com/actual-property'},'requestkey-010'),/only_synthetic_listings_allowed/);
+ assert.throws(()=>r.service.saveBuyer('fake',{buyerId:'B-REAL987',identityRef:'vault:real',fundsRef:'fixture:funds',consentRef:'fixture:consent'},'requestkey-009'),/only_synthetic_buyer_records_allowed/);
+ assert.throws(()=>r.service.importListing('fake',{id:'LIST-GATE9GOOD',statusEvidenceRef:'fixture:status',sourceGrantRef:'fixture:license',sourceUrl:'https://example.com/actual-property'},'requestkey-010'),/only_synthetic_listings_allowed/);
 });
 test('suppress and preview require synthetic IDs',async()=>{
  const r=await createGate9ScratchRuntime(opts());
- await assert.rejects(r.service.suppress('fake','B-ACTUAL988','requestkey-011'),/only_synthetic_buyer_ids_allowed/);
- await assert.rejects(r.service.preview('fake',{listingId:'LIST-OTHER987',valuationEvidenceRef:'fixture:comps'},'requestkey-012'),/only_synthetic_previews_allowed/);
+ assert.throws(()=>r.service.suppress('fake','B-ACTUAL988','requestkey-011'),/only_synthetic_buyer_ids_allowed/);
+ assert.throws(()=>r.service.preview('fake',{listingId:'LIST-OTHER987',valuationEvidenceRef:'fixture:comps'},'requestkey-012'),/only_synthetic_previews_allowed/);
 });
