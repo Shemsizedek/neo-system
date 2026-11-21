@@ -132,3 +132,25 @@ export function prepareSellerInquiry({listing={},source={},sender={},route={},op
   disclosure:'Draft only. No automated send, purchase commitment, or assertion of contractual ownership.'
  };
 }
+
+/** Privacy-minimized Deal Desk handoff: advisory only, never a quote or an executed contract. */
+export function toBuyerFirstDealDeskRecord({listing={},buyer={},valuation={},costs={},source={}}={},options={}) {
+ const s=calculateBuyerFirstCeiling({listing,buyer,valuation,costs},{...options,source});
+ const screened=s.status==='indicative_buyer_first_ceiling';
+ return {
+   normalized:{organization:clean(listing.address,160),geography:clean(listing.market,120),prospectType:'wholesale_buyer_first'},
+   opportunity:{
+     externalDealId:clean(listing.id,120),ownerAgent:'NEO-FLIP-001',
+     dealClass:'wholesale_contract_research',stage:screened?'approval_required':'discovered',
+     qualification:{score:screened?70:0,grade:screened?'B':'D'},
+     quote:{ask:null,nonBinding:true,approvalRequired:true,approvalReasons:screened?['seller_contract_not_executed','interest_rights_not_verified']:s.blockers},
+     buyerRef:screened?s.buyerId:null,
+     indicativeMaximumSellerPriceUsd:screened?s.maximumSellerContractPriceUsd:null,
+     potentialNetAssignmentFeeUsd:screened?s.estimatedNetAssignmentFeeUsd:null,
+     recognizedRevenueUsd:0,
+     nextAction:screened?'review_indicative_seller_ceiling_and_legal_disclosures':'resolve_source_buyer_and_valuation_gates',
+     sourceRefs:typeof listing.sourceUrl==='string'&&listing.sourceUrl.startsWith('https://')?[listing.sourceUrl]:[],
+     notes:'Research only. No seller acceptance, contract rights, signature, closing or receipt. No outreach sent.'
+   }
+ };
+}
