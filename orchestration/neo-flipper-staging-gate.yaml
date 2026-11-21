@@ -1,0 +1,40 @@
+schema_version: "1.0"
+workflow_id: "NEO-FLIP-004"
+name: "Protected buyer and licensed feed staging boundary"
+principal: "Shelton Estate & Co."
+owner_agent: "NEO-FLIP-001"
+parent_pipeline: "NEO-DEALDESK-002"
+status: "staging_adapter_committed_not_deployed"
+runtime: "server/neo-flipper/staging-gate.mjs"
+authentication:
+  mode: "trusted_server_attestation_required"
+  provider: "not_connected"
+  deny_by_default: true
+  scopes:
+    - buyer:write
+    - buyer:read
+    - listing:write
+    - listing:read
+    - deal:read
+    - audit:read
+storage:
+  implementation: "ephemeral_in_process_map"
+  encrypted_persistent_registry: "not_connected"
+  private_contact_vault: "not_connected"
+listing_provider:
+  commercial_source_authorization: "not_connected"
+  permissioned_read_only_connector: "injection_required"
+  status_attestation: "injection_required"
+buyer:
+  private_data: "must_remain_in_separate_access_controlled_vault"
+  opt_in_consent: "verified_required"
+  suppression: "immediate"
+deal_desk:
+  handoff: "read_only_advisory_preview"
+  authenticated_persistence: "not_connected"
+outbound:
+  email: "disabled"
+  signatures: "disabled"
+  payments: "disabled"
+  incoming_receipts: "separate_independent_provider_reconciliation_required"
+production_release: "prohibited_pending_staging_and_legal_review"
