@@ -1,12 +1,13 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import {generateKeyPairSync,randomBytes,sign} from 'node:crypto';
+import {createHash,generateKeyPairSync,randomBytes,sign} from 'node:crypto';
 import {createNeoKeyStagingIssuer} from './staging-issuer.mjs';
 import {createNeoKeyBootstrapApprovalService} from './bootstrap-approval.mjs';
 
 const now=1_900_000_000_000;
 const subject='google:member-one',rpId='connect.example.test',origin='https://connect.example.test';
 const makeKey=()=>generateKeyPairSync('ed25519');
+const fingerprint=k=>createHash('sha256').update(k.export({format:'der',type:'spki'})).digest('base64url');
 
 test('staging issuer requires trusted identity decision, authentic Ed25519 and unrevoked session',async()=>{
   const {privateKey,publicKey}=makeKey();
@@ -19,7 +20,7 @@ test('staging issuer requires trusted identity decision, authentic Ed25519 and u
   };
   const isSessionActive=async ({subject,jti})=>
     persistenceOnline&&active&&sessions.get(jti)?.subject===subject;
-  const issuer=createNeoKeyStagingIssuer({privateKey,publicKey,now:()=>now,
+  const issuer=createNeoKeyStagingIssuer({privateKey,publicKey,trustedPublicKeyFingerprint:fingerprint(publicKey),now:()=>now,
     authorizeSession:async ({subject,evidence})=>evidence==='trusted-server-proof'
       ? {approved:true,subject,method:'verified-identity'}:null,
     registerSession,isSessionActive});
@@ -31,7 +32,7 @@ test('staging issuer requires trusted identity decision, authentic Ed25519 and u
   assert.ok(claims.exp-claims.iat<=300);
   assert.equal(await issuer.verify(token.slice(0,-2)+'aa'),null);
   const {publicKey:wrongPublicKey}=makeKey();
-  assert.throws(()=>createNeoKeyStagingIssuer({privateKey,publicKey:wrongPublicKey,now:()=>now,
+  assert.throws(()=>createNeoKeyStagingIssuer({privateKey,publicKey:wrongPublicKey,trustedPublicKeyFingerprint:fingerprint(wrongPublicKey),now:()=>now,
     authorizeSession:async()=>({approved:true,subject,method:'verified-identity'}),
     registerSession:async()=>true,isSessionActive:async()=>true}),
     /neo_key_staging_signer_pair_mismatch/);
@@ -45,7 +46,7 @@ test('staging issuer requires trusted identity decision, authentic Ed25519 and u
 test('issuer rejects unsupported keys and missing trusted callbacks',()=>{
   assert.throws(()=>createNeoKeyStagingIssuer(),/configuration_required/);
   const key=generateKeyPairSync('ec',{namedCurve:'prime256v1'});
-  assert.throws(()=>createNeoKeyStagingIssuer({privateKey:key.privateKey,publicKey:key.publicKey,
+  assert.throws(()=>createNeoKeyStagingIssuer({privateKey:key.privateKey,publicKey:key.publicKey,trustedPublicKeyFingerprint:fingerprint(key.publicKey),
     authorizeSession:()=>{},registerSession:()=>{},isSessionActive:()=>{}}),/configuration_required/);
 });
 function approvals(){
@@ -110,4 +111,13 @@ test('separate approver aliases pointing at the same public key are forbidden',(
   assert.throws(()=>createNeoKeyBootstrapApprovalService({approverKeys,store:{
     insertApproval:async()=>{},findValidApproval:async()=>null
   }}),/configuration_required/);
+});
+
+test('issuer rejects unpinned or mismatched external signer fingerprint',()=>{
+  const {privateKey,publicKey}=makeKey();
+  const opts={privateKey,publicKey,authorizeSession:async()=>({approved:true,subject,method:'verified-identity'}),
+    registerSession:async()=>true,isSessionActive:async()=>true};
+  assert.throws(()=>createNeoKeyStagingIssuer(opts),/configuration_required/);
+  assert.throws(()=>createNeoKeyStagingIssuer({...opts,trustedPublicKeyFingerprint:fingerprint(makeKey().publicKey)}),
+    /signer_fingerprint_mismatch/);
 });
