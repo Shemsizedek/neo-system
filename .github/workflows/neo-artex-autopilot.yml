@@ -1,0 +1,39 @@
+name: NEO ARTEX lab gate (safe autopilot)
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '23 9 * * *'
+  pull_request:
+    paths:
+      - 'server/neo-hacker/artexAdapter*'
+      - '.github/workflows/neo-artex-autopilot.yml'
+      - 'docs/NEO_ARTEX_002.md'
+  push:
+    branches: [main]
+    paths:
+      - 'server/neo-hacker/artexAdapter*'
+      - '.github/workflows/neo-artex-autopilot.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  offline-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Verify ARTEX adapter syntax
+        run: |
+          node --check server/neo-hacker/artexAdapter.mjs
+          node --check server/neo-hacker/artexAdapter.test.mjs
+      - name: NEO Hacker ARTEX safety tests
+        run: node --test server/neo-hacker/artexAdapter.test.mjs server/neo-hacker/guardianPipeline.test.mjs
+      - name: Offline-only deployment gate
+        run: |
+          echo "No ARTEX server started; no scans; no cloud secrets; no production endpoints."
+          echo "This workflow continuously validates the NEO defensive adapter only."
