@@ -1,0 +1,76 @@
+# Project 144 / ARTEX lab only. NOT a production deployment.
+name: neo-artex-lab
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: artexlab
+      POSTGRES_DB: artexlab
+      POSTGRES_PASSWORD: ${ARTEX_LAB_DB_PASSWORD:?must be a generated lab-only password}
+    volumes:
+      - artex-lab-pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U artexlab -d artexlab"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks: [lab]
+    security_opt: ["no-new-privileges:true"]
+
+  neo-artex-target:
+    image: python:3.12-alpine
+    command: ["python", "-m", "http.server", "8080", "--bind", "0.0.0.0"]
+    working_dir: /demo
+    read_only: true
+    volumes:
+      - ./fixtures:/demo:ro
+    networks: [lab]
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: ["ALL"]
+
+  artex:
+    build:
+      context: ${ARTEX_LAB_SOURCE_DIR:?must point to verified pinned ARTEX checkout}
+      args:
+        ARTEX_VERSION: "v0.7.0"
+    image: neo-artex-lab:0.7.0-local
+    # UI accessible from the HOST only. Proxy port is NEVER published.
+    ports:
+      - "127.0.0.1:8787:8787"
+    environment:
+      ARTEX_PG_HOST: postgres
+      ARTEX_PG_PORT: "5432"
+      ARTEX_PG_USER: artexlab
+      ARTEX_PG_PASSWORD: ${ARTEX_LAB_DB_PASSWORD:?}
+      ARTEX_PG_DBNAME: artexlab
+      ARTEX_PG_SSLMODE: disable
+      ARTEX_JWT_KEY_DIR: /app/keys
+      ARTEX_UNTRUSTED_BOUNDARY: "1"
+      ARTEX_NOISE_PROFILE: quiet
+      ARTEX_UPDATE_CHECK: "0"
+      ARTEX_TASK_BUDGET_TOKENS: "100000"
+      ARTEX_TASK_BUDGET_TURNS: "30"
+      ARTEX_INTENT_BUDGET_TOKENS: "50000"
+      ARTEX_INTENT_BUDGET_TURNS: "10"
+      # No external model creds; no autonomous workers until separately approved.
+    volumes:
+      - artex-lab-data:/app/data
+      - artex-lab-keys:/app/keys
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks: [lab]
+    pids_limit: 512
+    security_opt: ["no-new-privileges:true"]
+    restart: "no"
+
+# The entire runtime, including the demo target, has no default gateway.
+# Verify egress is blocked at runtime before any active testing.
+networks:
+  lab:
+    internal: true
+
+volumes:
+  artex-lab-pg:
+  artex-lab-data:
+  artex-lab-keys:
