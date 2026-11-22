@@ -61,3 +61,21 @@ test('Gate 10 observed state remains NO-GO despite passing synthetic CI',()=>{
   assert.equal(result.deploymentAuthorized,false);
   assert.deepEqual(result.actionsPerformed,[]);
 });
+
+test('Gate 11 real-world custody and independent-review gaps cannot be filled by CI proof',()=>{
+  const dossier={
+    recovery_rollback:{status:'verified',source:'disposable-postgres-ci'},
+    dual_approver_custody:{status:'unverified',reason:'two synthetic persons are not human custody'},
+    issuer_custody:{status:'unverified',reason:'trusted external signer record absent'},
+    security_review:{status:'not-submitted',reason:'zero PR reviews'},
+    fido2_primary_backup:{status:'blocked',reason:'authorized hosts offline'},
+    owner_change_approval:{status:'not-granted'}
+  };
+  const result=rehearseNeoKeyStagingRelease(dossier);
+  assert.equal(result.decision,'NO_GO');
+  assert.equal(result.deploymentAuthorized,false);
+  assert.ok(result.missing.some(x=>x.key==='security_review'));
+  assert.ok(result.missing.some(x=>x.key==='dual_approver_custody'));
+  assert.ok(result.missing.some(x=>x.key==='fido2_primary_backup'));
+  assert.deepEqual(result.actionsPerformed,[]);
+});
