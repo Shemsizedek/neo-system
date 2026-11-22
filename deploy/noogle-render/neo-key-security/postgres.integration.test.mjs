@@ -153,8 +153,21 @@ if (!connectionString) {
         ['security-reviewer-a',signerA.publicKey],
         ['security-reviewer-b',signerB.publicKey]
       ]);
+      // CI-only trusted custody registry fixture. Real human identities,
+      // independent custody, and signer attestation remain unverified.
+      const signerFingerprint=key=>createHash('sha256').update(
+        key.export({format:'der',type:'spki'})).digest('base64url');
+      const custody=new Map([
+        ['security-reviewer-a',{approverId:'security-reviewer-a',personId:'operator-alpha',
+          status:'active',role:'neo-key-enrollment-approver',conflictOfInterest:false,
+          signerFingerprint:signerFingerprint(signerA.publicKey)}],
+        ['security-reviewer-b',{approverId:'security-reviewer-b',personId:'operator-beta',
+          status:'active',role:'neo-key-enrollment-approver',conflictOfInterest:false,
+          signerFingerprint:signerFingerprint(signerB.publicKey)}]
+      ]);
       const approvals=createNeoKeyBootstrapApprovalService({
-        approverKeys,store:createPostgresNeoKeyApprovalStore(pool),now:()=>now
+        approverKeys,store:createPostgresNeoKeyApprovalStore(pool),now:()=>now,
+        verifyApproverCustody:async ({approverId})=>custody.get(approverId)??null
       });
       const approvalReq={subject,rpId,origin,
         authorizationRef:randomBytes(24).toString('base64url'),
