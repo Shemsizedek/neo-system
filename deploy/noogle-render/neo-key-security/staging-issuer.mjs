@@ -1,4 +1,4 @@
-import {randomBytes,sign,verify} from 'node:crypto';
+import {createHash,randomBytes,sign,verify} from 'node:crypto';
 
 // Offline staging signer. The caller supplies Ed25519 keys and a trusted,
 // independently verified identity decision. This module opens no listener.
@@ -6,15 +6,23 @@ const b64=value=>Buffer.from(JSON.stringify(value)).toString('base64url');
 const validId=v=>typeof v==='string'&&/^[A-Za-z0-9_-]{8,128}$/.test(v);
 const canonical=v=>typeof v==='string'&&/^[A-Za-z0-9_-]+$/.test(v)&&Buffer.from(v,'base64url').toString('base64url')===v;
 export function createNeoKeyStagingIssuer({
-  privateKey, publicKey, kid='neo-key-staging-v1',
+  privateKey, publicKey, trustedPublicKeyFingerprint, kid='neo-key-staging-v1',
   authorizeSession, registerSession, isSessionActive, now=()=>Date.now(), ttlSeconds=120
 }={}) {
   if(privateKey?.asymmetricKeyType!=='ed25519'||
      publicKey?.asymmetricKeyType!=='ed25519'||
      typeof authorizeSession!=='function'||typeof registerSession!=='function'||
      typeof isSessionActive!=='function'||
+     typeof trustedPublicKeyFingerprint!=='string'||
+     !/^[A-Za-z0-9_-]{43}$/.test(trustedPublicKeyFingerprint)||
      !validId(kid)||!Number.isSafeInteger(ttlSeconds)||
      ttlSeconds<30||ttlSeconds>300)throw Error('neo_key_staging_issuer_configuration_required');
+  // The fingerprint MUST be supplied by a distinct, trusted config source,
+  // never derived from request JSON or the supplied signing key itself.
+  const actualFingerprint=createHash('sha256').update(
+    publicKey.export({type:'spki',format:'der'})).digest('base64url');
+  if(actualFingerprint!==trustedPublicKeyFingerprint)
+    throw Error('neo_key_staging_signer_fingerprint_mismatch');
   // Refuse mismatched signer and verifier keys at initialization rather than
   // persist unusable session IDs and issue unverifiable tokens.
   const probe=Buffer.from('NEO Key staging signer pair check v1');
