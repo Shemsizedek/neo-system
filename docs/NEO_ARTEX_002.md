@@ -45,7 +45,7 @@ The first source-pinned local-only ARTEX lab is staged in:
 - `deploy/neo-artex-lab/fixtures/index.html` (non-production target).
 - `scripts/neo-artex-lab.sh` (prepare/start/status/stop/check controls).
 
-The installer verifies the 40-character upstream commit, requires a clean checkout,
+The installer verifies the 40-character upstream commit and the v0.7.0 tag target, requires a clean checkout,
 generates lab-only database credentials, and builds its own container image.
 The UI binds to `127.0.0.1:8787`; the recording proxy is never published.
 The Compose application uses `internal: true` networking without an external
@@ -62,6 +62,15 @@ NEO_ARTEX_LAB_ENABLE=YES bash scripts/neo-artex-lab.sh start
 bash scripts/neo-artex-lab.sh status
 bash scripts/neo-artex-lab.sh stop
 ```
+
+The updated startup path now executes `scripts/neo-artex-lab-smoke.sh` and
+stops the disposable lab if basic isolation and readiness checks do not pass.
+The smoke checker requires loopback-only UI publication, an unpublished proxy,
+the internal-only Docker network, running containers, a healthy disposable
+PostgreSQL service, and the known-answer fixture HTTP page. The smoke checker
+does **not** perform vulnerability scans, validate firewall enforcement at the
+host layer, or confirm ARTEX's own target gate is enabled. It is not a
+production readiness certificate.
 
 **No lab was started by this change.** Local Docker availability, upstream source
 clone/build, network-deny checks, Postgres readiness and ARTEX application
@@ -100,3 +109,34 @@ No production changes, live scanning, wallet access, DNS mutations, logins,
 payment operations, blockchain operations or spending are permitted by this
 repository integration. The GitHub workflow cannot execute ARTEX or contact
 external scanning targets.
+
+## Gate 4 — 2026-11-21 execution evidence
+
+- GitHub Actions for prior PR head `1d7a1558e792a5b9edce62470c1bf4a20d546d8d`:
+  `NEO ARTEX lab gate (safe autopilot)` = success;
+  `NEO Hacker` = success.
+- Authorized workstation discovery: Desktop Commander `penguin` offline;
+  SentinelX `crown-node-001` offline. No remote Docker installation was
+  attempted, and no reachable authorized Docker host is presently confirmed.
+- This gate extended the local launcher to fail closed after smoke validation
+  and added source-release-tag verification and a read-only smoke script.
+- New PR head and associated CI must be checked separately. Older passing CI
+  results must not be attributed to newly committed files.
+- No live ARTEX jobs, no model keys, no live NEO targets, no spending,
+  no service deployments and no production modifications.
+
+## Release-blocking checklist
+
+- [ ] Latest CI for this gate is green (including shell syntax).
+- [ ] Docker host connected and explicitly designated for isolated security lab.
+- [ ] Pin upstream release provenance, dependency review, source-only build.
+- [ ] Docker runtime starts with only internal network; metadata and default
+      network egress blocked independently and tested.
+- [ ] Lab UI authentication/setup confirmed and not internet-exposed.
+- [ ] ARTEX per-task target/scope gates and human approvals enabled and tested.
+- [ ] A real upstream report export schema sanitized and mapped to NEO evidence.
+- [ ] Toy-only authorized security test completed with captured proof and
+      independent retest.
+- [ ] Shutdown, backup and cleanup procedures demonstrated.
+
+**Release decision: NO-GO** for autonomous scanning or production access.
