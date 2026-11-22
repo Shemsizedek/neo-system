@@ -133,7 +133,10 @@ if (!connectionString) {
       const issuerKeys=generateKeyPairSync('ed25519');
       const sessions=createPostgresNeoKeySessionStore(pool);
       const issuer=createNeoKeyStagingIssuer({
-        ...issuerKeys, now:()=>now,
+        ...issuerKeys,
+        trustedPublicKeyFingerprint:createHash('sha256').update(
+          issuerKeys.publicKey.export({format:'der',type:'spki'})).digest('base64url'),
+        now:()=>now,
         authorizeSession:async ({subject:requested,evidence})=>
           requested===subject && evidence==='verified-test-identity'
             ? {approved:true,subject:requested,method:'verified-identity'}:null,
