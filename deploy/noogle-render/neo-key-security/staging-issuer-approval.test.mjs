@@ -64,7 +64,17 @@ function approvals(){
         r.expiresAt>p.now?{...r,approverCount:r.approverIds[0]!==r.approverIds[1]?2:0}:null;
     }
   };
-  const service=createNeoKeyBootstrapApprovalService({approverKeys,store,now:()=>now});
+  const custodianRecords=new Map([
+    ['security-reviewer-a',{approverId:'security-reviewer-a',personId:'operator-alpha',
+      status:'active',role:'neo-key-enrollment-approver',conflictOfInterest:false,
+      signerFingerprint:fingerprint(a.publicKey)}],
+    ['security-reviewer-b',{approverId:'security-reviewer-b',personId:'operator-beta',
+      status:'active',role:'neo-key-enrollment-approver',conflictOfInterest:false,
+      signerFingerprint:fingerprint(b.publicKey)}]
+  ]);
+  const verifyApproverCustody=async ({approverId})=>custodianRecords.get(approverId)??null;
+  const service=createNeoKeyBootstrapApprovalService({
+    approverKeys,store,verifyApproverCustody,now:()=>now});
   const authorizationRef=randomBytes(24).toString('base64url'),expiresAt=now+180_000;
   const req={subject,rpId,origin,authorizationRef,expiresAt};
   const message=service.signingMessage(req);
@@ -72,7 +82,7 @@ function approvals(){
     {approverId:'security-reviewer-a',signature:sign(null,message,a.privateKey).toString('base64url')},
     {approverId:'security-reviewer-b',signature:sign(null,message,b.privateKey).toString('base64url')}
   ];
-  return {service,req,endorsements,rows,unknown:c,approverKeys};
+  return {service,req,endorsements,rows,unknown:c,approverKeys,custodianRecords};
 }
 test('two independent approver signatures produce a subject/RP-bound unspent approval',async()=>{
   const f=approvals();
@@ -110,7 +120,7 @@ test('separate approver aliases pointing at the same public key are forbidden',(
   ]);
   assert.throws(()=>createNeoKeyBootstrapApprovalService({approverKeys,store:{
     insertApproval:async()=>{},findValidApproval:async()=>null
-  }}),/configuration_required/);
+  },verifyApproverCustody:async()=>null}),/configuration_required/);
 });
 
 test('issuer rejects unpinned or mismatched external signer fingerprint',()=>{
@@ -132,4 +142,53 @@ test('mutating approver allowlist after service creation cannot authorize new si
   assert.equal(f.rows.size,0);
   await f.service.acceptSignedApproval({...f.req,endorsements:f.endorsements});
   assert.equal(f.rows.size,1);
+});
+
+test('two valid signing keys cannot impersonate a single human custodian',async()=>{
+  const f=approvals();
+  f.custodianRecords.set('security-reviewer-b',{
+    ...f.custodianRecords.get('security-reviewer-b'),
+    personId:'operator-alpha'
+  });
+  await assert.rejects(()=>f.service.acceptSignedApproval({...f.req,
+    endorsements:f.endorsements}),/neo_key_bootstrap_custody_independence_required/);
+  assert.equal(f.rows.size,0);
+});
+
+test('revoked, conflicted, self-approving and unpinned custodians cannot approve',async()=>{
+  for(const changes of [
+    {status:'revoked'},{conflictOfInterest:true},{personId:subject},
+    {signerFingerprint:fingerprint(makeKey().publicKey)},
+    {role:'untrusted-role'}]){
+    const f=approvals();
+    f.custodianRecords.set('security-reviewer-b',{
+      ...f.custodianRecords.get('security-reviewer-b'),...changes
+    });
+    await assert.rejects(()=>f.service.acceptSignedApproval({...f.req,
+      endorsements:f.endorsements}),/neo_key_bootstrap_custody_independence_required/);
+    assert.equal(f.rows.size,0);
+  }
+});
+
+test('custody registry outage denies approval before writing anything',async()=>{
+  const keyA=makeKey(),keyB=makeKey();
+  const approverKeys=new Map([
+    ['security-reviewer-a',keyA.publicKey],['security-reviewer-b',keyB.publicKey]
+  ]);
+  let writes=0;
+  const service=createNeoKeyBootstrapApprovalService({
+    approverKeys,now:()=>now,
+    store:{insertApproval:async()=>{writes++;},findValidApproval:async()=>null},
+    verifyApproverCustody:async()=>{throw Error('custody_registry_offline');}
+  });
+  const req={subject,rpId,origin,authorizationRef:randomBytes(24).toString('base64url'),
+    expiresAt:now+180_000};
+  const m=service.signingMessage(req);
+  const endorsements=[
+    {approverId:'security-reviewer-a',signature:sign(null,m,keyA.privateKey).toString('base64url')},
+    {approverId:'security-reviewer-b',signature:sign(null,m,keyB.privateKey).toString('base64url')}
+  ];
+  await assert.rejects(()=>service.acceptSignedApproval({...req,endorsements}),
+    /custody_registry_offline/);
+  assert.equal(writes,0);
 });
