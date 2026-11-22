@@ -9,11 +9,15 @@ on:
       - 'server/neo-hacker/artexAdapter*'
       - '.github/workflows/neo-artex-autopilot.yml'
       - 'docs/NEO_ARTEX_002.md'
+      - 'deploy/neo-artex-lab/**'
+      - 'scripts/neo-artex-lab.sh'
   push:
     branches: [main]
     paths:
       - 'server/neo-hacker/artexAdapter*'
       - '.github/workflows/neo-artex-autopilot.yml'
+      - 'deploy/neo-artex-lab/**'
+      - 'scripts/neo-artex-lab.sh'
 
 permissions:
   contents: read
@@ -33,6 +37,15 @@ jobs:
           node --check server/neo-hacker/artexAdapter.test.mjs
       - name: NEO Hacker ARTEX safety tests
         run: node --test server/neo-hacker/artexAdapter.test.mjs server/neo-hacker/guardianPipeline.test.mjs
+      - name: Validate lab launcher without activating a runtime
+        run: |
+          bash -n scripts/neo-artex-lab.sh
+          bash scripts/neo-artex-lab.sh help
+          if grep -qE '^[[:space:]]*-[[:space:]]*["\x27]?0\\.0\\.0\\.0:' deploy/neo-artex-lab/compose.yaml; then
+            echo 'Public ARTEX port binding rejected' >&2
+            exit 1
+          fi
+          grep -q 'internal: true' deploy/neo-artex-lab/compose.yaml
       - name: Offline-only deployment gate
         run: |
           echo "No ARTEX server started; no scans; no cloud secrets; no production endpoints."
