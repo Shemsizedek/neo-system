@@ -26,13 +26,17 @@ export function serializeCredential(credential) {
     if (credential.response[name] != null) output[name] = encodeBase64url(credential.response[name]);
   }
   if (!output.clientDataJSON) throw new TypeError('missing_client_data');
-  return { id: credential.id, rawId: encodeBase64url(credential.rawId), type: credential.type, response: output, clientExtensionResults: credential.getClientExtensionResults?.() || {} };
+  if (typeof credential.response.getTransports === 'function') output.transports = credential.response.getTransports();
+  return { id: credential.id, rawId: encodeBase64url(credential.rawId), type: credential.type,
+    response: output, authenticatorAttachment: credential.authenticatorAttachment || undefined,
+    clientExtensionResults: credential.getClientExtensionResults?.() || {} };
 }
 export function makeAuthenticatorClient({ fetcher = globalThis.fetch, credentials = globalThis.navigator?.credentials, origin = globalThis.location?.origin, csrfToken }) {
   if (typeof fetcher !== 'function') throw new TypeError('fetch_required');
   if (!origin || (!/^https:\/\//.test(origin) && !/^http:\/\/localhost(?::\d+)?$/.test(origin))) throw new Error('secure_origin_required');
   async function api(path, body = {}) {
-    const response = await fetcher(path, { method:'POST', credentials:'same-origin', headers:{ 'Content-Type':'application/json', ...(csrfToken ? { 'X-CSRF-Token':csrfToken } : {}) }, body:JSON.stringify(body) });
+    if (typeof csrfToken !== 'string' || !csrfToken.trim() || csrfToken.length > 256) throw new Error('csrf_token_required');
+    const response = await fetcher(path, { method:'POST', credentials:'same-origin', headers:{ 'Content-Type':'application/json', 'X-CSRF-Token':csrfToken }, body:JSON.stringify(body) });
     if (!response.ok) throw new Error('neopass_api_error_' + response.status);
     return response.json();
   }
