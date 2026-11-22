@@ -22,6 +22,7 @@ verify_source() {
   [ -d "$SOURCE/.git" ] || die 'missing ARTEX source checkout'
   [ "$(git -C "$SOURCE" remote get-url origin)" = "$REPO" ] || die 'unexpected upstream Git remote'
   [ "$(git -C "$SOURCE" rev-parse HEAD)" = "$SHA" ] || die 'source commit does not match pinned v0.7.0 revision'
+  [ "$(git -C "$SOURCE" rev-parse 'v0.7.0^{commit}')" = "$SHA" ] || die 'v0.7.0 tag resolves to another commit'
   [ -z "$(git -C "$SOURCE" status --porcelain)" ] || die 'uncommitted or untracked source files found'
 }
 prepare() {
@@ -52,7 +53,20 @@ case "${1:-help}" in
     prepare
     compose config -q
     compose up --build -d
-    printf 'Lab only: check localhost:8787. No external model configured; no scans started.\n' ;;
+    passed=0
+    for attempt in $(seq 1 15); do
+      if bash "$ROOT/scripts/neo-artex-lab-smoke.sh"; then
+        passed=1
+        break
+      fi
+      sleep 4
+    done
+    if [ "$passed" -ne 1 ]; then
+      printf 'Smoke check failed. Shutting down disposable ARTEX lab.\n' >&2
+      compose down
+      die 'startup failed closed'
+    fi
+    printf 'Isolated lab smoke passed; no ARTEX tasks or scans started.\n' ;;
   status)
     need docker
     [ -f "$ENVFILE" ] || die 'run prepare first'
@@ -61,6 +75,9 @@ case "${1:-help}" in
     need docker
     [ -f "$ENVFILE" ] || die 'run prepare first'
     compose down ;;
+  smoke)
+    need docker
+    bash "$ROOT/scripts/neo-artex-lab-smoke.sh" ;;
   check)
     need docker
     [ -f "$ENVFILE" ] || die 'run prepare first'
@@ -69,7 +86,7 @@ case "${1:-help}" in
     printf 'Compose syntax valid and source commit verified; runtime egress not yet verified.\n' ;;
   *)
     cat <<'HELP'
-Usage: scripts/neo-artex-lab.sh prepare|start|status|stop|check
+Usage: scripts/neo-artex-lab.sh prepare|start|status|smoke|stop|check
 The lab uses a source-built ARTEX image, loopback-only console, internal-only
 Docker network and a synthetic test target. No external LLM credentials.
 To start after authorization: NEO_ARTEX_LAB_ENABLE=YES scripts/neo-artex-lab.sh start
