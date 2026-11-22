@@ -1,4 +1,4 @@
-import {verify,randomBytes} from 'node:crypto';
+import {createHash,verify} from 'node:crypto';
 
 // Two independent Ed25519 public keys authorize a single first-key request.
 // No private keys, credentials, HTTP route or real user data are stored here.
@@ -6,13 +6,14 @@ import {verify,randomBytes} from 'node:crypto';
 // approver identity or approval actions from untrusted browser flags.
 const id=v=>typeof v==='string'&&/^[A-Za-z0-9_-]{16,128}$/.test(v);
 export function createNeoKeyBootstrapApprovalService({
-  approverKeys,store,now=()=>Date.now()
+  approverKeys,store,verifyApproverCustody,now=()=>Date.now()
 }={}) {
   if(!(approverKeys instanceof Map)||approverKeys.size<2||
      [...approverKeys.entries()].some(([k,v])=>!id(k)||v?.asymmetricKeyType!=='ed25519')||
      new Set([...approverKeys.values()].map(key=>
        key.export({format:'der',type:'spki'}).toString('hex'))).size!==approverKeys.size||
-     typeof store?.insertApproval!=='function'||typeof store?.findValidApproval!=='function') {
+     typeof store?.insertApproval!=='function'||typeof store?.findValidApproval!=='function'||
+     typeof verifyApproverCustody!=='function') {
     throw Error('neo_key_bootstrap_approval_configuration_required');
   }
   // Snapshot the signer allowlist at initialization. The caller must
@@ -33,6 +34,7 @@ export function createNeoKeyBootstrapApprovalService({
       }
       const message=payload(subject,rpId,origin,authorizationRef,expiresAt);
       const used=new Set();
+      const persons=new Set();
       for(const e of endorsements){
         if(!id(e?.approverId)||used.has(e.approverId)||
            typeof e.signature!=='string'||
@@ -43,6 +45,22 @@ export function createNeoKeyBootstrapApprovalService({
         if(!key||!verify(null,message,key,Buffer.from(e.signature,'base64url'))) {
           throw Error('neo_key_bootstrap_invalid_signature');
         }
+        // Caller must perform this lookup against an authoritative, signed
+        // and current custody registry, never browser-provided claims.
+        const custody=await verifyApproverCustody({approverId:e.approverId,
+          subject,rpId,origin});
+        const fingerprint=createHash('sha256').update(
+          key.export({type:'spki',format:'der'})).digest('base64url');
+        if(custody?.approverId!==e.approverId || custody.status!=='active' ||
+           custody.role!=='neo-key-enrollment-approver' ||
+           custody.signerFingerprint!==fingerprint ||
+           custody.conflictOfInterest!==false ||
+           typeof custody.personId!=='string' ||
+           !/^[A-Za-z0-9_:.-]{3,256}$/.test(custody.personId) ||
+           custody.personId===subject || persons.has(custody.personId)) {
+          throw Error('neo_key_bootstrap_custody_independence_required');
+        }
+        persons.add(custody.personId);
         used.add(e.approverId);
       }
       await store.insertApproval({subject,rpId,origin,authorizationRef,expiresAt,
