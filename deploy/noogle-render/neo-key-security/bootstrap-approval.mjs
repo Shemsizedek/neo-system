@@ -15,6 +15,9 @@ export function createNeoKeyBootstrapApprovalService({
      typeof store?.insertApproval!=='function'||typeof store?.findValidApproval!=='function') {
     throw Error('neo_key_bootstrap_approval_configuration_required');
   }
+  // Snapshot the signer allowlist at initialization. The caller must
+  // restart with a reviewed new trust configuration to rotate approvers.
+  const trustedApprovers=new Map(approverKeys);
   const payload=(subject,rpId,origin,ref,expiresAt)=>
     Buffer.from(JSON.stringify({purpose:'neo-key-first-credential',subject,rpId,origin,
       authorizationRef:ref,expiresAt}));
@@ -36,7 +39,7 @@ export function createNeoKeyBootstrapApprovalService({
            !/^[A-Za-z0-9_-]{80,128}$/.test(e.signature)) {
           throw Error('neo_key_bootstrap_approvers_required');
         }
-        const key=approverKeys.get(e.approverId);
+        const key=trustedApprovers.get(e.approverId);
         if(!key||!verify(null,message,key,Buffer.from(e.signature,'base64url'))) {
           throw Error('neo_key_bootstrap_invalid_signature');
         }
