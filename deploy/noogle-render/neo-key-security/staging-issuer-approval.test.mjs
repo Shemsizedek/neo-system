@@ -72,7 +72,7 @@ function approvals(){
     {approverId:'security-reviewer-a',signature:sign(null,message,a.privateKey).toString('base64url')},
     {approverId:'security-reviewer-b',signature:sign(null,message,b.privateKey).toString('base64url')}
   ];
-  return {service,req,endorsements,rows,unknown:c};
+  return {service,req,endorsements,rows,unknown:c,approverKeys};
 }
 test('two independent approver signatures produce a subject/RP-bound unspent approval',async()=>{
   const f=approvals();
@@ -120,4 +120,16 @@ test('issuer rejects unpinned or mismatched external signer fingerprint',()=>{
   assert.throws(()=>createNeoKeyStagingIssuer(opts),/configuration_required/);
   assert.throws(()=>createNeoKeyStagingIssuer({...opts,trustedPublicKeyFingerprint:fingerprint(makeKey().publicKey)}),
     /signer_fingerprint_mismatch/);
+});
+
+test('mutating approver allowlist after service creation cannot authorize new signer',async()=>{
+  const f=approvals();
+  f.approverKeys.set('security-reviewer-a',f.unknown.publicKey);
+  const fake=f.endorsements.map(x=>({...x}));
+  fake[0].signature=sign(null,f.service.signingMessage(f.req),f.unknown.privateKey).toString('base64url');
+  await assert.rejects(()=>f.service.acceptSignedApproval({...f.req,endorsements:fake}),
+    /neo_key_bootstrap_invalid_signature/);
+  assert.equal(f.rows.size,0);
+  await f.service.acceptSignedApproval({...f.req,endorsements:f.endorsements});
+  assert.equal(f.rows.size,1);
 });
