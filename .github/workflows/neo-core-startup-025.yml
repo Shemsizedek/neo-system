@@ -1,0 +1,28 @@
+name: Gate 025 — NEO Core clean-server startup verification
+on:
+  push:
+    branches:
+      - fix/neo-core-render-start-025
+  pull_request:
+    paths:
+      - 'scripts/verify-neo-core-startup.mjs'
+      - '.github/workflows/neo-core-startup-025.yml'
+      - 'server/neo-edge/**'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  boot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install dependencies and reproduce Render build
+        run: |
+          npm install --no-audit --no-fund
+          npm run build
+      - name: Start exact production router and probe localhost
+        run: node scripts/verify-neo-core-startup.mjs

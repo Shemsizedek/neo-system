@@ -622,8 +622,8 @@ function proxyAiGateway(req,res){
   req.pipe(upstream);
 }
 
-function proxyLegacy(req,res,port){
-  const headers={...req.headers,host:req.headers.host||'neo.holytemples.org','x-forwarded-host':req.headers['x-forwarded-host']||req.headers.host||''};
+function proxyLegacy(req,res,port,upstreamHost=null){
+  const headers={...req.headers,host:upstreamHost||req.headers.host||'neo.holytemples.org','x-forwarded-host':upstreamHost||req.headers['x-forwarded-host']||req.headers.host||''};
   const upstream=http.request({host:LEGACY_HOST,port,path:req.url||'/',method:req.method,headers},reply=>{res.writeHead(reply.statusCode||502,reply.headers);reply.pipe(res)});
   upstream.on('error',error=>json(res,502,{error:'neo_edge_upstream_unavailable',detail:error.message}));
   req.pipe(upstream);
@@ -699,6 +699,9 @@ export async function startNeoEdgeProduction(){
   const front=http.createServer(async(req,res)=>{
     const host=hostOf(req);
     const url=new URL(req.url||'/',`https://${host||'neo.holytemples.org'}`);
+    // Render origin health probe is mapped to NEO's existing health handler only.
+    // No other route is exposed on this service hostname.
+    if(host==='neo-system.onrender.com'&&req.method==='GET'&&url.pathname==='/health')return proxyLegacy(req,res,legacyPort,'neo.holytemples.org');
     if((host==='neofx.holytemples.org'||host==='finance.holytemples.org')&&url.pathname.startsWith('/api/neo-exchange/')){
       const handled=await handleNeoExchangeRequest(req,res,{fallthrough:true});
       if(handled!==false)return handled;
