@@ -1,0 +1,19 @@
+name: NEO Bitcoin-only VM regtest unit gate
+on:
+  pull_request:
+    paths:
+      - 'server/neo-vm/**'
+      - 'docs/NVM_BVM_GATE_2.md'
+      - '.github/workflows/neo-vm-gate.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  unit-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: node --test server/neo-vm/*.test.mjs
