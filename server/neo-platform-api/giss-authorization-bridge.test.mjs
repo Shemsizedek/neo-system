@@ -17,3 +17,10 @@ test('requires existing sign-in, exact callback and explicit same-origin consent
 test('PKCE grant exchanges once and yields narrowly isolated record access',async()=>{const {handler}=fixture();const code=await grant(handler);const response=await exchange(handler,code);assert.equal(response.status,200);const value=JSON.parse(response.payload);assert.equal(value.member.email,'member@example.org');assert.equal((await exchange(handler,code)).status,400);assert.equal((await call(handler,{path:'/auth/giss/records',headers:{authorization:'Bearer '+value.access_token}})).status,200);assert.equal(createNeopassSubjectResolver({secret})({headers:{authorization:'Bearer '+value.access_token}}),null);assert.equal((await call(handler,{path:'/auth/giss/records',method:'POST',headers:{authorization:'Bearer '+value.access_token}})).status,405)});
 test('wrong PKCE proof and expired code fail closed',async()=>{let {handler}=fixture();assert.equal((await exchange(handler,await grant(handler),'x'.repeat(43))).status,400);const next=fixture();const code=await grant(next.handler);next.advance();assert.equal((await exchange(next.handler,code)).status,400)});
 test('forged tokens cannot read academic records',async()=>{const {handler}=fixture();assert.equal((await call(handler,{path:'/auth/giss/records',headers:{authorization:'Bearer forged'}})).status,401)});
+test('canonical school domain is primary and approved legacy callback cannot substitute for grant callback',async()=>{
+ assert.equal(GISS_REDIRECT,'https://gisd.holytemples.org/api/neopass/callback');
+ const {handler}=fixture(),legacy='https://gisd-office.shemsizedek.chatgpt.site/api/neopass/callback';
+ const response=await call(handler,{path:authorize({redirect_uri:legacy}),method:'POST',headers:{cookie:'session=valid',origin:'https://egov.holytemples.org'},body:'consent=allow'});
+ assert.equal(response.status,303);const code=new URL(response.headers.location).searchParams.get('code');
+ assert.equal((await exchange(handler,code)).status,400);
+});

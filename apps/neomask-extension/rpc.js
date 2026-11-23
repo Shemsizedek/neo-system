@@ -11,7 +11,16 @@ async function signerRequest(method,payload){
 
 export async function handleRpc({origin,method,params=[]}={}){
   if(!SUPPORTED.has(method))throw new Error('Unsupported NeoMask method')
-  if(method==='neo_requestPermissions')return permissions.grant(origin,params[0]||{})
+  if(method==='neo_requestPermissions'){
+    const requested=params[0]?.permissions;
+    if(!Array.isArray(requested)||requested.length>4||requested.some(p=>!['accounts','read','transactions','sign'].includes(p)))throw new Error('Invalid permission request');
+    const bridge=globalThis.NeoMaskPermissionBridge;
+    if(typeof bridge?.request!=='function')throw new Error('Trusted permission approval UI is not connected');
+    const allowed=[...new Set(requested)];
+    const review=await bridge.request({origin,permissions:[...allowed],user_confirmation_required:true});
+    if(review?.approved!==true||!Array.isArray(review.permissions)||review.permissions.some(p=>!allowed.includes(p))||!Array.isArray(review.accounts)||review.accounts.length>20||review.accounts.some(a=>typeof a!=='string'||a.length>128||!a.length))throw new Error('Permission approval required');
+    return permissions.grant(origin,{permissions:review.permissions,accounts:review.accounts});
+  }
   if(method==='neo_getPermissions')return permissions.get(origin)
   if(method==='neo_revokePermissions')return permissions.revoke(origin,params[0]||{})
   if(method==='neo_requestAccounts'||method==='neo_getAccounts'){
