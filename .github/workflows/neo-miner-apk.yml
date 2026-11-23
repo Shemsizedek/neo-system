@@ -1,0 +1,44 @@
+name: NEO Miner Android APK
+on:
+  push:
+    branches: [nmng-011-android-apk]
+    paths:
+      - 'projects/neo-miner-android/**'
+      - '.github/workflows/neo-miner-apk.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'projects/neo-miner-android/**'
+      - '.github/workflows/neo-miner-apk.yml'
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: projects/neo-miner-android
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Configure Android SDK on GitHub Ubuntu runner
+        run: |
+          echo "ANDROID_HOME=$ANDROID_SDK_ROOT" >> "$GITHUB_ENV"
+          yes | "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
+          "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --install "platforms;android-35" "build-tools;35.0.0"
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
+      - name: Compile APK
+        run: gradle --no-daemon :app:assembleDebug
+      - name: Verify APK
+        run: |
+          test -s app/build/outputs/apk/debug/app-debug.apk
+          sha256sum app/build/outputs/apk/debug/app-debug.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: NEO-Miner-Generator-Android-APK
+          path: projects/neo-miner-android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
