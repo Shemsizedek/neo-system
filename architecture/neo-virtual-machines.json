@@ -1,0 +1,167 @@
+{
+  "schema_version": 1,
+  "program_id": "NEO-VM",
+  "gate_id": "NEO-VM-G1",
+  "project": "NEO System — Project 144",
+  "status": "LOCAL_PROTOTYPE",
+  "decision_date": "2026-10-29",
+  "source_baseline": "0a04327ef9ab8a1a25a2e21bbcf7c36aa55b5ad2",
+  "project_register": {
+    "workstream": "NEO Core / Bitcoin contract execution",
+    "purpose": "Compile bounded NEO contracts to existing Bitcoin Script and evaluate them locally",
+    "accountable_owner": "NEOsync",
+    "production_deployed": false,
+    "technical_owner": null,
+    "technical_owner_status": "TBD"
+  },
+  "architecture_inventory": [
+    {
+      "id": "NEO-BVM",
+      "name": "Bitcoin Virtual Machine",
+      "profile": "neo-bvm/p2wsh-subset-v1",
+      "role": "Bounded local Bitcoin witness-v0 Script subset evaluator",
+      "implementation": "core/neo-bvm/runtime.mjs",
+      "tests": "core/neo-bvm/runtime.test.mjs"
+    },
+    {
+      "id": "NEO-NVM",
+      "name": "NEO Virtual Machine",
+      "profile": "neo-nvm/contract-v1",
+      "role": "Strict NEO contract compiler and local execution orchestration",
+      "implementation": "core/neo-nvm/runtime.mjs",
+      "tests": "core/neo-nvm/runtime.test.mjs"
+    }
+  ],
+  "execution_policy": {
+    "family": "bitcoin",
+    "networks": [
+      "regtest"
+    ],
+    "contracts": [
+      "sha256-preimage-32-v1"
+    ],
+    "evm_compatibility": false,
+    "format_inference": false,
+    "unsupported_opcodes": "reject",
+    "bitcoin_consensus_validator": false,
+    "signature_verification": false,
+    "rpc_access": false,
+    "signing": false,
+    "broadcasting": false,
+    "receipt_evidence": "deterministic unsigned local summary checksum"
+  },
+  "integration_checklist": [
+    {
+      "integration": "NVM to BVM",
+      "status": "LOCAL_TESTED"
+    },
+    {
+      "integration": "Repository npm test and CI",
+      "status": "WIRED"
+    },
+    {
+      "integration": "Bitcoin Core regtest differential validation",
+      "status": "PENDING"
+    },
+    {
+      "integration": "NEOpass authorization",
+      "status": "NOT_CONNECTED"
+    },
+    {
+      "integration": "NeoMask signing",
+      "status": "NOT_CONNECTED"
+    },
+    {
+      "integration": "NEO Counter checkout",
+      "status": "NOT_CONNECTED"
+    },
+    {
+      "integration": "Counterparty and NOMNI semantics",
+      "status": "NOT_IMPLEMENTED"
+    }
+  ],
+  "decision_log": [
+    {
+      "id": "VM-D001",
+      "decision": "Keep both project-scoped names: NEO NVM for orchestration, NEO BVM for Bitcoin execution"
+    },
+    {
+      "id": "VM-D002",
+      "decision": "Use existing Bitcoin witness-v0 Script; do not invent Bitcoin consensus opcodes or require Ethereum"
+    },
+    {
+      "id": "VM-D003",
+      "decision": "Gate 1 is a bounded local hashlock prototype; Bitcoin Core remains the validation authority for future node tests"
+    },
+    {
+      "id": "VM-D004",
+      "decision": "Receipt hashes identify local summaries and are never represented as on-chain proofs"
+    }
+  ],
+  "prioritized_backlog": [
+    {
+      "id": "VM-001-PUBLISH",
+      "priority": "P0",
+      "status": "BLOCKED",
+      "deliverable": "Publish the tested feature branch and open a draft PR after explicit public-repository publication approval required by automatic review"
+    },
+    {
+      "id": "VM-002",
+      "priority": "P0",
+      "status": "NEXT",
+      "deliverable": "Isolated Bitcoin Core regtest harness for matching and mismatching witnesses, script mutations and resource-boundary vectors"
+    },
+    {
+      "id": "VM-003",
+      "priority": "P1",
+      "status": "PLANNED",
+      "deliverable": "Reviewed signature and timelock contract templates, transaction-context validation and differential tests"
+    },
+    {
+      "id": "VM-004",
+      "priority": "P1",
+      "status": "PLANNED",
+      "deliverable": "Verify NEOpass and NeoMask capabilities before adding authorized PSBT workflows"
+    },
+    {
+      "id": "VM-005",
+      "priority": "P2",
+      "status": "PLANNED",
+      "deliverable": "Define explicit Counterparty and NOMNI adapter semantics without treating local VM acceptance as token settlement"
+    }
+  ],
+  "next_milestone": "NEO-VM-G2: independent Bitcoin Core regtest acceptance and rejection evidence; no real funds",
+  "verification": {
+    "checked_at": "2026-10-29T09:13:33-04:00",
+    "environment": "local Node.js 24.22.1 checkout; no Bitcoin Core node",
+    "vm_tests": {
+      "total": 46,
+      "passed": 46,
+      "failed": 0,
+      "skipped": 0
+    },
+    "repository_tests": {
+      "total": 925,
+      "passed": 924,
+      "failed": 0,
+      "skipped": 1
+    },
+    "repository_skip": "KI-015 Postgres durable ledger integration test",
+    "build": "PASS",
+    "architecture_audit": {
+      "errors": 0,
+      "existing_gap_warnings": 3
+    },
+    "architecture_tests": {
+      "passed": 3,
+      "failed": 0
+    },
+    "demo": {
+      "correct_preimage": "LOCAL_ACCEPT",
+      "wrong_preimage": "LOCAL_REJECT"
+    },
+    "bitcoin_core": "NOT_RUN",
+    "production_deployment": "NOT_PERFORMED",
+    "repository_publication": "BLOCKED_AUTOMATIC_REVIEW_REQUIRES_EXPLICIT_PUBLICATION_APPROVAL"
+  }
+}
