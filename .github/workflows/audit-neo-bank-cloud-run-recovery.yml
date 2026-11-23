@@ -1,0 +1,96 @@
+name: NEO Bank Cloud Run Recovery Audit
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    environment: holytemples-production
+    env:
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID || secrets.GCP_PROJECT_ID }}
+      GCP_REGION: ${{ vars.GCP_REGION || secrets.GCP_REGION }}
+      GCP_WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER || secrets.GCP_WIF_PROVIDER }}
+      GCP_CLOUD_RUN_SERVICE_ACCOUNT: ${{ vars.GCP_CLOUD_RUN_SERVICE_ACCOUNT || secrets.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+    steps:
+      - name: Validate connection inputs without exposing values
+        shell: bash
+        run: |
+          set -euo pipefail
+          for key in GCP_PROJECT_ID GCP_REGION GCP_WIF_PROVIDER GCP_CLOUD_RUN_SERVICE_ACCOUNT; do
+            if [ -z "$(printenv "$key")" ]; then
+              echo "::error::Google Cloud connection is missing $key"
+              exit 1
+            fi
+          done
+      - uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_CLOUD_RUN_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@v3
+      - name: Inspect Cloud Run and Firestore metadata without reading records
+        shell: bash
+        run: |
+          set -euo pipefail
+          tmp="$RUNNER_TEMP/neo-bank"
+          mkdir -p "$tmp"
+          echo "## NEO Bank recovery audit (read-only)" >> "$GITHUB_STEP_SUMMARY"
+          if gcloud run services describe neo-bank --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format=json > "$tmp/service.json" 2>/dev/null; then
+            SERVICE_FILE="$tmp/service.json" AUDIT_DIR="$tmp" node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          const s=JSON.parse(fs.readFileSync(process.env.SERVICE_FILE,'utf8'));
+          const containers=s.spec?.template?.spec?.containers||s.template?.containers||[];
+          const names=new Set(containers.flatMap(c=>c.env||[]).map(e=>e.name));
+          const ready=(s.status?.conditions||[]).some(x=>(x.type==='Ready'||x.type==='ready')&&String(x.status).toLowerCase()==='true');
+          const pg=names.has('DATABASE_URL'),firestore=names.has('NEO_BANK_FIRESTORE_DATABASE');
+          console.log('Cloud Run service: found; Ready:',ready);
+          console.log('Database configuration present (names only): DATABASE_URL=',pg,' NEO_BANK_FIRESTORE_DATABASE=',firestore);
+          if(!pg&&firestore)console.log('WARNING: checked-in startup requires DATABASE_URL but Cloud Run config is Firestore-oriented');
+          if(!pg&&!firestore)console.log('WARNING: no configured bank database variable detected');
+          const url=s.status?.url||s.uri||'';
+          if(url&&url.startsWith('https://'))fs.writeFileSync(process.env.AUDIT_DIR+'/origin-url.txt',url);
+          JS
+            echo "- Cloud Run service metadata: readable" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "::warning::Cloud Run neo-bank could not be described (missing service or missing access)"
+            echo "- Cloud Run service metadata: unavailable" >> "$GITHUB_STEP_SUMMARY"
+          fi
+          if gcloud firestore databases list --project="$GCP_PROJECT_ID" --format=json > "$tmp/databases.json" 2>/dev/null; then
+            DATABASES_FILE="$tmp/databases.json" node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          const dbs=JSON.parse(fs.readFileSync(process.env.DATABASES_FILE,'utf8'));
+          console.log('Firestore database metadata: readable; database count:',Array.isArray(dbs)?dbs.length:'unknown');
+          JS
+            echo "- Firestore database metadata: readable (no records accessed)" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "::warning::Firestore database metadata unavailable (check API, permissions, or project)"
+            echo "- Firestore database metadata: unavailable" >> "$GITHUB_STEP_SUMMARY"
+          fi
+          if gcloud compute url-maps describe neo-edge-url-map --global --project="$GCP_PROJECT_ID" --format=json > "$tmp/url-map.json" 2>/dev/null; then
+            URL_MAP_FILE="$tmp/url-map.json" node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          const m=JSON.parse(fs.readFileSync(process.env.URL_MAP_FILE,'utf8'));
+          const matched=(m.hostRules||[]).some(x=>(x.hosts||[]).includes('neobank.holytemples.org'));
+          console.log('Legacy HTTPS load-balancer host rule for NEO Bank:',matched?'present':'absent');
+          JS
+          else
+            echo "::warning::Existing edge load balancer URL map cannot be inspected"
+          fi
+          check_http() {
+            local label="$1" url="$2" code
+            code="$(curl --connect-timeout 5 --max-time 15 -sS -o /dev/null -w '%{http_code}' "$url" 2>/dev/null || true)"
+            echo "$label: HTTP $code"
+            echo "- $label: HTTP $code" >> "$GITHUB_STEP_SUMMARY"
+          }
+          if [ -s "$tmp/origin-url.txt" ]; then
+            origin="$(cat "$tmp/origin-url.txt")"
+            check_http "Cloud Run /health" "$origin/health"
+            check_http "Cloud Run community status" "$origin/api/v1/community/status"
+          fi
+          check_http "Public bank /health" "https://neobank.holytemples.org/health"
+          check_http "Public bank landing" "https://neobank.holytemples.org/"
+          echo "Audit completed: no deploys, IAM changes, data reads, or DNS changes."
