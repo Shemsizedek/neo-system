@@ -1,6 +1,7 @@
 import http from 'node:http';
 import { fileURLToPath } from 'node:url';
 import { createDexCrownAuthorizer } from './crown-authorizer.mjs';
+import { validateAsset, normalizeCompletedMatch, makeCandles, availableIndicators } from './history.mjs';
 
 const PORT = Number(process.env.PORT || 8787);
 const COUNTERPARTY_API_BASE = (process.env.COUNTERPARTY_API_BASE || 'https://api.counterparty.io:4000').replace(/\/$/, '');
@@ -201,6 +202,32 @@ export async function handleNeoExchangeRequest(req, res, options = {}) {
         ...book,
         bids: book.bids.slice(0, limit),
         asks: book.asks.slice(0, limit)
+      });
+    }
+
+    if (req.method === 'GET' && url.pathname === '/api/neo-exchange/history') {
+      const base = validateAsset(url.searchParams.get('base'));
+      const quote = validateAsset(url.searchParams.get('quote'));
+      const timeframe = Number(url.searchParams.get('timeframe') || 3600);
+      if (!base || !quote || base === quote || ![60,300,900,3600,14400,86400,604800].includes(timeframe)) {
+        return send(res, 400, { ok: false, error: 'Valid distinct assets and supported timeframe are required' });
+      }
+      // The Counterparty v2 pair matches route may paginate; one page is NOT complete lifetime history.
+      const path = `/v2/orders/${encodeURIComponent(base)}/${encodeURIComponent(quote)}/matches?status=completed&verbose=true&limit=500`;
+      const payload = await counterparty(path);
+      const rows = normalizeRows(payload);
+      const trades = rows.map(row=>normalizeCompletedMatch(row,base,quote)).filter(Boolean)
+        .sort((a,b)=>b.time-a.time || String(b.id).localeCompare(String(a.id)));
+      const candles = makeCandles(trades,timeframe);
+      return send(res, 200, {
+        ok: true, source: 'counterparty-core-v2', status: 'VERIFIED_PARTIAL_HISTORY',
+        pair: `${base}/${quote}`, timeframe_seconds: timeframe,
+        coverage: { page_limit: 500, returned_rows: rows.length, verified_matches: trades.length,
+          unverified_rows: rows.length-trades.length, next_cursor: payload?.next_cursor ?? null,
+          complete_lifetime_history: false },
+        as_of: new Date().toISOString(),
+        trades: trades.slice(0,100), candles, indicators: availableIndicators(candles),
+        note: 'Only completed matches with normalized quantities and trustworthy block time are charted. Empty candles are not filled or interpolated.'
       });
     }
 
