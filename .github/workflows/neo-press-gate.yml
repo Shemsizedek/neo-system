@@ -1,0 +1,31 @@
+name: NEO Press evidence gate
+
+on:
+  pull_request:
+    paths:
+      - "server/neo-press/**"
+      - "docs/press/**"
+      - ".github/workflows/neo-press-gate.yml"
+  push:
+    branches: [main]
+    paths:
+      - "server/neo-press/**"
+      - "docs/press/**"
+      - ".github/workflows/neo-press-gate.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  metadata-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Configure Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Validate evidence metadata protections
+        run: node --test server/neo-press/*.test.mjs
