@@ -1,0 +1,54 @@
+name: Project 144 School and NEOpass External Probe
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - '.github/workflows/project144-school-identity-probe.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  external-probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Probe public endpoints without credentials
+        shell: bash
+        run: |
+          set -uo pipefail
+          echo '| Service | HTTP | Content type | Result |' >> "$GITHUB_STEP_SUMMARY"
+          echo '| --- | --- | --- | --- |' >> "$GITHUB_STEP_SUMMARY"
+          failures=0
+          for spec in 'GISD|https://school.holytemples.org/' 'NEOpass|https://neopass.holytemples.org/' 'Render platform API|https://neo-platform-api-recovery.onrender.com/' 'Render edge preview|https://neo-edge-render.onrender.com/' 'Platform health|https://neo-platform-api-recovery.onrender.com/health' 'School storage health|https://neo-platform-api-recovery.onrender.com/health/school'; do
+            IFS='|' read -r label url <<< "$spec"
+            headers="$(mktemp)"
+            body="$(mktemp)"
+            code="$(curl --location --silent --show-error --connect-timeout 10 --max-time 35 --retry 1 --dump-header "$headers" --output "$body" --write-out '%{http_code}' "$url" 2>curl-error.txt || true)"
+            ctype="$(grep -i '^content-type:' "$headers" | tail -1 | tr -d '\r' | cut -d' ' -f2 || true)"
+            verdict=PASS
+            if [[ ! "$code" =~ ^2[0-9][0-9]$ ]] || [[ ! "$ctype" =~ ^(text/html|application/json) ]] || [[ ! -s "$body" ]]; then
+              verdict=FAIL
+              failures=$((failures+1))
+            fi
+            echo "| $label | $code | ${ctype:-none} | $verdict |" >> "$GITHUB_STEP_SUMMARY"
+            echo "$label: HTTP=$code type=${ctype:-none} result=$verdict"
+            if [[ "$verdict" = FAIL ]]; then sed -n '1,4p' curl-error.txt; fi
+            rm -f curl-error.txt
+            rm -f "$headers" "$body"
+          done
+          echo '### School authentication boundary (no credentials)' >> "$GITHUB_STEP_SUMMARY"
+          for spec in 'School portal redirect|https://neo-platform-api-recovery.onrender.com/portal/school|302' 'School API access control|https://neo-platform-api-recovery.onrender.com/api/v1/school/dashboard|401'; do
+            IFS='|' read -r label url expected <<< "$spec"
+            code="$(curl --silent --show-error --connect-timeout 10 --max-time 35 --output /dev/null --write-out '%{http_code}' "$url" || true)"
+            verdict=PASS
+            if [[ "$code" != "$expected" ]]; then verdict=FAIL; failures=$((failures+1)); fi
+            echo "$label: HTTP=$code expected=$expected result=$verdict"
+            echo "- $label: HTTP $code (expected $expected), $verdict" >> "$GITHUB_STEP_SUMMARY"
+          done
+          echo 'These checks establish only public HTML reachability, not authenticated school or identity readiness.' >> "$GITHUB_STEP_SUMMARY"
+          if (( failures > 0 )); then
+            echo "::error::$failures external endpoint(s) failed public reachability"
+            exit 1
+          fi
