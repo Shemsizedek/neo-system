@@ -1,0 +1,127 @@
+{
+  "schema_version": 1,
+  "project": "NEO System — Project 144",
+  "integration": "modern-treasury",
+  "reviewed_on": "2026-10-29",
+  "accountable_owner": "NEOsync",
+  "authorization": {
+    "approved_by": "NEOsync",
+    "approved_on": "2026-10-29",
+    "scope": [
+      "Create NEO Project 144 Staging Read Only with Internal Accounts View only.",
+      "Store its credentials and a separate treasury operator secret on neo-counter-render-staging.",
+      "Reuse and redeploy that existing staging service, including the disclosed risk that temporary SQLite test data may reset."
+    ],
+    "payment_execution_authorized": false
+  },
+  "workstreams": [
+    "NEO Core",
+    "NEO Counter",
+    "NEO Merchant Treasury"
+  ],
+  "purpose": "Verify a restricted sandbox API key and discover sandbox internal accounts without moving money or changing NEO ledger balances.",
+  "source_host": "server/neo-merchant-treasury/server.mjs",
+  "staging_source_host": "deploy/modern-treasury-render/counter-staging.mjs",
+  "isolated_host_entrypoint": "server/neo-merchant-treasury/modern-treasury-staging.mjs",
+  "staging_plan": {
+    "provider": "Render",
+    "dedicated_service_request": "rejected_by_25_service_hobby_limit; no_service_created",
+    "service_name": "neo-counter-render-staging",
+    "existing_service_id": "srv-dbe0o0ff3r2c73cb01mg",
+    "existing_health_url": "https://neo-counter-render-staging.onrender.com/health",
+    "existing_live_deploy": "dep-dbe0o0vf3r2c73cb02vg",
+    "existing_live_commit": "6bd196caf0afa033b2ef799d9f3958e5a558333f",
+    "region": "virginia",
+    "plan": "free",
+    "branch": "feat/project144-modern-treasury-sandbox",
+    "auto_deploy": false,
+    "credential_state": "restricted_sandbox_key_created_and_saved_permissions_verified; server_storage_pending",
+    "proposed_key_name": "NEO Project 144 Staging Read Only",
+    "proposed_key_permission": "Internal Accounts: View only; no API Manage All role",
+    "deployment_state": "approved; build_command_saved; branch_start_and_credential_changes_pending_browser_recovery",
+    "actual_branch": "main",
+    "actual_start_entrypoint": "server/neo-counter-backend/server.mjs",
+    "staging_data_risk": "Existing temporary SQLite test data may reset on redeploy.",
+    "superseded_by": "current_runtime",
+    "note": "Historical Counter-staging fallback in the previous NEO workspace; never activated with Modern Treasury and not the current deployment target."
+  },
+  "upstream_origin": "https://app.moderntreasury.com",
+  "environment": "sandbox",
+  "access": "NEO_MERCHANT_TREASURY_OPERATOR_TOKEN",
+  "upstream_methods": [
+    "GET"
+  ],
+  "upstream_paths": [
+    "/api/api_keys/current",
+    "/api/ping",
+    "/api/internal_accounts"
+  ],
+  "secret_variables": [
+    "MODERN_TREASURY_ORGANIZATION_ID",
+    "MODERN_TREASURY_API_KEY"
+  ],
+  "controls": {
+    "server_side_credentials_only": true,
+    "reject_production_keys": true,
+    "reject_manage_permissions": true,
+    "verify_key_before_each_account_page": true,
+    "follow_redirects": false,
+    "request_timeout_ms": 10000,
+    "max_response_bytes": 2097152,
+    "account_projection": [
+      "id",
+      "currency",
+      "live_mode"
+    ],
+    "pagination": "Use X-After-Cursor, including on empty pages; do not infer completion from page length.",
+    "payment_execution_enabled": false,
+    "webhook_receiver_enabled": false,
+    "automatic_ledger_credit_enabled": false
+  },
+  "readiness": {
+    "source_implementation": "implemented",
+    "account_access": "signed_in_sandbox_dashboard_verified",
+    "credentials": "Existing Modern Treasury restricted sandbox key created in provider dashboard; no evidence its organization ID or secret, or separate operator token, has been installed on new Render staging",
+    "deployment": "NEO SYSTEM dedicated staging deployment live (dep-dbhuk4d9el5s738hsh40); authenticated service connectivity not yet verified",
+    "current_access_blockers": [
+      "Browser tool requires originating connected browser context; unavailable in this session.",
+      "Modern Treasury sandbox organization ID and existing key must be placed into Render secret environment settings without disclosing them in chat or source control.",
+      "External public HTTP probes were inconclusive due to network/DNS access limitations."
+    ],
+    "end_to_end_connection": "not_verified"
+  },
+  "dependencies": [
+    "Provision the previously created restricted sandbox Modern Treasury key and its organization ID securely on the new NEO SYSTEM staging service.",
+    "Provision a separate strong operator token in the new service; do not share it with NEO Counter merchant session authentication.",
+    "After configuration save/deploy, verify service HTTP health and operator-only status/check/account-discovery routes with sanitized output.",
+    "Leave old NEO Counter staging, live DNS and payment execution unchanged."
+  ],
+  "next_milestone": "Credential provision in NEO SYSTEM staging, followed by HTTP health, 401 unauthorized, authenticated key and read-only internal account discovery.",
+  "runbook": "docs/integrations/modern-treasury.md",
+  "current_runtime": {
+    "workspace_name": "NEO SYSTEM",
+    "workspace_id": "tea-dbhtkc8473hc73933img",
+    "service_name": "neo-modern-treasury-staging",
+    "service_id": "srv-dbhuk459el5s738hsf3g",
+    "dashboard_url": "https://dashboard.render.com/web/srv-dbhuk459el5s738hsf3g",
+    "service_url": "https://neo-modern-treasury-staging.onrender.com",
+    "provider": "Render",
+    "region": "oregon",
+    "plan": "free",
+    "auto_deploy": false,
+    "source_branch": "feat/project144-modern-treasury-sandbox",
+    "source_commit": "c03c8d7999cdaa85d773c0e8de76baac0cc4e820",
+    "entrypoint": "server/neo-merchant-treasury/modern-treasury-staging.mjs",
+    "deploy_id": "dep-dbhuk4d9el5s738hsh40",
+    "deploy_status": "live",
+    "build_tests": {
+      "count": 37,
+      "failed": 0
+    },
+    "credentials_status": "not_confirmed_provisioned",
+    "http_health_probe": "unverified_from_available_external_clients",
+    "upstream_authentication": "not_verified",
+    "payment_execution_enabled": false,
+    "legacy_counter_service_unchanged": true
+  }
+}
