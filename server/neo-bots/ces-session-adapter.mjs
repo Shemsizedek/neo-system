@@ -2,6 +2,7 @@ import { inventoryCesForms, classifyCesForm } from './ces-form-mapper.mjs';
 import { createLegacyCesCrawler } from './ces-legacy-crawler.mjs';
 import { createMemoryCesManifestStore } from './ces-manifest-store.mjs';
 import { generateLegacyRouteCandidates } from './ces-legacy-route-candidates.mjs';
+import { readNmniAdminReport } from './nmni-admin-reader.mjs';
 
 const DEFAULT_BASE_URL = 'https://www.community-exchange.org';
 
@@ -20,10 +21,14 @@ export function createCesSessionAdapter({
   if (!manifestStore?.save || !manifestStore?.get) throw new Error('manifestStore with save/get is required');
 
   const trustedOrigin = new URL(baseUrl).origin;
+  if (new URL(baseUrl).protocol !== 'https:' || new URL(baseUrl).username || new URL(baseUrl).password) {
+    throw new Error('CES base URL must be HTTPS without embedded credentials');
+  }
 
   function resolveTrustedUrl(path) {
     const url = new URL(path, baseUrl);
     if (url.origin !== trustedOrigin) throw new Error(`CES cross-origin request blocked: ${url.origin}`);
+    if (url.username || url.password) throw new Error('CES URL credentials are not permitted');
     return url;
   }
 
@@ -43,11 +48,27 @@ export function createCesSessionAdapter({
     if (!credentials?.username || !credentials?.password) {
       throw new Error(`missing CES credentials for ${exchange.exchangeId}`);
     }
-
     const loginUrl = resolveTrustedUrl(credentials.loginPath || '/');
     const submitUrl = resolveTrustedUrl(credentials.submitPath || credentials.loginPath || '/');
+    if (sessionValidator === defaultSessionValidator) {
+      if (!credentials.authenticatedPath || !credentials.authenticatedText) throw new Error('CES protected-page verification is not configured');
+      resolveTrustedUrl(credentials.authenticatedPath);
+      if (credentials.successLocationPattern) new RegExp(credentials.successLocationPattern);
+    }
 
     const loginPage = await request(credentials.loginPath || '/');
+    // A WAF or upstream access rejection is not a login-form mismatch.
+    // Never submit the account password after an unverified login-page response.
+    if ([401, 403, 429].includes(loginPage.status)) {
+      const error = new Error('CES upstream login page access denied');
+      error.validationReason = 'upstream_access_denied';
+      throw error;
+    }
+    if (loginPage.status < 200 || loginPage.status >= 300) {
+      const error = new Error('CES upstream login page unavailable');
+      error.validationReason = 'login_page_unavailable';
+      throw error;
+    }
     const html = await loginPage.text();
     validateCesLoginContract(html, {
       pageUrl: loginPage.url || loginUrl.toString(),
@@ -71,7 +92,11 @@ export function createCesSessionAdapter({
 
     if (response.status >= 400) throw new Error(`CES login failed with HTTP ${response.status}`);
     const validation = await sessionValidator({ response, exchange, credentials, request, baseUrl });
-    if (!validation?.authenticated) throw new Error('CES login response did not validate an authenticated session');
+    if (!validation?.authenticated) {
+      const error = new Error('CES login response did not validate an authenticated session');
+      error.validationReason = validation?.reason;
+      throw error;
+    }
 
     return {
       ok: true,
@@ -114,6 +139,9 @@ export function createCesSessionAdapter({
 
   return {
     login, discoverForms, discoverLegacyControlPanel, getLegacyDiscoveryManifest,
+    readNmniTradingStatistics({ exchange, collect = true }) {
+      return withSession(exchange, ({ request }) => readNmniAdminReport({ request, exchange, collect }));
+    },
     reviewTransaction(payload) {
       const path = payload.path || payload.discoveryPath;
       if (path) return discoverForms(payload.exchange, path);
@@ -188,14 +216,33 @@ export function createMemoryCookieJar() {
   };
 }
 
-export async function defaultSessionValidator({ response, credentials }) {
-  const location = response.headers?.get?.('location') || '';
-  const successMarker = credentials.successLocationPattern;
-  if (successMarker) {
-    const pattern = successMarker instanceof RegExp ? successMarker : new RegExp(String(successMarker), 'i');
-    return { authenticated: pattern.test(location), reason: 'configured-location-marker' };
+export async function defaultSessionValidator({ response, credentials, request, baseUrl }) {
+  const reject = (reason) => ({ authenticated: false, reason });
+  if (!credentials.authenticatedPath || !credentials.authenticatedText || typeof request !== 'function') {
+    return reject('protected-page-verification-required');
   }
-  return { authenticated: response.status >= 200 && response.status < 300, reason: 'successful-http-response' };
+  const origin = new URL(baseUrl).origin;
+  const probeUrl = new URL(credentials.authenticatedPath, baseUrl);
+  if (probeUrl.origin !== origin || probeUrl.username || probeUrl.password) return reject('untrusted-protected-page');
+  if (response.status < 200 || response.status >= 400) return reject('login-response-rejected');
+  const location = response.headers?.get?.('location') || '';
+  if (response.status >= 300 && !location) return reject('missing-login-redirect');
+  if (location) {
+    const target = new URL(location, baseUrl);
+    if (target.origin !== origin || target.username || target.password) return reject('untrusted-login-redirect');
+    if (credentials.successLocationPattern) {
+      const pattern = new RegExp(credentials.successLocationPattern instanceof RegExp ? credentials.successLocationPattern.source : String(credentials.successLocationPattern), 'i');
+      if (!pattern.test(target.pathname + target.search)) return reject('login-redirect-mismatch');
+    }
+  }
+  const probe = await request(probeUrl.toString(), { method: 'GET' });
+  if (probe.status < 200 || probe.status >= 300 || probe.headers?.get?.('location')) return reject('protected-page-unavailable');
+  if (probe.url && new URL(probe.url).origin !== origin) return reject('untrusted-protected-response');
+  const html = await probe.text();
+  const forms = inventoryCesForms(html, { pageUrl: probeUrl.toString() });
+  if (forms.some((form) => form.fields.some((field) => field.type === 'password'))) return reject('login-form-returned');
+  if (!html.includes(String(credentials.authenticatedText))) return reject('protected-page-marker-missing');
+  return { authenticated: true, reason: 'protected-page-marker-verified' };
 }
 
 function splitSetCookieHeader(value) {
@@ -222,3 +269,4 @@ function parseHtmlAttributes(source = '') {
   while ((match = pattern.exec(source))) attrs[match[1].toLowerCase()] = match[2] ?? match[3] ?? match[4] ?? '';
   return attrs;
 }
+

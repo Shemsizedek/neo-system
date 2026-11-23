@@ -55,6 +55,8 @@ test('session adapter does not POST credentials when the discovered login contra
       usernameField: 'username',
       passwordField: 'password',
       successLocationPattern: '^/memac\\.asp(?:\\?.*)?$',
+      authenticatedPath: '/memac.asp',
+      authenticatedText: 'Trading Account of',
     }),
   });
 
@@ -65,3 +67,4 @@ test('session adapter does not POST credentials when the discovered login contra
 
   assert.deepEqual(calls.map((call) => call.method), ['GET']);
 });
+
