@@ -17,6 +17,7 @@ WORKDIR /app
 COPY server/holytemples-adapter ./server/holytemples-adapter
 COPY server/neo-counter-backend/firestore-rest-db.mjs ./server/neo-counter-backend/firestore-rest-db.mjs
 COPY server/neo-edge ./server/neo-edge
+COPY server/markets ./server/markets
 COPY server/neo-teller-backend ./server/neo-teller-backend
 COPY api/neo-exchange ./api/neo-exchange
 COPY apps/neoscan/web ./apps/neoscan/web

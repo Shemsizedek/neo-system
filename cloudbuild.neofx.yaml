@@ -1,0 +1,13 @@
+# NEO-FX-050: dedicated staging service only. No domain mapping or shared neo-edge mutation.
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args: ['build','-f','deploy/neofx/Dockerfile','-t','us-central1-docker.pkg.dev/$PROJECT_ID/neo-system/neofx:$COMMIT_SHA','.']
+  - name: gcr.io/cloud-builders/docker
+    args: ['push','us-central1-docker.pkg.dev/$PROJECT_ID/neo-system/neofx:$COMMIT_SHA']
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+    entrypoint: gcloud
+    args: ['run','deploy','neofx-staging','--image','us-central1-docker.pkg.dev/$PROJECT_ID/neo-system/neofx:$COMMIT_SHA','--region','us-central1','--platform','managed','--port','8080','--no-allow-unauthenticated','--set-env-vars','NEO_FX_LIVE_TRADING=false','--quiet']
+images:
+  - us-central1-docker.pkg.dev/$PROJECT_ID/neo-system/neofx:$COMMIT_SHA
+options:
+  logging: CLOUD_LOGGING_ONLY
