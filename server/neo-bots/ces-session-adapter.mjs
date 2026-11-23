@@ -5,6 +5,25 @@ import { generateLegacyRouteCandidates } from './ces-legacy-route-candidates.mjs
 
 const DEFAULT_BASE_URL = 'https://www.community-exchange.org';
 
+function safeCesFormMetadata(form) {
+  // Keep field *names* for discovery, never hidden values, CSRF tokens or
+  // credential-bearing actions. Raw values remain private to the login parser.
+  const url = new URL(form.action);
+  if (url.search || url.hash || url.username || url.password ||
+      url.origin !== DEFAULT_BASE_URL) return null;
+  return Object.freeze({
+    index:form.index,
+    method:form.method,
+    action:url.origin+url.pathname,
+    readOnly:form.readOnly,
+    fingerprint:form.fingerprint,
+    classification:classifyCesForm(form),
+    fields:Object.freeze((form.fields||[]).map(field=>Object.freeze({
+      name:field.name,tag:field.tag,type:field.type,required:field.required,
+    }))),
+  });
+}
+
 export function createCesSessionAdapter({
   baseUrl = DEFAULT_BASE_URL,
   fetchImpl = globalThis.fetch,
@@ -20,10 +39,16 @@ export function createCesSessionAdapter({
   if (!manifestStore?.save || !manifestStore?.get) throw new Error('manifestStore with save/get is required');
 
   const trustedOrigin = new URL(baseUrl).origin;
+  let boundReportExchange = null;
 
   function resolveTrustedUrl(path) {
     const url = new URL(path, baseUrl);
     if (url.origin !== trustedOrigin) throw new Error(`CES cross-origin request blocked: ${url.origin}`);
+    // CES legacy links may embed uid/pw tokens in query strings. Refuse them
+    // before fetch, manifest creation, or accidental request logging.
+    if (url.search || url.hash || url.username || url.password) {
+      throw new Error('CES session URLs must not contain credentials or query strings');
+    }
     return url;
   }
 
@@ -94,7 +119,7 @@ export function createCesSessionAdapter({
       const response = await sessionRequest(path);
       const html = await response.text();
       const pageUrl = resolveTrustedUrl(path).toString();
-      const forms = inventoryCesForms(html, { pageUrl }).map((form) => ({ ...form, classification: classifyCesForm(form) }));
+      const forms = inventoryCesForms(html, { pageUrl }).map(safeCesFormMetadata).filter(Boolean);
       return { ok: response.ok, mode: 'discovery-read-only', path, status: response.status, forms };
     });
   }
@@ -114,6 +139,37 @@ export function createCesSessionAdapter({
 
   return {
     login, discoverForms, discoverLegacyControlPanel, getLegacyDiscoveryManifest,
+    async createVerifiedReportSession(exchange) {
+      // One adapter instance per CES exchange. Shared cookie jars must not
+      // silently cross NMNI/XCPC account boundaries after authentication.
+      if (!exchange?.exchangeId || !/^(NMNI|XCPC)$/.test(exchange.exchangeId)) {
+        throw new Error('Unapproved CES report exchange');
+      }
+      if (boundReportExchange && boundReportExchange !== exchange.exchangeId) {
+        throw new Error('CES report session exchange isolation required');
+      }
+      boundReportExchange = exchange.exchangeId;
+      // Fresh authenticated login and scoped GET-only report access.
+      const result = await login(exchange);
+      if (!result?.authenticated) throw new Error('Unverified CES report session');
+      const allowed = new Set([
+        '/_admin/reptrades.asp',
+        '/_admin/statsindex.asp',
+        '/_admin/groupmain.asp',
+        '/_admin/convrates.asp',
+      ]);
+      return Object.freeze({
+        exchangeId:exchange.exchangeId,authenticated:true,readOnly:true,
+        async get(path,options={}) {
+          if (options.method !== 'GET' || options.redirect !== 'manual') {
+            throw new Error('CES report requires explicit GET and manual redirects');
+          }
+          const url=resolveTrustedUrl(path);
+          if (!allowed.has(url.pathname)) throw new Error('CES report path not allowlisted');
+          return request(url.pathname,{method:'GET'});
+        },
+      });
+    },
     reviewTransaction(payload) {
       const path = payload.path || payload.discoveryPath;
       if (path) return discoverForms(payload.exchange, path);
@@ -127,7 +183,7 @@ export function createCesSessionAdapter({
       return withSession(payload.exchange, async ({ exchange, request: sessionRequest }) => {
         const response = await sessionRequest('/win/virtual.asp');
         const text = await response.text();
-        return { ok: response.ok, mode: 'read-only', operation: 'reviewVirtualTrader', exchange, status: response.status, pageDetected: /Virtual Trader/i.test(text), forms: inventoryCesForms(text, { pageUrl: resolveTrustedUrl('/win/virtual.asp').toString() }).map((form) => ({ ...form, classification: classifyCesForm(form) })) };
+        return { ok: response.ok, mode: 'read-only', operation: 'reviewVirtualTrader', exchange, status: response.status, pageDetected: /Virtual Trader/i.test(text), forms: inventoryCesForms(text, { pageUrl: resolveTrustedUrl('/win/virtual.asp').toString() }).map(safeCesFormMetadata).filter(Boolean) };
       });
     },
     reviewInterexchangeSettlement(payload) { return discoverForms(payload.exchange, payload.path || '/win/virtual.asp'); },
@@ -191,11 +247,15 @@ export function createMemoryCookieJar() {
 export async function defaultSessionValidator({ response, credentials }) {
   const location = response.headers?.get?.('location') || '';
   const successMarker = credentials.successLocationPattern;
-  if (successMarker) {
-    const pattern = successMarker instanceof RegExp ? successMarker : new RegExp(String(successMarker), 'i');
-    return { authenticated: pattern.test(location), reason: 'configured-location-marker' };
+  if (!successMarker) {
+    return { authenticated: false, reason: 'authenticated-session-marker-required' };
   }
-  return { authenticated: response.status >= 200 && response.status < 300, reason: 'successful-http-response' };
+  // A 200 login page is not evidence of an authenticated session.
+  if (![302,303].includes(response.status)) {
+    return { authenticated: false, reason: 'expected-authentication-redirect' };
+  }
+  const pattern = successMarker instanceof RegExp ? successMarker : new RegExp(String(successMarker), 'i');
+  return { authenticated: Boolean(location) && pattern.test(location), reason: 'configured-location-marker' };
 }
 
 function splitSetCookieHeader(value) {

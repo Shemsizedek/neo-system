@@ -114,6 +114,12 @@ export class NeoBotRuntime {
     const bot = this.registry.get(botId);
     if (bot.status !== 'active') throw new Error(`bot is not active: ${botId}`);
     if (!bot.scopes.includes(job.action)) throw new Error(`scope denied: ${job.action}`);
+    // Never accept a caller-supplied read-only label for a known write scope.
+    // Bots that declare readOnlyScopes have an authoritative per-action policy.
+    if (job.risk === 'read-only' && Array.isArray(bot.readOnlyScopes) &&
+        !bot.readOnlyScopes.includes(job.action)) {
+      throw new Error(`read-only risk escalation blocked: ${job.action}`);
+    }
 
     if (bot.requiresHumanApproval && job.risk !== 'read-only' && !context.approval) {
       return { status: 'approval_required', approval: this.approvals.create({ botId, action: job.action, payload: job.payload, reason: job.reason ?? 'governed action' }) };

@@ -32,6 +32,12 @@ export const NEO_BANK_BOT = {
     'ces.virtual-trader.review',
     'ces.interexchange.settlement.review',
   ],
+  // Authoritative read-only scope list; client-provided job.risk is NOT enough.
+  readOnlyScopes: [
+    'ces.transactions.review',
+    'ces.virtual-trader.review',
+    'ces.interexchange.settlement.review',
+  ],
   limits: {
     maxSingleVDollarIssue: 10000,
     approvalRequiredForValueMovement: true,
