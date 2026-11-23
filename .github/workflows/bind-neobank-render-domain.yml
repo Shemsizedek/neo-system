@@ -1,0 +1,93 @@
+name: Bind NEO Bank Render Custom Domain
+
+on:
+  push:
+    branches: [feat/neo-bank-ces-staging-gate-20261029]
+    paths: ['.github/workflows/bind-neobank-render-domain.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bind-neobank-render-domain
+  cancel-in-progress: false
+
+env:
+  RENDER_SERVICE_ID: srv-dbifhkcs728c73f4iuk0
+  EXPECTED_WORKSPACE: tea-dbhtkc8473hc73933img
+  RENDER_DOMAIN: neobank.holytemples.org
+
+jobs:
+  bind:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Confirm Render API secret exists
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        run: |
+          test -n "${RENDER_API_KEY:-}" || { echo "::error::Missing Render API credential"; exit 1; }
+      - name: Ensure target service belongs to NEO SYSTEM workspace
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        run: |
+          set -euo pipefail
+          curl -fsS --max-time 20 -H "Authorization: Bearer $RENDER_API_KEY" -H "Accept: application/json" \
+            "https://api.render.com/v1/services/$RENDER_SERVICE_ID" > /tmp/target-service.json
+          jq -e --arg ws "$EXPECTED_WORKSPACE" --arg name "neo-bank-render-staging" \
+            '(.ownerId == $ws) and (.name == $name)' /tmp/target-service.json >/dev/null || {
+              echo "::error::Service owner/name does not match approved NEO Bank target"
+              exit 1
+            }
+      - name: Check domain is not registered on a different target
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        run: |
+          set -euo pipefail
+          curl -fsS --max-time 20 -H "Authorization: Bearer $RENDER_API_KEY" -H "Accept: application/json" \
+            "https://api.render.com/v1/services/$RENDER_SERVICE_ID/custom-domains" > /tmp/domains-before.json
+          jq -e 'type=="array"' /tmp/domains-before.json >/dev/null || exit 1
+          if jq -e --arg d "$RENDER_DOMAIN" 'any(.[]; (.name // .domain // "") == $d)' /tmp/domains-before.json >/dev/null; then
+            echo "NEO Bank custom domain already registered on approved service; no new registration."
+            exit 0
+          fi
+          echo "NEO Bank domain registration required; user approved up to $0.25/month incremental custom-domain cost."
+      - name: Register approved NEO Bank custom domain
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        run: |
+          set -euo pipefail
+          if jq -e --arg d "$RENDER_DOMAIN" 'any(.[]; (.name // .domain // "") == $d)' /tmp/domains-before.json >/dev/null; then
+            exit 0
+          fi
+          code="$(curl -sS --max-time 30 -o /tmp/create.json -w '%{http_code}' -X POST \
+            -H "Authorization: Bearer $RENDER_API_KEY" -H "Content-Type: application/json" \
+            -H "Accept: application/json" --data "$(jq -nc --arg name "$RENDER_DOMAIN" '{name:$name}')" \
+            "https://api.render.com/v1/services/$RENDER_SERVICE_ID/custom-domains")"
+          if [ "$code" -lt 200 ] || [ "$code" -ge 300 ]; then
+            # Render may reject a hostname already registered elsewhere, an
+            # account limit, or a DNS-validation precondition. Print only
+            # provider error type and bounded message; never request details
+            # containing credentials or full service configuration.
+            error_detail="$(jq -r '[(.message // .error // .details // .errors[0].message // "unspecified error") | tostring] | .[0][0:240]' /tmp/create.json 2>/dev/null || echo "unparseable Render error")"
+            echo "::error::Render rejected custom-domain registration (HTTP $code): $error_detail"
+            exit 1
+          fi
+          echo "Render accepted NEO Bank custom-domain registration (HTTP $code)"
+      - name: Independently verify registration on intended service
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        run: |
+          set -euo pipefail
+          curl -fsS --max-time 20 -H "Authorization: Bearer $RENDER_API_KEY" -H "Accept: application/json" \
+            "https://api.render.com/v1/services/$RENDER_SERVICE_ID/custom-domains" > /tmp/domains-after.json
+          jq -e --arg d "$RENDER_DOMAIN" 'any(.[]; (.name // .domain // "") == $d)' /tmp/domains-after.json >/dev/null || {
+            echo "::error::Render domain registration could not be verified"
+            exit 1
+          }
+          echo "Verified $RENDER_DOMAIN registered on $RENDER_SERVICE_ID"
+          {
+            echo "NEO Bank domain registered on the intended Render service."
+            echo "Next step: change only the WordPress neobank DNS record, then verify HTTPS."
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -1,4 +1,6 @@
 import http from 'node:http';
+import {createBankSourceClient} from './source-client.mjs';
+import {createBankSourceHandler,sendSourceError} from './source-api.mjs';
 import {readFile} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
 import {getNomniValuation} from './market.mjs';
@@ -8,13 +10,16 @@ function json(res,status,value,extra={}){res.writeHead(status,{'content-type':'a
 function authorized(req,token){return Boolean(token)&&req.headers.authorization===`Bearer ${token}`}
 async function readBody(req){const chunks=[];let size=0;for await(const chunk of req){size+=chunk.length;if(size>32768)throw new Error('request_too_large');chunks.push(chunk)}try{return JSON.parse(Buffer.concat(chunks).toString('utf8')||'{}')}catch{throw new Error('invalid_json')}}
 const statusFor=error=>({authentication_required:401,authorization_required:403,invalid_origin:403,invalid_offer:400,invalid_transfer:400,invalid_account_update:400,recipient_not_found:404,account_not_found:404,self_transfer:409,insufficient_credit:409,request_too_large:413,invalid_json:400}[error.message]||500);
-export function createNeoBankServer({store,fetchImpl=fetch,apiToken=process.env.NEO_BANK_API_TOKEN||'',sessionSecret=process.env.NEO_PASS_JWT_SECRET||'',sessionIssuer=process.env.NEO_PASS_JWT_ISSUER||'neo-pass',googleClientId=process.env.GOOGLE_OAUTH_CLIENT_ID||'',executiveAdminEmail=process.env.NEO_EXECUTIVE_ADMIN_EMAIL||'',verifyGoogleCredential,now=()=>new Date().toISOString()}={}){
+export function createNeoBankServer({store,fetchImpl=fetch,apiToken=process.env.NEO_BANK_API_TOKEN||'',sessionSecret=process.env.NEO_PASS_JWT_SECRET||'',sessionIssuer=process.env.NEO_PASS_JWT_ISSUER||'neo-pass',googleClientId=process.env.GOOGLE_OAUTH_CLIENT_ID||'',executiveAdminEmail=process.env.NEO_EXECUTIVE_ADMIN_EMAIL||'',sourceClient=createBankSourceClient(),sourceControlToken=process.env.NEO_BANK_SOURCE_CONTROL_TOKEN,verifyGoogleCredential,now=()=>new Date().toISOString()}={}){
   if(!store)throw new Error('neo_bank_store_required');const authOptions={secret:sessionSecret,issuer:sessionIssuer};
   const identity=req=>sessionFromRequest(req,authOptions),required=req=>{const value=identity(req);if(!value)throw new Error('authentication_required');return value};
   const mutation=req=>{const origin=String(req.headers.origin||'');if(origin&&origin!=='https://neobank.holytemples.org'&&!/^http:\/\/127\.0\.0\.1:\d+$/.test(origin))throw new Error('invalid_origin')};
+  const sourceHandler=createBankSourceHandler({client:sourceClient,token:sourceControlToken});
   return http.createServer(async(req,res)=>{const url=new URL(req.url||'/',`http://${req.headers.host||'localhost'}`);try{
+    if(await sourceHandler(req,res))return;
     if(req.method==='GET'&&url.pathname==='/health'){try{await store.ping();return json(res,200,{ok:true,service:'neo-bank',database:'connected',timestamp:now()})}catch{return json(res,503,{ok:false,service:'neo-bank',database:'unavailable',timestamp:now()})}}
-    if(req.method==='GET'&&url.pathname==='/api/v1/community/status'){let database='unavailable';try{await store.ping();database='connected'}catch{}return json(res,database==='connected'?200:503,{service:'NEO Bank',network:'NMNI Community Exchange System',database,walletEntry:'https://holytemples.org/neo-system/neopay/',timestamp:now()})}
+    if(req.method==='GET'&&url.pathname==='/api/v1/community/status'){let database='unavailable';try{await store.ping();database='connected'}catch{}return json(res,database==='connected'?200:503,{service:'NEO Bank',network:'NEO Bank',database,walletEntry:'https://holytemples.org/neo-system/neopay/',timestamp:now()})}
+    if(req.method==='GET'&&url.pathname==='/api/v1/reports/trading'){const actor=required(req);if(actor.role!=='executive-admin')throw new Error('authorization_required');try{const report=await sourceClient.report();return json(res,report?200:404,report?{report}:{error:'report_not_available'})}catch(error){return sendSourceError(res,error)}}
     if(req.method==='GET'&&url.pathname==='/api/v1/nomni/valuation')return json(res,200,await getNomniValuation({fetchImpl,now}));
     if(req.method==='GET'&&url.pathname==='/api/v1/auth/config')return json(res,200,{googleClientId,enabled:Boolean(googleClientId&&sessionSecret&&verifyGoogleCredential)});
     if(req.method==='POST'&&url.pathname==='/api/v1/auth/google'){mutation(req);if(!googleClientId||!sessionSecret||!verifyGoogleCredential)return json(res,503,{error:'authentication_not_configured'});const input=await readBody(req),profile=await verifyGoogleCredential(input.credential,googleClientId);if(!profile?.sub||!profile?.email||profile.email_verified===false)return json(res,401,{error:'google_identity_not_verified'});const role=String(profile.email).toLowerCase()===String(executiveAdminEmail).toLowerCase()?'executive-admin':'member',subject=`google:${profile.sub}`,member=await store.ensureMember({subject,email:profile.email,name:profile.name,role}),token=issueSession({subject,email:profile.email,name:profile.name,role},authOptions);return json(res,200,{member:{accountNumber:member.accountNumber,displayName:member.displayName,role:member.role}},{'set-cookie':`neo_bank_session=${encodeURIComponent(token)}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=28800`})}
@@ -31,3 +36,4 @@ export function createNeoBankServer({store,fetchImpl=fetch,apiToken=process.env.
     if(req.method==='GET'&&['/app.css','/app.js'].includes(url.pathname)){const ext=url.pathname.endsWith('.css')?'.css':'.js',content=await readFile(`${root}${url.pathname.slice(1)}`);res.writeHead(200,{'content-type':types[ext],'cache-control':'public, max-age=300','x-content-type-options':'nosniff'});return res.end(content)}return json(res,404,{error:'not_found'});
   }catch(error){const status=statusFor(error);return json(res,status,{error:status===500?'internal_error':error.message})}});
 }
+
