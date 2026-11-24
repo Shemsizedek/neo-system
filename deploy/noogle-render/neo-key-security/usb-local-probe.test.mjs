@@ -30,3 +30,20 @@ test('opt-in Codespaces devcontainer does not install, expose ports or touch pro
   assert.equal(config.initializeCommand,undefined);
   assert.equal(config.features,undefined);
 });
+
+test('Gate 14 Windows local device probe cannot modify devices or emit identifiers',()=>{
+  const ps=new URL('./usb-windows-local-probe.ps1',import.meta.url);
+  const src=readFileSync(ps,'utf8');
+  for(const verb of [
+    'Set-PnpDevice','Disable-PnpDevice','Enable-PnpDevice',
+    'Format-Volume','Initialize-Disk','Clear-Disk','Remove-Item',
+    'Set-ExecutionPolicy','Start-Process','Invoke-Expression',
+    'Invoke-WebRequest','Export-', 'Set-Content','Out-File'
+  ]) assert.equal(src.includes(verb),false,`forbidden mutable action: ${verb}`);
+  assert.match(src,/Get-CimInstance -ClassName Win32_DiskDrive/);
+  assert.match(src,/Get-CimInstance -ClassName Win32_PnPEntity/);
+  assert.match(src,/FIDO2_HARDWARE_VERIFIED=NO/);
+  assert.match(src,/NO_DEVICE_CHANGES=TRUE/);
+  assert.equal(src.includes('Write-Output $_.PNPDeviceID'),false);
+  assert.equal(src.includes('Write-Output $_.SerialNumber'),false);
+});
