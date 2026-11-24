@@ -61,7 +61,7 @@ try {
   } elseif ($signature.Status.ToString() -ne 'Valid') {
     throw ('USB_RAPTOR_INVALID_SIGNATURE: ' + $signature.Status.ToString())
   }
-  # Never use -Verb RunAs, bypass security policy, or supply installer silent flags.
+  # Keep OS privilege prompts intact; never bypass policy or use silent setup flags.
   $process = Start-Process -FilePath $installer -PassThru -Wait -ErrorAction Stop
   if ($process.ExitCode -ne 0) {
     throw ('USB_RAPTOR_INSTALLER_EXIT_' + $process.ExitCode)
