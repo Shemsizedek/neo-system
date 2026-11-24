@@ -1,0 +1,8 @@
+# Do not commit unreviewed redistributable vendor executables or USB key material.
+*.zip
+*.exe
+*.msi
+vendor/
+artifacts/
+*.key
+*.pem
