@@ -58,13 +58,13 @@ test('Gate 6: actual NEO Key WebAuthn cryptography + app HTTP + disposable Postg
       isSessionActive:p=>sessions.isSessionActive(p)
     });
     const signerA=testKey(),signerB=testKey();
-    const approverKeys=new Map([['lab-approver-a',signerA.publicKey],
-      ['lab-approver-b',signerB.publicKey]]);
+    const approverKeys=new Map([['security-reviewer-a',signerA.publicKey],
+      ['security-reviewer-b',signerB.publicKey]]);
     const custody=new Map([
-      ['lab-approver-a',{approverId:'lab-approver-a',personId:'gate6-operator-a',
+      ['security-reviewer-a',{approverId:'security-reviewer-a',personId:'gate6-operator-a',
         status:'active',role:'neo-key-enrollment-approver',
         conflictOfInterest:false,signerFingerprint:fingerprint(signerA.publicKey)}],
-      ['lab-approver-b',{approverId:'lab-approver-b',personId:'gate6-operator-b',
+      ['security-reviewer-b',{approverId:'security-reviewer-b',personId:'gate6-operator-b',
         status:'active',role:'neo-key-enrollment-approver',
         conflictOfInterest:false,signerFingerprint:fingerprint(signerB.publicKey)}]
     ]);
@@ -77,8 +77,8 @@ test('Gate 6: actual NEO Key WebAuthn cryptography + app HTTP + disposable Postg
       authorizationRef:randomBytes(24).toString('base64url'),expiresAt:now+120000};
     const message=approvals.signingMessage(approval);
     await approvals.acceptSignedApproval({...approval,endorsements:[
-      {approverId:'lab-approver-a',signature:sign(null,message,signerA.privateKey).toString('base64url')},
-      {approverId:'lab-approver-b',signature:sign(null,message,signerB.privateKey).toString('base64url')}
+      {approverId:'security-reviewer-a',signature:sign(null,message,signerA.privateKey).toString('base64url')},
+      {approverId:'security-reviewer-b',signature:sign(null,message,signerB.privateKey).toString('base64url')}
     ]});
     bootstrapEvidence=approval.authorizationRef;
     session={token:await issuer.issue({subject,evidence:'synthetic-trusted-identity'})};
