@@ -41,7 +41,7 @@ BEGIN
 END $$;
 DROP TRIGGER IF EXISTS baas_sim_balance_check ON baas_sim_lines;
 CREATE CONSTRAINT TRIGGER baas_sim_balance_check
- AFTER INSERT OR UPDATE OR DELETE ON baas_sim_lines
+ AFTER INSERT ON baas_sim_lines
  DEFERRABLE INITIALLY DEFERRED
  FOR EACH ROW EXECUTE FUNCTION baas_sim_enforce_balance();
 -- Prevent accidental mutation of immutable journal lines by the app role via application policy.
