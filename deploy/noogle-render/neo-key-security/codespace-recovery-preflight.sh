@@ -1,6 +1,6 @@
 #!/bin/sh
 # Gate 17: no-write inventory for an existing NEO Key Codespace.
-# It does not install packages, run git fetch/pull, read secrets, launch
+# It does not install packages, synchronize the repository, read secrets, launch
 # any daemon, inspect USB hardware, rebuild or deploy anything.
 set -eu
 printf 'NEO_KEY_CODESPACE_PREFLIGHT=READ_ONLY\n'
