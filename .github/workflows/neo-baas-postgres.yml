@@ -27,7 +27,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
-      - run: npm ci
+      # The bank package has no committed lockfile; install pinned package.json dependencies.
+      - run: npm install --no-audit --no-fund
         working-directory: server/neo-bank
       - name: Run bank regression and PostgreSQL integration suite
         env:
