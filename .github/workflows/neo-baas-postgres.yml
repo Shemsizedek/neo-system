@@ -1,0 +1,37 @@
+name: NEO Bank BaaS PostgreSQL Gate
+on:
+  pull_request:
+    paths:
+      - 'server/neo-bank/**'
+      - '.github/workflows/neo-baas-postgres.yml'
+  workflow_dispatch:
+jobs:
+  ledger:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: neo_test
+          POSTGRES_PASSWORD: neo_test_only
+          POSTGRES_DB: neo_baas_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U neo_test -d neo_baas_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      # The bank package has no committed lockfile; install pinned package.json dependencies.
+      - run: npm install --no-audit --no-fund
+        working-directory: server/neo-bank
+      - name: Run bank regression and PostgreSQL integration suite
+        env:
+          NEO_BAAS_TEST_DATABASE_URL: postgres://neo_test:neo_test_only@127.0.0.1:5432/neo_baas_test
+        run: npm test
+        working-directory: server/neo-bank
