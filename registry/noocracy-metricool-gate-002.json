@@ -1,0 +1,21 @@
+{
+  "schema": "neo.noocracy.metricool-policy.v1",
+  "gate": "NEO-NOOCRACY-PUBLISHING-002",
+  "contentLane": "noocracy_report",
+  "cadence": "daily",
+  "approval": "auto",
+  "timezone": "America/Chicago",
+  "metricoolBrandId": "7080510",
+  "destinations": ["linkedin", "tiktok"],
+  "formats": {"linkedin": "image", "tiktok": "video"},
+  "aspectRatios": {"linkedin": "16:9", "tiktok": "9:16"},
+  "maxEditionsPerNetworkPerDay": 1,
+  "minimumSpacingMinutes": 60,
+  "preserveExistingScheduledPosts": true,
+  "worldBulletin": false,
+  "sourceReport": null,
+  "subscriptionUrl": null,
+  "activation": "blocked-awaiting-verified-source-subscription-and-media",
+  "connectorExecution": "injected-existing-metricool-connection",
+  "repositorySchedulerEnabled": false
+}
