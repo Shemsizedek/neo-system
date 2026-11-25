@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { prepareNoocracyMetricoolPost, scheduleNoocracyMetricoolPost } from './noocracy-metricool-publishing.mjs'
+import { prepareNoocracyMetricoolPost, scheduleNoocracyMetricoolPost, reconcileNoocracyMetricoolPost } from './noocracy-metricool-publishing.mjs'
 import { createMemorySocialAutomationStore } from '../../server/neo-router/social-automation-store.mjs'
 import { getLanePolicy, DEFAULT_PROVIDER_ORDER } from './neo-social-campaign-pipeline.mjs'
 
@@ -211,4 +211,173 @@ test('slow preflight cannot create after the publication window has elapsed', as
   h.runtime.store.claim = async (...args) => { const claimed = await claim(...args); time = '2026-11-26T17:00:01Z'; return claimed }
   const result = await scheduleNoocracyMetricoolPost(plan, h.runtime)
   assert.equal(result.status, 'blocked'); assert.equal(h.creates, 0)
+})
+
+const plannerUrl = 'https://app.metricool.com/planner/calendar?blogId=7080510&postId=12345'
+for (const [name, wrap] of [
+  ['JSON-text data envelope', post => ({ isError: false, structuredContent: null, content: [{ type: 'text', text: JSON.stringify({ data: [{ ...post, plannerUrl }] }) }] })],
+  ['structured result envelope', post => ({ structuredContent: { data: { ...post, plannerUrl } }, content: [] })],
+  ['structured result with human-readable summary', post => ({ isError: false, structuredContent: { data: { ...post, plannerUrl } }, content: [{ type: 'text', text: 'Action completed.' }] })],
+  ['planner URL beside data', post => ({ content: [{ type: 'text', text: JSON.stringify({ data: post, plannerUrl }) }] })],
+]) test(`retains and correlates returned identity through ${name}`, async () => {
+  const value = input(); const plan = prepareNoocracyMetricoolPost(value); const h = harness(value)
+  const create = h.runtime.createScheduledPost
+  h.runtime.createScheduledPost = async request => wrap(await create(request))
+  const result = await scheduleNoocracyMetricoolPost(plan, h.runtime)
+  assert.equal(result.status, 'scheduled'); assert.equal(result.plannerUrl, plannerUrl)
+  assert.equal(result.createOutcome.metricoolPostId, '12345'); assert.equal(result.createOutcome.metricoolUuid, 'synthetic-new-post')
+  assert.equal(result.recoveredFromAmbiguousCreate, false); assert.equal(h.creates, 1)
+})
+test('successful create identity must agree with the matching readback record', async () => {
+  for (const field of ['id', 'uuid']) {
+    const value = input(); const plan = prepareNoocracyMetricoolPost(value); const h = harness(value)
+    const create = h.runtime.createScheduledPost
+    h.runtime.createScheduledPost = async request => ({ ...await create(request), [field]: field === 'id' ? 777 : 'different-post' })
+    const result = await scheduleNoocracyMetricoolPost(plan, h.runtime)
+    assert.equal(result.status, 'reconciliation_required'); assert.equal(result.reason, 'create_response_identity_mismatch')
+    assert.equal(result.createOutcome[field === 'id' ? 'metricoolPostId' : 'metricoolUuid'], field === 'id' ? '777' : 'different-post')
+    await scheduleNoocracyMetricoolPost(plan, h.runtime)
+    assert.equal(h.creates, 1)
+  }
+})
+test('accepted IDs and planner URL survive a failed readback', async () => {
+  const value = input(); const plan = prepareNoocracyMetricoolPost(value); const h = harness(value)
+  const create = h.runtime.createScheduledPost
+  h.runtime.createScheduledPost = async request => ({ ...await create(request), plannerUrl })
+  const read = h.runtime.readSnapshot
+  h.runtime.readSnapshot = async () => { if (h.creates) throw new Error('provider unavailable'); return read() }
+  const result = await scheduleNoocracyMetricoolPost(plan, h.runtime)
+  assert.equal(result.status, 'reconciliation_required'); assert.equal(result.reason, 'schedule_readback_failed')
+  assert.equal(result.metricoolPostId, '12345'); assert.equal(result.metricoolUuid, 'synthetic-new-post'); assert.equal(result.plannerUrl, plannerUrl)
+  assert.deepEqual(await h.runtime.store.getReceipt(plan.idempotencyKey, plan.network), result)
+})
+for (const [name, response, reason] of [
+  ['explicit tool error', { isError: true, content: [{ type: 'text', text: '{"error":"rejected"}' }] }, 'create_response_rejected'],
+  ['in-band error with an ID', { success: false, data: { id: 12345, uuid: 'synthetic-new-post', plannerUrl } }, 'create_response_rejected'],
+  ['unknown nested metadata ID', { metadata: { id: 12345 } }, 'create_response_unrecognized'],
+  ['multiple returned identities', { data: [{ id: 12345 }, { id: 67890 }] }, 'create_response_ambiguous'],
+  ['contradictory structured/text identities', { structuredContent: { data: { id: 12345 } }, content: [{ type: 'text', text: '{"data":{"id":67890}}' }] }, 'create_response_ambiguous'],
+  ['structured result with explicit error text', { structuredContent: { data: { id: 12345 } }, content: [{ type: 'text', text: 'Error: request failed.' }] }, 'create_response_rejected'],
+]) test(`${name} never becomes a verified successful create`, async () => {
+  const value = input(); const plan = prepareNoocracyMetricoolPost(value); const h = harness(value)
+  const create = h.runtime.createScheduledPost
+  h.runtime.createScheduledPost = async request => { await create(request); return response }
+  const result = await scheduleNoocracyMetricoolPost(plan, h.runtime)
+  assert.equal(result.status, 'reconciliation_required'); assert.equal(result.reason, reason)
+  await scheduleNoocracyMetricoolPost(plan, h.runtime)
+  assert.equal(h.creates, 1)
+})
+test('exact validated intent is stored before any create call', async () => {
+  const value = input(); const plan = prepareNoocracyMetricoolPost(value); const h = harness(value)
+  const create = h.runtime.createScheduledPost
+  h.runtime.createScheduledPost = async request => {
+    const intent = await h.runtime.store.getReceipt(plan.idempotencyKey, plan.network)
+    assert.equal(intent.status, 'scheduling_intent'); assert.equal(intent.createOutcome.state, 'pending_result')
+    assert.deepEqual(intent.intent, plan); assert.deepEqual(intent.intent.request, request)
+    return create(request)
+  }
+  assert.equal((await scheduleNoocracyMetricoolPost(plan, h.runtime)).status, 'scheduled')
+})
+test('failed preflight persistence sends no create and retains its claim', async () => {
+  const value = input(); const plan = prepareNoocracyMetricoolPost(value); const h = harness(value)
+  h.runtime.store.saveReceipt = async () => { throw new Error('store unavailable') }
+  await assert.rejects(scheduleNoocracyMetricoolPost(plan, h.runtime), /store unavailable/)
+  assert.equal(h.creates, 0)
+  const retry = await scheduleNoocracyMetricoolPost(plan, h.runtime)
+  assert.equal(retry.reason, 'existing_or_concurrent_claim'); assert.equal(h.creates, 0)
+})
+test('silently discarded preflight persistence also sends no create', async () => {
+  const value = input(); const plan = prepareNoocracyMetricoolPost(value); const h = harness(value)
+  h.runtime.store.saveReceipt = async () => false
+  await assert.rejects(scheduleNoocracyMetricoolPost(plan, h.runtime), /preflight_intent_persistence_unverified/)
+  assert.equal(h.creates, 0)
+})
+test('slow intent persistence cannot create with an expired plan', async () => {
+  const value = input(); const plan = prepareNoocracyMetricoolPost(value); const h = harness(value)
+  let time = now
+  h.runtime.clock = () => time
+  const save = h.runtime.store.saveReceipt
+  h.runtime.store.saveReceipt = async (...args) => { const result = await save(...args); time = '2026-11-25T21:06:00Z'; return result }
+  assert.equal((await scheduleNoocracyMetricoolPost(plan, h.runtime)).status, 'blocked')
+  assert.equal(h.creates, 0)
+})
+test('slow persistence cannot create after the preflight queue snapshot expires', async () => {
+  const value = input(); value.snapshot.capturedAt = '2026-11-25T20:55:01Z'
+  const plan = prepareNoocracyMetricoolPost(value); const h = harness(value)
+  let time = now
+  h.runtime.clock = () => time
+  const save = h.runtime.store.saveReceipt
+  h.runtime.store.saveReceipt = async (...args) => { const result = await save(...args); time = '2026-11-25T21:00:02Z'; return result }
+  await assert.rejects(scheduleNoocracyMetricoolPost(plan, h.runtime), /schedule_verification_stale/)
+  assert.equal(h.creates, 0)
+  assert.equal((await h.runtime.store.getReceipt(plan.idempotencyKey, plan.network)).status, 'scheduling_intent')
+  assert.equal(await h.runtime.store.claim(plan.idempotencyKey, plan.network), false)
+})
+test('restart recovery reconciles the persisted original intent without another create', async () => {
+  const value = input(); const plan = prepareNoocracyMetricoolPost(value); const h = harness(value)
+  const save = h.runtime.store.saveReceipt
+  h.runtime.store.saveReceipt = async (...args) => { if (h.creates) throw new Error('simulated process loss after acceptance'); return save(...args) }
+  await assert.rejects(scheduleNoocracyMetricoolPost(plan, h.runtime), /simulated process loss/)
+  const persisted = JSON.parse(JSON.stringify(await h.runtime.store.getReceipt(plan.idempotencyKey, plan.network)))
+  assert.equal(persisted.status, 'scheduling_intent'); assert.equal(persisted.createOutcome.state, 'pending_result')
+  const recoveredStore = createMemorySocialAutomationStore()
+  await recoveredStore.saveReceipt(plan.idempotencyKey, plan.network, persisted)
+  const later = '2026-11-25T22:00:00Z'
+  const readSnapshot = async () => ({ ...value.snapshot, capturedAt: later, posts: structuredClone(h.posts) })
+  const result = await reconcileNoocracyMetricoolPost({ idempotencyKey: plan.idempotencyKey, network: plan.network }, { store: recoveredStore, readSnapshot, clock: () => later })
+  assert.equal(result.status, 'scheduled'); assert.equal(result.replayed, true); assert.equal(result.recoveredFromAmbiguousCreate, true)
+  assert.equal(result.receiptPersisted, false)
+  assert.equal((await recoveredStore.getReceipt(plan.idempotencyKey, plan.network)).status, 'scheduling_intent')
+  assert.equal(h.creates, 1)
+  const replay = await scheduleNoocracyMetricoolPost(plan, { ...h.runtime, store: recoveredStore })
+  assert.equal(replay.replayed, true); assert.equal(h.creates, 1)
+})
+test('pending intent replay reconciles only and never substitutes a revised caption', async () => {
+  const value = input(); const plan = prepareNoocracyMetricoolPost(value); const h = harness(value)
+  const save = h.runtime.store.saveReceipt
+  h.runtime.store.saveReceipt = async (...args) => { if (h.creates) throw new Error('simulated process loss'); return save(...args) }
+  await assert.rejects(scheduleNoocracyMetricoolPost(plan, h.runtime), /simulated process loss/)
+  h.runtime.store.saveReceipt = save
+  const revised = input(); revised.caption = revised.caption.replace('SYNTHETIC TEST:', 'CHANGED SYNTHETIC TEST:')
+  const result = await scheduleNoocracyMetricoolPost(prepareNoocracyMetricoolPost(revised), h.runtime)
+  assert.equal(result.status, 'scheduled'); assert.equal(result.replayed, true)
+  assert.deepEqual(result.intent.request, plan.request); assert.equal(h.creates, 1)
+})
+test('a persisted intent without readback evidence remains non-retryable', async () => {
+  const value = input(); const plan = prepareNoocracyMetricoolPost(value); const h = harness(value)
+  const save = h.runtime.store.saveReceipt
+  let captured
+  h.runtime.store.saveReceipt = async (...args) => { captured = structuredClone(args[2]); await save(...args); throw new Error('stop after intent persistence') }
+  await assert.rejects(scheduleNoocracyMetricoolPost(plan, h.runtime), /stop after intent persistence/)
+  assert.equal(captured.status, 'scheduling_intent'); assert.equal(h.creates, 0)
+  h.runtime.store.saveReceipt = save
+  const result = await reconcileNoocracyMetricoolPost(plan, h.runtime)
+  assert.equal(result.status, 'reconciliation_required'); assert.equal(result.automaticRetryAllowed, false)
+  await scheduleNoocracyMetricoolPost(plan, h.runtime)
+  assert.equal(h.creates, 0)
+})
+test('concurrent recovery cannot overwrite the scheduling owner’s accepted evidence', async () => {
+  const value = input(); const plan = prepareNoocracyMetricoolPost(value); const h = harness(value)
+  let enteredCreate, allowCreate, enteredRecovery, allowRecovery
+  const createStarted = new Promise(resolve => { enteredCreate = resolve })
+  const createGate = new Promise(resolve => { allowCreate = resolve })
+  const recoveryStarted = new Promise(resolve => { enteredRecovery = resolve })
+  const recoveryGate = new Promise(resolve => { allowRecovery = resolve })
+  const create = h.runtime.createScheduledPost
+  h.runtime.createScheduledPost = async request => { enteredCreate(); await createGate; return { ...await create(request), plannerUrl } }
+  const scheduling = scheduleNoocracyMetricoolPost(plan, h.runtime)
+  await createStarted
+  const recovery = reconcileNoocracyMetricoolPost(plan, {
+    store: h.runtime.store, clock,
+    readSnapshot: async () => { const snapshot = { ...value.snapshot, posts: [] }; enteredRecovery(); await recoveryGate; return snapshot },
+  })
+  await recoveryStarted
+  allowCreate()
+  const scheduled = await scheduling
+  allowRecovery()
+  const recovered = await recovery
+  assert.equal(recovered.status, 'reconciliation_required'); assert.equal(recovered.receiptPersisted, false)
+  assert.equal(scheduled.status, 'scheduled'); assert.equal(scheduled.plannerUrl, plannerUrl)
+  assert.deepEqual(await h.runtime.store.getReceipt(plan.idempotencyKey, plan.network), scheduled)
+  assert.equal(h.creates, 1)
 })

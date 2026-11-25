@@ -145,51 +145,156 @@ export function prepareNoocracyMetricoolPost({ source, subscription, media, conn
   return plan
 }
 
-/** Only calls the injected create operation once. The existing social store interface
- * supplies atomic claims + durable receipts. A production store must be durable. */
+/** Accept only documented post identity fields through bounded connector envelopes.
+ * Never descend into providers, metadata, arbitrary response fields or error text. */
+function createOutcome(result) {
+  const ids = new Set(), uuids = new Set(), urls = new Set()
+  let rejected = false, unrecognized = false, visited = 0
+  const scalar = (value, target) => {
+    if ((typeof value === 'string' && value.trim()) || (typeof value === 'number' && Number.isSafeInteger(value))) target.add(String(value).trim())
+    else unrecognized = true
+  }
+  const meaningful = value => value != null && value !== false && value !== '' && (!Array.isArray(value) || value.length > 0)
+  function visit(value, depth = 0) {
+    if (++visited > 64 || depth > 8) { unrecognized = true; return }
+    if (typeof value === 'string') {
+      try { visit(JSON.parse(value), depth + 1) } catch { unrecognized = true; if (/^\s*(?:error|failed)\b/i.test(value)) rejected = true }
+      return
+    }
+    if (Array.isArray(value)) { if (!value.length) unrecognized = true; for (const item of value) visit(item, depth + 1); return }
+    if (!value || typeof value !== 'object') { unrecognized = true; return }
+    if (value.isError === true || value.success === false || value.ok === false || meaningful(value.error) || meaningful(value.errors) || /^(?:error|failed|failure|rejected)$/i.test(String(value.status ?? '')) || (Number.isInteger(value.statusCode) && value.statusCode >= 400)) rejected = true
+    let identityFound = false
+    if (value.plannerUrl != null) {
+      identityFound = true
+      try {
+        const url = new URL(value.plannerUrl)
+        if (url.protocol !== 'https:' || url.hostname !== 'app.metricool.com' || !url.pathname.startsWith('/planner/') || url.username || url.password) throw new Error('invalid_planner_url')
+        urls.add(url.href)
+      } catch { unrecognized = true }
+    }
+    let envelope = false
+    for (const key of ['structuredContent', 'data', 'result', 'posts']) {
+      if (value[key] != null) { envelope = true; visit(value[key], depth + 1) }
+    }
+    if (Array.isArray(value.content)) {
+      envelope = true
+      if (!value.content.length && value.structuredContent == null) unrecognized = true
+      for (const block of value.content) {
+        if (block?.type !== 'text' || typeof block.text !== 'string') { unrecognized = true; continue }
+        if (value.structuredContent != null) {
+          try { visit(JSON.parse(block.text), depth + 1) }
+          catch { if (/^\s*(?:error|failed)\b/i.test(block.text)) rejected = true }
+        } else visit(block.text, depth + 1)
+      }
+    }
+    if (envelope) return
+    for (const [key, target] of [['id', ids], ['uuid', uuids]]) {
+      if (value[key] != null) { identityFound = true; scalar(value[key], target) }
+    }
+    if (!identityFound && !rejected) unrecognized = true
+  }
+  visit(result)
+  const ambiguous = ids.size > 1 || uuids.size > 1 || urls.size > 1
+  return {
+    state: rejected ? 'rejected' : ambiguous ? 'ambiguous' : unrecognized || !(ids.size || uuids.size || urls.size) ? 'unrecognized' : 'accepted',
+    metricoolPostId: ids.size === 1 ? [...ids][0] : null,
+    metricoolUuid: uuids.size === 1 ? [...uuids][0] : null,
+    plannerUrl: urls.size === 1 ? [...urls][0] : null,
+    reportedIds: [...ids], reportedUuids: [...uuids], plannerUrls: [...urls],
+  }
+}
+const receiptContext = plan => ({ gate: policy.gate, idempotencyKey: plan.idempotencyKey, network: plan.network, accountId: plan.accountId, sourceSha256: plan.sourceSha256 })
+const intentStatus = 'scheduling_intent'
+function verifiedIntent(receipt, idempotencyKey, network) {
+  const plan = receipt?.intent
+  if (!plan || receipt.intentSha256 !== hash(plan) || plan.schema !== 'neo.noocracy.metricool-plan.v1' || plan.gate !== policy.gate || !policy.destinations.includes(network) || plan.network !== network || receipt.network !== network || plan.idempotencyKey !== idempotencyKey || receipt.idempotencyKey !== idempotencyKey || idempotencyKey !== `${policy.contentLane}:metricool:${policy.metricoolBrandId}:${plan.editionDate}:${network}` || plan.request?.blogId !== policy.metricoolBrandId || plan.readRequest?.brandId !== policy.metricoolBrandId || !Array.isArray(plan.baseline)) throw new Error('valid_persisted_intent_required')
+  return structuredClone(plan)
+}
+async function reconcileIntent(pending, { readSnapshot, store, clock }, replayed) {
+  const plan = verifiedIntent(pending, pending.idempotencyKey, pending.network)
+  const outcome = pending.createOutcome ?? { state: 'pending_result' }
+  let receipt
+  try {
+    let after
+    try { after = await readSnapshot(structuredClone(plan.readRequest)) } catch { throw new Error('schedule_readback_failed') }
+    if (after?.complete !== true || !Array.isArray(after.posts) || after.brandId !== policy.metricoolBrandId || after.timezone !== policy.timezone) throw new Error('complete_readback_required')
+    validateSnapshot(after, plan.request.date, clock())
+    const byId = new Map(after.posts.map(post => [identity(post), post]))
+    if (!plan.baseline.every(post => byId.has(identity(post)) && hash(post) === hash(byId.get(identity(post))))) throw new Error('existing_schedule_changed')
+    if (!['accepted', 'transport_unknown', 'pending_result'].includes(outcome.state)) throw new Error(`create_response_${outcome.state}`)
+    const matches = after.posts.filter(post => signature(post) === plan.expectedSignature)
+    if (matches.length !== 1) throw new Error(matches.length ? 'ambiguous_readback' : 'scheduled_post_not_verified')
+    const post = matches[0]
+    if ((outcome.metricoolPostId != null && String(post.id ?? '') !== outcome.metricoolPostId) || (outcome.metricoolUuid != null && String(post.uuid ?? '') !== outcome.metricoolUuid)) throw new Error('create_response_identity_mismatch')
+    if (post.providers.some(provider => provider.status !== 'PENDING')) throw new Error('provider_pending_status_not_verified')
+    receipt = {
+      status: 'scheduled', published: false, platformPostId: null,
+      metricoolPostId: required(String(post.id ?? ''), 'metricool_post_id'),
+      metricoolUuid: required(String(post.uuid ?? ''), 'metricool_uuid'),
+      plannerUrl: outcome.plannerUrl ?? null,
+      verification: 'complete_schedule_readback', existingPostsPreserved: true,
+      recoveredFromAmbiguousCreate: outcome.state !== 'accepted',
+    }
+  } catch (error) {
+    receipt = { status: 'reconciliation_required', published: false, platformPostId: null, metricoolPostId: outcome.metricoolPostId ?? null, metricoolUuid: outcome.metricoolUuid ?? null, plannerUrl: outcome.plannerUrl ?? null, reason: error.message, automaticRetryAllowed: false }
+  }
+  receipt = { ...receipt, ...receiptContext(plan), intent: structuredClone(plan), intentSha256: pending.intentSha256, createOutcome: structuredClone(outcome), replayed, receiptPersisted: !replayed }
+  // The existing receipt API has no compare-and-swap. Recovery must never overwrite
+  // richer evidence while the original scheduling owner may still be finishing.
+  if (!replayed) await store.saveReceipt(plan.idempotencyKey, plan.network, structuredClone(receipt))
+  return receipt
+}
+
+/** Recovery only reads Metricool and receipts. Its returned evidence is not saved
+ * over the original owner's receipt without a compare-and-swap store. It needs no
+ * live prepared plan, future window or create callback, so restart cannot create. */
+export async function reconcileNoocracyMetricoolPost({ idempotencyKey, network }, { readSnapshot, store, clock = () => new Date().toISOString() }) {
+  if (typeof readSnapshot !== 'function' || typeof store?.getReceipt !== 'function') throw new Error('reconciliation_connector_and_store_required')
+  const existing = await store.getReceipt(idempotencyKey, network)
+  if (!existing) throw new Error('persisted_intent_required')
+  const receipt = structuredClone(existing)
+  if (![intentStatus, 'reconciliation_required'].includes(receipt.status)) return { ...receipt, replayed: true }
+  verifiedIntent(receipt, idempotencyKey, network)
+  return reconcileIntent(receipt, { readSnapshot, store, clock }, true)
+}
+
+/** Only calls the injected create operation once. The caller must provide a verified
+ * durable atomic store in production; the memory implementation is test-only. */
 export async function scheduleNoocracyMetricoolPost(plan, { createScheduledPost, readSnapshot, store, clock = () => new Date().toISOString() }) {
   if (plan?.schema !== 'neo.noocracy.metricool-plan.v1' || plan.gate !== policy.gate || preparedPlans.get(plan) !== hash(plan)) throw new Error('unaltered_in_process_validated_plan_required')
   plan = structuredClone(plan)
   if (typeof createScheduledPost !== 'function' || typeof readSnapshot !== 'function' || !['claim', 'getReceipt', 'saveReceipt'].every(name => typeof store?.[name] === 'function')) throw new Error('connector_and_receipt_store_required')
-  const existing = await store.getReceipt(plan.idempotencyKey, plan.network)
-  if (existing) return { ...existing, replayed: true }
+  const stored = await store.getReceipt(plan.idempotencyKey, plan.network)
+  if (stored) {
+    const existing = structuredClone(stored)
+    if (existing.status === intentStatus) {
+      verifiedIntent(existing, plan.idempotencyKey, plan.network)
+      return reconcileIntent(existing, { readSnapshot, store, clock }, true)
+    }
+    return { ...existing, replayed: true }
+  }
   fresh(plan.preparedAt, clock(), 'plan', 5 * 60 * 1000)
   if (instant(plan.request.date, 'publicationAt') <= instant(clock(), 'now')) throw new Error('publication_must_be_future')
   const before = await readSnapshot(structuredClone(plan.readRequest))
   validateSnapshot(before, plan.request.date, clock())
   if (!samePosts(plan.baseline, before.posts)) throw new Error('schedule_changed_since_preparation')
   if (!await store.claim(plan.idempotencyKey, plan.network)) return { status: 'reconciliation_required', reason: 'existing_or_concurrent_claim', published: false, replayed: true }
+  const pending = { status: intentStatus, published: false, platformPostId: null, automaticRetryAllowed: false, ...receiptContext(plan), intent: structuredClone(plan), intentSha256: hash(plan), createOutcome: { state: 'pending_result' } }
+  // The atomic claim remains in place if this persistence fails: fail closed.
+  await store.saveReceipt(plan.idempotencyKey, plan.network, structuredClone(pending))
+  const savedIntent = await store.getReceipt(plan.idempotencyKey, plan.network)
+  if (!savedIntent || hash(savedIntent) !== hash(pending)) throw new Error('preflight_intent_persistence_unverified')
   const createTime = instant(clock(), 'now')
   if (instant(plan.request.date, 'publicationAt') <= createTime || createTime - instant(plan.preparedAt, 'preparedAt') > 5 * 60 * 1000) {
-    const receipt = { status: 'blocked', reason: 'publication_window_elapsed_or_plan_expired', published: false, platformPostId: null, automaticRetryAllowed: false, idempotencyKey: plan.idempotencyKey, network: plan.network }
-    await store.saveReceipt(plan.idempotencyKey, plan.network, receipt)
+    const receipt = { ...pending, status: 'blocked', reason: 'publication_window_elapsed_or_plan_expired' }
+    await store.saveReceipt(plan.idempotencyKey, plan.network, structuredClone(receipt))
     return receipt
   }
-  let createError = false
-  try { await createScheduledPost(structuredClone(plan.request)) } catch { createError = true }
-  let receipt
-  try {
-    const after = await readSnapshot(structuredClone(plan.readRequest))
-    if (after?.complete !== true || !Array.isArray(after.posts) || after.brandId !== policy.metricoolBrandId || after.timezone !== policy.timezone) throw new Error('complete_readback_required')
-    validateSnapshot(after, plan.request.date, clock())
-    const byId = new Map(after.posts.map(post => [identity(post), post]))
-    const preserved = plan.baseline.every(post => byId.has(identity(post)) && hash(post) === hash(byId.get(identity(post))))
-    if (!preserved) throw new Error('existing_schedule_changed')
-    const matches = after.posts.filter(post => signature(post) === plan.expectedSignature)
-    if (matches.length !== 1) throw new Error(matches.length ? 'ambiguous_readback' : 'scheduled_post_not_verified')
-    const post = matches[0]
-    if (post.providers.some(provider => provider.status !== 'PENDING')) throw new Error('provider_pending_status_not_verified')
-    receipt = {
-      status: 'scheduled', published: false, platformPostId: null,
-      metricoolPostId: required(String(post.id ?? ''), 'metricool_post_id'),
-      metricoolUuid: required(String(post.uuid ?? ''), 'metricool_uuid'),
-      verification: 'complete_schedule_readback', existingPostsPreserved: true,
-      recoveredFromAmbiguousCreate: createError,
-    }
-  } catch (error) {
-    receipt = { status: 'reconciliation_required', published: false, platformPostId: null, reason: error.message, automaticRetryAllowed: false }
-  }
-  receipt = { ...receipt, gate: policy.gate, idempotencyKey: plan.idempotencyKey, network: plan.network, accountId: plan.accountId, sourceSha256: plan.sourceSha256, replayed: false }
-  await store.saveReceipt(plan.idempotencyKey, plan.network, receipt)
-  return receipt
+  validateSnapshot(before, plan.request.date, clock())
+  try { pending.createOutcome = createOutcome(await createScheduledPost(structuredClone(plan.request))) }
+  catch { pending.createOutcome = { state: 'transport_unknown' } }
+  // Retain accepted identity even if readback fails or this process stops next.
+  await store.saveReceipt(plan.idempotencyKey, plan.network, structuredClone(pending))
+  return reconcileIntent(pending, { readSnapshot, store, clock }, false)
 }
