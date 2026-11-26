@@ -1,0 +1,54 @@
+schema_version: "1.0"
+workflow_id: "NEO-FLIP-003"
+name: "NEO Flipper Buyer-First Wholesale"
+owner_agent: "NEO-FLIP-001"
+principal: "Shelton Estate & Co."
+parent_pipeline: "NEO-DEALDESK-002"
+status: "implementation_only_not_deployed"
+pilot_jurisdiction: "US-TX"
+runtime: "server/neo-flipper/buyer-first.mjs"
+stages:
+  - id: licensed_source
+    action: checkListingDataRights
+    required: "commercial rights, provider verification, status provenance, 120+ DOM"
+    external_access: "not_connected"
+  - id: sold_comparables
+    action: evaluateSoldComps
+    required: "3 independently verified closed sales with valuation-use rights and adjustment review"
+    external_access: "not_connected"
+  - id: buyer_opt_in
+    action: qualifyBuyerForContact
+    required: "identity, property-offer consent, suppression, buy-box and recent funds"
+    external_access: "not_connected"
+  - id: ceiling
+    action: calculateBuyerFirstCeiling
+    required: "conservative comps, cost evidence, buyer ceiling and margin"
+  - id: seller_inquiry
+    action: prepareSellerInquiry
+    output: "non_binding_unsent_draft"
+    external_send: "prohibited"
+  - id: handoff
+    action: toBuyerFirstDealDeskRecord
+    target: "NEO Deal Desk read-only review interface"
+    persistence: "not_connected"
+  - id: legal_and_signatures
+    status: "blocked_until_independent_review"
+    required: "principal interest, Texas disclosures, assignability, signer authority and approved provider"
+  - id: closing_receivable
+    target: "independent escrow/title plus receipt verification"
+    money_movement: "no outbound payment requested"
+allowed_automation:
+  - "research_authorized_source"
+  - "screen_sold_comparables"
+  - "match_opt_in_buyers"
+  - "calculate_advisory_seller_ceiling"
+  - "prepare_unsent_seller_draft"
+  - "prepare_privacy_minimized_review_record"
+blocked:
+  - "scrape_unlicensed_listing_data"
+  - "send_unsolicited_or_unapproved_messages"
+  - "make_binding_offers"
+  - "sign_on_behalf_of_parties"
+  - "move_funds"
+  - "treat_pending_receivable_as_income"
+  - "publicly_store_buyer_kyc_or_private_contacts"
