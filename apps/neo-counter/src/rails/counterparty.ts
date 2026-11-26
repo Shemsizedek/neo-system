@@ -1,5 +1,6 @@
 import type { PaymentObservation, RailQuote, ReadOnlyRail } from './types';
 import { quoteFromCesPacket } from './cesQuote';
+import { matchCounterpartyReceive } from './counterpartyEvidence';
 
 const COUNTERPARTY_API = import.meta.env.VITE_COUNTERPARTY_API || 'https://api.counterparty.io:4000/v2';
 const QUOTE_ENDPOINT = import.meta.env.VITE_NEO_COUNTER_QUOTE_ENDPOINT || '';
@@ -44,20 +45,10 @@ export class CounterpartyReadOnlyRail implements ReadOnlyRail {
     if (!response.ok) throw new Error(`${this.asset} receive observation unavailable`);
     const payload = await response.json() as any;
     const rows = Array.isArray(payload?.result) ? payload.result : Array.isArray(payload) ? payload : [];
-    const started = Date.parse(input.startedAt);
-
     for (const row of rows) {
-      const timestamp = Date.parse(row?.block_time || row?.timestamp || row?.created_at || '');
-      if (Number.isFinite(timestamp) && timestamp < started) continue;
-      const quantity = Number(row?.quantity_normalized ?? row?.quantity ?? row?.amount ?? 0);
-      if (quantity >= input.expectedAmount) {
-        return {
-          detected: true,
-          confirmed: true,
-          reference: row?.tx_hash || row?.tx_hash_index || row?.event_index?.toString(),
-          amount: quantity,
-          source: 'Counterparty API v2',
-        };
+      const match = matchCounterpartyReceive(row, { ...input, asset: this.asset });
+      if (match) {
+        return { detected: true, confirmed: true, ...match, source: 'Counterparty API v2' };
       }
     }
 
