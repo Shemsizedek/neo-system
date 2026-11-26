@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0c1713"><title>Nous OS Access | NEOpass</title>
+<link rel="stylesheet" href="/neopass/nous-access.css"><script src="/neopass/nous-access.js" defer></script></head>
+<body><main><div class="eyebrow">NEOpass · Identity Controls · Project 144</div>
+<h1>NEO Nous OS access</h1>
+<p>Choose whether Nous OS may read permitted information tied to your NEOpass account. This is optional. You may withdraw permission at any time.</p>
+<section class="panel" aria-labelledby="what-heading"><h2 id="what-heading">Before you decide</h2>
+<ul><li><strong>Read only.</strong> Nous OS can list approved agents, verify source information and request read-only analysis through authorized adapters.</li>
+<li><strong>No financial authority.</strong> This does not authorize transfers, wallet signing, contracts, purchases, publishing or deployments.</li>
+<li><strong>Limited duration.</strong> Consent expires after 24 hours. Nous access tokens expire within 120 seconds and require an active account at issuance.</li>
+<li><strong>Withdrawal.</strong> You can revoke consent here. This blocks new Nous tokens, but tokens already issued can remain valid until expiration or signing-key revocation.</li>
+<li><strong>Account records.</strong> NEOpass stores consent status, expiration and revocation cutoff. Nous OS stores separate planning receipts for authorized operations.</li></ul>
+<p class="note">A recent NEOpass sign-in is required to change access. If you recently signed in, you may need to sign in again to confirm your choice.</p>
+</section>
+<section class="panel" aria-labelledby="controls-heading"><h2 id="controls-heading">Your access</h2>
+<p id="nous-consent-status" role="status" aria-live="polite" class="status" tabindex="-1">Checking your current access…</p>
+<p id="nous-consent-expiry" class="note" hidden></p>
+<div id="nous-consent-controls" hidden>
+<label for="nous-consent-ack"><input type="checkbox" id="nous-consent-ack"><span>I understand this is optional, read-only Nous OS access for up to 24 hours and I can revoke it.</span></label>
+<div class="actions"><button id="nous-consent-grant" type="button" disabled>Allow read-only access</button><button id="nous-consent-revoke" class="secondary" type="button">Revoke access</button></div>
+</div>
+<div class="actions"><a href="/" class="button secondary">Return to NEOpass login</a><button id="nous-consent-retry" class="secondary" type="button">Refresh status</button></div>
+</section><p class="note">No permissions change until you explicitly select an action. This page does not display or persist your NEOpass session token.</p>
+</main></body></html>

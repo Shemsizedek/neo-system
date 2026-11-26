@@ -1,0 +1,48 @@
+name: NEO Nous OS hosted staging smoke
+on:
+  pull_request:
+    paths:
+      - 'core/nous-os/**'
+      - '.github/workflows/nous-hosted-smoke.yml'
+permissions:
+  contents: read
+jobs:
+  hosted-readiness:
+    if: github.event.pull_request.number == 1388
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check hosted Neon-backed staging health and denied anonymous access
+        env:
+          BASE_URL: https://neo-nous-os-db-staging.onrender.com
+        shell: bash
+        run: |
+          set -euo pipefail
+          code="000"
+          for i in $(seq 1 24); do
+            code=$(curl --max-time 12 -sS -o /tmp/nous-health.json -w '%{http_code}' "$BASE_URL/health" || true)
+            if [ "$code" = "200" ]; then break; fi
+            sleep 5
+          done
+          test "$code" = "200"
+          grep -q '"mode":"plan-only"' /tmp/nous-health.json
+          ready=$(curl --max-time 12 -sS -o /tmp/nous-ready.json -w '%{http_code}' "$BASE_URL/ready")
+          test "$ready" = "200"
+          grep -q '"identityConfigured":true' /tmp/nous-ready.json
+          grep -q '"backend":"postgresql"' /tmp/nous-ready.json
+          code=$(curl --max-time 12 -sS -o /tmp/nous-agents.json -w '%{http_code}' "$BASE_URL/v1/agents")
+          test "$code" = "401"
+          code=$(curl --max-time 12 -sS -o /tmp/nous-adapters.json -w '%{http_code}' "$BASE_URL/v1/adapters")
+          test "$code" = "401"
+          curl --max-time 12 -sS -D /tmp/nous-headers.txt -o /tmp/nous-security.json "$BASE_URL/v1/sources"
+          grep -iq '^referrer-policy: no-referrer' /tmp/nous-headers.txt
+          grep -iq '^x-frame-options: DENY' /tmp/nous-headers.txt
+          grep -iq '^content-security-policy: default-src' /tmp/nous-headers.txt
+          grep -q 'bearer_required' /tmp/nous-security.json
+      - name: Verify GitHub signed OIDC receipt in hosted Neon
+        run: node core/nous-os/deploy/hosted-oidc-smoke.mjs
+
+# Project 144: repeat the same signed receipt smoke after the 2026-11-10 staging redeploy.
