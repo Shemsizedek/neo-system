@@ -1,0 +1,31 @@
+{
+  "name": "NEO YouSpot Read-Only",
+  "version": "0.1.0",
+  "description": "NEO Project 144 read-only YouSpot MCP app registration descriptor",
+  "transport": "streamable-http",
+  "mcp_url": "https://youspot.com/mcp",
+  "oauth": {
+    "issuer": "https://youspot.com",
+    "authorization_endpoint": "https://youspot.com/oauth/authorize",
+    "token_endpoint": "https://youspot.com/oauth/token",
+    "registration_endpoint": "https://youspot.com/oauth/register",
+    "resource": "https://youspot.com/mcp",
+    "grant_type": "authorization_code",
+    "pkce": "S256",
+    "requested_scopes": [
+      "integrations"
+    ]
+  },
+  "policy": {
+    "default": "deny",
+    "allowed_tools": [
+      "list_integrations"
+    ],
+    "deny_scopes": [
+      "write"
+    ],
+    "require_external_enforcement": true,
+    "prohibit_tools_call_until_enforced": true
+  },
+  "status": "registration-template-not-connected"
+}
