@@ -1,5 +1,6 @@
 import http from 'node:http';
 import { randomUUID } from 'node:crypto';
+import { createEgaasAnchorHandler } from './egaas-anchors.mjs';
 import { readFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import { createNeoPrimeMarketData } from '../neo-prime/market-data.mjs';
@@ -71,6 +72,7 @@ export function createNeoPlatformApi({ now=()=>new Date().toISOString(), audit=(
   const dealDeskOutbound=createDealDeskOutboundService({outbox:dealDeskOutbox,mailAdapter:dealDeskMailAdapter,executionEnabled:dealDeskOutboundEnabled,crmStore,now});
   const dealDeskReplyWorker=dealDeskInboundReader?createDealDeskReplyWorker({outbox:dealDeskOutbox,outboundService:dealDeskOutbound,inboundReader:dealDeskInboundReader}):null;
   const loginAttempts=new Map();
+  const egaasAnchorHandler=createEgaasAnchorHandler({subjectResolver});
   const requireCrown=async(service,scope,res)=>{
     if(!crownServiceAuthorizer){json(res,503,{error:'crown_capability_authorizer_unavailable',service,required_scope:scope});return false}
     const proof=await crownServiceAuthorizer(service,scope)
@@ -81,6 +83,7 @@ export function createNeoPlatformApi({ now=()=>new Date().toISOString(), audit=(
   };
   return http.createServer(async(req,res)=>{try{
     const url=new URL(req.url||'/','http://neo.local');
+    if(await egaasAnchorHandler(req,res,url))return;
     if(await knowindexHandler(req,res,url))return;
     if(req.method==='OPTIONS'){res.writeHead(204,{'access-control-allow-origin':'*','access-control-allow-methods':'GET,POST,PATCH,DELETE,OPTIONS','access-control-allow-headers':'content-type,authorization,x-neopass-subject'});return res.end();}
     if(req.method==='GET'&&url.pathname==='/')return portal(res,authService?.clientId,url.searchParams.get('login')==='failed');
