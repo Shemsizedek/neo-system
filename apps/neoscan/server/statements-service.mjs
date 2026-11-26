@@ -1,4 +1,5 @@
 import {createCesAdapter} from '../adapters/ces/adapter.mjs';
+import {createTokenScanAdapter} from '../adapters/tokenscan/adapter.mjs';
 import {createCesIngestionStore} from '../adapters/ces/ingestion.mjs';
 
 export const STATEMENT_SERVICE_SCHEMA='neo.statement.service.v1';
@@ -48,6 +49,7 @@ export function createStatementsService(config={}){
   const xcpBase=String(config.counterpartyApi||XCP_DEFAULT).replace(/\/$/,'');
   const fetchImpl=config.fetchImpl||fetch;
   const cesAdapter=config.cesAdapter||createCesAdapter(config.ces||{});
+  const tokenScanAdapter=config.tokenScanAdapter||createTokenScanAdapter(config.tokenscan||{});
   const cesStore=config.cesStore||createCesIngestionStore();
 
   function ingestCesSnapshot(input){return cesStore.ingest(input);}
@@ -56,7 +58,11 @@ export function createStatementsService(config={}){
   async function buildPublicStatement({address,cesToken,includeCes=true,signal}={}){
     const account=String(address||'').trim();
     if(!account)throw new Error('address is required');
-    const sources={bitcoin:{status:'unavailable',entries:[]},counterparty:{status:'unavailable',entries:[]},ces:{status:'unavailable',entries:[]},offline:{status:'unavailable',entries:[]}};
+    const sources={tokenscan:{status:'unavailable',metadata:null},bitcoin:{status:'unavailable',entries:[]},counterparty:{status:'unavailable',entries:[]},ces:{status:'unavailable',entries:[]},offline:{status:'unavailable',entries:[]}};
+
+    const tokenScanTask=tokenScanAdapter.getAsset({asset:'NOMNI',signal})
+      .then(metadata=>{sources.tokenscan={status:'source-observed',metadata}})
+      .catch(error=>{sources.tokenscan={status:'unavailable',metadata:null,error:String(error.message||error)}});
 
     const btcTask=readJson(`${btcBase}/address/${encodeURIComponent(account)}`,{fetchImpl,signal})
       .then(data=>{sources.bitcoin={status:'verified',entries:[bitcoinBalance(data,account)]}})
@@ -76,7 +82,7 @@ export function createStatementsService(config={}){
         .catch(error=>{sources.ces={status:'unavailable',entries:[],error:String(error.message||error)}});
     }
 
-    await Promise.all([btcTask,xcpTask,cesTask]);
+    await Promise.all([btcTask,xcpTask,cesTask,tokenScanTask]);
     const trustedSources=Object.values(sources).filter(source=>source.status==='verified'||source.status==='imported').length;
     return {
       schema:STATEMENT_SERVICE_SCHEMA,
@@ -93,7 +99,7 @@ export function createStatementsService(config={}){
   function publicStatus(){
     const ces=cesAdapter.status();
     const imported=cesStore.status();
-    return {schema:STATEMENT_SERVICE_SCHEMA,readOnly:true,bitcoinApiConfigured:Boolean(btcBase),counterpartyApiConfigured:Boolean(xcpBase),ces:{configured:imported.loaded||ces.configured,network:imported.network||ces.network,account:imported.account||ces.account,readOnly:true,ingestionLoaded:imported.loaded}};
+    return {schema:STATEMENT_SERVICE_SCHEMA,readOnly:true,bitcoinApiConfigured:Boolean(btcBase),counterpartyApiConfigured:Boolean(xcpBase),tokenscan:tokenScanAdapter.status(),ces:{configured:imported.loaded||ces.configured,network:imported.network||ces.network,account:imported.account||ces.account,readOnly:true,ingestionLoaded:imported.loaded}};
   }
 
   return {buildPublicStatement,publicStatus,ingestCesSnapshot,cesStatus};

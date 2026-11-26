@@ -1,0 +1,34 @@
+name: NEO Accounting Adapter Tests
+
+on:
+  pull_request:
+    paths:
+      - 'apps/accounting/**'
+      - 'apps/neoscan/adapters/**'
+      - 'apps/neoscan/server/accounting-adapters.test.mjs'
+      - 'docs/accounting/**'
+      - '.github/workflows/neo-accounting-adapters.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'apps/accounting/**'
+      - 'apps/neoscan/adapters/**'
+      - 'apps/neoscan/server/accounting-adapters.test.mjs'
+      - 'docs/accounting/**'
+      - '.github/workflows/neo-accounting-adapters.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  adapter-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Test read-only accounting adapters
+        run: node --test apps/neoscan/server/accounting-adapters.test.mjs apps/neoscan/server/statements-service.test.mjs apps/neoscan/adapters/ces/*.test.mjs
