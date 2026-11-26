@@ -1,11 +1,12 @@
 import { DatabaseSync } from 'node:sqlite';
 import { randomUUID } from 'node:crypto';
+import { createPaymentAllocationStore } from './payment-allocation.mjs';
 
 export class VersionConflictError extends Error {
   constructor(remote){ super('version_conflict'); this.code='VERSION_CONFLICT'; this.remote=remote; }
 }
 
-export function createStore(path='data/neo-counter.sqlite'){
+export function createStore(path='data/neo-counter.sqlite', { paymentVerifier, now } = {}){
   const db=new DatabaseSync(path);
   db.exec(`
     PRAGMA journal_mode=WAL;
@@ -64,5 +65,7 @@ export function createStore(path='data/neo-counter.sqlite'){
 
   const listEvents=(merchantId,limit=100)=>db.prepare('SELECT * FROM event_ledger WHERE merchant_id=? ORDER BY created_at DESC LIMIT ?').all(merchantId,Math.min(limit,500)).map(row=>({id:row.id,merchantId:row.merchant_id,entity:row.entity,terminalId:row.terminal_id,version:row.version,type:row.event_type,payload:JSON.parse(row.payload_json),createdAt:row.created_at}));
 
-  return {db,getState,putEnvelope,appendEvent,listEvents,close:()=>db.close()};
+  // Disabled unless trusted server code supplies a verifier; no HTTP claim endpoint.
+  const paymentAllocations = paymentVerifier ? createPaymentAllocationStore(db, { verifyPayment: paymentVerifier, now }) : null;
+  return {db,getState,putEnvelope,appendEvent,listEvents,paymentAllocations,close:()=>db.close()};
 }

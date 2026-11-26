@@ -57,3 +57,17 @@ Permissions are enforced per route. Register access can read shared state and ap
 `sync_state` stores the current authoritative envelope for each merchant/entity pair. `event_ledger` is append-only and records each accepted sync plus explicit register events. `auth_sessions` stores only hashed bearer tokens with merchant, terminal, staff, permissions, expiry, and revocation metadata. SQLite transactions and `BEGIN IMMEDIATE` serialize state-version updates at the database boundary.
 
 For multi-node production deployment, keep the API contract and replace the store adapter with managed PostgreSQL or another transactional database. SQLite is suitable for the first single-service durable deployment and local/on-prem terminal coordination.
+
+## Internal payment allocation (SQLite only; opt-in)
+
+`createStore(path, { paymentVerifier, now })` exposes `paymentAllocations` only when trusted server code supplies `paymentVerifier`. Without it, the property is `null`; existing HTTP routes do not enable allocation.
+
+- `registerOrder(order)` binds an immutable, server-authoritative merchant/order to network, rail, asset, destination, integer atomic-unit amount, minimum confirmations and expiry. Browser query parameters are not an authoritative order.
+- `allocate({ merchantId, orderId, txid, eventIndex })` calls the verifier with the stored order and normalized reference. The verifier must independently obtain canonical chain evidence, check Counterparty validity/asset divisibility and node synchronization, and return the matching destination, amount in atomic units, confirmations, block hash and block time.
+- `eventIndex` must be the canonical Bitcoin output index or Counterparty send/message locator used consistently by the verifier, never an arbitrary caller-selected alias for the same payment.
+- A global unique payment locator and unique merchant/order constraint are enforced in a SQLite transaction. Concurrent claims cannot assign the same payment twice. Same-order retries reverify and return the existing allocation. Changed block identity or amount requires review; no automatic release/reassignment is performed.
+- New allocations reject expired orders, including expiry while awaiting the verifier. A late retry of an existing allocation remains possible after fresh verification. This conservative policy may send legitimately late payments to manual review.
+
+Allocation records do not transfer funds or authorize fulfillment. Continue to enforce merchant authorization and Crown policy at any future HTTP integration, and revalidate chain finality before irreversible fulfillment. The generic event ledger and browser callback remain untrusted for payment proof. This module does not change the Redis, Firestore or Cloudflare adapters. Keep their allocation capability disabled until equivalent atomic constraints and tests exist.
+
+Run `npm run neo-counter:server:test` to include synthetic evidence, rejection, retry, restart and two-connection race tests. No built-in live chain verifier, HTTP allocation route or deployed staging integration is supplied here.
