@@ -1,16 +1,4 @@
 {
-  "generatedAt": "2026-11-26T21:36:52.395Z",
-  "items": [
-    {
-      "fromId": "PAGE:abf7f4791a9c98e3d2067d1b9aba6bf976f4761ef9b874226598695669476d75",
-      "toId": "SRC-WORLD-TEMPLE-WEB",
-      "kind": "DERIVES_FROM",
-      "confidence": 0.99,
-      "evidenceRefs": [
-        "https://holytemples.org/",
-        "abf7f4791a9c98e3d2067d1b9aba6bf976f4761ef9b874226598695669476d75"
-      ],
-      "decision": "ACCEPTED"
-    }
-  ]
+  "generatedAt": "2026-11-27T08:39:11.004Z",
+  "items": []
 }
