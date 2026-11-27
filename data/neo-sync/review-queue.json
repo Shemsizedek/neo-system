@@ -1,4 +1,33 @@
 {
-  "generatedAt": "2026-11-27T08:39:11.004Z",
-  "items": []
+  "generatedAt": "2026-11-27T21:20:34.571Z",
+  "items": [
+    {
+      "type": "REVISION",
+      "sourceId": "SRC-WORLD-TEMPLE-WEB",
+      "url": "https://holytemples.org/",
+      "title": "World Temple of Karast | Omniversal Church &amp; Community",
+      "previousHash": "abf7f4791a9c98e3d2067d1b9aba6bf976f4761ef9b874226598695669476d75",
+      "currentHash": "b31b2fab0908b7c10cc18d917f17236cf69a14a1d2fdad64296cca346bac085d",
+      "previousExcerpt": "World Temple of Karast | Omniversal Church & Community Skip to content World Temple N.U.T &#8211; Omniversal Church Home Holy Ministries Holy Ordainment Holy Charter Holy Palace Holy Tablets Holy See Moorish Science Temple Noone Society World Temple City World Library World Mission World Ministries World Committees World Parliament World Education World Treasury of Merit World Police World Interfaith Court World Bull",
+      "currentExcerpt": "World Temple of Karast | Omniversal Church & Community Skip to content World Temple N.U.T &#8211; Omniversal Church Home Holy Ministries Holy Ordainment Holy Charter Holy Palace Holy Tablets Holy See Moorish Science Temple Noone Society World Temple City World Library World Mission World Ministries World Committees World Parliament World Education World Treasury of Merit World Police World Interfaith Court World Bull",
+      "quality": {
+        "dimensions": {
+          "provenance": 9,
+          "truthfulness": 8,
+          "soundRightReason": 7,
+          "coherence": 7,
+          "ethics": 9,
+          "reciprocity": 7,
+          "natureAlignment": 6,
+          "craftsmanship": 8,
+          "consequence": 8
+        },
+        "average": 7.666666666666667,
+        "potency": "9_ETHER_COHERENT",
+        "gate": "PASS",
+        "note": "Heuristic artifact-quality assessment only; not a score of persons, identities or protected characteristics."
+      },
+      "decision": "REVIEW_REQUIRED"
+    }
+  ]
 }
