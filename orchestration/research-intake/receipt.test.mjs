@@ -1,0 +1,17 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { generateKeyPairSync, sign } from 'node:crypto';
+import { verifyReceipt } from './receipt.mjs';
+const key = generateKeyPairSync('ec',{namedCurve:'prime256v1'});
+const other = generateKeyPairSync('ec',{namedCurve:'prime256v1'});
+const r = {task_id:'task-1',payload_hash:'a'.repeat(64),owner_id:'agent-1',result_hash:'b'.repeat(64)};
+const sig = sign('sha256',Buffer.from(JSON.stringify(['NEO-RELAY-RECEIPT-v1',r.task_id,r.payload_hash,r.owner_id,r.result_hash])),key.privateKey);
+const check = (receipt=r,signature=sig,publicKey=key.publicKey,expected=r) => verifyReceipt(receipt,signature,publicKey,expected);
+test('valid receipt',()=>assert.match(check(),/^[a-f0-9]{64}$/));
+test('tampered result',()=>assert.equal(check({...r,result_hash:'c'.repeat(64)}),false));
+test('wrong key',()=>assert.equal(check(r,sig,other.publicKey),false));
+test('wrong task',()=>assert.equal(check(r,sig,key.publicKey,{...r,task_id:'task-2'}),false));
+test('wrong owner',()=>assert.equal(check(r,sig,key.publicKey,{...r,owner_id:'agent-2'}),false));
+test('wrong payload',()=>assert.equal(check(r,sig,key.publicKey,{...r,payload_hash:'c'.repeat(64)}),false));
+test('malformed signature',()=>assert.equal(check(r,Buffer.from('bad')),false));
+test('private key rejected',()=>assert.equal(check(r,sig,key.privateKey),false));
