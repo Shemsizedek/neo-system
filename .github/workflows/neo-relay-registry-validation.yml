@@ -1,0 +1,42 @@
+name: Relay registry validation
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  registry:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: synthetic-ci-only
+        ports:
+          - 5432:5432
+        options: --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      PGHOST: localhost
+      PGUSER: postgres
+      PGPASSWORD: synthetic-ci-only
+      PGDATABASE: postgres
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate registry
+        run: |
+          set -eu
+          psql -v ON_ERROR_STOP=1 -f orchestration/research-intake/task-registry.sql
+          psql -v ON_ERROR_STOP=1 -c "INSERT INTO neo_relay.tasks(task_id,payload_hash) VALUES ('test',repeat('a',64)) ON CONFLICT DO NOTHING"
+          psql -v ON_ERROR_STOP=1 -c "INSERT INTO neo_relay.tasks(task_id,payload_hash) VALUES ('test',repeat('b',64)) ON CONFLICT DO NOTHING"
+          test "$(psql -Atc "SELECT count(*) FROM neo_relay.tasks WHERE task_id='test' AND payload_hash=repeat('a',64)")" = 1
+          for agent in a b; do
+            psql -Atq -v ON_ERROR_STOP=1 -c "UPDATE neo_relay.tasks SET state='CLAIMED',owner_id='$agent',claimed_at=clock_timestamp() WHERE task_id='test' AND state='QUEUED' AND payload_hash=repeat('a',64) RETURNING owner_id" > "$agent.out" &
+            if [ "$agent" = a ]; then first=$!; else second=$!; fi
+          done
+          wait "$first"
+          wait "$second"
+          test "$(cat a.out b.out | grep -c '^[ab]$')" = 1
+          test -z "$(psql -Atq -v ON_ERROR_STOP=1 -c "UPDATE neo_relay.tasks SET state='COMPLETED',receipt_hash=repeat('c',64) WHERE task_id='test' AND owner_id='intruder' AND state='CLAIMED' RETURNING task_id")"
+          owner=$(cat a.out b.out)
+          test "$(psql -Atq -v ON_ERROR_STOP=1 -c "UPDATE neo_relay.tasks SET state='COMPLETED',receipt_hash=repeat('c',64) WHERE task_id='test' AND owner_id='$owner' AND state='CLAIMED' RETURNING task_id")" = test
+          test -z "$(psql -Atq -v ON_ERROR_STOP=1 -c "UPDATE neo_relay.tasks SET state='CLAIMED',owner_id='b',claimed_at=clock_timestamp() WHERE task_id='test' AND state='QUEUED' RETURNING task_id")"
