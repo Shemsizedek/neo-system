@@ -1,0 +1,44 @@
+name: NEO Key isolated security prototype
+on:
+  pull_request:
+    paths:
+      - 'deploy/noogle-render/neo-key-*'
+      - 'deploy/noogle-render/neo-key-security/**'
+      - '.devcontainer/neo-key-lab/**'
+      - 'deploy/noogle-render/sql/003_neo_key_credentials.sql'
+      - 'deploy/noogle-render/webauthn-assertion*'
+      - 'deploy/noogle-render/challenge-service*'
+      - 'deploy/noogle-render/postgres-challenge-store*'
+      - '.github/workflows/neo-key-prototype-ci.yml'
+permissions:
+  contents: read
+jobs:
+  prototype-tests:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: neo_key_gate4
+          POSTGRES_USER: neo_key_ci
+          POSTGRES_PASSWORD: ephemeral-ci-only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U neo_key_ci -d neo_key_gate4"
+          --health-interval 3s
+          --health-timeout 3s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install isolated pinned WebAuthn and PostgreSQL test dependencies
+        run: npm ci --prefix deploy/noogle-render/neo-key-security --ignore-scripts --no-audit --no-fund
+      - name: Test isolated assertions and lifecycle
+        run: node --test deploy/noogle-render/neo-key-prototype.test.mjs deploy/noogle-render/neo-key-lifecycle.test.mjs deploy/noogle-render/neo-key-postgres-store.test.mjs deploy/noogle-render/webauthn-assertion.test.mjs deploy/noogle-render/challenge-service.test.mjs deploy/noogle-render/neo-key-security/registration-verifier.test.mjs deploy/noogle-render/neo-key-security/assertion-verifier.test.mjs deploy/noogle-render/neo-key-security/neopass-authority.test.mjs deploy/noogle-render/neo-key-security/staging-issuer-approval.test.mjs deploy/noogle-render/neo-key-security/staging-release-rehearsal.test.mjs deploy/noogle-render/neo-key-security/tor-ollama-support.test.mjs deploy/noogle-render/neo-key-security/usb-local-probe.test.mjs deploy/noogle-render/neo-key-security/codespace-recovery-preflight.test.mjs deploy/noogle-render/neo-key-security/usb-authenticator-options.test.mjs deploy/noogle-render/neo-key-security/usb-raptor-deployment.test.mjs
+      - name: Test live transactions against ephemeral PostgreSQL service
+        env:
+          NEO_KEY_EPHEMERAL_POSTGRES_URL: postgres://neo_key_ci:ephemeral-ci-only@127.0.0.1:5432/neo_key_gate4
+        run: node --test deploy/noogle-render/neo-key-security/postgres.integration.test.mjs
